@@ -112,14 +112,14 @@ struct BudgetManagementView: View {
 
         return VStack(spacing: 0) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(ReceiptCategory.color(for: category).opacity(0.15))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: ReceiptCategory.icon(for: category))
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(ReceiptCategory.color(for: category))
-                }
+                // Clear Liquid Glass badge — colour lives on the glyph only,
+                // never on a filled tile (the app-wide icon language).
+                Image(systemName: ReceiptCategory.icon(for: category))
+                    .font(AppFont.footnoteEmphasis)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(ReceiptCategory.color(for: category))
+                    .frame(width: 36, height: 36)
+                    .mediaGlass(in: Circle())
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(label)).font(AppFont.footnote).foregroundStyle(.primary)
@@ -169,14 +169,12 @@ struct BudgetManagementView: View {
                 VStack(spacing: 28) {
                     // Icon + label
                     VStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                                .fill(ReceiptCategory.color(for: category).opacity(0.15))
-                                .frame(width: 72, height: 72)
-                            Image(systemName: ReceiptCategory.icon(for: category))
-                                .font(.system(size: 30, weight: .semibold))
-                                .foregroundStyle(ReceiptCategory.color(for: category))
-                        }
+                        Image(systemName: ReceiptCategory.icon(for: category))
+                            .font(.system(size: 30, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(ReceiptCategory.color(for: category))
+                            .frame(width: 72, height: 72)
+                            .mediaGlass(in: Circle())
                         Text(LocalizedStringKey(label))
                             .font(.system(size: 20, weight: .bold))
                     }

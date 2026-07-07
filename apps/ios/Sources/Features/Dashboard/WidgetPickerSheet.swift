@@ -55,12 +55,13 @@ enum HomeSectionType: String, CaseIterable, Identifiable {
 
 enum HomeWidgetType: String, CaseIterable, Identifiable {
     case tasks, finances, documents, family, healthScore, inventory,
-         contractors, weather, plants, calendar
+         contractors, weather, plants, calendar, deliveries, shopping, journal
 
     var id: String { rawValue }
 
-    var isFullWidth: Bool {
-        self == .weather || self == .calendar
+    /// The size a widget arrives in — every widget can be resized afterwards.
+    var defaultSize: HomeWidgetSize {
+        self == .weather || self == .calendar ? .full : .half
     }
 
     var title: String {
@@ -75,6 +76,9 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .weather:     return String(localized: "Weather")
         case .plants:      return String(localized: "Plants")
         case .calendar:    return String(localized: "Calendar")
+        case .deliveries:  return String(localized: "Deliveries")
+        case .shopping:    return String(localized: "Shopping list")
+        case .journal:     return String(localized: "Photo Journal")
         }
     }
 
@@ -90,6 +94,9 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .weather:     return "cloud.sun.fill"
         case .plants:      return "leaf.fill"
         case .calendar:    return "calendar"
+        case .deliveries:  return "shippingbox.and.arrow.backward.fill"
+        case .shopping:    return "cart.fill"
+        case .journal:     return "photo.stack.fill"
         }
     }
 
@@ -105,19 +112,64 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .weather:     return Color.brandPrimaryBlue
         case .plants:      return Color(red: 0.25, green: 0.78, blue: 0.45)
         case .calendar:    return .teal
+        case .deliveries:  return Color.brandSkyBlue
+        case .shopping:    return Color(red: 1.0, green: 0.62, blue: 0.04)
+        case .journal:     return Color.brandPurple
+        }
+    }
+}
+
+// MARK: - Widget size
+
+enum HomeWidgetSize: String, CaseIterable {
+    case half, full
+
+    var title: String {
+        switch self {
+        case .half: return String(localized: "Half width")
+        case .full: return String(localized: "Full width")
         }
     }
 
-    static let defaultRaw = "tasks,finances,documents,family"
-    static let key = "prvio.homeWidgets"
-
-    static func load() -> [HomeWidgetType] {
-        let raw = UserDefaults.standard.string(forKey: key) ?? defaultRaw
-        return raw.split(separator: ",").compactMap { HomeWidgetType(rawValue: String($0)) }
+    var icon: String {
+        switch self {
+        case .half: return "square.split.2x1"
+        case .full: return "rectangle"
+        }
     }
 
-    static func save(_ types: [HomeWidgetType]) {
-        UserDefaults.standard.set(types.map(\.rawValue).joined(separator: ","), forKey: key)
+    var toggled: HomeWidgetSize { self == .half ? .full : .half }
+}
+
+// MARK: - Widget configuration (type + chosen size, persisted in order)
+
+struct HomeWidgetConfig: Identifiable, Equatable {
+    var type: HomeWidgetType
+    var size: HomeWidgetSize
+
+    var id: String { type.rawValue }
+
+    static let key = "prvio.homeWidgets"
+    private static let defaultRaw = "tasks,finances,documents,family"
+
+    /// Persisted as "type:size,…". Entries saved before sizes existed have no
+    /// ":size" suffix and fall back to the type's natural default.
+    static func load() -> [HomeWidgetConfig] {
+        let raw = UserDefaults.standard.string(forKey: key) ?? defaultRaw
+        return raw.split(separator: ",").compactMap { entry in
+            let parts = entry.split(separator: ":", maxSplits: 1)
+            guard let first = parts.first,
+                  let type = HomeWidgetType(rawValue: String(first)) else { return nil }
+            let size = parts.count > 1 ? HomeWidgetSize(rawValue: String(parts[1])) : nil
+            return HomeWidgetConfig(type: type, size: size ?? type.defaultSize)
+        }
+    }
+
+    static func save(_ configs: [HomeWidgetConfig]) {
+        UserDefaults.standard.set(
+            configs.map { "\($0.type.rawValue):\($0.size.rawValue)" }.joined(separator: ","),
+            forKey: key
+        )
     }
 }
 
@@ -126,10 +178,11 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
 struct WidgetPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var active: [HomeWidgetType] = HomeWidgetType.load()
+    @State private var active: [HomeWidgetConfig] = HomeWidgetConfig.load()
 
     private var inactive: [HomeWidgetType] {
-        HomeWidgetType.allCases.filter { !active.contains($0) }
+        let activeTypes = Set(active.map(\.type))
+        return HomeWidgetType.allCases.filter { !activeTypes.contains($0) }
     }
 
     var body: some View {
@@ -137,8 +190,8 @@ struct WidgetPickerSheet: View {
             List {
                 if !active.isEmpty {
                     Section {
-                        ForEach(active) { type in
-                            widgetRow(type, isActive: true)
+                        ForEach(active) { config in
+                            activeRow(config)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
@@ -162,10 +215,10 @@ struct WidgetPickerSheet: View {
                             Button {
                                 HapticFeedback.selection()
                                 withAnimation(.spring(response: 0.35)) {
-                                    active.append(type)
+                                    active.append(HomeWidgetConfig(type: type, size: type.defaultSize))
                                 }
                             } label: {
-                                widgetRow(type, isActive: false)
+                                availableRow(type)
                             }
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
@@ -185,7 +238,7 @@ struct WidgetPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        HomeWidgetType.save(active)
+                        HomeWidgetConfig.save(active)
                         HapticFeedback.success()
                         dismiss()
                     }
@@ -197,39 +250,73 @@ struct WidgetPickerSheet: View {
         .presentationBackground(.thinMaterial)
     }
 
-    private func widgetRow(_ type: HomeWidgetType, isActive: Bool) -> some View {
+    // Clear Liquid Glass badge — colour lives on the glyph, never on a tile.
+    private func iconBadge(_ type: HomeWidgetType) -> some View {
+        Image(systemName: type.icon)
+            .font(AppFont.headline)
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(type.color)
+            .frame(width: 40, height: 40)
+            .mediaGlass(in: Circle())
+    }
+
+    /// Active row: title + current size caption, and a size toggle that flips
+    /// the widget between half and full width.
+    private func activeRow(_ config: HomeWidgetConfig) -> some View {
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(type.color.opacity(0.18))
-                    .frame(width: 40, height: 40)
-                Image(systemName: type.icon)
-                    .font(AppFont.headline)
-                    .foregroundStyle(type.color)
-            }
+            iconBadge(config.type)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(type.title)
+                Text(config.type.title)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
-                if type.isFullWidth {
-                    Text("Full width")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.4))
-                }
+                Text(config.size.title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(0.4))
             }
 
             Spacer()
 
-            if isActive {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color.accentColor)
-            } else {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color.primary.opacity(0.3))
+            Button {
+                HapticFeedback.selection()
+                guard let idx = active.firstIndex(where: { $0.id == config.id }) else { return }
+                withAnimation(.snappy(duration: 0.2)) {
+                    active[idx].size = active[idx].size.toggled
+                }
+            } label: {
+                Image(systemName: config.size.icon)
+                    .font(.system(size: 15, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.primary)
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 34, height: 34)
+                    .mediaGlass(in: Circle(), interactive: true)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Widget size"))
+            .accessibilityValue(Text(verbatim: config.size.title))
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 22))
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.vertical, AppSpacing.xxs)
+        .contentShape(Rectangle())
+    }
+
+    private func availableRow(_ type: HomeWidgetType) -> some View {
+        HStack(spacing: 14) {
+            iconBadge(type)
+
+            Text(type.title)
+                .font(AppFont.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Image(systemName: "plus.circle")
+                .font(.system(size: 22))
+                .foregroundStyle(Color.primary.opacity(0.3))
         }
         .padding(.vertical, AppSpacing.xxs)
         .contentShape(Rectangle())

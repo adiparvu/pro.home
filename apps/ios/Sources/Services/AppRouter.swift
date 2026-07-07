@@ -101,6 +101,10 @@ final class AppRouter {
     /// presentation is still animating out). Drained by `drainPending()`.
     var pendingRoute: AppRoute?
 
+    /// The last deep link handled, for deduping double delivery of a single
+    /// Control Center tap (OpenURLIntent + App Group hand-off).
+    @ObservationIgnored private var lastDeepLink: (url: URL, at: Date)?
+
     private var anyPresentationActive: Bool {
         activeDestination != nil || activeCover != nil || hasLocalPresentation
     }
@@ -229,6 +233,13 @@ final class AppRouter {
 
     func handle(deepLink url: URL) {
         guard url.scheme == "prvio" else { return }
+        // One Control Center tap can arrive twice — once through the
+        // OpenURLIntent and once through the App Group hand-off. Navigating
+        // twice would stack the same page, so an identical link within a
+        // short window is the same tap.
+        if let last = lastDeepLink, last.url == url,
+           Date().timeIntervalSince(last.at) < 2 { return }
+        lastDeepLink = (url, Date())
         let host = url.host ?? ""
         let pathComponents = url.pathComponents.filter { $0 != "/" }
         let pathId = pathComponents.first.flatMap(UUID.init(uuidString:))

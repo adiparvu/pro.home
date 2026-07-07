@@ -101,6 +101,13 @@ struct PRVIOApp: App {
                         // form (matches the quick action in AppRouter).
                         router.navigate(to: .supplies)
                     }
+                    // Control Center taps park their destination here because
+                    // the OpenURLIntent hand-off has proven unreliable. The
+                    // router dedupes when the URL also arrives.
+                    if let controlPath = SharedDataStore.consumeControlPath() {
+                        let url = URL(string: "prvio://\(controlPath)") ?? URL(string: "prvio://")!
+                        router.handle(deepLink: url)
+                    }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
                 }

@@ -21,6 +21,8 @@ struct DashboardView: View {
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(InventoryService.self) var inventoryService
     @Environment(ContractorService.self) var contractorService
+    @Environment(SupplyService.self) var supplyService
+    @Environment(PhotoJournalService.self) var photoJournalService
     @Environment(ProactiveEngine.self) var proactiveEngine
 
     @State var mapPosition: MapCameraPosition = .region(
@@ -43,8 +45,6 @@ struct DashboardView: View {
         case notifications, editProfile, search, widgetPicker, healthDetail
         var id: Int { rawValue }
     }
-    @State var isEditingWidgets = false
-    @State var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
 
     private let sections = PropertySection.all
@@ -364,54 +364,21 @@ struct DashboardView: View {
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Spacer()
-            if isEditingWidgets {
-                Button {
-                    HapticFeedback.impact(.light)
-                    HomeWidgetType.save(editableWidgets)
-                    HomeSectionType.save(sectionOrder)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        isEditingWidgets = false
-                    }
-                } label: {
-                    Text("Done")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Color.accentColor.opacity(0.1), in: Capsule())
-                }
-                .buttonStyle(.plain)
-            } else {
-                HStack(spacing: 8) {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        editableWidgets = HomeWidgetType.load()
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditingWidgets = true
-                        }
-                    } label: {
-                        Image(systemName: "arrow.up.arrow.down")
-                            .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .accessibilityLabel("Reorder widgets")
-
-                    Button {
-                        HapticFeedback.impact(.light)
-                        activeSheet = .widgetPicker
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .accessibilityLabel("Add widget")
-                }
+            // One entry point: the + opens the widget manager, which owns
+            // adding, removing, resizing AND drag-reordering (the separate
+            // reorder button duplicated it and is gone).
+            Button {
+                HapticFeedback.impact(.light)
+                activeSheet = .widgetPicker
+            } label: {
+                Image(systemName: "plus")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    .frame(width: 32, height: 32)
             }
+            .buttonStyle(.plain)
+            .glassCircle()
+            .accessibilityLabel("Add widget")
         }
     }
 

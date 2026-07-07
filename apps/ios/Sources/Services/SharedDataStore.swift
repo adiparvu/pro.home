@@ -219,6 +219,28 @@ enum SharedDataStore {
         UserDefaults(suiteName: suiteName)?.string(forKey: contextMyNameKey)
     }
 
+    // MARK: Control Center hand-off (control tap → app navigation)
+    //
+    // Control Center intents run in the widget-extension process. The
+    // OpenURLIntent chain they return has proven flaky across iOS versions
+    // (app opens but the URL never arrives, or nothing opens on cold start),
+    // so the tapped destination is ALSO parked here and consumed by the app
+    // on its next activation — the same App Group hand-off the widget
+    // buttons rely on, which does work.
+
+    private static let controlPathKey = "prvio.intent.controlPath"
+
+    static func setControlPath(_ path: String) {
+        UserDefaults(suiteName: suiteName)?.set(path, forKey: controlPathKey)
+    }
+
+    static func consumeControlPath() -> String? {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let path = ud.string(forKey: controlPathKey) else { return nil }
+        ud.removeObject(forKey: controlPathKey)
+        return path
+    }
+
     // MARK: Intent flags (widget/Shortcuts process → app process)
     //
     // Written from whichever process runs the App Intent. The app-group suite is

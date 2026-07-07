@@ -6,26 +6,26 @@ extension DashboardView {
 
     // MARK: - Widget Grid
 
-    var enabledWidgets: [HomeWidgetType] { HomeWidgetType.load() }
+    var enabledWidgets: [HomeWidgetConfig] { HomeWidgetConfig.load() }
 
-    // Groups widgets into rows: full-width widgets get their own row,
-    // half-width widgets are paired left-right.
-    var widgetRows: [[HomeWidgetType]] {
-        var rows: [[HomeWidgetType]] = []
-        var halfPending: HomeWidgetType? = nil
-        for widget in enabledWidgets {
-            if widget.isFullWidth {
+    // Groups widgets into rows honouring each widget's CHOSEN size:
+    // full-width widgets get their own row, half-width ones pair left-right.
+    var widgetRows: [[HomeWidgetConfig]] {
+        var rows: [[HomeWidgetConfig]] = []
+        var halfPending: HomeWidgetConfig? = nil
+        for config in enabledWidgets {
+            if config.size == .full {
                 if let pending = halfPending {
                     rows.append([pending])
                     halfPending = nil
                 }
-                rows.append([widget])
+                rows.append([config])
             } else {
                 if let pending = halfPending {
-                    rows.append([pending, widget])
+                    rows.append([pending, config])
                     halfPending = nil
                 } else {
-                    halfPending = widget
+                    halfPending = config
                 }
             }
         }
@@ -34,24 +34,14 @@ extension DashboardView {
     }
 
     var widgetGrid: some View {
-        Group {
-            if isEditingWidgets {
-                widgetReorderList
-            } else {
-                widgetNormalGrid
-            }
-        }
-    }
-
-    private var widgetNormalGrid: some View {
         VStack(spacing: 12) {
             ForEach(Array(widgetRows.enumerated()), id: \.offset) { _, row in
-                if row.count == 1 && row[0].isFullWidth {
+                if row.count == 1 && row[0].size == .full {
                     widgetView(for: row[0])
                 } else {
                     HStack(spacing: 12) {
-                        ForEach(row) { type in
-                            widgetView(for: type)
+                        ForEach(row) { config in
+                            widgetView(for: config)
                                 .frame(maxWidth: .infinity)
                         }
                         if row.count == 1 {
@@ -63,76 +53,10 @@ extension DashboardView {
         }
     }
 
-    private var widgetReorderList: some View {
-        let sectionCount = sectionOrder.count
-        let widgetCount = editableWidgets.count
-        let totalRows = sectionCount + widgetCount
-        return List {
-            Section {
-                ForEach(sectionOrder) { sec in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(sec.color.opacity(0.15))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: sec.icon)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(sec.color)
-                        }
-                        Text(sec.title)
-                            .font(AppFont.body)
-                            .foregroundStyle(.primary)
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
-                }
-                .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
-            } header: {
-                Text("Sections")
-                    .font(AppFont.label)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-            }
-
-            Section {
-                ForEach(editableWidgets) { type in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(type.color.opacity(0.15))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: type.icon)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(type.color)
-                        }
-                        Text(type.title)
-                            .font(AppFont.body)
-                            .foregroundStyle(.primary)
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
-                }
-                .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
-            } header: {
-                Text("Overview Widgets")
-                    .font(AppFont.label)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-            }
-        }
-        .listStyle(.plain)
-        .environment(\.editMode, .constant(.active))
-        .frame(height: max(200, CGFloat(totalRows) * 56 + 80))
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
-        )
-    }
-
     @ViewBuilder
-    func widgetView(for type: HomeWidgetType) -> some View {
+    func widgetView(for config: HomeWidgetConfig) -> some View {
+        let type = config.type
+        let size = config.size
         switch type {
         case .tasks:
             HomeWidget(
@@ -204,15 +128,30 @@ extension DashboardView {
             ) { router.navigate(to: .contractors) }
 
         case .weather:
-            WeatherWidget(
-                cityName: propertyService.primary?.city ?? "",
-                coordinate: propertyService.primary.flatMap {
-                    guard let lat = $0.latitude, let lon = $0.longitude else { return nil }
-                    return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            if size == .full {
+                WeatherWidget(
+                    cityName: propertyService.primary?.city ?? "",
+                    coordinate: propertyService.primary.flatMap {
+                        guard let lat = $0.latitude, let lon = $0.longitude else { return nil }
+                        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                    }
+                ) {
+                    if let url = URL(string: "weather://") {
+                        UIApplication.shared.open(url)
+                    }
                 }
-            ) {
-                if let url = URL(string: "weather://") {
-                    UIApplication.shared.open(url)
+            } else {
+                // Half size: a compact tile that opens the forecast.
+                HomeWidget(
+                    icon: "cloud.sun.fill",
+                    iconColor: Color.brandPrimaryBlue,
+                    title: "Weather",
+                    value: propertyService.primary?.city ?? "–",
+                    subtitle: String(localized: "Tap for forecast")
+                ) {
+                    if let url = URL(string: "weather://") {
+                        UIApplication.shared.open(url)
+                    }
                 }
             }
 
@@ -231,11 +170,53 @@ extension DashboardView {
             ) { router.navigate(to: .plants(id: nil)) }
 
         case .calendar:
-            CalendarLargeWidget {
-                if let url = URL(string: "calshow://") {
-                    UIApplication.shared.open(url)
+            if size == .full {
+                CalendarLargeWidget {
+                    if let url = URL(string: "calshow://") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } else {
+                HomeWidget(
+                    icon: "calendar",
+                    iconColor: .teal,
+                    title: "Calendar",
+                    value: "\(Calendar.current.component(.day, from: Date()))",
+                    subtitle: Date().formatted(.dateTime.weekday(.wide))
+                ) {
+                    if let url = URL(string: "calshow://") {
+                        UIApplication.shared.open(url)
+                    }
                 }
             }
+
+        case .deliveries:
+            HomeWidget(
+                icon: "shippingbox.and.arrow.backward.fill",
+                iconColor: Color.brandSkyBlue,
+                title: "Deliveries",
+                value: "\(deliveryService.activeDeliveries.count)",
+                subtitle: String(localized: "in transit"),
+                badge: deliveryService.activeDeliveries.count
+            ) { router.navigate(to: .deliveries) }
+
+        case .shopping:
+            HomeWidget(
+                icon: "cart.fill",
+                iconColor: Color(red: 1.0, green: 0.62, blue: 0.04),
+                title: "Shopping list",
+                value: "\(supplyService.totalPending)",
+                subtitle: String(localized: "to buy")
+            ) { router.navigate(to: .supplies) }
+
+        case .journal:
+            HomeWidget(
+                icon: "photo.stack.fill",
+                iconColor: Color.brandPurple,
+                title: "Photo Journal",
+                value: "\(photoJournalService.entries.count)",
+                subtitle: String(localized: "memories")
+            ) { router.navigate(to: .photoJournal) }
         }
     }
 

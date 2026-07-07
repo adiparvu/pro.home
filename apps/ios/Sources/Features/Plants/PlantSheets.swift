@@ -23,6 +23,8 @@ struct AddPlantSheet: View {
     @State private var showFileImporter = false
     @State private var showPhotoMenu = false
     @State private var showLibrary = false
+    @State private var showSpeciesCatalog = false
+    @State private var pickedSpecies: PlantSpecies?
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
@@ -34,6 +36,7 @@ struct AddPlantSheet: View {
                 Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
+                        catalogSection
                         emojiPickerSection
                         plantPhotoSection
                         nameField
@@ -86,18 +89,94 @@ struct AddPlantSheet: View {
                 }
             }
             .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
+            .sheet(isPresented: $showSpeciesCatalog) {
+                PlantSpeciesPicker { picked in
+                    apply(picked)
+                }
+            }
         }
         .presentationBackground(.thinMaterial)
     }
 
+    // MARK: Species catalog
+
+    /// One tap prefills name + species (Latin) + emoji + watering interval
+    /// from the built-in horticultural catalog; everything stays editable.
+    private var catalogSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Button { showSpeciesCatalog = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                    Text("plant_catalog_row")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.accentColor)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(AppSpacing.base)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(
+                Color.primary.opacity(AppOpacity.subtleFill),
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            )
+
+            if let picked = pickedSpecies {
+                HStack(spacing: AppSpacing.xs) {
+                    Text(picked.emoji)
+                        .font(AppFont.caption)
+                    Text(picked.name)
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(picked.latin)
+                        .font(AppFont.caption)
+                        .italic()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Image(systemName: picked.light.symbol)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(Text(LocalizedStringKey(picked.light.titleKey)))
+                }
+                .padding(.horizontal, AppSpacing.xxs)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(.smooth(duration: 0.25), value: pickedSpecies)
+    }
+
+    private func apply(_ picked: PlantSpecies) {
+        pickedSpecies = picked
+        name = picked.name
+        species = picked.latin
+        selectedEmoji = picked.emoji
+        wateringIntervalDays = picked.wateringDays
+    }
+
     // MARK: Emoji picker
+
+    /// A catalog pick may carry an emoji outside the preset strip (🍅, 🍎…);
+    /// surface it as the first, selected option instead of losing it.
+    private var emojiChoices: [String] {
+        Plant.emojiOptions.contains(selectedEmoji)
+            ? Plant.emojiOptions
+            : [selectedEmoji] + Plant.emojiOptions
+    }
 
     private var emojiPickerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             fieldLabel("EMOJI")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(Plant.emojiOptions, id: \.self) { emoji in
+                    ForEach(emojiChoices, id: \.self) { emoji in
                         Button {
                             selectedEmoji = emoji
                             HapticFeedback.selection()

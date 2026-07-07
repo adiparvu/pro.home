@@ -25,6 +25,13 @@ struct OpenPRVIODestination: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & OpensIntent {
+        // Two delivery channels for one tap. The OpenURLIntent below is the
+        // documented path, but across iOS releases it has opened the app
+        // without ever delivering the URL (or not opened it at all from a
+        // cold start). So the destination is ALSO parked in the App Group —
+        // the hand-off the widget buttons use, which the app drains on every
+        // activation. The router dedupes if both arrive.
+        SharedDataStore.setControlPath(path ?? "")
         let url = URL(string: "prvio://\(path ?? "")") ?? URL(string: "prvio://")!
         return .result(opensIntent: OpenURLIntent(url))
     }
