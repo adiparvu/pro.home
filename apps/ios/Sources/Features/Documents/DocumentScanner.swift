@@ -42,9 +42,10 @@ struct DocumentScannerView: UIViewControllerRepresentable {
                                           didFinishWith scan: VNDocumentCameraScan) {
             let images = (0..<scan.pageCount).map { scan.imageOfPage(at: $0) }
             controller.dismiss(animated: true)
+            let finish = onFinish
             Task.detached(priority: .userInitiated) {
                 let result = DocumentScanIntelligence.process(pages: images)
-                await MainActor.run { [onFinish] in onFinish(result) }
+                await MainActor.run { finish(result) }
             }
         }
 
