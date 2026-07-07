@@ -75,6 +75,7 @@ struct AppearanceView: View {
                     accentColor: currentColor
                 ) {
                     withAnimation(.spring(response: 0.3)) { appSettings.theme = theme.code }
+                    UserDefaults.standard.set(true, forKey: "prvio.theme.explicit")
                     HapticFeedback.selection()
                     if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
                 }

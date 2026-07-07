@@ -40,7 +40,7 @@ struct MembersHubView: View {
         }
     }
 
-    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child"]
+    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child", "tenant"]
 
     private var familyMembers: [FamilyMember] {
         familyService.members.filter { Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }

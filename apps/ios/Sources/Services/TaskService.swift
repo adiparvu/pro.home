@@ -45,7 +45,10 @@ final class TaskService {
             ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            // A transient refresh failure must not throw a blocking alert
+            // over already-displayed cached data — only report when there
+            // is nothing on screen to stand behind.
+            if tasks.isEmpty { self.error = error.localizedDescription }
         }
         if let pid { await subscribeRealtime(propertyId: pid) }
     }

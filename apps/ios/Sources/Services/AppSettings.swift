@@ -212,7 +212,12 @@ final class AppSettings {
             locale = remote
             LanguageManager.apply(remote)
         }
-        theme = profile.theme ?? theme
+        // Same guard for the theme: the device's explicit choice is
+        // authoritative — the server profile only seeds it before the user
+        // ever touches the picker (this used to flip Light back to Dark on
+        // every cold start).
+        let explicitTheme = UserDefaults.standard.bool(forKey: "prvio.theme.explicit")
+        if !explicitTheme, let remote = profile.theme { theme = remote }
     }
 
     static let themes: [(code: String, label: String, icon: String)] = [

@@ -100,12 +100,12 @@ struct MemberProfileSheet: View {
                 profileActionBtn(icon: "phone.fill", label: "Call") {
                     if let url = URL(string: "facetime-audio://\(email)") { UIApplication.shared.open(url) }
                 }
-                profileActionBtn(icon: "facetime", label: "FaceTime") {
+                profileActionBtn(icon: "video.fill", label: "FaceTime") {
                     if let url = URL(string: "facetime://\(email)") { UIApplication.shared.open(url) }
                 }
             }
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "facetime", label: "FaceTime") {
+                profileActionBtn(icon: "video.fill", label: "FaceTime") {
                     if let url = URL(string: "facetime://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
                 profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp") {

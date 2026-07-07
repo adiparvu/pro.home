@@ -17,6 +17,30 @@ struct PRVIOWidgetSnapshot: Codable {
     var nextMaintenanceDue: String? = nil
     var activeDeliveryCount: Int = 0
     var updatedAt: Date = Date()
+
+    init() {}
+
+    /// Every field decodes leniently: a snapshot written by ANY app version
+    /// must decode in every widget/watch process, or the widgets freeze on
+    /// defaults. (activeDeliveryCount was added non-optional — old
+    /// snapshots threw keyNotFound and the whole snapshot silently
+    /// vanished.)
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        overdueTaskCount     = try c.decodeIfPresent(Int.self,      forKey: .overdueTaskCount) ?? 0
+        openTaskCount        = try c.decodeIfPresent(Int.self,      forKey: .openTaskCount) ?? 0
+        pendingSupplyCount   = try c.decodeIfPresent(Int.self,      forKey: .pendingSupplyCount) ?? 0
+        plantsNeedingWater   = try c.decodeIfPresent(Int.self,      forKey: .plantsNeedingWater) ?? 0
+        plantNames           = try c.decodeIfPresent([String].self, forKey: .plantNames) ?? []
+        unreadMessages       = try c.decodeIfPresent(Int.self,      forKey: .unreadMessages) ?? 0
+        propertyName         = try c.decodeIfPresent(String.self,   forKey: .propertyName)
+        propertyHealthScore  = try c.decodeIfPresent(Int.self,      forKey: .propertyHealthScore)
+        criticalTaskTitle    = try c.decodeIfPresent(String.self,   forKey: .criticalTaskTitle)
+        nextMaintenanceTitle = try c.decodeIfPresent(String.self,   forKey: .nextMaintenanceTitle)
+        nextMaintenanceDue   = try c.decodeIfPresent(String.self,   forKey: .nextMaintenanceDue)
+        activeDeliveryCount  = try c.decodeIfPresent(Int.self,      forKey: .activeDeliveryCount) ?? 0
+        updatedAt            = try c.decodeIfPresent(Date.self,     forKey: .updatedAt) ?? Date()
+    }
 }
 
 // MARK: - Watch payload (pushed to the watch over WatchConnectivity)
