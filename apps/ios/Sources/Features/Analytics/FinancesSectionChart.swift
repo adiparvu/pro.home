@@ -10,6 +10,12 @@ extension FinancesSection {
         let now = Date()
 
         func parseDate(_ r: FinancialRecord) -> Date? { AppDate.day(from: r.date) }
+        // Converted sums — raw amounts across currencies used to be added
+        // together, skewing every bucket that mixed EUR and RON records.
+        func summed(_ recs: [FinancialRecord], _ type: String) -> Double {
+            recs.filter { $0.type == type }
+                .reduce(0) { $0 + convertToPreferred($1.amount, from: $1.currency) }
+        }
 
         func dayBuckets(days: Int) -> [(String, Double, Double)] {
             let lbl = DateFormatter(); lbl.dateFormat = days <= 7 ? "EEE" : "d"
@@ -21,9 +27,7 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= start && d < end
                 }
-                return (lbl.string(from: day),
-                        recs.filter { $0.type == "income" }.reduce(0) { $0 + $1.amount },
-                        recs.filter { $0.type == "expense" }.reduce(0) { $0 + $1.amount })
+                return (lbl.string(from: day), summed(recs, "income"), summed(recs, "expense"))
             }
         }
 
@@ -38,9 +42,7 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= cursor && d < next
                 }
-                buckets.append((lbl.string(from: cursor),
-                                recs.filter { $0.type == "income" }.reduce(0) { $0 + $1.amount },
-                                recs.filter { $0.type == "expense" }.reduce(0) { $0 + $1.amount }))
+                buckets.append((lbl.string(from: cursor), summed(recs, "income"), summed(recs, "expense")))
                 cursor = next
             }
             return buckets

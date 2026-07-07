@@ -53641,6 +53641,102 @@
           }
         }
       }
+    },
+    "ana_insights_header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month's insights"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Observațiile lunii"
+          }
+        }
+      }
+    },
+    "ana_daily_header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily spending"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ritmul zilnic al cheltuielilor"
+          }
+        }
+      }
+    },
+    "ana_insight_top_cat %@ %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ is %2$lld%% of this month's spending."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ reprezintă %2$lld%% din cheltuielile lunii."
+          }
+        }
+      }
+    },
+    "ana_insight_jump %@ %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ grew %2$lld%% vs last month."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ a crescut cu %2$lld%% față de luna trecută."
+          }
+        }
+      }
+    },
+    "ana_insight_drop %@ %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ dropped %2$lld%% vs last month."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ a scăzut cu %2$lld%% față de luna trecută."
+          }
+        }
+      }
+    },
+    "ana_insight_peak_day %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most expensive day: %1$@ (%2$@)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cea mai scumpă zi: %1$@ (%2$@)."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

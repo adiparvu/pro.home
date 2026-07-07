@@ -6,6 +6,8 @@ import Charts
 struct FinancesSection: View {
     var service: FinancialService
     @Binding var displayedMonth: Date
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AppSettings.self) private var appSettings
 
     @State var chartRange: ChartRange = .sixMonths
     @State var customStart = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
@@ -14,6 +16,7 @@ struct FinancesSection: View {
 
     private var cal: Calendar { Calendar.current }
     private var isCurrentMonth: Bool { cal.isDate(displayedMonth, equalTo: Date(), toGranularity: .month) }
+    private var preferred: String { appSettings.preferredCurrency }
 
     private var monthRecords: [FinancialRecord] {
         service.records.filter { r in
@@ -30,39 +33,125 @@ struct FinancesSection: View {
         }
     }
 
-    private var income: Double { monthRecords.filter(\.isIncome).map(\.amount).reduce(0, +) }
-    private var expenses: Double { monthRecords.filter { $0.type == "expense" }.map(\.amount).reduce(0, +) }
-    private var net: Double { income - expenses }
-    private var savingsRate: Double { income > 0 ? (net / income) * 100 : 0 }
-
-    private var prevIncome: Double { prevMonthRecords.filter(\.isIncome).map(\.amount).reduce(0, +) }
-    private var prevExpenses: Double { prevMonthRecords.filter { $0.type == "expense" }.map(\.amount).reduce(0, +) }
+    /// One pass over a month's records, every amount converted to the
+    /// preferred currency — the sums here used to add raw amounts across
+    /// currencies, so one EUR salary next to RON expenses skewed every KPI.
+    private func stats(for records: [FinancialRecord]) -> MonthFinanceStats {
+        var s = MonthFinanceStats()
+        for r in records {
+            let v = currencyService.convert(r.amount, from: r.currency, to: preferred)
+            if r.isIncome {
+                s.income += v
+            } else if r.type == "expense" {
+                s.expenses += v
+                let key = r.category.isEmpty ? "other" : r.category.lowercased()
+                s.byCategory[key, default: 0] += v
+                if let d = AppDate.day(from: r.date) {
+                    s.byDay[cal.component(.day, from: d), default: 0] += v
+                }
+            }
+        }
+        return s
+    }
 
     private func trend(_ current: Double, _ prev: Double) -> Double? {
         guard prev > 0 else { return nil }
         return ((current - prev) / prev) * 100
     }
 
-    private var categoryData: [CategoryStat] {
-        let expenseRecords = monthRecords.filter { $0.type == "expense" }
-        let grouped = Dictionary(grouping: expenseRecords, by: \.category)
-        return grouped.map { key, val in
-            CategoryStat(name: key.isEmpty ? "Altele" : key.capitalized,
-                         amount: val.map(\.amount).reduce(0, +))
-        }
-        .sorted { $0.amount > $1.amount }
+    private func money(_ value: Double) -> String {
+        CurrencyService.money(value, code: preferred, whole: true)
+    }
+
+    /// Internal (not private) — the chart extension in
+    /// FinancesSectionChart.swift buckets through this same conversion.
+    func convertToPreferred(_ amount: Double, from code: String) -> Double {
+        currencyService.convert(amount, from: code, to: preferred)
     }
 
     var body: some View {
+        // One pass per render (the old computed vars re-filtered the whole
+        // record list on every access).
+        let cur = stats(for: monthRecords)
+        let prev = stats(for: prevMonthRecords)
+        let cats = cur.byCategory
+            .map { CategoryStat(name: $0.key.capitalized, amount: $0.value) }
+            .sorted { $0.amount > $1.amount }
+
         VStack(spacing: 16) {
             periodNavigator
-            kpiRow
-            if income > 0 || expenses > 0 {
-                savingsCard
-                if !categoryData.isEmpty { categoryCard }
+            kpiRow(cur: cur, prev: prev)
+            if cur.income > 0 || cur.expenses > 0 {
+                savingsCard(cur: cur)
+                if !cats.isEmpty { categoryCard(cats) }
+                MonthInsightsCard(insights: insights(cur: cur, prev: prev))
+                dailySpendCard(cur: cur)
             }
             chartCard
         }
+    }
+
+    @ViewBuilder
+    private func dailySpendCard(cur: MonthFinanceStats) -> some View {
+        let daysInMonth = cal.range(of: .day, in: .month, for: displayedMonth)?.count ?? 30
+        let peak = cur.byDay.max(by: { $0.value < $1.value })?.key
+        DailySpendCard(days: (1...daysInMonth).map {
+            DailySpendCard.Day(day: $0, amount: cur.byDay[$0] ?? 0)
+        }, peakDay: peak)
+    }
+
+    // MARK: - Auto insights (only claims the data actually supports)
+
+    private func insights(cur: MonthFinanceStats, prev: MonthFinanceStats) -> [MonthInsight] {
+        var out: [MonthInsight] = []
+        // Where the month's money is concentrated.
+        if cur.expenses > 0, let top = cur.byCategory.max(by: { $0.value < $1.value }) {
+            let pct = Int((top.value / cur.expenses * 100).rounded())
+            if pct >= 20 {
+                out.append(MonthInsight(icon: "chart.pie.fill", color: .blue,
+                    text: String(format: String(localized: "ana_insight_top_cat %@ %lld"),
+                                 localizedCategory(top.key), pct)))
+            }
+        }
+        // The category that moved the most vs. last month — only when it is
+        // big enough to matter (≥10% of the month) and the move is ≥25%.
+        var moveKey: String?
+        var movePct = 0.0
+        for (key, value) in cur.byCategory {
+            let before = prev.byCategory[key] ?? 0
+            guard before > 0, value >= cur.expenses * 0.1 else { continue }
+            let pct = (value - before) / before * 100
+            if abs(pct) >= 25, abs(pct) > abs(movePct) {
+                moveKey = key
+                movePct = pct
+            }
+        }
+        if let key = moveKey {
+            let rising = movePct > 0
+            out.append(MonthInsight(
+                icon: rising ? "arrow.up.right.circle.fill" : "arrow.down.right.circle.fill",
+                color: rising ? .orange : Color.brandSuccess,
+                text: String(format: String(localized: rising ? "ana_insight_jump %@ %lld"
+                                                              : "ana_insight_drop %@ %lld"),
+                             localizedCategory(key), Int(abs(movePct).rounded()))))
+        }
+        // The single most expensive day, when spending isn't flat.
+        if cur.byDay.count > 1, let peak = cur.byDay.max(by: { $0.value < $1.value }),
+           let date = cal.date(byAdding: .day, value: peak.key - 1, to: displayedMonth) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMMM"
+            formatter.locale = .current
+            out.append(MonthInsight(icon: "calendar.circle.fill", color: .purple,
+                text: String(format: String(localized: "ana_insight_peak_day %@ %@"),
+                             formatter.string(from: date), money(peak.value))))
+        }
+        return out
+    }
+
+    /// Category keys are stored lowercased; the catalog localizes their
+    /// capitalized form (the same keys the transaction rows display).
+    private func localizedCategory(_ raw: String) -> String {
+        String(localized: String.LocalizationValue(raw.capitalized))
     }
 
     // MARK: - Period Navigator
@@ -123,25 +212,26 @@ struct FinancesSection: View {
 
     // MARK: - KPI Row
 
-    private var kpiRow: some View {
-        HStack(spacing: 10) {
+    private func kpiRow(cur: MonthFinanceStats, prev: MonthFinanceStats) -> some View {
+        let net = cur.income - cur.expenses
+        return HStack(spacing: 10) {
             TrendKPICard(
                 label: "Income",
-                value: service.moneyDisplay(income),
+                value: money(cur.income),
                 icon: "arrow.down.circle.fill",
-                trendPct: trend(income, prevIncome),
-                trendPositive: income >= prevIncome
+                trendPct: trend(cur.income, prev.income),
+                trendPositive: cur.income >= prev.income
             )
             TrendKPICard(
                 label: "Expenses",
-                value: service.moneyDisplay(expenses),
+                value: money(cur.expenses),
                 icon: "arrow.up.circle.fill",
-                trendPct: trend(expenses, prevExpenses),
-                trendPositive: expenses <= prevExpenses
+                trendPct: trend(cur.expenses, prev.expenses),
+                trendPositive: cur.expenses <= prev.expenses
             )
             TrendKPICard(
                 label: "Net",
-                value: "\(net >= 0 ? "+" : "")" + service.moneyDisplay(net),
+                value: "\(net >= 0 ? "+" : "")" + money(net),
                 icon: "chart.line.uptrend.xyaxis",
                 trendPct: nil,
                 trendPositive: net >= 0,
@@ -153,8 +243,9 @@ struct FinancesSection: View {
 
     // MARK: - Savings Card
 
-    private var savingsCard: some View {
-        GlassCard(padding: 18) {
+    private func savingsCard(cur: MonthFinanceStats) -> some View {
+        let savingsRate = cur.income > 0 ? (cur.income - cur.expenses) / cur.income * 100 : 0
+        return GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("Savings rate", systemImage: "leaf.fill")
@@ -180,23 +271,23 @@ struct FinancesSection: View {
                     }
                 }
                 .frame(height: 8)
-                Text(LocalizedStringKey(savingsInsight))
+                Text(LocalizedStringKey(savingsInsight(rate: savingsRate)))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
         }
     }
 
-    private var savingsInsight: String {
-        if savingsRate >= 30 { return String(localized: "Excellent! You're saving more than 30% of your income.") }
-        if savingsRate >= 20 { return String(localized: "Good! You're saving \(Int(savingsRate))% of your income.") }
-        if savingsRate >= 0  { return String(localized: "You can save more by reducing expenses.") }
+    private func savingsInsight(rate: Double) -> String {
+        if rate >= 30 { return String(localized: "Excellent! You're saving more than 30% of your income.") }
+        if rate >= 20 { return String(localized: "Good! You're saving \(Int(rate))% of your income.") }
+        if rate >= 0  { return String(localized: "You can save more by reducing expenses.") }
         return String(localized: "Expenses exceed income this month.")
     }
 
     // MARK: - Category Donut Chart
 
-    private var categoryCard: some View {
+    private func categoryCard(_ categoryData: [CategoryStat]) -> some View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Expenses by category")
@@ -218,12 +309,12 @@ struct FinancesSection: View {
                         ForEach(categoryData.prefix(5)) { cat in
                             HStack(spacing: 6) {
                                 Circle().fill(cat.color).frame(width: 8, height: 8)
-                                Text(cat.name)
+                                Text(LocalizedStringKey(cat.name))
                                     .font(.system(size: 12))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                 Spacer()
-                                Text(service.moneyDisplay(cat.amount))
+                                Text(money(cat.amount))
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.primary)
                             }
