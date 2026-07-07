@@ -171,6 +171,45 @@ final class WatchStore: NSObject, WCSessionDelegate {
         queue(action: "consumePantry", id: id, haptic: .click)
     }
 
+    // MARK: Work session (a maintenance timer on the wrist)
+    //
+    // Honest scope: the elapsed time is computed from the persisted start
+    // date, so the session survives the app closing and the watch sleeping —
+    // but the quarter-hour haptic only fires while the session screen is up
+    // (background haptics would require a workout session we can't justify).
+
+    struct WorkSession: Codable, Equatable {
+        var taskId: UUID
+        var title: String
+        var startedAt: Date
+    }
+
+    private static let sessionKey = "prvio.watch.session"
+
+    private(set) var activeSession: WorkSession? = {
+        guard let data = (UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard)
+            .data(forKey: sessionKey) else { return nil }
+        return try? JSONDecoder().decode(WorkSession.self, from: data)
+    }()
+
+    func startSession(taskId: UUID, title: String) {
+        let session = WorkSession(taskId: taskId, title: title, startedAt: Date())
+        activeSession = session
+        if let data = try? JSONEncoder().encode(session) {
+            Self.defaults.set(data, forKey: Self.sessionKey)
+        }
+        WKInterfaceDevice.current().play(.start)
+    }
+
+    /// Ends the session; optionally completes the task it timed.
+    func endSession(completingTask: Bool) {
+        let session = activeSession
+        activeSession = nil
+        Self.defaults.removeObject(forKey: Self.sessionKey)
+        if completingTask, let session { completeTask(session.taskId) }
+        else { WKInterfaceDevice.current().play(.stop) }
+    }
+
     /// Dictated on the wrist for the house chat — the phone sends the real
     /// message on its next beat. transferUserInfo persists across
     /// unreachability, so nothing dictated is ever lost.

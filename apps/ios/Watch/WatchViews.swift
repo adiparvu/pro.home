@@ -210,6 +210,10 @@ private struct TodayGlance: View {
                             .entrance(4)
                     }
 
+                    if let session = store.activeSession {
+                        sessionCard(session).entrance(1)
+                    }
+
                     if let temp = payload.weatherTemp, let symbol = payload.weatherSymbol {
                         weatherCard(temp: temp, symbol: symbol).entrance(5)
                     }
@@ -267,6 +271,35 @@ private struct TodayGlance: View {
             }
         }
     }
+
+    /// The running maintenance session — live elapsed, tap to open.
+    private func sessionCard(_ session: WatchStore.WorkSession) -> some View {
+        Button { showSession = true } label: {
+            WatchCard(tint: .teal) {
+                HStack(spacing: 6) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.teal)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(session.title)
+                            .font(.system(size: 11, weight: .medium))
+                            .lineLimit(1)
+                        Text(session.startedAt, style: .timer)
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showSession) { WorkSessionView() }
+    }
+
+    @State private var showSession = false
 
     /// Trust is knowing how old the data is — stale info must say so.
     private var freshnessFooter: some View {
@@ -608,6 +641,7 @@ private struct TaskDetail: View {
     let task: TaskCatalogEntry
     @Environment(WatchStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var showSession = false
 
     var body: some View {
         ScrollView {
@@ -635,10 +669,95 @@ private struct TaskDetail: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
                 .primaryDoubleTap()
+
+                // Time the work: start a session, get on with the job.
+                Button {
+                    if store.activeSession?.taskId != task.id {
+                        store.startSession(taskId: task.id, title: task.title)
+                    }
+                    showSession = true
+                } label: {
+                    Label { Text(store.activeSession?.taskId == task.id
+                                 ? "watch_session_open" : "watch_session_start") } icon: {
+                        Image(systemName: "timer")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.teal)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+        .sheet(isPresented: $showSession) { WorkSessionView() }
+    }
+}
+
+// MARK: - Work session (maintenance timer)
+
+private struct WorkSessionView: View {
+    @Environment(WatchStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    /// Minute ticker for the quarter-hour haptic — fires only while this
+    /// screen is up; the elapsed display itself needs no timer at all
+    /// (Text(style: .timer) is system-driven).
+    private let minuteTick = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        if let session = store.activeSession {
+            ScrollView {
+                VStack(spacing: 12) {
+                    Image(systemName: "timer")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.teal)
+                        .symbolEffect(.pulse)
+                    Text(session.title)
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                    Text(session.startedAt, style: .timer)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+
+                    Button {
+                        store.endSession(completingTask: true)
+                        dismiss()
+                    } label: {
+                        Label { Text("watch_complete") } icon: {
+                            Image(systemName: "checkmark.circle.fill")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.teal)
+                    .primaryDoubleTap()
+
+                    Button {
+                        store.endSession(completingTask: false)
+                        dismiss()
+                    } label: {
+                        Label { Text("watch_session_end") } icon: {
+                            Image(systemName: "stop.circle")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .onReceive(minuteTick) { _ in
+                // A quiet pulse every quarter hour keeps time honest while
+                // hands are busy — screen-on only, by design.
+                let minutes = Int(Date().timeIntervalSince(session.startedAt) / 60)
+                if minutes > 0, minutes % 15 == 0 {
+                    WKInterfaceDevice.current().play(.notification)
+                }
+            }
+        } else {
+            AllClearView(icon: "timer")
+                .onAppear { dismiss() }
+        }
     }
 }
 
