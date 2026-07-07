@@ -51,6 +51,14 @@ extension IntegrationsView {
             }
             .buttonStyle(.plain)
 
+            Button { vm.activeSheet = .watchShowcase } label: {
+                IntegrationRowContent(
+                    icon: "applewatch", color: Color.brandSkyBlue,
+                    title: "Apple Watch",
+                    description: "ws_row_desc")
+            }
+            .buttonStyle(.plain)
+
             IntegrationRow(icon: "magnifyingglass", color: Color.brandSkyBlue,
                 title: "Spotlight Search",
                 description: "Tasks, plants, and documents appear in iOS Spotlight search results.",

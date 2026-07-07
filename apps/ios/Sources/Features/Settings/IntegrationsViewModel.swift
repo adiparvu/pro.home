@@ -17,7 +17,7 @@ enum IntegrationStatus: Equatable {
 // MARK: - Sheet destination
 
 enum IntegrationSheet: Identifiable {
-    case siriShortcuts, nfcWallet, iotHub, receiptScanner, emailImport
+    case siriShortcuts, nfcWallet, iotHub, receiptScanner, emailImport, watchShowcase
     var id: Int {
         switch self {
         case .siriShortcuts:  return 1
@@ -25,6 +25,7 @@ enum IntegrationSheet: Identifiable {
         case .iotHub:         return 3
         case .receiptScanner: return 4
         case .emailImport:    return 5
+        case .watchShowcase:  return 6
         }
     }
 }

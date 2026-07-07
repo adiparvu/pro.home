@@ -60,6 +60,7 @@ struct IntegrationsView: View {
             case .iotHub:         NavigationStack { IoTHubView() }
             case .receiptScanner: ReceiptScannerView()   // brings its own NavigationStack
             case .emailImport:    AutoImportView()       // brings its own NavigationStack
+            case .watchShowcase:  NavigationStack { WatchShowcaseView() }
             }
         }
     }
