@@ -611,13 +611,18 @@ struct BackgroundPicker: View {
                     }
                     .buttonStyle(.plain)
 
-                    if usingPhoto, let url = ChatBackgroundStore.url(for: bgImage),
-                       let img = UIImage(contentsOfFile: url.path) {
+                    if usingPhoto, let img = ChatBackgroundStore.image(named: bgImage) {
                         Button {
                             HapticFeedback.impact(.light)  // already selected — tap re-affirms
                         } label: {
                             tile(selected: true) {
-                                Image(uiImage: img).resizable().scaledToFill()
+                                // scaledToFill inside a clear overlay: the photo
+                                // fills the tile without inflating its layout —
+                                // a bare fill let portrait shots burst out of
+                                // the grid and cover the Upload tile.
+                                Color.clear
+                                    .overlay(Image(uiImage: img).resizable().scaledToFill())
+                                    .clipped()
                             }
                         }
                         .buttonStyle(.plain)
