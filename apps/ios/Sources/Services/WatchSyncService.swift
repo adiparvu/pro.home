@@ -96,6 +96,27 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
+        // The watch's work session, mirrored as a phone Live Activity. The
+        // system only lets the app START one in the foreground, so both
+        // events park in the App Group and drain on the next active beat.
+        if action == "sessionStart", let idString = userInfo["id"] as? String,
+           let id = UUID(uuidString: idString),
+           let title = userInfo["title"] as? String {
+            let startedAt = (userInfo["startedAt"] as? String).flatMap(Double.init)
+                .map(Date.init(timeIntervalSince1970:)) ?? Date()
+            DispatchQueue.main.async {
+                SharedDataStore.writePendingSessionStart(taskId: id, title: title, startedAt: startedAt)
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
+        if action == "sessionEnd" {
+            DispatchQueue.main.async {
+                SharedDataStore.writePendingSessionEnd()
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
         guard let idString = userInfo["id"] as? String,
               let id = UUID(uuidString: idString) else { return }
         DispatchQueue.main.async { [weak self] in

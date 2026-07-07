@@ -406,6 +406,46 @@ enum SharedDataStore {
         return count
     }
 
+    /// Read-only view of the streak — for screens that report it without
+    /// rolling the day forward (updateHouseStreak stays the only writer).
+    static func currentHouseStreak() -> Int {
+        UserDefaults(suiteName: suiteName)?.integer(forKey: streakCountKey) ?? 0
+    }
+
+    // MARK: Pending work session (watch → phone Live Activity)
+    //
+    // The watch's session start/end land here because Live Activities can
+    // only be requested while the app is in the foreground — the phone
+    // mirrors the wrist's timer the next time it's active (or instantly
+    // when it already is). startedAt rides along so the Dynamic Island
+    // shows the TRUE elapsed time, not the time since the mirror appeared.
+
+    private static let pendingSessionKey = "prvio.pending.session"
+
+    static func writePendingSessionStart(taskId: UUID, title: String, startedAt: Date) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        ud.set(["id": taskId.uuidString, "title": title,
+                "startedAt": String(startedAt.timeIntervalSince1970)],
+               forKey: pendingSessionKey)
+    }
+
+    static func writePendingSessionEnd() {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        ud.set(["end": "1"], forKey: pendingSessionKey)
+    }
+
+    /// nil = nothing pending; (nil) start = the session should END.
+    static func consumePendingSessionEvent() -> (start: (taskId: UUID, title: String, startedAt: Date)?, isEnd: Bool)? {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let dict = ud.dictionary(forKey: pendingSessionKey) as? [String: String] else { return nil }
+        ud.removeObject(forKey: pendingSessionKey)
+        if dict["end"] == "1" { return (start: nil, isEnd: true) }
+        guard let idStr = dict["id"], let id = UUID(uuidString: idStr),
+              let title = dict["title"],
+              let ts = dict["startedAt"].flatMap(Double.init) else { return nil }
+        return (start: (taskId: id, title: title, startedAt: Date(timeIntervalSince1970: ts)), isEnd: false)
+    }
+
     static func appendPendingSupplyCheck(_ itemId: UUID) {
         guard let ud = UserDefaults(suiteName: suiteName) else { return }
         var pending = (ud.array(forKey: pendingSupplyChecksKey) as? [String]) ?? []

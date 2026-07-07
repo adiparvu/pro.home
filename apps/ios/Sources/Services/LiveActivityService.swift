@@ -20,6 +20,7 @@ final class LiveActivityService {
     private var deliveryActivities: [UUID: Activity<DeliveryActivityAttributes>] = [:]
     private var plantCareActivity: Activity<PlantCareActivityAttributes>?
     private var plantSessionTotal = 0
+    private var workSessionActivity: Activity<WorkSessionActivityAttributes>?
 
     private var systemEnabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
@@ -63,6 +64,36 @@ final class LiveActivityService {
         let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
         shoppingActivity = try? Activity.request(
             attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+    }
+
+    // MARK: - Work session (user-initiated, from a task row or the watch)
+    //
+    // Gated only by the global Live Activity switch — the auto-start
+    // preferences govern activities the app starts by itself, and this one
+    // is always an explicit human action. One session at a time: starting a
+    // new one ends the old, matching the watch's single-session model.
+
+    func startWorkSession(taskId: UUID, title: String, startedAt: Date = Date()) {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+        endWorkSession(completed: false)
+        let attrs = WorkSessionActivityAttributes(taskId: taskId, taskTitle: title,
+                                                  startedAt: startedAt,
+                                                  propertyName: propertyName)
+        workSessionActivity = try? Activity.request(
+            attributes: attrs,
+            content: .init(state: .init(isComplete: false), staleDate: nil),
+            pushType: nil)
+    }
+
+    func endWorkSession(completed: Bool) {
+        workSessionActivity = nil
+        Task {
+            for activity in Activity<WorkSessionActivityAttributes>.activities {
+                await activity.end(
+                    ActivityContent(state: .init(isComplete: completed), staleDate: nil),
+                    dismissalPolicy: completed ? .after(.now + 2) : .immediate)
+            }
+        }
     }
 
     // MARK: - Maintenance (driven by TaskService)

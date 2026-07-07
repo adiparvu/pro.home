@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import Foundation
 
 // MARK: - Live Activity preferences (shared app ↔ widget extension)
@@ -146,4 +147,67 @@ struct PlantCareActivityAttributes: ActivityAttributes {
         var lastWateredName: String?
     }
     let propertyName: String
+}
+
+// MARK: - Work Session Live Activity
+//
+// The phone half of the watch's V10 session timer: the elapsed time lives in
+// the Dynamic Island and on the Lock Screen, counted by the system from the
+// fixed start date — no updates needed while it runs.
+
+struct WorkSessionActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var isComplete: Bool
+    }
+    let taskId: UUID
+    let taskTitle: String
+    let startedAt: Date
+    var propertyName: String?
+}
+
+// MARK: - Work session buttons (run in the app's process)
+//
+// These live in this shared file because the widget extension must SEE the
+// intent types to render the buttons, while LiveActivityIntent executes them
+// in the app's process. They speak only App Group + ActivityKit — never
+// app-target services — so both targets compile.
+
+struct CompleteWorkSessionIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Complete Task"
+
+    @Parameter(title: "Task ID")
+    var taskId: String
+
+    init() {}
+    init(taskId: UUID) { self.taskId = taskId.uuidString }
+
+    func perform() async throws -> some IntentResult {
+        if let id = UUID(uuidString: taskId) {
+            SharedDataStore.appendPendingCompletion(id)
+        }
+        for activity in Activity<WorkSessionActivityAttributes>.activities {
+            await activity.end(
+                ActivityContent(state: .init(isComplete: true), staleDate: nil),
+                dismissalPolicy: .after(.now + 2))
+        }
+        // Same channel the widget buttons use; the app drains the pending
+        // completion on its next foreground (or instantly when running).
+        NotificationCenter.default.post(name: Notification.Name("prvio.processPending"), object: nil)
+        return .result()
+    }
+}
+
+struct EndWorkSessionIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "End Session"
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<WorkSessionActivityAttributes>.activities {
+            await activity.end(
+                ActivityContent(state: .init(isComplete: false), staleDate: nil),
+                dismissalPolicy: .immediate)
+        }
+        return .result()
+    }
 }

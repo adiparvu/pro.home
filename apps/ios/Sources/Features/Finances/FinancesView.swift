@@ -66,6 +66,9 @@ struct FinancesView: View {
                         quickActionsRow
                             .padding(.top, AppSpacing.xl)
                             .padding(.horizontal, AppSpacing.xl)
+                        ExpenseForecastSection(records: financialService.records)
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
                         transactionList
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)

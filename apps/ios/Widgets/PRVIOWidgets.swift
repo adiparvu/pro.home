@@ -66,6 +66,7 @@ struct PRVIOWidgetBundle: WidgetBundle {
         MaintenanceLiveActivity()
         DeliveryLiveActivity()
         PlantCareLiveActivity()
+        WorkSessionLiveActivity()
         // Notification Center + Smart Stack
         NotificationCenterWidget()
         // Control Center (iOS 18+)

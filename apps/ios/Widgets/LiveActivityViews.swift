@@ -272,6 +272,145 @@ struct MaintenanceLockScreenView: View {
     }
 }
 
+// MARK: - Work Session Live Activity Widget
+//
+// The system counts the elapsed time from the fixed start date (no content
+// updates while it runs), and the Lock Screen buttons run as
+// LiveActivityIntents in the app's process — completing really completes.
+
+struct WorkSessionLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: WorkSessionActivityAttributes.self) { context in
+            Group {
+                if LA.lockDetails("workSession") {
+                    WorkSessionLockScreenView(context: context)
+                } else {
+                    MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "timer",
+                                   tint: context.state.isComplete ? .green : .teal,
+                                   title: context.attributes.taskTitle)
+                }
+            }
+            .widgetURL(URL(string: "prvio://tasks"))
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Group {
+                        if LA.expandedData("workSession") {
+                            Label(context.attributes.taskTitle, systemImage: "timer")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.teal)
+                                .lineLimit(1)
+                        } else {
+                            Image(systemName: "timer").foregroundStyle(.teal)
+                        }
+                    }
+                    .widgetURL(URL(string: "prvio://tasks"))
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if LA.expandedData("workSession") {
+                        Text(context.attributes.startedAt, style: .timer)
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.teal)
+                            .frame(maxWidth: 60)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if LA.expandedDetail("workSession") {
+                        HStack(spacing: 10) {
+                            Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
+                                Label("la_session_complete", systemImage: "checkmark.circle.fill")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.teal)
+                            Button(intent: EndWorkSessionIntent()) {
+                                Text("la_session_end")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+            } compactLeading: {
+                Image(systemName: "timer")
+                    .foregroundStyle(.teal)
+                    .font(.system(size: 12))
+            } compactTrailing: {
+                if LA.island("workSession") {
+                    Text(context.attributes.startedAt, style: .timer)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.teal)
+                        .frame(maxWidth: 44)
+                }
+            } minimal: {
+                Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "timer")
+                    .foregroundStyle(context.state.isComplete ? .green : .teal)
+            }
+        }
+    }
+}
+
+struct WorkSessionLockScreenView: View {
+    let context: ActivityViewContext<WorkSessionActivityAttributes>
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.teal.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "timer")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(context.state.isComplete ? .green : .teal)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.attributes.taskTitle)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    if LA.property("workSession"),
+                       let property = context.attributes.propertyName, !property.isEmpty {
+                        Text(property)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Text(context.attributes.startedAt, style: .timer)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(context.state.isComplete ? .green : .teal)
+                    .frame(maxWidth: 90)
+                    .multilineTextAlignment(.trailing)
+            }
+            if !context.state.isComplete {
+                HStack(spacing: 10) {
+                    Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
+                        Label("la_session_complete", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.teal)
+                    Button(intent: EndWorkSessionIntent()) {
+                        Text("la_session_end")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+        .padding(16)
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(.primary)
+    }
+}
+
 // MARK: - Delivery Live Activity Widget
 
 struct DeliveryLiveActivity: Widget {

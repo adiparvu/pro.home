@@ -239,10 +239,10 @@ struct SettingsView: View {
     // everything except landlord-only tools; residents and service providers get
     // a curated subset; guests get nothing. Feature order = display order.
     private enum PropertyFeature: CaseIterable {
-        case myProperty, documents, plans, finances, inventory, supplies, plants,
+        case myProperty, documents, houseCalendar, plans, finances, inventory, supplies, plants,
              deliveries, utilities, contractors, analytics, report, tenants,
              appliances, photoJournal, seasonal, paint, propertyValue, guestMode, perspectives,
-             yearReview
+             yearReview, monthlyRecap, dataExport
     }
 
     private func allowed(_ f: PropertyFeature) -> Bool {
@@ -253,18 +253,18 @@ struct SettingsView: View {
         case .guest:
             return false
         case .tenant:
-            return [.documents, .supplies, .plants, .deliveries, .utilities,
+            return [.documents, .houseCalendar, .supplies, .plants, .deliveries, .utilities,
                     .contractors, .appliances, .photoJournal, .seasonal, .paint,
-                    .yearReview].contains(f)
+                    .yearReview, .monthlyRecap].contains(f)
         case .familyChild, .familyTeen:
             return [.supplies, .plants, .deliveries, .photoJournal, .seasonal,
-                    .yearReview].contains(f)
+                    .yearReview, .monthlyRecap].contains(f)
         case .serviceProvider:
             return [.documents, .contractors, .deliveries, .appliances,
                     .seasonal, .photoJournal].contains(f)
         case .familyAdult, .familyElderly:
             // Family adult: everything except the landlord-only tools.
-            return f != .tenants && f != .guestMode && f != .propertyValue
+            return f != .tenants && f != .guestMode && f != .propertyValue && f != .dataExport
         case .owner, .partner:
             return true
         }
@@ -437,6 +437,27 @@ struct SettingsView: View {
                     .environment(photoJournalService)
                     .environment(documentService)
                     .environment(appSettings)
+            }
+        case .houseCalendar:
+            NavSettingsRow(icon: "calendar", color: .red, label: "House Calendar") {
+                CalendarView()
+                    .environment(taskService)
+                    .environment(documentService)
+                    .environment(applianceService)
+                    .environment(familyService)
+            }
+        case .monthlyRecap:
+            NavSettingsRow(icon: "moon.stars.fill", color: .indigo, label: "Month of Your Home") {
+                MonthlyRecapView()
+                    .environment(propertyService)
+                    .environment(taskService)
+                    .environment(financialService)
+                    .environment(photoJournalService)
+                    .environment(documentService)
+            }
+        case .dataExport:
+            NavSettingsRow(icon: "square.and.arrow.up.on.square.fill", color: .mint, label: "Export Your Data") {
+                ExportDataView()
             }
         case .plans:
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
@@ -642,6 +663,11 @@ struct SettingsView: View {
                     .environment(taskService)
                     .environment(applianceService)
                     .environment(plantService)
+            }
+            NavSettingsRow(icon: "sos.circle.fill", color: .red, label: "Emergency Mode") {
+                EmergencyModeView()
+                    .environment(documentService)
+                    .environment(router)
             }
             NavSettingsRow(icon: "phone.fill", color: .red, label: "Emergency Contacts") {
                 EmergencyContactsView()

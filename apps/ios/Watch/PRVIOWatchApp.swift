@@ -199,6 +199,17 @@ final class WatchStore: NSObject, WCSessionDelegate {
             Self.defaults.set(data, forKey: Self.sessionKey)
         }
         WKInterfaceDevice.current().play(.start)
+        // Mirror on the iPhone as a Live Activity. The phone can only start
+        // one while foregrounded, so this queues honestly via userInfo — the
+        // Dynamic Island appears the next time the phone is active, showing
+        // the TRUE elapsed time (the start date rides along).
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo([
+            "action": "sessionStart",
+            "id": taskId.uuidString,
+            "title": title,
+            "startedAt": String(session.startedAt.timeIntervalSince1970),
+        ])
     }
 
     /// Ends the session; optionally completes the task it timed.
@@ -208,6 +219,8 @@ final class WatchStore: NSObject, WCSessionDelegate {
         Self.defaults.removeObject(forKey: Self.sessionKey)
         if completingTask, let session { completeTask(session.taskId) }
         else { WKInterfaceDevice.current().play(.stop) }
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "sessionEnd"])
     }
 
     /// Dictated on the wrist for the house chat — the phone sends the real

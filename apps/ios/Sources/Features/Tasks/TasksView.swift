@@ -405,6 +405,16 @@ struct TaskRowView: View {
                 Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Mark as Done"),
                       systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark.circle")
             }
+            if !task.isCompleted {
+                // The phone half of the watch's work session: the timer
+                // lives in the Dynamic Island until it's completed or ended.
+                Button {
+                    HapticFeedback.impact(.medium)
+                    LiveActivityService.shared.startWorkSession(taskId: task.id, title: task.title)
+                } label: {
+                    Label("session_start", systemImage: "timer")
+                }
+            }
             Divider()
             Button(role: .destructive) {
                 HapticFeedback.warning()

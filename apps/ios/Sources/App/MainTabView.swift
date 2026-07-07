@@ -389,6 +389,7 @@ struct MainTabView: View {
         await notificationScheduler.scheduleCelebrations(
             accountCreatedAt: profileService.profile?.createdAt,
             birthDate: profileService.profile?.birthDate)
+        await notificationScheduler.scheduleMonthlyRecap()
         LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
         if case .coldStart = reason {
             // "Start When App Opens" belongs to launch, not to context switches.
@@ -570,6 +571,18 @@ struct MainTabView: View {
         for (id, count) in consumeCounts {
             if let item = pantryService.items.first(where: { $0.id == id }) {
                 Task { await pantryService.adjust(item, by: -Double(count)) }
+            }
+        }
+        // The watch's work session, mirrored into the Dynamic Island. This
+        // runs on the foreground beat — exactly when the system allows a
+        // Live Activity to start; the original start date keeps the elapsed
+        // time truthful however late the mirror appears.
+        if let event = SharedDataStore.consumePendingSessionEvent() {
+            if let start = event.start {
+                LiveActivityService.shared.startWorkSession(
+                    taskId: start.taskId, title: start.title, startedAt: start.startedAt)
+            } else if event.isEnd {
+                LiveActivityService.shared.endWorkSession(completed: false)
             }
         }
         if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty

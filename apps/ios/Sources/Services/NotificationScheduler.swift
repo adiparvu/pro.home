@@ -142,6 +142,31 @@ final class NotificationScheduler {
         for request in requests { try? await center.add(request) }
     }
 
+    // MARK: - Monthly recap
+
+    /// The 1st of every month at 09:30: the month's story is ready to read.
+    /// One repeating calendar trigger — the system re-fires it forever.
+    func scheduleMonthlyRecap() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional else { return }
+
+        center.removePendingNotificationRequests(withIdentifiers: ["monthly.recap"])
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "monthly_notif_title")
+        content.body = String(localized: "monthly_notif_body")
+        content.sound = .default
+        var comps = DateComponents()
+        comps.day = 1
+        comps.hour = 9
+        comps.minute = 30
+        try? await center.add(UNNotificationRequest(
+            identifier: "monthly.recap",
+            content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)))
+    }
+
     // MARK: - Celebrations (account anniversary + birthday)
 
     /// PRVIO celebrates with you: a congratulation on every yearly anniversary
