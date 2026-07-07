@@ -191,6 +191,7 @@ platform :ios do
 
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp' 'PRVIOWatch' 'SU92TVZT8W'")
 
     # App Groups (group.com.prvio.app) are registered and linked in the Apple
     # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
@@ -329,6 +330,17 @@ platform :ios do
     )
     widgets_uuid = ENV["SIGH_UUID"]
     UI.message("Widgets profile UUID: #{widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.watchkitapp",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWatch_AppStore.mobileprovision",
+      force:          true
+    )
+    watch_uuid = ENV["SIGH_UUID"]
+    UI.message("Watch profile UUID: #{watch_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
     # Manual signing: bake cert + profile UUID into the project file per-target
@@ -352,6 +364,16 @@ platform :ios do
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          widgets_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWatch"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.watchkitapp",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          watch_uuid
     )
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
@@ -476,6 +498,8 @@ platform :ios do
           <string>#{profile_uuid}</string>
           <key>com.prvio.app.widgets</key>
           <string>#{widgets_uuid}</string>
+          <key>com.prvio.app.watchkitapp</key>
+          <string>#{watch_uuid}</string>
         </dict>
       </dict>
       </plist>

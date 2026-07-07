@@ -19,6 +19,20 @@ struct PRVIOWidgetSnapshot: Codable {
     var updatedAt: Date = Date()
 }
 
+// MARK: - Watch payload (pushed to the watch over WatchConnectivity)
+//
+// The watch is a different device — it cannot read the phone's App Group.
+// The phone pushes this bundle (the same snapshot the widgets render, plus
+// the task/plant catalogs for real lists) via updateApplicationContext,
+// which WatchConnectivity persists and delivers even when the watch app
+// launches later.
+
+struct WatchPayload: Codable {
+    var snapshot: PRVIOWidgetSnapshot
+    var tasks: [TaskCatalogEntry] = []
+    var plants: [PlantCatalogEntry] = []
+}
+
 // MARK: - Intent catalogs (read by App Intents without Supabase)
 
 struct TaskCatalogEntry: Codable {

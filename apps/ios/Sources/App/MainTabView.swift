@@ -134,7 +134,10 @@ struct MainTabView: View {
         .environment(directMessageService)
         .environment(presenceService)
         .environment(proactiveEngine)
-        .task { await reloadWorld(reason: .coldStart) }
+        .task {
+            WatchSyncService.shared.activate()
+            await reloadWorld(reason: .coldStart)
+        }
         .task {
             // Presence heartbeat: advertise ourselves and refresh members' status
             // on a slow cadence while the app is foregrounded.
@@ -446,6 +449,15 @@ struct MainTabView: View {
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
                                    myName: profileService.profile?.preferredName)
+        // The watch renders the same state the widgets do — one push, in the
+        // same breath as the snapshot write, so the two can never diverge.
+        WatchSyncService.shared.push(WatchPayload(
+            snapshot: snapshot,
+            tasks: taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority,
+                                                            isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) },
+            plants: plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji,
+                                                                needsWatering: $0.needsWatering) }
+        ))
         WidgetCenter.shared.reloadAllTimelines()
     }
 
