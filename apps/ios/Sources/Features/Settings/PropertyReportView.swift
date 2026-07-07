@@ -34,7 +34,9 @@ struct PropertyReportView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showShareSheet) {
-            if let url = pdfURL { ShareSheet(url: url) }
+            // Preview first, share from the preview — nobody sends a
+            // document they haven't seen.
+            if let url = pdfURL { ReportPreviewSheet(url: url) }
         }
     }
 
@@ -249,107 +251,207 @@ struct PropertyReportView: View {
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
         let now = DateFormatter()
         now.dateStyle = .long
+        let dateLine = now.string(from: Date())
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("PRVIO_Report_\(Date().timeIntervalSince1970).pdf")
 
+        let titleAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+            .foregroundColor: UIColor.white
+        ]
+        let subAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 13),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.5)
+        ]
+        let bodyAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.white
+        ]
+        let sectionAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.4)
+        ]
+        let footerAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.3)
+        ]
+
         try? renderer.writePDF(to: url) { ctx in
-            ctx.beginPage()
-            let g = ctx.cgContext
+            var page = PDFCursor(
+                ctx: ctx, pageRect: pageRect,
+                footer: String(format: String(localized: "report_pdf_footer %@"), dateLine),
+                footerAttr: footerAttr)
+            page.newPage()
 
-            UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
-            g.fill(pageRect)
-
-            var y: CGFloat = 40
-
-            let titleAttr: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                .foregroundColor: UIColor.white
-            ]
-            let title = propertyService.primary?.name ?? "Property Report"
-            title.draw(at: CGPoint(x: 40, y: y), withAttributes: titleAttr)
-            y += 40
-
-            let subAttr: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 13),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.5)
-            ]
-            "Generated \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: y), withAttributes: subAttr)
-            y += 40
-
-            UIColor.white.withAlphaComponent(0.1).setFill()
-            g.fill(CGRect(x: 40, y: y, width: 515, height: 0.5))
-            y += 20
-
-            let bodyAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.white]
-            let sectionAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .semibold), .foregroundColor: UIColor.white.withAlphaComponent(0.4)]
+            let title = propertyService.primary?.name ?? String(localized: "report_pdf_title_fallback")
+            page.draw(title, titleAttr, advance: 40)
+            page.draw(String(format: String(localized: "report_pdf_generated %@"), dateLine),
+                      subAttr, advance: 40)
+            page.rule()
 
             if includesTasks {
-                "TASKS & MAINTENANCE".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                "Open: \(taskService.openCount)   Overdue: \(taskService.overdueCount)   Completed this week: \(taskService.completedThisWeek)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 24
-                for t in taskService.tasks.filter({ $0.isOverdue }).prefix(5) {
-                    "  • \(t.title) — due \(t.dueDateDisplay)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                    y += 17
+                page.draw(String(localized: "report_pdf_tasks"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_tasks_line %lld %lld %lld"),
+                                 taskService.openCount, taskService.overdueCount,
+                                 taskService.completedThisWeek),
+                          bodyAttr, advance: 24)
+                // The full overdue list — the cursor breaks pages, so the
+                // report no longer silently stops at five items.
+                for t in taskService.tasks.filter({ $0.isOverdue }) {
+                    page.draw("  " + String(format: String(localized: "report_pdf_task_due %@ %@"),
+                                            t.title, t.dueDateDisplay),
+                              bodyAttr, advance: 17)
                 }
-                y += 16
+                page.space(16)
             }
 
             if includesFinances {
-                "FINANCIAL SUMMARY".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                "This month: \(financialService.moneyDisplay(financialService.currentMonthIncome)) income · \(financialService.moneyDisplay(financialService.currentMonthExpenses)) expenses · Net: \(financialService.moneyDisplay(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 30
+                page.draw(String(localized: "report_pdf_finances"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_fin_line %@ %@ %@"),
+                                 financialService.moneyDisplay(financialService.currentMonthIncome),
+                                 financialService.moneyDisplay(financialService.currentMonthExpenses),
+                                 financialService.moneyDisplay(financialService.currentMonthNet)),
+                          bodyAttr, advance: 30)
             }
 
             if includesDocuments {
-                "DOCUMENTS".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                "Total: \(documentService.documents.count)   Expiring soon: \(documentService.expiringDocs.count)   Critical: \(documentService.criticalDocs.count)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 24
-                for doc in documentService.expiringDocs.prefix(5) {
-                    "  ⚠ \(doc.name) expires \(doc.expiresDisplay ?? "")".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                    y += 17
+                page.draw(String(localized: "report_pdf_documents"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_docs_line %lld %lld %lld"),
+                                 documentService.documents.count,
+                                 documentService.expiringDocs.count,
+                                 documentService.criticalDocs.count),
+                          bodyAttr, advance: 24)
+                for doc in documentService.expiringDocs {
+                    page.draw("  " + String(format: String(localized: "report_pdf_doc_expires %@ %@"),
+                                            doc.name, doc.expiresDisplay ?? ""),
+                              bodyAttr, advance: 17)
                 }
             }
 
-            let footerAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.white.withAlphaComponent(0.3)]
-            "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
-
-            // Digital Twin page
             if includesTwin {
-                ctx.beginPage()
-                UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
-                g.fill(pageRect)
-                var ty: CGFloat = 40
-                "DIGITAL TWIN".draw(at: CGPoint(x: 40, y: ty), withAttributes: titleAttr)
-                ty += 44
-
+                page.newPage()
+                page.draw(String(localized: "report_pdf_twin"), titleAttr, advance: 44)
                 if let twinImage {
-                    let rect = CGRect(x: 40, y: ty, width: 515, height: 280)
-                    twinImage.draw(in: rect)
-                    UIColor.white.withAlphaComponent(0.12).setStroke()
-                    let border = UIBezierPath(roundedRect: rect, cornerRadius: 10)
-                    border.lineWidth = 1; border.stroke()
-                    ty += 300
+                    page.image(twinImage, height: 280)
                 }
-
-                "Zones: \(zoneService.zones.count)   Objects: \(elementService.elements.count)   Average health: \(elementService.overallHealthScore)%"
-                    .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
-                ty += 28
-                "ZONES".draw(at: CGPoint(x: 40, y: ty), withAttributes: sectionAttr)
-                ty += 20
-                for zone in zoneService.zones.prefix(12) {
+                page.draw(String(format: String(localized: "report_pdf_twin_line %lld %lld %lld"),
+                                 zoneService.zones.count, elementService.elements.count,
+                                 elementService.overallHealthScore),
+                          bodyAttr, advance: 28)
+                page.draw(String(localized: "report_pdf_zones"), sectionAttr, advance: 20)
+                for zone in zoneService.zones {
                     let count = elementService.elements(inZone: zone.id).count
-                    "  • \(zone.name) — \(zone.healthScore)%  ·  \(count) objects"
-                        .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
-                    ty += 17
+                    page.draw("  " + String(format: String(localized: "report_pdf_zone_line %@ %lld %lld"),
+                                            zone.name, zone.healthScore, count),
+                              bodyAttr, advance: 17)
                 }
-                "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
             }
         }
 
         return url
+    }
+}
+
+// MARK: - PDF layout cursor
+//
+// A vertical cursor with automatic page breaks: every page it opens gets
+// the dark background and the footer, and any draw that would collide with
+// the footer flows onto a fresh page — so long lists paginate instead of
+// being truncated or drawn off-canvas.
+
+private struct PDFCursor {
+    let ctx: UIGraphicsPDFRendererContext
+    let pageRect: CGRect
+    let footer: String
+    let footerAttr: [NSAttributedString.Key: Any]
+    var y: CGFloat = 40
+
+    private var margin: CGFloat { 40 }
+    private var bottomLimit: CGFloat { pageRect.height - 60 }
+
+    mutating func newPage() {
+        ctx.beginPage()
+        UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
+        ctx.cgContext.fill(pageRect)
+        footer.draw(at: CGPoint(x: margin, y: pageRect.height - 42), withAttributes: footerAttr)
+        y = 40
+    }
+
+    mutating func ensure(_ height: CGFloat) {
+        if y + height > bottomLimit { newPage() }
+    }
+
+    mutating func draw(_ text: String, _ attr: [NSAttributedString.Key: Any], advance: CGFloat) {
+        ensure(advance)
+        text.draw(at: CGPoint(x: margin, y: y), withAttributes: attr)
+        y += advance
+    }
+
+    mutating func space(_ height: CGFloat) {
+        y += height
+    }
+
+    mutating func rule() {
+        ensure(21)
+        UIColor.white.withAlphaComponent(0.1).setFill()
+        ctx.cgContext.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 0.5))
+        y += 20
+    }
+
+    mutating func image(_ image: UIImage, height: CGFloat) {
+        ensure(height + 20)
+        let rect = CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: height)
+        image.draw(in: rect)
+        UIColor.white.withAlphaComponent(0.12).setStroke()
+        let border = UIBezierPath(roundedRect: rect, cornerRadius: 10)
+        border.lineWidth = 1
+        border.stroke()
+        y += height + 20
+    }
+}
+
+// MARK: - Report preview
+
+private struct ReportPreviewSheet: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ReportPDFView(url: url)
+                .ignoresSafeArea(edges: .bottom)
+                .navigationTitle("report_preview_title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                                .font(AppFont.footnoteEmphasis)
+                        }
+                        .accessibilityLabel(Text("Close"))
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        ShareLink(item: url)
+                    }
+                }
+        }
+    }
+}
+
+private struct ReportPDFView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> PDFView {
+        let view = PDFView()
+        view.autoScales = true
+        view.backgroundColor = .clear
+        view.document = PDFDocument(url: url)
+        return view
+    }
+
+    func updateUIView(_ view: PDFView, context: Context) {
+        if view.document?.documentURL != url {
+            view.document = PDFDocument(url: url)
+        }
     }
 }
