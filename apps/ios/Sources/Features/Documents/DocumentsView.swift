@@ -54,7 +54,7 @@ struct DocumentsView: View {
                     emptyState
                 } else {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 12) {
+                        LazyVStack(spacing: 12) {
                             if !documentService.expiringDocs.isEmpty && selectedCategory == nil && search.isEmpty {
                                 expiringBanner
                             }

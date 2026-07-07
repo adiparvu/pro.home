@@ -37,15 +37,26 @@ struct TasksView: View {
         case year    = "1 year"
         case all     = "All time"
 
+        // ISO8601DateFormatter construction is among Foundation's costliest
+        // allocations, and this filter runs twice per render — the
+        // formatters must be built once, not per evaluation.
+        private static let isoFractional: ISO8601DateFormatter = {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return f
+        }()
+        private static let isoPlain: ISO8601DateFormatter = {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withInternetDateTime]
+            return f
+        }()
+
         func apply(to tasks: [MaintenanceTask]) -> [MaintenanceTask] {
             guard self != .all else { return tasks }
             let cutoff = cutoffDate
-            let f1 = ISO8601DateFormatter()
-            f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            let f2 = ISO8601DateFormatter()
-            f2.formatOptions = [.withInternetDateTime]
             return tasks.filter {
-                guard let d = f1.date(from: $0.updatedAt) ?? f2.date(from: $0.updatedAt) else { return false }
+                guard let d = Self.isoFractional.date(from: $0.updatedAt)
+                    ?? Self.isoPlain.date(from: $0.updatedAt) else { return false }
                 return d >= cutoff
             }
         }

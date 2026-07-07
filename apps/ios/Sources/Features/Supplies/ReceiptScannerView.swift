@@ -249,11 +249,16 @@ struct ReceiptScannerView: View {
             await pantryService.stock(additions, propertyId: propId, category: parsed.category)
         }
 
-        // 2. Persist the receipt and its items.
+        // 2. Persist the receipt and its items. The VAT figure rides the
+        // notes column — captured data survives without a schema change.
         let now = ISO8601DateFormatter().string(from: Date())
-        let notes: String? = parsed.currency == "RON"
-            ? parsed.notes
-            : [parsed.notes, parsed.currency].compactMap { $0 }.joined(separator: " · ")
+        let vatNote: String? = parsed.vatAmount.map {
+            String(format: String(localized: "scanner_vat_note_fmt"),
+                   CurrencyService.money($0, code: parsed.currency, whole: false))
+        }
+        let currencyNote: String? = parsed.currency == "RON" ? nil : parsed.currency
+        let joined = [parsed.notes, vatNote, currencyNote].compactMap { $0 }.joined(separator: " · ")
+        let notes: String? = joined.isEmpty ? nil : joined
         let payload = NewReceiptPayload(
             propertyId: propId,
             storeName: parsed.storeName,
@@ -592,6 +597,11 @@ private struct ReceiptReviewView: View {
                                 .font(AppFont.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        if let vat = parsed.vatAmount {
+                            Text("scanner_vat_line \(CurrencyService.money(vat, code: parsed.currency, whole: false))")
+                                .font(AppFont.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -737,6 +747,9 @@ private struct ReceiptReviewView: View {
 private struct ReviewItemRow: View {
     @Binding var item: ParsedItem
     @State private var isEditing = false
+    /// The OCR's original name, captured when the editor opens — the
+    /// before/after pair is what the lexicon memory learns from.
+    @State private var originalName = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -839,8 +852,16 @@ private struct ReviewItemRow: View {
             item.unitPrice = item.quantity > 0
                 ? ReceiptIntelligence.roundMoney(item.totalPrice / item.quantity)
                 : item.totalPrice
+            // Learn the rename — the app must never make the same OCR
+            // mistake twice on this household's receipts.
+            if !originalName.isEmpty, item.name != originalName {
+                ReceiptLexiconMemory.remember(
+                    original: originalName,
+                    corrected: item.normalizedName.isEmpty ? item.name : item.normalizedName)
+            }
             isEditing = false
         } else {
+            originalName = item.name
             isEditing = true
         }
     }

@@ -10,6 +10,20 @@ import Security
 enum SecretStore {
     private static let service = "com.prvio.app.secrets"
 
+    /// One-time launch migration. The ARIA custom key once lived in
+    /// UserDefaults plaintext; the settings screen migrated it lazily, so a
+    /// user who never reopened that screen kept the billable key in the
+    /// plist forever. Runs at every launch, no-ops once clean.
+    static func migrateLegacySecrets() {
+        if let legacy = UserDefaults.standard.string(forKey: "prvio.aria.customApiKey"),
+           !legacy.isEmpty {
+            if string(for: "aria.customApiKey").isEmpty {
+                set(legacy, for: "aria.customApiKey")
+            }
+            UserDefaults.standard.removeObject(forKey: "prvio.aria.customApiKey")
+        }
+    }
+
     static func string(for key: String) -> String {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
@@ -45,7 +59,16 @@ enum SecretStore {
             var addQuery = query
             addQuery[kSecValueData] = data
             addQuery[kSecAttrAccessible] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-            SecItemAdd(addQuery as CFDictionary, nil)
+            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+            if addStatus == errSecDuplicateItem {
+                // A stale duplicate (e.g. created before the accessibility
+                // class changed) blocks the add — update it instead.
+                SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+            } else if addStatus != errSecSuccess {
+                debugLog("[SecretStore] add failed for \(key): \(addStatus)")
+            }
+        } else if status != errSecSuccess {
+            debugLog("[SecretStore] update failed for \(key): \(status)")
         }
     }
 }

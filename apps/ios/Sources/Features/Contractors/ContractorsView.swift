@@ -215,7 +215,7 @@ struct ContractorsView: View {
                     }
                 } else {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 10) {
+                        LazyVStack(spacing: 10) {
                             // Hoisted: one O(n + m) index build per render,
                             // not one per row.
                             let matches = accountMatches

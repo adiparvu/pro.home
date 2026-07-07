@@ -237,8 +237,11 @@ enum ReceiptProductLexicon {
     /// Splits a raw name into folded tokens, drops noise (sizes, brands,
     /// units), and maps synonyms onto canonical product ids.
     static func canonicalTokens(_ raw: String) -> Set<String> {
+        // Learned corrections apply here too, so list and pantry matching
+        // see the user's name for the product, not the OCR noise.
+        let source = ReceiptLexiconMemory.correction(for: raw) ?? raw
         var result: Set<String> = []
-        for piece in fold(raw).split(separator: " ") {
+        for piece in fold(source).split(separator: " ") {
             let token = String(piece).trimmingCharacters(in: CharacterSet(charactersIn: ".,%-"))
             guard !token.isEmpty, !isNoise(token) else { continue }
             result.insert(synonyms[token] ?? token)
@@ -252,6 +255,9 @@ enum ReceiptProductLexicon {
     /// "LAPTE ZUZU 1.5% 1L" → "Lapte", "IAURT GREC 10%" → "Iaurt grec".
     /// Unknown tokens survive, cleaned and capitalized, so nothing is lost.
     static func normalize(_ raw: String) -> String {
+        // The household's own corrections outrank every static rule — once
+        // the user renames a line, that receipt token resolves instantly.
+        if let learned = ReceiptLexiconMemory.correction(for: raw) { return learned }
         var words: [String] = []
         var seen: Set<String> = []
         for piece in fold(raw).split(separator: " ") {

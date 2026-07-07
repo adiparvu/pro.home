@@ -182,6 +182,11 @@ final class IoTService {
                 port: NWEndpoint.Port(rawValue: UInt16(clamping: port)) ?? 502
             )
             let connection = NWConnection(to: endpoint, using: .tcp)
+            // ONE serial queue for everything that can end this exchange —
+            // the connection's callbacks AND the timeout. On two queues the
+            // `done` guard raced, and a reply landing right at the deadline
+            // could resume the continuation twice (a hard trap).
+            let queue = DispatchQueue(label: "prvio.modbus.read")
             var done = false
 
             func finish(_ result: UInt16?) {
@@ -220,8 +225,8 @@ final class IoTService {
                     break
                 }
             }
-            connection.start(queue: .global(qos: .utility))
-            DispatchQueue.global().asyncAfter(deadline: .now() + 4) { finish(nil) }
+            connection.start(queue: queue)
+            queue.asyncAfter(deadline: .now() + 4) { finish(nil) }
         }
     }
 

@@ -181,7 +181,7 @@ struct DeliveriesView: View {
             }
             .padding(.leading, AppSpacing.xxs)
 
-            VStack(spacing: 10) {
+            LazyVStack(spacing: 10) {
                 ForEach(filteredActiveDeliveries) { delivery in
                     NavigationLink {
                         DeliveryDetailView(delivery: delivery) { editingDelivery = delivery }
@@ -221,7 +221,7 @@ struct DeliveriesView: View {
                 .buttonStyle(.plain)
 
                 if showCompleted {
-                    VStack(spacing: 10) {
+                    LazyVStack(spacing: 10) {
                         ForEach(completed) { delivery in
                             NavigationLink {
                                 DeliveryDetailView(delivery: delivery) { editingDelivery = delivery }

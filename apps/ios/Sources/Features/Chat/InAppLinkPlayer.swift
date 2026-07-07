@@ -79,11 +79,29 @@ private struct WebPlayerView: UIViewRepresentable {
         wv.isOpaque = false
         wv.backgroundColor = .black
         wv.scrollView.backgroundColor = .black
-        wv.load(URLRequest(url: url))
+        wv.navigationDelegate = context.coordinator
+        // The URL comes from another user's chat message — only the web
+        // schemes may load inside the app's trusted chrome.
+        if let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
+            wv.load(URLRequest(url: url))
+        }
         return wv
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    /// Cancels any navigation that tries to leave the web — custom app
+    /// schemes from a redirect would otherwise escape the sandbox of the
+    /// player sheet.
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            let scheme = navigationAction.request.url?.scheme?.lowercased()
+            decisionHandler(scheme == "http" || scheme == "https" ? .allow : .cancel)
+        }
+    }
 }
 
 // MARK: - Player sheet

@@ -24,11 +24,14 @@ private enum GuestWiFiKeychain {
 
     static func save(_ password: String) {
         let data = Data(password.utf8)
+        // ThisDeviceOnly, like every other secret in the app: the WiFi
+        // password must never ride an encrypted backup onto another device.
         let q: [String: Any] = [
-            kSecClass as String:        kSecClassGenericPassword,
-            kSecAttrService as String:  service,
-            kSecAttrAccount as String:  account,
-            kSecValueData as String:    data
+            kSecClass as String:          kSecClassGenericPassword,
+            kSecAttrService as String:    service,
+            kSecAttrAccount as String:    account,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecValueData as String:      data
         ]
         SecItemDelete(q as CFDictionary)
         if !password.isEmpty { SecItemAdd(q as CFDictionary, nil) }

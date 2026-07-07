@@ -61,6 +61,12 @@ final class OfflineOutbox {
         monitor.start(queue: DispatchQueue.global(qos: .utility))
     }
 
+    deinit {
+        // Without this, every discarded instance (SwiftUI re-evaluates
+        // @State default expressions) left a live dispatch source behind.
+        monitor.cancel()
+    }
+
     func pending(for propertyId: UUID) -> [PendingMessage] {
         pending.filter { $0.propertyId == propertyId }.sorted { $0.createdAt < $1.createdAt }
     }
@@ -94,7 +100,14 @@ final class OfflineOutbox {
     }
 
     private func save() {
-        guard let data = try? JSONEncoder().encode(pending) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        // The in-memory copy stays authoritative either way; a failed write
+        // must at least say so — these are exactly the messages this class
+        // exists to protect.
+        do {
+            let data = try JSONEncoder().encode(pending)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            debugLog("[Outbox] persist failed: \(error)")
+        }
     }
 }

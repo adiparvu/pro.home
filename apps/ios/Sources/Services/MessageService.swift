@@ -736,6 +736,9 @@ final class MessageService {
         reloadTasks.values.forEach { $0.cancel() }
         reloadTasks.removeAll()
         postgresSubs.removeAll()
+        typingTasks.values.forEach { $0.cancel() }
+        typingTasks.removeAll()
+        typingSub = nil
         await unsubscribe()
         await unsubscribeReads()
         await unsubscribeDeliveries()

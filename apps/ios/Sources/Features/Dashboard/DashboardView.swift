@@ -238,11 +238,19 @@ struct DashboardView: View {
         }
     }
 
-    private var dateString: String {
+    /// One formatter for the app's lifetime — the header re-renders on
+    /// every scroll tick, and DateFormatter construction is too expensive
+    /// to pay per frame. Main-actor only, so mutating the locale is safe.
+    private static let headerFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEEE, MMM d"
+        return f
+    }()
+
+    private var dateString: String {
+        let f = Self.headerFormatter
         // Follow the language chosen in the app, not the device.
-        f.locale = appSettings.appLocale
+        if f.locale != appSettings.appLocale { f.locale = appSettings.appLocale }
         return f.string(from: Date())
     }
 

@@ -47,9 +47,14 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState,
                  error: Error?) {
-        guard activationState == .activated, let payload = pending else { return }
-        pending = nil
-        push(payload)
+        guard activationState == .activated else { return }
+        // Delegate callbacks arrive on a background queue; `pending` is
+        // written by push() on main — touch it only there.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let payload = self.pending else { return }
+            self.pending = nil
+            self.push(payload)
+        }
     }
 
     func sessionDidBecomeInactive(_ session: WCSession) {}

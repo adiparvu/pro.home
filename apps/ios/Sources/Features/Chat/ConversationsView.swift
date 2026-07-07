@@ -47,13 +47,13 @@ struct ConversationsView: View {
 
     enum ConvFilter: CaseIterable {
         case all, unread, favorites, groups, family
-        var label: String {
+        var label: LocalizedStringKey {
             switch self {
-            case .all: return "Toate"
-            case .unread: return "Necitite"
-            case .favorites: return "Favorite"
-            case .groups: return "Grupuri"
-            case .family: return "Familie"
+            case .all: return "convo_filter_all"
+            case .unread: return "convo_filter_unread"
+            case .favorites: return "convo_filter_favorites"
+            case .groups: return "convo_filter_groups"
+            case .family: return "convo_filter_family"
             }
         }
     }
@@ -715,22 +715,22 @@ struct ConversationsView: View {
         // Group chat entry
         let lastGroupMsg = messageService.messages.last
         let groupPreview: String = {
-            guard let m = lastGroupMsg else { return "Nicio activitate" }
+            guard let m = lastGroupMsg else { return String(localized: "convo_prev_none") }
             let isOwn = m.senderId == supabase.auth.currentSession?.user.id
-            let prefix = isOwn ? "Tu: " : (m.senderName.components(separatedBy: " ").first.map { "\($0): " } ?? "")
-            if m.deletedForAll == true { return prefix + "🚫 Mesaj șters" }
-            if m.isContactShare { return prefix + "👤 Contact" }
+            let prefix = isOwn ? String(localized: "convo_prev_you") : (m.senderName.components(separatedBy: " ").first.map { "\($0): " } ?? "")
+            if m.deletedForAll == true { return prefix + String(localized: "convo_prev_deleted") }
+            if m.isContactShare { return prefix + String(localized: "convo_prev_contact") }
             if let body = m.body, !body.isEmpty { return prefix + body }
             switch m.attachmentType {
-            case "image":    return prefix + "📷 Imagine"
-            case "video":    return prefix + "🎥 Videoclip"
-            case "audio":    return prefix + "🎤 Mesaj vocal"
-            case "location": return prefix + "📍 Locație"
-            case "file":     return prefix + "📎 Fișier"
-            case "sticker":  return prefix + "😀 Sticker"
-            case "poll":     return prefix + "📊 Sondaj"
-            case "event":    return prefix + "📅 Eveniment"
-            default:         return prefix + "Mesaj"
+            case "image":    return prefix + String(localized: "convo_prev_image")
+            case "video":    return prefix + String(localized: "convo_prev_video")
+            case "audio":    return prefix + String(localized: "convo_prev_audio")
+            case "location": return prefix + String(localized: "convo_prev_location")
+            case "file":     return prefix + String(localized: "convo_prev_file")
+            case "sticker":  return prefix + String(localized: "convo_prev_sticker")
+            case "poll":     return prefix + String(localized: "convo_prev_poll")
+            case "event":    return prefix + String(localized: "convo_prev_event")
+            default:         return prefix + String(localized: "convo_prev_message")
             }
         }()
 
@@ -754,13 +754,13 @@ struct ConversationsView: View {
                 continue
             }
             let preview: String = {
-                if last.deletedForAll == true { return "🚫 Mesaj șters" }
-                let prefix = last.senderName == myName ? "Tu: " : ""
-                if last.isContactShare { return prefix + "👤 Contact" }
+                if last.deletedForAll == true { return String(localized: "convo_prev_deleted") }
+                let prefix = last.senderName == myName ? String(localized: "convo_prev_you") : ""
+                if last.isContactShare { return prefix + String(localized: "convo_prev_contact") }
                 let lower = last.body.lowercased()
-                if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return prefix + "🎤 Mesaj vocal" }
+                if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return prefix + String(localized: "convo_prev_audio") }
                 if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") {
-                    return prefix + "📷 Imagine"
+                    return prefix + String(localized: "convo_prev_image")
                 }
                 return prefix + last.body
             }()

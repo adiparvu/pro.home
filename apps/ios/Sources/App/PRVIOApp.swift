@@ -12,6 +12,9 @@ struct PRVIOApp: App {
 
     init() {
         applyGlobalAppearance()
+        // Secrets that once lived in UserDefaults move to the Keychain at
+        // every launch — not lazily when a settings screen happens to open.
+        SecretStore.migrateLegacySecrets()
     }
 
     var body: some Scene {

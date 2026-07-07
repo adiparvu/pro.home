@@ -154,11 +154,13 @@ struct InventoryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
                     Menu {
+                        // One pass builds every badge count for the menu.
+                        let counts = filterCounts
                         ForEach(InvFilter.allCases, id: \.self) { f in
                             Button {
                                 withAnimation(.spring(response: 0.25)) { filter = f }
                             } label: {
-                                Label("\(f.rawValue)  (\(countFor(f)))", systemImage: filter == f ? "checkmark" : f.icon)
+                                Label("\(f.rawValue)  (\(counts[f] ?? 0))", systemImage: filter == f ? "checkmark" : f.icon)
                             }
                         }
                     } label: {
@@ -253,16 +255,22 @@ struct InventoryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func countFor(_ f: InvFilter) -> Int {
-        switch f {
-        case .all:         return service.items.count
-        case .favorites:   return service.items.filter { favorites.isFavorite($0.id) }.count
-        case .loaned:      return service.items.filter { $0.isLoaned }.count
-        case .tools:       return service.items.filter { $0.category == "tools" }.count
-        case .garden:      return service.items.filter { $0.category == "garden" }.count
-        case .outdoor:     return service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }.count
-        case .electronics: return service.items.filter { $0.category == "electronics" }.count
-        case .other:       return service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }.count
+    /// One pass over the items builds every badge count — the filter menu
+    /// used to re-scan the whole array once per case.
+    private var filterCounts: [InvFilter: Int] {
+        var counts: [InvFilter: Int] = [.all: service.items.count]
+        for item in service.items {
+            if favorites.isFavorite(item.id) { counts[.favorites, default: 0] += 1 }
+            if item.isLoaned { counts[.loaned, default: 0] += 1 }
+            switch item.category {
+            case "tools":                          counts[.tools, default: 0] += 1
+            case "garden":                         counts[.garden, default: 0] += 1
+            case "outdoor", "sports", "vehicles":  counts[.outdoor, default: 0] += 1
+            case "electronics":                    counts[.electronics, default: 0] += 1
+            default:                               counts[.other, default: 0] += 1
+            }
         }
+        return counts
     }
+
 }

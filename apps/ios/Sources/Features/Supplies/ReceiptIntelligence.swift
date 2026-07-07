@@ -37,6 +37,9 @@ struct ParsedReceipt {
     var category: String = "other"
     var items: [ParsedItem] = []
     var notes: String? = nil
+    /// VAT total read off the receipt's fiscal rows (nil when absent) —
+    /// captured instead of discarded, never invented.
+    var vatAmount: Double? = nil
     var overallConfidence: Double = 0
 
     var dateValue: Date { AppDate.day(from: dateString) ?? Date() }
@@ -184,6 +187,7 @@ enum ReceiptIntelligence {
 
         var items: [ParsedItem] = []
         var declaredTotal: Double = 0
+        var vatTotal: Double = 0
         // A product name printed on its own row (its quantity/price follows).
         var pendingName: (name: String, confidence: Double)? = nil
         // A quantity row printed before its product name row.
@@ -194,6 +198,17 @@ enum ReceiptIntelligence {
             guard raw.count > 1 else { continue }
             let folded = ReceiptProductLexicon.fold(raw)
             let tokens = folded.split(separator: " ").map(String.init)
+
+            // VAT rows: capture the amount instead of discarding it.
+            // Multiple rates (9%, 19%) each get a row; they sum.
+            if folded.contains("tva") || folded.contains("btw")
+                || tokens.contains("vat") {
+                if let t = trailingAmount(in: raw), t.value > 0, !t.isNegative {
+                    vatTotal = roundMoney(vatTotal + t.value)
+                }
+                pendingName = nil
+                continue
+            }
 
             // TOTAL — strongest signal; "TOTAL TVA"/"SUBTOTAL" are not it.
             if folded.contains("total") || folded.contains("totaal") {
@@ -288,6 +303,8 @@ enum ReceiptIntelligence {
         receipt.items = items
         let itemsSum = roundMoney(items.reduce(0) { $0 + $1.totalPrice })
         receipt.total = declaredTotal > 0 ? declaredTotal : itemsSum
+        // A VAT figure larger than the total is a misread, not a fact.
+        if vatTotal > 0, vatTotal < receipt.total { receipt.vatAmount = vatTotal }
         receipt.category = guessCategory(storeName: receipt.storeName, items: items)
 
         var overall = items.isEmpty ? 0 : items.reduce(0) { $0 + $1.confidence } / Double(items.count)
