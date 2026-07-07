@@ -241,7 +241,7 @@ struct SettingsView: View {
     private enum PropertyFeature: CaseIterable {
         case myProperty, documents, houseCalendar, plans, finances, inventory, supplies, plants,
              deliveries, utilities, contractors, analytics, report, tenants,
-             appliances, photoJournal, seasonal, paint, propertyValue, guestMode, perspectives,
+             appliances, photoJournal, seasonal, paint, propertyValue, guestMode,
              yearReview, monthlyRecap, dataExport
     }
 
@@ -305,7 +305,7 @@ struct SettingsView: View {
         var features: [PropertyFeature] {
             switch self {
             case .home:      return [.myProperty, .plans, .photoJournal, .yearReview,
-                                     .perspectives, .propertyValue, .analytics, .report]
+                                     .propertyValue, .analytics, .report]
             case .upkeep:    return [.inventory, .appliances, .paint, .contractors,
                                      .seasonal, .utilities]
             case .moneyDocs: return [.finances, .documents, .tenants]
@@ -530,10 +530,6 @@ struct SettingsView: View {
             NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
                 GuestModeView().environment(propertyService).environment(familyService)
             }
-        case .perspectives:
-            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color.brandSkyBlue, label: "Perspectives") {
-                PropertyPerspectivesView().environment(propertyService).environment(taskService).environment(documentService).environment(financialService).environment(familyService).environment(applianceService).environment(router)
-            }
         }
     }
 
@@ -668,9 +664,6 @@ struct SettingsView: View {
                 EmergencyModeView()
                     .environment(documentService)
                     .environment(router)
-            }
-            NavSettingsRow(icon: "phone.fill", color: .red, label: "Emergency Contacts") {
-                EmergencyContactsView()
             }
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
                 HelpFAQView()

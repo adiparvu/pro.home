@@ -480,7 +480,7 @@ struct RolePermissionsSheet: View {
         "Supplies", "Plants", "Deliveries", "Utilities", "Contractors",
         "Analytics", "Property Report", "Tenants", "Appliances",
         "Photo Journal", "Seasonal Checklists", "Paint Colors",
-        "Property Value", "Guest Mode", "Perspectives", "Members", "Chat",
+        "Property Value", "Guest Mode", "Members", "Chat",
         "Live Activities", "Floating Buttons", "NFC Keys", "Integrations"
     ]
 
@@ -492,7 +492,7 @@ struct RolePermissionsSheet: View {
                         "Inventory", "Supplies", "Plants", "Deliveries",
                         "Utilities", "Contractors", "Analytics",
                         "Property Report", "Appliances", "Photo Journal",
-                        "Seasonal Checklists", "Paint Colors", "Perspectives",
+                        "Seasonal Checklists", "Paint Colors",
                         "Members", "Chat", "Live Activities",
                         "Floating Buttons", "NFC Keys", "Integrations"],
                  hidden: ["Tenants", "Guest Mode", "Property Value"]),
@@ -503,7 +503,7 @@ struct RolePermissionsSheet: View {
                         "Chat", "Live Activities", "Floating Buttons", "NFC Keys"],
                  hidden: ["My Property", "Plans & 3D", "Finances", "Inventory",
                           "Analytics", "Property Report", "Tenants",
-                          "Property Value", "Guest Mode", "Perspectives",
+                          "Property Value", "Guest Mode",
                           "Members", "Integrations"]),
         RoleSpec(id: "child",
                  sees: ["Supplies", "Plants", "Deliveries", "Photo Journal",
@@ -512,7 +512,7 @@ struct RolePermissionsSheet: View {
                           "Inventory", "Utilities", "Contractors", "Analytics",
                           "Property Report", "Tenants", "Appliances",
                           "Paint Colors", "Property Value", "Guest Mode",
-                          "Perspectives", "Members", "Live Activities",
+                          "Members", "Live Activities",
                           "Floating Buttons", "NFC Keys", "Integrations"]),
         RoleSpec(id: "worker",
                  sees: ["Documents", "Contractors", "Deliveries", "Appliances",
@@ -521,7 +521,7 @@ struct RolePermissionsSheet: View {
                  hidden: ["My Property", "Plans & 3D", "Finances", "Inventory",
                           "Supplies", "Plants", "Utilities", "Analytics",
                           "Property Report", "Tenants", "Paint Colors",
-                          "Property Value", "Guest Mode", "Perspectives",
+                          "Property Value", "Guest Mode",
                           "Members", "NFC Keys", "Integrations"]),
         RoleSpec(id: "guest",
                  sees: ["Chat"],
@@ -530,7 +530,7 @@ struct RolePermissionsSheet: View {
                           "Utilities", "Contractors", "Analytics",
                           "Property Report", "Tenants", "Appliances",
                           "Photo Journal", "Seasonal Checklists", "Paint Colors",
-                          "Property Value", "Guest Mode", "Perspectives",
+                          "Property Value", "Guest Mode",
                           "Members", "Live Activities", "Floating Buttons",
                           "NFC Keys", "Integrations"]),
     ]

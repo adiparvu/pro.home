@@ -355,9 +355,9 @@ struct ContractorsView: View {
             Text(service.error ?? "")
         }
         .navigationTitle("Contractors")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $search,
-                    placement: .navigationBarDrawer(displayMode: .always),
+                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.contractors)
         .toolbar {

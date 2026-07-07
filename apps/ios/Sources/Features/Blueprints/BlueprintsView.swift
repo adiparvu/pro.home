@@ -72,9 +72,9 @@ struct BlueprintsView: View {
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .always),
+                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {

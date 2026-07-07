@@ -18,6 +18,7 @@ struct EmergencyModeView: View {
     @State private var notes: [EmergencyNote] = []
     @State private var editingNote: EmergencyNote? = nil
     @State private var showAddNote = false
+    @State private var showAddContact = false
     @State private var torchOn = false
 
     var body: some View {
@@ -38,6 +39,12 @@ struct EmergencyModeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: load)
         .onDisappear { setTorch(false) }
+        .sheet(isPresented: $showAddContact) {
+            AddEmergencyContactSheet { contact in
+                contacts.append(contact)
+                saveContacts()
+            }
+        }
         .sheet(isPresented: $showAddNote) {
             EmergencyNoteSheet { note in
                 notes.append(note)
@@ -87,15 +94,46 @@ struct EmergencyModeView: View {
                     .buttonStyle(.plain)
                     .liquidGlass(cornerRadius: AppRadius.lg)
                     .accessibilityLabel(Text("emergency_call_a11y \(c.name)"))
+                    .contextMenu {
+                        if isCustom(c) {
+                            Button(role: .destructive) {
+                                contacts.removeAll { $0.id == c.id }
+                                saveContacts()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
                 }
+                Button {
+                    showAddContact = true
+                    HapticFeedback.impact(.medium)
+                } label: {
+                    Label("emergency_add_contact", systemImage: "plus")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    /// 112 always leads; the household's own numbers follow.
+    /// 112 always leads, the standing services follow, then the
+    /// household's own numbers (long-press to remove those).
     private var allContacts: [EmergencyContact] {
         [EmergencyContact(name: "112", role: String(localized: "emergency_112_role"),
-                          phone: "112", color: "red")] + contacts
+                          phone: "112", color: "red"),
+         EmergencyContact(name: String(localized: "emergency_gas_name"),
+                          role: String(localized: "emergency_gas_role"),
+                          phone: "0800-001122", color: "orange")] + contacts
+    }
+
+    private func isCustom(_ c: EmergencyContact) -> Bool {
+        contacts.contains { $0.id == c.id }
     }
 
     private func contactColor(_ c: EmergencyContact) -> Color {
@@ -277,6 +315,12 @@ struct EmergencyModeView: View {
         }
     }
 
+    private func saveContacts() {
+        if let d = try? JSONEncoder().encode(contacts) {
+            UserDefaults.standard.set(d, forKey: "prvio.emergency")
+        }
+    }
+
     private func saveNotes() {
         if let d = try? JSONEncoder().encode(notes) {
             UserDefaults.standard.set(d, forKey: "prvio.emergency.notes")
@@ -332,6 +376,56 @@ private struct EmergencyNoteSheet: View {
                 if let editing {
                     title = editing.title
                     detail = editing.detail
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
+
+// MARK: - Emergency contact (device-local)
+
+struct EmergencyContact: Identifiable, Codable {
+    var id = UUID()
+    var name: String
+    var role: String
+    var phone: String
+    var color: String = "red"
+}
+
+private struct AddEmergencyContactSheet: View {
+    let onSave: (EmergencyContact) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var role = ""
+    @State private var phone = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(String(localized: "emergency_contact_name_ph"), text: $name)
+                    TextField(String(localized: "emergency_contact_role_ph"), text: $role)
+                    TextField(String(localized: "emergency_contact_phone_ph"), text: $phone)
+                        .keyboardType(.phonePad)
+                } footer: {
+                    Text("emergency_note_footer")
+                }
+            }
+            .navigationTitle(Text("emergency_add_contact"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(EmergencyContact(name: name, role: role, phone: phone))
+                        dismiss()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty
+                              || phone.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
