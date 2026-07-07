@@ -461,6 +461,11 @@ struct MainTabView: View {
                                      status: $0.status, eta: $0.expectedDisplay)
             }
         )
+        SharedDataStore.writePantryCatalog(
+            pantryService.items.prefix(24).map {
+                PantryCatalogEntry(id: $0.id, name: $0.name, quantity: $0.quantity, unit: $0.unit)
+            }
+        )
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
                                    myName: profileService.profile?.preferredName)
@@ -528,8 +533,19 @@ struct MainTabView: View {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
+        // Wrist pantry consumption: every queued tap is one unit off the
+        // stock. Taps on the same item collapse into ONE adjustment — two
+        // separate adjust(-1) calls would both start from the same stale
+        // quantity and lose a unit.
+        let pantryConsumeIds = SharedDataStore.popPendingPantryConsumes()
+        let consumeCounts = Dictionary(pantryConsumeIds.map { ($0, 1) }, uniquingKeysWith: +)
+        for (id, count) in consumeCounts {
+            if let item = pantryService.items.first(where: { $0.id == id }) {
+                Task { await pantryService.adjust(item, by: -Double(count)) }
+            }
+        }
         if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty
-            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty {
+            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty {
             writeWidgetSnapshot()
         }
     }

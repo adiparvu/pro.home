@@ -34,6 +34,8 @@ struct WatchPayload: Codable {
     // Optional-by-default so payloads cached by the V1 watch app still decode.
     var supplies: [SupplyCatalogEntry] = []
     var deliveries: [DeliveryCatalogEntry] = []
+    /// Pantry stock for the wrist — consume-one taps ride the action queue.
+    var pantry: [PantryCatalogEntry] = []
     /// Property coordinates for the wrist map (nil until geocoded).
     var latitude: Double? = nil
     var longitude: Double? = nil
@@ -65,6 +67,13 @@ struct SupplyCatalogEntry: Codable {
     var id: UUID
     var name: String
     var isCompleted: Bool
+}
+
+struct PantryCatalogEntry: Codable {
+    var id: UUID
+    var name: String
+    var quantity: Double
+    var unit: String
 }
 
 struct DeliveryCatalogEntry: Codable {
@@ -188,6 +197,46 @@ enum SharedDataStore {
         return (try? JSONDecoder().decode([SupplyCatalogEntry].self, from: data)) ?? []
     }
 
+    // MARK: Pantry catalog
+
+    private static let pantryCatalogKey = "prvio.catalog.pantry"
+    private static let pendingPantryConsumesKey = "prvio.pending.pantryConsumes"
+
+    static func writePantryCatalog(_ items: [PantryCatalogEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: pantryCatalogKey)
+    }
+
+    static func readPantryCatalog() -> [PantryCatalogEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: pantryCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([PantryCatalogEntry].self, from: data)) ?? []
+    }
+
+    /// Each element is one "consume 1" tap — duplicates are meaningful,
+    /// so this appends unconditionally (unlike the idempotent check queues).
+    static func appendPendingPantryConsume(_ itemId: UUID) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        var pending = (ud.array(forKey: pendingPantryConsumesKey) as? [String]) ?? []
+        pending.append(itemId.uuidString)
+        ud.set(pending, forKey: pendingPantryConsumesKey)
+    }
+
+    static func popPendingPantryConsumes() -> [UUID] {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
+        let ids = ((ud.array(forKey: pendingPantryConsumesKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
+        ud.removeObject(forKey: pendingPantryConsumesKey)
+        return ids
+    }
+
+    static func applyLocalPantryConsume(_ id: UUID) {
+        var catalog = readPantryCatalog()
+        guard let idx = catalog.firstIndex(where: { $0.id == id }) else { return }
+        catalog[idx].quantity = max(0, ((catalog[idx].quantity - 1) * 10).rounded() / 10)
+        writePantryCatalog(catalog)
+    }
+
     // MARK: Delivery catalog
 
     private static let deliveryCatalogKey = "prvio.catalog.deliveries"
@@ -241,6 +290,7 @@ enum SharedDataStore {
                             plants: readPlantCatalog(),
                             supplies: readSupplyCatalog(),
                             deliveries: readDeliveryCatalog(),
+                            pantry: readPantryCatalog(),
                             latitude: extras.latitude,
                             longitude: extras.longitude,
                             insightTitle: extras.insightTitle,

@@ -127,6 +127,26 @@ final class WatchStore: NSObject, WCSessionDelegate {
         for plant in thirsty { waterPlant(plant.id) }
     }
 
+    /// One unit off the pantry stock, from the wrist.
+    func consumePantry(_ id: UUID) {
+        mutate { payload in
+            guard let i = payload.pantry.firstIndex(where: { $0.id == id }) else { return }
+            payload.pantry[i].quantity = max(0, ((payload.pantry[i].quantity - 1) * 10).rounded() / 10)
+        }
+        queue(action: "consumePantry", id: id, haptic: .click)
+    }
+
+    /// Dictated on the wrist for the house chat — the phone sends the real
+    /// message on its next beat. transferUserInfo persists across
+    /// unreachability, so nothing dictated is ever lost.
+    func sendChatMessage(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        WKInterfaceDevice.current().play(.success)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "sendMessage", "text": trimmed])
+    }
+
     private func mutate(_ change: (inout WatchPayload) -> Void) {
         guard var current = payload else { return }
         change(&current)

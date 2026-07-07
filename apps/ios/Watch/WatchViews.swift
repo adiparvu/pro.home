@@ -4,7 +4,22 @@ import MapKit
 // MARK: - Pages
 
 enum WatchPage: Hashable {
-    case today, tasks, plants, shopping, deliveries, map
+    case today, tasks, plants, shopping, pantry, deliveries, map
+}
+
+// MARK: - Double tap
+//
+// The two-finger double-tap fires each page's PRIMARY action without
+// touching the screen. watchOS 11+ only; earlier systems simply ignore it.
+extension View {
+    @ViewBuilder
+    func primaryDoubleTap() -> some View {
+        if #available(watchOS 11.0, *) {
+            self.handGestureShortcut(.primaryAction)
+        } else {
+            self
+        }
+    }
 }
 
 // MARK: - Wrist design language
@@ -97,6 +112,10 @@ struct WatchRootView: View {
                     ShoppingPage(supplies: payload.supplies)
                         .tag(WatchPage.shopping)
                 }
+                if !payload.pantry.isEmpty {
+                    PantryPage(items: payload.pantry)
+                        .tag(WatchPage.pantry)
+                }
                 if !payload.deliveries.isEmpty {
                     DeliveriesPage(deliveries: payload.deliveries)
                         .tag(WatchPage.deliveries)
@@ -114,6 +133,7 @@ struct WatchRootView: View {
                 case "tasks":                  selection = .tasks
                 case "plants":                 selection = .plants
                 case "shopping", "supplies":   selection = .shopping
+                case "pantry":                 selection = .pantry
                 case "deliveries", "packages": selection = .deliveries
                 default:                       selection = .today
                 }
@@ -194,8 +214,23 @@ private struct TodayGlance: View {
             }
             .navigationTitle(Text(verbatim: "PRVIO"))
             .containerBackground(Color.blue.gradient.opacity(0.25), for: .navigation)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // Dictate a message for the house chat — the phone sends
+                    // the real one through the same queue notification
+                    // replies use.
+                    TextFieldLink(prompt: Text("watch_chat_prompt")) {
+                        Image(systemName: "message")
+                            .accessibilityLabel(Text("watch_chat_send"))
+                    } onSubmit: { value in
+                        store.sendChatMessage(value)
+                    }
+                }
+            }
         }
     }
+
+    @Environment(WatchStore.self) private var store
 
     // Athlytic hero: the health ring fills on arrival, the name sits beside it.
     private var hero: some View {
@@ -352,12 +387,22 @@ private struct ActingSymbol: View {
     let acted: String
     let tint: Color
     let label: LocalizedStringKey
+    /// Marks this control as the page's double-tap primary action.
+    var isPrimary = false
     let action: () -> Void
 
     @State private var didAct = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        if isPrimary {
+            core.primaryDoubleTap()
+        } else {
+            core
+        }
+    }
+
+    private var core: some View {
         Button {
             guard !didAct else { return }
             didAct = true
@@ -408,7 +453,8 @@ private struct TasksPage: View {
                                 ActingSymbol(idle: "circle",
                                              acted: "checkmark.circle.fill",
                                              tint: task.isOverdue == true ? .red : .blue,
-                                             label: "watch_complete") {
+                                             label: "watch_complete",
+                                             isPrimary: task.id == open.first?.id) {
                                     withAnimation(.snappy) { store.completeTask(task.id) }
                                 }
                                 VStack(alignment: .leading, spacing: 1) {
@@ -483,6 +529,7 @@ private struct TaskDetail: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                .primaryDoubleTap()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -510,7 +557,9 @@ private struct PlantsPage: View {
                                 ActingSymbol(idle: "drop",
                                              acted: "drop.fill",
                                              tint: .cyan,
-                                             label: "watch_water_now") {
+                                             label: "watch_water_now",
+                                             isPrimary: thirsty.count == 1
+                                                        && plant.id == thirsty.first?.id) {
                                     withAnimation(.snappy) { store.waterPlant(plant.id) }
                                 }
                                 Text(plant.emoji)
@@ -536,12 +585,14 @@ private struct PlantsPage: View {
             .toolbar {
                 if thirsty.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
+                        // With several thirsty plants, double-tap waters all.
                         Button {
                             withAnimation(.snappy) { store.waterAllPlants() }
                         } label: {
                             Image(systemName: "drop.fill")
                         }
                         .accessibilityLabel(Text("watch_water_all"))
+                        .primaryDoubleTap()
                     }
                 }
             }
@@ -574,6 +625,7 @@ private struct PlantDetail: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.cyan)
+                .primaryDoubleTap()
             }
             .frame(maxWidth: .infinity)
         }
@@ -602,7 +654,8 @@ private struct ShoppingPage: View {
                             ActingSymbol(idle: "circle",
                                          acted: "checkmark.circle.fill",
                                          tint: .orange,
-                                         label: "watch_tap_check") {
+                                         label: "watch_tap_check",
+                                         isPrimary: item.id == pending.first?.id) {
                                 withAnimation(.snappy) { store.checkSupply(item.id) }
                             }
                             Text(item.name)
@@ -619,6 +672,92 @@ private struct ShoppingPage: View {
             .navigationTitle(Text("watch_shopping"))
             .containerBackground(Color.orange.gradient.opacity(0.3), for: .navigation)
         }
+    }
+}
+
+// MARK: - Page 4b: Pantry (consume from the wrist)
+
+private struct PantryPage: View {
+    let items: [PantryCatalogEntry]
+    @Environment(WatchStore.self) private var store
+
+    private var stocked: [PantryCatalogEntry] { Array(items.prefix(15)) }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if stocked.isEmpty {
+                    AllClearView(icon: "basket")
+                } else {
+                    List(stocked, id: \.id) { item in
+                        PantryRow(item: item,
+                                  isPrimary: item.id == stocked.first?.id) {
+                            store.consumePantry(item.id)
+                        }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(WatchDesign.cardFill(.green))
+                        )
+                    }
+                }
+            }
+            .navigationTitle(Text("watch_pantry"))
+            .containerBackground(Color.green.gradient.opacity(0.25), for: .navigation)
+        }
+    }
+}
+
+/// Repeatable consume row — unlike the one-shot ActingSymbol, stock can be
+/// consumed again and again; the icon bounces on every unit.
+private struct PantryRow: View {
+    let item: PantryCatalogEntry
+    var isPrimary = false
+    let consume: () -> Void
+
+    private var quantityLabel: String {
+        let qty = item.quantity
+        let number = qty == qty.rounded() ? String(Int(qty)) : String(format: "%.1f", qty)
+        return "\(number) \(item.unit)"
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            consumeButton
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.name)
+                    .font(.system(.footnote, design: .rounded))
+                    .lineLimit(1)
+                Text(verbatim: quantityLabel)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(item.quantity <= 0 ? .red : .secondary)
+                    .contentTransition(.numericText())
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder private var consumeButton: some View {
+        if isPrimary {
+            core.primaryDoubleTap()
+        } else {
+            core
+        }
+    }
+
+    private var core: some View {
+        Button {
+            withAnimation(.snappy) { consume() }
+        } label: {
+            Image(systemName: "minus.circle.fill")
+                .font(.system(size: 17))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(item.quantity > 0 ? .green : .secondary)
+                .symbolEffect(.bounce, value: item.quantity)
+        }
+        .buttonStyle(.plain)
+        .disabled(item.quantity <= 0)
+        .accessibilityLabel(Text("watch_consume_one"))
+        .accessibilityValue(Text(verbatim: quantityLabel))
     }
 }
 

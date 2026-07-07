@@ -73,6 +73,16 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
+        // Dictated on the wrist for the house chat — rides the same queue the
+        // notification reply action uses, so one drain path sends both.
+        if action == "sendMessage", let text = userInfo["text"] as? String,
+           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            DispatchQueue.main.async {
+                SharedDataStore.appendPendingChatReply(text)
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
         guard let idString = userInfo["id"] as? String,
               let id = UUID(uuidString: idString) else { return }
         DispatchQueue.main.async { [weak self] in
@@ -91,6 +101,9 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
         case "checkSupply":
             SharedDataStore.appendPendingSupplyCheck(id)
             SharedDataStore.applyLocalSupplyCheck(id)
+        case "consumePantry":
+            SharedDataStore.appendPendingPantryConsume(id)
+            SharedDataStore.applyLocalPantryConsume(id)
         default:
             return
         }
