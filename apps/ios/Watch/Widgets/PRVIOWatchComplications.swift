@@ -42,12 +42,13 @@ struct PRVIOStatusComplication: Widget {
 struct PRVIOTasksComplication: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "PRVIOWatchTasks", provider: WatchPayloadProvider()) { entry in
+            let open = (entry.payload?.tasks ?? []).filter { !$0.isCompleted }
             DomainComplicationView(
                 count: entry.payload?.snapshot.openTaskCount ?? 0,
                 icon: "checklist",
                 label: Text("watch_tasks"),
                 urgent: (entry.payload?.snapshot.overdueTaskCount ?? 0) > 0,
-                detail: entry.payload?.snapshot.criticalTaskTitle,
+                lines: Array(open.prefix(2).map(\.title)),
                 url: URL(string: "prvio://tasks")
             )
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
@@ -67,7 +68,7 @@ struct PRVIOWaterComplication: Widget {
                 icon: "drop.fill",
                 label: Text("watch_water"),
                 urgent: false,
-                detail: entry.payload?.snapshot.plantNames.first,
+                lines: Array((entry.payload?.snapshot.plantNames ?? []).prefix(2)),
                 url: URL(string: "prvio://plants")
             )
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
@@ -82,12 +83,13 @@ struct PRVIOWaterComplication: Widget {
 struct PRVIOShoppingComplication: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "PRVIOWatchShopping", provider: WatchPayloadProvider()) { entry in
+            let pending = (entry.payload?.supplies ?? []).filter { !$0.isCompleted }
             DomainComplicationView(
                 count: entry.payload?.snapshot.pendingSupplyCount ?? 0,
                 icon: "cart.fill",
                 label: Text("watch_shopping"),
                 urgent: false,
-                detail: nil,
+                lines: Array(pending.prefix(2).map(\.name)),
                 url: URL(string: "prvio://shopping")
             )
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
@@ -102,12 +104,13 @@ struct PRVIOShoppingComplication: Widget {
 struct PRVIODeliveriesComplication: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "PRVIOWatchDeliveries", provider: WatchPayloadProvider()) { entry in
+            let next = entry.payload?.deliveries.first
             DomainComplicationView(
                 count: entry.payload?.snapshot.activeDeliveryCount ?? 0,
                 icon: "shippingbox.fill",
                 label: Text("watch_deliveries"),
                 urgent: false,
-                detail: nil,
+                lines: [next?.title, next?.eta].compactMap { $0 },
                 url: URL(string: "prvio://deliveries")
             )
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
@@ -126,7 +129,9 @@ private struct DomainComplicationView: View {
     let icon: String
     let label: Text
     let urgent: Bool
-    let detail: String?
+    /// Up to two content lines on the rectangular face — density without
+    /// clutter: real titles, not just a number.
+    var lines: [String] = []
     let url: URL?
 
     @Environment(\.widgetFamily) private var family
@@ -160,8 +165,8 @@ private struct DomainComplicationView: View {
                     Text(verbatim: "\(count)")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
-                    if let detail, !detail.isEmpty {
-                        Text(detail)
+                    ForEach(Array(lines.prefix(2).enumerated()), id: \.offset) { _, line in
+                        Text(line)
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)

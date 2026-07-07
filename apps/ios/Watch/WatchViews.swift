@@ -6,13 +6,68 @@ enum WatchPage: Hashable {
     case today, tasks, plants, shopping, deliveries
 }
 
-// MARK: - Root: vertical pages, or the sync prompt
+// MARK: - Wrist design language
 //
-// Today is the glance; Tasks/Plants/Shopping act (tap the leading symbol for
-// the instant action, tap the row for a detail page — the Reminders-on-watch
-// split); Deliveries reads the live parcels. Content-driven paging keeps the
-// crown from scrolling through empty screens, and every complication
-// deep-links straight to its page through prvio:// URLs.
+// The dialect the whole watch app speaks — Athlytic's dense dashboard,
+// Gentler Streak's soft gradient cards, Things' rounded typographic
+// hierarchy, Waterllama's act-then-celebrate feedback. One place, so every
+// page stays coherent.
+
+enum WatchDesign {
+    /// Soft card fill: the domain colour breathing through dark glass.
+    static func cardFill(_ color: Color) -> LinearGradient {
+        LinearGradient(colors: [color.opacity(0.32), color.opacity(0.10)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    static func score(_ value: Int) -> Color {
+        switch value {
+        case 80...:   return .green
+        case 60..<80: return .yellow
+        default:      return .orange
+        }
+    }
+}
+
+/// The soft rounded card every module sits in.
+private struct WatchCard<Content: View>: View {
+    var tint: Color = .gray
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WatchDesign.cardFill(tint),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+/// Staggered entrance — cards breathe in one after another. Sits out
+/// entirely under Reduce Motion.
+private struct Entrance: ViewModifier {
+    let index: Int
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 10)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.spring(duration: 0.5).delay(Double(index) * 0.06)) {
+                    shown = true
+                }
+            }
+    }
+}
+
+private extension View {
+    func entrance(_ index: Int) -> some View { modifier(Entrance(index: index)) }
+}
+
+// MARK: - Root: vertical pages, or the sync prompt
 
 struct WatchRootView: View {
     @Environment(WatchStore.self) private var store
@@ -59,7 +114,7 @@ struct WatchRootView: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
             Text("watch_waiting_title")
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
             Text("watch_waiting_msg")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -69,7 +124,7 @@ struct WatchRootView: View {
     }
 }
 
-// MARK: - Page 1: Today
+// MARK: - Page 1: Today (the dashboard)
 
 private struct TodayGlance: View {
     let payload: WatchPayload
@@ -80,30 +135,39 @@ private struct TodayGlance: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    header
+                VStack(alignment: .leading, spacing: 8) {
+                    hero.entrance(0)
 
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
                                         GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                        statCell(count: snapshot.openTaskCount, label: "watch_open",
-                                 icon: "checklist", urgent: snapshot.overdueTaskCount > 0,
-                                 page: .tasks)
-                        statCell(count: snapshot.plantsNeedingWater, label: "watch_water",
-                                 icon: "drop.fill", urgent: false, page: .plants)
-                        statCell(count: snapshot.activeDeliveryCount, label: "watch_deliveries",
-                                 icon: "shippingbox.fill", urgent: false, page: .deliveries)
-                        statCell(count: snapshot.pendingSupplyCount, label: "watch_shopping",
-                                 icon: "cart.fill", urgent: false, page: .shopping)
+                        metric(count: snapshot.openTaskCount, label: "watch_open",
+                               icon: "checklist", tint: .blue,
+                               urgent: snapshot.overdueTaskCount > 0, page: .tasks)
+                            .entrance(1)
+                        metric(count: snapshot.plantsNeedingWater, label: "watch_water",
+                               icon: "drop.fill", tint: .cyan, urgent: false, page: .plants)
+                            .entrance(2)
+                        metric(count: snapshot.activeDeliveryCount, label: "watch_deliveries",
+                               icon: "shippingbox.fill", tint: .indigo, urgent: false,
+                               page: .deliveries)
+                            .entrance(3)
+                        metric(count: snapshot.pendingSupplyCount, label: "watch_shopping",
+                               icon: "cart.fill", tint: .orange, urgent: false, page: .shopping)
+                            .entrance(4)
                     }
 
                     if snapshot.unreadMessages > 0 {
-                        unreadRow(snapshot.unreadMessages)
+                        unreadRow(snapshot.unreadMessages).entrance(5)
                     }
 
                     if let critical = snapshot.criticalTaskTitle {
-                        urgentRow(critical)
+                        focusCard(icon: "exclamationmark.circle.fill", tint: .red,
+                                  title: critical, sub: nil)
+                            .entrance(6)
                     } else if let next = snapshot.nextMaintenanceTitle {
-                        nextRow(next, due: snapshot.nextMaintenanceDue)
+                        focusCard(icon: "wrench.and.screwdriver.fill", tint: .gray,
+                                  title: next, sub: snapshot.nextMaintenanceDue)
+                            .entrance(6)
                     }
                 }
             }
@@ -112,93 +176,163 @@ private struct TodayGlance: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(snapshot.propertyName ?? "PRVIO")
-                .font(.headline)
-                .lineLimit(1)
+    // Athlytic hero: the health ring fills on arrival, the name sits beside it.
+    private var hero: some View {
+        HStack(spacing: 10) {
             if let score = snapshot.propertyHealthScore {
-                HStack(spacing: 5) {
-                    Gauge(value: Double(score), in: 0...100) { EmptyView() }
-                        .gaugeStyle(.accessoryLinearCapacity)
-                        .frame(width: 54)
-                    Text(verbatim: "\(score)%")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                HealthRing(score: score)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(snapshot.propertyName ?? "PRVIO")
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                if snapshot.propertyHealthScore != nil {
+                    Text("watch_health")
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
-                .accessibilityLabel(Text("watch_health"))
             }
+            Spacer(minLength: 0)
         }
+        .padding(.bottom, 2)
     }
 
-    // A glance cell that is also a shortcut: tapping crowns straight to the
-    // page it counts.
-    private func statCell(count: Int, label: LocalizedStringKey, icon: String,
-                          urgent: Bool, page: WatchPage) -> some View {
+    private func metric(count: Int, label: LocalizedStringKey, icon: String,
+                        tint: Color, urgent: Bool, page: WatchPage) -> some View {
         Button {
             selection = page
         } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 4) {
-                    Image(systemName: icon)
-                        .font(.system(size: 12, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                    if urgent {
-                        Circle().fill(.red).frame(width: 6, height: 6)
+            WatchCard(tint: urgent ? .red : tint) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: icon)
+                            .font(.system(size: 12, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(urgent ? .red : tint)
+                        if urgent {
+                            Circle().fill(.red).frame(width: 5, height: 5)
+                                .accessibilityHidden(true)
+                        }
+                        Spacer(minLength: 0)
                     }
+                    Text(verbatim: "\(count)")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
+                    Text(label)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                Text(verbatim: "\(count)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                Text(label)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func unreadRow(_ count: Int) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "message.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.blue)
-            Text(verbatim: "\(count)")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-            Text("watch_unread")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.top, 2)
-    }
-
-    private func urgentRow(_ title: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "exclamationmark.circle.fill")
-                .foregroundStyle(.red)
-            Text(title)
-                .font(.footnote)
-                .lineLimit(2)
-        }
-        .padding(.top, 2)
-    }
-
-    private func nextRow(_ title: String, due: String?) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(title)
-                .font(.footnote)
-                .lineLimit(2)
-            if let due {
-                Text(due)
-                    .font(.system(size: 11))
+        WatchCard(tint: .blue) {
+            HStack(spacing: 6) {
+                Image(systemName: "message.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.blue)
+                Text(verbatim: "\(count)")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                Text("watch_unread")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
         }
-        .padding(.top, 2)
+    }
+
+    private func focusCard(icon: String, tint: Color, title: String, sub: String?) -> some View {
+        WatchCard(tint: tint) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(tint == .gray ? .secondary : tint)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(.footnote, design: .rounded))
+                        .lineLimit(2)
+                    if let sub {
+                        Text(sub)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+}
+
+/// The property's health as a ring that fills when the dashboard arrives.
+private struct HealthRing: View {
+    let score: Int
+    @State private var shown: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Gauge(value: shown, in: 0...100) {
+            Image(systemName: "house.fill")
+        } currentValueLabel: {
+            Text(verbatim: "\(Int(shown))")
+                .font(.system(.body, design: .rounded).weight(.bold))
+                .contentTransition(.numericText())
+        }
+        .gaugeStyle(.accessoryCircular)
+        .tint(Gradient(colors: [WatchDesign.score(score).opacity(0.55),
+                                WatchDesign.score(score)]))
+        .frame(width: 54, height: 54)
+        .onAppear {
+            if reduceMotion {
+                shown = Double(score)
+            } else {
+                withAnimation(.spring(duration: 1.1)) { shown = Double(score) }
+            }
+        }
+        .accessibilityLabel(Text("watch_health"))
+        .accessibilityValue(Text(verbatim: "\(score)%"))
+    }
+}
+
+// MARK: - Acting rows (Waterllama feedback: fill, bounce, then leave)
+
+/// The leading action symbol: tap → it fills and bounces, a beat later the
+/// real action fires and the row animates out. The pause is the celebration.
+private struct ActingSymbol: View {
+    let idle: String
+    let acted: String
+    let tint: Color
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    @State private var didAct = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button {
+            guard !didAct else { return }
+            didAct = true
+            if reduceMotion {
+                action()
+            } else {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(380))
+                    action()
+                }
+            }
+        } label: {
+            Image(systemName: didAct ? acted : idle)
+                .font(.system(size: 17, weight: didAct ? .semibold : .light))
+                .foregroundStyle(didAct ? tint : .secondary)
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.bounce, value: didAct)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
 }
 
@@ -222,25 +356,32 @@ private struct TasksPage: View {
                     AllClearView(icon: "checkmark.circle")
                 } else {
                     List(open, id: \.id) { task in
-                        // The circle completes on the spot; the row opens the
-                        // detail — the Reminders split, no accidental completes.
+                        // Symbol acts on the spot; the row opens the detail —
+                        // the Things split, no accidental completes.
                         NavigationLink(value: task.id) {
                             HStack(spacing: 8) {
-                                Button {
+                                ActingSymbol(idle: "circle",
+                                             acted: "checkmark.circle.fill",
+                                             tint: task.isOverdue == true ? .red : .blue,
+                                             label: "watch_complete") {
                                     withAnimation(.snappy) { store.completeTask(task.id) }
-                                } label: {
-                                    Image(systemName: "circle")
-                                        .font(.system(size: 17, weight: .light))
-                                        .foregroundStyle(task.isOverdue == true ? Color.red : Color.secondary)
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text("watch_complete"))
-
-                                Text(task.title)
-                                    .font(.footnote)
-                                    .lineLimit(2)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(task.title)
+                                        .font(.system(.footnote, design: .rounded))
+                                        .lineLimit(2)
+                                    if task.isOverdue == true {
+                                        Text("watch_overdue")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundStyle(.red)
+                                    }
+                                }
                             }
                         }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(WatchDesign.cardFill(task.isOverdue == true ? .red : .blue))
+                        )
                     }
                     .navigationDestination(for: UUID.self) { id in
                         if let task = open.first(where: { $0.id == id }) {
@@ -272,7 +413,7 @@ private struct TaskDetail: View {
                 }
 
                 Text(task.title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
 
                 Button {
                     store.completeTask(task.id)
@@ -309,22 +450,22 @@ private struct PlantsPage: View {
                     List(thirsty, id: \.id) { plant in
                         NavigationLink(value: plant.id) {
                             HStack(spacing: 6) {
-                                Button {
+                                ActingSymbol(idle: "drop",
+                                             acted: "drop.fill",
+                                             tint: .cyan,
+                                             label: "watch_water_now") {
                                     withAnimation(.snappy) { store.waterPlant(plant.id) }
-                                } label: {
-                                    Image(systemName: "drop.fill")
-                                        .font(.system(size: 14))
-                                        .foregroundStyle(.blue)
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text("watch_water_now"))
-
                                 Text(plant.emoji)
                                 Text(plant.name)
-                                    .font(.footnote)
+                                    .font(.system(.footnote, design: .rounded))
                                     .lineLimit(1)
                             }
                         }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(WatchDesign.cardFill(.cyan))
+                        )
                     }
                     .navigationDestination(for: UUID.self) { id in
                         if let plant = thirsty.first(where: { $0.id == id }) {
@@ -350,7 +491,7 @@ private struct PlantDetail: View {
                 Text(plant.emoji)
                     .font(.system(size: 44))
                 Text(plant.name)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
                     .multilineTextAlignment(.center)
 
                 Button {
@@ -363,7 +504,7 @@ private struct PlantDetail: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .tint(.cyan)
             }
             .frame(maxWidth: .infinity)
         }
@@ -371,7 +512,7 @@ private struct PlantDetail: View {
     }
 }
 
-// MARK: - Page 4: Shopping (tap to check off)
+// MARK: - Page 4: Shopping
 
 private struct ShoppingPage: View {
     let supplies: [SupplyCatalogEntry]
@@ -388,19 +529,21 @@ private struct ShoppingPage: View {
                     AllClearView(icon: "cart")
                 } else {
                     List(pending, id: \.id) { item in
-                        Button {
-                            withAnimation(.snappy) { store.checkSupply(item.id) }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "circle")
-                                    .font(.system(size: 17, weight: .light))
-                                    .foregroundStyle(.secondary)
-                                Text(item.name)
-                                    .font(.footnote)
-                                    .lineLimit(2)
+                        HStack(spacing: 8) {
+                            ActingSymbol(idle: "circle",
+                                         acted: "checkmark.circle.fill",
+                                         tint: .orange,
+                                         label: "watch_tap_check") {
+                                withAnimation(.snappy) { store.checkSupply(item.id) }
                             }
+                            Text(item.name)
+                                .font(.system(.footnote, design: .rounded))
+                                .lineLimit(2)
                         }
-                        .accessibilityHint(Text("watch_tap_check"))
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(WatchDesign.cardFill(.orange))
+                        )
                     }
                 }
             }
@@ -425,7 +568,7 @@ private struct DeliveriesPage: View {
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(parcel.status == "out_for_delivery" ? .orange : .secondary)
                             Text(parcel.title)
-                                .font(.footnote)
+                                .font(.system(.footnote, design: .rounded))
                                 .lineLimit(2)
                         }
                         DeliveryGlyphs.statusLabel(for: parcel.status)
@@ -434,6 +577,10 @@ private struct DeliveriesPage: View {
                             .lineLimit(1)
                     }
                 }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(WatchDesign.cardFill(.indigo))
+                )
             }
             .navigationDestination(for: UUID.self) { id in
                 if let parcel = deliveries.first(where: { $0.id == id }) {
@@ -458,7 +605,7 @@ private struct DeliveryDetail: View {
                     .foregroundStyle(parcel.status == "out_for_delivery" ? .orange : .secondary)
 
                 Text(parcel.title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
 
                 DeliveryGlyphs.statusLabel(for: parcel.status)
                     .font(.footnote.weight(.semibold))
@@ -517,7 +664,7 @@ private struct AllClearView: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
             Text("watch_all_good")
-                .font(.footnote)
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(.secondary)
         }
     }
