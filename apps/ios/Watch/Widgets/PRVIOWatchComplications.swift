@@ -351,6 +351,9 @@ struct WatchPayloadProvider: TimelineProvider {
 
     @available(watchOS 11.0, *)
     func relevance() async -> WidgetRelevance<Void> {
+        // The kind-carrying date context is watchOS 26 API — earlier systems
+        // return no clues, and their Smart Stack simply ranks unadvised.
+        guard #available(watchOS 26.0, *) else { return WidgetRelevance([]) }
         let payload = load()
         let cal = Calendar.current
         let now = Date()
