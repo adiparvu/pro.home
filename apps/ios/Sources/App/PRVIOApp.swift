@@ -149,6 +149,8 @@ struct PRVIOApp: App {
             .onContinueUserActivity("com.prvio.plants")   { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.chat")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.shopping") { router.handle(userActivity: $0) }
+            // Handoff from the watch: whatever page the wrist was reading.
+            .onContinueUserActivity("com.prvio.page")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("CSSearchableItemActionType") { router.handle(userActivity: $0) }
         }
     }

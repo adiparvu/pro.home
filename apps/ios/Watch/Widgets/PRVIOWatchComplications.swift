@@ -20,6 +20,7 @@ struct PRVIOWatchWidgetBundle: WidgetBundle {
         PRVIODeliveriesComplication()
         PRVIOHealthComplication()
         PRVIOWeatherComplication()
+        PRVIOChoiceComplication()
     }
 }
 
@@ -605,6 +606,129 @@ struct ComplicationBackground: ViewModifier {
             } else {
                 Color.clear
             }
+        }
+    }
+}
+
+// MARK: - Configurable complication (one slot, your choice of domain)
+//
+// The system widget configurator (long-press → edit) offers the domain as a
+// parameter — one "PRVIO" complication that becomes whichever face its owner
+// wants, instead of forcing seven separate entries onto the picker.
+
+enum WatchDomainOption: String, AppEnum {
+    case status, tasks, water, shopping, deliveries, health, weather
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "PRVIO"
+    static var caseDisplayRepresentations: [WatchDomainOption: DisplayRepresentation] = [
+        .status:     "PRVIO",
+        .tasks:      DisplayRepresentation(title: LocalizedStringResource("watch_tasks")),
+        .water:      DisplayRepresentation(title: LocalizedStringResource("watch_water")),
+        .shopping:   DisplayRepresentation(title: LocalizedStringResource("watch_shopping")),
+        .deliveries: DisplayRepresentation(title: LocalizedStringResource("watch_deliveries")),
+        .health:     DisplayRepresentation(title: LocalizedStringResource("watch_health")),
+        .weather:    DisplayRepresentation(title: LocalizedStringResource("watch_weather")),
+    ]
+}
+
+struct PRVIODomainConfigIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "PRVIO"
+
+    @Parameter(title: "Domain", default: .status)
+    var domain: WatchDomainOption
+}
+
+struct ChoiceEntry: TimelineEntry {
+    let date: Date
+    let payload: WatchPayload?
+    let domain: WatchDomainOption
+}
+
+struct ChoiceProvider: AppIntentTimelineProvider {
+    private func load() -> WatchPayload? {
+        guard let data = UserDefaults(suiteName: SharedDataStore.suiteName)?
+            .data(forKey: "prvio.watch.payload") else { return nil }
+        return try? JSONDecoder().decode(WatchPayload.self, from: data)
+    }
+
+    func placeholder(in context: Context) -> ChoiceEntry {
+        ChoiceEntry(date: .now, payload: nil, domain: .status)
+    }
+
+    func snapshot(for configuration: PRVIODomainConfigIntent, in context: Context) async -> ChoiceEntry {
+        ChoiceEntry(date: .now, payload: load(), domain: configuration.domain)
+    }
+
+    func timeline(for configuration: PRVIODomainConfigIntent, in context: Context) async -> Timeline<ChoiceEntry> {
+        Timeline(entries: [ChoiceEntry(date: .now, payload: load(), domain: configuration.domain)],
+                 policy: .after(.now.addingTimeInterval(3600)))
+    }
+}
+
+struct PRVIOChoiceComplication: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "PRVIOWatchChoice",
+                               intent: PRVIODomainConfigIntent.self,
+                               provider: ChoiceProvider()) { entry in
+            ChoiceComplicationView(payload: entry.payload, domain: entry.domain)
+                .modifier(ComplicationBackground())
+        }
+        .configurationDisplayName("PRVIO +")
+        .description(NSLocalizedString("watch_comp_choice_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+private struct ChoiceComplicationView: View {
+    let payload: WatchPayload?
+    let domain: WatchDomainOption
+
+    var body: some View {
+        switch domain {
+        case .status:
+            ComplicationView(payload: payload)
+        case .health:
+            HealthComplicationView(score: payload?.snapshot.propertyHealthScore,
+                                   name: payload?.snapshot.propertyName)
+        case .weather:
+            WeatherComplicationView(payload: payload)
+        case .tasks:
+            let open = (payload?.tasks ?? []).filter { !$0.isCompleted }
+            DomainComplicationView(
+                count: payload?.snapshot.openTaskCount ?? 0,
+                icon: "checklist",
+                label: Text("watch_tasks"),
+                urgent: (payload?.snapshot.overdueTaskCount ?? 0) > 0,
+                lines: Array(open.prefix(2).map(\.title)),
+                topTaskId: open.first?.id,
+                url: URL(string: "prvio://tasks"))
+        case .water:
+            DomainComplicationView(
+                count: payload?.snapshot.plantsNeedingWater ?? 0,
+                icon: "drop.fill",
+                label: Text("watch_water"),
+                urgent: false,
+                lines: Array((payload?.snapshot.plantNames ?? []).prefix(2)),
+                url: URL(string: "prvio://plants"))
+        case .shopping:
+            let pending = (payload?.supplies ?? []).filter { !$0.isCompleted }
+            DomainComplicationView(
+                count: payload?.snapshot.pendingSupplyCount ?? 0,
+                icon: "cart.fill",
+                label: Text("watch_shopping"),
+                urgent: false,
+                lines: Array(pending.prefix(2).map(\.name)),
+                url: URL(string: "prvio://shopping"))
+        case .deliveries:
+            let next = payload?.deliveries.first
+            DomainComplicationView(
+                count: payload?.snapshot.activeDeliveryCount ?? 0,
+                icon: "shippingbox.fill",
+                label: Text("watch_deliveries"),
+                urgent: false,
+                lines: [next?.title, next?.eta].compactMap { $0 },
+                url: URL(string: "prvio://deliveries"))
         }
     }
 }

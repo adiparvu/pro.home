@@ -59,6 +59,19 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
         session.activate()
     }
 
+    // MARK: On-demand refresh (watch asks, phone answers instantly)
+
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any],
+                 replyHandler: @escaping ([String: Any]) -> Void) {
+        guard message["action"] as? String == "refresh",
+              let payload = SharedDataStore.currentWatchPayload(),
+              let data = try? JSONEncoder().encode(payload) else {
+            replyHandler([:])
+            return
+        }
+        replyHandler(["payload": data])
+    }
+
     // MARK: Wrist actions
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {

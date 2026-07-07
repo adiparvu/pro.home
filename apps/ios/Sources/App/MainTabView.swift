@@ -480,6 +480,9 @@ struct MainTabView: View {
         // refresh runs in the startup orchestration).
         let topInsight = proactiveEngine.insights.first { !$0.isDismissed }
         let weather = PropertyWeather.cached()
+        // The house streak: consecutive verified all-clear days.
+        let streak = SharedDataStore.updateHouseStreak(
+            allClear: snapshot.overdueTaskCount == 0 && snapshot.plantsNeedingWater == 0)
         SharedDataStore.writeWatchExtras(SharedDataStore.WatchExtras(
             latitude: propertyService.primary?.latitude,
             longitude: propertyService.primary?.longitude,
@@ -489,7 +492,8 @@ struct MainTabView: View {
             weatherSymbol: weather?.symbol,
             weatherLo: weather?.lo,
             weatherHi: weather?.hi,
-            weatherAdvisory: weather?.advisory))
+            weatherAdvisory: weather?.advisory,
+            streakDays: streak))
         // The watch renders the same state the widgets do — one push, in the
         // same breath as the snapshot write, so the two can never diverge.
         if let payload = SharedDataStore.currentWatchPayload() {

@@ -386,8 +386,14 @@ final class AppRouter {
             }
         } else if let tab = activity.userInfo?["tab"] as? String {
             switch tab {
-            case "tasks": navigate(to: .tasks(id: nil))
-            case "chat":  navigate(to: .chat)
+            case "tasks":      navigate(to: .tasks(id: nil))
+            case "chat":       navigate(to: .chat)
+            case "home":       navigate(to: .home)
+            case "plants":     navigate(to: .plants(id: nil))
+            case "supplies":   navigate(to: .supplies)
+            case "pantry":     navigate(to: .pantry)
+            case "deliveries": navigate(to: .deliveries)
+            case "map":        navigate(to: .twin)
             default: break
             }
         }

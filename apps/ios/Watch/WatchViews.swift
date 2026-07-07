@@ -127,6 +127,12 @@ struct WatchRootView: View {
                 }
             }
             .tabViewStyle(.verticalPage)
+            // Handoff: raise the iPhone and land on the page you were
+            // reading here — the phone router already speaks this activity.
+            .userActivity("com.prvio.page") { activity in
+                activity.isEligibleForHandoff = true
+                activity.userInfo = ["tab": Self.handoffKey(for: selection)]
+            }
             .onOpenURL { url in
                 // Complication taps: prvio://tasks, prvio://plants, …
                 switch url.host {
@@ -140,6 +146,18 @@ struct WatchRootView: View {
             }
         } else {
             waiting
+        }
+    }
+
+    private static func handoffKey(for page: WatchPage) -> String {
+        switch page {
+        case .today:      return "home"
+        case .tasks:      return "tasks"
+        case .plants:     return "plants"
+        case .shopping:   return "supplies"
+        case .pantry:     return "pantry"
+        case .deliveries: return "deliveries"
+        case .map:        return "map"
         }
     }
 
@@ -214,11 +232,27 @@ private struct TodayGlance: View {
                                   title: next, sub: snapshot.nextMaintenanceDue)
                             .entrance(6)
                     }
+
+                    freshnessFooter
                 }
             }
             .navigationTitle(Text(verbatim: "PRVIO"))
             .containerBackground(Color.blue.gradient.opacity(0.25), for: .navigation)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    // Ask the phone for a fresh payload over the live channel.
+                    Button {
+                        store.requestRefresh()
+                    } label: {
+                        if store.isRefreshing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(store.isRefreshing)
+                    .accessibilityLabel(Text("watch_refresh"))
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     // Dictate a message for the house chat — the phone sends
                     // the real one through the same queue notification
@@ -234,6 +268,21 @@ private struct TodayGlance: View {
         }
     }
 
+    /// Trust is knowing how old the data is — stale info must say so.
+    private var freshnessFooter: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 8))
+            Text("watch_updated")
+                .font(.system(size: 9))
+            Text(snapshot.updatedAt, format: .relative(presentation: .named))
+                .font(.system(size: 9))
+        }
+        .foregroundStyle(.tertiary)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 2)
+    }
+
     @Environment(WatchStore.self) private var store
 
     // Athlytic hero: the health ring fills on arrival, the name sits beside it.
@@ -247,7 +296,19 @@ private struct TodayGlance: View {
                     .font(.system(.headline, design: .rounded).weight(.semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
-                if snapshot.propertyHealthScore != nil {
+                if let streak = payload.streakDays, streak >= 2 {
+                    // The house streak — consecutive verified all-clear days.
+                    HStack(spacing: 3) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.orange)
+                            .symbolEffect(.bounce, value: streak)
+                        Text(String(format: String(localized: "watch_streak"), streak))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.orange)
+                            .contentTransition(.numericText())
+                    }
+                } else if snapshot.propertyHealthScore != nil {
                     Text("watch_health")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
@@ -340,6 +401,9 @@ private struct TodayGlance: View {
                 Spacer(minLength: 0)
             }
         }
+        // Redacted on the Always-On dim state — messages aren't for
+        // whoever walks past a resting wrist.
+        .privacySensitive()
     }
 
     /// The ProactiveEngine's freshest insight — generated on the iPhone,
@@ -385,6 +449,7 @@ private struct TodayGlance: View {
                 Spacer(minLength: 0)
             }
         }
+        .privacySensitive()
     }
 }
 

@@ -52,14 +52,49 @@ final class WatchStore: NSObject, WCSessionDelegate {
     }
 
     private func ingest(_ context: [String: Any]) {
-        guard let data = context["payload"] as? Data,
-              let decoded = try? JSONDecoder().decode(WatchPayload.self, from: data) else { return }
+        guard let data = context["payload"] as? Data else { return }
+        ingestData(data)
+    }
+
+    private func ingestData(_ data: Data) {
+        guard let decoded = try? JSONDecoder().decode(WatchPayload.self, from: data) else { return }
         Task { @MainActor in
             self.payload = decoded
             Self.defaults.set(data, forKey: Self.cacheKey)
             // Fresh state → repaint the watch-face complications too.
             WidgetCenter.shared.reloadAllTimelines()
         }
+    }
+
+    // MARK: On-demand refresh
+    //
+    // applicationContext delivers "eventually"; when the phone is reachable
+    // RIGHT NOW, the live channel answers instantly — and when it isn't, the
+    // retry haptic says so instead of pretending.
+
+    private(set) var isRefreshing = false
+
+    func requestRefresh() {
+        let session = WCSession.default
+        guard WCSession.isSupported(), session.isReachable else {
+            WKInterfaceDevice.current().play(.retry)
+            return
+        }
+        isRefreshing = true
+        session.sendMessage(["action": "refresh"], replyHandler: { [weak self] reply in
+            Task { @MainActor in
+                self?.isRefreshing = false
+                if let data = reply["payload"] as? Data {
+                    self?.ingestData(data)
+                    WKInterfaceDevice.current().play(.click)
+                }
+            }
+        }, errorHandler: { [weak self] _ in
+            Task { @MainActor in
+                self?.isRefreshing = false
+                WKInterfaceDevice.current().play(.retry)
+            }
+        })
     }
 
     // MARK: Wrist actions

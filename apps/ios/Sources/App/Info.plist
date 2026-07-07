@@ -119,6 +119,7 @@
 		<string>com.prvio.plants</string>
 		<string>com.prvio.chat</string>
 		<string>com.prvio.shopping</string>
+		<string>com.prvio.page</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>

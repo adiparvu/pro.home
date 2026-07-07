@@ -50,6 +50,9 @@ struct WatchPayload: Codable {
     var weatherLo: Double? = nil
     var weatherHi: Double? = nil
     var weatherAdvisory: String? = nil
+    /// Consecutive all-clear days (no overdue tasks, no thirsty plants) —
+    /// the house streak, computed on the phone.
+    var streakDays: Int? = nil
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -274,6 +277,7 @@ enum SharedDataStore {
         var weatherLo: Double? = nil
         var weatherHi: Double? = nil
         var weatherAdvisory: String? = nil
+        var streakDays: Int? = nil
     }
 
     static func writeWatchExtras(_ extras: WatchExtras) {
@@ -311,7 +315,44 @@ enum SharedDataStore {
                             weatherSymbol: extras.weatherSymbol,
                             weatherLo: extras.weatherLo,
                             weatherHi: extras.weatherHi,
-                            weatherAdvisory: extras.weatherAdvisory)
+                            weatherAdvisory: extras.weatherAdvisory,
+                            streakDays: extras.streakDays)
+    }
+
+    // MARK: House streak (consecutive all-clear days)
+
+    private static let streakCountKey = "prvio.streak.count"
+    private static let streakDayKey   = "prvio.streak.lastDay"
+
+    /// Rolls the streak forward from today's observed state and returns the
+    /// current count. All-clear extends (once per day); a bad day resets to
+    /// zero. A day the app never opened breaks the chain honestly — we only
+    /// count days we actually verified.
+    static func updateHouseStreak(allClear: Bool) -> Int {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return 0 }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let yesterday = formatter.string(from: Date().addingTimeInterval(-86_400))
+
+        let lastDay = ud.string(forKey: streakDayKey)
+        var count = ud.integer(forKey: streakCountKey)
+
+        if allClear {
+            if lastDay == today {
+                count = max(count, 1)
+            } else if lastDay == yesterday {
+                count += 1
+            } else {
+                count = 1
+            }
+        } else {
+            count = 0
+        }
+        ud.set(count, forKey: streakCountKey)
+        ud.set(today, forKey: streakDayKey)
+        return count
     }
 
     static func appendPendingSupplyCheck(_ itemId: UUID) {
