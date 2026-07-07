@@ -19,6 +19,7 @@ struct MainTabView: View {
     @State private var elementService = PropertyElementService()
     @State private var zoneService = PropertyZoneService()
     @State private var supplyService = SupplyService()
+    @State private var pantryService = PantryService()
     @State private var receiptService = ReceiptService()
     @State private var stickerService = StickerService()
     @State private var plantService = PlantService()
@@ -121,6 +122,7 @@ struct MainTabView: View {
         .environment(elementService)
         .environment(zoneService)
         .environment(supplyService)
+        .environment(pantryService)
         .environment(receiptService)
         .environment(stickerService)
         .environment(plantService)
@@ -226,6 +228,8 @@ struct MainTabView: View {
             DeliveriesView()
         case .supplies:
             SuppliesView()
+        case .pantry:
+            PantryView()
         case .paintColors:
             PaintColorsView()
         case .photoJournal:

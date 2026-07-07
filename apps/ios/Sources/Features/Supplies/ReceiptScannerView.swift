@@ -15,6 +15,7 @@ struct ReceiptScannerView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
     @Environment(SupplyService.self) private var supplyService: SupplyService?
+    @Environment(PantryService.self) private var pantryService: PantryService?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -55,6 +56,7 @@ struct ReceiptScannerView: View {
                     if let binding = Binding($parsed) {
                         ReceiptReviewView(parsed: binding,
                                           syncActions: syncActions,
+                                          pantryAvailable: pantryService != nil,
                                           isSaving: isSaving) {
                             Task { await save() }
                         }
@@ -230,6 +232,21 @@ struct ReceiptScannerView: View {
         // 1. The killer feature: check off / decrement the shopping list.
         if let supplyService {
             await ReceiptListSync.apply(syncActions, via: supplyService)
+        }
+
+        // 1b. Grow the pantry: each bought product lands on its stock row,
+        // merged by normalized name (fresh load first so merging sees the
+        // household's latest numbers).
+        if let pantryService {
+            await pantryService.load(propertyId: propId)
+            let additions = parsed.items.map { item in
+                let display = item.normalizedName.isEmpty ? item.name : item.normalizedName
+                return PantryMerge.Addition(name: display,
+                                            normalizedName: display,
+                                            quantity: max(item.quantity, 1),
+                                            unit: item.unit)
+            }
+            await pantryService.stock(additions, propertyId: propId, category: parsed.category)
         }
 
         // 2. Persist the receipt and its items.
@@ -494,6 +511,8 @@ private struct ScannerProcessingView: View {
 private struct ReceiptReviewView: View {
     @Binding var parsed: ParsedReceipt
     let syncActions: [ReceiptListSync.ListSyncAction]
+    /// Nil when the pantry module isn't mounted — the note row hides.
+    var pantryAvailable: Bool = false
     let isSaving: Bool
     let onSave: () -> Void
 
@@ -503,6 +522,10 @@ private struct ReceiptReviewView: View {
                 headerCard
                 syncSection
                 itemsSection
+
+                if pantryAvailable, !parsed.items.isEmpty {
+                    pantryNote
+                }
 
                 GlassWideButton(icon: "checkmark", label: "scanner_save", isBusy: isSaving) {
                     onSave()
@@ -514,6 +537,20 @@ private struct ReceiptReviewView: View {
             .padding(.top, AppSpacing.lg)
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    /// The pantry grows on save — say so, quietly.
+    private var pantryNote: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "basket.fill")
+                .font(.system(size: 13))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+            Text(String(format: String(localized: "pantry_stock_note"), parsed.items.count))
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Header

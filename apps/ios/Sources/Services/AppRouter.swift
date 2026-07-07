@@ -26,6 +26,7 @@ final class AppRouter {
         case addSupply
         case plants
         case supplies
+        case pantry
         case documents
         case family
         case contractors
@@ -78,7 +79,7 @@ final class AppRouter {
     /// Every full-screen destination an external entry point can request.
     enum AppRoute: Equatable {
         case home, tasks(id: UUID?), newTask, plants(id: UUID?), supplies,
-             deliveries, chat, familyChat, scan, receipts, notifications,
+             pantry, deliveries, chat, familyChat, scan, receipts, notifications,
              aria, twin, settings, documents, finances, inventory, family,
              profile, contractors, paintColors, photoJournal, addSupply
     }
@@ -173,6 +174,8 @@ final class AppRouter {
             push(.plants)
         case .supplies:
             push(.supplies)
+        case .pantry:
+            push(.pantry)
         case .deliveries:
             push(.deliveries)
         case .documents:
@@ -252,6 +255,8 @@ final class AppRouter {
             navigate(to: .plants(id: pathId))
         case "shopping", "supplies":
             navigate(to: .supplies)
+        case "pantry":
+            navigate(to: .pantry)
         case "deliveries", "packages":
             navigate(to: .deliveries)
         case "chat":

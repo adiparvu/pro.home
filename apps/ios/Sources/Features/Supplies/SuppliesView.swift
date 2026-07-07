@@ -207,6 +207,7 @@ struct SuppliesView: View {
     private var listsScrollContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                if searchText.isEmpty { pantryCard }
                 if !filteredLists.isEmpty {
                     listsGrid
                 } else if !searchText.isEmpty {
@@ -222,6 +223,39 @@ struct SuppliesView: View {
                 await supplyService.load(propertyId: id)
             }
         }
+    }
+
+    /// The pantry door: real stock, fed automatically by receipt scans.
+    private var pantryCard: some View {
+        NavigationLink(destination: PantryView()) {
+            GlassCard(padding: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "basket.fill")
+                        .font(.system(size: 17, weight: .medium))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .mediaGlass(in: Circle())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("pantry_title")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        Text("pantry_card_subtitle")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var listsGrid: some View {
