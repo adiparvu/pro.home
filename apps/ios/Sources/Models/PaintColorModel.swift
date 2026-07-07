@@ -45,7 +45,11 @@ struct PaintColor: Identifiable, Codable, Equatable {
     }
 
     var swatchColor: Color {
-        guard let hex = hexColor, !hex.isEmpty else {
+        // Entries saved with a RAL code but no hex still get their real
+        // color from the built-in catalog.
+        let stored = (hexColor?.isEmpty == false ? hexColor : nil)
+            ?? code.flatMap(PaintCatalog.hex(forCode:))
+        guard let hex = stored, !hex.isEmpty else {
             return Color.primary.opacity(0.3)
         }
         let cleaned = hex.trimmingCharacters(in: .init(charactersIn: "#"))

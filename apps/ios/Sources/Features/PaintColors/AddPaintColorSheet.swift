@@ -14,6 +14,7 @@ struct AddPaintColorSheet: View {
     @State private var hexColor = ""
     @State private var notes = ""
     @State private var isSaving = false
+    @State private var showCatalog = false
 
     private let surfaces = ["walls", "ceiling", "trim", "door", "floor", "other"]
 
@@ -34,9 +35,11 @@ struct AddPaintColorSheet: View {
             }
 
             FormGroup(title: "Color Details") {
+                catalogRow
+                divider
                 fieldRow("paintbrush.fill", "Color Name (required)", $colorName)
                 divider
-                fieldRow("building.2.fill", "Brand (e.g. Farrow & Ball)", $brand)
+                brandRow
                 divider
                 fieldRow("number.circle.fill", "Color Code", $code)
                 divider
@@ -159,12 +162,83 @@ struct AddPaintColorSheet: View {
         .padding(.vertical, 10)
     }
 
+    // One tap fills name + code + hex from the built-in RAL catalog — the
+    // code every Belgian and Romanian paint shop mixes against.
+    private var catalogRow: some View {
+        Button { showCatalog = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "swatchpalette.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28)
+                Text("paint_catalog_pick")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.accentColor)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showCatalog) {
+            PaintCatalogPicker { entry in
+                colorName = entry.name
+                code = entry.code
+                hexColor = entry.hex
+            }
+        }
+    }
+
+    // Free text, with the brands sold in Romania and Belgium one tap away.
+    private var brandRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "building.2.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28)
+            TextField("Brand (e.g. Farrow & Ball)", text: $brand)
+                .font(.system(size: 15))
+                .foregroundStyle(.primary)
+                .tint(.accentColor)
+            Menu {
+                Section("paint_brands_ro") {
+                    ForEach(PaintCatalog.brandsRomania, id: \.self) { b in
+                        Button(b) { brand = b }
+                    }
+                }
+                Section("paint_brands_be") {
+                    ForEach(PaintCatalog.brandsBelgium, id: \.self) { b in
+                        Button(b) { brand = b }
+                    }
+                }
+            } label: {
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(Text("paint_brand_pick"))
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, 13)
+    }
+
     private var hexColorRow: some View {
         HStack(spacing: 10) {
-            Image(systemName: "circle.fill")
-                .font(.system(size: 14))
-                .foregroundStyle(hexPreviewColor)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(hexPreviewColor)
+                .frame(width: 22, height: 22)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.7)
+                )
                 .frame(width: 28)
+                .animation(.smooth(duration: 0.2), value: hexColor)
             Text("#")
                 .font(AppFont.body)
                 .foregroundStyle(Color.primary.opacity(0.4))
