@@ -17,15 +17,9 @@ extension MortgageView {
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
-                Button { isEditing = true } label: {
-                    Text("Set Up Mortgage")
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(.blue, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                GlassWideButton(label: "Set Up Mortgage") {
+                    isEditing = true
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -293,7 +287,7 @@ struct MortgageSetupSheet: View {
         }
     }
 
-    private func fieldCard(_ label: String, symbol: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+    private func fieldCard(_ label: LocalizedStringKey, symbol: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
         GlassCard {
             HStack {
                 Text(label)

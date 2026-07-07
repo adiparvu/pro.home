@@ -267,19 +267,25 @@ struct AddPlantSheet: View {
                         healthStatus = opt.id
                         HapticFeedback.selection()
                     } label: {
-                        Text(LocalizedStringKey(opt.label))
-                            .font(.system(size: 13, weight: healthStatus == opt.id ? .semibold : .regular))
-                            .foregroundStyle(
-                                healthStatus == opt.id ? .white : Color.primary.opacity(0.65)
+                        HStack(spacing: 5) {
+                            if healthStatus == opt.id {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .symbolRenderingMode(.hierarchical)
+                            }
+                            Text(LocalizedStringKey(opt.label))
+                                .font(.system(size: 13, weight: healthStatus == opt.id ? .semibold : .regular))
+                        }
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .mediaGlass(in: Capsule(), interactive: true)
+                        .overlay(
+                            Capsule().strokeBorder(
+                                healthStatus == opt.id ? Color.primary.opacity(0.35) : Color.clear,
+                                lineWidth: 1.5
                             )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(
-                                healthStatus == opt.id
-                                    ? healthColorFor(opt.id)
-                                    : Color.primary.opacity(AppOpacity.subtleFill),
-                                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            )
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -316,27 +322,11 @@ struct AddPlantSheet: View {
     // MARK: Save button
 
     private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if isSaving {
-                    ProgressView().tint(.white)
-                } else {
-                    Text("Add plant")
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
-            .foregroundStyle(
-                canSave ? Color.white : Color.primary.opacity(0.4)
-            )
+        GlassWideButton(label: "Add plant", isBusy: isSaving) {
+            save()
         }
-        .buttonStyle(.plain)
         .disabled(!canSave)
+        .opacity(canSave ? 1 : 0.5)
     }
 
     // MARK: Helpers
@@ -345,16 +335,6 @@ struct AddPlantSheet: View {
         Text(text)
             .font(AppFont.label)
             .foregroundStyle(.secondary)
-    }
-
-    private func healthColorFor(_ id: String) -> Color {
-        switch id {
-        case "great":       return Color(red: 0.15, green: 0.80, blue: 0.4)
-        case "good":        return Color(red: 0.25, green: 0.72, blue: 0.35)
-        case "needs_water": return Color(red: 1.0,  green: 0.62, blue: 0.1)
-        case "critical":    return .red
-        default:            return .gray
-        }
     }
 
     private func save() {

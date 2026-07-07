@@ -247,38 +247,23 @@ struct ExpenseDashboardView: View {
 
     private var quickActionsRow: some View {
         HStack(spacing: 12) {
-            quickAction(icon: "camera.viewfinder", label: String(localized: "expense_scan")) {
-                showScanner = true; HapticFeedback.impact(.light)
+            GlassActionButton(icon: "camera.viewfinder", label: "expense_scan") {
+                showScanner = true
             }
-            quickAction(icon: "plus.circle.fill", label: String(localized: "expense_add")) {
-                showAddReceipt = true; HapticFeedback.impact(.light)
+            .frame(maxWidth: .infinity)
+            GlassActionButton(icon: "plus.circle.fill", label: "expense_add") {
+                showAddReceipt = true
             }
-            quickAction(icon: "target", label: String(localized: "expense_budgets")) {
-                showBudgets = true; HapticFeedback.impact(.light)
+            .frame(maxWidth: .infinity)
+            GlassActionButton(icon: "target", label: "expense_budgets") {
+                showBudgets = true
             }
-            quickAction(icon: "chart.bar.doc.horizontal", label: String(localized: "expense_reports_short")) {
-                showReports = true; HapticFeedback.impact(.light)
-            }
-        }
-    }
-
-    private func quickAction(icon: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 7) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 48, height: 48)
-                    .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                Text(label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
+            .frame(maxWidth: .infinity)
+            GlassActionButton(icon: "chart.bar.doc.horizontal", label: "expense_reports_short") {
+                showReports = true
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Category breakdown

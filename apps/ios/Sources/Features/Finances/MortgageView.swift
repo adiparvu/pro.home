@@ -66,7 +66,7 @@ struct MortgageView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(loanAmount == 0 ? "Setup" : "Edit") {
+                Button(loanAmount == 0 ? String(localized: "Setup") : String(localized: "Edit")) {
                     isEditing = true
                     HapticFeedback.impact(.light)
                 }

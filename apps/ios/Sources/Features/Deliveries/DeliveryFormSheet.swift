@@ -174,14 +174,12 @@ struct DeliveryFormSheet: View {
                         HapticFeedback.selection()
                     } label: {
                         HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(statusColor(for: opt.id).opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: statusIcon(for: opt.id))
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(statusColor(for: opt.id))
-                            }
+                            Image(systemName: statusIcon(for: opt.id))
+                                .font(AppFont.footnoteEmphasis)
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.primary)
+                                .frame(width: 32, height: 32)
+                                .glassCircle()
                             Text(LocalizedStringKey(opt.label))
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
@@ -207,17 +205,6 @@ struct DeliveryFormSheet: View {
                 }
             }
             .liquidGlass(cornerRadius: AppRadius.lg)
-        }
-    }
-
-    private func statusColor(for id: String) -> Color {
-        switch id {
-        case "expected":         return .blue
-        case "out_for_delivery": return .orange
-        case "delivered":        return Color.brandSuccess
-        case "missed":           return .red
-        case "returned":         return .gray
-        default:                 return .gray
         }
     }
 
@@ -273,27 +260,14 @@ struct DeliveryFormSheet: View {
     // MARK: Save button
 
     private var saveButton: some View {
-        Button { Task { await save() } } label: {
-            Group {
-                if isSaving {
-                    ProgressView().tint(.white)
-                } else {
-                    Text(LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"))
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
-            .foregroundStyle(
-                canSave ? Color.white : Color.primary.opacity(0.4)
-            )
+        GlassWideButton(
+            label: LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"),
+            isBusy: isSaving
+        ) {
+            Task { await save() }
         }
-        .buttonStyle(.plain)
         .disabled(!canSave)
+        .opacity(canSave ? 1 : 0.5)
     }
 
     // MARK: Helpers

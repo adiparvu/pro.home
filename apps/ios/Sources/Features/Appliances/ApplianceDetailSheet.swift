@@ -167,7 +167,7 @@ struct ApplianceDetailSheet: View {
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.base)
-                .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous), interactive: true)
         }
         .buttonStyle(.plain)
     }

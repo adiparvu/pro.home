@@ -59,7 +59,7 @@ struct MemberProfileSheet: View {
 
     private var profileHeader: some View {
         VStack(spacing: 10) {
-            MemberAvatar(member: resolvedMember, size: 80)
+            headerAvatar
             Text(resolvedMember.name)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.primary)
@@ -72,44 +72,60 @@ struct MemberProfileSheet: View {
         }
     }
 
+    // Header avatar: the member's photo when one exists, otherwise their
+    // initials in `.primary` on a clear Liquid Glass disc — never a tinted
+    // colour fill.
+    @ViewBuilder
+    private var headerAvatar: some View {
+        if let urlStr = resolvedMember.avatarUrl, !urlStr.isEmpty, URL(string: urlStr) != nil {
+            MemberAvatar(member: resolvedMember, size: 80)
+        } else {
+            Text(resolvedMember.initials)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(.primary)
+                .frame(width: 80, height: 80)
+                .glassCircle()
+        }
+    }
+
     private var quickActions: some View {
         HStack(spacing: 12) {
             // Call is always offered: over the phone line when we have a
             // number, over FaceTime Audio via e-mail otherwise.
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
+                profileActionBtn(icon: "phone.fill", label: "Call") {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
             } else if let email = resolvedMember.email, !email.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
+                profileActionBtn(icon: "phone.fill", label: "Call") {
                     if let url = URL(string: "facetime-audio://\(email)") { UIApplication.shared.open(url) }
                 }
-                profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
+                profileActionBtn(icon: "facetime", label: "FaceTime") {
                     if let url = URL(string: "facetime://\(email)") { UIApplication.shared.open(url) }
                 }
             }
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
+                profileActionBtn(icon: "facetime", label: "FaceTime") {
                     if let url = URL(string: "facetime://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
-                profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp", color: Color(red: 0.16, green: 0.72, blue: 0.37)) {
+                profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp") {
                     let num = phone.filter { $0.isNumber }
                     if let url = URL(string: "https://wa.me/\(num)") { UIApplication.shared.open(url) }
                 }
                 if let tg = resolvedMember.socialLinks?.first(where: { $0.platform == "telegram" }) {
                     let handle = tg.handle.replacingOccurrences(of: "@", with: "")
-                    profileActionBtn(icon: "paperplane.fill", label: "Telegram", color: Color(red: 0.13, green: 0.60, blue: 0.87)) {
+                    profileActionBtn(icon: "paperplane.fill", label: "Telegram") {
                         if let url = URL(string: "tg://resolve?domain=\(handle)") ?? URL(string: "https://t.me/\(handle)") {
                             UIApplication.shared.open(url)
                         }
                     }
                 }
             }
-            profileActionBtn(icon: "bubble.left.fill", label: "Message", color: .purple) {
+            profileActionBtn(icon: "bubble.left.fill", label: "Message") {
                 showDM = true
             }
             if let email = resolvedMember.email, !email.isEmpty {
-                profileActionBtn(icon: "envelope.fill", label: "Email", color: .orange) {
+                profileActionBtn(icon: "envelope.fill", label: "Email") {
                     if let url = URL(string: "mailto:\(email)") { UIApplication.shared.open(url) }
                 }
             }
@@ -117,35 +133,12 @@ struct MemberProfileSheet: View {
     }
 
     // Round liquid-glass action discs — the profile actions read like the
-    // system Contacts card, per the app's Liquid Glass language.
-    private func profileActionBtn(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(AppFont.title3)
-                    .foregroundStyle(color)
-                    .frame(width: 56, height: 56)
-                    .background {
-                        ZStack {
-                            Circle().fill(.ultraThinMaterial)
-                            Circle().fill(color.opacity(0.10))
-                        }
-                    }
-                    .overlay(
-                        Circle().strokeBorder(
-                            LinearGradient(colors: [.white.opacity(0.28), color.opacity(0.15)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 0.8
-                        )
-                    )
-                    .shadow(color: color.opacity(0.18), radius: 8, y: 4)
-                Text(label)
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(0.6))
-            }
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
+    // system Contacts card, per the app's Liquid Glass language:
+    // a 52pt clear glass circle, a monochrome hierarchical glyph, and an
+    // 11pt secondary label. Never tinted.
+    private func profileActionBtn(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        GlassActionButton(icon: icon, label: label, action: action)
+            .frame(maxWidth: .infinity)
     }
 
     private var contactSection: some View {
