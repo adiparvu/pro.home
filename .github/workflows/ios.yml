@@ -16,8 +16,10 @@ jobs:
   deploy:
     name: Build & Upload to TestFlight
     # Uploads are on-demand only (owner's call) — pushes run just the tests.
-    # Trigger from the Actions tab (Run Workflow) or via the API.
-    if: github.event_name == 'workflow_dispatch'
+    # Trigger from the Actions tab (Run Workflow), or push a commit whose
+    # message carries the [deploy] marker (the API dispatch needs a
+    # permission this integration doesn't have).
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy]')
     runs-on: macos-26
     timeout-minutes: 45
 
