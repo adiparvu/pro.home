@@ -77,7 +77,7 @@ final class ContractorAccountMatchTests: XCTestCase {
     }
 
     func testEmailWinsOverPhoneWhenBothPresent() {
-        let byEmail = member(name: "Email Match", email: "ion@x.ro", phone: "0711111111")
+        let byEmail = member(name: "Email Match", phone: "0711111111", email: "ion@x.ro")
         let byPhone = member(name: "Phone Match", phone: "0745123456")
         let c = contractor(phone: "+40745123456", email: "ION@x.ro")
         XCTAssertEqual(ContractorAccountMatch.member(for: c, in: [byPhone, byEmail])?.id, byEmail.id)
