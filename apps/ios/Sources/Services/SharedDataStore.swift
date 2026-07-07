@@ -137,20 +137,32 @@ struct DeliveryCatalogEntry: Codable {
 
 enum WatchActionRelay {
     private static let key = "prvio.watch.pendingRelay"
-    private static var relayDefaults: UserDefaults {
-        UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
-    }
 
     static func append(action: String, id: String) {
-        var pending = (relayDefaults.array(forKey: key) as? [[String: String]]) ?? []
-        pending.append(["action": action, "id": id])
-        relayDefaults.set(pending, forKey: key)
+        guard let data = try? JSONEncoder().encode(["action": action, "id": id]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        SharedDataStore.coordinateQueue("watchRelay", legacyKey: nil) { queue in
+            queue.append(json)
+        }
     }
 
     static func drain() -> [[String: String]] {
-        let pending = (relayDefaults.array(forKey: key) as? [[String: String]]) ?? []
-        relayDefaults.removeObject(forKey: key)
-        return pending
+        var drained = SharedDataStore.coordinateQueue("watchRelay", legacyKey: nil) { (queue: inout [String]) -> [[String: String]] in
+            let entries = queue.compactMap { json -> [String: String]? in
+                json.data(using: .utf8)
+                    .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }
+            }
+            queue.removeAll()
+            return entries
+        } ?? []
+        // One-time drain of actions a pre-coordination build queued in
+        // UserDefaults (dictionary elements — the generic drain can't).
+        if let ud = UserDefaults(suiteName: SharedDataStore.suiteName),
+           let legacy = ud.array(forKey: key) as? [[String: String]], !legacy.isEmpty {
+            ud.removeObject(forKey: key)
+            drained = legacy + drained
+        }
+        return drained
     }
 }
 
@@ -210,20 +222,80 @@ enum SharedDataStore {
     }
 
     // MARK: Pending actions (written by App Intents, processed by main app on foreground)
+    //
+    // Every pending queue used to be a UserDefaults array, but UserDefaults
+    // read-modify-write is not atomic across processes: a widget tap (in the
+    // extension process) racing the app's foreground drain could silently
+    // drop actions. Each queue is now a JSON file in the App Group container
+    // and every mutation runs inside NSFileCoordinator's writing block — the
+    // system serializes coordinated access across all group processes. The
+    // old UserDefaults key is drained into the file on first touch so no
+    // action written by a previous build is lost.
+
+    private static var queuesDirectory: URL? {
+        guard let container = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: suiteName) else { return nil }
+        let dir = container.appendingPathComponent("Queues", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    /// Atomically read-modify-write one queue. `body` mutates the queue in
+    /// place; the file is rewritten only when it actually changed (and
+    /// removed when it empties, so the directory never accumulates husks).
+    @discardableResult
+    fileprivate static func coordinateQueue<T>(_ name: String,
+                                           legacyKey: String?,
+                                           _ body: (inout [String]) -> T) -> T? {
+        guard let url = queuesDirectory?.appendingPathComponent(name + ".json") else { return nil }
+        var result: T?
+        let coordinator = NSFileCoordinator()
+        var coordError: NSError?
+        coordinator.coordinate(writingItemAt: url, options: [], error: &coordError) { url in
+            var queue = (try? Data(contentsOf: url))
+                .flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
+            var dirty = false
+            if let legacyKey, let ud = UserDefaults(suiteName: suiteName),
+               let legacy = ud.array(forKey: legacyKey) as? [String], !legacy.isEmpty {
+                queue = legacy + queue
+                ud.removeObject(forKey: legacyKey)
+                dirty = true
+            }
+            let before = queue
+            result = body(&queue)
+            if queue != before { dirty = true }
+            guard dirty else { return }
+            if queue.isEmpty {
+                try? FileManager.default.removeItem(at: url)
+            } else if let data = try? JSONEncoder().encode(queue) {
+                try? data.write(to: url, options: .atomic)
+            }
+        }
+        return result
+    }
+
+    /// Append once (the queue is idempotent — a second tap on the same
+    /// button must not produce a second action).
+    private static func coordinatedAppendUnique(_ name: String, legacyKey: String?, _ value: String) {
+        coordinateQueue(name, legacyKey: legacyKey) { queue in
+            if !queue.contains(value) { queue.append(value) }
+        }
+    }
+
+    private static func coordinatedPop(_ name: String, legacyKey: String?) -> [String] {
+        coordinateQueue(name, legacyKey: legacyKey) { queue in
+            let drained = queue
+            queue.removeAll()
+            return drained
+        } ?? []
+    }
 
     static func appendPendingWatering(_ plantId: UUID) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingWateringsKey) as? [String]) ?? []
-        let str = plantId.uuidString
-        if !pending.contains(str) { pending.append(str) }
-        ud.set(pending, forKey: pendingWateringsKey)
+        coordinatedAppendUnique("waterings", legacyKey: pendingWateringsKey, plantId.uuidString)
     }
 
     static func popPendingWaterings() -> [UUID] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let ids = ((ud.array(forKey: pendingWateringsKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
-        ud.removeObject(forKey: pendingWateringsKey)
-        return ids
+        coordinatedPop("waterings", legacyKey: pendingWateringsKey).compactMap { UUID(uuidString: $0) }
     }
 
     // MARK: Supply catalog
@@ -260,17 +332,14 @@ enum SharedDataStore {
     /// Each element is one "consume 1" tap — duplicates are meaningful,
     /// so this appends unconditionally (unlike the idempotent check queues).
     static func appendPendingPantryConsume(_ itemId: UUID) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingPantryConsumesKey) as? [String]) ?? []
-        pending.append(itemId.uuidString)
-        ud.set(pending, forKey: pendingPantryConsumesKey)
+        coordinateQueue("pantryConsumes", legacyKey: pendingPantryConsumesKey) { queue in
+            queue.append(itemId.uuidString)
+        }
     }
 
     static func popPendingPantryConsumes() -> [UUID] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let ids = ((ud.array(forKey: pendingPantryConsumesKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
-        ud.removeObject(forKey: pendingPantryConsumesKey)
-        return ids
+        coordinatedPop("pantryConsumes", legacyKey: pendingPantryConsumesKey)
+            .compactMap { UUID(uuidString: $0) }
     }
 
     static func applyLocalPantryConsume(_ id: UUID) {
@@ -381,8 +450,12 @@ enum SharedDataStore {
             return (allWatchPages, [])
         }
         let stored = (ud.array(forKey: watchPageOrderKey) as? [String]) ?? []
-        var order = stored.filter { allWatchPages.contains($0) }
-        order += allWatchPages.filter { !order.contains($0) }
+        // Dedupe while filtering: a duplicated key in the stored order
+        // becomes two ForEach rows with the same identity on the watch —
+        // undefined behavior that can crash the app at first render.
+        var seen = Set<String>()
+        var order = stored.filter { allWatchPages.contains($0) && seen.insert($0).inserted }
+        order += allWatchPages.filter { !seen.contains($0) }
         let hidden = Set((ud.array(forKey: watchHiddenPagesKey) as? [String]) ?? [])
             .intersection(allWatchPages)
         return (order, hidden)
@@ -447,22 +520,43 @@ enum SharedDataStore {
     private static let pendingSessionKey = "prvio.pending.session"
 
     static func writePendingSessionStart(taskId: UUID, title: String, startedAt: Date) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        ud.set(["id": taskId.uuidString, "title": title,
-                "startedAt": String(startedAt.timeIntervalSince1970)],
-               forKey: pendingSessionKey)
+        writePendingSessionEvent(["id": taskId.uuidString, "title": title,
+                                  "startedAt": String(startedAt.timeIntervalSince1970)])
     }
 
     static func writePendingSessionEnd() {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        ud.set(["end": "1"], forKey: pendingSessionKey)
+        writePendingSessionEvent(["end": "1"])
+    }
+
+    /// The session slot rides the coordinated queue as a single JSON-encoded
+    /// element — the newest event replaces whatever was waiting, as before.
+    private static func writePendingSessionEvent(_ event: [String: String]) {
+        guard let data = try? JSONEncoder().encode(event),
+              let json = String(data: data, encoding: .utf8) else { return }
+        coordinateQueue("session", legacyKey: nil) { queue in
+            queue = [json]
+        }
+        // The slot moved out of UserDefaults — clear any event an older
+        // build left there so it can't resurrect after this one is consumed.
+        UserDefaults(suiteName: suiteName)?.removeObject(forKey: pendingSessionKey)
     }
 
     /// nil = nothing pending; (nil) start = the session should END.
     static func consumePendingSessionEvent() -> (start: (taskId: UUID, title: String, startedAt: Date)?, isEnd: Bool)? {
-        guard let ud = UserDefaults(suiteName: suiteName),
-              let dict = ud.dictionary(forKey: pendingSessionKey) as? [String: String] else { return nil }
-        ud.removeObject(forKey: pendingSessionKey)
+        var event: [String: String]?
+        coordinateQueue("session", legacyKey: nil) { queue in
+            if let json = queue.first, let data = json.data(using: .utf8) {
+                event = try? JSONDecoder().decode([String: String].self, from: data)
+            }
+            queue.removeAll()
+        }
+        // One-time drain of a slot written by a pre-coordination build.
+        if event == nil, let ud = UserDefaults(suiteName: suiteName),
+           let legacy = ud.dictionary(forKey: pendingSessionKey) as? [String: String] {
+            ud.removeObject(forKey: pendingSessionKey)
+            event = legacy
+        }
+        guard let dict = event else { return nil }
         if dict["end"] == "1" { return (start: nil, isEnd: true) }
         guard let idStr = dict["id"], let id = UUID(uuidString: idStr),
               let title = dict["title"],
@@ -471,18 +565,12 @@ enum SharedDataStore {
     }
 
     static func appendPendingSupplyCheck(_ itemId: UUID) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingSupplyChecksKey) as? [String]) ?? []
-        let str = itemId.uuidString
-        if !pending.contains(str) { pending.append(str) }
-        ud.set(pending, forKey: pendingSupplyChecksKey)
+        coordinatedAppendUnique("supplyChecks", legacyKey: pendingSupplyChecksKey, itemId.uuidString)
     }
 
     static func popPendingSupplyChecks() -> [UUID] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let ids = ((ud.array(forKey: pendingSupplyChecksKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
-        ud.removeObject(forKey: pendingSupplyChecksKey)
-        return ids
+        coordinatedPop("supplyChecks", legacyKey: pendingSupplyChecksKey)
+            .compactMap { UUID(uuidString: $0) }
     }
 
     // MARK: App context for in-app intents (primary property + display name)
@@ -511,17 +599,13 @@ enum SharedDataStore {
     private static let pendingWatchTasksKey = "prvio.pending.watchTasks"
 
     static func appendPendingWatchTask(_ title: String) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingWatchTasksKey) as? [String]) ?? []
-        pending.append(title)
-        ud.set(pending, forKey: pendingWatchTasksKey)
+        coordinateQueue("watchTasks", legacyKey: pendingWatchTasksKey) { queue in
+            queue.append(title)
+        }
     }
 
     static func popPendingWatchTasks() -> [String] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let titles = (ud.array(forKey: pendingWatchTasksKey) as? [String]) ?? []
-        ud.removeObject(forKey: pendingWatchTasksKey)
-        return titles
+        coordinatedPop("watchTasks", legacyKey: pendingWatchTasksKey)
     }
 
     // MARK: Chat replies typed on a notification (delegate → app → Supabase)
@@ -529,17 +613,13 @@ enum SharedDataStore {
     private static let pendingChatRepliesKey = "prvio.pending.chatReplies"
 
     static func appendPendingChatReply(_ text: String) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingChatRepliesKey) as? [String]) ?? []
-        pending.append(text)
-        ud.set(pending, forKey: pendingChatRepliesKey)
+        coordinateQueue("chatReplies", legacyKey: pendingChatRepliesKey) { queue in
+            queue.append(text)
+        }
     }
 
     static func popPendingChatReplies() -> [String] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let texts = (ud.array(forKey: pendingChatRepliesKey) as? [String]) ?? []
-        ud.removeObject(forKey: pendingChatRepliesKey)
-        return texts
+        coordinatedPop("chatReplies", legacyKey: pendingChatRepliesKey)
     }
 
     // MARK: Control Center hand-off (control tap → app navigation)
@@ -632,17 +712,11 @@ enum SharedDataStore {
     }
 
     static func appendPendingCompletion(_ taskId: UUID) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var pending = (ud.array(forKey: pendingCompletionsKey) as? [String]) ?? []
-        let str = taskId.uuidString
-        if !pending.contains(str) { pending.append(str) }
-        ud.set(pending, forKey: pendingCompletionsKey)
+        coordinatedAppendUnique("completions", legacyKey: pendingCompletionsKey, taskId.uuidString)
     }
 
     static func popPendingCompletions() -> [UUID] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let ids = ((ud.array(forKey: pendingCompletionsKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
-        ud.removeObject(forKey: pendingCompletionsKey)
-        return ids
+        coordinatedPop("completions", legacyKey: pendingCompletionsKey)
+            .compactMap { UUID(uuidString: $0) }
     }
 }

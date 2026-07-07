@@ -86,7 +86,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "830"
+        CURRENT_PROJECT_VERSION: "831"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -163,7 +163,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "830"
+        CURRENT_PROJECT_VERSION: "831"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -180,6 +180,7 @@ targets:
       - path: Watch
         excludes:
           - "Widgets/**"
+          - "Info.plist"
       - path: Sources/Services/SharedDataStore.swift
     dependencies:
       - target: PRVIOWatchWidgets
@@ -200,8 +201,11 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "830"
+        CURRENT_PROJECT_VERSION: "831"
         GENERATE_INFOPLIST_FILE: YES
+        # Merged into the generated plist — declares NSUserActivityTypes
+        # (Handoff advertising without it crashes the app on device).
+        INFOPLIST_FILE: Watch/Info.plist
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
@@ -244,10 +248,13 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "830"
+        CURRENT_PROJECT_VERSION: "831"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        # RelevanceKit only exists on watchOS 11+ — a hard link makes the
+        # widget extension undyld-loadable on watchOS 10 devices.
+        OTHER_LDFLAGS: "-weak_framework RelevanceKit"
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"

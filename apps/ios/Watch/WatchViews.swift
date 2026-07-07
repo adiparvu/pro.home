@@ -102,6 +102,14 @@ struct WatchRootView: View {
     /// Default order when the phone hasn't sent a preference yet.
     private static let defaultOrder = ["tasks", "plants", "shopping", "pantry", "deliveries", "map"]
 
+    /// The payload's page order, deduped defensively — a payload cached by
+    /// an older phone build can carry duplicate keys, and two ForEach rows
+    /// with the same identity is undefined behavior (crashes on device).
+    private static func orderedPages(_ payload: WatchPayload) -> [String] {
+        var seen = Set<String>()
+        return (payload.pageOrder ?? defaultOrder).filter { seen.insert($0).inserted }
+    }
+
     var body: some View {
         if let payload = store.payload {
             TabView(selection: $selection) {
@@ -110,7 +118,7 @@ struct WatchRootView: View {
                 // The owner's pages, in the owner's order (chosen on the
                 // iPhone). Data-gating stays: an enabled page with nothing
                 // to show still steps aside.
-                ForEach(payload.pageOrder ?? Self.defaultOrder, id: \.self) { key in
+                ForEach(Self.orderedPages(payload), id: \.self) { key in
                     page(for: key, payload: payload)
                 }
             }
