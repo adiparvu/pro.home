@@ -60,8 +60,11 @@ private struct BrandWidgetView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.white.opacity(0.12))
                 .frame(width: 46, height: 46)
-            Image(systemName: "house.fill")
-                .font(.system(size: 21, weight: .bold))
+            Image("BrandMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 26, height: 26)
                 .foregroundStyle(.white)
         }
     }

@@ -15,6 +15,9 @@ concurrency:
 jobs:
   deploy:
     name: Build & Upload to TestFlight
+    # Uploads are on-demand only (owner's call) — pushes run just the tests.
+    # Trigger from the Actions tab (Run Workflow) or via the API.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-26
     timeout-minutes: 45
 

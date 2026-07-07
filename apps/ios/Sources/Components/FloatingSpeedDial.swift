@@ -64,13 +64,27 @@ struct FloatingSpeedDial: View {
                 onSelect(only)
             }
         } label: {
-            Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
-                .font(.system(size: isMenu ? 22 : 20, weight: .bold))
-                .foregroundStyle(.primary)
-                .rotationEffect(.degrees(expanded && isMenu && !reduceMotion ? 45 : 0))
-                .animation(dialAnimation, value: expanded)
-                .frame(width: 58, height: 58)
-                .contentShape(Circle())
+            // The app's monogram is the FAB's face (user's brand mark);
+            // expanding swaps it for the close affordance.
+            Group {
+                if isMenu && !expanded {
+                    Image("BrandMark")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30, height: 30)
+                } else if isMenu {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 20, weight: .bold))
+                } else {
+                    Image(systemName: actions.first?.icon ?? "plus")
+                        .font(.system(size: 20, weight: .bold))
+                }
+            }
+            .foregroundStyle(.primary)
+            .animation(dialAnimation, value: expanded)
+            .frame(width: 58, height: 58)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .glassCircle()

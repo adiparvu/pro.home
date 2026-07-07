@@ -90,16 +90,20 @@ struct QRCodeImage: View {
             .fill(.white)
             .frame(width: badge, height: badge)
             .overlay(
-                PRVBrandMark()
-                    .fill(
+                // The approved monogram (P with the roof) replaces the old
+                // letterform — same white badge, same footprint.
+                Image("BrandMark")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(
                         LinearGradient(
                             colors: [Color(red: 0.16, green: 0.20, blue: 0.52),
                                      Color(red: 0.36, green: 0.20, blue: 0.68)],
                             startPoint: .top, endPoint: .bottom
-                        ),
-                        style: FillStyle(eoFill: true)
+                        )
                     )
-                    .frame(width: badge * 0.62, height: badge * 0.62)
+                    .frame(width: badge * 0.66, height: badge * 0.66)
             )
             .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
     }
