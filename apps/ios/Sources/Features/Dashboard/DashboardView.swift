@@ -16,7 +16,9 @@ struct DashboardView: View {
     @Environment(AppRouter.self) var router
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PlantService.self) var plantService
-    @Environment(DeliveryService.self) private var deliveryService
+    // Not private: DashboardWidgets.swift (extension, separate file) renders
+    // the Deliveries widget from it.
+    @Environment(DeliveryService.self) var deliveryService
     @Environment(PropertyElementService.self) private var elementService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(InventoryService.self) var inventoryService
