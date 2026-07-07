@@ -192,6 +192,7 @@ platform :ios do
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp' 'PRVIOWatch' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp.widgets' 'PRVIOWatchWidgets' 'SU92TVZT8W'")
 
     # App Groups (group.com.prvio.app) are registered and linked in the Apple
     # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
@@ -301,7 +302,7 @@ platform :ios do
       $stdout.flush
     RUBY
 
-    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets'")
+    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets' 'com.prvio.app.watchkitapp' 'com.prvio.app.watchkitapp.widgets'")
 
     # Wait for Developer Portal capability changes to propagate before sigh().
     sleep(12)
@@ -341,6 +342,17 @@ platform :ios do
     )
     watch_uuid = ENV["SIGH_UUID"]
     UI.message("Watch profile UUID: #{watch_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.watchkitapp.widgets",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWatchWidgets_AppStore.mobileprovision",
+      force:          true
+    )
+    watch_widgets_uuid = ENV["SIGH_UUID"]
+    UI.message("Watch widgets profile UUID: #{watch_widgets_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
     # Manual signing: bake cert + profile UUID into the project file per-target
@@ -374,6 +386,16 @@ platform :ios do
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          watch_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWatchWidgets"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.watchkitapp.widgets",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          watch_widgets_uuid
     )
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
@@ -500,6 +522,8 @@ platform :ios do
           <string>#{widgets_uuid}</string>
           <key>com.prvio.app.watchkitapp</key>
           <string>#{watch_uuid}</string>
+          <key>com.prvio.app.watchkitapp.widgets</key>
+          <string>#{watch_widgets_uuid}</string>
         </dict>
       </dict>
       </plist>

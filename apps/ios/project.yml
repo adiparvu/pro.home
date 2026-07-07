@@ -78,7 +78,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "775"
+        CURRENT_PROJECT_VERSION: "776"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -154,7 +154,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "775"
+        CURRENT_PROJECT_VERSION: "776"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -169,7 +169,16 @@ targets:
     platform: watchOS
     sources:
       - path: Watch
+        excludes:
+          - "Widgets/**"
       - path: Sources/Services/SharedDataStore.swift
+    dependencies:
+      - target: PRVIOWatchWidgets
+    entitlements:
+      path: Watch/PRVIOWatch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
     postBuildScripts:
       - name: Generate localization tables
         script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
@@ -182,7 +191,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "775"
+        CURRENT_PROJECT_VERSION: "776"
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -191,6 +200,45 @@ targets:
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.prvio.app
         INFOPLIST_KEY_CFBundleDisplayName: PRVIO
         TARGETED_DEVICE_FAMILY: "4"
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          SWIFT_COMPILATION_MODE: wholemodule
+
+  PRVIOWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: Watch/Widgets
+        excludes:
+          - "Info.plist"
+      - path: Sources/Services/SharedDataStore.swift
+    postBuildScripts:
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
+    entitlements:
+      path: Watch/Widgets/PRVIOWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.watchkitapp.widgets
+        SWIFT_VERSION: "5.10"
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "776"
+        INFOPLIST_FILE: Watch/Widgets/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"

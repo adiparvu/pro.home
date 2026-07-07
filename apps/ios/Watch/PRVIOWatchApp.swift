@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchConnectivity
+import WidgetKit
 
 // MARK: - PRVIO for Apple Watch
 //
@@ -27,11 +28,17 @@ final class WatchStore: NSObject, WCSessionDelegate {
     private(set) var payload: WatchPayload?
 
     private static let cacheKey = "prvio.watch.payload"
+    /// The App Group suite, so the watch-face complications read the same
+    /// payload the app renders. Falls back to standard if the group is
+    /// unavailable (e.g. simulator without entitlements).
+    private static var defaults: UserDefaults {
+        UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+    }
 
     override init() {
         super.init()
         // Render instantly from the last delivery, then refresh live.
-        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+        if let data = Self.defaults.data(forKey: Self.cacheKey),
            let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
             payload = cached
         }
@@ -45,7 +52,9 @@ final class WatchStore: NSObject, WCSessionDelegate {
               let decoded = try? JSONDecoder().decode(WatchPayload.self, from: data) else { return }
         Task { @MainActor in
             self.payload = decoded
-            UserDefaults.standard.set(data, forKey: Self.cacheKey)
+            Self.defaults.set(data, forKey: Self.cacheKey)
+            // Fresh state → repaint the watch-face complications too.
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 
