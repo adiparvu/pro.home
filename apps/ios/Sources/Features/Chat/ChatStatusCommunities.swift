@@ -389,7 +389,7 @@ struct StoryViewer: View {
     private static let tickInterval: Double = 1.0 / 30.0
     /// Progress clock. Pausing is a hard freeze: ticks are ignored while
     /// `isPaused`, so the bar cannot creep during a long-press or drag.
-    private let tick = Timer.publish(every: Self.tickInterval, on: .main, in: .common).autoconnect()
+    private let tick = Timer.publish(every: StoryViewer.tickInterval, on: .main, in: .common).autoconnect()
 
     init(groups: [StatusGroup], startGroupId: UUID, myName: String,
          members: [FamilyMember], propertyId: UUID?) {
