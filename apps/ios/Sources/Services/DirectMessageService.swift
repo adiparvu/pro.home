@@ -131,6 +131,42 @@ final class DirectMessageService {
         messages(with: partner, myName: myName).max { $0.createdAt < $1.createdAt }
     }
 
+    // MARK: - Bulk conversation summaries (one pass, every partner)
+
+    struct ConversationSummary {
+        var last: DirectMessage?
+        var unread: Int = 0
+    }
+
+    /// Everything the conversation list needs about every DM thread, built
+    /// in ONE pass over the store. The list used to call `lastMessage` +
+    /// `unreadCount` per member — O(members × dms), re-run several times
+    /// per render. Same semantics: hidden messages excluded, unread counts
+    /// only inbound messages newer than the per-partner last-seen mark.
+    func conversationSummaries(myName: String) -> [String: ConversationSummary] {
+        _ = localRevision  // observe hidden-ids / last-seen changes
+        let hidden = hiddenIds()
+        var out: [String: ConversationSummary] = [:]
+        var seenDates: [String: Date] = [:]
+        for m in dms where !hidden.contains(m.id) {
+            let partner: String
+            let inbound: Bool
+            if m.recipientName == myName { partner = m.senderName; inbound = true }
+            else if m.senderName == myName { partner = m.recipientName; inbound = false }
+            else { continue }
+            var s = out[partner] ?? ConversationSummary()
+            if s.last.map({ m.createdAt > $0.createdAt }) ?? true { s.last = m }
+            if inbound {
+                let seen: Date
+                if let cached = seenDates[partner] { seen = cached }
+                else { seen = lastSeenDate(for: partner); seenDates[partner] = seen }
+                if (m.date ?? .distantPast) > seen { s.unread += 1 }
+            }
+            out[partner] = s
+        }
+        return out
+    }
+
     // MARK: - Older history (per conversation, server-paged)
 
     /// Conversations whose full server history is already in memory

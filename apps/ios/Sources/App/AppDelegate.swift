@@ -10,6 +10,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         ProactiveEngine.registerBackgroundTask()
         ProactiveEngine.scheduleBackgroundRefresh()
+        // Apple's own crash/hang/battery telemetry, persisted on-device —
+        // the measured ground any future self-healing must stand on.
+        MetricsMonitor.shared.start()
         // Ask APNs for a token if the user already granted notifications.
         PushTokenService.registerIfAuthorized()
         // AsyncImage (chat photos, avatars, stickers) loads through

@@ -749,8 +749,12 @@ struct ConversationsView: View {
         // DM entries — WhatsApp-style: a person appears in the list only once
         // the conversation has at least one message (either direction). Newly
         // added members stay reachable via the "+" new-conversation flow.
+        // One pass over the DM store builds every thread's preview state —
+        // the per-member lastMessage/unreadCount scans were O(members × dms)
+        // and ran several times per render.
+        let summaries = directMessageService.conversationSummaries(myName: myName)
         for member in familyService.members {
-            guard let last = directMessageService.lastMessage(with: member.name, myName: myName) else {
+            guard let last = summaries[member.name]?.last else {
                 continue
             }
             let preview: String = {
@@ -769,7 +773,7 @@ struct ConversationsView: View {
                 name: member.name,
                 preview: preview,
                 date: parseISODate(last.createdAt),
-                unread: directMessageService.unreadCount(from: member.name, myName: myName),
+                unread: summaries[member.name]?.unread ?? 0,
                 isGroup: false,
                 member: member
             ))
