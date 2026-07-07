@@ -160,11 +160,18 @@ struct CamerasView: View {
 
     // MARK: - Scenes
 
-    /// Home × action-set pairs so chips from several homes can share one row.
-    private var scenePairs: [(home: HMHome, actionSet: HMActionSet)] {
+    /// Home × action-set pairs so chips from several homes can share one row
+    /// (a struct because ForEach can't key-path into tuple elements).
+    private struct ScenePair: Identifiable {
+        let home: HMHome
+        let actionSet: HMActionSet
+        var id: UUID { actionSet.uniqueIdentifier }
+    }
+
+    private var scenePairs: [ScenePair] {
         guard homeKit.isAuthorized else { return [] }
         return homeKit.homes.flatMap { home in
-            homeKit.actionSets(in: home).map { (home, $0) }
+            homeKit.actionSets(in: home).map { ScenePair(home: home, actionSet: $0) }
         }
     }
 
@@ -176,7 +183,7 @@ struct CamerasView: View {
                 sectionHeader("cameras_scenes_section")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.sm) {
-                        ForEach(pairs, id: \.actionSet.uniqueIdentifier) { pair in
+                        ForEach(pairs) { pair in
                             sceneChip(pair.actionSet, in: pair.home)
                         }
                     }

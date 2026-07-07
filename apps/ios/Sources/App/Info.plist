@@ -51,6 +51,8 @@
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to attach photos to property records and tasks.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Used to save security camera snapshots to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Used for voice search to find tasks, documents, and finances hands-free.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

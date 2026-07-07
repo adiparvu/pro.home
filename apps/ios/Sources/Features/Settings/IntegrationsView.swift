@@ -61,6 +61,7 @@ struct IntegrationsView: View {
             case .receiptScanner: ReceiptScannerView()   // brings its own NavigationStack
             case .emailImport:    AutoImportView()       // brings its own NavigationStack
             case .watchShowcase:  NavigationStack { WatchShowcaseView() }
+            case .cameras:        NavigationStack { CamerasView() }
             }
         }
     }

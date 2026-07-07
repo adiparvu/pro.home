@@ -230,6 +230,8 @@ struct MainTabView: View {
             SuppliesView()
         case .pantry:
             PantryView()
+        case .cameras:
+            CamerasView()
         case .paintColors:
             PaintColorsView()
         case .photoJournal:

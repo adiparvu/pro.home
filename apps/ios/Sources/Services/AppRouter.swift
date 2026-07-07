@@ -27,6 +27,7 @@ final class AppRouter {
         case plants
         case supplies
         case pantry
+        case cameras
         case documents
         case family
         case contractors
@@ -79,9 +80,10 @@ final class AppRouter {
     /// Every full-screen destination an external entry point can request.
     enum AppRoute: Equatable {
         case home, tasks(id: UUID?), newTask, plants(id: UUID?), supplies,
-             pantry, deliveries, chat, familyChat, scan, receipts, notifications,
-             aria, twin, settings, documents, finances, inventory, family,
-             profile, contractors, paintColors, photoJournal, addSupply
+             pantry, cameras, deliveries, chat, familyChat, scan, receipts,
+             notifications, aria, twin, settings, documents, finances,
+             inventory, family, profile, contractors, paintColors,
+             photoJournal, addSupply
     }
 
     /// Bumped on every close-all — screens that own local sheets (Dashboard's
@@ -176,6 +178,8 @@ final class AppRouter {
             push(.supplies)
         case .pantry:
             push(.pantry)
+        case .cameras:
+            push(.cameras)
         case .deliveries:
             push(.deliveries)
         case .documents:
@@ -257,6 +261,8 @@ final class AppRouter {
             navigate(to: .supplies)
         case "pantry":
             navigate(to: .pantry)
+        case "cameras":
+            navigate(to: .cameras)
         case "deliveries", "packages":
             navigate(to: .deliveries)
         case "chat":

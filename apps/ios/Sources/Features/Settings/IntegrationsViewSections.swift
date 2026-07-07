@@ -269,12 +269,13 @@ extension IntegrationsView {
 
     var securitySection: some View {
         IntegrationGroup(title: "Security") {
-            // IP cameras and motion sensors connect through the local IoT hub.
-            Button { vm.activeSheet = .iotHub } label: {
+            // Real camera integration: HomeKit accessories stream natively;
+            // RTSP cameras are polled via their HTTP snapshot endpoint.
+            Button { vm.activeSheet = .cameras } label: {
                 IntegrationRowContent(
-                    icon: "camera.fill", color: .indigo,
-                    title: "Security Cameras",
-                    description: "Conectează camere IP și senzori de mișcare prin hub-ul IoT local.")
+                    icon: "video.fill", color: .indigo,
+                    title: "cameras_title",
+                    description: "cameras_row_desc")
             }
             .buttonStyle(.plain)
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),

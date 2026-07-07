@@ -315,6 +315,24 @@ platform :ios do
             })
             puts "  enable NFC_TAG_READING → HTTP #{rc.code}: #{rc.body[0..400]}"
           end
+
+          # The Cameras page streams HomeKit camera accessories — without the
+          # HomeKit capability the regenerated profile lacks the
+          # com.apple.developer.homekit entitlement and HMHomeManager reports
+          # no homes on real devices.
+          hk_cap = caps.find { |c| c.dig("attributes","capabilityType") == "HOMEKIT" }
+          if hk_cap
+            puts "  HOMEKIT already enabled (id=#{hk_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "HOMEKIT" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable HOMEKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
         end
       end
       puts "\nsetup_app_groups done."
