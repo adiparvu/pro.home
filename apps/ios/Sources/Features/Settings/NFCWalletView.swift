@@ -395,7 +395,9 @@ struct NFCTagNameSheet: View {
                                 .pickerStyle(.segmented)
 
                                 if linkedType != "none" {
-                                    TextField("Name of linked \(linkedType)", text: $linkedName)
+                                    TextField(linkedType == "zone" ? "nfc_linked_name_zone"
+                                              : linkedType == "appliance" ? "nfc_linked_name_appliance"
+                                              : "nfc_linked_name_element", text: $linkedName)
                                         .font(.system(size: 15))
                                         .foregroundStyle(.primary)
                                         .tint(.accentColor)

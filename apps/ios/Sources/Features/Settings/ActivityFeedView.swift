@@ -25,40 +25,49 @@ private enum ActivityCategory: String, CaseIterable {
     case appliances = "Appliances"
     case plants     = "Plants"
 
+    /// Outline symbols — the chips and timeline render monochrome and
+    /// hierarchical, so the lighter variants read cleaner than `.fill`.
     var icon: String {
         switch self {
-        case .all:        return "square.grid.2x2.fill"
-        case .tasks:      return "checkmark.circle.fill"
-        case .finances:   return "banknote.fill"
-        case .documents:  return "doc.text.fill"
-        case .elements:   return "cube.fill"
-        case .appliances: return "washer.fill"
-        case .plants:     return "leaf.fill"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .all:        return .blue
-        case .tasks:      return Color.brandSuccess
-        case .finances:   return Color.brandSkyBlue
-        case .documents:  return .orange
-        case .elements:   return .purple
-        case .appliances: return Color.brandPrimaryBlue
-        case .plants:     return Color(red: 0.15, green: 0.75, blue: 0.40)
+        case .all:        return "square.grid.2x2"
+        case .tasks:      return "checkmark.circle"
+        case .finances:   return "banknote"
+        case .documents:  return "doc.text"
+        case .elements:   return "cube"
+        case .appliances: return "washer"
+        case .plants:     return "leaf"
         }
     }
 }
 
+/// One synthesized feed entry. `title` is a `LocalizedStringKey` built from a
+/// catalog key at the synthesis site, so every event title resolves through
+/// Localizable.xcstrings (ro + en) instead of shipping raw English text.
 private struct ActivityEvent: Identifiable {
     let id = UUID()
     let icon: String
-    let color: Color
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
     let date: Date
     let member: String
     let category: ActivityCategory
+}
+
+/// Events of one calendar day, newest first.
+private struct ActivityDayGroup: Identifiable {
+    let day: Date
+    let events: [ActivityEvent]
+    var id: Date { day }
+}
+
+/// The whole feed derived in a single pass per body evaluation — the body
+/// never re-filters or re-groups inside its loops.
+private struct ActivityFeedSnapshot {
+    let groups: [ActivityDayGroup]
+    /// Events inside the selected period, before category/member filters —
+    /// distinguishes "no activity at all" from "filters matched nothing".
+    let periodCount: Int
+    let visibleCount: Int
 }
 
 // MARK: - View
@@ -72,26 +81,29 @@ struct ActivityFeedView: View {
     @Environment(PropertyElementService.self) private var elementService
     @Environment(ApplianceService.self) private var applianceService
     @Environment(PlantService.self) private var plantService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var period:           ActivityPeriod   = .month
     @State private var selectedMember:   String?          = nil
     @State private var selectedCategory: ActivityCategory = .all
 
+    /// Internal sentinel for "the signed-in user" — kept stable for filter
+    /// equality; presented through the localized "You" catalog key.
     private let currentUser = "You"
+
+    private var filterAnimation: Animation? { reduceMotion ? nil : .smooth }
 
     // MARK: Event synthesis
 
     private var allEvents: [ActivityEvent] {
         var events: [ActivityEvent] = []
-        let isoFull = ISO8601DateFormatter()
 
         // Finances
         for r in financialService.records {
             guard let date = AppDate.day(from: r.date) else { continue }
             let isIncome = r.type == "income"
             events.append(ActivityEvent(
-                icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                color:    isIncome ? Color.brandSuccess : .red,
+                icon:     isIncome ? "arrow.down.circle" : "arrow.up.circle",
                 title:    isIncome ? "Income added" : "Expense recorded",
                 subtitle: "\(r.title) · \(financialService.moneyDisplay(r.amount))",
                 date:     date,
@@ -102,10 +114,9 @@ struct ActivityFeedView: View {
 
         // Documents
         for doc in documentService.documents {
-            let date = isoFull.date(from: doc.createdAt) ?? Date()
+            let date = AppDate.timestamp(from: doc.createdAt) ?? Date()
             events.append(ActivityEvent(
                 icon:     doc.categoryIcon,
-                color:    .orange,
                 title:    "Document added",
                 subtitle: doc.name,
                 date:     date,
@@ -115,24 +126,23 @@ struct ActivityFeedView: View {
         }
 
         // Tasks
-        let isoTask = makeISOParser()
         for task in taskService.tasks {
-            let date = isoTask(task.updatedAt) ?? isoTask(task.createdAt) ?? Date()
+            let date = AppDate.timestamp(from: task.updatedAt)
+                ?? AppDate.timestamp(from: task.createdAt) ?? Date()
             let taskMember = task.assigneeNames.first ?? currentUser
             if task.isCompleted {
                 events.append(ActivityEvent(
-                    icon:     "checkmark.circle.fill",
-                    color:    Color.brandSuccess,
+                    icon:     "checkmark.circle",
                     title:    "Task completed",
                     subtitle: task.title,
                     date:     date,
                     member:   taskMember,
                     category: .tasks
                 ))
-            } else if let due = task.dueDate, let dueDate = isoTask(due), dueDate < Date() {
+            } else if let due = task.dueDate,
+                      let dueDate = AppDate.timestamp(from: due), dueDate < Date() {
                 events.append(ActivityEvent(
-                    icon:     "exclamationmark.circle.fill",
-                    color:    .red,
+                    icon:     "exclamationmark.circle",
                     title:    "Task overdue",
                     subtitle: task.title,
                     date:     dueDate,
@@ -140,10 +150,9 @@ struct ActivityFeedView: View {
                     category: .tasks
                 ))
             } else {
-                let created = isoTask(task.createdAt) ?? Date()
+                let created = AppDate.timestamp(from: task.createdAt) ?? Date()
                 events.append(ActivityEvent(
-                    icon:     "clock.fill",
-                    color:    .orange,
+                    icon:     "clock",
                     title:    "Task added",
                     subtitle: task.title,
                     date:     created,
@@ -155,10 +164,10 @@ struct ActivityFeedView: View {
 
         // Plants
         for plant in plantService.plants {
-            if let wateredStr = plant.lastWateredAt, let wateredDate = isoTask(wateredStr) {
+            if let wateredStr = plant.lastWateredAt,
+               let wateredDate = AppDate.timestamp(from: wateredStr) {
                 events.append(ActivityEvent(
-                    icon:     "drop.fill",
-                    color:    Color(red: 0.15, green: 0.75, blue: 0.40),
+                    icon:     "drop",
                     title:    "Plant watered",
                     subtitle: plant.name,
                     date:     wateredDate,
@@ -166,11 +175,10 @@ struct ActivityFeedView: View {
                     category: .plants
                 ))
             }
-            let addedDate = isoTask(plant.createdAt) ?? Date()
+            let addedDate = AppDate.timestamp(from: plant.createdAt) ?? Date()
             let plantSubtitle = plant.emoji.isEmpty ? plant.name : "\(plant.emoji) \(plant.name)"
             events.append(ActivityEvent(
-                icon:     "leaf.fill",
-                color:    Color(red: 0.15, green: 0.75, blue: 0.40),
+                icon:     "leaf",
                 title:    "Plant added",
                 subtitle: plantSubtitle,
                 date:     addedDate,
@@ -181,10 +189,9 @@ struct ActivityFeedView: View {
 
         // Property elements
         for el in elementService.elements {
-            let date = isoTask(el.createdAt) ?? Date()
+            let date = AppDate.timestamp(from: el.createdAt) ?? Date()
             events.append(ActivityEvent(
                 icon:     el.elementType.icon,
-                color:    el.layer.color,
                 title:    "Element added",
                 subtitle: el.name,
                 date:     date,
@@ -195,10 +202,9 @@ struct ActivityFeedView: View {
 
         // Appliances
         for ap in applianceService.appliances {
-            let date = isoTask(ap.createdAt) ?? Date()
+            let date = AppDate.timestamp(from: ap.createdAt) ?? Date()
             events.append(ActivityEvent(
                 icon:     ap.categoryIcon,
-                color:    Color.brandPrimaryBlue,
                 title:    "Appliance added",
                 subtitle: [ap.brand, ap.name].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " "),
                 date:     date,
@@ -210,30 +216,27 @@ struct ActivityFeedView: View {
         return events.sorted { $0.date > $1.date }
     }
 
-    private var cutoffDate: Date {
-        Calendar.current.date(byAdding: .day, value: -period.days, to: Date()) ?? Date()
-    }
-
-    private var filteredEvents: [ActivityEvent] {
-        allEvents
-            .filter { $0.date >= cutoffDate }
-            .filter { selectedMember == nil || $0.member == selectedMember }
-            .filter { selectedCategory == .all || $0.category == selectedCategory }
-    }
-
-    private var groupedByDay: [(label: String, events: [ActivityEvent])] {
-        let cal = Calendar.current
-        let formatter = DateFormatter(); formatter.locale = .current
-        let grouped = Dictionary(grouping: filteredEvents) {
-            cal.startOfDay(for: $0.date)
+    /// Filters and groups in one pass; called once per body evaluation.
+    private var feedSnapshot: ActivityFeedSnapshot {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -period.days, to: Date()) ?? Date()
+        let inPeriod = allEvents.filter { $0.date >= cutoff }
+        let visible = inPeriod.filter {
+            (selectedMember == nil || $0.member == selectedMember)
+                && (selectedCategory == .all || $0.category == selectedCategory)
         }
-        return grouped.keys
-            .sorted(by: >)
-            .map { day in
-                formatter.dateFormat = cal.isDateInToday(day) ? "'Today'" :
-                    cal.isDateInYesterday(day) ? "'Yesterday'" : "d MMMM"
-                return (formatter.string(from: day), (grouped[day] ?? []).sorted { $0.date > $1.date })
-            }
+
+        let cal = Calendar.current
+        var buckets: [Date: [ActivityEvent]] = [:]
+        for event in visible {
+            buckets[cal.startOfDay(for: event.date), default: []].append(event)
+        }
+        // `visible` is already newest-first, so each bucket stays sorted.
+        let groups = buckets.keys.sorted(by: >).map {
+            ActivityDayGroup(day: $0, events: buckets[$0] ?? [])
+        }
+        return ActivityFeedSnapshot(groups: groups,
+                                    periodCount: inPeriod.count,
+                                    visibleCount: visible.count)
     }
 
     // MARK: Members for filter
@@ -245,10 +248,11 @@ struct ActivityFeedView: View {
     // MARK: Body
 
     var body: some View {
+        let snapshot = feedSnapshot
         VStack(spacing: 0) {
             PageHeader(titleKey: "Activity", subtitleKey: "PROPERTY")
 
-            periodRow
+            periodRow(count: snapshot.visibleCount)
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.sm)
 
@@ -260,10 +264,10 @@ struct ActivityFeedView: View {
 
             Divider().opacity(0.3).padding(.top, AppSpacing.sm)
 
-            if filteredEvents.isEmpty {
-                emptyState
+            if snapshot.visibleCount == 0 {
+                emptyState(filtersMatchedNothing: snapshot.periodCount > 0)
             } else {
-                timeline
+                timeline(snapshot.groups)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -273,27 +277,34 @@ struct ActivityFeedView: View {
 
     // MARK: Period chips
 
-    private var periodRow: some View {
-        HStack(spacing: 6) {
+    private func periodRow(count: Int) -> some View {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(ActivityPeriod.allCases, id: \.self) { p in
+                let isSelected = period == p
                 Button {
-                    withAnimation(.easeInOut(duration: 0.18)) { period = p }
+                    HapticFeedback.selection()
+                    withAnimation(filterAnimation) { period = p }
                 } label: {
                     Text(LocalizedStringKey(p.rawValue))
-                        .font(.system(size: 12, weight: period == p ? .semibold : .regular))
-                        .foregroundStyle(period == p ? .white : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
-                        .background(period == p ? Color.accentColor : Color.primary.opacity(0.08),
-                                    in: Capsule())
+                        .font(isSelected ? AppFont.captionStrong : AppFont.caption)
+                        .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .filterChip(isSelected: isSelected)
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
             Spacer()
-            Text("\(filteredEvents.count)")
-                .font(AppFont.caption)
+            Text("\(count)")
+                .font(AppFont.caption2)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 10).padding(.vertical, AppSpacing.xs)
-                .background(.regularMaterial, in: Capsule())
+                .monospacedDigit()
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xs)
+                .glassCapsule()
+                .contentTransition(.numericText())
+                .animation(filterAnimation, value: count)
         }
     }
 
@@ -301,33 +312,30 @@ struct ActivityFeedView: View {
 
     private var categoryRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Spacer(minLength: 20)
+            HStack(spacing: AppSpacing.sm) {
                 ForEach(ActivityCategory.allCases, id: \.self) { cat in
                     let isSelected = selectedCategory == cat
                     Button {
-                        withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = cat }
+                        HapticFeedback.selection()
+                        withAnimation(filterAnimation) { selectedCategory = cat }
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: AppSpacing.xxs) {
                             Image(systemName: cat.icon)
                                 .font(AppFont.label)
+                                .symbolRenderingMode(.hierarchical)
                             Text(LocalizedStringKey(cat.rawValue))
-                                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                                .font(isSelected ? AppFont.captionStrong : AppFont.caption)
                         }
-                        .foregroundStyle(isSelected ? cat.color : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.xs)
-                        .background(
-                            isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(AppOpacity.subtleFill),
-                            in: Capsule()
-                        )
-                        .overlay(
-                            Capsule().strokeBorder(isSelected ? cat.color.opacity(0.3) : Color.clear, lineWidth: 1)
-                        )
+                        .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .filterChip(isSelected: isSelected)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
-                Spacer(minLength: 20)
             }
+            .padding(.horizontal, AppSpacing.xl)
         }
     }
 
@@ -335,55 +343,54 @@ struct ActivityFeedView: View {
 
     private var memberRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Spacer(minLength: 20)
+            HStack(spacing: AppSpacing.sm) {
                 ForEach(allMembers, id: \.self) { name in
+                    let isSelected = selectedMember == name
                     Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selectedMember = selectedMember == name ? nil : name
+                        HapticFeedback.selection()
+                        withAnimation(filterAnimation) {
+                            selectedMember = isSelected ? nil : name
                         }
                     } label: {
-                        HStack(spacing: 6) {
+                        HStack(spacing: AppSpacing.xs) {
                             memberAvatar(name: name, size: 22)
-                            Text(name)
-                                .font(.system(size: 13, weight: selectedMember == name ? .semibold : .regular))
-                                .foregroundStyle(selectedMember == name ? .blue : .primary)
+                            Text(displayName(name))
+                                .font(isSelected ? AppFont.captionEmphasis : AppFont.caption)
+                                .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
                         }
-                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(
-                            selectedMember == name
-                                ? Color.accentColor.opacity(0.12)
-                                : Color.primary.opacity(AppOpacity.subtleFill),
-                            in: Capsule()
-                        )
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .filterChip(isSelected: isSelected)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
 
                 if selectedMember != nil {
                     Button {
-                        withAnimation { selectedMember = nil }
+                        HapticFeedback.selection()
+                        withAnimation(filterAnimation) { selectedMember = nil }
                     } label: {
                         Text("All")
-                            .font(.system(size: 13))
+                            .font(AppFont.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
+                            .padding(.horizontal, AppSpacing.md)
+                            .padding(.vertical, AppSpacing.xs)
+                            .filterChip(isSelected: false)
                     }
                     .buttonStyle(.plain)
                 }
-
-                Spacer(minLength: 20)
             }
+            .padding(.horizontal, AppSpacing.xl)
         }
     }
 
     // MARK: Timeline
 
-    private var timeline: some View {
+    private func timeline(_ groups: [ActivityDayGroup]) -> some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                ForEach(groupedByDay, id: \.label) { group in
+            LazyVStack(spacing: AppSpacing.xl, pinnedViews: .sectionHeaders) {
+                ForEach(groups) { group in
                     Section {
                         GlassCard(padding: 0) {
                             VStack(spacing: 0) {
@@ -394,78 +401,102 @@ struct ActivityFeedView: View {
                         }
                         .padding(.horizontal, AppSpacing.xl)
                     } header: {
-                        dayHeader(LocalizedStringKey(group.label))
+                        dayHeader(group.day)
                     }
                 }
                 Spacer(minLength: 100)
             }
             .padding(.top, AppSpacing.md)
+            .animation(filterAnimation, value: period)
+            .animation(filterAnimation, value: selectedCategory)
+            .animation(filterAnimation, value: selectedMember)
         }
     }
 
-    private func dayHeader(_ label: LocalizedStringKey) -> some View {
+    private func dayHeader(_ day: Date) -> some View {
         HStack {
-            Text(label).textCase(.uppercase)
+            dayTitle(day)
+                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
         .background(appBackground)
     }
 
+    /// "Today"/"Yesterday" resolve through the catalog; other days use the
+    /// shared locale-aware formatters (year appended once it's not this year).
+    private func dayTitle(_ day: Date) -> Text {
+        let cal = Calendar.current
+        if cal.isDateInToday(day) { return Text("Today") }
+        if cal.isDateInYesterday(day) { return Text("Yesterday") }
+        let formatter = cal.isDate(day, equalTo: Date(), toGranularity: .year)
+            ? AppDate.monthDay : AppDate.monthDayYear
+        return Text(formatter.string(from: day))
+    }
+
     private func eventRow(_ event: ActivityEvent, isLast: Bool) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(event.color.opacity(0.14))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: event.icon)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(event.color)
-                        .symbolRenderingMode(.hierarchical)
-                }
+            HStack(spacing: AppSpacing.md) {
+                // Monochrome hierarchical symbol on a neutral circle — the
+                // sanctioned icon idiom; never a tinted color square.
+                Image(systemName: event.icon)
+                    .font(AppFont.body)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.primary)
+                    .frame(width: 36, height: 36)
+                    .background(Color.subtleFill, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.hairline, lineWidth: 0.5))
+
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(LocalizedStringKey(event.title))
-                        .font(AppFont.footnote)
+                    Text(event.title)
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(event.subtitle)
-                        .font(.system(size: 12))
+                        .font(AppFont.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+
                 Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(timeString(event.date))
-                        .font(.system(size: 11))
+
+                VStack(alignment: .trailing, spacing: AppSpacing.xxs) {
+                    Text(event.date, format: .dateTime.hour().minute())
+                        .font(AppFont.caption2)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     memberAvatar(name: event.member, size: 18)
                 }
             }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.05))
+                    .fill(Color.hairline)
                     .frame(height: 0.5)
-                    .padding(.leading, 62)
+                    .padding(.leading, AppSpacing.base + 36 + AppSpacing.md)
             }
         }
     }
 
     // MARK: Empty state
 
-    private var emptyState: some View {
+    private func emptyState(filtersMatchedNothing: Bool) -> some View {
         VStack {
             Spacer()
-            EmptyStateView(
-                icon: "clock.badge.questionmark",
-                title: "No activity in this period",
-                message: "Activities appear automatically as you\nadd tasks, documents, and transactions."
-            )
+            if filtersMatchedNothing {
+                EmptyStateView(icon: "line.3.horizontal.decrease",
+                               title: "No results")
+            } else {
+                EmptyStateView(
+                    icon: "clock.arrow.circlepath",
+                    title: "No activity in this period",
+                    message: "Activities appear automatically as you\nadd tasks, documents, and transactions."
+                )
+            }
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -473,12 +504,16 @@ struct ActivityFeedView: View {
 
     // MARK: Helpers
 
+    private func displayName(_ member: String) -> String {
+        member == currentUser ? String(localized: "You") : member
+    }
+
     private func memberAvatar(name: String, size: CGFloat) -> some View {
         let member = familyService.members.first { $0.name == name }
         let color: Color = member.map { colorFromHex($0.color) } ?? .blue
         return ZStack {
             Circle().fill(color.opacity(0.2))
-            Text(String(name.prefix(1)).uppercased())
+            Text(String(displayName(name).prefix(1)).uppercased())
                 .font(.system(size: size * 0.5, weight: .semibold))
                 .foregroundStyle(color)
         }
@@ -493,17 +528,34 @@ struct ActivityFeedView: View {
                      green: Double((int >> 8) & 0xFF) / 255,
                      blue: Double(int & 0xFF) / 255)
     }
+}
 
-    private func timeString(_ date: Date) -> String {
-        let f = DateFormatter(); f.dateFormat = "HH:mm"
-        return f.string(from: date)
+// MARK: - Filter chip style
+
+/// The feed's one neutral chip treatment: a quiet capsule fill with a subtle
+/// primary stroke when selected — never an accent-color fill. Monochrome keeps
+/// every state legible on Liquid Glass in both light and dark.
+private struct FilterChipStyle: ViewModifier {
+    let isSelected: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                Color.primary.opacity(isSelected ? AppOpacity.subtleFill + 0.05 : AppOpacity.subtleFill),
+                in: Capsule()
+            )
+            .overlay(
+                Capsule().strokeBorder(
+                    Color.primary.opacity(isSelected ? 0.25 : AppOpacity.hairline),
+                    lineWidth: isSelected ? 1 : 0.5
+                )
+            )
+            .contentShape(Capsule())
     }
+}
 
-    private func makeISOParser() -> (String) -> Date? {
-        let f1 = ISO8601DateFormatter()
-        f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        return { str in f1.date(from: str) ?? f2.date(from: str) }
+private extension View {
+    func filterChip(isSelected: Bool) -> some View {
+        modifier(FilterChipStyle(isSelected: isSelected))
     }
 }
