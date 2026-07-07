@@ -1,6 +1,11 @@
 import SwiftUI
 
-// MARK: - Root: three vertical pages, or the sync prompt
+// MARK: - Root: vertical pages, or the sync prompt
+//
+// Today is the glance; Tasks/Plants/Shopping act on tap (optimistic local
+// mutation + queued sync to the phone); Deliveries reads the live parcels.
+// Content-driven paging: Shopping and Deliveries only appear when they have
+// something to say, so the crown never scrolls through empty screens.
 
 struct WatchRootView: View {
     @Environment(WatchStore.self) private var store
@@ -11,6 +16,12 @@ struct WatchRootView: View {
                 TodayGlance(payload: payload)
                 TasksPage(tasks: payload.tasks)
                 PlantsPage(plants: payload.plants)
+                if payload.supplies.contains(where: { !$0.isCompleted }) {
+                    ShoppingPage(supplies: payload.supplies)
+                }
+                if !payload.deliveries.isEmpty {
+                    DeliveriesPage(deliveries: payload.deliveries)
+                }
             }
             .tabViewStyle(.verticalPage)
         } else {
@@ -137,10 +148,11 @@ private struct TodayGlance: View {
     }
 }
 
-// MARK: - Page 2: Tasks
+// MARK: - Page 2: Tasks (tap the circle to complete)
 
 private struct TasksPage: View {
     let tasks: [TaskCatalogEntry]
+    @Environment(WatchStore.self) private var store
 
     private var open: [TaskCatalogEntry] {
         // Overdue first, then the rest, capped for wrist reading.
@@ -152,68 +164,164 @@ private struct TasksPage: View {
     var body: some View {
         Group {
             if open.isEmpty {
-                allClear
+                AllClearView(icon: "checkmark.circle")
             } else {
                 List(open, id: \.id) { task in
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(task.isOverdue == true ? Color.red : Color.secondary.opacity(0.4))
-                            .frame(width: 7, height: 7)
-                        Text(task.title)
-                            .font(.footnote)
-                            .lineLimit(2)
+                    Button {
+                        withAnimation(.snappy) { store.completeTask(task.id) }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "circle")
+                                .font(.system(size: 17, weight: .light))
+                                .foregroundStyle(task.isOverdue == true ? Color.red : Color.secondary)
+                            Text(task.title)
+                                .font(.footnote)
+                                .lineLimit(2)
+                        }
                     }
+                    .accessibilityHint(Text("watch_tap_complete"))
                 }
             }
         }
         .navigationTitle(Text("watch_tasks"))
     }
-
-    private var allClear: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "checkmark.circle")
-                .font(.title2)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.secondary)
-            Text("watch_all_good")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-    }
 }
 
-// MARK: - Page 3: Plants
+// MARK: - Page 3: Plants (tap to water)
 
 private struct PlantsPage: View {
     let plants: [PlantCatalogEntry]
+    @Environment(WatchStore.self) private var store
 
     private var thirsty: [PlantCatalogEntry] { plants.filter(\.needsWatering) }
 
     var body: some View {
         Group {
             if thirsty.isEmpty {
-                allClear
+                AllClearView(icon: "leaf")
             } else {
                 List(thirsty, id: \.id) { plant in
-                    HStack(spacing: 6) {
-                        Text(plant.emoji)
-                        Text(plant.name)
-                            .font(.footnote)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                        Image(systemName: "drop.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                    Button {
+                        withAnimation(.snappy) { store.waterPlant(plant.id) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(plant.emoji)
+                            Text(plant.name)
+                                .font(.footnote)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.blue)
+                        }
                     }
+                    .accessibilityHint(Text("watch_tap_water"))
                 }
             }
         }
         .navigationTitle(Text("watch_plants"))
     }
+}
 
-    private var allClear: some View {
+// MARK: - Page 4: Shopping (tap to check off)
+
+private struct ShoppingPage: View {
+    let supplies: [SupplyCatalogEntry]
+    @Environment(WatchStore.self) private var store
+
+    private var pending: [SupplyCatalogEntry] {
+        Array(supplies.filter { !$0.isCompleted }.prefix(15))
+    }
+
+    var body: some View {
+        Group {
+            if pending.isEmpty {
+                AllClearView(icon: "cart")
+            } else {
+                List(pending, id: \.id) { item in
+                    Button {
+                        withAnimation(.snappy) { store.checkSupply(item.id) }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "circle")
+                                .font(.system(size: 17, weight: .light))
+                                .foregroundStyle(.secondary)
+                            Text(item.name)
+                                .font(.footnote)
+                                .lineLimit(2)
+                        }
+                    }
+                    .accessibilityHint(Text("watch_tap_check"))
+                }
+            }
+        }
+        .navigationTitle(Text("watch_shopping"))
+    }
+}
+
+// MARK: - Page 5: Deliveries (glanceable, read-only)
+
+private struct DeliveriesPage: View {
+    let deliveries: [DeliveryCatalogEntry]
+
+    var body: some View {
+        List(deliveries.prefix(10), id: \.id) { parcel in
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon(for: parcel.status))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(parcel.status == "out_for_delivery" ? .orange : .secondary)
+                    Text(parcel.title)
+                        .font(.footnote)
+                        .lineLimit(2)
+                }
+                HStack(spacing: 4) {
+                    Text(statusLabel(for: parcel.status))
+                    if let carrier = parcel.carrier, !carrier.isEmpty {
+                        Text(verbatim: "· \(carrier)")
+                    }
+                    if let eta = parcel.eta, !eta.isEmpty {
+                        Text(verbatim: "· \(eta)")
+                    }
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+        }
+        .navigationTitle(Text("watch_deliveries"))
+    }
+
+    private func icon(for status: String) -> String {
+        switch status {
+        case "out_for_delivery": return "bicycle"
+        case "delivered":        return "checkmark.seal.fill"
+        case "missed":           return "exclamationmark.triangle.fill"
+        default:                 return "shippingbox.fill"
+        }
+    }
+
+    // The same keys the iPhone's Delivery.statusLabel resolves.
+    private func statusLabel(for status: String) -> Text {
+        switch status {
+        case "expected":         return Text("Expected")
+        case "out_for_delivery": return Text("Out for delivery")
+        case "delivered":        return Text("Delivered")
+        case "missed":           return Text("Missed")
+        case "returned":         return Text("Returned")
+        default:                 return Text(verbatim: status)
+        }
+    }
+}
+
+// MARK: - Shared empty state
+
+private struct AllClearView: View {
+    let icon: String
+
+    var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "leaf")
+            Image(systemName: icon)
                 .font(.title2)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)

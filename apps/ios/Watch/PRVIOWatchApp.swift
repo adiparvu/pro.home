@@ -1,13 +1,17 @@
 import SwiftUI
 import WatchConnectivity
+import WatchKit
 import WidgetKit
 
 // MARK: - PRVIO for Apple Watch
 //
-// A glanceable companion: the phone pushes the same snapshot the widgets
-// render (plus the task/plant catalogs) over WatchConnectivity, and the
-// watch shows it in three vertical pages — Today, Tasks, Plants. Read-only
-// by design in V1: the wrist answers "what needs me?", the phone acts.
+// A working companion: the phone pushes the same snapshot the widgets render
+// (plus the task/plant/supply/delivery catalogs) over WatchConnectivity, and
+// the watch shows it in vertical pages — Today, Tasks, Plants, Shopping,
+// Deliveries. V2 acts from the wrist: completing a task, watering a plant or
+// checking off a purchase mutates the local payload instantly and queues the
+// action to the phone through transferUserInfo, which WatchConnectivity
+// delivers even if the iPhone is unreachable right now.
 
 @main
 struct PRVIOWatchApp: App {
@@ -56,6 +60,64 @@ final class WatchStore: NSObject, WCSessionDelegate {
             // Fresh state → repaint the watch-face complications too.
             WidgetCenter.shared.reloadAllTimelines()
         }
+    }
+
+    // MARK: Wrist actions
+    //
+    // Mutate the cached payload immediately (the wrist must feel instant),
+    // then queue the action to the phone. transferUserInfo persists across
+    // unreachability and app restarts, so nothing is lost on a hike; the
+    // phone lands it in the same pending-action pipeline the widget buttons
+    // use and answers with a fresh authoritative payload.
+
+    func completeTask(_ id: UUID) {
+        mutate { payload in
+            guard let i = payload.tasks.firstIndex(where: { $0.id == id }) else { return }
+            payload.tasks[i].isCompleted = true
+            payload.tasks[i].isOverdue = false
+            payload.snapshot.openTaskCount = payload.tasks.filter { !$0.isCompleted }.count
+            payload.snapshot.overdueTaskCount = payload.tasks.filter { !$0.isCompleted && ($0.isOverdue ?? false) }.count
+            if payload.snapshot.criticalTaskTitle == payload.tasks[i].title {
+                payload.snapshot.criticalTaskTitle = nil
+            }
+        }
+        queue(action: "completeTask", id: id)
+    }
+
+    func waterPlant(_ id: UUID) {
+        mutate { payload in
+            guard let i = payload.plants.firstIndex(where: { $0.id == id }) else { return }
+            payload.plants[i].needsWatering = false
+            let thirsty = payload.plants.filter(\.needsWatering)
+            payload.snapshot.plantsNeedingWater = thirsty.count
+            payload.snapshot.plantNames = Array(thirsty.prefix(3).map(\.name))
+        }
+        queue(action: "waterPlant", id: id)
+    }
+
+    func checkSupply(_ id: UUID) {
+        mutate { payload in
+            guard let i = payload.supplies.firstIndex(where: { $0.id == id }) else { return }
+            payload.supplies[i].isCompleted = true
+            payload.snapshot.pendingSupplyCount = payload.supplies.filter { !$0.isCompleted }.count
+        }
+        queue(action: "checkSupply", id: id)
+    }
+
+    private func mutate(_ change: (inout WatchPayload) -> Void) {
+        guard var current = payload else { return }
+        change(&current)
+        payload = current
+        if let data = try? JSONEncoder().encode(current) {
+            Self.defaults.set(data, forKey: Self.cacheKey)
+        }
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func queue(action: String, id: UUID) {
+        WKInterfaceDevice.current().play(.success)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": action, "id": id.uuidString])
     }
 
     // MARK: WCSessionDelegate

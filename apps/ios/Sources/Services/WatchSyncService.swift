@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import WidgetKit
 
 // MARK: - Watch sync (phone side)
 //
@@ -8,6 +9,12 @@ import WatchConnectivity
 // that always carries the LATEST state and survives the watch app being
 // closed. Called from the same place the widget snapshot is written, so the
 // watch can never drift from what the widgets show.
+//
+// The reverse channel makes the wrist ACT: the watch queues actions through
+// `transferUserInfo` (guaranteed delivery, survives unreachability) and this
+// service lands them in the exact pipeline the widget App Intents already
+// use — pending queue + instant local catalog mutation + Supabase
+// reconciliation on the app's next foreground beat.
 
 final class WatchSyncService: NSObject, WCSessionDelegate {
     static let shared = WatchSyncService()
@@ -50,5 +57,38 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
     func sessionDidDeactivate(_ session: WCSession) {
         // A watch switch deactivates the session; re-activate for the new watch.
         session.activate()
+    }
+
+    // MARK: Wrist actions
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        guard let action = userInfo["action"] as? String,
+              let idString = userInfo["id"] as? String,
+              let id = UUID(uuidString: idString) else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.apply(action: action, id: id)
+        }
+    }
+
+    private func apply(action: String, id: UUID) {
+        switch action {
+        case "completeTask":
+            SharedDataStore.appendPendingCompletion(id)
+            SharedDataStore.applyLocalTaskCompletion(id)
+        case "waterPlant":
+            SharedDataStore.appendPendingWatering(id)
+            SharedDataStore.applyLocalWatering(id)
+        case "checkSupply":
+            SharedDataStore.appendPendingSupplyCheck(id)
+            SharedDataStore.applyLocalSupplyCheck(id)
+        default:
+            return
+        }
+        // Every glass repaints from the mutated catalogs: home-screen widgets,
+        // the watch (fresh context push), and — if the app is live — Supabase
+        // itself through the same reconciliation the widget buttons use.
+        WidgetCenter.shared.reloadAllTimelines()
+        if let payload = SharedDataStore.currentWatchPayload() { push(payload) }
+        NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
     }
 }

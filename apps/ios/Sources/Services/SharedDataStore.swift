@@ -31,6 +31,9 @@ struct WatchPayload: Codable {
     var snapshot: PRVIOWidgetSnapshot
     var tasks: [TaskCatalogEntry] = []
     var plants: [PlantCatalogEntry] = []
+    // Optional-by-default so payloads cached by the V1 watch app still decode.
+    var supplies: [SupplyCatalogEntry] = []
+    var deliveries: [DeliveryCatalogEntry] = []
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -55,6 +58,15 @@ struct SupplyCatalogEntry: Codable {
     var id: UUID
     var name: String
     var isCompleted: Bool
+}
+
+struct DeliveryCatalogEntry: Codable {
+    var id: UUID
+    var title: String
+    var carrier: String?
+    /// Raw status ("expected", "out_for_delivery", …) — the watch localizes it.
+    var status: String
+    var eta: String?
 }
 
 // MARK: - Store
@@ -141,6 +153,34 @@ enum SharedDataStore {
         guard let ud = UserDefaults(suiteName: suiteName),
               let data = ud.data(forKey: supplyCatalogKey) else { return [] }
         return (try? JSONDecoder().decode([SupplyCatalogEntry].self, from: data)) ?? []
+    }
+
+    // MARK: Delivery catalog
+
+    private static let deliveryCatalogKey = "prvio.catalog.deliveries"
+
+    static func writeDeliveryCatalog(_ items: [DeliveryCatalogEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: deliveryCatalogKey)
+    }
+
+    static func readDeliveryCatalog() -> [DeliveryCatalogEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: deliveryCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([DeliveryCatalogEntry].self, from: data)) ?? []
+    }
+
+    /// The watch payload assembled from the store alone — used to answer a
+    /// wrist action instantly (after the local mutations) without needing the
+    /// app's services to be alive.
+    static func currentWatchPayload() -> WatchPayload? {
+        guard let snapshot = read() else { return nil }
+        return WatchPayload(snapshot: snapshot,
+                            tasks: readTaskCatalog(),
+                            plants: readPlantCatalog(),
+                            supplies: readSupplyCatalog(),
+                            deliveries: readDeliveryCatalog())
     }
 
     static func appendPendingSupplyCheck(_ itemId: UUID) {
