@@ -70,7 +70,36 @@ final class NotificationScheduler {
                                                     actions: [supplyAdd],
                                                     intentIdentifiers: [], options: [])
 
-        UNUserNotificationCenter.current().setNotificationCategories([taskCategory, plantCategory, supplyCategory])
+        // DOCUMENT and PROACTIVE were being set on content but never
+        // registered — their notifications shipped with no actions at all.
+        let docRemind = UNNotificationAction(identifier: "DOC_REMIND_WEEK",
+                                             title: String(localized: "notif_doc_remind_week"), options: [])
+        let documentCategory = UNNotificationCategory(identifier: "DOCUMENT",
+                                                      actions: [docRemind],
+                                                      intentIdentifiers: [], options: [])
+
+        let proactiveOpen = UNNotificationAction(identifier: "PROACTIVE_OPEN",
+                                                 title: String(localized: "notif_view_details"),
+                                                 options: [.foreground])
+        let proactiveCategory = UNNotificationCategory(identifier: "PROACTIVE",
+                                                       actions: [proactiveOpen],
+                                                       intentIdentifiers: [], options: [])
+
+        // Reply to a mention straight from the notification — keyboard,
+        // scribble or voice, courtesy of the text-input action.
+        let messageReply = UNTextInputNotificationAction(
+            identifier: "MESSAGE_REPLY",
+            title: String(localized: "notif_reply"),
+            options: [],
+            textInputButtonTitle: String(localized: "Send"),
+            textInputPlaceholder: String(localized: "Message…"))
+        let messageCategory = UNNotificationCategory(identifier: "MESSAGE",
+                                                     actions: [messageReply],
+                                                     intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories(
+            [taskCategory, plantCategory, supplyCategory,
+             documentCategory, proactiveCategory, messageCategory])
     }
 
     // MARK: - Plant watering notifications

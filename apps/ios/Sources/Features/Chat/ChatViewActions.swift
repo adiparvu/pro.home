@@ -254,6 +254,7 @@ extension ChatView {
             content.title = String(format: String(localized: "%@ mentioned %@"), senderName, name)
             content.body = body
             content.sound = .default
+            content.categoryIdentifier = "MESSAGE"
             let req = UNNotificationRequest(
                 identifier: "mention.\(UUID().uuidString)",
                 content: content,

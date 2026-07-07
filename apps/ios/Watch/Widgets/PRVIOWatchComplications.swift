@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - PRVIO watch-face complications
 //
@@ -50,6 +51,7 @@ struct PRVIOTasksComplication: Widget {
                 label: Text("watch_tasks"),
                 urgent: (entry.payload?.snapshot.overdueTaskCount ?? 0) > 0,
                 lines: Array(open.prefix(2).map(\.title)),
+                topTaskId: open.first?.id,
                 url: URL(string: "prvio://tasks")
             )
             .modifier(ComplicationBackground())
@@ -120,6 +122,61 @@ struct PRVIODeliveriesComplication: Widget {
         .description(NSLocalizedString("watch_comp_deliveries_desc", comment: ""))
         .supportedFamilies([.accessoryCircular, .accessoryCorner,
                             .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Interactive completion (watchOS 11: act from the face itself)
+
+/// Relay queue: widget-extension actions the watch APP forwards to the phone
+/// over WCSession on its next activation (extensions can't use WCSession).
+enum WatchActionRelay {
+    private static let key = "prvio.watch.pendingRelay"
+    private static var defaults: UserDefaults {
+        UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+    }
+
+    static func append(action: String, id: String) {
+        var pending = (defaults.array(forKey: key) as? [[String: String]]) ?? []
+        pending.append(["action": action, "id": id])
+        defaults.set(pending, forKey: key)
+    }
+
+    static func drain() -> [[String: String]] {
+        let pending = (defaults.array(forKey: key) as? [[String: String]]) ?? []
+        defaults.removeObject(forKey: key)
+        return pending
+    }
+}
+
+@available(watchOS 11.0, *)
+struct CompleteTopTaskIntent: AppIntent {
+    static var title: LocalizedStringResource = "Complete Task"
+    static var isDiscoverable: Bool { false }
+
+    @Parameter(title: "Task")
+    var taskId: String
+
+    init() { taskId = "" }
+    init(taskId: String) { self.taskId = taskId }
+
+    func perform() async throws -> some IntentResult {
+        guard let id = UUID(uuidString: taskId) else { return .result() }
+        // Mutate the cached payload so every complication repaints done.
+        let defaults = UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+        if let data = defaults.data(forKey: "prvio.watch.payload"),
+           var payload = try? JSONDecoder().decode(WatchPayload.self, from: data),
+           let idx = payload.tasks.firstIndex(where: { $0.id == id }) {
+            payload.tasks[idx].isCompleted = true
+            payload.tasks[idx].isOverdue = false
+            payload.snapshot.openTaskCount = payload.tasks.filter { !$0.isCompleted }.count
+            payload.snapshot.overdueTaskCount = payload.tasks.filter { !$0.isCompleted && ($0.isOverdue ?? false) }.count
+            if let encoded = try? JSONEncoder().encode(payload) {
+                defaults.set(encoded, forKey: "prvio.watch.payload")
+            }
+        }
+        WatchActionRelay.append(action: "completeTask", id: taskId)
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
     }
 }
 
@@ -197,6 +254,9 @@ private struct DomainComplicationView: View {
     /// Up to two content lines on the rectangular face — density without
     /// clutter: real titles, not just a number.
     var lines: [String] = []
+    /// When set, the rectangular face grows a complete button (watchOS 11
+    /// interactive widgets) that finishes this task from the face itself.
+    var topTaskId: UUID? = nil
     let url: URL?
 
     @Environment(\.widgetFamily) private var family
@@ -220,24 +280,36 @@ private struct DomainComplicationView: View {
                     .widgetCurvesContent()
                     .widgetLabel { label }
             case .accessoryRectangular:
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Image(systemName: icon)
-                            .font(.system(size: 11, weight: .semibold))
-                        label
-                            .font(.system(size: 13, weight: .semibold))
+                HStack(alignment: .center, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: icon)
+                                .font(.system(size: 11, weight: .semibold))
+                            label
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text(verbatim: "\(count)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                        ForEach(Array(lines.prefix(2).enumerated()), id: \.offset) { _, line in
+                            Text(line)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
-                    Text(verbatim: "\(count)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
-                    ForEach(Array(lines.prefix(2).enumerated()), id: \.offset) { _, line in
-                        Text(line)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let topTaskId, count > 0, #available(watchOS 11.0, *) {
+                        Button(intent: CompleteTopTaskIntent(taskId: topTaskId.uuidString)) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 20, weight: .medium))
+                                .symbolRenderingMode(.hierarchical)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("watch_complete"))
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             default:
                 HStack(spacing: 3) {
                     Image(systemName: icon)

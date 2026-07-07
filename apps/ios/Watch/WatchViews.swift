@@ -30,17 +30,27 @@ enum WatchDesign {
     }
 }
 
-/// The soft rounded card every module sits in.
+/// The soft rounded card every module sits in. On watchOS 26 it wears real
+/// Liquid Glass (tinted); earlier systems keep the gradient fill — one
+/// authority, so the whole app upgrades the day the target does.
 private struct WatchCard<Content: View>: View {
     var tint: Color = .gray
     @ViewBuilder var content: Content
 
     var body: some View {
+        if #available(watchOS 26.0, *) {
+            padded.glassEffect(.regular.tint(tint.opacity(0.3)),
+                               in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            padded.background(WatchDesign.cardFill(tint),
+                              in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private var padded: some View {
         content
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(WatchDesign.cardFill(tint),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

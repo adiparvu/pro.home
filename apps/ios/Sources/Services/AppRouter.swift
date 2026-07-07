@@ -353,6 +353,7 @@ final class AppRouter {
         case "com.prvio.action.deliveries": navigate(to: .deliveries)
         case "com.prvio.action.chat":       navigate(to: .chat)
         case "com.prvio.action.scan":       navigate(to: .scan)
+        case "com.prvio.action.home":       navigate(to: .home)
         default: break
         }
     }

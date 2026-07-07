@@ -497,6 +497,15 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
+        let chatReplies = SharedDataStore.popPendingChatReplies()
+        for reply in chatReplies {
+            if let propId = propertyService.primary?.id {
+                let name = profileService.profile?.preferredName
+                    ?? profileService.profile?.fullName ?? ""
+                Task { try? await messageService.send(propertyId: propId,
+                                                      senderName: name, body: reply) }
+            }
+        }
         let watchTaskTitles = SharedDataStore.popPendingWatchTasks()
         for title in watchTaskTitles {
             if let propId = propertyService.primary?.id {
@@ -514,7 +523,8 @@ struct MainTabView: View {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
-        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty || !watchTaskTitles.isEmpty {
+        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty
+            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty {
             writeWidgetSnapshot()
         }
     }

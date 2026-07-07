@@ -153,6 +153,19 @@ final class WatchStore: NSObject, WCSessionDelegate {
         // already waiting here even if the watch app wasn't running for it.
         guard activationState == .activated else { return }
         ingest(session.receivedApplicationContext)
+        // Actions performed on the face (interactive complications) queued in
+        // the App Group while the app was closed — forward them to the phone.
+        for entry in WatchActionRelay.drain() {
+            guard let action = entry["action"], let id = entry["id"] else { continue }
+            session.transferUserInfo(["action": action, "id": id])
+        }
+        Task { @MainActor [weak self] in
+            // Re-read the cache: the widget may have mutated it while we slept.
+            if let data = Self.defaults.data(forKey: Self.cacheKey),
+               let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
+                self?.payload = cached
+            }
+        }
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {

@@ -275,6 +275,24 @@ enum SharedDataStore {
         return titles
     }
 
+    // MARK: Chat replies typed on a notification (delegate → app → Supabase)
+
+    private static let pendingChatRepliesKey = "prvio.pending.chatReplies"
+
+    static func appendPendingChatReply(_ text: String) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        var pending = (ud.array(forKey: pendingChatRepliesKey) as? [String]) ?? []
+        pending.append(text)
+        ud.set(pending, forKey: pendingChatRepliesKey)
+    }
+
+    static func popPendingChatReplies() -> [String] {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
+        let texts = (ud.array(forKey: pendingChatRepliesKey) as? [String]) ?? []
+        ud.removeObject(forKey: pendingChatRepliesKey)
+        return texts
+    }
+
     // MARK: Control Center hand-off (control tap → app navigation)
     //
     // Control Center intents run in the widget-extension process. The
