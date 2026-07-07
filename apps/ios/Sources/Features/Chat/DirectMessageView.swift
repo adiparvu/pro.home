@@ -79,7 +79,6 @@ struct DirectMessageView: View {
     @State private var lastTypingSent = Date.distantPast
     @State private var audioRecorder = ChatAudioRecorder()
     @State private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
-    @State private var recordingCancelled = false
     @State private var blockRefresh = false
 
     private var myName: String {
@@ -855,15 +854,31 @@ struct DirectMessageView: View {
             // iMessage-style compose row: round + on the left, one slim pill
             // holding the field and the trailing control INSIDE it (mic when
             // empty, filled send arrow while typing). Camera lives in the +
-            // tray, like iMessage.
-            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                plusButton
-
+            // tray, like iMessage. While recording, the whole row becomes the
+            // iMessage recording pill; stop parks the clip for review.
+            if audioRecorder.isRecording {
+                VoiceRecordingPill(recorder: audioRecorder) {
+                    audioRecorder.finishRecording()
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, 8)
+            } else if let voicePreview = audioRecorder.preview {
+                VoiceReviewRow(preview: voicePreview, isSending: isSending) {
+                    audioRecorder.discardPreview()
+                } onSend: {
+                    if let clip = audioRecorder.takePreview() {
+                        Task { await sendAudio(clip.url) }
+                    }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, 8)
+            } else {
                 HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    // Text field and recording indicator share the same slot.
-                    // The text field stays in the hierarchy (preserves keyboard/
-                    // focus) and is hidden behind the recording bar when active.
-                    ZStack(alignment: .leading) {
+                    plusButton
+
+                    HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                         TextField("Message…", text: $input, axis: .vertical)
                             .font(.system(size: 16))
                             .foregroundStyle(.primary)
@@ -871,8 +886,6 @@ struct DirectMessageView: View {
                             .lineLimit(1...6)
                             .focused($focused)
                             .padding(.vertical, 7)
-                            .opacity(audioRecorder.isRecording ? 0 : 1)
-                            .allowsHitTesting(!audioRecorder.isRecording)
                             .onChange(of: input) { _, val in
                                 if !val.isEmpty, showAttachmentTray {
                                     withAnimation { showAttachmentTray = false }
@@ -886,44 +899,36 @@ struct DirectMessageView: View {
                                 // per-keystroke UserDefaults write is typing lag.
                             }
 
-                        if audioRecorder.isRecording {
-                            recordingIndicator
-                                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                        }
-                    }
-
-                    // Trailing controls — mic is ALWAYS present last to keep view
-                    // identity stable so the drag gesture is never interrupted
-                    // mid-recording.
-                    HStack(spacing: 6) {
-                        if !audioRecorder.isRecording, !isTextEmpty {
+                        if isTextEmpty {
+                            micButton
+                                .padding(.bottom, 3)
+                        } else {
                             sendButton
+                                .padding(.bottom, 3)
                                 .transition(.asymmetric(
                                     insertion: .scale(scale: 0.7).combined(with: .opacity),
                                     removal: .scale(scale: 0.7).combined(with: .opacity)
                                 ))
                         }
-                        micButton
                     }
-                    .padding(.bottom, 3)
                     .animation(.spring(duration: 0.2), value: isTextEmpty)
-                    .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
+                    .padding(.leading, 14)
+                    .padding(.trailing, 5)
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
                 }
-                .padding(.leading, 14)
-                .padding(.trailing, 5)
-                .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, 8)
+                // iMessage has no separate band behind the compose row — the bar
+                // sits directly on the conversation background, which the root
+                // ZStack already draws full-screen. Re-rendering the theme here
+                // painted photo wallpapers a second time (scaledToFill on a bar-
+                // sized area spills the whole image across the screen).
             }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, 8)
-            // iMessage has no separate band behind the compose row — the bar
-            // sits directly on the conversation background, which the root
-            // ZStack already draws full-screen. Re-rendering the theme here
-            // painted photo wallpapers a second time (scaledToFill on a bar-
-            // sized area spills the whole image across the screen).
         }
         .animation(.spring(duration: 0.3), value: showAttachmentTray)
         .animation(.spring(duration: 0.3), value: replyingTo?.id)
-        .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
+        .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
+        .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
                       maxSelectionCount: 10, matching: .images)
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
@@ -962,10 +967,6 @@ struct DirectMessageView: View {
         .accessibilityLabel("Add attachment")
     }
 
-    private var recordingIndicator: some View {
-        ChatRecordingIndicator(durationText: audioRecorder.durationText)
-    }
-
     private var sendButton: some View {
         Button {
             Task { await sendMessage() }
@@ -979,47 +980,20 @@ struct DirectMessageView: View {
         .accessibilityLabel(Text("Send"))
     }
 
-    // Mic button is always the rightmost element — never removed from hierarchy
-    // so the LongPress+Drag gesture chain is never interrupted by re-renders.
-    // iMessage-style: a plain dictation glyph inside the field, no chrome.
+    // iMessage-style: a plain dictation glyph inside the field, no chrome —
+    // tap to start recording; the pill becomes the recording surface.
     private var micButton: some View {
-        ZStack {
-            Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
+        Button {
+            focused = false
+            audioRecorder.start()
+            HapticFeedback.impact(.medium)
+        } label: {
+            Image(systemName: "mic.fill")
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(audioRecorder.isRecording ? .red : Color.primary.opacity(AppOpacity.disabled))
-                .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(width: 28, height: 28)
         }
-        .gesture(
-            LongPressGesture(minimumDuration: 0.3)
-                .onEnded { _ in
-                    guard !audioRecorder.isRecording else { return }
-                    recordingCancelled = false
-                    focused = false
-                    audioRecorder.start()
-                    HapticFeedback.impact(.medium)
-                }
-        )
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { val in
-                    guard audioRecorder.isRecording, !recordingCancelled else { return }
-                    if val.translation.width < -60 {
-                        recordingCancelled = true
-                        _ = audioRecorder.stop()
-                        HapticFeedback.warning()
-                    }
-                }
-                .onEnded { _ in
-                    guard audioRecorder.isRecording, !recordingCancelled else {
-                        recordingCancelled = false
-                        return
-                    }
-                    if let url = audioRecorder.stop() {
-                        Task { await sendAudio(url) }
-                    }
-                }
-        )
+        .buttonStyle(.plain)
         .accessibilityLabel(Text("Record voice message"))
     }
 

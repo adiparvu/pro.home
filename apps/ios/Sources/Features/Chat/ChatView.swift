@@ -913,47 +913,26 @@ struct ChatView: View {
             }
 
             if audioRecorder.isRecording {
-                // Recording bar replaces input
-                HStack(spacing: 10) {
-                    Button {
-                        _ = audioRecorder.stop()
-                        HapticFeedback.warning()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.55))
-                            .frame(width: 30, height: 30)
-                            .background(Circle().fill(Color.primary.opacity(0.1)))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Cancel recording")
-
-                    ChatRecordingIndicator(durationText: audioRecorder.durationText)
-                        .gesture(
-                            DragGesture(minimumDistance: 40)
-                                .onEnded { val in
-                                    if val.translation.width < -40 {
-                                        _ = audioRecorder.stop()
-                                        HapticFeedback.warning()
-                                    }
-                                }
-                        )
-
-                    Button {
-                        if let url = audioRecorder.stop() {
-                            Task { await sendAudio(url: url) }
-                        }
-                    } label: {
-                        ZStack {
-                            Circle().fill(Color.accentColor).frame(width: 34, height: 34)
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Send"))
+                // iMessage: the whole compose row becomes the recording pill —
+                // live waveform, red timer, red stop. Stop parks the clip for
+                // review; nothing sends yet.
+                VoiceRecordingPill(recorder: audioRecorder) {
+                    audioRecorder.finishRecording()
                 }
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
+            } else if let voicePreview = audioRecorder.preview {
+                // iMessage review: ✕ discards, play auditions, the arrow sends.
+                VoiceReviewRow(preview: voicePreview, isSending: isSending) {
+                    audioRecorder.discardPreview()
+                } onSend: {
+                    if let clip = audioRecorder.takePreview() {
+                        Task { await sendAudio(url: clip.url) }
+                    }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.xs)
@@ -1006,21 +985,21 @@ struct ChatView: View {
                             .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             .accessibilityLabel("Confirm edit")
                         } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            // Dictation-style mic (iMessage) — hold to record
-                            Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.disabled))
-                                .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
-                                .frame(width: 28, height: 28)
-                                .padding(.bottom, 4)
-                                .onLongPressGesture(minimumDuration: 0.3) {
-                                    guard !audioRecorder.isRecording else { return }
-                                    audioRecorder.start()
-                                    HapticFeedback.impact(.medium)
-                                }
-                                .accessibilityLabel("Record voice message")
-                                .accessibilityHint("Double-tap and hold to record")
-                                .accessibilityAddTraits(.isButton)
+                            // Dictation-style mic (iMessage) — tap to start
+                            // recording; the pill becomes the recording surface.
+                            Button {
+                                focused = false
+                                audioRecorder.start()
+                                HapticFeedback.impact(.medium)
+                            } label: {
+                                Image(systemName: "mic.fill")
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    .frame(width: 28, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.bottom, 4)
+                            .accessibilityLabel("Record voice message")
                         } else {
                             Button {
                                 guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -1055,5 +1034,7 @@ struct ChatView: View {
                 .padding(.bottom, AppSpacing.xs)
             }
         }
+        .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
+        .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
     }
 }

@@ -233,40 +233,6 @@ struct ChatReplyBanner: View {
     }
 }
 
-/// The recording status pill (pulsing dot · elapsed time · "slide to cancel")
-/// shared by both input bars while a voice message is being recorded.
-struct ChatRecordingIndicator: View {
-    let durationText: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.red)
-                .frame(width: 8, height: 8)
-                .symbolEffect(.pulse)
-            Text(durationText)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-            Spacer(minLength: 0)
-            Image(systemName: "lessthan")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.3))
-            Text("Slide to cancel")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.4))
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 9)
-        .liquidGlass(cornerRadius: AppRadius.xl)
-        // One VoiceOver stop instead of "8 · lessthan · Slide to cancel".
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Recording voice message"))
-        .accessibilityValue(Text(durationText))
-        .accessibilityHint("Slide left to cancel")
-    }
-}
-
 /// The "unread messages" marker shown at the point the reader left off, tinted
 /// with the accent colour to stand apart from the neutral date separators.
 struct UnreadDivider: View {
