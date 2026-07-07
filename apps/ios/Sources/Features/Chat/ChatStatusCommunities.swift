@@ -726,7 +726,10 @@ struct CommunitiesView: View {
                                                   members: members,
                                                   service: service)
                                 } label: {
-                                    CommunityRow(group: group, memberCount: service.members(for: group).count)
+                                    CommunityRow(group: group,
+                                                 memberCount: service.members(for: group).count,
+                                                 preview: service.previewLine(for: group),
+                                                 avatarMembers: resolvedMembers(of: group))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -754,14 +757,21 @@ struct CommunitiesView: View {
         .presentationBackground(.thinMaterial)
     }
 
+    /// Group members resolved back to FamilyMembers (for real avatars).
+    private func resolvedMembers(of group: ChatGroup) -> [FamilyMember] {
+        service.members(for: group).compactMap { gm in
+            members.first { $0.id.uuidString == gm.memberId }
+        }
+    }
+
     private var newGroupButton: some View {
         Button { showCreate = true } label: {
             HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.15)).frame(width: 52, height: 52)
-                    Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Color.accentColor)
-                }
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 52, height: 52)
+                    .glassRoundedRect(AppRadius.lg)
                 Text("Grup nou").font(AppFont.headline).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
@@ -909,6 +919,19 @@ private struct GroupChatView: View {
             guard let pid = propertyId else { return }
             svc.myName = myName
             await svc.load(propertyId: pid, groupId: group.id)
+            // Live thread: messages from other members land without a reload.
+            await svc.subscribeRealtime(propertyId: pid)
+        }
+        .onDisappear {
+            let messageSvc = svc
+            let groupSvc = service
+            let pid = propertyId
+            Task {
+                await messageSvc.unsubscribeAll()
+                // The list behind us shows each group's newest message —
+                // refresh it so the row reflects this conversation.
+                if let pid { await groupSvc.loadPreviews(propertyId: pid) }
+            }
         }
     }
 
@@ -940,24 +963,68 @@ private struct GroupChatView: View {
 private struct CommunityRow: View {
     let group: ChatGroup
     let memberCount: Int
+    /// Newest message ("Ana: vin mâine") + its timestamp, when the group has one.
+    let preview: (text: String, date: Date?)?
+    /// Members resolved to FamilyMembers, for the overlapping avatar stack.
+    let avatarMembers: [FamilyMember]
+
+    private var fallbackLine: String {
+        "\(group.kindLabel) · " + String(format: String(localized: "comm_member_count"), memberCount)
+    }
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 48, height: 48)
-                Image(systemName: group.kindIcon).font(.system(size: 20)).foregroundStyle(Color.accentColor)
-            }
+            Image(systemName: group.kindIcon)
+                .font(.system(size: 20, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(group.kindTint)
+                .frame(width: 48, height: 48)
+                .glassCircle()
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(group.name.isEmpty ? group.kindLabel : group.name)
                     .font(AppFont.headline).foregroundStyle(.primary)
-                Text("\(group.kindLabel) · \(memberCount) membri")
-                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .lineLimit(1)
+                Text(preview?.text.isEmpty == false ? preview!.text : fallbackLine)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .lineLimit(1)
             }
-            Spacer()
-            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
+
+            Spacer(minLength: AppSpacing.sm)
+
+            VStack(alignment: .trailing, spacing: 5) {
+                if let date = preview?.date {
+                    Text(date, format: .relative(presentation: .named))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                        .lineLimit(1)
+                }
+                if !avatarMembers.isEmpty {
+                    HStack(spacing: -8) {
+                        ForEach(avatarMembers.prefix(3)) { m in
+                            MemberAvatar(member: m, size: 20)
+                                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.2))
+                        }
+                        if avatarMembers.count > 3 {
+                            Text(verbatim: "+\(avatarMembers.count - 3)")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                .frame(width: 20, height: 20)
+                                .background(Circle().fill(Color.primary.opacity(0.08)))
+                                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.2))
+                        }
+                    }
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
         .liquidGlass(cornerRadius: AppRadius.lg)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1104,6 +1171,7 @@ private struct AddGroupMembersSheet: View {
                             else { selectedIds.insert(m.id) }
                         } label: {
                             HStack(spacing: 12) {
+                                MemberAvatar(member: m, size: 32)
                                 Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
@@ -1180,6 +1248,7 @@ private struct CreateGroupSheet: View {
                                 else { selectedIds.insert(m.id) }
                             } label: {
                                 HStack(spacing: 12) {
+                                    MemberAvatar(member: m, size: 32)
                                     Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")

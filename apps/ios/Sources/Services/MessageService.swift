@@ -80,7 +80,11 @@ final class MessageService {
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+            // Scope is symmetric: a group chat sees only its group, and the
+            // main chat sees only NULL-group rows — otherwise every community
+            // message would also land in the main conversation.
             if let gid = groupId { query = query.eq("group_id", value: gid.uuidString) }
+            else { query = query.or("group_id.is.null") }
             let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
@@ -112,6 +116,7 @@ final class MessageService {
                 .eq("property_id", value: propertyId.uuidString)
                 .lt("created_at", value: oldest)
             if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
+            else { query = query.or("group_id.is.null") }
             let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
@@ -136,6 +141,7 @@ final class MessageService {
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
             if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
+            else { query = query.or("group_id.is.null") }
             if let newest = messages.last?.createdAt {
                 query = query.gt("created_at", value: newest)
             }
@@ -159,7 +165,10 @@ final class MessageService {
         // a thread never tears down the tab-level subscription (and vice-versa).
         if realtimeChannel != nil, subscribedPropertyId == propertyId { return }
         if realtimeChannel != nil { await unsubscribe() }
-        let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString)")
+        // Topic includes the group scope so a community thread's channel never
+        // collides with the main chat's channel for the same property.
+        let scope = currentGroupId?.uuidString ?? "main"
+        let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString):\(scope)")
         // Callbacks must be registered before subscribing.
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
@@ -178,8 +187,11 @@ final class MessageService {
                 self.unreadCount += fromOthers
                 // The per-conversation alert tone is a real setting, not
                 // decoration: play it for messages from others while the
-                // app is in the foreground.
-                if fromOthers > 0 { ChatToneStore.playIncoming("group") }
+                // app is in the foreground. Group threads key by group id —
+                // the same key their disappearing-message TTL already uses.
+                if fromOthers > 0 {
+                    ChatToneStore.playIncoming(self.currentGroupId?.uuidString ?? "group")
+                }
             }
         })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
