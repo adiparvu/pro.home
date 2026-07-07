@@ -16,13 +16,25 @@ struct ChatGroup: Identifiable, Codable, Hashable {
     var description: String
     var avatarUrl: String?
     var kind: String            // "family" | "work" | "custom"
+    /// The auth user who created the group — the group's admin. Management
+    /// (rename, members, delete) is gated on this, not on the ambiguous
+    /// "you" member row.
+    var createdBy: UUID?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, kind
         case propertyId = "property_id"
         case avatarUrl  = "avatar_url"
+        case createdBy  = "created_by"
         case createdAt  = "created_at"
+    }
+
+    /// Legacy rows without created_by stay manageable by everyone rather
+    /// than locking their own creator out.
+    func isAdmin(userId: UUID?) -> Bool {
+        guard let createdBy else { return true }
+        return createdBy == userId
     }
 
     var kindIcon: String {

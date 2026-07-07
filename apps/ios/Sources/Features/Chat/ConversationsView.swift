@@ -321,6 +321,12 @@ struct ConversationsView: View {
                             members: familyService.members,
                             myName: myName)
         }
+        // Deep link prvio://communities[/<groupId>] — the router lands on the
+        // chat tab and bumps this counter; the sheet opens here and
+        // CommunitiesView auto-opens the requested group.
+        .onChange(of: router.communitiesRequest) { _, _ in
+            showCommunities = true
+        }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
                                  groupName: propertyService.groupChatDisplayName) { id in

@@ -700,6 +700,7 @@ private struct StorySegmentBar: View {
 
 struct CommunitiesView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppRouter.self) private var router
     @State private var service = ChatGroupService()
 
     var propertyId: UUID? = nil
@@ -707,9 +708,12 @@ struct CommunitiesView: View {
     var myName: String = "Me"
 
     @State private var showCreate = false
+    /// Value-based path so a deep link (prvio://communities/<id>) can open a
+    /// specific group programmatically, not just by tap.
+    @State private var path: [ChatGroup] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
                     newGroupButton
@@ -719,13 +723,7 @@ struct CommunitiesView: View {
                     } else {
                         VStack(spacing: 10) {
                             ForEach(service.groups) { group in
-                                NavigationLink {
-                                    GroupChatView(group: group,
-                                                  propertyId: propertyId,
-                                                  myName: myName,
-                                                  members: members,
-                                                  service: service)
-                                } label: {
+                                NavigationLink(value: group) {
                                     CommunityRow(group: group,
                                                  memberCount: service.members(for: group).count,
                                                  preview: service.previewLine(for: group),
@@ -741,6 +739,13 @@ struct CommunitiesView: View {
                 }
                 .padding(.top, AppSpacing.sm)
             }
+            .navigationDestination(for: ChatGroup.self) { group in
+                GroupChatView(group: group,
+                              propertyId: propertyId,
+                              myName: myName,
+                              members: members,
+                              service: service)
+            }
             .navigationTitle("Communities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -748,13 +753,35 @@ struct CommunitiesView: View {
                 CreateGroupSheet(members: members) { name, kind, selected in
                     showCreate = false
                     guard let pid = propertyId else { return }
-                    Task { await service.create(propertyId: pid, name: name, kind: kind,
-                                                selected: selected, myName: myName) }
+                    Task {
+                        if let created = await service.create(propertyId: pid, name: name, kind: kind,
+                                                              selected: selected, myName: myName) {
+                            // Land straight in the new conversation.
+                            path = [created]
+                        }
+                    }
                 }
             }
-            .task { if let pid = propertyId { await service.load(propertyId: pid) } }
+            .task {
+                if let pid = propertyId { await service.load(propertyId: pid) }
+                openDeepLinkedGroupIfNeeded()
+            }
+            // A second deep link while the sheet is already up re-targets the
+            // path instead of relying on a fresh .task.
+            .onChange(of: router.communitiesRequest) { _, _ in
+                openDeepLinkedGroupIfNeeded()
+            }
         }
         .presentationBackground(.thinMaterial)
+    }
+
+    /// Opens the group a deep link asked for, once, when it exists.
+    private func openDeepLinkedGroupIfNeeded() {
+        guard let gid = router.deepLinkCommunityGroupId else { return }
+        router.deepLinkCommunityGroupId = nil
+        if let group = service.groups.first(where: { $0.id == gid }) {
+            path = [group]
+        }
     }
 
     /// Group members resolved back to FamilyMembers (for real avatars).
@@ -1052,6 +1079,11 @@ private struct GroupSettingsSheet: View {
 
     private var currentGroup: ChatGroup { service.groups.first(where: { $0.id == group.id }) ?? group }
     private var currentMembers: [ChatGroupMember] { service.members(for: group) }
+    /// Management (rename / members / delete) belongs to the creator only;
+    /// everyone else gets a read-only view plus their own notification prefs.
+    private var isAdmin: Bool {
+        currentGroup.isAdmin(userId: supabase.auth.currentSession?.user.id)
+    }
     /// Family members not already in this group, for the "add" picker.
     private var addableMembers: [FamilyMember] {
         let existingIds = Set(currentMembers.map { $0.memberId })
@@ -1062,28 +1094,44 @@ private struct GroupSettingsSheet: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-                    HStack(spacing: 10) {
-                        TextField("Nume grup", text: $name)
-                            .font(.system(size: 16))
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                            .liquidGlass(cornerRadius: 14)
-                        Button("Salvează") {
-                            Task { await service.rename(group, to: name) }
+                    if isAdmin {
+                        HStack(spacing: 10) {
+                            TextField("Nume grup", text: $name)
+                                .font(.system(size: 16))
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+                                .liquidGlass(cornerRadius: 14)
+                            Button("Salvează") {
+                                Task { await service.rename(group, to: name) }
+                            }
+                            .font(AppFont.footnoteEmphasis)
+                            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty
+                                      || name == group.name)
                         }
-                        .font(AppFont.footnoteEmphasis)
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty
-                                  || name == group.name)
+                    }
+
+                    // Every member controls their own alerts for this group —
+                    // mute + tones keyed by the group id, the same key the
+                    // incoming-message sound and disappearing timer use.
+                    SettingsGroup(title: "Notificări") {
+                        NavSettingsRow(icon: "bell.fill", color: .red, label: "Notificări chat") {
+                            ConversationNotificationsView(
+                                convId: group.id.uuidString,
+                                subtitle: currentGroup.name.isEmpty ? currentGroup.kindLabel
+                                                                    : currentGroup.name)
+                        }
                     }
 
                     HStack {
                         Text("Membri").font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
-                        Button { showAddMembers = true } label: {
-                            Label("Adaugă", systemImage: "person.badge.plus")
-                                .font(AppFont.captionEmphasis)
+                        if isAdmin {
+                            Button { showAddMembers = true } label: {
+                                Label("Adaugă", systemImage: "person.badge.plus")
+                                    .font(AppFont.captionEmphasis)
+                            }
+                            .disabled(addableMembers.isEmpty)
                         }
-                        .disabled(addableMembers.isEmpty)
                     }
 
                     VStack(spacing: 8) {
@@ -1099,7 +1147,7 @@ private struct GroupSettingsSheet: View {
                                 if m.role == "admin" {
                                     Text("Admin").font(AppFont.captionStrong)
                                         .foregroundStyle(Color.accentColor)
-                                } else {
+                                } else if isAdmin {
                                     Button {
                                         Task { await service.removeMember(m, from: group) }
                                     } label: {
@@ -1115,16 +1163,18 @@ private struct GroupSettingsSheet: View {
                         }
                     }
 
-                    Button(role: .destructive) { showDeleteConfirm = true } label: {
-                        Label("Șterge grupul", systemImage: "trash")
-                            .font(AppFont.subheadline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.md)
+                    if isAdmin {
+                        Button(role: .destructive) { showDeleteConfirm = true } label: {
+                            Label("Șterge grupul", systemImage: "trash")
+                                .font(AppFont.subheadline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.md)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.red)
+                        .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.top, 10)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.red)
-                    .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .padding(.top, 10)
                 }
                 .padding(AppSpacing.lg)
             }

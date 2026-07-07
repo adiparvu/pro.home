@@ -83,8 +83,14 @@ final class AppRouter {
              pantry, cameras, deliveries, chat, familyChat, scan, receipts,
              notifications, aria, twin, settings, documents, finances,
              inventory, family, profile, contractors, paintColors,
-             photoJournal, addSupply
+             photoJournal, addSupply, communities(groupId: UUID?)
     }
+
+    /// Bumped when an external entry point asks for the Communities sheet;
+    /// the chat tab observes it, presents the sheet, and CommunitiesView
+    /// auto-opens `deepLinkCommunityGroupId` when one was requested.
+    private(set) var communitiesRequest = 0
+    var deepLinkCommunityGroupId: UUID?
 
     /// Bumped on every close-all — screens that own local sheets (Dashboard's
     /// search / notifications / health) observe it and dismiss theirs too.
@@ -215,6 +221,10 @@ final class AppRouter {
             activeCover = .aria
         case .addSupply:
             activeDestination = .addSupply
+        case .communities(let groupId):
+            selectedTab = .chat
+            deepLinkCommunityGroupId = groupId
+            communitiesRequest &+= 1
         }
     }
 
@@ -267,6 +277,8 @@ final class AppRouter {
             navigate(to: .deliveries)
         case "chat":
             navigate(to: .chat)
+        case "communities", "groups":
+            navigate(to: .communities(groupId: pathId))
         case "scan":
             navigate(to: .scan)
         case "receipts":
