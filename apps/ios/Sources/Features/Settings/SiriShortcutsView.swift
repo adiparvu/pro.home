@@ -137,7 +137,7 @@ struct SiriShortcutsView: View {
                         Image(systemName: "quote.opening")
                             .font(.system(size: 9))
                             .foregroundStyle(Color.primary.opacity(0.3))
-                        Text(phrase)
+                        Text(LocalizedStringKey(phrase))
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .italic()
@@ -199,7 +199,9 @@ private struct SiriCommand: Identifiable {
     let tint: Color
     let title: LocalizedStringKey
     /// The REAL spoken phrases (same wording AppShortcuts.xcstrings registers).
-    let phrases: [LocalizedStringKey]
+    /// Kept as key strings — LocalizedStringKey isn't Hashable, so ForEach
+    /// needs a Hashable identity; Text re-wraps them at render time.
+    let phrases: [String]
 }
 
 private struct SiriCommandGroup: Identifiable {

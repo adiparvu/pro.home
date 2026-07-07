@@ -18,6 +18,7 @@ struct ProfileView: View {
     @State private var showCamera = false
     @State private var toast: String?
     @State private var toastIsError = false
+    @State private var copiedAccountId = false
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
 
     private var ringColor: Color { avatarRingColor(for: avatarRingColorName) }
@@ -223,11 +224,49 @@ struct ProfileView: View {
                     infoRow("Phone", phone)
                     div
                 }
-                infoRow("Account ID", shortId)
+                accountIdRow
                 div
                 infoRow("Member since", memberSince)
             }
         }
+    }
+
+    /// The account ID is an identity, not decoration: PRVIO-prefixed, derived
+    /// from the account UUID, and copyable with one tap so it can be pasted
+    /// into search or shared for support.
+    private var accountIdRow: some View {
+        Button {
+            guard let uid = auth.session?.user.id else { return }
+            UIPasteboard.general.string = AccountID.display(for: uid)
+            HapticFeedback.success()
+            withAnimation(.snappy(duration: 0.2)) { copiedAccountId = true }
+            Task {
+                try? await Task.sleep(for: .seconds(1.6))
+                withAnimation(.smooth(duration: 0.25)) { copiedAccountId = false }
+            }
+        } label: {
+            HStack {
+                Text("Account ID")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                Spacer()
+                Text(copiedAccountId ? String(localized: "account_id_copied") : shortId)
+                    .font(AppFont.footnote)
+                    .foregroundStyle(copiedAccountId ? Color.brandSuccess : .primary)
+                    .contentTransition(.opacity)
+                    .lineLimit(1)
+                Image(systemName: copiedAccountId ? "checkmark.circle.fill" : "doc.on.doc")
+                    .font(.system(size: 12))
+                    .foregroundStyle(copiedAccountId ? Color.brandSuccess : Color.primary.opacity(0.35))
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Account ID"))
+        .accessibilityValue(Text(shortId))
+        .accessibilityHint(Text("account_id_copy_hint"))
     }
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
@@ -333,7 +372,7 @@ struct ProfileView: View {
         auth.session?.user.email?.components(separatedBy: "@").first?.capitalized ?? "User"
     }
     private var shortId: String {
-        auth.session?.user.id.uuidString.components(separatedBy: "-").first ?? "—"
+        auth.session.map { AccountID.display(for: $0.user.id) } ?? "—"
     }
     private var memberSince: String {
         guard let user = auth.session?.user else { return "—" }

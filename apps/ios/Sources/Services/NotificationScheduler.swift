@@ -142,6 +142,66 @@ final class NotificationScheduler {
         for request in requests { try? await center.add(request) }
     }
 
+    // MARK: - Celebrations (account anniversary + birthday)
+
+    /// PRVIO celebrates with you: a congratulation on every yearly anniversary
+    /// of the account and on the user's birthday (when set in the profile).
+    /// Non-repeating triggers re-armed at every launch, so the year count in
+    /// the copy is always correct.
+    func scheduleCelebrations(accountCreatedAt: String?, birthDate: String?) async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional else { return }
+
+        center.removePendingNotificationRequests(
+            withIdentifiers: ["celebration.anniversary", "celebration.birthday"])
+
+        let cal = Calendar.current
+        let now = Date()
+
+        if let s = accountCreatedAt,
+           let created = AppDate.timestamp(from: s) ?? AppDate.day(from: s),
+           let next = nextYearlyOccurrence(of: created, after: now, calendar: cal) {
+            let years = cal.dateComponents([.year], from: created, to: next.date).year ?? 0
+            if years >= 1 {
+                let content = UNMutableNotificationContent()
+                content.title = String(localized: "celebration_anniversary_title")
+                content.body = years == 1
+                    ? String(localized: "celebration_anniversary_body_one")
+                    : String(format: String(localized: "celebration_anniversary_body_many"), years)
+                content.sound = .default
+                try? await center.add(UNNotificationRequest(
+                    identifier: "celebration.anniversary",
+                    content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: next.components, repeats: false)))
+            }
+        }
+
+        if let s = birthDate, let birthday = AppDate.day(from: s),
+           let next = nextYearlyOccurrence(of: birthday, after: now, calendar: cal) {
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "celebration_birthday_title")
+            content.body  = String(localized: "celebration_birthday_body")
+            content.sound = .default
+            try? await center.add(UNNotificationRequest(
+                identifier: "celebration.birthday",
+                content: content,
+                trigger: UNCalendarNotificationTrigger(dateMatching: next.components, repeats: false)))
+        }
+    }
+
+    /// The next 09:00 on the month/day of `date`, strictly after `now`.
+    /// Feb 29 anniversaries roll forward per the calendar's matching rules.
+    private func nextYearlyOccurrence(of date: Date, after now: Date, calendar cal: Calendar)
+        -> (date: Date, components: DateComponents)? {
+        var match = cal.dateComponents([.month, .day], from: date)
+        match.hour = 9; match.minute = 0
+        guard let next = cal.nextDate(after: now, matching: match,
+                                      matchingPolicy: .nextTimePreservingSmallerComponents) else { return nil }
+        return (next, cal.dateComponents([.year, .month, .day, .hour, .minute], from: next))
+    }
+
     // MARK: - Main entry point
 
     func reschedule(tasks: [MaintenanceTask], documents: [DocumentModel]) async {

@@ -30,6 +30,7 @@ struct GlobalSearchSheet: View {
     @Environment(PaintColorService.self) private var paintColorService
     @Environment(PhotoJournalService.self) private var photoJournalService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AuthService.self) private var auth
     @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
@@ -164,7 +165,16 @@ struct GlobalSearchSheet: View {
         }
     }
 
+    /// The signed-in account when the query targets its PRVIO ID — the ID is
+    /// a real lookup key, not decoration.
+    private var accountIdMatch: UUID? {
+        guard active, let uid = auth.session?.user.id,
+              AccountID.matches(query, userId: uid) else { return nil }
+        return uid
+    }
+
     private var hasResults: Bool {
+        accountIdMatch != nil ||
         !shortcutResults.isEmpty || !taskResults.isEmpty || !docResults.isEmpty ||
         !plantResults.isEmpty || !deliveryResults.isEmpty || !peopleResults.isEmpty ||
         !financialResults.isEmpty || !elementResults.isEmpty || !applianceResults.isEmpty ||
@@ -229,7 +239,7 @@ struct GlobalSearchSheet: View {
             guard active, let pid = propertyService.primary?.id else { chatHits = []; return }
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
-            chatHits = (try? await supabase
+            let raw: [ChatSearchHit] = (try? await supabase
                 .from("messages")
                 .select("id, sender_name, body, created_at")
                 .eq("property_id", value: pid.uuidString)
@@ -237,6 +247,18 @@ struct GlobalSearchSheet: View {
                 .order("created_at", ascending: false)
                 .limit(8)
                 .execute().value) ?? []
+            // Structured bodies (shared contacts ride as JSON with a base64
+            // avatar) match almost any substring — keep them only when the
+            // query matches what the user actually sees: names, phones, emails.
+            chatHits = raw.filter { hit in
+                let contacts = SharedContactPayload.decode(hit.body)
+                guard !contacts.isEmpty else { return true }
+                return contacts.contains { c in
+                    c.name.localizedCaseInsensitiveContains(query) ||
+                    c.phones.contains { $0.localizedCaseInsensitiveContains(query) } ||
+                    c.emails.contains { $0.localizedCaseInsensitiveContains(query) }
+                }
+            }
         }
         .sheet(item: $selectedMember) { m in
             MemberProfileSheet(member: m)
@@ -336,6 +358,7 @@ struct GlobalSearchSheet: View {
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                accountSectionView
                 shortcutsSectionView
                 peopleSectionView
                 chatSectionView
@@ -537,6 +560,19 @@ struct GlobalSearchSheet: View {
 
     // MARK: - Individual section views
 
+    @ViewBuilder private var accountSectionView: some View {
+        if let uid = accountIdMatch {
+            resultSection("search_sec_account", icon: "person.text.rectangle.fill", color: .indigo) {
+                resultRow(AccountID.display(for: uid),
+                          subtitle: String(localized: "account_id_open_profile"),
+                          icon: "person.crop.circle.fill", color: .indigo,
+                          isLast: true) {
+                    navigateAway(route: .profile)
+                }
+            }
+        }
+    }
+
     @ViewBuilder private var peopleSectionView: some View {
         if !peopleResults.isEmpty {
             resultSection("People", icon: "person.2.fill", color: .purple) {
@@ -687,8 +723,11 @@ struct GlobalSearchSheet: View {
         if !chatHits.isEmpty {
             resultSection("Chat", icon: "bubble.left.and.bubble.right.fill", color: .blue) {
                 ForEach(chatHits) { hit in
-                    resultRow(hit.body ?? "", subtitle: hit.senderName ?? "",
-                              icon: "bubble.left.fill", color: .blue,
+                    let contacts = SharedContactPayload.decode(hit.body)
+                    resultRow(chatDisplayText(hit.body, contacts: contacts),
+                              subtitle: hit.senderName ?? "",
+                              icon: contacts.isEmpty ? "bubble.left.fill" : "person.crop.circle.fill",
+                              color: .blue,
                               isLast: hit.id == chatHits.last?.id) {
                         navigateAway(route: .chat)
                     }
@@ -754,6 +793,15 @@ struct GlobalSearchSheet: View {
         }
     }
 
+    /// A chat body must always read like a message in results — structured
+    /// payloads (shared contacts) render as their human meaning, never as
+    /// wire-format JSON.
+    private func chatDisplayText(_ body: String?, contacts: [SharedContactPayload]) -> String {
+        guard !contacts.isEmpty else { return body ?? "" }
+        let names = contacts.map(\.name).joined(separator: ", ")
+        return String(format: String(localized: "search_shared_contact"), names)
+    }
+
     // MARK: - Subtitle helpers (extracted to avoid type-checker timeout)
 
     private func paintSubtitle(_ p: PaintColor) -> String {
@@ -812,14 +860,12 @@ struct GlobalSearchSheet: View {
         Button(action: action) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                            .fill(color.opacity(0.14))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: icon)
-                            .font(AppFont.captionStrong)
-                            .foregroundStyle(color)
-                    }
+                    Image(systemName: icon)
+                        .font(AppFont.captionStrong)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(color)
+                        .frame(width: 30, height: 30)
+                        .glassRoundedRect(AppRadius.sm)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
                             .font(AppFont.footnote)

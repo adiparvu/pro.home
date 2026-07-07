@@ -71,8 +71,11 @@ struct NotificationCenterView: View {
                             Label("Clear all", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 34, height: 34)
+                            .glassCircle()
                     }
                 }
             }
@@ -157,7 +160,7 @@ struct NotificationCenterView: View {
             HapticFeedback.selection()
             withAnimation(.smooth(duration: 0.22)) { filter = key }
         } label: {
-            HStack(spacing: 5) {
+            let content = HStack(spacing: 5) {
                 if let icon {
                     Image(systemName: icon)
                         .font(.system(size: 10, weight: .semibold))
@@ -169,9 +172,18 @@ struct NotificationCenterView: View {
             }
             .foregroundStyle(selected ? Color.white : color)
             .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(selected ? color : color.opacity(0.13), in: Capsule())
+
+            // Selected keeps a solid tint for unmistakable state; the resting
+            // chips are Liquid Glass so the row adapts to whatever scrolls
+            // beneath instead of painting opaque pastel pills.
+            if selected {
+                content.background(color.gradient, in: Capsule())
+            } else {
+                content.glassCapsule()
+            }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
     private var emptyState: some View {
@@ -210,14 +222,12 @@ private struct NotificationRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(category.color.opacity(0.13))
-                    .frame(width: 40, height: 40)
-                Image(systemName: category.icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(category.color)
-            }
+            Image(systemName: category.icon)
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(category.color)
+                .frame(width: 40, height: 40)
+                .glassCircle()
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {
@@ -254,15 +264,14 @@ private struct NotificationRow: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
-        .background(
-            notification.isUnread
-                ? Color.primary.opacity(AppOpacity.hairline)
-                : Color.primary.opacity(0.03),
-            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
-        )
+        .liquidGlass(cornerRadius: AppRadius.lg)
+        .overlay {
+            // Unread keeps a quiet tinted edge — state must survive the
+            // switch from opaque fills to adaptive glass.
+            if notification.isUnread {
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(notification.priorityColor.opacity(0.3), lineWidth: 1)
+            }
+        }
     }
 }

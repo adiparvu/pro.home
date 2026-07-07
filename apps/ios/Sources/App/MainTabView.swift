@@ -380,6 +380,9 @@ struct MainTabView: View {
         updateDynamicShortcuts()
         await indexSpotlight()
         await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+        await notificationScheduler.scheduleCelebrations(
+            accountCreatedAt: profileService.profile?.createdAt,
+            birthDate: profileService.profile?.birthDate)
         LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
         if case .coldStart = reason {
             // "Start When App Opens" belongs to launch, not to context switches.
