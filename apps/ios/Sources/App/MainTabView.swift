@@ -371,6 +371,12 @@ struct MainTabView: View {
         }
 
         // Phase 3 — glanceable surfaces, always in the same order.
+        // Apple Weather first (1h App-Group cache) so the snapshot written
+        // below already carries it to the watch.
+        if let lat = propertyService.primary?.latitude,
+           let lon = propertyService.primary?.longitude {
+            await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
+        }
         notificationScheduler.registerCategories()
         await notificationScheduler.reschedule(
             tasks: taskService.tasks,
@@ -469,13 +475,21 @@ struct MainTabView: View {
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
                                    myName: profileService.profile?.preferredName)
-        // Wrist extras: the property pin and the engine's freshest insight.
+        // Wrist extras: the property pin, the engine's freshest insight, and
+        // Apple Weather for the property (whatever the cache holds — the
+        // refresh runs in the startup orchestration).
         let topInsight = proactiveEngine.insights.first { !$0.isDismissed }
+        let weather = PropertyWeather.cached()
         SharedDataStore.writeWatchExtras(SharedDataStore.WatchExtras(
             latitude: propertyService.primary?.latitude,
             longitude: propertyService.primary?.longitude,
             insightTitle: topInsight?.title,
-            insightBody: topInsight?.body))
+            insightBody: topInsight?.body,
+            weatherTemp: weather?.temp,
+            weatherSymbol: weather?.symbol,
+            weatherLo: weather?.lo,
+            weatherHi: weather?.hi,
+            weatherAdvisory: weather?.advisory))
         // The watch renders the same state the widgets do — one push, in the
         // same breath as the snapshot write, so the two can never diverge.
         if let payload = SharedDataStore.currentWatchPayload() {

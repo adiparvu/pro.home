@@ -333,6 +333,24 @@ platform :ios do
             })
             puts "  enable HOMEKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
           end
+
+          # The property weather card fetches through WeatherKit — the
+          # capability must be on the App ID or the entitlement is stripped
+          # from the regenerated profile and every fetch fails with a JWT
+          # authentication error.
+          wk_cap = caps.find { |c| c.dig("attributes","capabilityType") == "WEATHERKIT" }
+          if wk_cap
+            puts "  WEATHERKIT already enabled (id=#{wk_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "WEATHERKIT" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable WEATHERKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
         end
       end
       puts "\nsetup_app_groups done."

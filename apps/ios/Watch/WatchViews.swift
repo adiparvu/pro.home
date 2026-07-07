@@ -192,6 +192,10 @@ private struct TodayGlance: View {
                             .entrance(4)
                     }
 
+                    if let temp = payload.weatherTemp, let symbol = payload.weatherSymbol {
+                        weatherCard(temp: temp, symbol: symbol).entrance(5)
+                    }
+
                     if snapshot.unreadMessages > 0 {
                         unreadRow(snapshot.unreadMessages).entrance(5)
                     }
@@ -284,6 +288,42 @@ private struct TodayGlance: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    /// Apple Weather at the property, with the garden advisory when there is
+    /// one — and the attribution the WeatherKit terms require.
+    private func weatherCard(temp: Double, symbol: String) -> some View {
+        WatchCard(tint: .cyan) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 15, weight: .semibold))
+                        .symbolRenderingMode(.multicolor)
+                    Text(verbatim: "\(Int(temp.rounded()))°")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
+                    Spacer(minLength: 0)
+                    if let lo = payload.weatherLo, let hi = payload.weatherHi {
+                        Text(verbatim: "\(Int(lo.rounded()))°–\(Int(hi.rounded()))°")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if let advisory = payload.weatherAdvisory {
+                    HStack(spacing: 4) {
+                        Image(systemName: advisory == "frost" ? "snowflake" : "cloud.rain.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(advisory == "frost" ? "watch_adv_frost" : "watch_adv_rain")
+                            .font(.system(size: 11, weight: .medium))
+                            .lineLimit(2)
+                    }
+                    .foregroundStyle(.orange)
+                }
+                Text(verbatim: " Apple Weather")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private func unreadRow(_ count: Int) -> some View {

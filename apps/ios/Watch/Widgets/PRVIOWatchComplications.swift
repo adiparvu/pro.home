@@ -1,6 +1,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import RelevanceKit
 
 // MARK: - PRVIO watch-face complications
 //
@@ -18,6 +19,7 @@ struct PRVIOWatchWidgetBundle: WidgetBundle {
         PRVIOShoppingComplication()
         PRVIODeliveriesComplication()
         PRVIOHealthComplication()
+        PRVIOWeatherComplication()
     }
 }
 
@@ -43,7 +45,7 @@ struct PRVIOStatusComplication: Widget {
 
 struct PRVIOTasksComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "PRVIOWatchTasks", provider: WatchPayloadProvider()) { entry in
+        StaticConfiguration(kind: "PRVIOWatchTasks", provider: WatchPayloadProvider(domain: .tasks)) { entry in
             let open = (entry.payload?.tasks ?? []).filter { !$0.isCompleted }
             DomainComplicationView(
                 count: entry.payload?.snapshot.openTaskCount ?? 0,
@@ -65,7 +67,7 @@ struct PRVIOTasksComplication: Widget {
 
 struct PRVIOWaterComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "PRVIOWatchWater", provider: WatchPayloadProvider()) { entry in
+        StaticConfiguration(kind: "PRVIOWatchWater", provider: WatchPayloadProvider(domain: .water)) { entry in
             DomainComplicationView(
                 count: entry.payload?.snapshot.plantsNeedingWater ?? 0,
                 icon: "drop.fill",
@@ -85,7 +87,7 @@ struct PRVIOWaterComplication: Widget {
 
 struct PRVIOShoppingComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "PRVIOWatchShopping", provider: WatchPayloadProvider()) { entry in
+        StaticConfiguration(kind: "PRVIOWatchShopping", provider: WatchPayloadProvider(domain: .shopping)) { entry in
             let pending = (entry.payload?.supplies ?? []).filter { !$0.isCompleted }
             DomainComplicationView(
                 count: entry.payload?.snapshot.pendingSupplyCount ?? 0,
@@ -106,7 +108,7 @@ struct PRVIOShoppingComplication: Widget {
 
 struct PRVIODeliveriesComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "PRVIOWatchDeliveries", provider: WatchPayloadProvider()) { entry in
+        StaticConfiguration(kind: "PRVIOWatchDeliveries", provider: WatchPayloadProvider(domain: .deliveries)) { entry in
             let next = entry.payload?.deliveries.first
             DomainComplicationView(
                 count: entry.payload?.snapshot.activeDeliveryCount ?? 0,
@@ -163,7 +165,7 @@ struct CompleteTopTaskIntent: AppIntent {
 
 struct PRVIOHealthComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "PRVIOWatchHealth", provider: WatchPayloadProvider()) { entry in
+        StaticConfiguration(kind: "PRVIOWatchHealth", provider: WatchPayloadProvider(domain: .health)) { entry in
             HealthComplicationView(score: entry.payload?.snapshot.propertyHealthScore,
                                    name: entry.payload?.snapshot.propertyName)
                 .modifier(ComplicationBackground())
@@ -309,6 +311,11 @@ struct WatchPayloadEntry: TimelineEntry {
 }
 
 struct WatchPayloadProvider: TimelineProvider {
+    /// Which complication this provider instance feeds — relevance clues are
+    /// per domain, so the Smart Stack surfaces the RIGHT card, not all seven.
+    enum Domain { case status, tasks, water, shopping, deliveries, health, weather }
+    var domain: Domain = .status
+
     private func load() -> WatchPayload? {
         guard let data = UserDefaults(suiteName: SharedDataStore.suiteName)?
             .data(forKey: "prvio.watch.payload") else { return nil }
@@ -329,6 +336,167 @@ struct WatchPayloadProvider: TimelineProvider {
         let entry = WatchPayloadEntry(date: .now, payload: load())
         completion(Timeline(entries: [entry],
                             policy: .after(.now.addingTimeInterval(3600))))
+    }
+
+    // MARK: Smart Stack relevance (watchOS 11 asks; earlier systems never call)
+    //
+    // Context clues teach the Smart Stack WHEN each complication matters:
+    // plants surface in the morning while thirsty, deliveries while a parcel
+    // is on the road today, tasks while something is overdue, weather early
+    // and whenever a garden advisory is active.
+
+    func relevance() async -> WidgetRelevance<Void> {
+        let payload = load()
+        let cal = Calendar.current
+        let now = Date()
+        var attributes: [WidgetRelevanceAttribute<Void>] = []
+
+        func morning(daysAhead: Int) -> DateInterval? {
+            guard let day = cal.date(byAdding: .day, value: daysAhead, to: now),
+                  let start = cal.date(bySettingHour: 7, minute: 0, second: 0, of: day),
+                  let end = cal.date(bySettingHour: 10, minute: 0, second: 0, of: day),
+                  end > now else { return nil }
+            return DateInterval(start: max(start, now), end: end)
+        }
+
+        switch domain {
+        case .tasks:
+            if (payload?.snapshot.overdueTaskCount ?? 0) > 0 {
+                attributes.append(WidgetRelevanceAttribute(
+                    context: .date(interval: DateInterval(start: now, duration: 2 * 3600),
+                                   kind: .scheduled)))
+            }
+        case .water:
+            if (payload?.snapshot.plantsNeedingWater ?? 0) > 0 {
+                for day in 0...1 {
+                    if let interval = morning(daysAhead: day) {
+                        attributes.append(WidgetRelevanceAttribute(
+                            context: .date(interval: interval, kind: .scheduled)))
+                    }
+                }
+            }
+        case .deliveries:
+            if payload?.deliveries.contains(where: { $0.status == "out_for_delivery" }) == true,
+               let dayEnd = cal.date(bySettingHour: 21, minute: 0, second: 0, of: now),
+               dayEnd > now {
+                attributes.append(WidgetRelevanceAttribute(
+                    context: .date(interval: DateInterval(start: now, end: dayEnd),
+                                   kind: .scheduled)))
+            }
+        case .shopping:
+            // Shopping lists matter on weekend mornings when items are pending.
+            if (payload?.snapshot.pendingSupplyCount ?? 0) > 0 {
+                for day in 0...6 {
+                    guard let candidate = cal.date(byAdding: .day, value: day, to: now),
+                          cal.component(.weekday, from: candidate) == 7,
+                          let interval = morning(daysAhead: day) else { continue }
+                    attributes.append(WidgetRelevanceAttribute(
+                        context: .date(interval: interval, kind: .default)))
+                    break
+                }
+            }
+        case .weather:
+            if payload?.weatherAdvisory != nil {
+                attributes.append(WidgetRelevanceAttribute(
+                    context: .date(interval: DateInterval(start: now, duration: 6 * 3600),
+                                   kind: .scheduled)))
+            }
+            if let interval = morning(daysAhead: payload?.weatherTemp == nil ? 1 : 0) {
+                attributes.append(WidgetRelevanceAttribute(
+                    context: .date(interval: interval, kind: .informational)))
+            }
+        case .status, .health:
+            break
+        }
+        return WidgetRelevance(attributes)
+    }
+}
+
+// MARK: - Weather complication (Apple Weather at the property)
+
+struct PRVIOWeatherComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchWeather",
+                            provider: WatchPayloadProvider(domain: .weather)) { entry in
+            WeatherComplicationView(payload: entry.payload)
+                .modifier(ComplicationBackground())
+        }
+        .configurationDisplayName("PRVIO · Weather")
+        .description(NSLocalizedString("watch_comp_weather_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+private struct WeatherComplicationView: View {
+    let payload: WatchPayload?
+
+    @Environment(\.widgetFamily) private var family
+
+    private var temp: Int? { payload?.weatherTemp.map { Int($0.rounded()) } }
+    private var symbol: String { payload?.weatherSymbol ?? "cloud.sun.fill" }
+    private var advisory: String? { payload?.weatherAdvisory }
+
+    private var advisoryText: Text? {
+        switch advisory {
+        case "frost": return Text("watch_adv_frost")
+        case "rain":  return Text("watch_adv_rain")
+        default:      return nil
+        }
+    }
+
+    var body: some View {
+        Group {
+            switch family {
+            case .accessoryCircular:
+                VStack(spacing: 0) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 12, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                    Text(verbatim: temp.map { "\($0)°" } ?? "–")
+                        .font(.system(.body, design: .rounded).weight(.bold))
+                }
+            case .accessoryCorner:
+                Text(verbatim: temp.map { "\($0)°" } ?? "–")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .widgetCurvesContent()
+                    .widgetLabel { Text(payload?.snapshot.propertyName ?? "PRVIO") }
+            case .accessoryRectangular:
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: symbol)
+                            .font(.system(size: 11, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                        Text(payload?.snapshot.propertyName ?? "PRVIO")
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    HStack(spacing: 6) {
+                        Text(verbatim: temp.map { "\($0)°" } ?? "–")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                        if let lo = payload?.weatherLo, let hi = payload?.weatherHi {
+                            Text(verbatim: "\(Int(lo.rounded()))°–\(Int(hi.rounded()))°")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let advisoryText {
+                        advisoryText
+                            .font(.system(size: 11))
+                            .foregroundStyle(.orange)
+                            .lineLimit(1)
+                    } else {
+                        Text(verbatim: " Apple Weather")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            default:
+                Text(verbatim: temp.map { "PRVIO \($0)°" } ?? "PRVIO")
+            }
+        }
+        .widgetURL(URL(string: "prvio://"))
     }
 }
 

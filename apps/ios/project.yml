@@ -68,6 +68,7 @@ targets:
         # HomeKit camera accessories (Cameras page): HMHomeManager requires
         # the HomeKit entitlement in the provisioning profile.
         com.apple.developer.homekit: true
+        com.apple.developer.weatherkit: true
     postBuildScripts:
       # The .xcstrings catalog is copied raw by this project, not compiled —
       # this phase generates the per-language .lproj tables into the product
@@ -85,7 +86,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "814"
+        CURRENT_PROJECT_VERSION: "815"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -161,7 +162,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "814"
+        CURRENT_PROJECT_VERSION: "815"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -198,7 +199,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "814"
+        CURRENT_PROJECT_VERSION: "815"
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -242,7 +243,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "814"
+        CURRENT_PROJECT_VERSION: "815"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"

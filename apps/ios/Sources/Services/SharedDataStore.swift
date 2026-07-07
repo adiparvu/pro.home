@@ -43,6 +43,13 @@ struct WatchPayload: Codable {
     /// to the wrist and readable offline.
     var insightTitle: String? = nil
     var insightBody: String? = nil
+    /// Apple Weather for the property (fetched on the phone). Advisory is a
+    /// raw token ("frost" | "rain") — the watch localizes it.
+    var weatherTemp: Double? = nil
+    var weatherSymbol: String? = nil
+    var weatherLo: Double? = nil
+    var weatherHi: Double? = nil
+    var weatherAdvisory: String? = nil
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -262,6 +269,11 @@ enum SharedDataStore {
         var longitude: Double?
         var insightTitle: String?
         var insightBody: String?
+        var weatherTemp: Double? = nil
+        var weatherSymbol: String? = nil
+        var weatherLo: Double? = nil
+        var weatherHi: Double? = nil
+        var weatherAdvisory: String? = nil
     }
 
     static func writeWatchExtras(_ extras: WatchExtras) {
@@ -294,7 +306,12 @@ enum SharedDataStore {
                             latitude: extras.latitude,
                             longitude: extras.longitude,
                             insightTitle: extras.insightTitle,
-                            insightBody: extras.insightBody)
+                            insightBody: extras.insightBody,
+                            weatherTemp: extras.weatherTemp,
+                            weatherSymbol: extras.weatherSymbol,
+                            weatherLo: extras.weatherLo,
+                            weatherHi: extras.weatherHi,
+                            weatherAdvisory: extras.weatherAdvisory)
     }
 
     static func appendPendingSupplyCheck(_ itemId: UUID) {
