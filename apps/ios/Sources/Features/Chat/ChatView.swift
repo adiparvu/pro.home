@@ -63,9 +63,22 @@ struct ChatView: View {
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
     @State private var themeRefresh = 0
-    /// False until the first batch of messages lands — the initial fill must
-    /// not animate (bubbles springing into place read as an entry flash).
+    /// False until entry settles. Messages arrive in two batches — the page
+    /// already in memory from ConversationsView, then the network refresh that
+    /// replaces it — and BOTH must land unanimated, so this flips only after a
+    /// short grace window, not on the first count change.
     @State private var chatDidLoad = false
+    /// Grace timer that flips `chatDidLoad`; started once the list is non-empty.
+    @State private var chatLoadGraceTask: Task<Void, Never>? = nil
+    /// Per-change animation gate, decided in `onChange` (which runs ahead of
+    /// the body pass that renders the change): spring only for small deltas
+    /// (send/receive), never for bulk merges (refresh, older-page loads).
+    @State private var animateMessageDelta = false
+    /// Newest rendered message id — distinguishes appends (auto-scroll) from
+    /// prepends like "load older" (keep the reading position).
+    @State private var newestMessageId: UUID? = nil
+    /// Guards the jump-to-latest button against rapid re-taps mid-flight.
+    @State private var isJumpingToLatest = false
     @State private var audioRecorder = ChatAudioRecorder()
     @State var outbox = OfflineOutbox()
 
@@ -351,6 +364,8 @@ struct ChatView: View {
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
         }
         .onDisappear {
+            chatLoadGraceTask?.cancel()
+            chatLoadGraceTask = nil
             // Persist the unsent composer draft once, on the way out.
             if text.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(text, forKey: draftKey) }
@@ -532,6 +547,18 @@ struct ChatView: View {
 
     private let chatBottomInset: CGFloat = 78
 
+    /// Arms the entry grace window once. `chatDidLoad` may only flip after the
+    /// network refresh has had time to land; flipping it on the first count
+    /// change let the refresh batch animate — the visible settle on entry.
+    private func startLoadGraceIfNeeded() {
+        guard chatLoadGraceTask == nil else { return }
+        chatLoadGraceTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            chatDidLoad = true
+        }
+    }
+
     private var messageList: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
@@ -710,13 +737,15 @@ struct ChatView: View {
                     }
                     // Clearance so the newest message rests above the overlaid
                     // input bar (which blurs the messages behind it = real glass).
+                    // It doubles as the jump-button sentinel: visibility follows
+                    // it entering/leaving the lazy render window. A tall zone
+                    // means the sub-point settle at rest can't flip the button
+                    // in and out (the previous 1pt marker toggled on any nudge
+                    // and stole the first tap; before that, a GeometryReader
+                    // preference reset to 0 whenever the LazyVStack culled the
+                    // off-screen marker, hiding the button on deep scroll-back).
                     Color.clear.frame(height: chatBottomInset)
-                    // Jump-button sentinel: visibility follows the marker
-                    // entering/leaving the lazy render window. The previous
-                    // GeometryReader preference reset to 0 whenever the
-                    // LazyVStack culled the off-screen marker, hiding the
-                    // button on any deep scroll-back.
-                    Color.clear.frame(height: 1).id("CHAT_BOTTOM")
+                        .id("CHAT_BOTTOM")
                         .onAppear {
                             withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
                         }
@@ -726,17 +755,37 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
-                .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
+                .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { old, new in
-                guard !messageService.messages.isEmpty else { return }
-                defer { chatDidLoad = true }
-                if old == 0 {
-                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                } else {
-                    withAnimation { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
+                guard new > 0 else { return }
+                // Decide the animation for THIS change — onChange runs ahead
+                // of the body pass that renders it. Spring only small deltas
+                // once entry has settled; the network refresh replacing the
+                // in-memory page and "load older" pages must land unanimated
+                // (a springing bulk merge reads as the whole chat settling).
+                animateMessageDelta = chatDidLoad && abs(new - old) <= 3
+                startLoadGraceIfNeeded()
+                let newest = messageService.messages.last?.id
+                let appended = newest != newestMessageId
+                newestMessageId = newest
+                // Prepends (older pages) keep the reading position; only
+                // appends may move the viewport.
+                if appended {
+                    let ownLatest = messageService.messages.last?.senderId
+                        == supabase.auth.currentSession?.user.id
+                    if !chatDidLoad {
+                        // Entry batches: snap straight to the bottom rest.
+                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                    } else if !showJumpToLatest || ownLatest {
+                        // Follow new messages only when already at the bottom
+                        // or when we sent it — never yank a reader up-thread.
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+                            proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                        }
+                    }
                 }
                 if let pid = propertyId {
                     Task {
@@ -747,12 +796,18 @@ struct ChatView: View {
             }
             .onAppear {
                 // defaultScrollAnchor(.bottom) already rests on the newest
-                // message from the first frame — a delayed corrective jump here
-                // read as an entry flash. Only the unread divider needs one.
-                if unreadDividerId != nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
-                    }
+                // message from the first frame — no corrective jump here.
+                newestMessageId = messageService.messages.last?.id
+                if !messageService.messages.isEmpty { startLoadGraceIfNeeded() }
+            }
+            .onChange(of: unreadDividerId) { _, id in
+                // Set once, right after the first load completes. (An onAppear
+                // check ran before the id existed — dead on entry — and fired
+                // again when navigating back from group info, yanking the list
+                // to the divider mid-session.)
+                guard id != nil else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
                 }
             }
             .onChange(of: scrollTarget) { _, target in
@@ -764,10 +819,26 @@ struct ChatView: View {
             .overlay(alignment: .bottom) {
                 if showJumpToLatest {
                     Button {
+                        // Idempotent: re-taps mid-flight are ignored instead of
+                        // restarting the spring (each restart read as a nudge).
+                        guard !isJumpingToLatest else { return }
+                        isJumpingToLatest = true
+                        HapticFeedback.impact(.light)
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                         }
-                        HapticFeedback.impact(.light)
+                        // LazyVStack estimates offsets for distant targets, so
+                        // one animated pass can land short of the true bottom —
+                        // which used to demand a second or third press. Once
+                        // the spring settles, re-assert the anchor; a no-op if
+                        // the first pass already landed.
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.45))
+                            if showJumpToLatest {
+                                proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                            }
+                            isJumpingToLatest = false
+                        }
                     } label: {
                         Image(systemName: "chevron.down")
                             .font(AppFont.headline)

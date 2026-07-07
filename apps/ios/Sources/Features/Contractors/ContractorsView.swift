@@ -141,9 +141,20 @@ struct ContractorsView: View {
     @Environment(ContractorService.self) private var service
     @Environment(AuthService.self) private var auth
     @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(TaskService.self) private var taskService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(DirectMessageService.self) private var directMessageService
     @State private var showAdd = false
     @State private var selectedContractor: ContractorModel? = nil
     @State private var editContractor: ContractorModel? = nil
+    @State private var deleteCandidate: ContractorModel? = nil
+    /// Matched member whose in-app DM thread is being opened from a row.
+    @State private var dmMember: FamilyMember? = nil
+    /// Matched member for the chat surface's own call affordance (the same
+    /// CallPickerSheet DirectMessageView presents from its header).
+    @State private var callMember: FamilyMember? = nil
     @State private var search = ""
     @State private var favoritesOnly = false
     @State private var favRefresh = 0
@@ -160,6 +171,30 @@ struct ContractorsView: View {
             $0.name.localizedCaseInsensitiveContains(search) ||
             $0.specialty.localizedCaseInsensitiveContains(search)
         }
+    }
+
+    /// Contractor id → property member with a PRVIO account, rebuilt from the
+    /// already-loaded in-memory lists (O(n + m), no network).
+    private var accountMatches: [UUID: FamilyMember] {
+        ContractorAccountMatch.matches(contractors: service.contractors,
+                                       members: familyService.members)
+    }
+
+    /// Compact "history on this property" figure for the peek card: how many
+    /// already-loaded financial records and tasks mention the contractor by
+    /// name. Pure in-memory sweep, evaluated only when a preview is presented.
+    private func historyCount(for contractor: ContractorModel) -> Int {
+        let name = contractor.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard name.count >= 3 else { return 0 }
+        let financial = financialService.records.filter {
+            $0.title.localizedCaseInsensitiveContains(name) ||
+            ($0.description?.localizedCaseInsensitiveContains(name) ?? false)
+        }.count
+        let tasks = taskService.tasks.filter {
+            $0.title.localizedCaseInsensitiveContains(name) ||
+            ($0.notes?.localizedCaseInsensitiveContains(name) ?? false)
+        }.count
+        return financial + tasks
     }
 
     var body: some View {
@@ -181,9 +216,16 @@ struct ContractorsView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 10) {
+                            // Hoisted: one O(n + m) index build per render,
+                            // not one per row.
+                            let matches = accountMatches
                             ForEach(filtered) { c in
+                                let matched = matches[c.id]
                                 ContractorRow(contractor: c,
-                                              isFavorite: ContractorFavoritesStore.isFavorite(c.id))
+                                              isFavorite: ContractorFavoritesStore.isFavorite(c.id),
+                                              matchedMember: matched,
+                                              onOpenDM: { dmMember = $0 },
+                                              onOpenCallPicker: { callMember = $0 })
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         HapticFeedback.selection()
@@ -193,7 +235,26 @@ struct ContractorsView: View {
                                         if let phone = c.phone, !phone.isEmpty {
                                             Button { call(phone) } label: { Label("Call", systemImage: "phone.fill") }
                                         }
-                                        Button { editContractor = c } label: { Label("Edit", systemImage: "pencil") }
+                                        if matched != nil || c.phone?.isEmpty == false {
+                                            Button {
+                                                if let matched {
+                                                    HapticFeedback.selection()
+                                                    dmMember = matched
+                                                } else if let phone = c.phone {
+                                                    openContactURL("sms://\(contactURLDigits(phone))")
+                                                }
+                                            } label: { Label("Message", systemImage: "message.fill") }
+                                        }
+                                        if let phone = c.phone, !phone.isEmpty {
+                                            Button {
+                                                openContactURL("facetime://\(contactURLDigits(phone))")
+                                            } label: { Label("FaceTime", systemImage: "video.fill") }
+                                        }
+                                        if let email = c.email, !email.isEmpty {
+                                            Button {
+                                                openContactURL("mailto:\(email)")
+                                            } label: { Label("Email", systemImage: "envelope.fill") }
+                                        }
                                         Button {
                                             HapticFeedback.selection()
                                             ContractorFavoritesStore.toggle(c.id); favRefresh += 1
@@ -201,15 +262,19 @@ struct ContractorsView: View {
                                             Label(ContractorFavoritesStore.isFavorite(c.id) ? "Remove from favorites" : "Add to favorites",
                                                   systemImage: ContractorFavoritesStore.isFavorite(c.id) ? "star.slash" : "star")
                                         }
+                                        Button { editContractor = c } label: { Label("Edit", systemImage: "pencil") }
                                         Divider()
                                         Button(role: .destructive) {
-                                            HapticFeedback.warning(); Task { await service.delete(c) }
+                                            deleteCandidate = c
                                         } label: { Label("Delete", systemImage: "trash") }
+                                    } preview: {
+                                        ContractorPeekCard(contractor: c,
+                                                           member: matched,
+                                                           historyCount: historyCount(for: c))
                                     }
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
-                                            HapticFeedback.warning()
-                                            Task { await service.delete(c) }
+                                            deleteCandidate = c
                                         } label: { Label("Delete", systemImage: "trash") }
                                     }
                                     .swipeActions(edge: .leading) {
@@ -228,7 +293,13 @@ struct ContractorsView: View {
                 }
             }
         }
-        .task { await service.load() }
+        .task {
+            // Members power the PRVIO-account matching; they are loaded at
+            // startup, so this only refetches after a cold cache.
+            async let contractorsLoad: Void = service.load()
+            if familyService.members.isEmpty { await familyService.load() }
+            await contractorsLoad
+        }
         .sheet(isPresented: $showAdd) {
             AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)
         }
@@ -237,6 +308,43 @@ struct ContractorsView: View {
         }
         .sheet(item: $editContractor) { c in
             EditContractorSheet(contractor: c, service: service)
+        }
+        // Full-height in-app DM with the matched member — the same
+        // construction ConversationsView uses (DirectMessageView reads
+        // everything else, including myName, from the environment). The task
+        // mirrors ConversationsView's bootstrap so the thread has history and
+        // realtime even when the chat tab was never visited this session.
+        .sheet(item: $dmMember) { member in
+            NavigationStack {
+                DirectMessageView(member: member)
+            }
+            .task {
+                guard let pid = propertyService.primary?.id else { return }
+                let myName = profileService.profile?.preferredName
+                    ?? profileService.profile?.fullName ?? "Me"
+                directMessageService.myName = myName
+                await directMessageService.load(propertyId: pid, myName: myName)
+                await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+            }
+        }
+        // Mirrors DirectMessageView's own header call affordance.
+        .sheet(item: $callMember) { member in
+            CallPickerSheet(members: [member], isVideo: false)
+        }
+        .confirmationDialog(
+            Text("Delete \(deleteCandidate?.name ?? "")?"),
+            isPresented: Binding(
+                get: { deleteCandidate != nil },
+                set: { if !$0 { deleteCandidate = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Contractor", role: .destructive) {
+                guard let c = deleteCandidate else { return }
+                deleteCandidate = nil
+                HapticFeedback.warning()
+                Task { await service.delete(c) }
+            }
         }
         .alert("Error", isPresented: Binding(
             get: { service.error != nil },
@@ -286,13 +394,35 @@ struct ContractorsView: View {
 private struct ContractorRow: View {
     let contractor: ContractorModel
     var isFavorite: Bool = false
+    /// Property member with a PRVIO account matching this contractor, if any.
+    var matchedMember: FamilyMember? = nil
+    /// Opens the in-app 1:1 DM with the matched member (default tap on the
+    /// message icon when matched).
+    var onOpenDM: (FamilyMember) -> Void = { _ in }
+    /// Presents the chat surface's call affordance for the matched member
+    /// (default tap on the call icon when matched).
+    var onOpenCallPicker: (FamilyMember) -> Void = { _ in }
+
+    /// Channel data: the contractor's own fields, falling back to the matched
+    /// member's profile so a linked account stays reachable either way.
+    private var channelPhone: String? {
+        nonEmpty(contractor.phone) ?? nonEmpty(matchedMember?.phone)
+    }
+    private var channelEmail: String? {
+        nonEmpty(contractor.email) ?? nonEmpty(matchedMember?.email)
+    }
+    private var hasChannels: Bool { channelPhone != nil || channelEmail != nil }
+
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary)
+                        Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
+                        if matchedMember != nil {
+                            PRVIOAccountBadge()
+                        }
                         if isFavorite {
                             Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(.yellow)
                         }
@@ -300,22 +430,231 @@ private struct ContractorRow: View {
                     Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()
-                if let phone = contractor.phone, !phone.isEmpty {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
-                            UIApplication.shared.open(url)
+                // Two-layer quick actions: default tap = the primary channel
+                // (in-app when the contractor has a PRVIO account), long-press
+                // = a native menu of every other way to reach them.
+                if matchedMember != nil || channelPhone != nil {
+                    quickAction("message.fill", accessibility: "Message contractor") {
+                        if let member = matchedMember {
+                            onOpenDM(member)
+                        } else if let phone = channelPhone {
+                            openContactURL("sms://\(contactURLDigits(phone))")
                         }
-                    } label: {
-                        Image(systemName: "phone.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(.primary)
-                            .frame(width: 38, height: 38)
                     }
-                    .glassCircle()
-                    .accessibilityLabel("Call contractor")
+                    quickAction("phone.fill", accessibility: "Call contractor") {
+                        if let member = matchedMember {
+                            onOpenCallPicker(member)
+                        } else if let phone = channelPhone {
+                            openContactURL("tel://\(contactURLDigits(phone))")
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func quickAction(_ icon: String,
+                             accessibility: LocalizedStringKey,
+                             primary: @escaping () -> Void) -> some View {
+        Group {
+            if hasChannels {
+                Menu {
+                    ContractorChannelMenu(phone: channelPhone, email: channelEmail)
+                } label: {
+                    quickActionIcon(icon)
+                } primaryAction: {
+                    HapticFeedback.impact(.light)
+                    primary()
+                }
+            } else {
+                Button {
+                    HapticFeedback.impact(.light)
+                    primary()
+                } label: {
+                    quickActionIcon(icon)
+                }
+            }
+        }
+        .glassCircle()
+        .accessibilityLabel(accessibility)
+    }
+
+    private func quickActionIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 16))
+            .foregroundStyle(.primary)
+            .frame(width: 38, height: 38)
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        guard let value, !value.isEmpty else { return nil }
+        return value
+    }
+}
+
+// MARK: - Contact plumbing (shared by row + context menu)
+
+/// Digits (plus leading "+") suitable for tel:/sms:/facetime: URLs.
+private func contactURLDigits(_ phone: String) -> String {
+    phone.filter { $0.isNumber || $0 == "+" }
+}
+
+private func openContactURL(_ raw: String) {
+    HapticFeedback.impact(.light)
+    guard let url = URL(string: raw) else { return }
+    UIApplication.shared.open(url)
+}
+
+/// Long-press menu on the row's quick-action icons: every other channel for
+/// reaching the contractor, built only from data that actually exists.
+private struct ContractorChannelMenu: View {
+    let phone: String?
+    let email: String?
+
+    var body: some View {
+        Section("Alege cum contactezi") {
+            if let phone, !phone.isEmpty {
+                let urlDigits = contactURLDigits(phone)
+                let bareDigits = phone.filter(\.isNumber)
+                Button {
+                    openContactURL("facetime://\(urlDigits)")
+                } label: { Label("FaceTime", systemImage: "video.fill") }
+                Button {
+                    openContactURL("facetime-audio://\(urlDigits)")
+                } label: { Label("FaceTime Audio", systemImage: "phone.and.waveform.fill") }
+                Button {
+                    openContactURL("https://wa.me/\(bareDigits)")
+                } label: { Label("WhatsApp", systemImage: "message.fill") }
+                Button {
+                    openContactURL("tg://resolve?phone=\(bareDigits)")
+                } label: { Label("Telegram", systemImage: "paperplane.fill") }
+                Button {
+                    openContactURL("sms://\(urlDigits)")
+                } label: { Label("Mesaj SMS", systemImage: "bubble.left.fill") }
+                Button {
+                    openContactURL("tel://\(urlDigits)")
+                } label: { Label("Sună clasic", systemImage: "phone.fill") }
+            } else if let email, !email.isEmpty {
+                // No phone on file: FaceTime still works against the account
+                // email; every phone-bound channel is deliberately absent.
+                Button {
+                    openContactURL("facetime://\(email)")
+                } label: { Label("FaceTime", systemImage: "video.fill") }
+                Button {
+                    openContactURL("facetime-audio://\(email)")
+                } label: { Label("FaceTime Audio", systemImage: "phone.and.waveform.fill") }
+            }
+        }
+    }
+}
+
+// MARK: - PRVIO account badge
+
+/// Small monochrome glass capsule marking contractors who also have a PRVIO
+/// account on this property.
+struct PRVIOAccountBadge: View {
+    var body: some View {
+        Text(verbatim: "PRVIO")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2.5)
+            .glassCapsule()
+            .accessibilityLabel(Text("Are cont PRVIO"))
+    }
+}
+
+// MARK: - Long-press peek card
+
+/// Rich `.contextMenu` preview for a contractor row: avatar (member photo when
+/// the contractor has a PRVIO account, monochrome initials on glass
+/// otherwise), name + trade, contact rows, and a compact history line
+/// computed from data already in memory.
+struct ContractorPeekCard: View {
+    let contractor: ContractorModel
+    let member: FamilyMember?
+    let historyCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            HStack(spacing: 14) {
+                avatar
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(contractor.name)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        if member != nil {
+                            PRVIOAccountBadge()
+                        }
+                    }
+                    Text(LocalizedStringKey(contractor.specialty.capitalized))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                }
+                Spacer(minLength: 0)
+            }
+            if contractor.phone?.isEmpty == false || contractor.email?.isEmpty == false {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let phone = contractor.phone, !phone.isEmpty {
+                        contactLine("phone.fill", phone)
+                    }
+                    if let email = contractor.email, !email.isEmpty {
+                        contactLine("envelope.fill", email)
+                    }
+                }
+            }
+            if historyCount > 0 {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    Text("Activitate pe proprietate: \(historyCount)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                }
+            }
+        }
+        .padding(AppSpacing.xl)
+        .frame(width: 340, alignment: .leading)
+        .background(.regularMaterial)
+    }
+
+    @ViewBuilder private var avatar: some View {
+        if let member {
+            MemberAvatar(member: member, size: 56)
+        } else {
+            ZStack {
+                Circle().fill(.ultraThinMaterial)
+                Circle().strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 1)
+                Text(initials)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+            }
+            .frame(width: 56, height: 56)
+        }
+    }
+
+    private var initials: String {
+        let parts = contractor.name.split(separator: " ")
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
+        }
+        return String(contractor.name.prefix(2)).uppercased()
+    }
+
+    private func contactLine(_ icon: String, _ value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .frame(width: 20)
+            Text(value)
+                .font(.system(size: 14))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
         }
     }
 }
