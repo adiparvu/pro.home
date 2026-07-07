@@ -26,6 +26,9 @@ struct NavSettingsRow<D: View>: View {
     let icon: String
     let color: Color
     let label: LocalizedStringKey
+    /// Optional current value shown before the chevron, the way iOS Settings
+    /// states a row's value ("Mesaje care dispar   7 zile ›").
+    var value: String? = nil
     @ViewBuilder let destination: () -> D
 
     var body: some View {
@@ -39,6 +42,12 @@ struct NavSettingsRow<D: View>: View {
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     Spacer()
+                    if let value {
+                        Text(value)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .lineLimit(1)
+                    }
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))

@@ -174,7 +174,12 @@ final class MessageService {
                 // Count only messages from others as unread — not my own echoes, and
                 // not a forced +1 when loadNewer found nothing new (the old drift bug).
                 let myId = supabase.auth.currentSession?.user.id
-                self.unreadCount += self.messages.suffix(added).filter { $0.senderId != myId }.count
+                let fromOthers = self.messages.suffix(added).filter { $0.senderId != myId }.count
+                self.unreadCount += fromOthers
+                // The per-conversation alert tone is a real setting, not
+                // decoration: play it for messages from others while the
+                // app is in the foreground.
+                if fromOthers > 0 { ChatToneStore.playIncoming("group") }
             }
         })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in

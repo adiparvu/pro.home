@@ -84,100 +84,16 @@ struct AppearanceView: View {
 
     // MARK: - Currency
 
+    // Currency earned its own page (it's a financial preference, not a
+    // visual one) — Appearance keeps a single value-stating row into it.
     private var currencySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Currency")
-
-            VStack(spacing: 0) {
-                ForEach(CurrencyService.supported, id: \.code) { cur in
-                    let isSelected = appSettings.preferredCurrency == cur.code
-                    Button {
-                        withAnimation(.spring(response: 0.3)) {
-                            appSettings.preferredCurrency = cur.code
-                        }
-                        if let uid = auth.session?.user.id {
-                            appSettings.syncToProfile(userId: uid)
-                        }
-                    } label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
-                                    .frame(width: 40, height: 40)
-                                Text(cur.symbol)
-                                    .font(AppFont.subheadline)
-                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: "\(cur.code) — ") + Text(LocalizedStringKey(cur.name))
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.primary)
-                                if isSelected {
-                                    Text(currencyService.rateDisplay(for: cur.code))
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Color.primary.opacity(0.4))
-                                        .transition(.opacity)
-                                }
-                            }
-
-                            Spacer()
-
-                            if currencyService.isLoading && isSelected {
-                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(AppOpacity.mediumText))
-                            } else if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(.tint)
-                                    .transition(.scale.combined(with: .opacity))
-                            } else {
-                                Circle()
-                                    .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
-                                    .frame(width: 20, height: 20)
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, AppSpacing.md)
-                    }
-                    .buttonStyle(.plain)
-
-                    if cur.code != CurrencyService.supported.last?.code {
-                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 68)
-                    }
-                }
+        SettingsGroup(title: "Currency") {
+            NavSettingsRow(icon: "coloncurrencysign.circle.fill", color: Color.brandSuccess,
+                           label: "currency_row_label",
+                           value: appSettings.preferredCurrency) {
+                CurrencyView()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 10))
-                Text("BNR rates · Updated \(currencyService.lastUpdatedDisplay)")
-                    .font(.system(size: 11))
-            }
-            .foregroundStyle(Color.primary.opacity(0.3))
-            .padding(.leading, AppSpacing.xxs)
-
-            Button {
-                Task { await forceFetch() }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(AppFont.caption)
-                    Text("Refresh rates now")
-                        .font(AppFont.caption)
-                }
-                .foregroundStyle(.tint)
-                .padding(.leading, AppSpacing.xxs)
-            }
-            .buttonStyle(.plain)
-            .disabled(currencyService.isLoading)
         }
-    }
-
-    private func forceFetch() async {
-        UserDefaults.standard.removeObject(forKey: "prvio.bnr.ratesDate")
-        await currencyService.refresh()
     }
 
     // MARK: - Accent Color

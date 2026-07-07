@@ -55,10 +55,10 @@ struct ChatSettingsView: View {
                 SettingsGroup(title: "Conversații") {
                     valueTapRow(icon: "star.fill", label: "Mesaje marcate",
                                 value: marked.isEmpty ? nil : "\(marked.count)") { showStarred = true }
-                    NavSettingsRow(icon: "timer", color: .teal, label: "Mesaje care dispar") {
+                    NavSettingsRow(icon: "timer", color: .teal, label: "Mesaje care dispar",
+                                   value: disappearingLabel) {
                         DisappearingMessagesView(convId: "group", serverKey: "group")
                     }
-                    InfoSettingsRow(icon: "timer", color: .teal, label: "Durată curentă", value: disappearingLabel)
                 }
 
                 SettingsGroup(title: "Confidențialitate") {

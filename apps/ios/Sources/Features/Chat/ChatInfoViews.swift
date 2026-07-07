@@ -1327,6 +1327,23 @@ enum ChatToneStore {
     static func callTone(_ id: String) -> String {
         UserDefaults.standard.string(forKey: "chat.calltone.\(id)") ?? "Default"
     }
+
+    /// The honest half of the preference: the tone the user picked actually
+    /// plays when a message lands while the app is open. (Notifications
+    /// outside the app keep the system default — iOS doesn't let apps use
+    /// Apple's tones there.)
+    @MainActor
+    static func playIncoming(_ id: String) {
+        guard UIApplication.shared.applicationState == .active,
+              !ChatMuteStore.isMuted(id) else { return }
+        let name = alertTone(id)
+        guard name != "None" else { return }
+        if let tone = SystemToneCatalog.tone(named: name, isCall: false) {
+            SystemToneCatalog.play(tone)
+        } else {
+            ChatTonePreview.play(name, isCall: false)
+        }
+    }
     static func setCallTone(_ id: String, _ tone: String) {
         UserDefaults.standard.set(tone, forKey: "chat.calltone.\(id)")
     }
@@ -1891,52 +1908,90 @@ enum ChatTonePreview {
 
 /// Tone list where tapping a row plays a preview and selects it. The selection
 /// binding is persisted by the parent's onChange, so there is no separate save.
+/// The curated classics come first; beneath them, every real Apple tone found
+/// on the device (ringtones for calls, modern alert tones otherwise).
 struct TonePickerView: View {
     let title: String
     let options: [String]
     @Binding var selection: String
     var isCall: Bool = false
 
+    /// Device tones not already covered by the curated list — Apple's own
+    /// names are proper nouns, shown verbatim like iOS Settings does.
+    private var deviceTones: [SystemToneCatalog.Tone] {
+        let curated = Set(options)
+        return (isCall ? SystemToneCatalog.ringtones : SystemToneCatalog.alertTones)
+            .filter { !curated.contains($0.name) }
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                ForEach(options, id: \.self) { opt in
-                    Button {
-                        selection = opt
-                        ChatTonePreview.play(opt, isCall: isCall)
-                        HapticFeedback.selection()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: opt == "None" ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                                .font(.system(size: 15))
-                                .foregroundStyle(opt == "None" ? Color.primary.opacity(0.4) : Color.accentColor)
-                                .frame(width: 24)
-                            Text(LocalizedStringKey(opt)).font(.system(size: 16)).foregroundStyle(.primary)
-                            Spacer()
-                            if selection == opt {
-                                Image(systemName: "checkmark")
-                                    .font(AppFont.subheadline)
-                                    .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(spacing: 0) {
+                    ForEach(options, id: \.self) { opt in
+                        toneRow(title: Text(LocalizedStringKey(opt)), name: opt,
+                                isNone: opt == "None", isLast: opt == options.last) {
+                            ChatTonePreview.play(opt, isCall: isCall)
+                        }
+                    }
+                }
+                .liquidGlass(cornerRadius: AppRadius.lg)
+
+                if !deviceTones.isEmpty {
+                    Text("tones_apple_section")
+                        .font(AppFont.label)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        .padding(.leading, AppSpacing.xxs)
+                    LazyVStack(spacing: 0) {
+                        ForEach(deviceTones) { tone in
+                            toneRow(title: Text(verbatim: tone.name), name: tone.name,
+                                    isNone: false, isLast: tone == deviceTones.last) {
+                                SystemToneCatalog.play(tone)
                             }
                         }
-                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
-                    if opt != options.last { Divider().padding(.leading, 52) }
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                 }
-            }
-            .liquidGlass(cornerRadius: AppRadius.lg)
-            .padding(AppSpacing.lg)
 
-            Text("Atinge un ton ca să-l asculți. Selecția se salvează automat.")
-                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 22)
+                Text("tones_footer_hint")
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    .padding(.leading, AppSpacing.xxs)
+            }
+            .padding(AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(LocalizedStringKey(title))
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { SystemToneCatalog.stop() }
+    }
+
+    private func toneRow(title: Text, name: String, isNone: Bool, isLast: Bool,
+                         play: @escaping () -> Void) -> some View {
+        VStack(spacing: 0) {
+            Button {
+                selection = name
+                play()
+                HapticFeedback.selection()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: isNone ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(isNone ? Color.primary.opacity(0.4) : Color.accentColor)
+                        .frame(width: 24)
+                    title.font(.system(size: 16)).foregroundStyle(.primary)
+                    Spacer()
+                    if selection == name {
+                        Image(systemName: "checkmark")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if !isLast { Divider().padding(.leading, 52) }
+        }
     }
 }
 
