@@ -345,14 +345,14 @@ enum ReceiptIntelligence {
     // A money amount has exactly two decimals; the lookahead (plus the
     // preceding-character check in `allAmounts`) stops "1.404" (a weight)
     // from half-matching as "1.40".
-    private static let amountRegex = /\d{1,6}[.,]\d{2}(?!\d)/
+    private static let amountRegex = #/\d{1,6}[.,]\d{2}(?!\d)/#
     // Trailing amount at line end, tolerating VAT class letters ("7,49 A"),
     // currency suffixes ("28,45 LEI") and negative markers ("0,85-").
     private static let trailingAmountRegex =
-        /(-?)(\d{1,6}[.,]\d{2})\s*(-?)\s*(?:lei|ron|eur|€|[A-Za-z]{1,2})?\s*$/.ignoresCase()
+        #/(-?)(\d{1,6}[.,]\d{2})\s*(-?)\s*(?:lei|ron|eur|€|[A-Za-z]{1,2})?\s*$/#.ignoresCase()
     // Quantity lines: qty [unit] x unitPrice.
     private static let quantityRegex =
-        /^\s*(\d{1,4}(?:[.,]\d{1,3})?)\s*(buc|bucati|kg|gr|g|l|ml|st|stuks|pcs)?\.?\s*[x×*]\s*(\d{1,6}(?:[.,]\d{1,2})?)/.ignoresCase()
+        #/^\s*(\d{1,4}(?:[.,]\d{1,3})?)\s*(buc|bucati|kg|gr|g|l|ml|st|stuks|pcs)?\.?\s*[x×*]\s*(\d{1,6}(?:[.,]\d{1,2})?)/#.ignoresCase()
 
     static func number(from s: some StringProtocol) -> Double? {
         Double(s.replacingOccurrences(of: ",", with: "."))

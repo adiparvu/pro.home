@@ -61,7 +61,7 @@ enum ReceiptListSync {
     }
 
     private static let quantityTextRegex =
-        /^\s*[x×]?\s*(\d{1,5}(?:[.,]\d{1,3})?)\s*(buc|bucati|bucata|pcs|st|stuks|kg|gr|g|l|litri|lt|ml)?\.?\s*$/.ignoresCase()
+        #/^\s*[x×]?\s*(\d{1,5}(?:[.,]\d{1,3})?)\s*(buc|bucati|bucata|pcs|st|stuks|kg|gr|g|l|litri|lt|ml)?\.?\s*$/#.ignoresCase()
 
     /// Parses the shopping list's free-text quantity ("3", "x3", "×3",
     /// "3 buc", "2kg", "1.5 l", "10") into a value + normalized unit.

@@ -265,7 +265,7 @@ enum ReceiptProductLexicon {
             return raw.trimmingCharacters(in: .whitespaces).localizedCapitalized
         }
         let joined = words.joined(separator: " ")
-        return joined.prefix(1).localizedUppercase + joined.dropFirst()
+        return joined.prefix(1).localizedUppercase + String(joined.dropFirst())
     }
 
     // MARK: - Matching
