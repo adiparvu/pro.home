@@ -27,9 +27,24 @@ struct DirectMessageView: View {
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var themeRefresh = 0
-    /// False until the first batch of messages lands — the initial fill must
-    /// not animate (bubbles springing into place read as an entry flash).
+    /// False until entry settles. The parent loads the conversation
+    /// asynchronously and a server refresh can replace it moments later —
+    /// BOTH batches must land unanimated, so this flips only after a short
+    /// grace window, not on the first count change.
     @State private var chatDidLoad = false
+    /// Grace timer that flips `chatDidLoad`; started once the list is non-empty.
+    @State private var chatLoadGraceTask: Task<Void, Never>? = nil
+    /// Per-change animation gate, decided in `onChange` (which runs ahead of
+    /// the body pass that renders the change): spring only for small deltas
+    /// (send/receive), never for bulk merges (refresh, older-page loads).
+    @State private var animateMessageDelta = false
+    /// Newest message id — distinguishes appends (auto-scroll) from prepends
+    /// like "load older" (keep the reading position).
+    @State private var newestMessageId: UUID? = nil
+    /// Guards the jump-to-latest button against rapid re-taps mid-flight.
+    @State private var isJumpingToLatest = false
+    /// Debounce for the bottom-sentinel toggle (see `setJumpToLatest`).
+    @State private var jumpToggleTask: Task<Void, Never>? = nil
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
@@ -280,6 +295,8 @@ struct DirectMessageView: View {
         }
         .onAppear {
             themeRefresh &+= 1
+            newestMessageId = conversationMessages.last?.id
+            if !conversationMessages.isEmpty { startLoadGraceIfNeeded() }
             // Freeze the prior last-seen BEFORE markRead overwrites it, so the
             // divider marks where this session started — not messages that
             // arrive while we're reading.
@@ -294,6 +311,10 @@ struct DirectMessageView: View {
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
         }
         .onDisappear {
+            chatLoadGraceTask?.cancel()
+            chatLoadGraceTask = nil
+            jumpToggleTask?.cancel()
+            jumpToggleTask = nil
             // Persist the unsent composer draft once, on the way out.
             if input.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(input, forKey: draftKey) }
@@ -302,6 +323,10 @@ struct DirectMessageView: View {
             // The parent loads messages asynchronously, so they may arrive after
             // onAppear; resolve the divider on the first non-empty state, once.
             resolveUnreadDivider()
+            // The scroll view (and its own onChange) mounts only once messages
+            // exist, so it never sees the 0→N transition — arm the entry grace
+            // window from here as well.
+            if !conversationMessages.isEmpty { startLoadGraceIfNeeded() }
         }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
@@ -384,6 +409,31 @@ struct DirectMessageView: View {
         unreadDividerId = directMessageService.firstUnreadId(
             from: member.name, myName: myName, since: since)
         unreadResolved = true
+    }
+
+    /// Arms the entry grace window once. `chatDidLoad` may only flip after the
+    /// server refresh has had time to land; flipping it on the first count
+    /// change let the refresh batch animate — the visible settle on entry.
+    private func startLoadGraceIfNeeded() {
+        guard chatLoadGraceTask == nil else { return }
+        chatLoadGraceTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            chatDidLoad = true
+        }
+    }
+
+    /// Debounced sentinel toggle: at the bottom rest the 1pt marker can flip
+    /// in/out on sub-point settles, flickering the jump button and stealing
+    /// its first tap. Only a state that survives 150ms is committed.
+    private func setJumpToLatest(_ show: Bool) {
+        jumpToggleTask?.cancel()
+        guard show != showJumpToLatest else { return }
+        jumpToggleTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = show }
+        }
     }
 
     /// True when older messages exist beyond the current render window —
@@ -639,34 +689,49 @@ struct DirectMessageView: View {
                             // marker entering/leaving the lazy render window —
                             // the old GeometryReader preference reset to 0 once
                             // the LazyVStack culled the off-screen marker, which
-                            // hid the button exactly when it was needed.
+                            // hid the button exactly when it was needed. Toggles
+                            // are debounced (setJumpToLatest): a 1pt zone flips
+                            // on sub-point settles at rest otherwise.
                             Color.clear.frame(height: 1).id("DM_BOTTOM")
-                                .onAppear {
-                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
-                                }
-                                .onDisappear {
-                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
-                                }
+                                .onAppear { setJumpToLatest(false) }
+                                .onDisappear { setJumpToLatest(true) }
                         }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.bottom, AppSpacing.md)
-                        .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: conversationMessages.count)
+                        .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: conversationMessages.count)
                     }
                     .defaultScrollAnchor(.bottom)
                     .scrollDismissesKeyboard(.immediately)
-                    .onChange(of: conversationMessages.count) { old, _ in
-                        defer { chatDidLoad = true }
+                    .onChange(of: conversationMessages.count) { old, new in
+                        guard new > 0 else { return }
+                        // Decide the animation for THIS change — onChange runs
+                        // ahead of the body pass that renders it. Spring only
+                        // small deltas once entry has settled; bulk merges
+                        // (server refresh, older pages) must land unanimated
+                        // (a springing merge reads as the whole chat settling).
+                        animateMessageDelta = chatDidLoad && abs(new - old) <= 3
+                        startLoadGraceIfNeeded()
+                        let newest = conversationMessages.last?.id
+                        let appended = newest != newestMessageId
+                        newestMessageId = newest
+                        // Prepends (older pages) keep the reading position;
+                        // only appends may move the viewport.
+                        guard appended else { return }
                         let isOwnLatest = conversationMessages.last?.senderName == myName
-                        // Only auto-scroll & mark read when the user is already at the
-                        // bottom, or when the new message is one we just sent ourselves.
-                        guard !showJumpToLatest || isOwnLatest else { return }
-                        if let last = conversationMessages.last {
-                            if old == 0 {
-                                // First fill: land instantly, no visible jump.
-                                proxy.scrollTo(last.id, anchor: .bottom)
-                            } else {
-                                withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                        if !chatDidLoad {
+                            // Entry batches: snap straight to the bottom rest.
+                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                        } else if !showJumpToLatest || isOwnLatest {
+                            // Follow new messages only when already at the
+                            // bottom or when we sent it ourselves — never yank
+                            // a reader up-thread.
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
                             }
+                        } else {
+                            // Reading up-thread: leave the viewport alone and
+                            // don't mark the (unseen) message read.
+                            return
                         }
                         directMessageService.markRead(partner: member.name)
                         Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
@@ -681,10 +746,26 @@ struct DirectMessageView: View {
             .overlay(alignment: .bottomTrailing) {
                 if showJumpToLatest {
                     Button {
+                        // Idempotent: re-taps mid-flight are ignored instead of
+                        // restarting the spring (each restart read as a nudge).
+                        guard !isJumpingToLatest else { return }
+                        isJumpingToLatest = true
+                        HapticFeedback.impact(.light)
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
                         }
-                        HapticFeedback.impact(.light)
+                        // LazyVStack estimates offsets for distant targets, so
+                        // one animated pass can land short of the true bottom —
+                        // which used to demand a second or third press. Once
+                        // the spring settles, re-assert the anchor; a no-op if
+                        // the first pass already landed.
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.45))
+                            if showJumpToLatest {
+                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                            }
+                            isJumpingToLatest = false
+                        }
                     } label: {
                         Image(systemName: "chevron.down")
                             .font(AppFont.headline)
