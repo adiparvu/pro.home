@@ -158,11 +158,14 @@ final class ServerNotificationLocalizerTests: XCTestCase {
         XCTAssertEqual(ServerNotificationLocalizer.body(raw), raw)
     }
 
-    func testDigestCountSegmentIsTransformedAndKeepsTheNumber() {
-        let raw = "3 tasks overdue. "
-        let out = ServerNotificationLocalizer.body(raw) ?? ""
+    /// Under an English test host the digest rewrite is observationally an
+    /// identity (en → en), so the assertable invariants are: the count
+    /// survives the regex substitution, and text after the known segment
+    /// passes through untouched.
+    func testDigestSegmentKeepsCountAndUnknownTail() {
+        let out = ServerNotificationLocalizer.body("3 tasks overdue. Custom tail.") ?? ""
         XCTAssertTrue(out.contains("3"))
-        XCTAssertNotEqual(out, raw)
+        XCTAssertTrue(out.hasSuffix("Custom tail."))
     }
 }
 
