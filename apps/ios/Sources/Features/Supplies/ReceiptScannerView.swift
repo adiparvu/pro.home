@@ -1,35 +1,65 @@
 import SwiftUI
-import Vision
 import PhotosUI
+import PDFKit
+import VisionKit
 import UniformTypeIdentifiers
 
-// MARK: - Receipt Scanner (OCR)
+// MARK: - Receipt Scanner
+//
+// Photograph (or import) a receipt → on-device OCR with positional row
+// reconstruction → parsed items with prices → automatic shopping-list sync
+// (bought items are checked off or their quantities decremented) → one tap
+// saves everything. Zero manual typing after the photo.
 
 struct ReceiptScannerView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(SupplyService.self) private var supplyService: SupplyService?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private enum Phase { case entry, processing, review }
+
+    @State private var phase: Phase = .entry
+    @State private var progress = ScanProgress()
+    @State private var parsed: ParsedReceipt? = nil
+    @State private var syncActions: [ReceiptListSync.ListSyncAction] = []
+    @State private var scanFailed = false
+    @State private var isSaving = false
 
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
-    @State private var sourceImage: UIImage? = nil
-    @State private var isProcessing = false
-    @State private var parsed: ParsedReceipt? = nil
-    @State private var showCamera = false
+    @State private var showDocumentScanner = false
+    @State private var showLegacyCamera = false
     @State private var showFileImporter = false
+
+    private var phaseAnimation: Animation? { reduceMotion ? nil : .snappy }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 appBackground.ignoresSafeArea()
 
-                if let parsed {
-                    ReceiptReviewView(parsed: parsed, onSave: { p in
-                        Task { await saveReceipt(p) }
-                    })
-                    .environment(receiptService)
-                    .environment(propertyService)
-                } else {
-                    pickPhotoState
+                switch phase {
+                case .entry:
+                    ScannerEntryView(
+                        scanFailed: scanFailed,
+                        selectedPhotoItem: $selectedPhotoItem,
+                        onCamera: { openCamera() },
+                        onImportPDF: { showFileImporter = true }
+                    )
+                    .transition(.opacity)
+                case .processing:
+                    ScannerProcessingView(progress: progress)
+                        .transition(.opacity)
+                case .review:
+                    if let binding = Binding($parsed) {
+                        ReceiptReviewView(parsed: binding,
+                                          syncActions: syncActions,
+                                          isSaving: isSaving) {
+                            Task { await save() }
+                        }
+                        .transition(.opacity)
+                    }
                 }
             }
             .navigationTitle(String(localized: "scanner_title"))
@@ -38,172 +68,175 @@ struct ReceiptScannerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "Cancel")) { dismiss() }
                 }
-                if parsed != nil {
+                if phase == .review {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(String(localized: "scanner_rescan")) {
-                            withAnimation { self.parsed = nil; sourceImage = nil }
+                            withAnimation(phaseAnimation) {
+                                parsed = nil
+                                syncActions = []
+                                phase = .entry
+                            }
                         }
                     }
                 }
             }
             .onChange(of: selectedPhotoItem) { _, item in
-                Task { await loadAndProcess(item) }
+                guard let item else { return }
+                Task {
+                    selectedPhotoItem = nil
+                    guard let data = try? await item.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data) else { return }
+                    process(images: [image])
+                }
             }
-            .fullScreenCover(isPresented: $showCamera) {
+            .onChange(of: parsed?.items) { _, items in
+                // Edited names/quantities re-run the list matching live.
+                guard let items else { return }
+                recomputeSync(for: items)
+            }
+            .fullScreenCover(isPresented: $showDocumentScanner) {
+                DocumentScanner { images in
+                    showDocumentScanner = false
+                    if !images.isEmpty { process(images: images) }
+                }
+                .ignoresSafeArea()
+            }
+            .fullScreenCover(isPresented: $showLegacyCamera) {
                 CameraCapture { image in
-                    showCamera = false
-                    isProcessing = true
-                    Task {
-                        isProcessing = true
-                        defer { isProcessing = false }
-                        let parsed = await performOCR(on: image)
-                        withAnimation { self.parsed = parsed }
-                    }
+                    showLegacyCamera = false
+                    process(images: [image])
                 }
                 .ignoresSafeArea()
             }
             .fileImporter(
                 isPresented: $showFileImporter,
-                allowedContentTypes: [.image, .jpeg, .png, .heic, .pdf],
+                allowedContentTypes: [.pdf],
                 allowsMultipleSelection: false
             ) { result in
-                if let url = try? result.get().first,
-                   url.startAccessingSecurityScopedResource(),
-                   let data = try? Data(contentsOf: url),
-                   let image = UIImage(data: data) {
-                    url.stopAccessingSecurityScopedResource()
-                    isProcessing = true
-                    Task {
-                        defer { isProcessing = false }
-                        let parsed = await performOCR(on: image)
-                        withAnimation { self.parsed = parsed }
-                    }
-                }
+                guard let url = try? result.get().first else { return }
+                importPDF(from: url)
             }
         }
     }
 
-    // MARK: - Pick photo state
+    // MARK: - Input sources
 
-    private var pickPhotoState: some View {
-        VStack(spacing: 32) {
-            Spacer()
+    private func openCamera() {
+        // VisionKit's document camera brings edge detection, perspective
+        // correction, auto-capture and multi-page scans (long receipts).
+        if VNDocumentCameraViewController.isSupported {
+            showDocumentScanner = true
+        } else {
+            showLegacyCamera = true
+        }
+    }
 
-            VStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.12))
-                        .frame(width: 100, height: 100)
-                    Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 44, weight: .light))
-                        .foregroundStyle(Color.accentColor)
-                }
+    private func importPDF(from url: URL) {
+        let secured = url.startAccessingSecurityScopedResource()
+        Task {
+            let images = await Task.detached(priority: .userInitiated) {
+                Self.renderPDFPages(at: url)
+            }.value
+            if secured { url.stopAccessingSecurityScopedResource() }
+            if !images.isEmpty { process(images: images) }
+        }
+    }
 
-                Text(String(localized: "scanner_headline"))
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.primary)
+    /// Renders up to 3 PDF pages at 300 dpi for OCR.
+    nonisolated private static func renderPDFPages(at url: URL) -> [UIImage] {
+        guard let document = PDFDocument(url: url) else { return [] }
+        let pageCount = min(document.pageCount, 3)
+        guard pageCount > 0 else { return [] }
+        let scale: CGFloat = 300.0 / 72.0
+        var images: [UIImage] = []
+        for index in 0..<pageCount {
+            guard let page = document.page(at: index) else { continue }
+            let bounds = page.bounds(for: .mediaBox)
+            guard bounds.width > 0, bounds.height > 0 else { continue }
+            let size = CGSize(width: bounds.width * scale, height: bounds.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: size)
+            images.append(renderer.image { ctx in
+                UIColor.white.setFill()
+                ctx.fill(CGRect(origin: .zero, size: size))
+                ctx.cgContext.translateBy(x: 0, y: size.height)
+                ctx.cgContext.scaleBy(x: scale, y: -scale)
+                page.draw(with: .mediaBox, to: ctx.cgContext)
+            })
+        }
+        return images
+    }
 
-                Text(String(localized: "scanner_body"))
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+    // MARK: - Processing pipeline
+
+    private func process(images: [UIImage]) {
+        guard !images.isEmpty else { return }
+        scanFailed = false
+        progress = ScanProgress(pageCount: images.count)
+        withAnimation(phaseAnimation) { phase = .processing }
+
+        Task {
+            // 1. OCR — page by page, so the checklist reflects real work.
+            var lines: [OCRLine] = []
+            for (index, image) in images.enumerated() {
+                progress.currentPage = index + 1
+                let pageLines = await ReceiptIntelligence.recognize(image: image, pageIndex: index)
+                lines.append(contentsOf: pageLines)
             }
+            progress.complete(.reading)
 
-            if isProcessing {
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                        .tint(Color.accentColor)
-                    Text(String(localized: "scanner_processing"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                }
+            // 2. Parse rows into products, prices, store, date, total.
+            let receipt = ReceiptIntelligence.parse(rows: lines)
+            await stepBreath()
+            progress.complete(.products)
+
+            // 3. Match against the pending shopping list.
+            let pendingItems = supplyService?.items.filter { !$0.isCompleted } ?? []
+            let plan = ReceiptListSync.plan(receiptItems: receipt.items, listItems: pendingItems)
+            await stepBreath()
+            progress.complete(.matching)
+            await stepBreath()
+
+            if receipt.items.isEmpty && receipt.total == 0 {
+                HapticFeedback.error()
+                scanFailed = true
+                withAnimation(phaseAnimation) { phase = .entry }
             } else {
-                VStack(spacing: 12) {
-                    GlassWideButton(icon: "camera.fill", label: "Fotografiază bon") {
-                        showCamera = true
-                    }
-
-                    HStack(spacing: 12) {
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            Label(String(localized: "scanner_choose_photo"), systemImage: "photo.on.rectangle")
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color.accentColor)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 46)
-                                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            showFileImporter = true
-                        } label: {
-                            Label(String(localized: "Din fișiere"), systemImage: "doc.fill")
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 46)
-                                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    Text(String(localized: "scanner_tip"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.4))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.xl)
-                }
-                .padding(.horizontal, AppSpacing.xl)
+                HapticFeedback.impact(.light)
+                parsed = receipt
+                syncActions = plan.actions
+                withAnimation(phaseAnimation) { phase = .review }
             }
-
-            Spacer()
         }
     }
 
-    // MARK: - Load and OCR
-
-    private func loadAndProcess(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
-        isProcessing = true
-        defer { isProcessing = false }
-
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else { return }
-        sourceImage = image
-
-        let parsed = await performOCR(on: image)
-        withAnimation(.easeInOut(duration: 0.3)) { self.parsed = parsed }
+    /// A short pause so each completed step registers visually instead of
+    /// the whole checklist flashing past in one frame.
+    private func stepBreath() async {
+        try? await Task.sleep(for: .milliseconds(reduceMotion ? 120 : 320))
     }
 
-    private func performOCR(on image: UIImage) async -> ParsedReceipt {
-        guard let cgImage = image.cgImage else { return ParsedReceipt() }
-        // Vision's `.accurate` recognition is CPU-heavy (often 1s+). Running the
-        // handler on a detached task keeps it off the main actor so the
-        // "processing" animation and scrolling stay smooth.
-        return await Task.detached(priority: .userInitiated) {
-            await withCheckedContinuation { continuation in
-                let request = VNRecognizeTextRequest { req, _ in
-                    let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
-                    let lines = observations.compactMap { $0.topCandidates(1).first?.string }
-                    continuation.resume(returning: ReceiptParser.parse(lines: lines))
-                }
-                request.recognitionLevel = .accurate
-                request.usesLanguageCorrection = true
-
-                let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-                do { try handler.perform([request]) }
-                catch { continuation.resume(returning: ParsedReceipt()) }
-            }
-        }.value
+    private func recomputeSync(for items: [ParsedItem]) {
+        let pendingItems = supplyService?.items.filter { !$0.isCompleted } ?? []
+        syncActions = ReceiptListSync.plan(receiptItems: items, listItems: pendingItems).actions
     }
 
     // MARK: - Save
 
-    private func saveReceipt(_ parsed: ParsedReceipt) async {
-        guard let propId = propertyService.primary?.id else { return }
+    private func save() async {
+        guard let parsed, let propId = propertyService.primary?.id, !isSaving else { return }
+        isSaving = true
+        defer { isSaving = false }
+
+        // 1. The killer feature: check off / decrement the shopping list.
+        if let supplyService {
+            await ReceiptListSync.apply(syncActions, via: supplyService)
+        }
+
+        // 2. Persist the receipt and its items.
         let now = ISO8601DateFormatter().string(from: Date())
+        let notes: String? = parsed.currency == "RON"
+            ? parsed.notes
+            : [parsed.notes, parsed.currency].compactMap { $0 }.joined(separator: " · ")
         let payload = NewReceiptPayload(
             propertyId: propId,
             storeName: parsed.storeName,
@@ -211,7 +244,7 @@ struct ReceiptScannerView: View {
             total: parsed.total,
             category: parsed.category,
             imageUrl: nil,
-            notes: parsed.notes,
+            notes: notes?.isEmpty == true ? nil : notes,
             createdAt: now,
             updatedAt: now
         )
@@ -219,7 +252,7 @@ struct ReceiptScannerView: View {
             NewReceiptItemPayload(
                 receiptId: UUID(),
                 propertyId: propId,
-                name: item.name,
+                name: item.normalizedName.isEmpty ? item.name : item.normalizedName,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 totalPrice: item.totalPrice,
@@ -237,262 +270,580 @@ struct ReceiptScannerView: View {
     }
 }
 
-// MARK: - Receipt Review
+// MARK: - Scan progress model
 
-private struct ReceiptReviewView: View {
-    @Environment(ReceiptService.self) private var receiptService
-    @Environment(PropertyService.self) private var propertyService
-    @Environment(\.dismiss) private var dismiss
+@MainActor
+@Observable
+final class ScanProgress {
+    enum Step: Int, CaseIterable, Comparable {
+        case reading, products, matching
+        static func < (lhs: Step, rhs: Step) -> Bool { lhs.rawValue < rhs.rawValue }
+    }
 
-    @State var parsed: ParsedReceipt
-    var onSave: (ParsedReceipt) -> Void
+    var pageCount: Int
+    var currentPage = 1
+    private(set) var completed: Set<Step> = []
 
-    @State private var isSaving = false
+    init(pageCount: Int = 1) { self.pageCount = pageCount }
+
+    func complete(_ step: Step) { completed.insert(step) }
+    func isDone(_ step: Step) -> Bool { completed.contains(step) }
+    var currentStep: Step? { Step.allCases.first { !completed.contains($0) } }
+}
+
+// MARK: - Entry state
+
+private struct ScannerEntryView: View {
+    let scanFailed: Bool
+    @Binding var selectedPhotoItem: PhotosPickerItem?
+    let onCamera: () -> Void
+    let onImportPDF: () -> Void
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
-                // Store + date
-                VStack(alignment: .leading, spacing: 8) {
-                    fieldLabel("STORE")
-                    TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
-                        .font(.system(size: 16))
-                        .padding(AppSpacing.base)
-                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            VStack(spacing: AppSpacing.xxl) {
+                VStack(spacing: AppSpacing.lg) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 42, weight: .light))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .frame(width: 104, height: 104)
+                        .mediaGlass(in: Circle())
+                        .accessibilityHidden(true)
+
+                    Text("scanner_headline")
+                        .font(AppFont.title3)
+                        .foregroundStyle(.primary)
+
+                    Text("scanner_body")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.xl)
+                }
+                .padding(.top, AppSpacing.xxl)
+
+                if scanFailed {
+                    Label {
+                        Text("scanner_failed")
+                            .font(AppFont.caption)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                    }
+                    .foregroundStyle(Color.brandWarning)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, AppSpacing.xl)
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    fieldLabel("DATE")
-                    DatePicker("", selection: Binding(
-                        get: { parsed.dateValue },
-                        set: { parsed.dateString = ReceiptParser.isoDate($0) }
-                    ), displayedComponents: .date)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .padding(.vertical, AppSpacing.xxs)
-                }
+                VStack(spacing: AppSpacing.md) {
+                    GlassWideButton(icon: "camera.fill", label: "Fotografiază bon") {
+                        onCamera()
+                    }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    fieldLabel("CATEGORY")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(ReceiptCategory.all, id: \.id) { cat in
-                                Button { parsed.category = cat.id; HapticFeedback.selection() } label: {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
-                                        Text(cat.label).font(.system(size: 13))
-                                    }
-                                    .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
-                                    .background(parsed.category == cat.id
-                                        ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(AppOpacity.subtleFill),
-                                                in: Capsule())
-                                }
-                                .buttonStyle(.plain)
-                            }
+                    HStack(spacing: AppSpacing.md) {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            secondaryChipLabel("scanner_choose_photo", icon: "photo.on.rectangle")
                         }
-                    }
-                }
+                        .buttonStyle(.plain)
 
-                // Items
-                if !parsed.items.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        fieldLabel("ITEMS (\(parsed.items.count))")
-                        GlassCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(parsed.items.enumerated()), id: \.offset) { idx, item in
-                                    HStack {
-                                        Text(item.name).font(.system(size: 13)).foregroundStyle(.primary).lineLimit(1)
-                                        Spacer()
-                                        Text(Receipt.format(item.totalPrice))
-                                            .font(AppFont.captionEmphasis).foregroundStyle(.secondary).monospacedDigit()
-                                    }
-                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                                    if idx < parsed.items.count - 1 {
-                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
-                                    }
-                                }
-                            }
+                        Button {
+                            HapticFeedback.impact(.light)
+                            onImportPDF()
+                        } label: {
+                            secondaryChipLabel("scanner_import_pdf", icon: "doc.fill")
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 
-                // Total
-                VStack(alignment: .leading, spacing: 8) {
-                    fieldLabel("TOTAL")
-                    HStack {
-                        TextField("0.00", value: $parsed.total, format: .number.precision(.fractionLength(2)))
-                            .font(AppFont.title2)
-                            .keyboardType(.decimalPad)
+                // What the scanner actually does — honest capabilities only.
+                GlassCard(padding: AppSpacing.lg) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        Text("scanner_info_title")
+                            .font(AppFont.label)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        capabilityRow("text.viewfinder", "scanner_info_ocr")
+                        capabilityRow("basket", "scanner_info_products")
+                        capabilityRow("checklist", "scanner_info_sync")
+                        capabilityRow("clock.arrow.circlepath", "scanner_info_history")
                     }
-                    .padding(AppSpacing.base)
-                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                Text("scanner_tip")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.xl)
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.xxl)
+        }
+    }
+
+    private func secondaryChipLabel(_ key: LocalizedStringKey, icon: String) -> some View {
+        Label {
+            Text(key).font(AppFont.footnoteEmphasis)
+        } icon: {
+            Image(systemName: icon)
+        }
+        .foregroundStyle(.primary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 46)
+        .glassCapsule()
+    }
+
+    private func capabilityRow(_ icon: String, _ key: LocalizedStringKey) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: icon)
+                .font(AppFont.footnote)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 24)
+            Text(key)
+                .font(AppFont.footnote)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Image(systemName: "checkmark.circle")
+                .font(AppFont.footnote)
+                .foregroundStyle(Color.brandSuccess)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Processing state
+
+private struct ScannerProcessingView: View {
+    let progress: ScanProgress
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: AppSpacing.xxl) {
+            Spacer()
+
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.system(size: 34, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 88, height: 88)
+                .mediaGlass(in: Circle())
+                .accessibilityHidden(true)
+
+            GlassCard(padding: AppSpacing.xl) {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    stepRow(.reading, label: readingLabel)
+                    stepRow(.products, label: Text("scanner_step_products"))
+                    stepRow(.matching, label: Text("scanner_step_matching"))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .animation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.2),
+                       value: progress.completed)
+
+            Spacer()
+        }
+    }
+
+    private var readingLabel: Text {
+        if progress.pageCount > 1, !progress.isDone(.reading) {
+            let pages = String(format: String(localized: "scanner_step_page"),
+                               progress.currentPage, progress.pageCount)
+            return Text(verbatim: "\(String(localized: "scanner_step_reading")) \(pages)")
+        }
+        return Text("scanner_step_reading")
+    }
+
+    @ViewBuilder
+    private func stepRow(_ step: ScanProgress.Step, label: Text) -> some View {
+        let done = progress.isDone(step)
+        let isCurrent = progress.currentStep == step
+        HStack(spacing: AppSpacing.md) {
+            ZStack {
+                if done {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.brandSuccess)
+                        .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                } else if isCurrent {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Circle()
+                        .fill(Color.primary.opacity(AppOpacity.hairline))
+                        .frame(width: 8, height: 8)
+                }
+            }
+            .frame(width: 22, height: 22)
+
+            label
+                .font(done || isCurrent ? AppFont.subheadline : AppFont.footnote)
+                .foregroundStyle(done || isCurrent
+                    ? Color.primary
+                    : Color.primary.opacity(AppOpacity.disabled))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Review state
+
+private struct ReceiptReviewView: View {
+    @Binding var parsed: ParsedReceipt
+    let syncActions: [ReceiptListSync.ListSyncAction]
+    let isSaving: Bool
+    let onSave: () -> Void
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                headerCard
+                syncSection
+                itemsSection
 
                 GlassWideButton(icon: "checkmark", label: "scanner_save", isBusy: isSaving) {
-                    isSaving = true
-                    onSave(parsed)
+                    onSave()
                 }
 
-                Spacer(minLength: 40)
+                Spacer(minLength: AppSpacing.xxl)
             }
-            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: Header
+
+    private var headerCard: some View {
+        GlassCard(padding: AppSpacing.lg) {
+            VStack(alignment: .leading, spacing: AppSpacing.base) {
+                fieldLabel("scanner_field_store")
+                TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
+                    .font(AppFont.headline)
+                    .padding(AppSpacing.md)
+                    .background(Color.subtleFill,
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        fieldLabel("scanner_field_date")
+                        DatePicker("", selection: Binding(
+                            get: { parsed.dateValue },
+                            set: { parsed.dateString = AppDate.dayString(from: $0) }
+                        ), displayedComponents: .date)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .accessibilityLabel(Text("scanner_field_date"))
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: AppSpacing.xs) {
+                        fieldLabel("scanner_field_total")
+                        HStack(spacing: AppSpacing.xs) {
+                            TextField("0.00", value: $parsed.total,
+                                      format: .number.precision(.fractionLength(2)))
+                                .font(AppFont.title2)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .monospacedDigit()
+                                .fixedSize()
+                                .accessibilityLabel(Text("scanner_field_total"))
+                            Text(parsed.currency)
+                                .font(AppFont.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                fieldLabel("scanner_field_category")
+                categoryChips
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
-        Text(text).font(AppFont.label).foregroundStyle(.secondary)
-    }
-}
-
-// MARK: - Parsed Receipt
-
-struct ParsedReceipt {
-    var storeName: String = ""
-    var dateString: String = ReceiptParser.isoDate(Date())
-    var total: Double = 0
-    var category: String = "food"
-    var items: [ParsedItem] = []
-    var notes: String? = nil
-
-    var dateValue: Date {
-        AppDate.day(from: dateString) ?? Date()
-    }
-}
-
-struct ParsedItem {
-    var name: String
-    var quantity: Double
-    var unitPrice: Double
-    var totalPrice: Double
-}
-
-// MARK: - Receipt Parser (OCR → structured data)
-
-enum ReceiptParser {
-    static func isoDate(_ date: Date) -> String {
-        AppDate.dayString(from: date)
-    }
-
-    static func parse(lines: [String]) -> ParsedReceipt {
-        var result = ParsedReceipt()
-        guard !lines.isEmpty else { return result }
-
-        // 1. Store name — first non-empty, non-date, non-price-only line
-        result.storeName = extractStoreName(from: lines)
-
-        // 2. Date
-        if let dateStr = extractDate(from: lines) {
-            result.dateString = dateStr
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(ReceiptCategory.all, id: \.id) { cat in
+                    let selected = parsed.category == cat.id
+                    Button {
+                        parsed.category = cat.id
+                        HapticFeedback.selection()
+                    } label: {
+                        HStack(spacing: AppSpacing.xs) {
+                            Image(systemName: selected ? "checkmark" : ReceiptCategory.icon(for: cat.id))
+                                .font(AppFont.caption2)
+                            Text(cat.label)
+                                .font(AppFont.captionEmphasis)
+                        }
+                        .foregroundStyle(selected ? Color.primary : Color.primary.opacity(AppOpacity.emphasis))
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, 7)
+                        .background(Color.primary.opacity(selected ? 0 : AppOpacity.subtleFill), in: Capsule())
+                        .overlay(Capsule().strokeBorder(
+                            selected ? Color.primary.opacity(AppOpacity.mediumText) : .clear,
+                            lineWidth: 1.2))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(cat.label))
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, 2)
         }
-
-        // 3. Items + total
-        let (items, total) = extractItemsAndTotal(from: lines)
-        result.items = items
-        result.total = total > 0 ? total : items.reduce(0) { $0 + $1.totalPrice }
-
-        // 4. Category heuristic from store name + items
-        result.category = guessCategory(storeName: result.storeName, items: items)
-
-        return result
     }
 
-    private static func extractStoreName(from lines: [String]) -> String {
-        let datePattern = #/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/#
-        let pricePattern = #/^\d+[.,]\d{2}\s*$/#
-        for line in lines.prefix(5) {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.count > 2 else { continue }
-            guard (try? datePattern.firstMatch(in: trimmed)) == nil else { continue }
-            guard (try? pricePattern.firstMatch(in: trimmed)) == nil else { continue }
-            return trimmed
-        }
-        return ""
-    }
+    // MARK: Shopping-list sync
 
-    private static func extractDate(from lines: [String]) -> String? {
-        let patterns: [String] = [
-            #"\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b"#,
-            #"\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b"#,
-            #"\b(\d{1,2})[./-](\d{1,2})[./-](\d{2})\b"#,
-        ]
-        for line in lines {
-            for pattern in patterns {
-                if let match = line.range(of: pattern, options: .regularExpression) {
-                    let dateStr = String(line[match])
-                        .trimmingCharacters(in: .whitespaces)
-                        .replacingOccurrences(of: "/", with: "-")
-                        .replacingOccurrences(of: ".", with: "-")
-
-                    let parts = dateStr.components(separatedBy: "-").map { Int($0) ?? 0 }
-                    guard parts.count == 3 else { continue }
-                    if parts[0] > 1900 {
-                        // yyyy-mm-dd
-                        return String(format: "%04d-%02d-%02d", parts[0], parts[1], parts[2])
-                    } else if parts[2] > 1900 {
-                        // dd-mm-yyyy
-                        return String(format: "%04d-%02d-%02d", parts[2], parts[1], parts[0])
-                    } else if parts[2] > 0 {
-                        // dd-mm-yy
-                        let year = parts[2] < 50 ? 2000 + parts[2] : 1900 + parts[2]
-                        return String(format: "%04d-%02d-%02d", year, parts[1], parts[0])
+    @ViewBuilder
+    private var syncSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            fieldLabel("Shopping list")
+            GlassCard(padding: 0) {
+                if syncActions.isEmpty {
+                    Text("scanner_sync_none")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .padding(AppSpacing.base)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(syncActions.enumerated()), id: \.element.id) { index, action in
+                            syncRow(action)
+                            if index < syncActions.count - 1 {
+                                Rectangle().fill(Color.hairline)
+                                    .frame(height: 0.5)
+                                    .padding(.leading, AppSpacing.base + 22 + AppSpacing.md)
+                            }
+                        }
                     }
                 }
             }
         }
-        return nil
     }
 
-    private static func extractItemsAndTotal(from lines: [String]) -> ([ParsedItem], Double) {
-        // Price pattern: number ending with decimal separator + 2 digits
-        let priceRegex = #/(\d{1,6}[.,]\d{2})\s*$/#
-        let totalKeywords = ["total", "totaal", "totale", "gesamt", "summa", "suma", "lei", "grand", "amount"]
-        var items: [ParsedItem] = []
-        var total: Double = 0
+    private func syncRow(_ action: ReceiptListSync.ListSyncAction) -> some View {
+        let text: String
+        let icon: String
+        switch action {
+        case .complete(let item):
+            text = String(format: String(localized: "scanner_sync_complete"), item.name)
+            icon = "checkmark.circle.fill"
+        case .decrement(let item, _, let purchased, let remaining):
+            text = String(format: String(localized: "scanner_sync_decrement"),
+                          item.name, displayQuantity(purchased), displayQuantity(remaining))
+            icon = "minus.circle.fill"
+        }
+        return HStack(spacing: AppSpacing.md) {
+            Image(systemName: icon)
+                .font(AppFont.footnote)
+                .foregroundStyle(Color.brandSuccess)
+                .frame(width: 22)
+            Text(text)
+                .font(AppFont.footnote)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: text))
+    }
 
-        for line in lines {
-            let lower = line.lowercased()
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.count > 2 else { continue }
+    /// Stored quantities keep dot decimals; display follows the locale.
+    private func displayQuantity(_ stored: String) -> String {
+        guard let separator = Locale.current.decimalSeparator, separator != "." else { return stored }
+        return stored.replacingOccurrences(of: ".", with: separator)
+    }
 
-            guard let match = try? priceRegex.firstMatch(in: trimmed) else { continue }
-            let priceStr = String(match.1).replacingOccurrences(of: ",", with: ".")
-            guard let price = Double(priceStr), price > 0 else { continue }
+    // MARK: Items
 
-            let isTotal = totalKeywords.contains(where: { lower.contains($0) })
-            if isTotal {
-                if price > total { total = price }
-                continue
+    @ViewBuilder
+    private var itemsSection: some View {
+        if !parsed.items.isEmpty {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(String(format: String(localized: "scanner_items_count"), parsed.items.count))
+                    .font(AppFont.label)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                GlassCard(padding: 0) {
+                    VStack(spacing: 0) {
+                        ForEach($parsed.items) { $item in
+                            ReviewItemRow(item: $item)
+                            if item.id != parsed.items.last?.id {
+                                Rectangle().fill(Color.hairline)
+                                    .frame(height: 0.5)
+                                    .padding(.leading, AppSpacing.base)
+                            }
+                        }
+                    }
+                }
             }
+        }
+    }
 
-            // Extract name (everything before the price)
-            let nameRange = trimmed.range(of: String(match.1))
-            let name = nameRange != nil
-                ? trimmed[..<nameRange!.lowerBound].trimmingCharacters(in: .whitespaces)
-                : trimmed
+    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(AppFont.label)
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+    }
+}
 
-            guard name.count > 1 && !name.allSatisfy({ $0.isNumber || $0 == "." || $0 == "," || $0 == " " }) else { continue }
+// MARK: - Review item row
 
-            items.append(ParsedItem(name: name.capitalized, quantity: 1, unitPrice: price, totalPrice: price))
+private struct ReviewItemRow: View {
+    @Binding var item: ParsedItem
+    @State private var isEditing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button {
+                guard item.uncertain || isEditing else { return }
+                withAnimation(reduceMotion ? nil : .snappy) { toggleEditing() }
+            } label: {
+                rowContent
+            }
+            .buttonStyle(.plain)
+            .disabled(!item.uncertain && !isEditing)
+
+            if isEditing {
+                editor
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    private var rowContent: some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.normalizedName.isEmpty ? item.name : item.normalizedName)
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                if !item.normalizedName.isEmpty,
+                   item.normalizedName.localizedCaseInsensitiveCompare(item.name) != .orderedSame {
+                    Text(item.name)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                }
+            }
+            Spacer(minLength: AppSpacing.sm)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(Receipt.format(item.totalPrice))
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                if item.quantity != 1 {
+                    Text(verbatim: "\(quantityText) × \(Receipt.format(item.unitPrice))")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .monospacedDigit()
+                }
+            }
+            if item.uncertain {
+                Image(systemName: "exclamationmark.circle")
+                    .font(AppFont.footnote)
+                    .foregroundStyle(Color.brandWarning)
+                    .accessibilityLabel(Text("scanner_uncertain_badge"))
+            }
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(item.uncertain ? Text("scanner_uncertain_badge") : Text(verbatim: ""))
+    }
+
+    private var quantityText: String {
+        let formatted = ReceiptListSync.formatQuantity(item.quantity,
+                                                       unit: item.unit == "buc" ? nil : item.unit)
+        guard let separator = Locale.current.decimalSeparator, separator != "." else { return formatted }
+        return formatted.replacingOccurrences(of: ".", with: separator)
+    }
+
+    private var editor: some View {
+        VStack(spacing: AppSpacing.sm) {
+            TextField(String(localized: "scanner_edit_name"), text: $item.name)
+                .font(AppFont.footnote)
+                .padding(AppSpacing.sm)
+                .background(Color.subtleFill,
+                            in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                .onChange(of: item.name) { _, newName in
+                    item.normalizedName = ReceiptProductLexicon.normalize(newName)
+                }
+            HStack(spacing: AppSpacing.sm) {
+                TextField(String(localized: "scanner_edit_qty"), value: $item.quantity, format: .number)
+                    .keyboardType(.decimalPad)
+                TextField(String(localized: "scanner_edit_price"), value: $item.totalPrice,
+                          format: .number.precision(.fractionLength(2)))
+                    .keyboardType(.decimalPad)
+            }
+            .font(AppFont.footnote)
+            .monospacedDigit()
+            .textFieldStyle(.plain)
+            .padding(AppSpacing.sm)
+            .background(Color.subtleFill,
+                        in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.bottom, AppSpacing.md)
+    }
+
+    private func toggleEditing() {
+        if isEditing {
+            // Closing the editor counts as the user's review.
+            item.uncertain = false
+            item.unitPrice = item.quantity > 0
+                ? ReceiptIntelligence.roundMoney(item.totalPrice / item.quantity)
+                : item.totalPrice
+            isEditing = false
+        } else {
+            isEditing = true
+        }
+    }
+}
+
+// MARK: - VisionKit document scanner
+
+private struct DocumentScanner: UIViewControllerRepresentable {
+    let onFinish: ([UIImage]) -> Void
+
+    func makeUIViewController(context: Context) -> VNDocumentCameraViewController {
+        let controller = VNDocumentCameraViewController()
+        controller.delegate = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+        let onFinish: ([UIImage]) -> Void
+        init(onFinish: @escaping ([UIImage]) -> Void) { self.onFinish = onFinish }
+
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController,
+                                          didFinishWith scan: VNDocumentCameraScan) {
+            var images: [UIImage] = []
+            for index in 0..<scan.pageCount {
+                images.append(scan.imageOfPage(at: index))
+            }
+            onFinish(images)
         }
 
-        return (items, total)
-    }
+        func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+            onFinish([])
+        }
 
-    private static func guessCategory(storeName: String, items: [ParsedItem]) -> String {
-        let lower = storeName.lowercased()
-        let foodKeywords = ["kaufland", "lidl", "aldi", "mega", "carrefour", "penny", "market", "supermarket",
-                            "magazin", "shop", "food", "alimentar", "piata", "piaţa", "consum", "profi"]
-        let pharmacyKeywords = ["pharmacy", "farma", "farmacia", "apotek", "apotheke", "dr max", "helpnet"]
-        let hardwareKeywords = ["dedeman", "brico", "leroy", "hornbach", "bauhaus", "hardware", "bricolaj"]
-        let clothingKeywords = ["zara", "h&m", "hm ", "fashion", "clothing", "moda", "new yorker"]
-        let diningKeywords = ["restaurant", "pizzeria", "cafe", "cafenea", "mcdonalds", "kfc", "burger"]
-
-        if foodKeywords.contains(where: { lower.contains($0) }) { return "food" }
-        if pharmacyKeywords.contains(where: { lower.contains($0) }) { return "health" }
-        if hardwareKeywords.contains(where: { lower.contains($0) }) { return "diy" }
-        if clothingKeywords.contains(where: { lower.contains($0) }) { return "clothing" }
-        if diningKeywords.contains(where: { lower.contains($0) }) { return "dining" }
-        return "other"
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController,
+                                          didFailWithError error: Error) {
+            onFinish([])
+        }
     }
 }
