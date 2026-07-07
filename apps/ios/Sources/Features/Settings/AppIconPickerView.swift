@@ -20,8 +20,6 @@ struct AppIconPickerView: View {
     @State private var familyID: String?
     /// Chosen variant per family, so browsing away and back keeps the pick.
     @State private var variantByFamily: [String: String] = [:]
-    /// Moon-button override for paired themes (nil = follow the system).
-    @State private var previewDark: Bool?
     @State private var showError = false
 
     private var ro: Bool { Locale.appIsRomanian }
@@ -36,26 +34,9 @@ struct AppIconPickerView: View {
 
     private var current: AppIconTheme { variant(of: currentFamily) }
 
-    /// The face the artwork shows right now.
-    private var showsDark: Bool {
-        guard current.hasPair else { return false }
-        return previewDark ?? (colorScheme == .dark)
-    }
-
-    /// True when the pair faces are individual choices (auto-switch off).
-    private var picksFaces: Bool { !iconManager.autoSwitch && current.hasPair && !current.isDefault }
-
-    /// The face Apply installs: previewed face when faces are individual
-    /// choices, the system appearance otherwise.
-    private var appliesDarkFace: Bool {
-        guard current.hasPair else { return false }
-        if picksFaces {
-            if let previewDark { return previewDark }
-            if iconManager.appliedIconName == current.darkIcon { return true }
-            if iconManager.appliedIconName == current.lightIcon { return false }
-        }
-        return colorScheme == .dark
-    }
+    /// Pairs always install the face matching the system appearance —
+    /// day/night switching just happens, like the primary icon.
+    private var appliesDarkFace: Bool { current.hasPair && colorScheme == .dark }
 
     private var isApplied: Bool {
         iconManager.selected.id == current.id
@@ -72,20 +53,15 @@ struct AppIconPickerView: View {
                 .padding(.top, AppSpacing.lg)
             Spacer(minLength: AppSpacing.md)
             variantRow
-            autoSwitchToggle
-                .padding(.horizontal, AppSpacing.xl)
-                .padding(.top, AppSpacing.md)
             applyBar
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if current.hasPair {
-                ToolbarItem(placement: .topBarTrailing) { faceToggle }
-            }
-        }
         .onAppear {
+            // The day/night toggle is gone from the UI: paired icons simply
+            // follow the system appearance, so the switch is always on.
+            iconManager.autoSwitch = true
             let installed = iconManager.selected
             let family = AppIconFamilies.family(containing: installed.id)
             familyID = family.id
@@ -118,24 +94,6 @@ struct AppIconPickerView: View {
         .padding(.top, AppSpacing.sm)
     }
 
-    // MARK: Day/night preview toggle (paired themes only)
-
-    private var faceToggle: some View {
-        Button {
-            HapticFeedback.selection()
-            withAnimation(.smooth(duration: 0.3)) { previewDark = !showsDark }
-        } label: {
-            Image(systemName: showsDark ? "moon.fill" : "sun.max.fill")
-                .font(AppFont.subheadline)
-                .foregroundStyle(.primary)
-                .frame(width: 34, height: 34)
-                .glassCircle()
-                .contentTransition(.symbolEffect(.replace))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(ro ? "Fața zi/noapte" : "Day/night face"))
-    }
-
     // MARK: Carousel — one hero per family, neighbour peeking at the edge
 
     private var carousel: some View {
@@ -161,12 +119,13 @@ struct AppIconPickerView: View {
 
     private func heroArtwork(for family: IconFamily) -> some View {
         let theme = variant(of: family)
-        let dark = family.id == currentFamily.id ? showsDark : (colorScheme == .dark)
-        let asset = dark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
+        // Paired themes show the face matching the system appearance — the
+        // installed icon adapts the same way, automatically. No identity
+        // tricks here: an .id() swap inside the lazy carousel used to break
+        // the scroll targets (frozen slides, page stuck after applying).
+        let asset = colorScheme == .dark ? (theme.darkPreview ?? theme.lightPreview)
+                                         : theme.lightPreview
         return IconArtwork(name: asset, size: 300)
-            .id(asset)
-            .transition(.opacity)
-            .animation(.smooth(duration: 0.3), value: asset)
             .frame(maxWidth: .infinity)
             .accessibilityLabel(Text(theme.name))
     }
@@ -219,7 +178,7 @@ struct AppIconPickerView: View {
 
     private func swatch(_ theme: AppIconTheme) -> some View {
         let isSelected = theme.id == current.id
-        let asset = showsDark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
+        let asset = colorScheme == .dark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
         return Button {
             HapticFeedback.selection()
             withAnimation(.snappy(duration: 0.25)) {
@@ -242,23 +201,6 @@ struct AppIconPickerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(theme.name))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    }
-
-    // MARK: Auto day/night switch
-
-    private var autoSwitchToggle: some View {
-        @Bindable var iconManager = iconManager
-        return HStack(spacing: 10) {
-            Image(systemName: "circle.lefthalf.filled")
-                .foregroundStyle(.primary)
-            Text(ro ? "Schimbare automată zi/noapte" : "Auto day/night switch")
-                .font(AppFont.footnoteEmphasis)
-            Spacer()
-            Toggle("", isOn: $iconManager.autoSwitch).labelsHidden()
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: Apply — "Active" when the shown icon is the installed one

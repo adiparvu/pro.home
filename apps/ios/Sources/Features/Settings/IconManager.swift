@@ -132,18 +132,20 @@ enum AppIconCatalog {
         pair("metallic", "Metalic", base: "Metallic", .elegant,
              "Metal șlefuit, reflexii reci. Precizie industrială, rafinată.",
              "Brushed metal, cool reflections. Industrial precision, refined."),
-        single("gold-noir", "Aur Nocturn", asset: "GoldNoir", .elegant,
-               "Aur masiv pe negru profund. Sobru, scump, memorabil.",
-               "Solid gold on deep black. Sober, expensive, unforgettable."),
-        single("metallic-gold", "Aur Lichid", asset: "MetallicGold", .elegant,
-               "Aur topit sub sticlă. Lumina alunecă pe fiecare curbă.",
-               "Molten gold under glass. Light glides across every curve."),
-        single("rose-mocha", "Rose Mocha", asset: "RoseMocha", .elegant,
-               "Roz-cafeniu, cald ca o cafea de seară.",
-               "Rosy mocha, warm as an evening coffee."),
-        single("rose-noir", "Rose Noir", asset: "RoseNoir", .elegant,
-               "Cupru trandafiriu pe noapte adâncă. Contrast dramatic.",
-               "Rose copper on deep night. Dramatic contrast."),
+        // Two single designs joined into a day/night set: liquid gold by
+        // day, gold on black by night.
+        AppIconTheme(id: "metallic-gold", name: "Aur Lichid",
+            storyRO: "Aur topit ziua, aur pe negru profund noaptea.",
+            storyEN: "Molten gold by day, gold on deep black by night.",
+            category: .elegant,
+            lightPreview: "MetallicGold", darkPreview: "GoldNoir",
+            lightIcon: "AppIconMetallicGold", darkIcon: "AppIconGoldNoir"),
+        AppIconTheme(id: "rose-mocha", name: "Rose Mocha",
+            storyRO: "Roz-cafeniu cald ziua, cupru pe noapte adâncă seara.",
+            storyEN: "Warm rosy mocha by day, rose copper on deep night after dark.",
+            category: .elegant,
+            lightPreview: "RoseMocha", darkPreview: "RoseNoir",
+            lightIcon: "AppIconRoseMocha", darkIcon: "AppIconRoseNoir"),
         single("silver-noir", "Argint Nocturn", asset: "SilverNoir", .elegant,
                "Argint pur pe umbră. Sobrietate lucioasă.",
                "Pure silver on shadow. Glossy restraint."),
@@ -167,12 +169,12 @@ enum AppIconCatalog {
         single("forest-royal", "Pădure Regală", asset: "ForestRoyal", .nature,
                "Verde smarald și aur regal. Natura, la rang de coroană.",
                "Emerald green and royal gold. Nature, crowned."),
-        single("emerald-gloss", "Smarald Lucios", asset: "EmeraldGloss", .nature,
-               "Smarald sub un strat de sticlă. Verde profund, lustruit.",
-               "Emerald under a coat of glass. Deep green, polished."),
-        single("emerald-marble", "Smarald Marmură", asset: "EmeraldMarble", .nature,
-               "Marmură verde cu vinișoare de lumină. Solid și scump.",
-               "Green marble veined with light. Solid and rich."),
+        AppIconTheme(id: "emerald-marble", name: "Smarald Marmură",
+            storyRO: "Marmură verde ziua, smarald lustruit sub sticlă noaptea.",
+            storyEN: "Green marble by day, polished emerald under glass by night.",
+            category: .nature,
+            lightPreview: "EmeraldMarble", darkPreview: "EmeraldGloss",
+            lightIcon: "AppIconEmeraldMarble", darkIcon: "AppIconEmeraldGloss"),
         single("lavender-royal", "Lavandă Regală", asset: "LavenderRoyal", .nature,
                "Mov profund și aur. Un câmp de lavandă la asfințit.",
                "Deep purple and gold. A lavender field at sundown."),
@@ -230,7 +232,15 @@ enum AppIconCatalog {
                "Just the outline, nothing more. Pure clarity."),
     ]
 
-    static func theme(id: String) -> AppIconTheme { all.first { $0.id == id } ?? all[0] }
+    /// Ids of singles that were merged into day/night pairs keep resolving.
+    private static let mergedIDs = ["gold-noir": "metallic-gold",
+                                    "rose-noir": "rose-mocha",
+                                    "emerald-gloss": "emerald-marble"]
+
+    static func theme(id: String) -> AppIconTheme {
+        let resolved = mergedIDs[id] ?? id
+        return all.first { $0.id == resolved } ?? all[0]
+    }
 
     static func theme(forIconName name: String?) -> AppIconTheme {
         guard let name else { return all[0] }
@@ -256,12 +266,12 @@ enum AppIconFamilies {
         IconFamily(id: "default",     variantIDs: ["default"]),
         IconFamily(id: "glass",       variantIDs: ["glass"]),
         IconFamily(id: "classic",     variantIDs: ["classic"]),
-        IconFamily(id: "roseGold",    variantIDs: ["roseGold", "rose-mocha", "rose-noir"]),
+        IconFamily(id: "roseGold",    variantIDs: ["roseGold", "rose-mocha"]),
         IconFamily(id: "baroque",     variantIDs: ["baroque", "baroque-cream", "baroque-floral"]),
         IconFamily(id: "metallic",    variantIDs: ["metallic", "metallic-gold"]),
-        IconFamily(id: "noir-metals", variantIDs: ["gold-noir", "silver-noir"]),
+        IconFamily(id: "noir-metals", variantIDs: ["silver-noir"]),
         IconFamily(id: "forest",      variantIDs: ["forest", "forest-royal"]),
-        IconFamily(id: "emerald",     variantIDs: ["emerald", "emerald-gloss", "emerald-marble"]),
+        IconFamily(id: "emerald",     variantIDs: ["emerald", "emerald-marble"]),
         IconFamily(id: "sunset",      variantIDs: ["sunset"]),
         IconFamily(id: "lavender",    variantIDs: ["lavender", "lavender-royal"]),
         IconFamily(id: "arctic",      variantIDs: ["arctic"]),

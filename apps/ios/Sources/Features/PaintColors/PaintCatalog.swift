@@ -34,8 +34,10 @@ struct PaintCatalogFamily: Identifiable {
 enum PaintCatalog {
 
     /// Brands common on the Belgian and Romanian markets, for the brand menu.
-    static let brandsBelgium = ["Levis", "Trimetal", "Sikkens", "Boss Paints", "Mathys", "Colora"]
-    static let brandsRomania = ["Policolor", "Spor", "Savana", "Kober", "Oskar", "Düfa", "Deutek", "Danke!"]
+    static let brandsBelgium = ["Levis", "Trimetal", "Sikkens", "Boss Paints", "Mathys", "Colora",
+                                "Sigma", "Dulux", "Caparol", "Rust-Oleum", "V33"]
+    static let brandsRomania = ["Policolor", "Spor", "Savana", "Kober", "Oskar", "Düfa", "Deutek",
+                                "Danke!", "Caparol", "Dulux", "Azur", "Fabryo", "Duraziv", "Vitex"]
 
     private static func c(_ code: String, _ en: String, _ ro: String, _ hex: String) -> PaintCatalogColor {
         PaintCatalogColor(code: "RAL \(code)", nameEN: en, nameRO: ro, hex: hex)

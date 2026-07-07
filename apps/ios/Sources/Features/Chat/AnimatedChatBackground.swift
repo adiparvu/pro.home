@@ -96,17 +96,20 @@ struct AnimatedChatBackground: View {
     }
 
     /// 3×3 control grid: corners pinned so edges never tear; the inner points
-    /// drift on slow sine tracks with incommensurate speeds and phases.
+    /// drift on sine tracks with incommensurate speeds and phases. The first
+    /// tuning (speeds ≈0.1 rad/s) took a full minute per cycle — technically
+    /// animated, visibly frozen. These cycles run 9–18s: alive at a glance,
+    /// still calm behind bubbles, exactly the iMessage feel.
     static func points(at t: Double) -> [SIMD2<Float>] {
         func drift(_ base: Float, _ amp: Float, _ speed: Double, _ phase: Double) -> Float {
             base + amp * Float(sin(t * speed + phase))
         }
         return [
-            [0, 0], [drift(0.5, 0.16, 0.11, 0.0), 0], [1, 0],
-            [0, drift(0.5, 0.14, 0.09, 1.3)],
-            [drift(0.5, 0.22, 0.07, 2.1), drift(0.5, 0.22, 0.13, 4.2)],
-            [1, drift(0.5, 0.14, 0.10, 5.0)],
-            [0, 1], [drift(0.5, 0.16, 0.12, 3.3), 1], [1, 1],
+            [0, 0], [drift(0.5, 0.20, 0.47, 0.0), 0], [1, 0],
+            [0, drift(0.5, 0.18, 0.39, 1.3)],
+            [drift(0.5, 0.30, 0.33, 2.1), drift(0.5, 0.30, 0.55, 4.2)],
+            [1, drift(0.5, 0.18, 0.43, 5.0)],
+            [0, 1], [drift(0.5, 0.20, 0.51, 3.3), 1], [1, 1],
         ]
     }
 }
