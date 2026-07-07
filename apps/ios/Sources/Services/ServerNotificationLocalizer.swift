@@ -27,7 +27,14 @@ enum ServerNotificationLocalizer {
         if let match = raw.wholeMatch(of: #/This task was due (.+) and is now overdue\./# ) {
             return String(format: String(localized: "srvnotif_overdue_body"), String(match.1))
         }
-        if raw.contains("Spent so far this month:") || raw.hasPrefix("All clear") {
+        // Any digest segment routes to the digest translator — the old gate
+        // (spend marker or all-clear prefix) missed digests that had only
+        // task/document/plant counts, which then shipped in English on a
+        // Romanian device. Over-matching is harmless: digestBody only
+        // rewrites exact known segments and passes everything else through.
+        if raw.contains("Spent so far this month:") || raw.hasPrefix("All clear")
+            || raw.contains("overdue. ") || raw.contains("due this week. ")
+            || raw.contains("expiring within 30 days. ") || raw.contains("need water. ") {
             return digestBody(raw)
         }
         return raw
