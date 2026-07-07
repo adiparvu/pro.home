@@ -1,9 +1,10 @@
 import SwiftUI
+import MapKit
 
 // MARK: - Pages
 
 enum WatchPage: Hashable {
-    case today, tasks, plants, shopping, deliveries
+    case today, tasks, plants, shopping, deliveries, map
 }
 
 // MARK: - Wrist design language
@@ -90,6 +91,11 @@ struct WatchRootView: View {
                     DeliveriesPage(deliveries: payload.deliveries)
                         .tag(WatchPage.deliveries)
                 }
+                if let lat = payload.latitude, let lon = payload.longitude {
+                    PropertyMapPage(latitude: lat, longitude: lon,
+                                    name: payload.snapshot.propertyName)
+                        .tag(WatchPage.map)
+                }
             }
             .tabViewStyle(.verticalPage)
             .onOpenURL { url in
@@ -158,6 +164,11 @@ private struct TodayGlance: View {
 
                     if snapshot.unreadMessages > 0 {
                         unreadRow(snapshot.unreadMessages).entrance(5)
+                    }
+
+                    if let insight = payload.insightTitle {
+                        insightCard(title: insight, body: payload.insightBody)
+                            .entrance(7)
                     }
 
                     if let critical = snapshot.criticalTaskTitle {
@@ -241,6 +252,30 @@ private struct TodayGlance: View {
                 Text("watch_unread")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    /// The ProactiveEngine's freshest insight — generated on the iPhone,
+    /// pushed in the payload, readable with the phone out of reach.
+    private func insightCard(title: String, body: String?) -> some View {
+        WatchCard(tint: .purple) {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.purple)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .lineLimit(2)
+                    if let body, !body.isEmpty {
+                        Text(body)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+                }
                 Spacer(minLength: 0)
             }
         }
@@ -648,6 +683,52 @@ private struct DeliveryDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .containerBackground(Color.cyan.gradient.opacity(0.3), for: .navigation)
+    }
+}
+
+// MARK: - Page 6: Property map (the twin on the wrist)
+//
+// MapKit's native watch map: crown and pan gestures come free, the property
+// pin wears the brand. Coordinates ride the payload, so the map centers
+// correctly even offline (tiles need connectivity; the pin does not).
+
+private struct PropertyMapPage: View {
+    let latitude: Double
+    let longitude: Double
+    let name: String?
+
+    @State private var position: MapCameraPosition
+
+    init(latitude: Double, longitude: Double, name: String?) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.name = name
+        let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        _position = State(initialValue: .region(MKCoordinateRegion(
+            center: center,
+            span: MKCoordinateSpan(latitudeDelta: 0.004, longitudeDelta: 0.004))))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Map(position: $position) {
+                Annotation(name ?? "PRVIO",
+                           coordinate: CLLocationCoordinate2D(latitude: latitude,
+                                                              longitude: longitude)) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blue.opacity(0.25))
+                            .frame(width: 30, height: 30)
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 22, height: 22)
+                            .background(Circle().fill(Color.blue))
+                    }
+                }
+            }
+            .navigationTitle(Text("watch_map"))
+        }
     }
 }
 

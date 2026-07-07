@@ -34,6 +34,13 @@ struct WatchPayload: Codable {
     // Optional-by-default so payloads cached by the V1 watch app still decode.
     var supplies: [SupplyCatalogEntry] = []
     var deliveries: [DeliveryCatalogEntry] = []
+    /// Property coordinates for the wrist map (nil until geocoded).
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    /// The top ProactiveEngine insight — the phone's intelligence, delivered
+    /// to the wrist and readable offline.
+    var insightTitle: String? = nil
+    var insightBody: String? = nil
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -171,16 +178,47 @@ enum SharedDataStore {
         return (try? JSONDecoder().decode([DeliveryCatalogEntry].self, from: data)) ?? []
     }
 
+    // MARK: Watch extras (coordinates + top insight, set by writeWidgetSnapshot)
+
+    private static let watchExtrasKey = "prvio.watch.extras"
+
+    struct WatchExtras: Codable {
+        var latitude: Double?
+        var longitude: Double?
+        var insightTitle: String?
+        var insightBody: String?
+    }
+
+    static func writeWatchExtras(_ extras: WatchExtras) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(extras) else { return }
+        ud.set(data, forKey: watchExtrasKey)
+    }
+
+    static func readWatchExtras() -> WatchExtras {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: watchExtrasKey),
+              let extras = try? JSONDecoder().decode(WatchExtras.self, from: data) else {
+            return WatchExtras()
+        }
+        return extras
+    }
+
     /// The watch payload assembled from the store alone — used to answer a
     /// wrist action instantly (after the local mutations) without needing the
     /// app's services to be alive.
     static func currentWatchPayload() -> WatchPayload? {
         guard let snapshot = read() else { return nil }
+        let extras = readWatchExtras()
         return WatchPayload(snapshot: snapshot,
                             tasks: readTaskCatalog(),
                             plants: readPlantCatalog(),
                             supplies: readSupplyCatalog(),
-                            deliveries: readDeliveryCatalog())
+                            deliveries: readDeliveryCatalog(),
+                            latitude: extras.latitude,
+                            longitude: extras.longitude,
+                            insightTitle: extras.insightTitle,
+                            insightBody: extras.insightBody)
     }
 
     static func appendPendingSupplyCheck(_ itemId: UUID) {

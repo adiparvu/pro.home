@@ -81,7 +81,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
                 payload.snapshot.criticalTaskTitle = nil
             }
         }
-        queue(action: "completeTask", id: id)
+        queue(action: "completeTask", id: id, haptic: .success)
     }
 
     func waterPlant(_ id: UUID) {
@@ -92,7 +92,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
             payload.snapshot.plantsNeedingWater = thirsty.count
             payload.snapshot.plantNames = Array(thirsty.prefix(3).map(\.name))
         }
-        queue(action: "waterPlant", id: id)
+        queue(action: "waterPlant", id: id, haptic: .directionUp)
     }
 
     func checkSupply(_ id: UUID) {
@@ -101,7 +101,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
             payload.supplies[i].isCompleted = true
             payload.snapshot.pendingSupplyCount = payload.supplies.filter { !$0.isCompleted }.count
         }
-        queue(action: "checkSupply", id: id)
+        queue(action: "checkSupply", id: id, haptic: .click)
     }
 
     /// Dictated on the wrist; the phone creates the real task. Optimistic:
@@ -137,8 +137,10 @@ final class WatchStore: NSObject, WCSessionDelegate {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    private func queue(action: String, id: UUID) {
-        WKInterfaceDevice.current().play(.success)
+    /// Each action speaks its own haptic dialect — completing lands with
+    /// success, watering lifts, checking off clicks.
+    private func queue(action: String, id: UUID, haptic: WKHapticType) {
+        WKInterfaceDevice.current().play(haptic)
         guard WCSession.isSupported() else { return }
         WCSession.default.transferUserInfo(["action": action, "id": id.uuidString])
     }

@@ -459,6 +459,13 @@ struct MainTabView: View {
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
                                    myName: profileService.profile?.preferredName)
+        // Wrist extras: the property pin and the engine's freshest insight.
+        let topInsight = proactiveEngine.insights.first { !$0.isDismissed }
+        SharedDataStore.writeWatchExtras(SharedDataStore.WatchExtras(
+            latitude: propertyService.primary?.latitude,
+            longitude: propertyService.primary?.longitude,
+            insightTitle: topInsight?.title,
+            insightBody: topInsight?.body))
         // The watch renders the same state the widgets do — one push, in the
         // same breath as the snapshot write, so the two can never diverge.
         if let payload = SharedDataStore.currentWatchPayload() {
