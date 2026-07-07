@@ -3,9 +3,9 @@ import SwiftUI
 
 // MARK: - PRVIO brand widget
 //
-// A simple, premium home-screen shortcut: the PRVIO wordmark on the brand
-// gradient. Tapping it opens the app. Requested as "one that's just the PRVIO
-// name and opens the app."
+// A simple, premium home-screen shortcut: the PRVIO monogram and wordmark
+// centered on black — the composition of a hardware badge, not a data
+// widget. Tapping it opens the app.
 
 struct BrandWidget: Widget {
     let kind = "BrandWidget"
@@ -26,64 +26,50 @@ private struct BrandWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        Group {
-            if family == .systemMedium { medium } else { small }
-        }
-        .containerBackground(for: .widget) {
-            LinearGradient(
-                colors: [Color(red: 0.16, green: 0.36, blue: 0.78),
-                         Color(red: 0.42, green: 0.24, blue: 0.72)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var small: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        // Everything centered on black: logo above, wordmark and tagline
+        // beneath, the composition sitting in the optical middle.
+        VStack(spacing: family == .systemMedium ? 8 : 6) {
             glyph
-            Spacer(minLength: 6)
             wordmark
+                .padding(.top, 2)
             tagline
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(4)
-    }
-
-    private var medium: some View {
-        HStack(spacing: 16) {
-            glyph
-            VStack(alignment: .leading, spacing: 4) {
-                wordmark
-                tagline
-                if let name = snapshot.propertyName, !name.isEmpty {
-                    Text(name)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
-                        .lineLimit(1)
-                        .padding(.top, 2)
-                }
+            if family == .systemMedium,
+               let name = snapshot.propertyName, !name.isEmpty {
+                Text(name)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .padding(.top, 2)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(4)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .containerBackground(for: .widget) {
+            // Near-black with a faint crown of light so the panel reads as a
+            // material, not a hole in the wallpaper.
+            ZStack {
+                Color.black
+                RadialGradient(colors: [.white.opacity(0.07), .clear],
+                               center: .top, startRadius: 0, endRadius: 200)
+            }
+        }
     }
 
     private var glyph: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(.white.opacity(0.16))
-                .frame(width: 52, height: 52)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.white.opacity(0.12))
+                .frame(width: 46, height: 46)
             Image(systemName: "house.fill")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 21, weight: .bold))
                 .foregroundStyle(.white)
         }
     }
 
     private var wordmark: some View {
         Text("PRVIO")
-            .font(.system(size: 26, weight: .heavy, design: .rounded))
-            .tracking(1.5)
+            .font(.system(size: 24, weight: .heavy, design: .rounded))
+            .tracking(2)
             .foregroundStyle(.white)
     }
 
