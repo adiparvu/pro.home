@@ -72,7 +72,7 @@ struct BlueprintsView: View {
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))

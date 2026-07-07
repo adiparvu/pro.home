@@ -231,7 +231,7 @@ private struct NotificationRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(notification.title)
+                    Text(ServerNotificationLocalizer.title(notification.title))
                         .font(.system(size: 14, weight: notification.isUnread ? .semibold : .regular))
                         .foregroundStyle(Color.primary)
                         .lineLimit(2)
@@ -240,7 +240,7 @@ private struct NotificationRow: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                 }
-                if let body = notification.body, !body.isEmpty {
+                if let body = ServerNotificationLocalizer.body(notification.body), !body.isEmpty {
                     Text(body)
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.6))

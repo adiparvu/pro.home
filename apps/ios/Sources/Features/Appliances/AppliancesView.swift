@@ -39,7 +39,7 @@ struct AppliancesView: View {
             }
         }
         .navigationTitle("Appliances")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search appliances…"))

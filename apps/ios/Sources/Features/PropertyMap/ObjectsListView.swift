@@ -94,7 +94,7 @@ struct ObjectsListView: View {
             .trackTabScroll()
         }
         .navigationTitle("Objects")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search name, brand, serial…")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

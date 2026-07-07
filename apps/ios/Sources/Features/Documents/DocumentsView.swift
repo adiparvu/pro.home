@@ -87,7 +87,7 @@ struct DocumentsView: View {
             }
         }
         .navigationTitle("Documents")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search documents..."))

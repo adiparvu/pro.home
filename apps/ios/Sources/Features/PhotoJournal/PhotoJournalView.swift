@@ -40,7 +40,7 @@ struct PhotoJournalView: View {
             }
         }
         .navigationTitle("Photo Journal")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))

@@ -146,7 +146,7 @@ struct InventoryView: View {
             )
         }
         .navigationTitle("Inventory")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))

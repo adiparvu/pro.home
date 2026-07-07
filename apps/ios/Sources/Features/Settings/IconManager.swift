@@ -35,6 +35,16 @@ struct AppIconTheme: Identifiable, Equatable {
 
     var story: String { Locale.appIsRomanian ? storyRO : storyEN }
 
+    /// The merged day/night asset for pair themes: ONE alternate icon whose
+    /// dark variant iOS renders by itself — no setAlternateIconName on theme
+    /// change, so the system "You have changed the icon" alert never fires
+    /// for appearance switches. Naming: "…Light" pairs drop the suffix
+    /// ("AppIconGlass"), joined singles gain "Set" ("AppIconRoseMochaSet").
+    var pairedIcon: String? {
+        guard hasPair, let lightIcon else { return nil }
+        return lightIcon.hasSuffix("Light") ? String(lightIcon.dropLast(5)) : lightIcon + "Set"
+    }
+
     /// The alternate icon name to install for a given appearance (nil = primary).
     func iconName(isDark: Bool) -> String? {
         if isDefault { return nil }
@@ -244,7 +254,9 @@ enum AppIconCatalog {
 
     static func theme(forIconName name: String?) -> AppIconTheme {
         guard let name else { return all[0] }
-        return all.first { $0.lightIcon == name || $0.darkIcon == name } ?? all[0]
+        return all.first {
+            $0.lightIcon == name || $0.darkIcon == name || $0.pairedIcon == name
+        } ?? all[0]
     }
 }
 
@@ -341,8 +353,16 @@ final class IconManager {
     /// Lets the picker mark the precise pair face that is applied.
     var appliedIconName: String? { lastAppliedName }
 
+    /// The asset to install for a theme: pair themes with auto-switch ride
+    /// the merged day/night asset (iOS adapts it silently); auto-switch off
+    /// pins the specific face the user chose.
+    private func resolvedName(for theme: AppIconTheme, isDark: Bool) -> String? {
+        if theme.hasPair, autoSwitch, let paired = theme.pairedIcon { return paired }
+        return theme.iconName(isDark: isDark)
+    }
+
     func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
-        let name = theme.iconName(isDark: isDark)
+        let name = resolvedName(for: theme, isDark: isDark)
         guard force || name != lastAppliedName else { return }
         // Commit state synchronously, *before* the async system call. It used
         // to be committed inside the completion, so anything reading
@@ -371,8 +391,14 @@ final class IconManager {
         apply(theme, isDark: isDark, force: true)
     }
 
+    /// Appearance changes no longer install anything — the merged pair asset
+    /// carries both variants and iOS switches them itself, silently. The one
+    /// job left is migrating users still on a legacy per-face name (installed
+    /// before the merge) onto the merged asset, once.
     func colorSchemeChanged(isDark: Bool) {
-        guard autoSwitch, selected.hasPair else { return }
+        guard autoSwitch, selected.hasPair, let paired = selected.pairedIcon,
+              lastAppliedName != nil, lastAppliedName != paired,
+              AppIconCatalog.theme(forIconName: lastAppliedName).id == selected.id else { return }
         guard Date() >= suppressAutoUntil else { return }
         apply(selected, isDark: isDark)
     }

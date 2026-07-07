@@ -355,7 +355,7 @@ struct ContractorsView: View {
             Text(service.error ?? "")
         }
         .navigationTitle("Contractors")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))
