@@ -28,6 +28,7 @@ struct AddDocumentSheet: View {
     @State private var showScanCamera = false
     @State private var isScanning = false
     @State private var scanPickerItem: PhotosPickerItem? = nil
+    @State private var showDocScanner = false
 
     private let categories = ["contract", "legal", "warranty", "insurance", "certificate",
                                "manual", "invoice", "permit", "tax", "utility", "photo", "other"]
@@ -45,6 +46,14 @@ struct AddDocumentSheet: View {
                                         .autocorrectionDisabled()
                                 }
                                 Menu {
+                                    if DocumentScannerView.isSupported {
+                                        // The real scanner: multi-page, edge
+                                        // detection, PDF attached, expiry
+                                        // detected — not just a name OCR.
+                                        Button { showDocScanner = true } label: {
+                                            Label("doc_scan_pdf", systemImage: "doc.viewfinder")
+                                        }
+                                    }
                                     Button { showScanCamera = true } label: {
                                         Label("Camera", systemImage: "camera.fill")
                                     }
@@ -150,6 +159,28 @@ struct AddDocumentSheet: View {
                 }
                 .ignoresSafeArea()
         }
+        .fullScreenCover(isPresented: $showDocScanner) {
+            DocumentScannerView { result in
+                showDocScanner = false
+                guard let result else { return }
+                applyScan(result)
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    /// A finished scan fills the whole form: the PDF is attached, and the
+    /// OCR's title/expiry proposals land only where the user hasn't typed.
+    private func applyScan(_ result: DocumentScanResult) {
+        pickedFileData = result.pdfData
+        pickedFileName = "scan-\(AppDate.dayString(from: Date())).pdf"
+        pickedMimeType = "application/pdf"
+        if name.isEmpty, let suggested = result.suggestedName { name = suggested }
+        if let expiry = result.suggestedExpiry, expiry > Date() {
+            hasExpiry = true
+            expiryDate = expiry
+        }
+        HapticFeedback.success()
     }
 
     // MARK: - Share with

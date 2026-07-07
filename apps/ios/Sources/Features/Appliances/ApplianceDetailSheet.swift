@@ -41,6 +41,7 @@ struct ApplianceDetailSheet: View {
                         headerCard
                         detailsSection
                         warrantySection
+                        ApplianceServiceBookSection(appliance: appliance)
                         if let notes = appliance.notes, !notes.isEmpty {
                             notesSection(notes)
                         }

@@ -12,9 +12,12 @@ struct FinancialRecord: Identifiable, Codable {
     var description: String?
     let createdAt: String
     var sharedMemberIds: [String] = []   // family_members.id shared this row with (see migration 094)
+    /// Free-form labels. The appliance service book rides here:
+    /// ["service", "appliance:<uuid>"] links a repair expense to its appliance.
+    var tags: [String] = []
 
     enum CodingKeys: String, CodingKey {
-        case id, title, amount, currency, type, category, date, description
+        case id, title, amount, currency, type, category, date, description, tags
         case propertyId = "property_id"
         case createdAt = "created_at"
         case sharedMemberIds = "shared_member_ids"

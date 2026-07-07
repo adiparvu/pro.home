@@ -6,6 +6,7 @@ import PhotosUI
 struct PropertySettingsView: View {
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
+    @State private var showPassport = false
     @State private var searchText = ""
 
     private var filteredProperties: [PropertyModel] {
@@ -49,6 +50,16 @@ struct PropertySettingsView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 12) {
+                    if propertyService.primary != nil {
+                        // The dossier: everything the property has become,
+                        // as one shareable PDF.
+                        Button { showPassport = true } label: {
+                            Image(systemName: "doc.richtext")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        .accessibilityLabel(Text("passport_title"))
+                    }
                     Button { showAdd = true } label: {
                         Image(systemName: "plus")
                             .font(AppFont.subheadline)
@@ -59,6 +70,7 @@ struct PropertySettingsView: View {
             }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }
+        .sheet(isPresented: $showPassport) { PropertyPassportSheet() }
         .alert("Error", isPresented: Binding(
             get: { propertyService.error != nil },
             set: { if !$0 { propertyService.error = nil } }
