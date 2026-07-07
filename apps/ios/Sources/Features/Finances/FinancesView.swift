@@ -28,25 +28,15 @@ struct FinancesView: View {
         }
     }
 
-    private func total(_ type: String) -> Double {
-        monthRecords.filter { $0.type == type }
+    private func total(_ type: String, in records: [FinancialRecord]) -> Double {
+        records.filter { $0.type == type }
             .reduce(0) { $0 + currencyService.convert($1.amount, from: $1.currency, to: preferred) }
     }
 
-    var income:   Double { total("income") }
-    var expenses: Double { total("expense") }
-    var net:      Double { income - expenses }
-
-    var filteredRecords: [FinancialRecord] {
-        let base = monthRecords
-        guard let type = selectedType else { return base }
-        return base.filter { $0.type == type }
-    }
-
     // Group records by date string
-    var groupedRecords: [(date: String, records: [FinancialRecord])] {
+    func grouped(_ records: [FinancialRecord]) -> [(date: String, records: [FinancialRecord])] {
         var grouped: [String: [FinancialRecord]] = [:]
-        for r in filteredRecords { grouped[r.date, default: []].append(r) }
+        for r in records { grouped[r.date, default: []].append(r) }
         return grouped.keys.sorted(by: >).map { (date: $0, records: grouped[$0] ?? []) }
     }
 
@@ -54,22 +44,78 @@ struct FinancesView: View {
         Calendar.current.isDate(displayedMonth, equalTo: Date(), toGranularity: .month)
     }
 
+    /// Top expense categories of the displayed month, with their share of
+    /// the month's spending — one pass, converted to the preferred currency.
+    func categoryItems(month: [FinancialRecord]) -> [CategoryBreakdownSection.Item] {
+        var totals: [String: Double] = [:]
+        for r in month where r.type == "expense" {
+            totals[r.category.lowercased(), default: 0]
+                += currencyService.convert(r.amount, from: r.currency, to: preferred)
+        }
+        let grand = totals.values.reduce(0, +)
+        guard grand > 0 else { return [] }
+        return totals.sorted { $0.value > $1.value }.prefix(5).map {
+            CategoryBreakdownSection.Item(category: $0.key, amount: $0.value, share: $0.value / grand)
+        }
+    }
+
+    /// Income vs. expenses for the six months ending at the displayed month,
+    /// zeros included so the chart never lies by omission.
+    func trendPoints() -> [SixMonthTrendSection.Point] {
+        let cal = Calendar.current
+        guard let end = cal.date(byAdding: .month, value: 1, to: displayedMonth),
+              let start = cal.date(byAdding: .month, value: -5, to: displayedMonth) else { return [] }
+        var buckets: [Date: (income: Double, expense: Double)] = [:]
+        for r in financialService.records {
+            guard let d = AppDate.day(from: r.date), d >= start, d < end else { continue }
+            let m = cal.startOfMonth(d)
+            var b = buckets[m] ?? (0, 0)
+            let v = currencyService.convert(r.amount, from: r.currency, to: preferred)
+            if r.isIncome { b.income += v } else { b.expense += v }
+            buckets[m] = b
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        formatter.locale = .current
+        return (0..<6).compactMap { cal.date(byAdding: .month, value: $0, to: start) }.flatMap { m in
+            let b = buckets[m] ?? (0, 0)
+            let label = formatter.string(from: m).capitalized
+            return [SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: true, amount: b.income),
+                    SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: false, amount: b.expense)]
+        }
+    }
+
     var body: some View {
+        // One pass per render: the month filter and both totals used to be
+        // recomputed on every property access (4× per render, each with a
+        // currency conversion per record).
+        let month = monthRecords
+        let income = total("income", in: month)
+        let expenses = total("expense", in: month)
+        let filtered = selectedType.map { t in month.filter { $0.type == t } } ?? month
+
         Group {
         if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        heroSection
-                        kpiStrip
+                        heroSection(net: income - expenses)
+                        kpiStrip(income: income, expenses: expenses)
                         quickActionsRow
                             .padding(.top, AppSpacing.xl)
+                            .padding(.horizontal, AppSpacing.xl)
+                        CategoryBreakdownSection(items: categoryItems(month: month),
+                                                 format: { fmt($0) })
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
+                        SixMonthTrendSection(points: trendPoints())
+                            .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         ExpenseForecastSection(records: financialService.records)
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
-                        transactionList
+                        transactionList(filtered)
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)

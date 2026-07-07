@@ -53609,6 +53609,38 @@
           }
         }
       }
+    },
+    "fin_categories_header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top categories"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorii de top"
+          }
+        }
+      }
+    },
+    "fin_trend_header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 6 months"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimele 6 luni"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

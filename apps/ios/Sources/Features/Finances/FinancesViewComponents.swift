@@ -19,7 +19,7 @@ private let categoryIcons: [String: (icon: String, color: Color)] = [
     "other":       ("ellipsis.circle.fill",     Color.primary.opacity(0.6)),
 ]
 
-private func catStyle(_ category: String) -> (icon: String, color: Color) {
+func catStyle(_ category: String) -> (icon: String, color: Color) {
     categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(AppOpacity.mediumText))
 }
 
@@ -29,7 +29,7 @@ extension FinancesView {
 
     // MARK: Hero
 
-    var heroSection: some View {
+    func heroSection(net: Double) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 20) {
                 Button {
@@ -87,7 +87,7 @@ extension FinancesView {
 
     // MARK: KPI Strip
 
-    var kpiStrip: some View {
+    func kpiStrip(income: Double, expenses: Double) -> some View {
         HStack(spacing: 0) {
             kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess, icon: "arrow.down.left")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
@@ -167,14 +167,14 @@ extension FinancesView {
     // MARK: Transaction List
 
     @ViewBuilder
-    var transactionList: some View {
-        if filteredRecords.isEmpty {
+    func transactionList(_ filtered: [FinancialRecord]) -> some View {
+        if filtered.isEmpty {
             emptyState
         } else {
             // Lazy on purpose: this is the app's longest list — eager VStack
             // built every row (with a currency conversion each) on open.
             LazyVStack(spacing: 16) {
-                ForEach(groupedRecords, id: \.date) { group in
+                ForEach(grouped(filtered), id: \.date) { group in
                     VStack(spacing: 0) {
                         HStack {
                             Text(groupDateLabel(group.date))
@@ -240,7 +240,7 @@ extension FinancesView {
         return out.string(from: d)
     }
 
-    private func fmt(_ value: Double) -> String {
+    func fmt(_ value: Double) -> String {
         preferred == "RON"
             ? String(format: "%.0f %@", value, currencyService.symbol(for: preferred))
             : String(format: "%@%.0f", currencyService.symbol(for: preferred), value)
