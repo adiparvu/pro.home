@@ -137,10 +137,10 @@ enum DocumentScanIntelligence {
     /// dd.MM.yyyy, dd/MM/yyyy, dd-MM-yyyy and yyyy-MM-dd, anywhere in a line.
     static func extractDates(from text: String) -> [Date] {
         var found: [Date] = []
-        for match in text.matches(of: /(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/) {
+        for match in text.matches(of: #/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/#) {
             found.append(contentsOf: date(day: Int(match.1), month: Int(match.2), year: Int(match.3)))
         }
-        for match in text.matches(of: /(\d{4})-(\d{2})-(\d{2})/) {
+        for match in text.matches(of: #/(\d{4})-(\d{2})-(\d{2})/#) {
             found.append(contentsOf: date(day: Int(match.3), month: Int(match.2), year: Int(match.1)))
         }
         return found

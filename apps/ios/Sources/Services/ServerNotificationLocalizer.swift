@@ -24,7 +24,7 @@ enum ServerNotificationLocalizer {
     static func body(_ raw: String?) -> String? {
         guard let raw, !raw.isEmpty else { return raw }
         // "This task was due Jun 07 and is now overdue."
-        if let match = raw.wholeMatch(of: /This task was due (.+) and is now overdue\./ ) {
+        if let match = raw.wholeMatch(of: #/This task was due (.+) and is now overdue\./# ) {
             return String(format: String(localized: "srvnotif_overdue_body"), String(match.1))
         }
         if raw.contains("Spent so far this month:") || raw.hasPrefix("All clear") {
@@ -57,15 +57,15 @@ enum ServerNotificationLocalizer {
             out = String(localized: "srvnotif_digest_allclear") + " "
                 + String(out.dropFirst("All clear — no overdue tasks, expiring documents or thirsty plants. ".count))
         }
-        out = replaceCount(in: out, pattern: /(\d+) tasks? overdue\. /,
+        out = replaceCount(in: out, pattern: #/(\d+) tasks? overdue\. /#,
                            one: "srvnotif_digest_overdue_one", many: "srvnotif_digest_overdue_many")
-        out = replaceCount(in: out, pattern: /(\d+) tasks? due this week\. /,
+        out = replaceCount(in: out, pattern: #/(\d+) tasks? due this week\. /#,
                            one: "srvnotif_digest_due_one", many: "srvnotif_digest_due_many")
-        out = replaceCount(in: out, pattern: /(\d+) documents? expiring within 30 days\. /,
+        out = replaceCount(in: out, pattern: #/(\d+) documents? expiring within 30 days\. /#,
                            one: "srvnotif_digest_docs_one", many: "srvnotif_digest_docs_many")
-        out = replaceCount(in: out, pattern: /(\d+) plants? need water\. /,
+        out = replaceCount(in: out, pattern: #/(\d+) plants? need water\. /#,
                            one: "srvnotif_digest_plants_one", many: "srvnotif_digest_plants_many")
-        if let match = out.firstMatch(of: /Spent so far this month: ([A-Z]{3}) ([\d.,]+)\./ ) {
+        if let match = out.firstMatch(of: #/Spent so far this month: ([A-Z]{3}) ([\d.,]+)\./# ) {
             out = out.replacingCharacters(
                 in: match.range,
                 with: String(format: String(localized: "srvnotif_digest_spend"),

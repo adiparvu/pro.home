@@ -345,8 +345,11 @@ struct WatchPayloadProvider: TimelineProvider {
     // Context clues teach the Smart Stack WHEN each complication matters:
     // plants surface in the morning while thirsty, deliveries while a parcel
     // is on the road today, tasks while something is overdue, weather early
-    // and whenever a garden advisory is active.
+    // and whenever a garden advisory is active. The availability gate matches
+    // the protocol requirement's own — the deployment target is watchOS 10,
+    // where this method simply never exists.
 
+    @available(watchOS 11.0, *)
     func relevance() async -> WidgetRelevance<Void> {
         let payload = load()
         let cal = Calendar.current
@@ -536,11 +539,15 @@ private struct BudgetComplicationView: View {
         value.formatted(.currency(code: code).precision(.fractionLength(0)))
     }
 
-    /// Compact amount for the tiny faces ("1,2 K lei").
+    /// Compact amount for the tiny faces. Manual thousands-compaction —
+    /// the system's .compactName notation needs watchOS 11, and this
+    /// complication serves watchOS 10 too.
     private func compact(_ value: Double) -> String {
-        value.formatted(.currency(code: code)
-            .notation(.compactName)
-            .precision(.fractionLength(0...1)))
+        if value >= 10_000 {
+            let thousands = (value / 1000).formatted(.number.precision(.fractionLength(0)))
+            return "\(thousands)K \(code)"
+        }
+        return money(value)
     }
 
     var body: some View {
@@ -758,6 +765,19 @@ struct ChoiceProvider: AppIntentTimelineProvider {
         guard let data = UserDefaults(suiteName: SharedDataStore.suiteName)?
             .data(forKey: "prvio.watch.payload") else { return nil }
         return try? JSONDecoder().decode(WatchPayload.self, from: data)
+    }
+
+    /// watchOS requires the pre-configured menu (there is no in-place widget
+    /// editor on the watch face picker) — one entry per domain.
+    func recommendations() -> [AppIntentRecommendation<PRVIODomainConfigIntent>] {
+        WatchDomainOption.allCases.map { option in
+            let intent = PRVIODomainConfigIntent()
+            intent.domain = option
+            return AppIntentRecommendation(
+                intent: intent,
+                description: Text(WatchDomainOption.caseDisplayRepresentations[option]?.title
+                                  ?? "PRVIO"))
+        }
     }
 
     func placeholder(in context: Context) -> ChoiceEntry {
