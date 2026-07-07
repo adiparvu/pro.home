@@ -2,38 +2,77 @@ import SwiftUI
 import WidgetKit
 import AppIntents
 
-// MARK: - The one control launch intent
+// MARK: - Control Center launch plumbing
 //
-// Control Center buttons run in the widget extension. A bare `OpenURLIntent`
-// as the button action has proven unreliable at actually launching the app
-// on newer iOS — the documented pattern is an intent that declares
-// `openAppWhenRun` and RETURNS an OpenURLIntent, which the system executes
-// in the app's context. One intent, parameterized by destination, backs
-// every control.
+// Control Center buttons run in the widget extension, and history here is
+// littered with approaches that LOOKED right and didn't launch anything on
+// device: a bare OpenURLIntent, then openAppWhenRun + .result(opensIntent:).
+// The mechanism Apple actually documents for controls that open the app is
+// an `OpenIntent` whose `target` is an AppEnum — the SYSTEM performs the
+// launch, no flags involved. Routing stays on the App Group hand-off the
+// widget buttons already use (drained on every activation, deduped in the
+// router), so the destination survives even a cold start.
 
 @available(iOS 18.0, *)
-struct OpenPRVIODestination: AppIntent {
+enum PRVIODestination: String, AppEnum {
+    case home, newTask, chat, shopping, receipts, plants,
+         deliveries, finances, documents, twin, aria
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "PRVIO Destination"
+
+    static let caseDisplayRepresentations: [PRVIODestination: DisplayRepresentation] = [
+        .home:       "PRVIO",
+        .newTask:    "New Task",
+        .chat:       "Chat",
+        .shopping:   "Shopping",
+        .receipts:   "Scan Receipt",
+        .plants:     "My Plants",
+        .deliveries: "Deliveries",
+        .finances:   "Finances",
+        .documents:  "Documents",
+        .twin:       "Digital Twin",
+        .aria:       "AI Assistant",
+    ]
+
+    /// The prvio:// host/path the router resolves.
+    var path: String {
+        switch self {
+        case .home:       return ""
+        case .newTask:    return "tasks/new"
+        case .chat:       return "chat"
+        case .shopping:   return "shopping"
+        case .receipts:   return "receipts"
+        case .plants:     return "plants"
+        case .deliveries: return "deliveries"
+        case .finances:   return "finances"
+        case .documents:  return "documents"
+        case .twin:       return "twin"
+        case .aria:       return "ai"
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+struct OpenPRVIODestination: OpenIntent {
     static let title: LocalizedStringResource = "Open PRVIO"
-    static let openAppWhenRun: Bool = true
     static var isDiscoverable: Bool { false }
 
     @Parameter(title: "Destination")
-    var path: String?
+    var target: PRVIODestination
 
-    init() {}
-    init(path: String?) { self.path = path }
+    init() {
+        target = .home
+    }
 
-    @MainActor
-    func perform() async throws -> some IntentResult & OpensIntent {
-        // Two delivery channels for one tap. The OpenURLIntent below is the
-        // documented path, but across iOS releases it has opened the app
-        // without ever delivering the URL (or not opened it at all from a
-        // cold start). So the destination is ALSO parked in the App Group —
-        // the hand-off the widget buttons use, which the app drains on every
-        // activation. The router dedupes if both arrive.
-        SharedDataStore.setControlPath(path ?? "")
-        let url = URL(string: "prvio://\(path ?? "")") ?? URL(string: "prvio://")!
-        return .result(opensIntent: OpenURLIntent(url))
+    init(_ destination: PRVIODestination) {
+        target = destination
+    }
+
+    func perform() async throws -> some IntentResult {
+        // The system opens the app (OpenIntent semantics); we only park where
+        // it should land. Drained on activation, deduped in the router.
+        SharedDataStore.setControlPath(target.path)
+        return .result()
     }
 }
 
@@ -43,7 +82,7 @@ struct OpenPRVIODestination: AppIntent {
 struct OpenAppControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.open") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: nil)) {
+            ControlWidgetButton(action: OpenPRVIODestination(.home)) {
                 Label("PRVIO", systemImage: "house.fill")
             }
         }
@@ -58,7 +97,7 @@ struct OpenAppControl: ControlWidget {
 struct AddTaskControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.addtask") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "tasks/new")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.newTask)) {
                 Label("New Task", systemImage: "checklist.checked")
             }
         }
@@ -73,7 +112,7 @@ struct AddTaskControl: ControlWidget {
 struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "chat")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.chat)) {
                 Label("Chat", systemImage: "message.fill")
             }
         }
@@ -88,7 +127,7 @@ struct OpenChatControl: ControlWidget {
 struct ShoppingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.shopping") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "shopping")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.shopping)) {
                 Label("Shopping", systemImage: "cart.fill")
             }
         }
@@ -105,7 +144,7 @@ struct ScanControl: ControlWidget {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
             // prvio://receipts opens the expense/receipt capture flow —
             // prvio://scan would open the inventory object scanner instead.
-            ControlWidgetButton(action: OpenPRVIODestination(path: "receipts")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.receipts)) {
                 Label("Scan Receipt", systemImage: "barcode.viewfinder")
             }
         }
@@ -120,7 +159,7 @@ struct ScanControl: ControlWidget {
 struct PlantsControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.plants") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "plants")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.plants)) {
                 Label("My Plants", systemImage: "leaf.fill")
             }
         }
@@ -135,7 +174,7 @@ struct PlantsControl: ControlWidget {
 struct DeliveriesControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.deliveries") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "deliveries")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.deliveries)) {
                 Label("Deliveries", systemImage: "shippingbox.fill")
             }
         }
@@ -150,7 +189,7 @@ struct DeliveriesControl: ControlWidget {
 struct FinancesControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.finances") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "finances")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.finances)) {
                 Label("Finances", systemImage: "chart.pie.fill")
             }
         }
@@ -165,7 +204,7 @@ struct FinancesControl: ControlWidget {
 struct DocumentsControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.documents") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "documents")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.documents)) {
                 Label("Documents", systemImage: "folder.fill")
             }
         }
@@ -180,7 +219,7 @@ struct DocumentsControl: ControlWidget {
 struct DigitalTwinControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.twin") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "twin")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.twin)) {
                 Label("Digital Twin", systemImage: "square.stack.3d.up.fill")
             }
         }
@@ -195,7 +234,7 @@ struct DigitalTwinControl: ControlWidget {
 struct AssistantControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.aria") {
-            ControlWidgetButton(action: OpenPRVIODestination(path: "ai")) {
+            ControlWidgetButton(action: OpenPRVIODestination(.aria)) {
                 Label("AI Assistant", systemImage: "sparkles")
             }
         }

@@ -392,6 +392,18 @@ private struct TasksPage: View {
             }
             .navigationTitle(Text("watch_tasks"))
             .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // Dictate a task straight from the wrist — the phone
+                    // creates the real one on its next beat.
+                    TextFieldLink(prompt: Text("watch_new_task_prompt")) {
+                        Image(systemName: "plus")
+                            .accessibilityLabel(Text("New Task"))
+                    } onSubmit: { value in
+                        withAnimation(.snappy) { store.createTask(value) }
+                    }
+                }
+            }
         }
     }
 }
@@ -476,6 +488,18 @@ private struct PlantsPage: View {
             }
             .navigationTitle(Text("watch_plants"))
             .containerBackground(Color.green.gradient.opacity(0.3), for: .navigation)
+            .toolbar {
+                if thirsty.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            withAnimation(.snappy) { store.waterAllPlants() }
+                        } label: {
+                            Image(systemName: "drop.fill")
+                        }
+                        .accessibilityLabel(Text("watch_water_all"))
+                    }
+                }
+            }
         }
     }
 }

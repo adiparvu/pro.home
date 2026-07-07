@@ -219,6 +219,24 @@ enum SharedDataStore {
         UserDefaults(suiteName: suiteName)?.string(forKey: contextMyNameKey)
     }
 
+    // MARK: Watch-dictated tasks (watch → phone → Supabase on next beat)
+
+    private static let pendingWatchTasksKey = "prvio.pending.watchTasks"
+
+    static func appendPendingWatchTask(_ title: String) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        var pending = (ud.array(forKey: pendingWatchTasksKey) as? [String]) ?? []
+        pending.append(title)
+        ud.set(pending, forKey: pendingWatchTasksKey)
+    }
+
+    static func popPendingWatchTasks() -> [String] {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
+        let titles = (ud.array(forKey: pendingWatchTasksKey) as? [String]) ?? []
+        ud.removeObject(forKey: pendingWatchTasksKey)
+        return titles
+    }
+
     // MARK: Control Center hand-off (control tap → app navigation)
     //
     // Control Center intents run in the widget-extension process. The

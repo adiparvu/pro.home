@@ -28,19 +28,9 @@ private struct BrandWidgetView: View {
     var body: some View {
         // Everything centered on black: logo above, wordmark and tagline
         // beneath, the composition sitting in the optical middle.
-        VStack(spacing: family == .systemMedium ? 8 : 6) {
+        VStack(spacing: family == .systemMedium ? 10 : 8) {
             glyph
             wordmark
-                .padding(.top, 2)
-            tagline
-            if family == .systemMedium,
-               let name = snapshot.propertyName, !name.isEmpty {
-                Text(name)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .lineLimit(1)
-                    .padding(.top, 2)
-            }
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -56,17 +46,14 @@ private struct BrandWidgetView: View {
     }
 
     private var glyph: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.12))
-                .frame(width: 46, height: 46)
-            Image("BrandMark")
-                .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 26, height: 26)
-                .foregroundStyle(.white)
-        }
+        // The monogram stands on its own — no plate behind it.
+        Image("BrandMark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: family == .systemMedium ? 56 : 48,
+                   height: family == .systemMedium ? 56 : 48)
+            .foregroundStyle(.white)
     }
 
     private var wordmark: some View {
@@ -76,12 +63,4 @@ private struct BrandWidgetView: View {
             .foregroundStyle(.white)
     }
 
-    private var tagline: some View {
-        Text(NSLocalizedString("widget_brand_tagline", comment: ""))
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(0.5)
-            .foregroundStyle(.white.opacity(0.7))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-    }
 }

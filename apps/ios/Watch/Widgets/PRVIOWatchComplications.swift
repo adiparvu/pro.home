@@ -16,6 +16,7 @@ struct PRVIOWatchWidgetBundle: WidgetBundle {
         PRVIOWaterComplication()
         PRVIOShoppingComplication()
         PRVIODeliveriesComplication()
+        PRVIOHealthComplication()
     }
 }
 
@@ -25,7 +26,7 @@ struct PRVIOStatusComplication: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchPayloadProvider()) { entry in
             ComplicationView(payload: entry.payload)
-                .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+                .modifier(ComplicationBackground())
         }
         .configurationDisplayName("PRVIO")
         .description(NSLocalizedString("watch_complication_desc", comment: ""))
@@ -51,7 +52,7 @@ struct PRVIOTasksComplication: Widget {
                 lines: Array(open.prefix(2).map(\.title)),
                 url: URL(string: "prvio://tasks")
             )
-            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+            .modifier(ComplicationBackground())
         }
         .configurationDisplayName("PRVIO · Tasks")
         .description(NSLocalizedString("watch_comp_tasks_desc", comment: ""))
@@ -71,7 +72,7 @@ struct PRVIOWaterComplication: Widget {
                 lines: Array((entry.payload?.snapshot.plantNames ?? []).prefix(2)),
                 url: URL(string: "prvio://plants")
             )
-            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+            .modifier(ComplicationBackground())
         }
         .configurationDisplayName("PRVIO · Water")
         .description(NSLocalizedString("watch_comp_water_desc", comment: ""))
@@ -92,7 +93,7 @@ struct PRVIOShoppingComplication: Widget {
                 lines: Array(pending.prefix(2).map(\.name)),
                 url: URL(string: "prvio://shopping")
             )
-            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+            .modifier(ComplicationBackground())
         }
         .configurationDisplayName("PRVIO · Shopping")
         .description(NSLocalizedString("watch_comp_shopping_desc", comment: ""))
@@ -113,12 +114,76 @@ struct PRVIODeliveriesComplication: Widget {
                 lines: [next?.title, next?.eta].compactMap { $0 },
                 url: URL(string: "prvio://deliveries")
             )
-            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+            .modifier(ComplicationBackground())
         }
         .configurationDisplayName("PRVIO · Deliveries")
         .description(NSLocalizedString("watch_comp_deliveries_desc", comment: ""))
         .supportedFamilies([.accessoryCircular, .accessoryCorner,
                             .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Health complication (the property's score as a face gauge)
+
+struct PRVIOHealthComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchHealth", provider: WatchPayloadProvider()) { entry in
+            HealthComplicationView(score: entry.payload?.snapshot.propertyHealthScore,
+                                   name: entry.payload?.snapshot.propertyName)
+                .modifier(ComplicationBackground())
+        }
+        .configurationDisplayName("PRVIO · Health")
+        .description(NSLocalizedString("watch_comp_health_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+private struct HealthComplicationView: View {
+    let score: Int?
+    let name: String?
+
+    @Environment(\.widgetFamily) private var family
+
+    private var value: Double { Double(score ?? 0) }
+
+    var body: some View {
+        Group {
+            switch family {
+            case .accessoryCircular:
+                Gauge(value: value, in: 0...100) {
+                    Image(systemName: "house.fill")
+                } currentValueLabel: {
+                    Text(verbatim: "\(score ?? 0)")
+                        .font(.system(.body, design: .rounded).weight(.bold))
+                }
+                .gaugeStyle(.accessoryCircular)
+            case .accessoryCorner:
+                Text(verbatim: "\(score ?? 0)%")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .widgetCurvesContent()
+                    .widgetLabel { Text("watch_health") }
+            case .accessoryRectangular:
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text(name ?? "PRVIO")
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    Gauge(value: value, in: 0...100) { EmptyView() }
+                        .gaugeStyle(.accessoryLinearCapacity)
+                    Text(verbatim: "\(score ?? 0)%")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            default:
+                Text(verbatim: "PRVIO \(score ?? 0)%")
+            }
+        }
+        .widgetURL(URL(string: "prvio://"))
     }
 }
 
@@ -300,6 +365,27 @@ private struct ComplicationView: View {
                 .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
             Text(verbatim: "\(value)")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
+        }
+    }
+}
+
+
+// MARK: - Family-aware complication background
+//
+// AccessoryWidgetBackground is designed for the circular faces; in the Smart
+// Stack's rectangular slot it rendered as a stray dark circle behind the
+// content. Rectangular and inline get a clear background instead.
+
+struct ComplicationBackground: ViewModifier {
+    @Environment(\.widgetFamily) private var family
+
+    func body(content: Content) -> some View {
+        content.containerBackground(for: .widget) {
+            if family == .accessoryCircular || family == .accessoryCorner {
+                AccessoryWidgetBackground()
+            } else {
+                Color.clear
+            }
         }
     }
 }

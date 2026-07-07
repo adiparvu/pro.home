@@ -490,13 +490,24 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
+        let watchTaskTitles = SharedDataStore.popPendingWatchTasks()
+        for title in watchTaskTitles {
+            if let propId = propertyService.primary?.id {
+                Task {
+                    try? await taskService.addTask(NewTaskPayload(
+                        propertyId: propId, title: title, description: nil,
+                        dueDate: nil, priority: "medium", category: "maintenance",
+                        assigneeIds: [], assigneeNames: []))
+                }
+            }
+        }
         let supplyIds = SharedDataStore.popPendingSupplyChecks()
         for id in supplyIds {
             if let item = supplyService.items.first(where: { $0.id == id }), !item.isCompleted {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
-        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty {
+        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty || !watchTaskTitles.isEmpty {
             writeWidgetSnapshot()
         }
     }

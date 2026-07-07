@@ -62,8 +62,18 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
     // MARK: Wrist actions
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        guard let action = userInfo["action"] as? String,
-              let idString = userInfo["id"] as? String,
+        guard let action = userInfo["action"] as? String else { return }
+        // Dictated from the wrist: park the title; the app creates the real
+        // task through TaskService on its next foreground beat.
+        if action == "createTask", let title = userInfo["title"] as? String,
+           !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            DispatchQueue.main.async {
+                SharedDataStore.appendPendingWatchTask(title)
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
+        guard let idString = userInfo["id"] as? String,
               let id = UUID(uuidString: idString) else { return }
         DispatchQueue.main.async { [weak self] in
             self?.apply(action: action, id: id)

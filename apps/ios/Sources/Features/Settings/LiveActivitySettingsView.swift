@@ -147,7 +147,7 @@ struct LiveActivitySettingsView: View {
                         rowDivider
                         LAToggleRow(icon: "app.badge.checkmark.fill", color: .teal,
                                     title: "Start When App Opens",
-                                    subtitle: "Resume any in-progress activity when you open PRV HOUSE",
+                                    subtitle: "Resume any in-progress activity when you open PRVIO",
                                     isOn: $startOnOpen)
                     }
 
@@ -219,9 +219,9 @@ struct LiveActivitySettingsView: View {
                     Text("Customize")
                 }
                 .font(AppFont.captionEmphasis)
-                .foregroundStyle(previewKind.color)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
-                .background(previewKind.color.opacity(0.14), in: Capsule())
+                .mediaGlass(in: Capsule(), interactive: true)
             }
             .buttonStyle(.plain)
         }
@@ -239,10 +239,14 @@ struct LiveActivitySettingsView: View {
             VStack(spacing: 5) {
                 Image(systemName: kind.icon)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(selected ? .white : kind.color)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(kind.color)
                     .frame(width: 40, height: 40)
-                    .background(
-                        Circle().fill(selected ? kind.color : kind.color.opacity(0.14))
+                    .mediaGlass(in: Circle(), interactive: true)
+                    .overlay(
+                        Circle().strokeBorder(
+                            selected ? Color.primary.opacity(0.35) : Color.clear,
+                            lineWidth: 1.2)
                     )
                 Text(kind.title)
                     .font(.system(size: 10, weight: selected ? .semibold : .regular))
@@ -306,7 +310,7 @@ private struct KindNavRow: View {
                         .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.brandSuccess)
                         .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
-                        .background(Color.brandSuccess.opacity(0.15), in: Capsule())
+                        .background(Capsule().strokeBorder(Color.brandSuccess.opacity(0.45), lineWidth: 1))
                 }
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionEmphasis)
@@ -489,7 +493,7 @@ struct LiveActivityKindDetailView: View {
                     Text("End").font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.brandDanger)
                         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
-                        .background(Color.brandDanger.opacity(0.14), in: Capsule())
+                        .mediaGlass(in: Capsule(), interactive: true)
                 }
                 .buttonStyle(.plain)
             }

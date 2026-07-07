@@ -104,6 +104,29 @@ final class WatchStore: NSObject, WCSessionDelegate {
         queue(action: "checkSupply", id: id)
     }
 
+    /// Dictated on the wrist; the phone creates the real task. Optimistic:
+    /// it appears in the local list immediately so the wrist feels instant.
+    func createTask(_ title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        mutate { payload in
+            payload.tasks.insert(TaskCatalogEntry(id: UUID(), title: trimmed,
+                                                  priority: "medium",
+                                                  isCompleted: false,
+                                                  isOverdue: false), at: 0)
+            payload.snapshot.openTaskCount += 1
+        }
+        WKInterfaceDevice.current().play(.success)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "createTask", "title": trimmed])
+    }
+
+    /// One tap, every thirsty plant — each watering still syncs individually.
+    func waterAllPlants() {
+        let thirsty = payload?.plants.filter(\.needsWatering) ?? []
+        for plant in thirsty { waterPlant(plant.id) }
+    }
+
     private func mutate(_ change: (inout WatchPayload) -> Void) {
         guard var current = payload else { return }
         change(&current)

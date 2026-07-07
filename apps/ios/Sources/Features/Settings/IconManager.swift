@@ -324,6 +324,11 @@ final class IconManager {
 
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
 
+    /// A manual pick owns the icon for a beat — any appearance-driven
+    /// re-apply landing inside this window is dropped, so the icon can never
+    /// visibly flip right after the user chose it.
+    @ObservationIgnored private var suppressAutoUntil: Date = .distantPast
+
     init() {
         let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         selected = AppIconCatalog.theme(id: id)
@@ -362,11 +367,13 @@ final class IconManager {
     }
 
     func select(_ theme: AppIconTheme, isDark: Bool) {
+        suppressAutoUntil = Date().addingTimeInterval(2.5)
         apply(theme, isDark: isDark, force: true)
     }
 
     func colorSchemeChanged(isDark: Bool) {
         guard autoSwitch, selected.hasPair else { return }
+        guard Date() >= suppressAutoUntil else { return }
         apply(selected, isDark: isDark)
     }
 }
