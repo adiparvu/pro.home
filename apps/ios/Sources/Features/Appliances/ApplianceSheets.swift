@@ -12,6 +12,8 @@ struct AddApplianceSheet: View {
     @State private var name = ""
     @State private var brand = ""
     @State private var category: ApplianceCategory = .other
+    /// The catalog type driving category + name prefill (nil = free-form).
+    @State private var selectedType: ApplianceType?
     @State private var modelNumber = ""
     @State private var serialNumber = ""
     @State private var scanPickerItem: PhotosPickerItem? = nil
@@ -33,10 +35,13 @@ struct AddApplianceSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         formSection("Basic Info") {
+                            typeRow
+                            divider
                             fieldRow("tag.fill", "Name (required)", $name)
                             divider
                             HStack {
                                 fieldRow("building.2.fill", "Brand", $brand)
+                                brandMenu
                                 Spacer()
                                 Menu {
                                     Button {
@@ -53,9 +58,9 @@ struct AddApplianceSheet: View {
                                         else { Image(systemName: "camera.viewfinder") }
                                         Text("Scan").font(.caption.weight(.semibold))
                                     }
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(.primary)
                                     .padding(.horizontal, 10).padding(.vertical, 5)
-                                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                    .glassCapsule()
                                 }
                                 .onChange(of: scanPickerItem) { _, item in
                                     guard let item else { return }
@@ -206,7 +211,7 @@ struct AddApplianceSheet: View {
         }
     }
 
-    private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+    private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
@@ -220,6 +225,78 @@ struct AddApplianceSheet: View {
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
+    }
+
+    // One tap picks what the thing IS — the category sets itself and the
+    // name pre-fills; the brand menu then completes it ("Frigider Bosch").
+    private var typeRow: some View {
+        Menu {
+            ForEach(ApplianceCatalog.byCategory, id: \.category) { group in
+                Section(group.category.displayName) {
+                    ForEach(group.types) { type in
+                        Button {
+                            apply(type: type)
+                        } label: {
+                            Label(type.name, systemImage: type.icon)
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: selectedType?.icon ?? "square.grid.2x2.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28)
+                (selectedType.map { Text(verbatim: $0.name) } ?? Text("appliance_type_pick"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(selectedType == nil ? Color.accentColor : .primary)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private var brandMenu: some View {
+        Menu {
+            ForEach(selectedType?.brands ?? ApplianceCatalog.allBrands, id: \.self) { b in
+                Button(b) { apply(brand: b) }
+            }
+        } label: {
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text("appliance_brand_pick"))
+    }
+
+    /// Prefill that never fights the user: it only rewrites the name while
+    /// the name is still one of its own suggestions (or empty).
+    private func apply(type: ApplianceType) {
+        let autoNames = [selectedType?.name, selectedType.map { "\($0.name) \(brand)" }]
+        selectedType = type
+        category = type.category
+        if name.trimmingCharacters(in: .whitespaces).isEmpty || autoNames.contains(name) {
+            name = brand.isEmpty ? type.name : "\(type.name) \(brand)"
+        }
+        HapticFeedback.selection()
+    }
+
+    private func apply(brand newBrand: String) {
+        let autoNames = [selectedType?.name, selectedType.map { "\($0.name) \(brand)" }]
+        brand = newBrand
+        if let type = selectedType,
+           name.trimmingCharacters(in: .whitespaces).isEmpty || autoNames.contains(name) {
+            name = "\(type.name) \(newBrand)"
+        }
+        HapticFeedback.selection()
     }
 
     private var categoryPicker: some View {
