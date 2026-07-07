@@ -73,6 +73,29 @@ final class HomeKitService: NSObject {
             .first { $0.characteristicType == HMCharacteristicTypeTargetTemperature }
             .flatMap { $0.value as? Double }
     }
+
+    // MARK: - Cameras & scenes (Cameras page)
+
+    /// Accessories exposing a camera profile (video doorbells, HomeKit
+    /// cameras). Computed from the delegate-mirrored `homes` array — never
+    /// touches the lazy `manager`, so merely rendering a view that reads
+    /// this cannot trigger the HomeKit permission prompt.
+    var cameraAccessories: [HMAccessory] {
+        homes.flatMap(\.accessories).filter { accessory in
+            accessory.profiles.contains { $0 is HMCameraProfile }
+        }
+    }
+
+    /// User-defined scenes with at least one action, per home (built-in
+    /// empty placeholders would render as dead chips).
+    func actionSets(in home: HMHome) -> [HMActionSet] {
+        home.actionSets.filter { !$0.actions.isEmpty }
+    }
+
+    /// Runs a HomeKit scene — a real HMActionSet execution, not a mock.
+    func execute(_ actionSet: HMActionSet, in home: HMHome) async throws {
+        try await home.executeActionSet(actionSet)
+    }
 }
 
 extension HomeKitService: HMHomeManagerDelegate {
