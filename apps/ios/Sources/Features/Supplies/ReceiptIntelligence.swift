@@ -187,7 +187,7 @@ enum ReceiptIntelligence {
         // A product name printed on its own row (its quantity/price follows).
         var pendingName: (name: String, confidence: Double)? = nil
         // A quantity row printed before its product name row.
-        var pendingQuantity: (qty: Double, unit: String, unitPrice: Double)? = nil
+        var pendingQuantity: QuantityMatch? = nil
 
         for row in rows {
             let raw = row.text.trimmingCharacters(in: .whitespaces)
