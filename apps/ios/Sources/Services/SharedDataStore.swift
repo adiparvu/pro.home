@@ -76,6 +76,32 @@ struct DeliveryCatalogEntry: Codable {
     var eta: String?
 }
 
+// MARK: - Watch action relay (widget extension → watch app → phone)
+//
+// Interactive complications run in the watch WIDGET extension, which cannot
+// touch WCSession. Their actions queue here (App Group), and the watch APP
+// forwards them to the phone on its next activation. Lives in this file
+// because it must compile into both watch targets.
+
+enum WatchActionRelay {
+    private static let key = "prvio.watch.pendingRelay"
+    private static var relayDefaults: UserDefaults {
+        UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+    }
+
+    static func append(action: String, id: String) {
+        var pending = (relayDefaults.array(forKey: key) as? [[String: String]]) ?? []
+        pending.append(["action": action, "id": id])
+        relayDefaults.set(pending, forKey: key)
+    }
+
+    static func drain() -> [[String: String]] {
+        let pending = (relayDefaults.array(forKey: key) as? [[String: String]]) ?? []
+        relayDefaults.removeObject(forKey: key)
+        return pending
+    }
+}
+
 // MARK: - Store
 
 enum SharedDataStore {

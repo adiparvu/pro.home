@@ -127,27 +127,6 @@ struct PRVIODeliveriesComplication: Widget {
 
 // MARK: - Interactive completion (watchOS 11: act from the face itself)
 
-/// Relay queue: widget-extension actions the watch APP forwards to the phone
-/// over WCSession on its next activation (extensions can't use WCSession).
-enum WatchActionRelay {
-    private static let key = "prvio.watch.pendingRelay"
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
-    }
-
-    static func append(action: String, id: String) {
-        var pending = (defaults.array(forKey: key) as? [[String: String]]) ?? []
-        pending.append(["action": action, "id": id])
-        defaults.set(pending, forKey: key)
-    }
-
-    static func drain() -> [[String: String]] {
-        let pending = (defaults.array(forKey: key) as? [[String: String]]) ?? []
-        defaults.removeObject(forKey: key)
-        return pending
-    }
-}
-
 @available(watchOS 11.0, *)
 struct CompleteTopTaskIntent: AppIntent {
     static var title: LocalizedStringResource = "Complete Task"
