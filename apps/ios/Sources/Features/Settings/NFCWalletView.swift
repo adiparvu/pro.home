@@ -299,7 +299,7 @@ struct NFCWalletView: View {
 
     private func scanForNewTag() {
         guard NFCScanService.isSupported else {
-            scanErrorMsg = "NFC is not available on this device."
+            scanErrorMsg = String(localized: "NFC is not available on this device.")
             showScanError = true
             return
         }

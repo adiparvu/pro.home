@@ -297,6 +297,25 @@ platform :ios do
           })
           puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..400]}"
         end
+
+        # The NFC wallet needs the Tag Reading capability on the APP bundle —
+        # without it the regenerated profile lacks the readersession
+        # entitlement and readingAvailable stays false on real devices.
+        if bundle_id == "com.prvio.app"
+          nfc_cap = caps.find { |c| c.dig("attributes","capabilityType") == "NFC_TAG_READING" }
+          if nfc_cap
+            puts "  NFC_TAG_READING already enabled (id=#{nfc_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "NFC_TAG_READING" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable NFC_TAG_READING → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+        end
       end
       puts "\nsetup_app_groups done."
       $stdout.flush
