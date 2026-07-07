@@ -316,7 +316,7 @@ struct ConversationsView: View {
                 storyPickerItem = nil
             }
         }
-        .sheet(isPresented: $showCommunities) {
+        .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
             CommunitiesView(propertyId: propertyService.primary?.id,
                             members: familyService.members,
                             myName: myName)

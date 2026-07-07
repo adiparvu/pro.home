@@ -606,6 +606,7 @@ struct MessageBubble: View {
     static func replyPreview(_ m: Message) -> String {
         if m.isPollMessage { return "📊 Poll" }
         if m.isEventMessage { return "📅 Event" }
+        if m.isTaskShare { return "🧰 Task" }
         if m.isContactShare { return "👤 Contact" }
         if m.isAudioMessage { return "🎤 Voice message" }
         if m.isImageMessage { return "📷 Photo" }
@@ -777,6 +778,9 @@ struct MessageBubble: View {
                        bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
         } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
             EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor)
+        } else if message.isTaskShare, let sharedTask = SharedTaskPayload.decode(message.body) {
+            TaskCardBubble(payload: sharedTask, isOwn: isOwn,
+                           bubbleColor: ownBubbleColor, hasTail: isGroupEnd)
         } else if message.isContactShare {
             ContactCardBubble(payloads: SharedContactPayload.decode(message.body),
                               isOwn: isOwn, bubbleColor: ownBubbleColor,

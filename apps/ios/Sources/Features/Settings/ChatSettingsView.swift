@@ -13,6 +13,7 @@ struct ChatSettingsView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
     @Environment(MessageService.self) private var messageService
+    @Environment(AppRouter.self) private var router
 
     @AppStorage("presence.shareStatus") private var shareStatus = true
     @State private var showTheme = false
@@ -106,7 +107,7 @@ struct ChatSettingsView: View {
                        members: familyService.members,
                        onAddStatus: { showStatus = false })
         }
-        .sheet(isPresented: $showCommunities) {
+        .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
             CommunitiesView(propertyId: propertyService.primary?.id,
                             members: familyService.members,
                             myName: myName)

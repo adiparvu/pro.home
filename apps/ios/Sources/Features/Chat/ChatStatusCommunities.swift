@@ -771,6 +771,10 @@ struct CommunitiesView: View {
             .onChange(of: router.communitiesRequest) { _, _ in
                 openDeepLinkedGroupIfNeeded()
             }
+            // A shared task card asked for the Tasks page — clear the stage.
+            .onChange(of: router.dismissGeneration) { _, _ in
+                dismiss()
+            }
         }
         .presentationBackground(.thinMaterial)
     }
@@ -837,6 +841,7 @@ private struct GroupChatView: View {
     @State private var svc = MessageService()
     @State private var text = ""
     @State private var showSettings = false
+    @State private var showTaskPicker = false
 
     private var myId: UUID? { supabase.auth.currentSession?.user.id }
     private var currentGroup: ChatGroup { service.groups.first(where: { $0.id == group.id }) ?? group }
@@ -964,6 +969,29 @@ private struct GroupChatView: View {
 
     private var composer: some View {
         HStack(spacing: 10) {
+            // Share a real task into the thread — it lands as a live card.
+            Button { showTaskPicker = true } label: {
+                Image(systemName: "checklist")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 34, height: 34)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("comm_share_task"))
+            .sheet(isPresented: $showTaskPicker) {
+                TaskSharePicker { task in
+                    guard let pid = propertyId,
+                          let body = SharedTaskPayload.encode(SharedTaskPayload(
+                              id: task.id, title: task.title,
+                              due: task.dueDateDisplay, priority: task.priority)) else { return }
+                    MessageSounds.sent()
+                    Task {
+                        try? await svc.send(propertyId: pid, senderName: myName,
+                                            body: body, attachmentType: "task")
+                    }
+                }
+            }
             TextField("Mesaj", text: $text, axis: .vertical)
                 .font(.system(size: 16))
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
@@ -1055,9 +1083,10 @@ private struct CommunityRow: View {
     }
 }
 
-// Group management: rename, add/remove members, delete group.
+// Group management: rename, add/remove members, contractors roster, delete.
 private struct GroupSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(ContractorService.self) private var contractorService
     let group: ChatGroup
     var service: ChatGroupService
     let availableMembers: [FamilyMember]
@@ -1066,6 +1095,7 @@ private struct GroupSettingsSheet: View {
 
     @State private var name: String
     @State private var showAddMembers = false
+    @State private var showAddContractors = false
     @State private var showDeleteConfirm = false
 
     init(group: ChatGroup, service: ChatGroupService, availableMembers: [FamilyMember],
@@ -1088,6 +1118,99 @@ private struct GroupSettingsSheet: View {
     private var addableMembers: [FamilyMember] {
         let existingIds = Set(currentMembers.map { $0.memberId })
         return availableMembers.filter { !existingIds.contains($0.id.uuidString) }
+    }
+
+    // MARK: Contractors roster (contact list, honestly labeled)
+
+    private var currentExternals: [ChatGroupMember] { service.externals(for: group) }
+    private var addableContractors: [ContractorModel] {
+        let attached = Set(currentExternals.map { $0.memberId })
+        return contractorService.contractors.filter {
+            !attached.contains(ChatGroupService.externalPrefix + $0.id.uuidString)
+        }
+    }
+
+    private func contractor(for member: ChatGroupMember) -> ContractorModel? {
+        let raw = String(member.memberId.dropFirst(ChatGroupService.externalPrefix.count))
+        guard let id = UUID(uuidString: raw) else { return nil }
+        return contractorService.contractors.first { $0.id == id }
+    }
+
+    @ViewBuilder private var contractorsSection: some View {
+        if !currentExternals.isEmpty || (isAdmin && !addableContractors.isEmpty) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("comm_externals").font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    Spacer()
+                    if isAdmin {
+                        Button { showAddContractors = true } label: {
+                            Label("Adaugă", systemImage: "person.badge.plus")
+                                .font(AppFont.captionEmphasis)
+                        }
+                        .disabled(addableContractors.isEmpty)
+                    }
+                }
+
+                VStack(spacing: 8) {
+                    ForEach(currentExternals) { m in
+                        externalRow(m)
+                    }
+                }
+
+                if !currentExternals.isEmpty {
+                    Text("comm_externals_note")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.35))
+                }
+            }
+        }
+    }
+
+    private func externalRow(_ m: ChatGroupMember) -> some View {
+        let model = contractor(for: m)
+        return HStack(spacing: 12) {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(AppFont.caption)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.orange)
+                .frame(width: 40, height: 40)
+                .glassCircle()
+            VStack(alignment: .leading, spacing: 1) {
+                Text(m.memberName).font(AppFont.body)
+                if let category = model?.category, !category.isEmpty {
+                    Text(category).font(.system(size: 12))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                }
+            }
+            Spacer()
+            if let phone = model?.phone, !phone.isEmpty {
+                let digits = phone.filter { $0.isNumber || $0 == "+" }
+                Button {
+                    if let url = URL(string: "tel://\(digits)") { UIApplication.shared.open(url) }
+                } label: {
+                    Image(systemName: "phone.fill")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.brandSuccess)
+                        .frame(width: 32, height: 32)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Sună"))
+            }
+            if isAdmin {
+                Button {
+                    Task { await service.removeMember(m, from: group) }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(format: String(localized: "Remove %@"), m.memberName)))
+            }
+        }
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
+        .liquidGlass(cornerRadius: 14)
     }
 
     var body: some View {
@@ -1163,6 +1286,8 @@ private struct GroupSettingsSheet: View {
                         }
                     }
 
+                    contractorsSection
+
                     if isAdmin {
                         Button(role: .destructive) { showDeleteConfirm = true } label: {
                             Label("Șterge grupul", systemImage: "trash")
@@ -1188,6 +1313,13 @@ private struct GroupSettingsSheet: View {
                     Task { await service.addMembers(selected, to: group) }
                 }
             }
+            .sheet(isPresented: $showAddContractors) {
+                AddContractorsSheet(contractors: addableContractors) { selected in
+                    showAddContractors = false
+                    Task { await service.addContractors(selected, to: group) }
+                }
+            }
+            .task { await contractorService.load() }
             .confirmationDialog("Ștergi acest grup?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
                 Button("Șterge grupul", role: .destructive) {
                     Task {
@@ -1250,6 +1382,69 @@ private struct AddGroupMembersSheet: View {
     }
 }
 
+/// Attach contractors to a group's roster (they don't receive messages —
+/// the picker says so, honestly).
+private struct AddContractorsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let contractors: [ContractorModel]
+    let onAdd: ([ContractorModel]) -> Void
+
+    @State private var selectedIds: Set<UUID> = []
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("comm_externals_note")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .padding(.bottom, AppSpacing.xs)
+                    ForEach(contractors) { c in
+                        Button {
+                            if selectedIds.contains(c.id) { selectedIds.remove(c.id) }
+                            else { selectedIds.insert(c.id) }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "wrench.and.screwdriver.fill")
+                                    .font(AppFont.caption)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(.orange)
+                                    .frame(width: 34, height: 34)
+                                    .glassCircle()
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(c.name).font(AppFont.body).foregroundStyle(.primary)
+                                    if !c.category.isEmpty {
+                                        Text(c.category).font(.system(size: 12))
+                                            .foregroundStyle(Color.primary.opacity(0.45))
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: selectedIds.contains(c.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(selectedIds.contains(c.id) ? Color.accentColor : Color.primary.opacity(0.25))
+                            }
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
+                            .liquidGlass(cornerRadius: 14)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(AppSpacing.lg)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle(Text("comm_add_contractors"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Adaugă") { onAdd(contractors.filter { selectedIds.contains($0.id) }) }
+                        .disabled(selectedIds.isEmpty)
+                }
+            }
+        }
+    }
+}
+
 private struct CreateGroupSheet: View {
     @Environment(\.dismiss) private var dismiss
     let members: [FamilyMember]
@@ -1265,10 +1460,62 @@ private struct CreateGroupSheet: View {
         ("custom", "Custom",  "person.3.fill")
     ]
 
+    /// One-tap starting points: each pre-fills the name and kind and
+    /// preselects the household members whose role fits the team.
+    private struct GroupTemplate: Identifiable {
+        let id: String
+        let nameKey: String
+        let kind: String
+        let icon: String
+        let tint: Color
+        let roles: [String]
+    }
+    private static let templates: [GroupTemplate] = [
+        GroupTemplate(id: "familie", nameKey: "Familie", kind: "family",
+                      icon: "house.fill", tint: Color.brandSuccess,
+                      roles: ["owner", "partner", "child"]),
+        GroupTemplate(id: "chiriasi", nameKey: "comm_tpl_tenants", kind: "custom",
+                      icon: "key.fill", tint: Color.brandSkyBlue,
+                      roles: ["tenant"]),
+        GroupTemplate(id: "renovare", nameKey: "comm_tpl_renovation", kind: "work",
+                      icon: "hammer.fill", tint: .orange,
+                      roles: ["guest"]),
+    ]
+
+    private func applyTemplate(_ template: GroupTemplate) {
+        HapticFeedback.selection()
+        name = String(localized: String.LocalizationValue(template.nameKey))
+        kind = template.kind
+        selectedIds = Set(members.filter { template.roles.contains($0.role) }.map(\.id))
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
+                    Text("comm_templates_label").font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    HStack(spacing: 10) {
+                        ForEach(Self.templates) { template in
+                            Button { applyTemplate(template) } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: template.icon)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundStyle(template.tint)
+                                    Text(LocalizedStringKey(template.nameKey))
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1).minimumScaleFactor(0.8)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.md)
+                                .glassRoundedRect(14)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
                     TextField("Nume grup", text: $name)
                         .font(.system(size: 16))
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)

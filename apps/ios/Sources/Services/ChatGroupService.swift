@@ -170,8 +170,39 @@ final class ChatGroupService {
         }
     }
 
+    /// Contractors attached to a group are a contact roster, not chat
+    /// participants — they ride the same membership table with a prefixed
+    /// member_id and the "external" role, and are listed separately.
+    static let externalPrefix = "contractor:"
+
     func members(for group: ChatGroup) -> [ChatGroupMember] {
-        membersByGroup[group.id] ?? []
+        (membersByGroup[group.id] ?? []).filter { !$0.memberId.hasPrefix(Self.externalPrefix) }
+    }
+
+    func externals(for group: ChatGroup) -> [ChatGroupMember] {
+        (membersByGroup[group.id] ?? []).filter { $0.memberId.hasPrefix(Self.externalPrefix) }
+    }
+
+    /// Attaches contractors to a group's roster (role "external").
+    func addContractors(_ selected: [ContractorModel], to group: ChatGroup) async {
+        guard !selected.isEmpty else { return }
+        struct NewMember: Encodable {
+            let group_id: String
+            let member_id: String
+            let member_name: String
+            let role: String
+        }
+        let rows = selected.map {
+            NewMember(group_id: group.id.uuidString,
+                      member_id: Self.externalPrefix + $0.id.uuidString,
+                      member_name: $0.name, role: "external")
+        }
+        do {
+            try await supabase.from("chat_group_members").insert(rows).execute()
+            await loadAllMembers()
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     /// Creates a group and inserts its members in one flow. `selected` are the
