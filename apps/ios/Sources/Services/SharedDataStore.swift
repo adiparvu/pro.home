@@ -53,6 +53,15 @@ struct WatchPayload: Codable {
     /// Consecutive all-clear days (no overdue tasks, no thirsty plants) —
     /// the house streak, computed on the phone.
     var streakDays: Int? = nil
+    /// This month's spending in the household currency, and the total
+    /// monthly budget when one is set. Sums never mix currencies — records
+    /// in other currencies are simply not included here.
+    var budgetSpent: Double? = nil
+    var budgetLimit: Double? = nil
+    var budgetCurrency: String? = nil
+    /// The owner's chosen watch pages, in their chosen order (page keys).
+    /// nil means the default set — Today is always first and never listed.
+    var pageOrder: [String]? = nil
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -278,6 +287,9 @@ enum SharedDataStore {
         var weatherHi: Double? = nil
         var weatherAdvisory: String? = nil
         var streakDays: Int? = nil
+        var budgetSpent: Double? = nil
+        var budgetLimit: Double? = nil
+        var budgetCurrency: String? = nil
     }
 
     static func writeWatchExtras(_ extras: WatchExtras) {
@@ -316,7 +328,46 @@ enum SharedDataStore {
                             weatherLo: extras.weatherLo,
                             weatherHi: extras.weatherHi,
                             weatherAdvisory: extras.weatherAdvisory,
-                            streakDays: extras.streakDays)
+                            streakDays: extras.streakDays,
+                            budgetSpent: extras.budgetSpent,
+                            budgetLimit: extras.budgetLimit,
+                            budgetCurrency: extras.budgetCurrency,
+                            pageOrder: visibleWatchPages())
+    }
+
+    // MARK: Watch page personalization (chosen on the iPhone)
+
+    /// Every page the watch can show, in the default order. Today is not
+    /// listed — it is always first and can't be hidden.
+    static let allWatchPages = ["tasks", "plants", "shopping", "pantry", "deliveries", "map"]
+
+    private static let watchPageOrderKey  = "prvio.watch.pageOrder"
+    private static let watchHiddenPagesKey = "prvio.watch.hiddenPages"
+
+    static func writeWatchPagePrefs(order: [String], hidden: [String]) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        ud.set(order, forKey: watchPageOrderKey)
+        ud.set(hidden, forKey: watchHiddenPagesKey)
+    }
+
+    /// The stored order, sanitized: unknown keys dropped, pages added in a
+    /// later version appended — so an old preference never hides new pages.
+    static func readWatchPagePrefs() -> (order: [String], hidden: Set<String>) {
+        guard let ud = UserDefaults(suiteName: suiteName) else {
+            return (allWatchPages, [])
+        }
+        let stored = (ud.array(forKey: watchPageOrderKey) as? [String]) ?? []
+        var order = stored.filter { allWatchPages.contains($0) }
+        order += allWatchPages.filter { !order.contains($0) }
+        let hidden = Set((ud.array(forKey: watchHiddenPagesKey) as? [String]) ?? [])
+            .intersection(allWatchPages)
+        return (order, hidden)
+    }
+
+    /// The pages the watch should show, in order — what rides the payload.
+    static func visibleWatchPages() -> [String] {
+        let prefs = readWatchPagePrefs()
+        return prefs.order.filter { !prefs.hidden.contains($0) }
     }
 
     // MARK: House streak (consecutive all-clear days)

@@ -483,6 +483,13 @@ struct MainTabView: View {
         // The house streak: consecutive verified all-clear days.
         let streak = SharedDataStore.updateHouseStreak(
             allClear: snapshot.overdueTaskCount == 0 && snapshot.plantsNeedingWater == 0)
+        // This month's spending for the wrist — household currency only, so
+        // the number is honest (a EUR bill never inflates a RON total).
+        let householdCurrency = financialService.currency
+        let monthSpent = financialService.currentMonthRecords
+            .filter { $0.type == "expense" && $0.currency == householdCurrency }
+            .reduce(0) { $0 + $1.amount }
+        let budgetLimit = budgetService.totalBudget()
         SharedDataStore.writeWatchExtras(SharedDataStore.WatchExtras(
             latitude: propertyService.primary?.latitude,
             longitude: propertyService.primary?.longitude,
@@ -493,7 +500,10 @@ struct MainTabView: View {
             weatherLo: weather?.lo,
             weatherHi: weather?.hi,
             weatherAdvisory: weather?.advisory,
-            streakDays: streak))
+            streakDays: streak,
+            budgetSpent: financialService.records.isEmpty ? nil : monthSpent,
+            budgetLimit: budgetLimit > 0 ? budgetLimit : nil,
+            budgetCurrency: financialService.records.isEmpty ? nil : householdCurrency))
         // The watch renders the same state the widgets do — one push, in the
         // same breath as the snapshot write, so the two can never diverge.
         if let payload = SharedDataStore.currentWatchPayload() {

@@ -594,6 +594,9 @@ struct SettingsView: View {
                 NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                     AppIconPickerView()
                 }
+                NavSettingsRow(icon: "applewatch", color: .teal, label: "Apple Watch") {
+                    WatchSettingsView()
+                }
                 if allowedApp(.liveActivities) {
                     NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
                         LiveActivitySettingsView()

@@ -99,31 +99,19 @@ struct WatchRootView: View {
     @Environment(WatchStore.self) private var store
     @State private var selection: WatchPage = .today
 
+    /// Default order when the phone hasn't sent a preference yet.
+    private static let defaultOrder = ["tasks", "plants", "shopping", "pantry", "deliveries", "map"]
+
     var body: some View {
         if let payload = store.payload {
             TabView(selection: $selection) {
                 TodayGlance(payload: payload, selection: $selection)
                     .tag(WatchPage.today)
-                TasksPage(tasks: payload.tasks)
-                    .tag(WatchPage.tasks)
-                PlantsPage(plants: payload.plants)
-                    .tag(WatchPage.plants)
-                if payload.supplies.contains(where: { !$0.isCompleted }) {
-                    ShoppingPage(supplies: payload.supplies)
-                        .tag(WatchPage.shopping)
-                }
-                if !payload.pantry.isEmpty {
-                    PantryPage(items: payload.pantry)
-                        .tag(WatchPage.pantry)
-                }
-                if !payload.deliveries.isEmpty {
-                    DeliveriesPage(deliveries: payload.deliveries)
-                        .tag(WatchPage.deliveries)
-                }
-                if let lat = payload.latitude, let lon = payload.longitude {
-                    PropertyMapPage(latitude: lat, longitude: lon,
-                                    name: payload.snapshot.propertyName)
-                        .tag(WatchPage.map)
+                // The owner's pages, in the owner's order (chosen on the
+                // iPhone). Data-gating stays: an enabled page with nothing
+                // to show still steps aside.
+                ForEach(payload.pageOrder ?? Self.defaultOrder, id: \.self) { key in
+                    page(for: key, payload: payload)
                 }
             }
             .tabViewStyle(.verticalPage)
@@ -146,6 +134,41 @@ struct WatchRootView: View {
             }
         } else {
             waiting
+        }
+    }
+
+    @ViewBuilder
+    private func page(for key: String, payload: WatchPayload) -> some View {
+        switch key {
+        case "tasks":
+            TasksPage(tasks: payload.tasks)
+                .tag(WatchPage.tasks)
+        case "plants":
+            PlantsPage(plants: payload.plants)
+                .tag(WatchPage.plants)
+        case "shopping":
+            if payload.supplies.contains(where: { !$0.isCompleted }) {
+                ShoppingPage(supplies: payload.supplies)
+                    .tag(WatchPage.shopping)
+            }
+        case "pantry":
+            if !payload.pantry.isEmpty {
+                PantryPage(items: payload.pantry)
+                    .tag(WatchPage.pantry)
+            }
+        case "deliveries":
+            if !payload.deliveries.isEmpty {
+                DeliveriesPage(deliveries: payload.deliveries)
+                    .tag(WatchPage.deliveries)
+            }
+        case "map":
+            if let lat = payload.latitude, let lon = payload.longitude {
+                PropertyMapPage(latitude: lat, longitude: lon,
+                                name: payload.snapshot.propertyName)
+                    .tag(WatchPage.map)
+            }
+        default:
+            EmptyView()
         }
     }
 

@@ -20,6 +20,7 @@ struct PRVIOWatchWidgetBundle: WidgetBundle {
         PRVIODeliveriesComplication()
         PRVIOHealthComplication()
         PRVIOWeatherComplication()
+        PRVIOBudgetComplication()
         PRVIOChoiceComplication()
     }
 }
@@ -314,7 +315,7 @@ struct WatchPayloadEntry: TimelineEntry {
 struct WatchPayloadProvider: TimelineProvider {
     /// Which complication this provider instance feeds — relevance clues are
     /// per domain, so the Smart Stack surfaces the RIGHT card, not all seven.
-    enum Domain { case status, tasks, water, shopping, deliveries, health, weather }
+    enum Domain { case status, tasks, water, shopping, deliveries, health, weather, budget }
     var domain: Domain = .status
 
     private func load() -> WatchPayload? {
@@ -406,7 +407,7 @@ struct WatchPayloadProvider: TimelineProvider {
                 attributes.append(WidgetRelevanceAttribute(
                     context: .date(interval: interval, kind: .informational)))
             }
-        case .status, .health:
+        case .status, .health, .budget:
             break
         }
         return WidgetRelevance(attributes)
@@ -497,6 +498,113 @@ private struct WeatherComplicationView: View {
                 Text(verbatim: temp.map { "PRVIO \($0)°" } ?? "PRVIO")
             }
         }
+        .widgetURL(URL(string: "prvio://"))
+    }
+}
+
+// MARK: - Budget complication (this month's spending, household currency)
+
+struct PRVIOBudgetComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchBudget",
+                            provider: WatchPayloadProvider(domain: .budget)) { entry in
+            BudgetComplicationView(payload: entry.payload)
+                .modifier(ComplicationBackground())
+        }
+        .configurationDisplayName("PRVIO · Budget")
+        .description(NSLocalizedString("watch_comp_budget_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+private struct BudgetComplicationView: View {
+    let payload: WatchPayload?
+
+    @Environment(\.widgetFamily) private var family
+
+    private var spent: Double? { payload?.budgetSpent }
+    private var limit: Double? { payload?.budgetLimit }
+    private var code: String { payload?.budgetCurrency ?? "EUR" }
+    private var over: Bool {
+        guard let spent, let limit else { return false }
+        return spent > limit
+    }
+
+    /// Full amount for the wide faces ("1.234 lei").
+    private func money(_ value: Double) -> String {
+        value.formatted(.currency(code: code).precision(.fractionLength(0)))
+    }
+
+    /// Compact amount for the tiny faces ("1,2 K lei").
+    private func compact(_ value: Double) -> String {
+        value.formatted(.currency(code: code)
+            .notation(.compactName)
+            .precision(.fractionLength(0...1)))
+    }
+
+    var body: some View {
+        Group {
+            switch family {
+            case .accessoryCircular:
+                if let spent, let limit, limit > 0 {
+                    Gauge(value: min(spent, limit), in: 0...limit) {
+                        Image(systemName: "banknote.fill")
+                    } currentValueLabel: {
+                        Text(verbatim: "\(Int((spent / limit * 100).rounded()))%")
+                            .font(.system(.footnote, design: .rounded).weight(.bold))
+                            .foregroundStyle(over ? .red : .primary)
+                    }
+                    .gaugeStyle(.accessoryCircularCapacity)
+                } else {
+                    VStack(spacing: 0) {
+                        Image(systemName: "banknote.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                        Text(verbatim: spent.map(compact) ?? "–")
+                            .font(.system(.footnote, design: .rounded).weight(.bold))
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                    }
+                }
+            case .accessoryCorner:
+                Text(verbatim: spent.map(compact) ?? "–")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundStyle(over ? .red : .primary)
+                    .widgetCurvesContent()
+                    .widgetLabel { Text("watch_budget") }
+            case .accessoryRectangular:
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "banknote.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                        Text("watch_budget_month")
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    Text(verbatim: spent.map(money) ?? "–")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(over ? .red : .primary)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    if let spent, let limit, limit > 0 {
+                        Gauge(value: min(spent, limit), in: 0...limit) { EmptyView() }
+                            .gaugeStyle(.accessoryLinearCapacity)
+                            .tint(over ? .red : .green)
+                    } else {
+                        Text(payload?.snapshot.propertyName ?? "PRVIO")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            default:
+                Text(verbatim: spent.map { "PRVIO · \(money($0))" } ?? "PRVIO")
+            }
+        }
+        .privacySensitive()
         .widgetURL(URL(string: "prvio://"))
     }
 }
@@ -617,7 +725,7 @@ struct ComplicationBackground: ViewModifier {
 // wants, instead of forcing seven separate entries onto the picker.
 
 enum WatchDomainOption: String, AppEnum {
-    case status, tasks, water, shopping, deliveries, health, weather
+    case status, tasks, water, shopping, deliveries, health, weather, budget
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "PRVIO"
     static var caseDisplayRepresentations: [WatchDomainOption: DisplayRepresentation] = [
@@ -628,6 +736,7 @@ enum WatchDomainOption: String, AppEnum {
         .deliveries: DisplayRepresentation(title: LocalizedStringResource("watch_deliveries")),
         .health:     DisplayRepresentation(title: LocalizedStringResource("watch_health")),
         .weather:    DisplayRepresentation(title: LocalizedStringResource("watch_weather")),
+        .budget:     DisplayRepresentation(title: LocalizedStringResource("watch_budget")),
     ]
 }
 
@@ -693,6 +802,8 @@ private struct ChoiceComplicationView: View {
                                    name: payload?.snapshot.propertyName)
         case .weather:
             WeatherComplicationView(payload: payload)
+        case .budget:
+            BudgetComplicationView(payload: payload)
         case .tasks:
             let open = (payload?.tasks ?? []).filter { !$0.isCompleted }
             DomainComplicationView(
