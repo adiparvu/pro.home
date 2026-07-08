@@ -59,6 +59,14 @@ struct ForcePasswordView: View {
                     }
 
                     VStack(spacing: 0) {
+                        // A `.username` field (the signed-in email) lets iCloud
+                        // Keychain associate the new password with this account
+                        // when it prompts to save. Read-only — the account is
+                        // fixed once you're on this screen.
+                        if let email = auth.session?.user.email, !email.isEmpty {
+                            usernameRow(email)
+                            Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                        }
                         secureRow(icon: "key.fill", placeholder: "New password", text: $password)
                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                         secureRow(icon: "key.fill", placeholder: "Confirm password", text: $confirm)
@@ -144,7 +152,27 @@ struct ForcePasswordView: View {
                 .foregroundStyle(Color.accentColor).frame(width: 28)
             SecureField(placeholder, text: text)
                 .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                // Both fields use `.newPassword` so iOS offers/fills the same
+                // suggested strong password into password AND confirm together,
+                // and iCloud Keychain saves it on submit.
                 .textContentType(.newPassword)
+        }
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+    }
+
+    private func usernameRow(_ email: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "envelope.fill").font(AppFont.scaled(14))
+                .foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField("Email", text: .constant(email))
+                .font(AppFont.scaled(15))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .textContentType(.username)
+                .keyboardType(.emailAddress)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .disabled(true)
+                .accessibilityLabel(Text("Email"))
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }

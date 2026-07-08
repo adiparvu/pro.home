@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct LoginView: View {
     @Environment(AuthService.self) private var auth
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var email = ""
     @State private var password = ""
     @State private var isLoading = false
@@ -10,123 +12,174 @@ struct LoginView: View {
 
     enum Field { case email, password }
 
+    private var canSubmit: Bool { !email.isEmpty && !password.isEmpty }
+
     var body: some View {
         ZStack {
-            // Background
-            Color.black.ignoresSafeArea()
-            RadialGradient(
-                colors: [Color.primary.opacity(AppOpacity.hairline), .clear],
-                center: .top,
-                startRadius: 0,
-                endRadius: 400
-            )
-            .ignoresSafeArea()
+            // Adaptive base — light/dark/system all handled by `appBackground`.
+            appBackground.ignoresSafeArea()
+
+            // Subtle brand glow at the top. Suppressed under Reduce Transparency
+            // so the screen collapses to a clean solid surface.
+            if !reduceTransparency {
+                RadialGradient(
+                    colors: [Color.brandSkyBlue.opacity(0.20), .clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 420
+                )
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
 
             VStack(spacing: 0) {
                 Spacer()
 
-                // Logo
-                VStack(spacing: 14) {
-                    PRVIOLogoView(size: 84)
-                        .shadow(color: Color.brandSkyBlue.opacity(0.50), radius: 22, y: 8)
+                brandEmblem
+                    .padding(.bottom, AppSpacing.xxl)
 
-                    VStack(spacing: 4) {
-                        Text("PRVIO")
-                            .font(AppFont.scaled(28, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("Property management")
-                            .font(AppFont.footnote)
-                            .foregroundStyle(.white.opacity(0.45))
-                            .tracking(0.4)
-                    }
-                }
-                .padding(.bottom, 48)
+                Text("PRVIO")
+                    .font(AppFont.scaled(30, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .padding(.bottom, 40)
 
-                // Form
-                VStack(spacing: 12) {
-                    GlassTextField(
-                        placeholder: "Email",
-                        text: $email,
-                        keyboardType: .emailAddress,
-                        icon: "envelope"
-                    )
-                    .focused($focus, equals: .email)
-                    .submitLabel(.next)
-                    .onSubmit { focus = .password }
+                form
+                    .padding(.horizontal, AppSpacing.xxl)
 
-                    GlassTextField(
-                        placeholder: "Password",
-                        text: $password,
-                        isSecure: true,
-                        icon: "lock"
-                    )
-                    .focused($focus, equals: .password)
-                    .submitLabel(.go)
-                    .onSubmit { signIn() }
-
-                    if let error = errorMessage {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(.red.opacity(0.8))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, AppSpacing.xxs)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.xxl)
-
-                // Sign in button
-                Button(action: signIn) {
-                    ZStack {
-                        if isLoading {
-                            ProgressView()
-                                .tint(.black)
-                        } else {
-                            Text("Sign In")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.black)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
-                .opacity((email.isEmpty || password.isEmpty) ? 0.5 : 1)
-                .padding(.horizontal, AppSpacing.xxl)
-                .padding(.top, AppSpacing.lg)
+                signInButton
+                    .padding(.horizontal, AppSpacing.xxl)
+                    .padding(.top, AppSpacing.lg)
 
                 Spacer()
                 Spacer()
             }
         }
-        .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Brand emblem
+    //
+    // The new PRVIO monogram (glowing white P-with-a-roof — the shared
+    // `BrandMark` template asset) sits on a brand-gradient badge so the white
+    // glyph reads with equal contrast in light and dark. The mark itself keeps
+    // its glow; the gradient anchors the identity used by the app icon/splash.
+
+    private var brandEmblem: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.brandSkyBlue, Color.brandPrimaryBlue, Color.brandPurple],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Image("BrandMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.white)
+                .shadow(color: .white.opacity(reduceTransparency ? 0 : 0.45), radius: 10)
+                .padding(20)
+        }
+        .frame(width: 96, height: 96)
+        .shadow(color: Color.brandSkyBlue.opacity(reduceTransparency ? 0 : 0.45), radius: 24, y: 10)
+        .accessibilityLabel(Text("PRVIO"))
+    }
+
+    // MARK: - Form
+
+    private var form: some View {
+        VStack(spacing: AppSpacing.md) {
+            GlassTextField(
+                placeholder: "Email",
+                text: $email,
+                icon: "envelope",
+                keyboardType: .emailAddress,
+                textContentType: .username
+            )
+            .focused($focus, equals: .email)
+            .submitLabel(.next)
+            .onSubmit { focus = .password }
+
+            GlassTextField(
+                placeholder: "Password",
+                text: $password,
+                icon: "lock",
+                isSecure: true,
+                textContentType: .password
+            )
+            .focused($focus, equals: .password)
+            .submitLabel(.go)
+            .onSubmit { signIn() }
+
+            if let error = errorMessage {
+                Text(error)
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.brandDanger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, AppSpacing.xxs)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    // MARK: - Sign in button
+
+    private var signInButton: some View {
+        Button(action: signIn) {
+            ZStack {
+                if isLoading {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Sign In")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isLoading || !canSubmit)
+        .opacity(canSubmit ? 1 : 0.5)
+        .animation(.snappy, value: canSubmit)
     }
 
     private func signIn() {
-        guard !email.isEmpty, !password.isEmpty else { return }
+        guard canSubmit else { return }
         focus = nil
         isLoading = true
-        errorMessage = nil
+        withAnimation(.snappy) { errorMessage = nil }
         Task {
             do {
                 try await auth.signIn(email: email, password: password)
             } catch {
-                errorMessage = error.localizedDescription
+                withAnimation(.snappy) { errorMessage = error.localizedDescription }
             }
             isLoading = false
         }
     }
 }
 
+// MARK: - Glass text field
+//
+// A single adaptive glass field row. `textContentType` is threaded through to
+// the underlying Text/SecureField so iOS credential autofill and iCloud
+// Keychain can associate the username + password. The placeholder is a
+// `LocalizedStringKey` so it localizes (RO/EN).
+
 private struct GlassTextField: View {
-    let placeholder: String
+    let placeholder: LocalizedStringKey
     @Binding var text: String
+    var icon: String
     var keyboardType: UIKeyboardType = .default
     var isSecure = false
-    var icon: String
+    var textContentType: UITextContentType? = nil
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
                 .font(AppFont.scaled(16, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -135,17 +188,21 @@ private struct GlassTextField: View {
             Group {
                 if isSecure {
                     SecureField(placeholder, text: $text)
+                        .textContentType(textContentType)
                 } else {
                     TextField(placeholder, text: $text)
                         .keyboardType(keyboardType)
+                        .textContentType(textContentType)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
             }
-            .font(.body)
+            .font(AppFont.body)
+            .foregroundStyle(.primary)
+            .tint(.accentColor)
         }
         .padding(.horizontal, AppSpacing.lg)
         .frame(height: 52)
-        .glassRoundedRect(14)
+        .glassRoundedRect(AppRadius.lg)
     }
 }
