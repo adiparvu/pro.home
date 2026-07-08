@@ -215,7 +215,9 @@ struct AddUtilitySheet: View {
         for pattern in amountPatterns {
             if let match = text.firstMatch(pattern: pattern) {
                 amount = match.replacingOccurrences(of: ",", with: ".")
-                found.append("amount €\(amount)")
+                // The invoice's currency isn't known at scan time — don't
+                // stamp a € onto what might be a RON amount.
+                found.append("amount \(amount)")
                 break
             }
         }
