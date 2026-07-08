@@ -12,6 +12,7 @@ struct ConversationsView: View {
     @Environment(ProfileService.self) private var profileService
     @Environment(StickerService.self) private var stickerService
     @Environment(PresenceService.self) private var presenceService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
@@ -65,6 +66,19 @@ struct ConversationsView: View {
 
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
+    }
+
+    /// The assistant bar's luminous edge: neutral white light by default,
+    /// the user's accent colour once they've turned one on — the bar wears
+    /// the identity they chose for the app.
+    private var ariaEdgeTint: Color {
+        appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .white
+    }
+
+    /// The bloom behind the bar follows the same rule (reference indigo by
+    /// default) so the edge and its glow never clash.
+    private var ariaBloomTint: Color {
+        appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .brandIndigo
     }
 
     private var nonArchived: [ConversationEntry] { sortedConversations.filter { !archivedIds.contains($0.id) } }
@@ -528,13 +542,16 @@ struct ConversationsView: View {
                             // Reference (IMG_8066): the assistant bar carries a
                             // luminous top edge — a hairline that is bright at
                             // the top and dissolves down the sides — plus a
-                            // soft indigo bloom radiating from behind it.
+                            // soft bloom radiating from behind it. Both inherit
+                            // the user's accent colour when one is active;
+                            // otherwise the edge stays neutral white light over
+                            // the reference's indigo bloom.
                             .overlay(
                                 RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                                     .strokeBorder(
                                         LinearGradient(stops: [
-                                            .init(color: .white.opacity(0.65), location: 0),
-                                            .init(color: .white.opacity(0.12), location: 0.4),
+                                            .init(color: ariaEdgeTint.opacity(0.65), location: 0),
+                                            .init(color: ariaEdgeTint.opacity(0.12), location: 0.4),
                                             .init(color: .clear, location: 1),
                                         ], startPoint: .top, endPoint: .bottom),
                                         lineWidth: 1
@@ -542,11 +559,11 @@ struct ConversationsView: View {
                                     .allowsHitTesting(false)
                             )
                             .background(
-                                // The bloom: a blurred indigo slab tucked behind
-                                // the bar's top edge, so the glow reads as light
+                                // The bloom: a blurred slab tucked behind the
+                                // bar's top edge, so the glow reads as light
                                 // spilling out from above it.
                                 RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                                    .fill(Color.brandIndigo.opacity(0.45))
+                                    .fill(ariaBloomTint.opacity(0.45))
                                     .blur(radius: 18)
                                     .padding(.horizontal, AppSpacing.lg)
                                     .offset(y: -6)
