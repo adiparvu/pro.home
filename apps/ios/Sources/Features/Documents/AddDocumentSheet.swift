@@ -27,6 +27,13 @@ struct AddDocumentSheet: View {
     @State private var isScanning = false
     @State private var scanPickerItem: PhotosPickerItem? = nil
     @State private var showDocScanner = false
+    /// The fields the last OCR pass filled — shown as a review banner so the
+    /// user checks the extraction before saving (nothing is trusted silently).
+    @State private var prefillLabels: [String] = []
+    @State private var categoryTouched = false
+    /// The category we last set from OCR, so the picker's onChange can tell a
+    /// user's pick from our own programmatic one and stop auto-switching.
+    @State private var autoCategory = "contract"
 
     private let categories = ["contract", "legal", "warranty", "insurance", "certificate",
                                "manual", "invoice", "permit", "tax", "utility", "photo", "other"]
@@ -92,9 +99,14 @@ struct AddDocumentSheet: View {
                                     }
                                 }
                                 .tint(Color.primary.opacity(AppOpacity.emphasis))
+                                .onChange(of: category) { _, newVal in
+                                    if newVal != autoCategory { categoryTouched = true }
+                                }
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
+
+                        if !prefillLabels.isEmpty { prefillBanner }
 
                         // The category decides which sections appear — a
                         // Contract asks for issuer + identifiers + value, a
@@ -147,18 +159,64 @@ struct AddDocumentSheet: View {
         }
     }
 
-    /// A finished scan fills the whole form: the PDF is attached, and the
-    /// OCR's title/expiry proposals land only where the user hasn't typed.
+    /// A finished scan fills the whole form: the PDF is attached, and the OCR's
+    /// proposals (name, dates, issuer, amount, identifiers) land only where the
+    /// user hasn't typed — the review banner then lists what was read.
     private func applyScan(_ result: DocumentScanResult) {
         pickedFileData = result.pdfData
         pickedFileName = "scan-\(AppDate.dayString(from: Date())).pdf"
         pickedMimeType = "application/pdf"
         if name.isEmpty, let suggested = result.suggestedName { name = suggested }
-        if let expiry = result.suggestedExpiry, expiry > Date() {
-            fields.dateEnabled[.expiresAt] = true
-            fields.dates[.expiresAt] = expiry
-        }
+        applyPrefill(from: result.lines)
         HapticFeedback.success()
+    }
+
+    /// Runs the deterministic D2 extractor over recognized text and fills the
+    /// untouched fields, auto-selecting the category only while the user hasn't
+    /// picked one themselves.
+    private func applyPrefill(from lines: [String]) {
+        guard !lines.isEmpty else { return }
+        let prefill = DocumentOCR.extract(from: lines)
+        if !categoryTouched, let cat = prefill.suggestedCategory,
+           categories.contains(cat), cat != category {
+            autoCategory = cat
+            category = cat
+        }
+        let written = fields.applyPrefill(prefill)
+        if !written.isEmpty { prefillLabels = written }
+    }
+
+    // MARK: - OCR review banner
+    //
+    // Extraction shows what it actually read; the user confirms before saving.
+    // This is the visible half of the honesty rule — the form is prefilled, but
+    // every value stays editable and is announced here.
+    private var prefillBanner: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "sparkles.rectangle.stack")
+                .font(AppFont.scaled(15)).foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("doc_ocr_prefill_title")
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                Text("\(String(localized: "doc_ocr_prefill_body")) \(prefillLabels.joined(separator: ", "))")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            Spacer(minLength: 0)
+            Button {
+                withAnimation(.snappy) { prefillLabels = [] }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.lg)
+        .background(Color.accentColor.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+            .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 0.5))
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     // MARK: - Share with
@@ -197,10 +255,11 @@ struct AddDocumentSheet: View {
     }
 
     private func runOCR(on image: UIImage) async {
-        let lines = await VisionCaptureService.recognizeText(in: image)
-        let parsed = VisionCaptureService.parseProduct(from: lines)
-        if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
-        if !parsed.brand.isEmpty && name.isEmpty { name = parsed.brand + " " + parsed.model }
+        let lines = await DocumentOCR.recognize(image)
+        if name.isEmpty, let suggested = DocumentScanIntelligence.suggestName(from: lines) {
+            name = suggested
+        }
+        applyPrefill(from: lines)
         HapticFeedback.success()
     }
 

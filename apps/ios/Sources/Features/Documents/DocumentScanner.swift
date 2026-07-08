@@ -16,6 +16,9 @@ struct DocumentScanResult {
     let pageCount: Int
     var suggestedName: String?
     var suggestedExpiry: Date?
+    /// The recognized text from the first pages, so the caller can run the
+    /// full D2 prefill (issuer, amount, identifiers) — not just name + expiry.
+    var lines: [String] = []
 }
 
 struct DocumentScannerView: UIViewControllerRepresentable {
@@ -74,7 +77,8 @@ enum DocumentScanIntelligence {
         return DocumentScanResult(pdfData: pdf,
                                   pageCount: pages.count,
                                   suggestedName: suggestName(from: lines),
-                                  suggestedExpiry: detectExpiry(in: lines))
+                                  suggestedExpiry: detectExpiry(in: lines),
+                                  lines: lines)
     }
 
     private static func makePDF(pages: [UIImage]) -> Data? {

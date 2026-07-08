@@ -91,6 +91,7 @@ struct DocumentDetailView: View {
                 VStack(spacing: 16) {
                     header
                     fileCard
+                    DocumentFilesSection(documentId: doc.id)
                     richDetailsCard
                     detailsCard
                     Spacer(minLength: 40)
