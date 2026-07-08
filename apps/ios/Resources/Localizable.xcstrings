@@ -54905,6 +54905,54 @@
           }
         }
       }
+    },
+    "Work session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work session"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesiune de lucru"
+          }
+        }
+      }
+    },
+    "Time a task from start to done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time a task from start to done"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cronometrează o sarcină de la început până la final"
+          }
+        }
+      }
+    },
+    "Delivery issue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delivery issue"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemă la livrare"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

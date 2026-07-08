@@ -60,6 +60,16 @@ enum AppFont {
     static var title2: Font { scaled(22, weight: .bold, design: .rounded, relativeTo: .title2) }
     /// 28–34pt bold rounded — large navigation titles, page headers.
     static var title: Font { scaled(30, weight: .bold, design: .rounded, relativeTo: .largeTitle) }
+
+    // Live Activity metrics — the rounded numerals in the Dynamic Island and
+    // on Lock Screen cards (counts, percentages, timers). Rounded + bold like
+    // Apple's own activities, and Dynamic-Type-relative like every token.
+    /// 12pt bold rounded — compact island trailing metric.
+    static var metricSmall: Font { scaled(12, weight: .bold, design: .rounded, relativeTo: .caption1) }
+    /// 15pt bold rounded — expanded island trailing metric.
+    static var metric: Font { scaled(15, weight: .bold, design: .rounded, relativeTo: .subheadline) }
+    /// 20pt bold rounded — Lock Screen hero metric (percent, timer).
+    static var metricLarge: Font { scaled(20, weight: .bold, design: .rounded, relativeTo: .title3) }
 }
 
 // MARK: - Color opacity tiers
@@ -73,6 +83,9 @@ enum AppOpacity {
     /// Subtle background fills (pills, input backgrounds, card tints).
     static let subtleFill: Double = 0.07
     /// Disabled controls, placeholder/tertiary text.
+    /// Soft tinted fill behind an icon in its accent color (icon discs).
+    static let tintedFill: Double = 0.15
+
     static let disabled: Double = 0.35
     /// Standard secondary text (subtitles, metadata).
     static let secondaryText: Double = 0.45
@@ -110,6 +123,10 @@ extension Color {
     /// Vibrant magenta-pink — the warm stop of the story-ring "unseen"
     /// gradient; usable for other semantic pink accents.
     static let brandPink = Color(red: 0.88, green: 0.19, blue: 0.42)
+
+    /// System-teal anchor — work-session timers and other "focus" accents
+    /// (codifies the `.teal` already used by the session Live Activity).
+    static let brandTeal = Color(red: 0.19, green: 0.69, blue: 0.78)
 }
 
 // MARK: - Spacing

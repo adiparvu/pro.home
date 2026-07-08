@@ -1,0 +1,255 @@
+import ActivityKit
+import SwiftUI
+import WidgetKit
+
+// MARK: - IslandKit
+//
+// The shared design system for every PRVIO Live Activity: one icon disc, one
+// metric style, one progress bar, one lock-screen card. Each activity in
+// LiveActivityViews.swift composes these instead of hand-building its own
+// layout — the five originals had drifted into five slightly different
+// designs with hardcoded colors and frozen font sizes.
+
+// MARK: Preference gates
+//
+// LiveActivityPrefs reads the app-group suite, so the user's choices in
+// Settings › Live Activities drive the REAL activity rendering. Views are
+// re-evaluated on every content update, so a settings change applies from
+// the next update. Gates are keyed by the canonical kind — no raw strings.
+enum LA {
+    static func lockDetails(_ k: LiveActivityKind) -> Bool { LiveActivityPrefs.showOnLockScreen(for: k.rawValue) }
+    static func island(_ k: LiveActivityKind) -> Bool { LiveActivityPrefs.showDynamicIsland(for: k.rawValue) }
+    static func progress(_ k: LiveActivityKind) -> Bool { LiveActivityPrefs.showProgress(for: k.rawValue) }
+    static func eta(_ k: LiveActivityKind) -> Bool { LiveActivityPrefs.showETA(for: k.rawValue) }
+    static func property(_ k: LiveActivityKind) -> Bool { LiveActivityPrefs.showProperty(for: k.rawValue) }
+    static func expandedDetail(_ k: LiveActivityKind) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k.rawValue) == .detailed }
+    static func expandedData(_ k: LiveActivityKind) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k.rawValue) != .minimal }
+}
+
+enum IslandMetrics {
+    /// Lock-screen leading icon disc.
+    static let iconDisc: CGFloat = 44
+}
+
+// MARK: - State icon
+//
+// The kind's symbol that flips to a green checkmark on completion — with a
+// crossfading symbol replace, and a one-shot bounce that Reduce Motion turns
+// off. Every activity uses this in every region, so success reads the same
+// everywhere.
+struct IslandStateIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let kind: LiveActivityKind
+    var isComplete = false
+    var isProblem = false
+
+    private var symbol: String {
+        if isComplete { return "checkmark.circle.fill" }
+        if isProblem { return "exclamationmark.triangle.fill" }
+        return kind.icon
+    }
+    private var tint: Color {
+        if isComplete { return .brandSuccess }
+        if isProblem { return .brandWarning }
+        return kind.color
+    }
+
+    var body: some View {
+        Image(systemName: symbol)
+            .foregroundStyle(tint)
+            .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+            // Discrete effect keyed on the flip to complete; Reduce Motion
+            // keeps the token false so the bounce never triggers.
+            .symbolEffect(.bounce, options: .nonRepeating,
+                          value: isComplete && !reduceMotion)
+            // Ongoing attention while a problem state persists.
+            .symbolEffect(.pulse, options: .repeating,
+                          isActive: isProblem && !isComplete && !reduceMotion)
+    }
+}
+
+/// Lock-screen leading disc: the state icon on the kind's soft fill.
+struct IslandIconDisc: View {
+    let kind: LiveActivityKind
+    var isComplete = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill((isComplete ? Color.brandSuccess : kind.color).opacity(AppOpacity.tintedFill))
+                .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
+            IslandStateIcon(kind: kind, isComplete: isComplete)
+                .font(AppFont.title3)
+        }
+        .accessibilityHidden(true) // decorative — the card's text carries the state
+    }
+}
+
+// MARK: - Metric
+//
+// Rounded numerals with the numeric-text roll — counts, percentages, ETAs.
+// Three sizes: compact (island pill), expanded (island trailing), hero
+// (Lock Screen right edge).
+struct IslandMetric: View {
+    enum Size { case compact, expanded, hero }
+
+    let text: Text
+    var tint: Color = .primary
+    var size: Size = .compact
+
+    init(_ text: Text, tint: Color = .primary, size: Size = .compact) {
+        self.text = text
+        self.tint = tint
+        self.size = size
+    }
+
+    private var font: Font {
+        switch size {
+        case .compact:  return AppFont.metricSmall
+        case .expanded: return AppFont.metric
+        case .hero:     return AppFont.metricLarge
+        }
+    }
+
+    var body: some View {
+        text
+            .font(font)
+            .monospacedDigit()
+            .foregroundStyle(tint)
+            .lineLimit(1)
+            .contentTransition(.numericText())
+    }
+}
+
+// MARK: - Expanded leading header
+//
+// Icon-only when the user chose a data-light island; icon + title otherwise.
+struct IslandHeader: View {
+    let kind: LiveActivityKind
+    let title: Text
+    var isComplete = false
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xs) {
+            IslandStateIcon(kind: kind, isComplete: isComplete)
+                .font(AppFont.captionStrong)
+            if LA.expandedData(kind) {
+                title
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(isComplete ? Color.brandSuccess : kind.color)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+// MARK: - Progress
+struct IslandProgressBar: View {
+    let value: Double
+    let tint: Color
+
+    var body: some View {
+        ProgressView(value: max(0, min(1, value)))
+            .tint(tint)
+            .accessibilityHidden(true) // the row's text already states n of m
+    }
+}
+
+/// Ordered journey in discrete segments (the Apple Store order-tracking
+/// pattern): filled up to and including the current stage; a problem tints
+/// the current segment to warning. HStack order mirrors under RTL.
+struct IslandMilestoneBar: View {
+    let stage: Int
+    var total: Int = 4
+    var tint: Color
+    var isProblem = false
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xxs) {
+            ForEach(0..<total, id: \.self) { i in
+                Capsule()
+                    .fill(segmentColor(i))
+                    .frame(height: 4)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .accessibilityHidden(true) // the status text carries the stage
+    }
+
+    private func segmentColor(_ i: Int) -> Color {
+        guard i <= stage else { return Color.primary.opacity(AppOpacity.subtleFill) }
+        return (isProblem && i == stage) ? .brandWarning : tint
+    }
+}
+
+// MARK: - Lock-screen card
+//
+// The one card layout every activity's Lock Screen presentation composes:
+// disc · title + detail rows · trailing metric, on the system material.
+struct IslandLockCard<Detail: View, Trailing: View>: View {
+    let kind: LiveActivityKind
+    let title: Text
+    var isComplete = false
+    @ViewBuilder var detail: Detail
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: AppSpacing.base) {
+            IslandIconDisc(kind: kind, isComplete: isComplete)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                title
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                detail
+            }
+            Spacer()
+            trailing
+        }
+        .padding(AppSpacing.lg)
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(.primary)
+    }
+}
+
+/// Secondary line under a lock-card title — context + optional property name.
+struct IslandContextLine: View {
+    let kind: LiveActivityKind
+    let text: Text
+    var propertyName: String?
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xxs) {
+            text
+            if LA.property(kind), let property = propertyName, !property.isEmpty {
+                Text(verbatim: "· \(property)")
+            }
+        }
+        .font(AppFont.caption)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+    }
+}
+
+// MARK: - Minimal lock-screen row (details toggled off)
+struct MinimalLockRow: View {
+    let kind: LiveActivityKind
+    let title: Text
+    var isComplete = false
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm + 2) {
+            IslandStateIcon(kind: kind, isComplete: isComplete)
+                .font(AppFont.subheadline)
+            title
+                .font(AppFont.captionEmphasis)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(.primary)
+    }
+}

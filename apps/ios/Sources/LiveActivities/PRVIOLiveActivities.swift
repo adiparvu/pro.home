@@ -130,6 +130,11 @@ struct DeliveryActivityAttributes: ActivityAttributes {
         var status: String
         var statusLabel: String
         var eta: String?
+        // Milestone journey (all optional so payloads started before these
+        // fields existed — and pushes from older senders — still decode).
+        var milestoneIndex: Int?   // 0 ordered · 1 in transit · 2 out for delivery · 3 delivered
+        var checkpoint: String?    // latest human-readable event ("Sorted · Cluj")
+        var isProblem: Bool?       // exception / failed attempt / expired
     }
     let trackingNumber: String
     let carrier: String
@@ -185,6 +190,9 @@ struct CompleteWorkSessionIntent: LiveActivityIntent {
         if let id = UUID(uuidString: taskId) {
             SharedDataStore.appendPendingCompletion(id)
         }
+        // Runs in the app's process: confirms the completion when the app is
+        // active; a silent no-op when it's backgrounded.
+        HapticFeedback.success()
         for activity in Activity<WorkSessionActivityAttributes>.activities {
             await activity.end(
                 ActivityContent(state: .init(isComplete: true), staleDate: nil),
@@ -203,6 +211,7 @@ struct EndWorkSessionIntent: LiveActivityIntent {
     init() {}
 
     func perform() async throws -> some IntentResult {
+        HapticFeedback.impact(.light)
         for activity in Activity<WorkSessionActivityAttributes>.activities {
             await activity.end(
                 ActivityContent(state: .init(isComplete: false), staleDate: nil),

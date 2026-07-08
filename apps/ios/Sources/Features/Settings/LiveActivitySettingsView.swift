@@ -7,62 +7,13 @@ import ActivityKit
 // app and the widgets target) so the extension that actually renders the
 // activity reads the same app-group values this screen writes.
 
-extension LiveActivityPrefs {
-    static func autoStart(for kind: LiveActivityKind) -> Bool {
-        switch kind {
-        case .shopping:    return bool(autoShoppingKey, default: true)
-        case .delivery:    return bool(autoDeliveryKey, default: true)
-        case .maintenance: return bool(autoMaintKey,    default: false)
-        case .plantCare:   return bool(autoPlantKey,    default: false)
-        }
-    }
-}
+// The canonical LiveActivityKind — identity, tint, deep link, auto-start
+// capability, preference keys — lives in
+// Sources/LiveActivities/LiveActivityKind.swift, shared with the widgets
+// target so the real activity views and this screen can never drift apart.
+// This file adds only the preview sample data the mocks need.
 
-enum LiveActivityKind: String, CaseIterable, Identifiable {
-    case shopping, delivery, maintenance, plantCare
-    var id: String { rawValue }
-
-    var title: LocalizedStringKey {
-        switch self {
-        case .shopping:    return "Shopping list"
-        case .delivery:    return "Deliveries"
-        case .maintenance: return "Maintenance tasks"
-        case .plantCare:   return "Plant care"
-        }
-    }
-    var subtitle: LocalizedStringKey {
-        switch self {
-        case .shopping:    return "Track items as you check them off"
-        case .delivery:    return "Follow a package until it arrives"
-        case .maintenance: return "Watch progress on an active task"
-        case .plantCare:   return "Watering progress for your plants"
-        }
-    }
-    var icon: String {
-        switch self {
-        case .shopping:    return "cart.fill"
-        case .delivery:    return "shippingbox.fill"
-        case .maintenance: return "wrench.and.screwdriver.fill"
-        case .plantCare:   return "leaf.fill"
-        }
-    }
-    var color: Color {
-        switch self {
-        case .shopping:    return Color.brandSkyBlue
-        case .delivery:    return .orange
-        case .maintenance: return .teal
-        case .plantCare:   return Color(red: 0.15, green: 0.80, blue: 0.40)
-        }
-    }
-    var storageKey: String {
-        switch self {
-        case .shopping:    return LiveActivityPrefs.autoShoppingKey
-        case .delivery:    return LiveActivityPrefs.autoDeliveryKey
-        case .maintenance: return LiveActivityPrefs.autoMaintKey
-        case .plantCare:   return LiveActivityPrefs.autoPlantKey
-        }
-    }
-
+extension LiveActivityKind {
     // MARK: Preview sample data — each kind mocks up as itself, so the user
     // sees exactly how THAT activity will look before customizing it.
     var previewHeadline: LocalizedStringKey {
@@ -71,6 +22,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .delivery:    return "Garden bench"
         case .maintenance: return "Fix kitchen tap"
         case .plantCare:   return "Plant watering"
+        case .workSession: return "Fix kitchen tap"
         }
     }
     var previewStatus: LocalizedStringKey {
@@ -79,6 +31,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .delivery:    return "In transit"
         case .maintenance: return "Step 3 of 5"
         case .plantCare:   return "3 of 5 watered"
+        case .workSession: return "12:34"
         }
     }
     var previewProgress: Double {
@@ -87,15 +40,10 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .delivery:    return 0.65
         case .maintenance: return 0.6
         case .plantCare:   return 0.6
+        case .workSession: return 0.5
         }
     }
     var showsETA: Bool { self == .delivery }
-    var defaultAuto: Bool {
-        switch self {
-        case .shopping, .delivery: return true
-        case .maintenance, .plantCare: return false
-        }
-    }
 }
 
 extension DynamicIslandStyle {
@@ -380,11 +328,15 @@ struct LiveActivityKindDetailView: View {
                 )
                 .animation(.snappy(duration: 0.28), value: appearanceToken)
 
-                group {
-                    LAToggleRow(icon: "play.circle.fill", color: kind.color,
-                                title: "Start automatically",
-                                subtitle: kind.subtitle,
-                                isOn: $autoStart)
+                // The work session is always started by hand (task row or
+                // watch), so it offers no auto-start switch.
+                if kind.supportsAutoStart {
+                    group {
+                        LAToggleRow(icon: "play.circle.fill", color: kind.color,
+                                    title: "Start automatically",
+                                    subtitle: kind.subtitle,
+                                    isOn: $autoStart)
+                    }
                 }
 
                 group {

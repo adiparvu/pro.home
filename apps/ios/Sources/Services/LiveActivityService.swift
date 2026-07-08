@@ -18,11 +18,17 @@ final class LiveActivityService {
     private var shoppingActivity: Activity<ShoppingActivityAttributes>?
     private var maintenanceActivity: Activity<MaintenanceActivityAttributes>?
     private var deliveryActivities: [UUID: Activity<DeliveryActivityAttributes>] = [:]
+    private var deliveryStartedAt: [UUID: Date] = [:]
     private var plantCareActivity: Activity<PlantCareActivityAttributes>?
     private var plantSessionTotal = 0
     private var workSessionActivity: Activity<WorkSessionActivityAttributes>?
 
     private var systemEnabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
+
+    /// Freshness contract: past this date the system dims the activity as
+    /// stale instead of presenting hours-old data as live. Terminal updates
+    /// (ends) keep a nil stale date — a final state doesn't go stale.
+    private func stale(hours: Double) -> Date { Date().addingTimeInterval(hours * 3600) }
 
     private func allowed(_ kind: LiveActivityKind) -> Bool {
         LiveActivityPrefs.isEnabled && LiveActivityPrefs.autoStart(for: kind) && systemEnabled
@@ -52,7 +58,7 @@ final class LiveActivityService {
                 shoppingActivity = nil
                 startShopping(listName: listName, state: state)
             } else {
-                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
             }
         } else if bought > 0, bought < total {
             startShopping(listName: listName, state: state)
@@ -63,7 +69,7 @@ final class LiveActivityService {
         guard allowed(.shopping) else { return }
         let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
         shoppingActivity = try? Activity.request(
-            attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+            attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
     }
 
     // MARK: - Work session (user-initiated, from a task row or the watch)
@@ -81,7 +87,7 @@ final class LiveActivityService {
                                                   propertyName: propertyName)
         workSessionActivity = try? Activity.request(
             attributes: attrs,
-            content: .init(state: .init(isComplete: false), staleDate: nil),
+            content: .init(state: .init(isComplete: false), staleDate: stale(hours: 12)),
             pushType: nil)
     }
 
@@ -109,13 +115,13 @@ final class LiveActivityService {
         let state = MaintenanceActivityAttributes.ContentState(
             progress: 0, stepDescription: step ?? String(localized: "In progress"), isComplete: false)
         maintenanceActivity = try? Activity.request(
-            attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+            attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
     }
 
     func updateMaintenance(progress: Double, step: String) {
         guard let activity = maintenanceActivity else { return }
         let state = MaintenanceActivityAttributes.ContentState(progress: progress, stepDescription: step, isComplete: false)
-        Task { await activity.update(.init(state: state, staleDate: nil)) }
+        Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
     }
 
     /// Ends the activity if the completed task is the one being tracked.
@@ -131,10 +137,17 @@ final class LiveActivityService {
         maintenanceActivity = nil
     }
 
-    // MARK: - Delivery (driven by DeliveryService add/update)
+    // MARK: - Delivery (driven by DeliveryService add/update + server pushes)
 
-    /// Reflects a delivery's current state: starts when active, updates status,
-    /// ends when delivered / returned / missed.
+    /// The island shows at most two activities anyway; keeping our own fleet
+    /// small means every parcel still reads at a glance.
+    private static let maxDeliveryActivities = 3
+
+    /// Reflects a delivery's current state: starts when active, updates status
+    /// (alerting on the transitions that matter), ends when delivered /
+    /// returned / missed. Live-tracked parcels also register for ActivityKit
+    /// pushes so the tracking webhook can update the island while the phone
+    /// is locked.
     func syncDelivery(_ delivery: Delivery) {
         // Adopt activities that survived an app relaunch (matched by tracking id).
         if deliveryActivities[delivery.id] == nil {
@@ -142,35 +155,122 @@ final class LiveActivityService {
                 $0.attributes.trackingNumber == (delivery.trackingNumber ?? "")
                     && $0.attributes.description == delivery.description
             }
+            if deliveryActivities[delivery.id] != nil, deliveryStartedAt[delivery.id] == nil {
+                deliveryStartedAt[delivery.id] = Date()
+            }
         }
 
+        let milestone = delivery.activityMilestone
         let state = DeliveryActivityAttributes.ContentState(
-            status: delivery.status, statusLabel: delivery.statusLabel,
-            eta: delivery.expectedDisplay)
+            status: delivery.liveStatus ?? delivery.status,
+            statusLabel: delivery.statusLabel,
+            eta: delivery.expectedDisplay,
+            milestoneIndex: milestone.index,
+            checkpoint: delivery.latestCheckpointLine,
+            isProblem: milestone.problem)
 
         if let activity = deliveryActivities[delivery.id] {
             if delivery.isActive {
-                Task { await activity.update(.init(state: state, staleDate: nil)) }
+                // Light up the Lock Screen only when something actionable
+                // happened — arriving today or a problem, not every hop.
+                let becameUrgent = activity.content.state.status != state.status
+                    && (state.status == "out_for_delivery" || milestone.problem)
+                let alert: AlertConfiguration? = becameUrgent
+                    ? AlertConfiguration(title: "\(delivery.description)",
+                                         body: "\(delivery.statusLabel)",
+                                         sound: .default)
+                    : nil
+                Task { await activity.update(.init(state: state, staleDate: stale(hours: 6)),
+                                             alertConfiguration: alert) }
             } else {
                 Task { await activity.end(.init(state: state, staleDate: nil),
                                           dismissalPolicy: .after(Date().addingTimeInterval(6))) }
-                deliveryActivities.removeValue(forKey: delivery.id)
+                cleanupDelivery(id: delivery.id, activityId: activity.id)
             }
         } else if delivery.isActive, allowed(.delivery) {
+            makeRoomForDelivery()
+            guard deliveryActivities.count < Self.maxDeliveryActivities else { return }
             let attrs = DeliveryActivityAttributes(
                 trackingNumber: delivery.trackingNumber ?? "",
                 carrier: delivery.carrier ?? String(localized: "Courier"),
                 description: delivery.description,
                 propertyName: propertyName)
-            deliveryActivities[delivery.id] = try? Activity.request(
-                attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+            // Live-tracked parcels update from the server while the phone is
+            // locked; manually tracked ones only ever update from the app.
+            let activity = try? Activity.request(
+                attributes: attrs,
+                content: .init(state: state, staleDate: stale(hours: 6)),
+                pushType: delivery.isLiveTracked ? .token : nil)
+            deliveryActivities[delivery.id] = activity
+            deliveryStartedAt[delivery.id] = Date()
+            if let activity, let trackerId = delivery.trackerId {
+                observeActivityPushToken(activity, trackerId: trackerId)
+            }
         }
     }
 
     func endDelivery(id: UUID) {
         guard let activity = deliveryActivities[id] else { return }
         Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        cleanupDelivery(id: id, activityId: activity.id)
+    }
+
+    /// When the fleet is full, the oldest island makes room for the newest
+    /// parcel — most-recent activity wins.
+    private func makeRoomForDelivery() {
+        while deliveryActivities.count >= Self.maxDeliveryActivities {
+            guard let oldest = deliveryStartedAt
+                .filter({ deliveryActivities[$0.key] != nil })
+                .min(by: { $0.value < $1.value })?.key,
+                let activity = deliveryActivities[oldest] else { return }
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+            cleanupDelivery(id: oldest, activityId: activity.id)
+        }
+    }
+
+    private func cleanupDelivery(id: UUID, activityId: String) {
         deliveryActivities.removeValue(forKey: id)
+        deliveryStartedAt.removeValue(forKey: id)
+        Task { await removeActivityToken(activityId: activityId) }
+    }
+
+    // MARK: - ActivityKit push tokens (server-updated deliveries)
+    //
+    // The token rows land in `live_activity_tokens`; the track-webhook edge
+    // function reads them by tracker id and sends `apns-push-type:
+    // liveactivity` updates, so a parcel moves on the island with the app
+    // closed and the phone in a pocket.
+
+    private func observeActivityPushToken(_ activity: Activity<DeliveryActivityAttributes>,
+                                          trackerId: String) {
+        Task {
+            for await token in activity.pushTokenUpdates {
+                let hex = token.map { String(format: "%02x", $0) }.joined()
+                await uploadActivityToken(hex, activityId: activity.id, trackerId: trackerId)
+            }
+        }
+    }
+
+    private func uploadActivityToken(_ hex: String, activityId: String, trackerId: String) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        struct Row: Encodable {
+            let user_id: String
+            let activity_id: String
+            let activity_kind: String
+            let tracker_id: String
+            let token: String
+            let environment: String
+        }
+        let row = Row(user_id: uid.uuidString, activity_id: activityId,
+                      activity_kind: "delivery", tracker_id: trackerId,
+                      token: hex, environment: PushTokenService.environment)
+        try? await supabase.from("live_activity_tokens")
+            .upsert(row, onConflict: "activity_id").execute()
+    }
+
+    private func removeActivityToken(activityId: String) async {
+        try? await supabase.from("live_activity_tokens")
+            .delete().eq("activity_id", activityId).execute()
     }
 
     // MARK: - Plant care (driven by PlantService.markWatered)
@@ -185,7 +285,7 @@ final class LiveActivityService {
                 wateredCount: 1, totalCount: plantSessionTotal, lastWateredName: name)
             if plantSessionTotal > 1 {
                 plantCareActivity = try? Activity.request(
-                    attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+                    attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
             }
             return
         }
@@ -199,7 +299,7 @@ final class LiveActivityService {
             plantCareActivity = nil
             plantSessionTotal = 0
         } else {
-            Task { await activity.update(.init(state: state, staleDate: nil)) }
+            Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
         }
     }
 
@@ -236,6 +336,7 @@ final class LiveActivityService {
         case .delivery:    return !Activity<DeliveryActivityAttributes>.activities.isEmpty
         case .maintenance: return !Activity<MaintenanceActivityAttributes>.activities.isEmpty
         case .plantCare:   return !Activity<PlantCareActivityAttributes>.activities.isEmpty
+        case .workSession: return !Activity<WorkSessionActivityAttributes>.activities.isEmpty
         }
     }
 
@@ -247,14 +348,21 @@ final class LiveActivityService {
                 for a in Activity<ShoppingActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 shoppingActivity = nil
             case .delivery:
-                for a in Activity<DeliveryActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<DeliveryActivityAttributes>.activities {
+                    await a.end(nil, dismissalPolicy: .immediate)
+                    await removeActivityToken(activityId: a.id)
+                }
                 deliveryActivities.removeAll()
+                deliveryStartedAt.removeAll()
             case .maintenance:
                 for a in Activity<MaintenanceActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 maintenanceActivity = nil
             case .plantCare:
                 for a in Activity<PlantCareActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 plantCareActivity = nil
+            case .workSession:
+                for a in Activity<WorkSessionActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                workSessionActivity = nil
             }
         }
     }
@@ -280,8 +388,47 @@ final class LiveActivityService {
                 await a.update(.init(state: a.content.state, staleDate: nil))
             }
             for a in Activity<PlantCareActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: nil))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 2)))
+            }
+            for a in Activity<WorkSessionActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 12)))
             }
         }
+    }
+}
+
+// MARK: - Delivery → activity state mapping
+
+private extension Delivery {
+    /// The 4-segment journey (0 ordered · 1 in transit · 2 out for delivery ·
+    /// 3 delivered) plus whether the parcel is in a problem state. Uses the
+    /// live-tracking vocabulary when the webhook has filled it, the legacy
+    /// status otherwise.
+    var activityMilestone: (index: Int, problem: Bool) {
+        switch liveStatus ?? "" {
+        case "pending", "info_received":                  return (0, false)
+        case "in_transit":                                return (1, false)
+        case "out_for_delivery", "available_for_pickup":  return (2, false)
+        case "delivered":                                 return (3, false)
+        case "exception", "expired":                      return (1, true)
+        case "failed_attempt":                            return (2, true)
+        default:
+            switch status {
+            case "out_for_delivery": return (2, false)
+            case "delivered":        return (3, false)
+            case "missed":           return (2, true)
+            default:                 return (0, false)
+            }
+        }
+    }
+
+    /// Latest human-readable tracking event: "Sorted at hub · Cluj".
+    var latestCheckpointLine: String? {
+        guard let c = liveCheckpoints.first else { return nil }
+        let message = (c.message?.isEmpty == false ? c.message : c.status) ?? ""
+        if let location = c.location, !location.isEmpty {
+            return message.isEmpty ? location : "\(message) · \(location)"
+        }
+        return message.isEmpty ? nil : message
     }
 }

@@ -2,329 +2,231 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Preference gates
+// MARK: - PRVIO Live Activities
 //
-// LiveActivityPrefs reads the app-group suite, so the user's choices in
-// Settings › Live Activities › Appearance drive the REAL activity rendering,
-// not just the in-app preview. Live Activity views are re-evaluated on every
-// content update, so a settings change applies from the next update (and
-// immediately for newly started activities).
-// Each helper takes the activity kind so per-activity overrides apply; a nil /
-// unknown kind falls back to the global appearance.
-private enum LA {
-    static func lockDetails(_ k: String) -> Bool { LiveActivityPrefs.showOnLockScreen(for: k) }
-    static func island(_ k: String) -> Bool { LiveActivityPrefs.showDynamicIsland(for: k) }
-    static func progress(_ k: String) -> Bool { LiveActivityPrefs.showProgress(for: k) }
-    static func eta(_ k: String) -> Bool { LiveActivityPrefs.showETA(for: k) }
-    static func property(_ k: String) -> Bool { LiveActivityPrefs.showProperty(for: k) }
-    static func expandedDetail(_ k: String) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k) == .detailed }
-    static func expandedData(_ k: String) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k) != .minimal }
-}
+// Every activity composes IslandKit (IslandKit.swift): one icon language, one
+// metric style, one lock card — themed by the canonical LiveActivityKind.
+// Appearance preferences are applied through the LA gates at render time; the
+// system re-renders on each content update.
 
-// MARK: - Shared minimal lock-screen row (Lock Screen toggle off)
-
-private struct MinimalLockRow: View {
-    let icon: String
-    let tint: Color
-    let title: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(AppFont.subheadline)
-                .foregroundStyle(tint)
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
-    }
-}
-
-// MARK: - Shopping Live Activity Widget
+// MARK: - Shopping
 
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
-            Group {
-                if LA.lockDetails("shopping") {
-                    ShoppingLockScreenView(context: context)
-                } else {
-                    MinimalLockRow(icon: "cart.fill", tint: .blue, title: context.attributes.listName)
-                }
-            }
-            .widgetURL(URL(string: "prvio://shopping"))
+            ShoppingLockView(context: context)
+                .widgetURL(LiveActivityKind.shopping.deepLink)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let bought = context.state.itemsBought
+            let total = context.state.totalItems
+            let done = total > 0 && bought >= total
+            let progress = total > 0 ? Double(bought) / Double(total) : 0
+            let countText = Text(verbatim: "\(bought)/\(total)")
+            let countLabel = Text(String(format: String(localized: "%d of %d items"), bought, total))
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Group {
-                        if LA.expandedData("shopping") {
-                            Label(context.attributes.listName, systemImage: "cart.fill")
-                                .font(AppFont.captionEmphasis)
-                                .foregroundStyle(.blue)
-                        } else {
-                            Image(systemName: "cart.fill").foregroundStyle(.blue)
-                        }
-                    }
-                    .widgetURL(URL(string: "prvio://shopping"))
+                    IslandHeader(kind: .shopping, title: Text(context.attributes.listName), isComplete: done)
+                        .widgetURL(LiveActivityKind.shopping.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData("shopping") {
-                        Text("\(context.state.itemsBought)/\(context.state.totalItems)")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
+                    if LA.expandedData(.shopping) {
+                        IslandMetric(countText, size: .expanded)
+                            .accessibilityLabel(countLabel)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail("shopping") {
-                        VStack(spacing: 6) {
-                            if LA.progress("shopping") {
-                                ProgressView(value: context.state.totalItems > 0
-                                             ? Double(context.state.itemsBought) / Double(context.state.totalItems)
-                                             : 0)
-                                .tint(.blue)
+                    if LA.expandedDetail(.shopping) {
+                        VStack(spacing: AppSpacing.xs) {
+                            if LA.progress(.shopping) {
+                                IslandProgressBar(value: progress, tint: LiveActivityKind.shopping.color)
                             }
                             HStack {
-                                Text(String(format: String(localized: "%d of %d items"), context.state.itemsBought, context.state.totalItems))
-                                    .font(.system(size: 12))
+                                countLabel
+                                    .font(AppFont.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                if context.state.itemsBought == context.state.totalItems {
+                                if done {
                                     Text("Complete! 🎉")
                                         .font(AppFont.captionStrong)
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(Color.brandSuccess)
                                 }
                             }
                         }
                     }
                 }
             } compactLeading: {
-                Image(systemName: "cart.fill")
-                    .foregroundStyle(.blue)
+                IslandStateIcon(kind: .shopping, isComplete: done)
                     .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.shopping.title))
             } compactTrailing: {
-                if LA.island("shopping") {
-                    Text("\(context.state.itemsBought)/\(context.state.totalItems)")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                if LA.island(.shopping) {
+                    IslandMetric(countText)
+                        .accessibilityLabel(countLabel)
                 }
             } minimal: {
-                Image(systemName: "cart.fill")
-                    .foregroundStyle(.blue)
+                IslandStateIcon(kind: .shopping, isComplete: done)
+                    .accessibilityLabel(Text(LiveActivityKind.shopping.title))
             }
         }
     }
 }
 
-struct ShoppingLockScreenView: View {
+private struct ShoppingLockView: View {
     let context: ActivityViewContext<ShoppingActivityAttributes>
 
-    var progress: Double {
+    private var progress: Double {
         context.state.totalItems > 0
             ? Double(context.state.itemsBought) / Double(context.state.totalItems)
             : 0
     }
+    private var isComplete: Bool {
+        context.state.totalItems > 0 && context.state.itemsBought >= context.state.totalItems
+    }
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "cart.fill")
-                    .font(AppFont.title3)
-                    .foregroundStyle(.blue)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.listName)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                if LA.progress("shopping") {
-                    ProgressView(value: progress).tint(.blue)
+        if LA.lockDetails(.shopping) {
+            IslandLockCard(kind: .shopping,
+                           title: Text(context.attributes.listName),
+                           isComplete: isComplete) {
+                if LA.progress(.shopping) {
+                    IslandProgressBar(value: progress, tint: LiveActivityKind.shopping.color)
                 }
-                HStack(spacing: 4) {
-                    Text(String(format: String(localized: "%d of %d items"), context.state.itemsBought, context.state.totalItems))
-                    if LA.property("shopping"), !context.attributes.propertyName.isEmpty {
-                        Text("· \(context.attributes.propertyName)")
-                    }
-                }
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                IslandContextLine(kind: .shopping,
+                                  text: Text(String(format: String(localized: "%d of %d items"),
+                                                    context.state.itemsBought, context.state.totalItems)),
+                                  propertyName: context.attributes.propertyName)
+            } trailing: {
+                IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
+                             tint: isComplete ? .brandSuccess : LiveActivityKind.shopping.color,
+                             size: .hero)
             }
-            Spacer()
-            Text("\(Int(progress * 100))%")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(.blue)
+        } else {
+            MinimalLockRow(kind: .shopping, title: Text(context.attributes.listName), isComplete: isComplete)
         }
-        .padding(16)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
     }
 }
 
-// MARK: - Maintenance Live Activity Widget
+// MARK: - Maintenance
 
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
-            Group {
-                if LA.lockDetails("maintenance") {
-                    MaintenanceLockScreenView(context: context)
-                } else {
-                    MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill",
-                                   tint: context.state.isComplete ? .green : .orange,
-                                   title: context.attributes.taskTitle)
-                }
-            }
-            .widgetURL(URL(string: "prvio://tasks"))
+            MaintenanceLockView(context: context)
+                .widgetURL(LiveActivityKind.maintenance.deepLink)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let done = context.state.isComplete
+            let percentText = Text(verbatim: "\(Int(context.state.progress * 100))%")
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Group {
-                        if LA.expandedData("maintenance") {
-                            Label(context.attributes.taskTitle, systemImage: "wrench.fill")
-                                .font(AppFont.captionStrong)
-                                .foregroundStyle(.orange)
-                                .lineLimit(1)
-                        } else {
-                            Image(systemName: "wrench.fill").foregroundStyle(.orange)
-                        }
-                    }
-                    .widgetURL(URL(string: "prvio://tasks"))
+                    IslandHeader(kind: .maintenance, title: Text(context.attributes.taskTitle), isComplete: done)
+                        .widgetURL(LiveActivityKind.maintenance.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData("maintenance") {
-                        Text("\(Int(context.state.progress * 100))%")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(context.state.isComplete ? .green : .orange)
+                    if LA.expandedData(.maintenance) {
+                        IslandMetric(percentText,
+                                     tint: done ? .brandSuccess : LiveActivityKind.maintenance.color,
+                                     size: .expanded)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail("maintenance") {
-                        VStack(spacing: 4) {
-                            if LA.progress("maintenance") {
-                                ProgressView(value: context.state.progress).tint(.orange)
+                    if LA.expandedDetail(.maintenance) {
+                        VStack(spacing: AppSpacing.xxs) {
+                            if LA.progress(.maintenance) {
+                                IslandProgressBar(value: context.state.progress,
+                                                  tint: LiveActivityKind.maintenance.color)
                             }
                             Text(context.state.stepDescription)
-                                .font(.system(size: 11))
+                                .font(AppFont.caption)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
                     }
                 }
             } compactLeading: {
-                Image(systemName: "wrench.fill")
-                    .foregroundStyle(.orange)
-                    .font(.system(size: 12))
+                IslandStateIcon(kind: .maintenance, isComplete: done)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.maintenance.title))
             } compactTrailing: {
-                if LA.island("maintenance") {
-                    Text("\(Int(context.state.progress * 100))%")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                if LA.island(.maintenance) {
+                    IslandMetric(percentText)
+                        .accessibilityLabel(Text(context.state.stepDescription))
                 }
             } minimal: {
-                Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill")
-                    .foregroundStyle(context.state.isComplete ? .green : .orange)
+                IslandStateIcon(kind: .maintenance, isComplete: done)
+                    .accessibilityLabel(Text(LiveActivityKind.maintenance.title))
             }
         }
     }
 }
 
-struct MaintenanceLockScreenView: View {
+private struct MaintenanceLockView: View {
     let context: ActivityViewContext<MaintenanceActivityAttributes>
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill")
-                    .font(AppFont.title3)
-                    .foregroundStyle(context.state.isComplete ? .green : .orange)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.taskTitle)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                if LA.progress("maintenance") {
-                    ProgressView(value: context.state.progress).tint(.orange)
+        if LA.lockDetails(.maintenance) {
+            IslandLockCard(kind: .maintenance,
+                           title: Text(context.attributes.taskTitle),
+                           isComplete: context.state.isComplete) {
+                if LA.progress(.maintenance) {
+                    IslandProgressBar(value: context.state.progress,
+                                      tint: LiveActivityKind.maintenance.color)
                 }
-                HStack(spacing: 4) {
-                    Text(context.state.stepDescription)
-                    if LA.property("maintenance"), let property = context.attributes.propertyName, !property.isEmpty {
-                        Text("· \(property)")
-                    }
-                }
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                IslandContextLine(kind: .maintenance,
+                                  text: Text(context.state.stepDescription),
+                                  propertyName: context.attributes.propertyName)
+            } trailing: {
+                IslandMetric(Text(verbatim: "\(Int(context.state.progress * 100))%"),
+                             tint: context.state.isComplete ? .brandSuccess : LiveActivityKind.maintenance.color,
+                             size: .hero)
             }
-            Spacer()
+        } else {
+            MinimalLockRow(kind: .maintenance,
+                           title: Text(context.attributes.taskTitle),
+                           isComplete: context.state.isComplete)
         }
-        .padding(16)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
     }
 }
 
-// MARK: - Work Session Live Activity Widget
+// MARK: - Work session
 //
 // The system counts the elapsed time from the fixed start date (no content
-// updates while it runs), and the Lock Screen buttons run as
-// LiveActivityIntents in the app's process — completing really completes.
+// updates while it runs), and the buttons run as LiveActivityIntents in the
+// app's process — completing really completes.
 
 struct WorkSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkSessionActivityAttributes.self) { context in
-            Group {
-                if LA.lockDetails("workSession") {
-                    WorkSessionLockScreenView(context: context)
-                } else {
-                    MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "timer",
-                                   tint: context.state.isComplete ? .green : .teal,
-                                   title: context.attributes.taskTitle)
-                }
-            }
-            .widgetURL(URL(string: "prvio://tasks"))
+            WorkSessionLockView(context: context)
+                .widgetURL(LiveActivityKind.workSession.deepLink)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let done = context.state.isComplete
+            let timer = Text(context.attributes.startedAt, style: .timer)
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Group {
-                        if LA.expandedData("workSession") {
-                            Label(context.attributes.taskTitle, systemImage: "timer")
-                                .font(AppFont.captionStrong)
-                                .foregroundStyle(.teal)
-                                .lineLimit(1)
-                        } else {
-                            Image(systemName: "timer").foregroundStyle(.teal)
-                        }
-                    }
-                    .widgetURL(URL(string: "prvio://tasks"))
+                    IslandHeader(kind: .workSession, title: Text(context.attributes.taskTitle), isComplete: done)
+                        .widgetURL(LiveActivityKind.workSession.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData("workSession") {
-                        Text(context.attributes.startedAt, style: .timer)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.teal)
+                    if LA.expandedData(.workSession) {
+                        IslandMetric(timer,
+                                     tint: done ? .brandSuccess : LiveActivityKind.workSession.color,
+                                     size: .expanded)
                             .frame(maxWidth: 60)
                             .multilineTextAlignment(.trailing)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail("workSession") {
-                        HStack(spacing: 10) {
+                    if LA.expandedDetail(.workSession), !done {
+                        HStack(spacing: AppSpacing.sm + 2) {
                             Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
                                 Label("la_session_complete", systemImage: "checkmark.circle.fill")
                                     .font(AppFont.captionStrong)
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.teal)
+                            .tint(LiveActivityKind.workSession.color)
                             Button(intent: EndWorkSessionIntent()) {
                                 Text("la_session_end")
                                     .font(AppFont.captionStrong)
@@ -334,311 +236,325 @@ struct WorkSessionLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: "timer")
-                    .foregroundStyle(.teal)
-                    .font(.system(size: 12))
+                IslandStateIcon(kind: .workSession, isComplete: done)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.workSession.title))
             } compactTrailing: {
-                if LA.island("workSession") {
-                    Text(context.attributes.startedAt, style: .timer)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.teal)
+                if LA.island(.workSession) {
+                    IslandMetric(timer, tint: done ? .brandSuccess : LiveActivityKind.workSession.color)
                         .frame(maxWidth: 44)
                 }
             } minimal: {
-                Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "timer")
-                    .foregroundStyle(context.state.isComplete ? .green : .teal)
+                IslandStateIcon(kind: .workSession, isComplete: done)
+                    .accessibilityLabel(Text(LiveActivityKind.workSession.title))
             }
         }
     }
 }
 
-struct WorkSessionLockScreenView: View {
+private struct WorkSessionLockView: View {
     let context: ActivityViewContext<WorkSessionActivityAttributes>
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(Color.teal.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "timer")
-                        .font(AppFont.title3)
-                        .foregroundStyle(context.state.isComplete ? .green : .teal)
+        if LA.lockDetails(.workSession) {
+            VStack(spacing: AppSpacing.sm + 2) {
+                HStack(spacing: AppSpacing.base) {
+                    IslandIconDisc(kind: .workSession, isComplete: context.state.isComplete)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.attributes.taskTitle)
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        if LA.property(.workSession),
+                           let property = context.attributes.propertyName, !property.isEmpty {
+                            Text(property)
+                                .font(AppFont.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    IslandMetric(Text(context.attributes.startedAt, style: .timer),
+                                 tint: context.state.isComplete ? .brandSuccess : LiveActivityKind.workSession.color,
+                                 size: .hero)
+                        .frame(maxWidth: 90)
+                        .multilineTextAlignment(.trailing)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(context.attributes.taskTitle)
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    if LA.property("workSession"),
-                       let property = context.attributes.propertyName, !property.isEmpty {
-                        Text(property)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                if !context.state.isComplete {
+                    HStack(spacing: AppSpacing.sm + 2) {
+                        Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
+                            Label("la_session_complete", systemImage: "checkmark.circle.fill")
+                                .font(AppFont.captionEmphasis)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(LiveActivityKind.workSession.color)
+                        Button(intent: EndWorkSessionIntent()) {
+                            Text("la_session_end")
+                                .font(AppFont.captionEmphasis)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                     }
-                }
-                Spacer()
-                Text(context.attributes.startedAt, style: .timer)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(context.state.isComplete ? .green : .teal)
-                    .frame(maxWidth: 90)
-                    .multilineTextAlignment(.trailing)
-            }
-            if !context.state.isComplete {
-                HStack(spacing: 10) {
-                    Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
-                        Label("la_session_complete", systemImage: "checkmark.circle.fill")
-                            .font(AppFont.captionEmphasis)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.teal)
-                    Button(intent: EndWorkSessionIntent()) {
-                        Text("la_session_end")
-                            .font(AppFont.captionEmphasis)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
                 }
             }
+            .padding(AppSpacing.lg)
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
+        } else {
+            MinimalLockRow(kind: .workSession,
+                           title: Text(context.attributes.taskTitle),
+                           isComplete: context.state.isComplete)
         }
-        .padding(16)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
     }
 }
 
-// MARK: - Delivery Live Activity Widget
+// MARK: - Delivery
+//
+// A milestone journey (ordered → in transit → out for delivery → delivered).
+// The content state can arrive from the app OR from a server push whose
+// sender doesn't know the device language, so the status label is resolved
+// on-device from the status key, falling back to the pushed label.
+
+private enum DeliveryFace {
+    /// On-device label for both the legacy and the live-tracking status
+    /// vocabularies; `fallback` covers unknown/future statuses.
+    static func label(_ status: String, fallback: String) -> String {
+        switch status {
+        case "expected", "pending", "info_received": return String(localized: "Expected")
+        case "in_transit":                           return String(localized: "In transit")
+        case "out_for_delivery":                     return String(localized: "Out for delivery")
+        case "available_for_pickup":                 return String(localized: "Ready for pickup")
+        case "delivered":                            return String(localized: "Delivered")
+        case "missed":                               return String(localized: "Missed")
+        case "returned":                             return String(localized: "Returned")
+        case "exception", "expired":                 return String(localized: "Delivery issue")
+        case "failed_attempt":                       return String(localized: "Failed attempt")
+        default:                                     return fallback
+        }
+    }
+
+    static func milestone(_ state: DeliveryActivityAttributes.ContentState) -> Int {
+        if let index = state.milestoneIndex { return max(0, min(3, index)) }
+        switch state.status { // payloads from before the milestone field
+        case "out_for_delivery", "available_for_pickup": return 2
+        case "delivered":                                 return 3
+        case "in_transit":                                return 1
+        default:                                          return 0
+        }
+    }
+
+    static func tint(_ state: DeliveryActivityAttributes.ContentState) -> Color {
+        if state.isProblem == true { return .brandWarning }
+        switch state.status {
+        case "out_for_delivery", "available_for_pickup": return .brandWarning
+        case "delivered":                                 return .brandSuccess
+        default:                                          return LiveActivityKind.delivery.color
+        }
+    }
+}
 
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
-            Group {
-                if LA.lockDetails("delivery") {
-                    DeliveryLockScreenView(context: context)
-                } else {
-                    MinimalLockRow(icon: "shippingbox.fill", tint: .blue, title: context.attributes.description)
-                }
-            }
-            .widgetURL(URL(string: "prvio://deliveries"))
+            DeliveryLockView(context: context)
+                .widgetURL(LiveActivityKind.delivery.deepLink)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let state = context.state
+            let delivered = state.status == "delivered"
+            let problem = state.isProblem == true
+            let tint = DeliveryFace.tint(state)
+            let label = DeliveryFace.label(state.status, fallback: state.statusLabel)
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Group {
-                        if LA.expandedData("delivery") {
-                            Label(context.attributes.carrier, systemImage: "shippingbox.fill")
-                                .font(AppFont.captionStrong)
-                                .foregroundStyle(.blue)
-                        } else {
-                            Image(systemName: "shippingbox.fill").foregroundStyle(.blue)
-                        }
-                    }
-                    .widgetURL(URL(string: "prvio://deliveries"))
+                    IslandHeader(kind: .delivery, title: Text(context.attributes.carrier), isComplete: delivered)
+                        .widgetURL(LiveActivityKind.delivery.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData("delivery") {
-                        Text(context.state.statusLabel)
-                            .font(AppFont.label)
-                            .foregroundStyle(deliveryColor(context.state.status))
+                    if LA.expandedData(.delivery) {
+                        Text(label)
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(tint)
+                            .lineLimit(1)
+                            .contentTransition(.opacity)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail("delivery") {
-                        HStack {
-                            Text(context.attributes.description)
-                                .font(.system(size: 12))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            Spacer()
-                            if LA.eta("delivery"), let eta = context.state.eta {
-                                Text("ETA: \(eta)")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
+                    if LA.expandedDetail(.delivery) {
+                        VStack(spacing: AppSpacing.xs) {
+                            if LA.progress(.delivery) {
+                                IslandMilestoneBar(stage: DeliveryFace.milestone(state),
+                                                   tint: delivered ? .brandSuccess : LiveActivityKind.delivery.color,
+                                                   isProblem: problem)
+                            }
+                            HStack {
+                                Text(state.checkpoint ?? context.attributes.description)
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Spacer()
+                                if LA.eta(.delivery), let eta = state.eta {
+                                    Text("ETA: \(eta)")
+                                        .font(AppFont.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
                 }
             } compactLeading: {
-                Image(systemName: "shippingbox.fill")
-                    .foregroundStyle(.blue)
-                    .font(.system(size: 12))
+                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.delivery.title))
             } compactTrailing: {
-                if LA.island("delivery") {
-                    Text(context.state.statusLabel)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(deliveryColor(context.state.status))
+                if LA.island(.delivery) {
+                    Text(label)
+                        .font(AppFont.label)
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+                        .contentTransition(.opacity)
                 }
             } minimal: {
-                Image(systemName: "shippingbox.fill")
-                    .foregroundStyle(.blue)
+                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem)
+                    .accessibilityLabel(Text(verbatim: label))
             }
-        }
-    }
-
-    private func deliveryColor(_ status: String) -> Color {
-        switch status {
-        case "out_for_delivery": return .orange
-        case "delivered":        return .green
-        default:                 return .blue
         }
     }
 }
 
-struct DeliveryLockScreenView: View {
+private struct DeliveryLockView: View {
     let context: ActivityViewContext<DeliveryActivityAttributes>
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "shippingbox.fill")
-                    .font(AppFont.title3)
-                    .foregroundStyle(.blue)
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(context.attributes.description)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                if LA.property("delivery"), let property = context.attributes.propertyName, !property.isEmpty {
-                    Text("\(property) · \(context.attributes.carrier) · \(context.state.statusLabel)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("\(context.attributes.carrier) · \(context.state.statusLabel)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+        let state = context.state
+        let delivered = state.status == "delivered"
+        let label = DeliveryFace.label(state.status, fallback: state.statusLabel)
+
+        if LA.lockDetails(.delivery) {
+            IslandLockCard(kind: .delivery,
+                           title: Text(context.attributes.description),
+                           isComplete: delivered) {
+                if LA.progress(.delivery) {
+                    IslandMilestoneBar(stage: DeliveryFace.milestone(state),
+                                       tint: delivered ? .brandSuccess : LiveActivityKind.delivery.color,
+                                       isProblem: state.isProblem == true)
                 }
-                if LA.eta("delivery"), let eta = context.state.eta {
+                IslandContextLine(kind: .delivery,
+                                  text: Text(verbatim: "\(context.attributes.carrier) · \(label)"),
+                                  propertyName: context.attributes.propertyName)
+                if let checkpoint = state.checkpoint {
+                    Text(checkpoint)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if LA.eta(.delivery), let eta = state.eta {
                     Text(String(format: String(localized: "Estimated: %@"), eta))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.orange)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(DeliveryFace.tint(state))
                 }
+            } trailing: {
+                EmptyView()
             }
-            Spacer()
+        } else {
+            MinimalLockRow(kind: .delivery,
+                           title: Text(context.attributes.description),
+                           isComplete: delivered)
         }
-        .padding(16)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
     }
 }
 
-// MARK: - Plant Care Live Activity Widget
+// MARK: - Plant care
 
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
-            Group {
-                if LA.lockDetails("plantCare") {
-                    PlantCareLockScreenView(context: context)
-                } else {
-                    MinimalLockRow(icon: "drop.fill", tint: .blue, title: String(localized: "Plant watering"))
-                }
-            }
-            .widgetURL(URL(string: "prvio://plants"))
+            PlantCareLockView(context: context)
+                .widgetURL(LiveActivityKind.plantCare.deepLink)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let watered = context.state.wateredCount
+            let total = context.state.totalCount
+            let done = total > 0 && watered >= total
+            let progress = total > 0 ? Double(watered) / Double(total) : 0
+            let countText = Text(verbatim: "\(watered)/\(total)")
+            let countLabel = Text(String(format: String(localized: "%d of %d plants watered"), watered, total))
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Group {
-                        if LA.expandedData("plantCare") {
-                            Label("Plant watering", systemImage: "drop.fill")
-                                .font(AppFont.captionStrong)
-                                .foregroundStyle(.blue)
-                        } else {
-                            Image(systemName: "drop.fill").foregroundStyle(.blue)
-                        }
-                    }
-                    .widgetURL(URL(string: "prvio://plants"))
+                    IslandHeader(kind: .plantCare, title: Text("Plant watering"), isComplete: done)
+                        .widgetURL(LiveActivityKind.plantCare.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData("plantCare") {
-                        Text("\(context.state.wateredCount)/\(context.state.totalCount)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(.blue)
+                    if LA.expandedData(.plantCare) {
+                        IslandMetric(countText,
+                                     tint: done ? .brandSuccess : LiveActivityKind.plantCare.color,
+                                     size: .expanded)
+                            .accessibilityLabel(countLabel)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail("plantCare") {
-                        VStack(spacing: 4) {
-                            if LA.progress("plantCare") {
-                                ProgressView(value: context.state.totalCount > 0
-                                             ? Double(context.state.wateredCount) / Double(context.state.totalCount)
-                                             : 0)
-                                .tint(.blue)
+                    if LA.expandedDetail(.plantCare) {
+                        VStack(spacing: AppSpacing.xxs) {
+                            if LA.progress(.plantCare) {
+                                IslandProgressBar(value: progress, tint: LiveActivityKind.plantCare.color)
                             }
                             if let name = context.state.lastWateredName {
                                 Text(String(format: String(localized: "Last watered: %@"), name))
-                                    .font(.system(size: 11))
+                                    .font(AppFont.caption)
                                     .foregroundStyle(.secondary)
+                                    .lineLimit(1)
                             }
                         }
                     }
                 }
             } compactLeading: {
-                Image(systemName: "drop.fill")
-                    .foregroundStyle(.blue)
-                    .font(.system(size: 12))
+                IslandStateIcon(kind: .plantCare, isComplete: done)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.plantCare.title))
             } compactTrailing: {
-                if LA.island("plantCare") {
-                    Text("\(context.state.wateredCount)/\(context.state.totalCount)")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                if LA.island(.plantCare) {
+                    IslandMetric(countText)
+                        .accessibilityLabel(countLabel)
                 }
             } minimal: {
-                Image(systemName: "drop.fill")
-                    .foregroundStyle(.blue)
+                IslandStateIcon(kind: .plantCare, isComplete: done)
+                    .accessibilityLabel(Text(LiveActivityKind.plantCare.title))
             }
         }
     }
 }
 
-struct PlantCareLockScreenView: View {
+private struct PlantCareLockView: View {
     let context: ActivityViewContext<PlantCareActivityAttributes>
 
-    var progress: Double {
+    private var progress: Double {
         context.state.totalCount > 0
             ? Double(context.state.wateredCount) / Double(context.state.totalCount)
             : 0
     }
+    private var isComplete: Bool {
+        context.state.totalCount > 0 && context.state.wateredCount >= context.state.totalCount
+    }
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "drop.fill")
-                    .font(AppFont.title3)
-                    .foregroundStyle(.blue)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Plant watering")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                if LA.progress("plantCare") {
-                    ProgressView(value: progress).tint(.blue)
+        if LA.lockDetails(.plantCare) {
+            IslandLockCard(kind: .plantCare,
+                           title: Text("Plant watering"),
+                           isComplete: isComplete) {
+                if LA.progress(.plantCare) {
+                    IslandProgressBar(value: progress, tint: LiveActivityKind.plantCare.color)
                 }
-                HStack(spacing: 4) {
-                    Text(String(format: String(localized: "%d of %d plants watered"), context.state.wateredCount, context.state.totalCount))
-                    if LA.property("plantCare"), !context.attributes.propertyName.isEmpty {
-                        Text("· \(context.attributes.propertyName)")
-                    }
-                }
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                IslandContextLine(kind: .plantCare,
+                                  text: Text(String(format: String(localized: "%d of %d plants watered"),
+                                                    context.state.wateredCount, context.state.totalCount)),
+                                  propertyName: context.attributes.propertyName)
+            } trailing: {
+                IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
+                             tint: isComplete ? .brandSuccess : LiveActivityKind.plantCare.color,
+                             size: .hero)
             }
-            Spacer()
-            Text("\(Int(progress * 100))%")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(.blue)
+        } else {
+            MinimalLockRow(kind: .plantCare, title: Text("Plant watering"), isComplete: isComplete)
         }
-        .padding(16)
-        .activityBackgroundTint(Color.clear)
-        .activitySystemActionForegroundColor(.primary)
     }
 }
