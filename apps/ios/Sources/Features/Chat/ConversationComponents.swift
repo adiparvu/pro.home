@@ -99,6 +99,8 @@ struct ConversationRowView: View {
     var muted: Bool = false
     var pinned: Bool = false
     var forceUnread: Bool = false
+    /// Live presence from PresenceService — only ever true for DM rows.
+    var online: Bool = false
 
     private var isUnread: Bool { entry.unread > 0 || forceUnread }
 
@@ -108,6 +110,15 @@ struct ConversationRowView: View {
         HStack(alignment: .top, spacing: 14) {
             avatar
                 .frame(width: 54, height: 54)
+                .overlay(alignment: .bottomTrailing) {
+                    if online {
+                        Circle()
+                            .fill(Color.brandSuccess)
+                            .frame(width: 13, height: 13)
+                            .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 2))
+                            .accessibilityLabel(Text("convo_online"))
+                    }
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {

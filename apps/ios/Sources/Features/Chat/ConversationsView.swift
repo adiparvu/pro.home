@@ -11,6 +11,7 @@ struct ConversationsView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(StickerService.self) private var stickerService
+    @Environment(PresenceService.self) private var presenceService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
@@ -162,21 +163,24 @@ struct ConversationsView: View {
         let pid = propertyService.primary?.id
         let prefs = await ChatPrefsSync.load()
         if prefs.isEmpty {
-            let ids = pinnedIds.union(mutedIds).union(archivedIds)
+            let ids = pinnedIds.union(mutedIds).union(archivedIds).union(manualUnreadIds)
             for id in ids {
                 await ChatPrefsSync.upsert(convId: id,
                                            pinned: pinnedIds.contains(id),
                                            muted: mutedIds.contains(id),
                                            archived: archivedIds.contains(id),
+                                           manualUnread: manualUnreadIds.contains(id),
                                            propertyId: pid)
             }
         } else {
-            pinnedIds   = Set(prefs.filter { $0.pinned }.map { $0.convId })
-            mutedIds    = Set(prefs.filter { $0.muted }.map { $0.convId })
-            archivedIds = Set(prefs.filter { $0.archived }.map { $0.convId })
-            UserDefaults.standard.set(Array(pinnedIds),   forKey: "chat.pinned")
-            UserDefaults.standard.set(Array(mutedIds),    forKey: "chat.muted")
-            UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
+            pinnedIds       = Set(prefs.filter { $0.pinned }.map { $0.convId })
+            mutedIds        = Set(prefs.filter { $0.muted }.map { $0.convId })
+            archivedIds     = Set(prefs.filter { $0.archived }.map { $0.convId })
+            manualUnreadIds = Set(prefs.filter { $0.manualUnread == true }.map { $0.convId })
+            UserDefaults.standard.set(Array(pinnedIds),       forKey: "chat.pinned")
+            UserDefaults.standard.set(Array(mutedIds),        forKey: "chat.muted")
+            UserDefaults.standard.set(Array(archivedIds),     forKey: "chat.archived")
+            UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
         }
         // Bring the "clear conversation" cutoff across from other devices.
         for r in prefs { ConversationClearStore.applyRemote(r.convId, iso: r.clearedAt) }
@@ -216,18 +220,22 @@ struct ConversationsView: View {
     private func toggleFavorite(_ id: String) { toggle(id, in: &favoriteIds, key: "chat.favorites") }
     private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned"); syncPrefs(id) }
     private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted"); syncPrefs(id) }
-    private func toggleUnread(_ id: String)   { toggle(id, in: &manualUnreadIds, key: "chat.manualUnread") }
+    private func toggleUnread(_ id: String)   { toggle(id, in: &manualUnreadIds, key: "chat.manualUnread"); syncPrefs(id) }
 
-    /// Pushes the current pin/mute/archive state of one conversation to Supabase.
+    /// Pushes the current pin/mute/archive/manual-unread state of one
+    /// conversation to Supabase.
     private func syncPrefs(_ id: String) {
         let pid = propertyService.primary?.id
         let pinned = pinnedIds.contains(id), muted = mutedIds.contains(id), archived = archivedIds.contains(id)
-        Task { await ChatPrefsSync.upsert(convId: id, pinned: pinned, muted: muted, archived: archived, propertyId: pid) }
+        let unread = manualUnreadIds.contains(id)
+        Task { await ChatPrefsSync.upsert(convId: id, pinned: pinned, muted: muted, archived: archived, manualUnread: unread, propertyId: pid) }
     }
 
     private func markAllRead() {
+        let wasUnread = manualUnreadIds
         manualUnreadIds.removeAll()
         UserDefaults.standard.set([String](), forKey: "chat.manualUnread")
+        for id in wasUnread { syncPrefs(id) }
         messageService.resetUnread()
         for m in familyService.members { directMessageService.markRead(partner: m.name) }
         if let pid = propertyService.primary?.id {
@@ -265,6 +273,9 @@ struct ConversationsView: View {
             await directMessageService.load(propertyId: pid, myName: myName)
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
             await syncRemotePrefs()
+            // Fresh presence for the online dots (MainTabView keeps it live;
+            // this just avoids showing stale state for the first ~45s).
+            await presenceService.load(propertyId: pid)
         }
         .task {
             // Keep the group conversation preview + unread badge live from the
@@ -555,7 +566,8 @@ struct ConversationsView: View {
                                     propertyPhotoUrl: propertyService.primary?.photoUrl,
                                     muted: mutedIds.contains(entry.id),
                                     pinned: pinnedIds.contains(entry.id),
-                                    forceUnread: manualUnreadIds.contains(entry.id)
+                                    forceUnread: manualUnreadIds.contains(entry.id),
+                                    online: entry.member.map { presenceService.status(for: $0.name) == .online } ?? false
                                 )
                             }
                             .buttonStyle(.plain)
@@ -651,8 +663,9 @@ struct ConversationsView: View {
     }
 
     private func markConversationRead(_ entry: ConversationEntry) {
-        manualUnreadIds.remove(entry.id)
+        let wasManual = manualUnreadIds.remove(entry.id) != nil
         UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
+        if wasManual { syncPrefs(entry.id) }
         if entry.isGroup {
             messageService.resetUnread()
             if let pid = propertyService.primary?.id {
@@ -666,6 +679,7 @@ struct ConversationsView: View {
     private func markConversationUnread(_ entry: ConversationEntry) {
         manualUnreadIds.insert(entry.id)
         UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
+        syncPrefs(entry.id)
     }
 
     private var searchField: some View {

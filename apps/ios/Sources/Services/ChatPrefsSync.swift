@@ -15,10 +15,13 @@ enum ChatPrefsSync {
         let pinned: Bool
         let muted: Bool
         let archived: Bool
+        /// Optional so rows decode even before migration 119 lands.
+        let manualUnread: Bool?
         let clearedAt: String?
         enum CodingKeys: String, CodingKey {
             case convId = "conv_id"
             case pinned, muted, archived
+            case manualUnread = "manual_unread"
             case clearedAt = "cleared_at"
         }
     }
@@ -28,7 +31,7 @@ enum ChatPrefsSync {
     }
 
     static func upsert(convId: String, pinned: Bool, muted: Bool, archived: Bool,
-                       propertyId: UUID?) async {
+                       manualUnread: Bool, propertyId: UUID?) async {
         guard let uid = supabase.auth.currentSession?.user.id else { return }
         struct Payload: Encodable {
             let user_id: String
@@ -37,10 +40,12 @@ enum ChatPrefsSync {
             let pinned: Bool
             let muted: Bool
             let archived: Bool
+            let manual_unread: Bool
         }
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
-                        pinned: pinned, muted: muted, archived: archived)
+                        pinned: pinned, muted: muted, archived: archived,
+                        manual_unread: manualUnread)
         _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
