@@ -489,6 +489,14 @@ struct ConversationsView: View {
             }
         }
         .frame(width: 48, height: 48)
+        // Reference: my own avatar wears the online dot — honest, this device
+        // is by definition online while the list is on screen.
+        .overlay(alignment: .bottomTrailing) {
+            Circle()
+                .fill(Color.brandSuccess)
+                .frame(width: 12, height: 12)
+                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 2))
+        }
     }
 
     private var myInitialsAvatar: some View {
@@ -517,6 +525,32 @@ struct ConversationsView: View {
                         Button { HapticFeedback.impact(.light); router.navigate(to: .aria) } label: { ariaRow }
                             .buttonStyle(.plain)
                             .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+                            // Reference (IMG_8066): the assistant bar carries a
+                            // luminous top edge — a hairline that is bright at
+                            // the top and dissolves down the sides — plus a
+                            // soft indigo bloom radiating from behind it.
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+                                    .strokeBorder(
+                                        LinearGradient(stops: [
+                                            .init(color: .white.opacity(0.65), location: 0),
+                                            .init(color: .white.opacity(0.12), location: 0.4),
+                                            .init(color: .clear, location: 1),
+                                        ], startPoint: .top, endPoint: .bottom),
+                                        lineWidth: 1
+                                    )
+                                    .allowsHitTesting(false)
+                            )
+                            .background(
+                                // The bloom: a blurred indigo slab tucked behind
+                                // the bar's top edge, so the glow reads as light
+                                // spilling out from above it.
+                                RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+                                    .fill(Color.brandIndigo.opacity(0.45))
+                                    .blur(radius: 18)
+                                    .padding(.horizontal, AppSpacing.lg)
+                                    .offset(y: -6)
+                            )
                             .padding(.bottom, AppSpacing.xs)
                     }
 
@@ -705,6 +739,11 @@ struct ConversationsView: View {
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 14)
         .background(Color.primary.opacity(0.06),
                     in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        // Hairline rim — the reference field reads recessed, not painted on.
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.7)
+        )
     }
 
     private var filterChips: some View {
@@ -789,6 +828,9 @@ struct ConversationsView: View {
                     .fill(LinearGradient(colors: [Color.brandIndigo, Color.brandPurple],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 44, height: 44)
+                    // The wand tile glows in the reference — a tight purple
+                    // halo, not a drop shadow.
+                    .shadow(color: Color.brandPurple.opacity(0.55), radius: 8)
                 Image(systemName: "wand.and.stars")
                     .font(AppFont.scaled(19, weight: .semibold))
                     .foregroundStyle(.white)
