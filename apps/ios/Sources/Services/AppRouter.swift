@@ -37,6 +37,9 @@ final class AppRouter {
         case photoJournal
         case profile
         case notifications
+        /// The notification panel pre-filtered to the chat module — the
+        /// conversations screen's bell shows only chat activity.
+        case notificationsChat
         case emergency
         case iotHub
 
@@ -83,7 +86,7 @@ final class AppRouter {
     enum AppRoute: Equatable {
         case home, tasks(id: UUID?), newTask, plants(id: UUID?), supplies,
              pantry, cameras, deliveries, chat, familyChat, scan, receipts,
-             notifications, aria, twin, settings, documents, finances,
+             notifications, notificationsChat, aria, twin, settings, documents, finances,
              inventory, family, profile, contractors, paintColors,
              photoJournal, addSupply, communities(groupId: UUID?), emergency,
              iotHub
@@ -229,6 +232,9 @@ final class AppRouter {
         case .notifications:
             selectedTab = .home
             activeDestination = .notifications
+        case .notificationsChat:
+            // Opened from the conversations bell — stay on the chat tab.
+            activeDestination = .notificationsChat
         case .aria:
             activeCover = .aria
         case .addSupply:

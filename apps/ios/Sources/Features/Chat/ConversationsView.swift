@@ -467,7 +467,7 @@ struct ConversationsView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("New conversation")
 
-                Button { router.navigate(to: .notifications) } label: {
+                Button { router.navigate(to: .notificationsChat) } label: {
                     Image(systemName: "bell")
                         .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)

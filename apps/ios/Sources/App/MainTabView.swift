@@ -297,6 +297,13 @@ struct MainTabView: View {
                     .environment(router)
             }
             .presentationDragIndicator(.visible)
+        case .notificationsChat:
+            NavigationStack {
+                NotificationCenterView(service: notificationService, initialFilter: "chat")
+                    .environment(auth)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
         default:
             // Content modules never land in the sheet slot; ARIA is always
             // cover-presented (routedCover).

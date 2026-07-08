@@ -16,6 +16,13 @@ struct NotificationCenterView: View {
 
     @State private var filter: String?   // nil = All, "unread", or a module
 
+    /// `initialFilter` pre-selects a module chip — the conversations bell
+    /// opens the panel scoped to chat activity; All stays one tap away.
+    init(service: NotificationService, initialFilter: String? = nil) {
+        self.service = service
+        _filter = State(initialValue: initialFilter)
+    }
+
     private var userId: UUID? { auth.session?.user.id }
 
     private var categories: [NotificationCategory] {
