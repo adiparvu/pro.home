@@ -177,7 +177,7 @@ struct InventoryView: View {
             }
         }
         .sheet(isPresented: $showAdd) { AddInventorySheet { item in Task { await service.add(item) } } }
-        .sheet(isPresented: $showScanner) {
+        .fullScreenCover(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
                 showScanner = false
                 if let found = service.itemByQR(qrValue) {

@@ -281,7 +281,6 @@ struct DashboardView: View {
             }
         }
         .frame(width: 42, height: 42)
-        .overlay(Circle().strokeBorder(Color.brandSuccess.opacity(0.55), lineWidth: 1.5))
     }
 
     // MARK: - Aerial background (drone photo or canvas illustration)

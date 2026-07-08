@@ -227,12 +227,16 @@ final class AppRouter {
             selectedTab = .tasks
             activeDestination = .newTask
         case .scan:
-            activeDestination = .inventoryScan
+            // A camera — full-screen cover, never a sheet that leaves the page
+            // visible behind it (and never the inventory module wrapped in a
+            // sheet, which stacked the scanner as a second sheet on top).
+            activeCover = .inventoryScan
         case .receipts:
             // "Scan Receipt" (Control Center / prvio://receipts) opens the
             // camera OCR receipt scanner — NOT the manual add-transaction form
             // (that is .addExpense, reachable from the Finances FAB action).
-            activeDestination = .receiptScan
+            // Camera → full-screen cover so nothing shows through behind it.
+            activeCover = .receiptScan
         case .notifications:
             selectedTab = .home
             activeDestination = .notifications
@@ -261,11 +265,11 @@ final class AppRouter {
         case .documents:  navigate(to: .documents)
         case .deliveries: navigate(to: .deliveries)
         case .digitalTwin: selectedTab = .digitalTwin
-        // Creation tasks stay modal (single slot swaps content by itself).
+        // Creation forms stay modal sheets (HIG). Cameras go full-screen.
         case .newTask:    activeDestination = .newTask
         case .addExpense: activeDestination = .addExpense
-        case .scan:       activeDestination = .inventoryScan
-        case .addItem:    activeDestination = .inventoryAdd
+        case .scan:       activeCover = .inventoryScan
+        case .addItem:    activeCover = .inventoryAdd
         case .addSupply:  activeDestination = .addSupply
         }
     }

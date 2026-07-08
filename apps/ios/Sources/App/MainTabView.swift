@@ -268,6 +268,22 @@ struct MainTabView: View {
                     .environment(profileService)
                     .environment(taskService)
             }
+        // Cameras / scanners present full-screen — a camera must never float as
+        // a sheet with the page showing through behind it. The inventory
+        // scanner also used to stack as a SECOND sheet on top of the inventory
+        // module when opened from Control Center / Shortcuts; full-screen here
+        // (plus a full-screen internal scanner) removes the stacked-sheet look.
+        case .receiptScan:
+            // Camera OCR receipt scanner (its own NavigationStack, with Cancel).
+            // Receipt + property services are required; supply/pantry are read
+            // optionally for shopping-list sync from the ambient environment.
+            ReceiptScannerView()
+                .environment(receiptService)
+                .environment(propertyService)
+        case .inventoryScan:
+            NavigationStack { InventoryView(autoScan: true) }
+        case .inventoryAdd:
+            NavigationStack { InventoryView(autoAdd: true) }
         default:
             EmptyView()
         }
@@ -282,17 +298,6 @@ struct MainTabView: View {
             AddTaskView()
         case .addExpense:
             AddFinancialView { await financialService.load() }
-        case .receiptScan:
-            // Camera OCR receipt scanner (its own NavigationStack). Receipt +
-            // property services are required; supply/pantry are read optionally
-            // for shopping-list sync and resolve from the ambient environment.
-            ReceiptScannerView()
-                .environment(receiptService)
-                .environment(propertyService)
-        case .inventoryScan:
-            NavigationStack { InventoryView(autoScan: true) }
-        case .inventoryAdd:
-            NavigationStack { InventoryView(autoAdd: true) }
         case .addSupply:
             AddSupplyItemSheet(list: nil, editingItem: nil)
                 .environment(supplyService)
