@@ -60,7 +60,7 @@ struct DashboardSmallView: View {
                 }
                 HStack(spacing: 10) {
                     miniStat(icon: "checklist",
-                             value: "\(entry.snapshot.overdueTaskCount)",
+                             value: "\(entry.snapshot.openTaskCount)",
                              color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
                     miniStat(icon: "leaf.fill",
                              value: "\(entry.snapshot.plantsNeedingWater)",
@@ -107,8 +107,8 @@ struct DashboardMediumView: View {
 
                 HStack(spacing: 0) {
                     statPill(icon: "checklist",
-                             value: "\(entry.snapshot.overdueTaskCount)",
-                             label: NSLocalizedString("widget_overdue", comment: ""),
+                             value: "\(entry.snapshot.openTaskCount)",
+                             label: NSLocalizedString("widget_open", comment: ""),
                              color: entry.snapshot.overdueTaskCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5))
                     statPill(icon: "leaf.fill",
                              value: "\(entry.snapshot.plantsNeedingWater)",
@@ -118,10 +118,10 @@ struct DashboardMediumView: View {
                              value: "\(entry.snapshot.activeDeliveryCount)",
                              label: NSLocalizedString("widget_deliveries", comment: ""),
                              color: entry.snapshot.activeDeliveryCount > 0 ? .blue : .white.opacity(0.5))
-                    statPill(icon: "square.and.pencil",
-                             value: "\(entry.snapshot.openTaskCount)",
-                             label: NSLocalizedString("widget_open", comment: ""),
-                             color: .white.opacity(0.6))
+                    statPill(icon: "exclamationmark.triangle.fill",
+                             value: "\(entry.snapshot.overdueTaskCount)",
+                             label: NSLocalizedString("widget_overdue", comment: ""),
+                             color: entry.snapshot.overdueTaskCount > 0 ? .red : .white.opacity(0.6))
                 }
             }
             .padding(.horizontal, 14)
@@ -185,8 +185,8 @@ struct DashboardLargeView: View {
                 // Stats row
                 HStack(spacing: 0) {
                     largeStat(icon: "checklist",
-                              value: "\(entry.snapshot.overdueTaskCount)",
-                              label: "Overdue",
+                              value: "\(entry.snapshot.openTaskCount)",
+                              label: "Tasks",
                               color: entry.snapshot.overdueTaskCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5))
                     largeStat(icon: "leaf.fill",
                               value: "\(entry.snapshot.plantsNeedingWater)",

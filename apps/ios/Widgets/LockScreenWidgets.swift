@@ -343,7 +343,7 @@ struct LockScreenDashboardView: View {
                     }
                 }
                 HStack(spacing: 10) {
-                    Label("\(entry.snapshot.overdueTaskCount)", systemImage: "checklist")
+                    Label("\(entry.snapshot.openTaskCount)", systemImage: "checklist")
                         .font(AppFont.scaled(11))
                     Label("\(entry.snapshot.plantsNeedingWater)", systemImage: "leaf.fill")
                         .font(AppFont.scaled(11))
@@ -372,8 +372,8 @@ struct LockScreenDashboardView: View {
 
     private var inlineText: String {
         var parts: [String] = []
-        if entry.snapshot.overdueTaskCount > 0 {
-            parts.append(String(format: String(localized: "%d tasks"), entry.snapshot.overdueTaskCount))
+        if entry.snapshot.openTaskCount > 0 {
+            parts.append(String(format: String(localized: "%d tasks"), entry.snapshot.openTaskCount))
         }
         if entry.snapshot.plantsNeedingWater > 0 {
             parts.append(String(format: String(localized: "%d plants"), entry.snapshot.plantsNeedingWater))
