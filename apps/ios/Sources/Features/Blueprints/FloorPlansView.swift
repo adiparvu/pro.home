@@ -10,6 +10,8 @@ import RoomPlan
 struct FloorPlansView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(InventoryService.self) private var inventoryService
+    @Environment(ApplianceService.self) private var applianceService
     @State private var service = FloorPlanService()
 
     enum DisplayMode: String, CaseIterable {
@@ -25,6 +27,7 @@ struct FloorPlansView: View {
     @State private var previewTitle = ""
     @State private var isFetchingScan = false
     @State private var roomToDelete: RoomRecord?
+    @State private var inspectedRoom: RoomRecord?
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -89,7 +92,23 @@ struct FloorPlansView: View {
         .task(id: propertyService.primary?.id) {
             if let pid = propertyService.primary?.id {
                 await service.load(propertyId: pid)
+                // The inspector matches inventory/appliances by location —
+                // hydrate them if this page is reached before their own.
+                if inventoryService.items.isEmpty {
+                    await inventoryService.load(propertyId: pid)
+                }
+                if applianceService.appliances.isEmpty {
+                    await applianceService.load(propertyId: pid)
+                }
             }
+        }
+        .sheet(item: $inspectedRoom) { room in
+            RoomInspectorSheet(
+                room: room,
+                health: zoneHealth(for: room),
+                onViewScan: { openScan(room) },
+                onScan: { scanTarget = room }
+            )
         }
         .refreshable {
             if let pid = propertyService.primary?.id {
@@ -197,11 +216,7 @@ struct FloorPlansView: View {
                     healthFor: { zoneHealth(for: $0) },
                     isEditing: isEditingPlan,
                     onTap: { room in
-                        if room.hasScan {
-                            openScan(room)
-                        } else if RoomCaptureSession.isSupported {
-                            scanTarget = room
-                        }
+                        inspectedRoom = room
                     },
                     onGeometryChange: { room, rect in
                         Task {
@@ -223,11 +238,7 @@ struct FloorPlansView: View {
 
     private func roomRow(_ room: RoomRecord) -> some View {
         Button {
-            if room.hasScan {
-                openScan(room)
-            } else if RoomCaptureSession.isSupported {
-                scanTarget = room
-            }
+            inspectedRoom = room
         } label: {
             GlassCard {
                 HStack(spacing: 14) {

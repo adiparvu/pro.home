@@ -54809,6 +54809,102 @@
           }
         }
       }
+    },
+    "room_scan_present" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3D scan attached"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanare 3D atașată"
+          }
+        }
+      }
+    },
+    "room_scan_absent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No 3D scan yet"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fără scanare 3D încă"
+          }
+        }
+      }
+    },
+    "room_health_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zone health"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sănătatea zonei"
+          }
+        }
+      }
+    },
+    "room_appliances %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appliances (%lld)"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Electrocasnice (%lld)"
+          }
+        }
+      }
+    },
+    "room_inventory %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inventory here (%lld)"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inventar aici (%lld)"
+          }
+        }
+      }
+    },
+    "room_inspector_empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing linked to this room yet. Set an item's or appliance's location to this room's name and it appears here."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimic legat de această cameră încă. Setează locația unui obiect sau electrocasnic pe numele camerei și apare aici."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
