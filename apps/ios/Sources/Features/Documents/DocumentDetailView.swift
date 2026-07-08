@@ -92,6 +92,7 @@ struct DocumentDetailView: View {
                     header
                     fileCard
                     DocumentFilesSection(documentId: doc.id)
+                    DocumentRelationsSection(documentId: doc.id)
                     richDetailsCard
                     detailsCard
                     Spacer(minLength: 40)

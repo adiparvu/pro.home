@@ -42,6 +42,7 @@ struct ApplianceDetailSheet: View {
                         detailsSection
                         warrantySection
                         ApplianceServiceBookSection(appliance: appliance)
+                        LinkedDocumentsSection(targetKind: .appliance, targetId: appliance.id)
                         if let notes = appliance.notes, !notes.isEmpty {
                             notesSection(notes)
                         }
