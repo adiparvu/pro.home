@@ -42,6 +42,10 @@ struct ConversationsView: View {
     @State private var lockedRevealed = false
     @State private var searchText = ""
     @State private var navTarget: String? = nil
+    // Conversation ids whose FULL history (server-side) matches the query —
+    // the in-memory scan below only sees the loaded page.
+    @State private var serverHits: Set<String> = []
+    @State private var serverSearchTask: Task<Void, Never>?
 
     private var hasLockedChats: Bool { nonArchived.contains { ChatLockStore.isLocked($0.id) } }
 
@@ -95,11 +99,12 @@ struct ConversationsView: View {
     private var searchedConversations: [ConversationEntry] {
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return visibleConversations }
-        // Global search: match the conversation name, its last-message preview,
-        // or the body of any loaded message in that conversation.
+        // Match the conversation name, its last-message preview, the loaded
+        // messages, or — via `serverHits` — the full server-side history.
         return nonArchived.filter { entry in
             // Don't surface secured chats in search until unlocked.
             if ChatLockStore.isLocked(entry.id) && !lockedRevealed { return false }
+            if serverHits.contains(entry.id) { return true }
             if entry.name.localizedCaseInsensitiveContains(q) { return true }
             if entry.preview.localizedCaseInsensitiveContains(q) { return true }
             if entry.isGroup {
@@ -111,6 +116,33 @@ struct ConversationsView: View {
                     .contains { $0.body.localizedCaseInsensitiveContains(q) }
             }
             return false
+        }
+    }
+
+    /// Debounced server search: after a pause in typing, asks Postgres which
+    /// conversations match anywhere in their history and folds the ids into
+    /// the visible results.
+    private func scheduleServerSearch(_ raw: String) {
+        serverSearchTask?.cancel()
+        let q = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard q.count >= 2, let pid = propertyService.primary?.id else {
+            serverHits = []
+            return
+        }
+        serverSearchTask = Task {
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            async let groupHit = messageService.groupHasMatch(propertyId: pid, query: q)
+            async let partners = directMessageService.partnersMatching(
+                propertyId: pid, myName: myName, query: q)
+            var hits = Set<String>()
+            if await groupHit { hits.insert("group") }
+            let names = await partners
+            for member in familyService.members where names.contains(member.name) {
+                hits.insert(member.id.uuidString)
+            }
+            guard !Task.isCancelled else { return }
+            serverHits = hits
         }
     }
 
@@ -245,6 +277,7 @@ struct ConversationsView: View {
             await messageService.subscribeRealtime(propertyId: pid)
         }
         .onAppear { loadFlags() }
+        .onChange(of: searchText) { _, text in scheduleServerSearch(text) }
         .navigationDestination(item: $navTarget) { id in
             if id == "group" {
                 groupChatDestination

@@ -509,3 +509,28 @@ final class DirectMessageService {
         }?.id
     }
 }
+
+// MARK: - Server-side search
+
+extension DirectMessageService {
+    /// Names of the DM partners whose history contains the query — matched
+    /// on Postgres, so results reach past the loaded page.
+    func partnersMatching(propertyId: UUID, myName: String, query: String) async -> Set<String> {
+        struct Row: Decodable {
+            let senderName: String
+            let recipientName: String
+            enum CodingKeys: String, CodingKey {
+                case senderName = "sender_name"
+                case recipientName = "recipient_name"
+            }
+        }
+        let rows: [Row] = (try? await supabase.from("direct_messages")
+            .select("sender_name, recipient_name")
+            .eq("property_id", value: propertyId.uuidString)
+            .or("sender_name.eq.\(myName),recipient_name.eq.\(myName)")
+            .ilike("body", pattern: MessageService.likePattern(query))
+            .limit(200)
+            .execute().value) ?? []
+        return Set(rows.map { $0.senderName == myName ? $0.recipientName : $0.senderName })
+    }
+}

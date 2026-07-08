@@ -77,26 +77,37 @@ serve(async (req) => {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   }
-  if (!cronSecret || req.headers.get('x-cron-secret') !== cronSecret) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
-  }
-
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // Pull unpushed chat notifications.
+  // Two accepted callers: the legacy CRON_SECRET env, and the vault-held
+  // webhook secret the notifications trigger sends (chat_push_secret() is
+  // executable only with the service role, so anon clients can't read it).
+  const provided = (req.headers.get('x-cron-secret') ?? '').trim()
+  let authorized = !!cronSecret && provided === cronSecret.trim()
+  if (!authorized && provided) {
+    const { data: vaultSecret } = await admin.rpc('chat_push_secret')
+    authorized = typeof vaultSecret === 'string' && provided === vaultSecret.trim()
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Claim unpushed chat notifications atomically: the insert trigger can
+  // fire this function several times in a burst, and stamping pushed_at
+  // up-front means each row is sent by exactly one invocation.
   const { data: notes, error } = await admin
     .from('notifications')
-    .select('id, user_id, title, body')
+    .update({ pushed_at: new Date().toISOString() })
     .eq('module', 'chat')
     .is('pushed_at', null)
-    .limit(200)
+    .select('id, user_id, title, body')
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -111,7 +122,6 @@ serve(async (req) => {
   }
 
   const jwt = await makeApnsJwt(p8, keyId, teamId)
-  const nowISO = new Date().toISOString()
   let sent = 0
   const pushedIds: string[] = []
 
@@ -142,14 +152,10 @@ serve(async (req) => {
         })
         if (res.ok) sent++
       } catch (_e) {
-        // best-effort; leave pushed_at unset so a later run can retry
+        // best-effort: the row is already claimed; the message stays in-app
       }
     }
     pushedIds.push(n.id)
-  }
-
-  if (pushedIds.length > 0) {
-    await admin.from('notifications').update({ pushed_at: nowISO }).in('id', pushedIds)
   }
 
   return new Response(JSON.stringify({ sent, processed: pushedIds.length }), {

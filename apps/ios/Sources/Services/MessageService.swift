@@ -746,3 +746,33 @@ final class MessageService {
         await unsubscribePollVotes()
     }
 }
+
+// MARK: - Server-side search
+//
+// The conversations search used to scan only the messages already loaded in
+// memory, so anything older than the current page was invisible. These run
+// the match on Postgres (ILIKE, bounded) and reach the whole history.
+
+extension MessageService {
+    /// Escapes LIKE wildcards so a user typing "100%" searches for the
+    /// literal text instead of matching everything.
+    static func likePattern(_ raw: String) -> String {
+        let escaped = raw
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
+        return "%\(escaped)%"
+    }
+
+    /// True when any group message in this property matches the query.
+    func groupHasMatch(propertyId: UUID, query: String) async -> Bool {
+        struct Row: Decodable { let id: UUID }
+        let rows: [Row] = (try? await supabase.from("messages")
+            .select("id")
+            .eq("property_id", value: propertyId.uuidString)
+            .ilike("body", pattern: Self.likePattern(query))
+            .limit(1)
+            .execute().value) ?? []
+        return !rows.isEmpty
+    }
+}
