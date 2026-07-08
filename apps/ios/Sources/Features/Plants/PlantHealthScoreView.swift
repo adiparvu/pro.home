@@ -54,7 +54,7 @@ struct PlantHealthScoreCard: View {
                     Label {
                         Text(top).font(AppFont.footnote).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     } icon: {
-                        Image(systemName: "lightbulb.fill").font(AppFont.caption).foregroundStyle(.brandWarning)
+                        Image(systemName: "lightbulb.fill").font(AppFont.caption).foregroundStyle(Color.brandWarning)
                     }
                     .padding(.top, 2)
                 }
