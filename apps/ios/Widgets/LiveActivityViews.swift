@@ -15,11 +15,9 @@ struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         // watchOS 11+ mirrors iPhone Live Activities into the Smart Stack when
         // a small supplemental family is declared; older systems ignore it.
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        // (The modifier back-deploys below iOS 18, and Widget.body is not a
+        // result builder, so an #available branch cannot type-check anyway.)
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -121,11 +119,7 @@ private struct ShoppingLockView: View {
 
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -215,11 +209,7 @@ private struct MaintenanceLockView: View {
 
 struct WorkSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -381,11 +371,7 @@ private enum DeliveryFace {
 
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -502,11 +488,7 @@ private struct DeliveryLockView: View {
 
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -610,11 +592,7 @@ private struct PlantCareLockView: View {
 
 struct EmergencyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
@@ -711,6 +689,415 @@ private struct EmergencyLockView: View {
             .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .emergency, title: Text("la_emergency_active"))
+        }
+    }
+}
+
+// MARK: - IoT sensor alert
+//
+// Raised by the user's own sensors (threshold crossings, smoke). Critical
+// hazards (smoke / gas / water) wear danger red; everything else warning
+// orange. "Got it" silences this instance until the sensor clears.
+
+private struct AlertSymbol: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let name: String
+    let tint: Color
+    var pulses = true
+
+    var body: some View {
+        Image(systemName: name)
+            .foregroundStyle(tint)
+            .symbolEffect(.pulse, options: .repeating, isActive: pulses && !reduceMotion)
+    }
+}
+
+struct IoTAlertLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        configuration.supplementalActivityFamilies([.small])
+    }
+
+    private var configuration: some WidgetConfiguration {
+        ActivityConfiguration(for: IoTAlertActivityAttributes.self) { context in
+            IoTAlertLockView(context: context)
+                .widgetURL(LiveActivityKind.iotAlert.deepLink)
+        } dynamicIsland: { context in
+            let active = context.state.isActive
+            let tint: Color = active
+                ? (context.attributes.isCritical ? .brandDanger : .brandWarning)
+                : .brandSuccess
+
+            return DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: AppSpacing.xs) {
+                        AlertSymbol(name: context.attributes.icon, tint: tint, pulses: active)
+                            .font(AppFont.captionStrong)
+                        if LA.expandedData(.iotAlert) {
+                            Text(context.attributes.sensorName)
+                                .font(AppFont.captionStrong)
+                                .foregroundStyle(tint)
+                                .lineLimit(1)
+                        }
+                    }
+                    .widgetURL(LiveActivityKind.iotAlert.deepLink)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if LA.expandedData(.iotAlert) {
+                        IslandMetric(Text(verbatim: context.state.valueDisplay),
+                                     tint: tint, size: .expanded)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if LA.expandedDetail(.iotAlert) {
+                        HStack(spacing: AppSpacing.sm + 2) {
+                            if let zone = context.attributes.zone {
+                                Text(zone)
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            if active {
+                                Button(intent: AcknowledgeIoTAlertIntent(sensorId: context.attributes.sensorId)) {
+                                    Text("la_alert_ack")
+                                        .font(AppFont.captionStrong)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(tint)
+                            }
+                        }
+                    }
+                }
+            } compactLeading: {
+                AlertSymbol(name: context.attributes.icon, tint: tint, pulses: active)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(context.attributes.sensorName))
+            } compactTrailing: {
+                if LA.island(.iotAlert) {
+                    IslandMetric(Text(verbatim: context.state.valueDisplay), tint: tint)
+                        .accessibilityLabel(Text(verbatim: "\(context.attributes.sensorName) \(context.state.valueDisplay)"))
+                }
+            } minimal: {
+                AlertSymbol(name: context.attributes.icon, tint: tint, pulses: active)
+                    .accessibilityLabel(Text(context.attributes.sensorName))
+            }
+        }
+    }
+}
+
+private struct IoTAlertLockView: View {
+    let context: ActivityViewContext<IoTAlertActivityAttributes>
+
+    private var tint: Color {
+        context.state.isActive
+            ? (context.attributes.isCritical ? .brandDanger : .brandWarning)
+            : .brandSuccess
+    }
+
+    var body: some View {
+        if LA.lockDetails(.iotAlert) {
+            VStack(spacing: AppSpacing.sm + 2) {
+                HStack(spacing: AppSpacing.base) {
+                    ZStack {
+                        Circle()
+                            .fill(tint.opacity(AppOpacity.tintedFill))
+                            .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
+                        AlertSymbol(name: context.attributes.icon, tint: tint,
+                                    pulses: context.state.isActive)
+                            .font(AppFont.title3)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.attributes.sensorName)
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        IslandContextLine(kind: .iotAlert,
+                                          text: Text(context.attributes.zone ?? ""),
+                                          propertyName: context.attributes.propertyName)
+                    }
+                    Spacer()
+                    IslandMetric(Text(verbatim: context.state.valueDisplay),
+                                 tint: tint, size: .hero)
+                }
+                if context.state.isActive {
+                    Button(intent: AcknowledgeIoTAlertIntent(sensorId: context.attributes.sensorId)) {
+                        Text("la_alert_ack")
+                            .font(AppFont.captionEmphasis)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(tint)
+                }
+            }
+            .padding(AppSpacing.lg)
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
+        } else {
+            MinimalLockRow(kind: .iotAlert, title: Text(context.attributes.sensorName))
+        }
+    }
+}
+
+// MARK: - Energy session
+//
+// Live gauge over the user's own power sensors: consumption vs tagged
+// production. Values only ever come from real polls.
+
+private enum EnergyFace {
+    static func watts(_ w: Double?) -> String? {
+        guard let w else { return nil }
+        return w >= 1000 ? String(format: "%.1f kW", w / 1000)
+                         : String(format: "%.0f W", w)
+    }
+}
+
+struct EnergyLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        configuration.supplementalActivityFamilies([.small])
+    }
+
+    private var configuration: some WidgetConfiguration {
+        ActivityConfiguration(for: EnergyActivityAttributes.self) { context in
+            EnergyLockView(context: context)
+                .widgetURL(LiveActivityKind.energy.deepLink)
+        } dynamicIsland: { context in
+            let headline = EnergyFace.watts(context.state.consumptionW)
+                ?? EnergyFace.watts(context.state.productionW) ?? "—"
+
+            return DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    IslandHeader(kind: .energy, title: Text(LiveActivityKind.energy.title))
+                        .widgetURL(LiveActivityKind.energy.deepLink)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if LA.expandedData(.energy) {
+                        IslandMetric(Text(verbatim: headline),
+                                     tint: LiveActivityKind.energy.color, size: .expanded)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if LA.expandedDetail(.energy) {
+                        HStack(spacing: AppSpacing.base) {
+                            if let consumption = EnergyFace.watts(context.state.consumptionW) {
+                                Label {
+                                    Text(verbatim: consumption).font(AppFont.captionStrong)
+                                } icon: {
+                                    Image(systemName: "arrow.down.circle.fill")
+                                        .foregroundStyle(LiveActivityKind.energy.color)
+                                }
+                                .font(AppFont.caption)
+                                .accessibilityLabel(Text("la_energy_consumption"))
+                            }
+                            if let production = EnergyFace.watts(context.state.productionW) {
+                                Label {
+                                    Text(verbatim: production).font(AppFont.captionStrong)
+                                } icon: {
+                                    Image(systemName: "sun.max.fill")
+                                        .foregroundStyle(Color.brandSuccess)
+                                }
+                                .font(AppFont.caption)
+                                .accessibilityLabel(Text("la_energy_production"))
+                            }
+                            Spacer()
+                            Button(intent: EndEnergySessionIntent()) {
+                                Text("la_session_end")
+                                    .font(AppFont.captionStrong)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+            } compactLeading: {
+                IslandStateIcon(kind: .energy)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.energy.title))
+            } compactTrailing: {
+                if LA.island(.energy) {
+                    IslandMetric(Text(verbatim: headline), tint: LiveActivityKind.energy.color)
+                }
+            } minimal: {
+                IslandStateIcon(kind: .energy)
+                    .accessibilityLabel(Text(LiveActivityKind.energy.title))
+            }
+        }
+    }
+}
+
+private struct EnergyLockView: View {
+    let context: ActivityViewContext<EnergyActivityAttributes>
+
+    var body: some View {
+        if LA.lockDetails(.energy) {
+            IslandLockCard(kind: .energy, title: Text(LiveActivityKind.energy.title)) {
+                HStack(spacing: AppSpacing.xxs) {
+                    if let consumption = EnergyFace.watts(context.state.consumptionW) {
+                        Text("la_energy_consumption") + Text(verbatim: " \(consumption)")
+                    }
+                    if context.state.consumptionW != nil, context.state.productionW != nil {
+                        Text(verbatim: "·")
+                    }
+                    if let production = EnergyFace.watts(context.state.productionW) {
+                        Text("la_energy_production") + Text(verbatim: " \(production)")
+                    }
+                }
+                .font(AppFont.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                IslandContextLine(kind: .energy, text: Text(verbatim: ""),
+                                  propertyName: context.attributes.propertyName)
+            } trailing: {
+                IslandMetric(Text(verbatim: EnergyFace.watts(context.state.consumptionW)
+                                  ?? EnergyFace.watts(context.state.productionW) ?? "—"),
+                             tint: LiveActivityKind.energy.color, size: .hero)
+            }
+        } else {
+            MinimalLockRow(kind: .energy, title: Text(LiveActivityKind.energy.title))
+        }
+    }
+}
+
+// MARK: - Cover operation (garage / gate)
+//
+// Follows a single user-issued command. "Open"/"Closed" appear only when a
+// feedback sensor confirmed them; otherwise the terminal state is the honest
+// "command finished" / "no confirmation".
+
+private enum CoverFace {
+    static func label(_ stage: String) -> LocalizedStringKey {
+        switch stage {
+        case "sent":    return "la_cover_sent"
+        case "moving":  return "la_cover_moving"
+        case "open":    return "la_cover_open"
+        case "closed":  return "la_cover_closed"
+        case "stopped": return "la_cover_stopped"
+        case "done":    return "la_cover_done"
+        case "timeout": return "la_cover_timeout"
+        default:        return "la_cover_failed"
+        }
+    }
+    static func tint(_ stage: String) -> Color {
+        switch stage {
+        case "failed", "timeout":                 return .brandWarning
+        case "open", "closed", "done", "stopped": return .brandSuccess
+        default:                                  return LiveActivityKind.cover.color
+        }
+    }
+    static func icon(_ stage: String) -> String {
+        stage == "open" ? "door.garage.open" : LiveActivityKind.cover.icon
+    }
+    static func isBusy(_ stage: String) -> Bool {
+        stage == "sent" || stage == "moving"
+    }
+}
+
+struct CoverLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        configuration.supplementalActivityFamilies([.small])
+    }
+
+    private var configuration: some WidgetConfiguration {
+        ActivityConfiguration(for: CoverActivityAttributes.self) { context in
+            CoverLockView(context: context)
+                .widgetURL(LiveActivityKind.cover.deepLink)
+        } dynamicIsland: { context in
+            let stage = context.state.stage
+            let tint = CoverFace.tint(stage)
+
+            return DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: CoverFace.icon(stage))
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(tint)
+                            .contentTransition(.symbolEffect(.replace))
+                        if LA.expandedData(.cover) {
+                            Text(context.attributes.deviceName)
+                                .font(AppFont.captionStrong)
+                                .foregroundStyle(tint)
+                                .lineLimit(1)
+                        }
+                    }
+                    .widgetURL(LiveActivityKind.cover.deepLink)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if LA.expandedData(.cover) {
+                        Text(CoverFace.label(stage))
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(tint)
+                            .lineLimit(1)
+                            .contentTransition(.opacity)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if LA.expandedDetail(.cover), CoverFace.isBusy(stage) {
+                        HStack(spacing: AppSpacing.sm) {
+                            ProgressView()
+                                .tint(LiveActivityKind.cover.color)
+                            Text(CoverFace.label(stage))
+                                .font(AppFont.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }
+                }
+            } compactLeading: {
+                Image(systemName: CoverFace.icon(stage))
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(tint)
+                    .accessibilityLabel(Text(context.attributes.deviceName))
+            } compactTrailing: {
+                if LA.island(.cover) {
+                    Text(CoverFace.label(stage))
+                        .font(AppFont.label)
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+                        .contentTransition(.opacity)
+                }
+            } minimal: {
+                Image(systemName: CoverFace.icon(stage))
+                    .foregroundStyle(tint)
+                    .accessibilityLabel(Text(context.attributes.deviceName))
+            }
+        }
+    }
+}
+
+private struct CoverLockView: View {
+    let context: ActivityViewContext<CoverActivityAttributes>
+
+    var body: some View {
+        let stage = context.state.stage
+        if LA.lockDetails(.cover) {
+            HStack(spacing: AppSpacing.base) {
+                ZStack {
+                    Circle()
+                        .fill(CoverFace.tint(stage).opacity(AppOpacity.tintedFill))
+                        .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
+                    Image(systemName: CoverFace.icon(stage))
+                        .font(AppFont.title3)
+                        .foregroundStyle(CoverFace.tint(stage))
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.attributes.deviceName)
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(CoverFace.label(stage))
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if CoverFace.isBusy(stage) {
+                    ProgressView()
+                        .tint(LiveActivityKind.cover.color)
+                }
+            }
+            .padding(AppSpacing.lg)
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
+        } else {
+            MinimalLockRow(kind: .cover, title: Text(context.attributes.deviceName))
         }
     }
 }

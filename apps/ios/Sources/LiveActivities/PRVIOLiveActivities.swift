@@ -202,6 +202,100 @@ struct EndEmergencyIntent: LiveActivityIntent {
     }
 }
 
+// MARK: - IoT alert Live Activity
+//
+// Raised when one of the user's own sensors crosses its limits (or a smoke
+// sensor fires). Started only from real polled readings; ends when the
+// sensor clears or the user acknowledges this instance.
+
+struct IoTAlertActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var valueDisplay: String
+        var isActive: Bool
+    }
+    let sensorId: UUID
+    let sensorName: String
+    let icon: String
+    let isCritical: Bool
+    let zone: String?
+    let startedAt: Date
+    var propertyName: String?
+}
+
+struct AcknowledgeIoTAlertIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Acknowledge Alert"
+
+    @Parameter(title: "Sensor ID")
+    var sensorId: String
+
+    init() {}
+    init(sensorId: UUID) { self.sensorId = sensorId.uuidString }
+
+    func perform() async throws -> some IntentResult {
+        HapticFeedback.impact(.light)
+        // Remember the acknowledgement (app-group so the app's sync loop
+        // sees it) — otherwise the next sensor poll would re-raise the same
+        // alert seconds later. Cleared when the sensor itself clears.
+        var acked = LiveActivityPrefs.store.stringArray(forKey: "prvio.iot.ackedAlerts") ?? []
+        if !acked.contains(sensorId) { acked.append(sensorId) }
+        LiveActivityPrefs.store.set(acked, forKey: "prvio.iot.ackedAlerts")
+
+        for activity in Activity<IoTAlertActivityAttributes>.activities
+        where activity.attributes.sensorId.uuidString == sensorId {
+            await activity.end(
+                ActivityContent(state: .init(valueDisplay: activity.content.state.valueDisplay,
+                                             isActive: false), staleDate: nil),
+                dismissalPolicy: .immediate)
+        }
+        return .result()
+    }
+}
+
+// MARK: - Energy Live Activity
+//
+// A live gauge over the user's own power sensors: consumption vs tagged
+// production (solar). User-started from the IoT hub; values update with
+// every real poll — never invented.
+
+struct EnergyActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var consumptionW: Double?
+        var productionW: Double?
+    }
+    let startedAt: Date
+    var propertyName: String?
+}
+
+struct EndEnergySessionIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "End Energy Session"
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        HapticFeedback.impact(.light)
+        for activity in Activity<EnergyActivityAttributes>.activities {
+            await activity.end(
+                ActivityContent(state: activity.content.state, staleDate: nil),
+                dismissalPolicy: .immediate)
+        }
+        return .result()
+    }
+}
+
+// MARK: - Cover Live Activity (garage / gate)
+//
+// Follows one user-issued open/close/stop command: sent → moving →
+// open/closed (only when a linked feedback sensor confirms it) or
+// done/timeout/failed. Stage vocabulary is localized on-device.
+
+struct CoverActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var stage: String // sent / moving / open / closed / stopped / done / timeout / failed
+    }
+    let deviceName: String
+    let startedAt: Date
+}
+
 // MARK: - Work session buttons (run in the app's process)
 //
 // These live in this shared file because the widget extension must SEE the

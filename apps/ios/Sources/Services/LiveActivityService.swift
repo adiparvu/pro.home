@@ -331,6 +331,139 @@ final class LiveActivityService {
         }
     }
 
+    // MARK: - IoT alerts (driven by IoTService polling)
+    //
+    // One island per alerting sensor, capped at the two most severe;
+    // acknowledged instances stay silenced (app-group set, shared with the
+    // widget's intent) until the sensor itself clears.
+
+    private var iotAlertActivities: [UUID: Activity<IoTAlertActivityAttributes>] = [:]
+    private static let maxIoTAlerts = 2
+    private static let ackedAlertsKey = "prvio.iot.ackedAlerts"
+
+    func syncIoTAlerts(_ alerting: [IoTSensor]) {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+
+        var acked = Set(LiveActivityPrefs.store.stringArray(forKey: Self.ackedAlertsKey) ?? [])
+        let alertingIds = Set(alerting.map(\.id.uuidString))
+
+        // A cleared sensor loses its acknowledgement, so a future incident
+        // alerts again instead of staying muted forever.
+        let staleAcks = acked.subtracting(alertingIds)
+        if !staleAcks.isEmpty {
+            acked.subtract(staleAcks)
+            LiveActivityPrefs.store.set(Array(acked), forKey: Self.ackedAlertsKey)
+        }
+
+        // Adopt activities that survived a relaunch.
+        for activity in Activity<IoTAlertActivityAttributes>.activities
+        where iotAlertActivities[activity.attributes.sensorId] == nil {
+            iotAlertActivities[activity.attributes.sensorId] = activity
+        }
+
+        // End islands whose sensor cleared or was acknowledged.
+        for (id, activity) in iotAlertActivities
+        where !alertingIds.contains(id.uuidString) || acked.contains(id.uuidString) {
+            let display = activity.content.state.valueDisplay
+            Task { await activity.end(
+                .init(state: .init(valueDisplay: display, isActive: false), staleDate: nil),
+                dismissalPolicy: .after(.now + 4)) }
+            iotAlertActivities.removeValue(forKey: id)
+        }
+
+        guard allowed(.iotAlert) else { return }
+        let ranked = alerting
+            .filter { !acked.contains($0.id.uuidString) }
+            .sorted { ($0.isCriticalAlert ? 0 : 1) < ($1.isCriticalAlert ? 0 : 1) }
+
+        for sensor in ranked {
+            if let activity = iotAlertActivities[sensor.id] {
+                Task { await activity.update(
+                    .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
+                          staleDate: stale(hours: 1))) }
+            } else if iotAlertActivities.count < Self.maxIoTAlerts {
+                let attrs = IoTAlertActivityAttributes(
+                    sensorId: sensor.id, sensorName: sensor.name,
+                    icon: sensor.type.icon, isCritical: sensor.isCriticalAlert,
+                    zone: sensor.linkedZoneName.isEmpty ? nil : sensor.linkedZoneName,
+                    startedAt: Date(), propertyName: propertyName)
+                iotAlertActivities[sensor.id] = try? Activity.request(
+                    attributes: attrs,
+                    content: .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
+                                   staleDate: stale(hours: 1)),
+                    pushType: nil)
+            }
+        }
+    }
+
+    // MARK: - Energy session (user-pinned from the IoT hub)
+
+    private var energyActivity: Activity<EnergyActivityAttributes>?
+
+    func startEnergySession(consumptionW: Double?, productionW: Double?) {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+        guard Activity<EnergyActivityAttributes>.activities.isEmpty else { return }
+        let attrs = EnergyActivityAttributes(startedAt: Date(), propertyName: propertyName)
+        energyActivity = try? Activity.request(
+            attributes: attrs,
+            content: .init(state: .init(consumptionW: consumptionW, productionW: productionW),
+                           staleDate: stale(hours: 0.25)),
+            pushType: nil)
+    }
+
+    /// Fed by every real sensor poll; a no-op while no session runs.
+    func updateEnergy(consumptionW: Double?, productionW: Double?) {
+        if energyActivity == nil {
+            energyActivity = Activity<EnergyActivityAttributes>.activities.first
+        }
+        guard let activity = energyActivity else { return }
+        Task { await activity.update(
+            .init(state: .init(consumptionW: consumptionW, productionW: productionW),
+                  staleDate: stale(hours: 0.25))) }
+    }
+
+    func endEnergySession() {
+        energyActivity = nil
+        Task {
+            for a in Activity<EnergyActivityAttributes>.activities {
+                await a.end(.init(state: a.content.state, staleDate: nil),
+                            dismissalPolicy: .immediate)
+            }
+        }
+    }
+
+    // MARK: - Cover operation (garage / gate, driven by IoTService.perform)
+
+    private var coverActivity: Activity<CoverActivityAttributes>?
+
+    func startCoverOperation(deviceName: String) {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+        // One operation at a time — a new command replaces the old island.
+        Task {
+            for a in Activity<CoverActivityAttributes>.activities {
+                await a.end(nil, dismissalPolicy: .immediate)
+            }
+        }
+        let attrs = CoverActivityAttributes(deviceName: deviceName, startedAt: Date())
+        coverActivity = try? Activity.request(
+            attributes: attrs,
+            content: .init(state: .init(stage: "sent"), staleDate: stale(hours: 0.25)),
+            pushType: nil)
+    }
+
+    func updateCover(stage: String) {
+        guard let activity = coverActivity else { return }
+        Task { await activity.update(.init(state: .init(stage: stage),
+                                           staleDate: stale(hours: 0.25))) }
+    }
+
+    func endCoverOperation(stage: String) {
+        guard let activity = coverActivity else { return }
+        coverActivity = nil
+        Task { await activity.end(.init(state: .init(stage: stage), staleDate: nil),
+                                  dismissalPolicy: .after(.now + 4)) }
+    }
+
     // MARK: - Auto-start (Start When App Opens / Start on a Schedule)
 
     /// Called when the app becomes active with fresh data. Honors the
@@ -366,6 +499,9 @@ final class LiveActivityService {
         case .plantCare:   return !Activity<PlantCareActivityAttributes>.activities.isEmpty
         case .workSession: return !Activity<WorkSessionActivityAttributes>.activities.isEmpty
         case .emergency:   return !Activity<EmergencyActivityAttributes>.activities.isEmpty
+        case .iotAlert:    return !Activity<IoTAlertActivityAttributes>.activities.isEmpty
+        case .energy:      return !Activity<EnergyActivityAttributes>.activities.isEmpty
+        case .cover:       return !Activity<CoverActivityAttributes>.activities.isEmpty
         }
     }
 
@@ -395,6 +531,15 @@ final class LiveActivityService {
             case .emergency:
                 for a in Activity<EmergencyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 emergencyActivity = nil
+            case .iotAlert:
+                for a in Activity<IoTAlertActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                iotAlertActivities.removeAll()
+            case .energy:
+                for a in Activity<EnergyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                energyActivity = nil
+            case .cover:
+                for a in Activity<CoverActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                coverActivity = nil
             }
         }
     }
@@ -427,6 +572,15 @@ final class LiveActivityService {
             }
             for a in Activity<EmergencyActivityAttributes>.activities {
                 await a.update(.init(state: a.content.state, staleDate: nil))
+            }
+            for a in Activity<IoTAlertActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 1)))
+            }
+            for a in Activity<EnergyActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25)))
+            }
+            for a in Activity<CoverActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25)))
             }
         }
     }

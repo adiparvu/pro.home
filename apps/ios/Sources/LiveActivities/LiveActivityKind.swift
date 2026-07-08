@@ -12,6 +12,7 @@ import SwiftUI
 
 enum LiveActivityKind: String, CaseIterable, Identifiable {
     case shopping, delivery, maintenance, plantCare, workSession, emergency
+    case iotAlert, energy, cover
 
     var id: String { rawValue }
 
@@ -23,6 +24,9 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return "Plant care"
         case .workSession: return "Work session"
         case .emergency:   return "Emergency"
+        case .iotAlert:    return "Sensor alerts"
+        case .energy:      return "Energy"
+        case .cover:       return "Garage & gates"
         }
     }
 
@@ -34,6 +38,9 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return "Watering progress for your plants"
         case .workSession: return "Time a task from start to done"
         case .emergency:   return "Keep the emergency page one tap away"
+        case .iotAlert:    return "Light up when a sensor crosses its limits"
+        case .energy:      return "Live consumption and production"
+        case .cover:       return "Follow an open or close command"
         }
     }
 
@@ -45,6 +52,9 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return "leaf.fill"
         case .workSession: return "timer"
         case .emergency:   return "light.beacon.max.fill"
+        case .iotAlert:    return "sensor.tag.radiowaves.forward.fill"
+        case .energy:      return "bolt.fill"
+        case .cover:       return "door.garage.closed"
         }
     }
 
@@ -59,6 +69,9 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return .brandSuccess
         case .workSession: return .brandTeal
         case .emergency:   return .brandDanger
+        case .iotAlert:    return .brandWarning
+        case .energy:      return .brandGold
+        case .cover:       return .brandPurple
         }
     }
 
@@ -71,6 +84,8 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return URL(string: "prvio://plants")
         case .workSession: return URL(string: "prvio://tasks")
         case .emergency:   return URL(string: "prvio://emergency")
+        case .iotAlert, .energy, .cover:
+            return URL(string: "prvio://iot")
         }
     }
 
@@ -79,8 +94,9 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
     /// no auto-start toggle — only appearance customization.
     var supportsAutoStart: Bool {
         switch self {
-        case .workSession, .emergency: return false
-        default:                       return true
+        // Explicit human actions - no auto-start, only appearance options.
+        case .workSession, .emergency, .energy, .cover: return false
+        default:                                        return true
         }
     }
 
@@ -90,16 +106,19 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .delivery:    return LiveActivityPrefs.autoDeliveryKey
         case .maintenance: return LiveActivityPrefs.autoMaintKey
         case .plantCare:   return LiveActivityPrefs.autoPlantKey
+        case .iotAlert:    return "prvio.la.auto.iotAlert"
         // Unused (no auto-start), but @AppStorage still needs a stable key.
         case .workSession: return "prvio.la.auto.workSession"
         case .emergency:   return "prvio.la.auto.emergency"
+        case .energy:      return "prvio.la.auto.energy"
+        case .cover:       return "prvio.la.auto.cover"
         }
     }
 
     var defaultAuto: Bool {
         switch self {
-        case .shopping, .delivery: return true
-        default:                   return false
+        case .shopping, .delivery, .iotAlert: return true
+        default:                              return false
         }
     }
 }

@@ -127,6 +127,10 @@ extension Color {
     /// System-teal anchor — work-session timers and other "focus" accents
     /// (codifies the `.teal` already used by the session Live Activity).
     static let brandTeal = Color(red: 0.19, green: 0.69, blue: 0.78)
+
+    /// Electric gold — energy readings (codifies the hue the IoT current
+    /// sensor tiles already use).
+    static let brandGold = Color(red: 0.95, green: 0.75, blue: 0.15)
 }
 
 // MARK: - Spacing

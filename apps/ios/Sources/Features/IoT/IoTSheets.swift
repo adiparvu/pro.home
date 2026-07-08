@@ -280,8 +280,10 @@ struct DeviceDetailSheet: View {
     @State private var testing = false
     @State private var testResult: Bool?
     @State private var showDeleteConfirm = false
+    @State private var showAddActuator = false
 
     private var sensors: [IoTSensor] { service.sensorsForDevice(device) }
+    private var actuators: [IoTActuator] { service.actuatorsForDevice(device) }
 
     var body: some View {
         NavigationStack {
@@ -353,12 +355,59 @@ struct DeviceDetailSheet: View {
                     }
                 }
 
+                Section("iot_actuators_header") {
+                    ForEach(actuators) { actuator in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                Image(systemName: actuator.kind.icon)
+                                    .foregroundStyle(Color.brandPurple)
+                                    .frame(width: 24)
+                                Text(actuator.name).font(.subheadline.weight(.medium))
+                                Spacer()
+                                if actuator.kind == .relay, let on = actuator.isOn {
+                                    Text(on ? "iot_cmd_on" : "iot_cmd_off")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            // Capability-gated: only the commands this
+                            // actuator kind declares are ever rendered.
+                            HStack(spacing: 8) {
+                                ForEach(actuator.kind.commands, id: \.rawValue) { command in
+                                    Button {
+                                        HapticFeedback.impact(.medium)
+                                        service.perform(command, on: actuator)
+                                    } label: {
+                                        Label(command.label, systemImage: command.icon)
+                                            .font(.caption.weight(.semibold))
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                            }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                service.removeActuator(actuator)
+                            } label: { Label("Delete", systemImage: "trash") }
+                        }
+                    }
+                    Button { showAddActuator = true } label: {
+                        Label("iot_add_actuator", systemImage: "plus")
+                    }
+                }
+
                 Section {
                     Button(role: .destructive) {
                         showDeleteConfirm = true
                     } label: {
                         Label("Remove Controller", systemImage: "trash")
                     }
+                }
+            }
+            .sheet(isPresented: $showAddActuator) {
+                AddActuatorSheet(device: device, sensors: sensors) { actuator in
+                    service.addActuator(actuator)
                 }
             }
             .navigationTitle(device.name)
@@ -394,8 +443,12 @@ struct SensorDetailSheet: View {
     var service: IoTService
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
+    @State private var isProduction = false
 
     private var device: IoTDevice? { service.devices.first { $0.id == sensor.deviceId } }
+    private var isEnergyType: Bool {
+        sensor.type == .power || sensor.type == .energy || sensor.type == .current
+    }
 
     var body: some View {
         NavigationStack {
@@ -457,6 +510,19 @@ struct SensorDetailSheet: View {
                     }
                 }
 
+                if isEnergyType {
+                    Section("Energy") {
+                        Toggle(String(localized: "iot_production_toggle"), isOn: $isProduction)
+                            .onChange(of: isProduction) { _, on in
+                                var updated = sensor
+                                updated.isProduction = on
+                                service.updateSensor(updated)
+                            }
+                    } footer: {
+                        Text("iot_production_footer")
+                    }
+                }
+
                 Section {
                     Button(role: .destructive) {
                         showDeleteConfirm = true
@@ -465,6 +531,7 @@ struct SensorDetailSheet: View {
                     }
                 }
             }
+            .onAppear { isProduction = sensor.isProduction == true }
             .navigationTitle(sensor.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -595,5 +662,103 @@ struct AddIoTAutomationSheet: View {
         case .below:  return "Is below (<)"
         case .equals: return "Equals (=)"
         }
+    }
+}
+
+// MARK: - Add Actuator Sheet
+//
+// The write half of a controller: a relay or a cover. For covers, an
+// optional door/window sensor gives the honest "open"/"closed" confirmation
+// in the Live Activity — without one the app only claims the command ran.
+
+struct AddActuatorSheet: View {
+    let device: IoTDevice
+    let sensors: [IoTSensor]
+    let onSave: (IoTActuator) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var kind: IoTActuator.ActuatorKind = .cover
+    @State private var remoteId = ""
+    @State private var modbusAddress = ""
+    @State private var feedbackSensorId: UUID?
+
+    private var feedbackCandidates: [IoTSensor] {
+        sensors.filter { $0.type == .doorWindow }
+    }
+
+    private var canSave: Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        if device.connectionProtocol == .modbusTCP {
+            return Int(modbusAddress) != nil
+        }
+        return true
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(String(localized: "iot_actuator_name_ph"), text: $name)
+                    Picker("Type", selection: $kind) {
+                        ForEach(IoTActuator.ActuatorKind.allCases) { k in
+                            Label(k.label, systemImage: k.icon).tag(k)
+                        }
+                    }
+                }
+
+                Section {
+                    if device.connectionProtocol == .http {
+                        TextField(String(localized: "iot_actuator_remote_ph"), text: $remoteId)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    } else {
+                        TextField(String(localized: "iot_actuator_modbus_ph"), text: $modbusAddress)
+                            .keyboardType(.numberPad)
+                    }
+                } footer: {
+                    Text(device.connectionProtocol == .http
+                         ? "iot_actuator_http_footer"
+                         : "iot_actuator_modbus_footer")
+                }
+
+                if kind == .cover {
+                    Section {
+                        Picker(String(localized: "iot_feedback_sensor"),
+                               selection: $feedbackSensorId) {
+                            Text("iot_feedback_none").tag(UUID?.none)
+                            ForEach(feedbackCandidates) { sensor in
+                                Text(sensor.name).tag(UUID?.some(sensor.id))
+                            }
+                        }
+                    } footer: {
+                        Text("iot_feedback_footer")
+                    }
+                }
+            }
+            .navigationTitle(Text("iot_add_actuator"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let trimmed = name.trimmingCharacters(in: .whitespaces)
+                        onSave(IoTActuator(
+                            deviceId: device.id,
+                            remoteId: remoteId.isEmpty ? trimmed : remoteId,
+                            name: trimmed,
+                            kind: kind,
+                            modbusAddress: Int(modbusAddress),
+                            feedbackSensorId: kind == .cover ? feedbackSensorId : nil))
+                        dismiss()
+                    }
+                    .disabled(!canSave)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

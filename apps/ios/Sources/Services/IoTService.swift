@@ -11,11 +11,13 @@ final class IoTService {
     var devices: [IoTDevice] = []
     var sensors: [IoTSensor] = []
     var automations: [IoTAutomation] = []
+    var actuators: [IoTActuator] = []
     var isPolling = false
 
     private let devicesKey     = "prvio.iot.devices"
     private let sensorsKey     = "prvio.iot.sensors"
     private let automationsKey = "prvio.iot.automations"
+    private let actuatorsKey   = "prvio.iot.actuators"
     private var pollTimer: Timer?
 
     private init() { load() }
@@ -29,12 +31,15 @@ final class IoTService {
            let v = try? JSONDecoder().decode([IoTSensor].self, from: d) { sensors = v }
         if let d = UserDefaults.standard.data(forKey: automationsKey),
            let v = try? JSONDecoder().decode([IoTAutomation].self, from: d) { automations = v }
+        if let d = UserDefaults.standard.data(forKey: actuatorsKey),
+           let v = try? JSONDecoder().decode([IoTActuator].self, from: d) { actuators = v }
     }
 
     private func persist() {
         if let d = try? JSONEncoder().encode(devices)     { UserDefaults.standard.set(d, forKey: devicesKey) }
         if let d = try? JSONEncoder().encode(sensors)     { UserDefaults.standard.set(d, forKey: sensorsKey) }
         if let d = try? JSONEncoder().encode(automations) { UserDefaults.standard.set(d, forKey: automationsKey) }
+        if let d = try? JSONEncoder().encode(actuators)   { UserDefaults.standard.set(d, forKey: actuatorsKey) }
     }
 
     // MARK: - Devices CRUD
@@ -48,6 +53,7 @@ final class IoTService {
     func removeDevice(_ device: IoTDevice) {
         devices.removeAll { $0.id == device.id }
         sensors.removeAll { $0.deviceId == device.id }
+        actuators.removeAll { $0.deviceId == device.id }
         persist()
     }
 
@@ -67,6 +73,119 @@ final class IoTService {
 
     func removeSensor(_ sensor: IoTSensor) {
         sensors.removeAll { $0.id == sensor.id }; persist()
+    }
+
+    // MARK: - Actuators CRUD
+
+    func addActuator(_ actuator: IoTActuator) { actuators.append(actuator); persist() }
+
+    func removeActuator(_ actuator: IoTActuator) {
+        actuators.removeAll { $0.id == actuator.id }; persist()
+    }
+
+    func actuatorsForDevice(_ device: IoTDevice) -> [IoTActuator] {
+        actuators.filter { $0.deviceId == device.id }
+    }
+
+    // MARK: - Commands (the write half)
+    //
+    // HTTP controllers get POST {baseURL}/command {"id": remoteId,
+    // "command": "open"}; Modbus relays are FC 05 coil writes and Modbus
+    // covers FC 06 register writes (1 = open, 2 = close, 0 = stop). Success
+    // means the controller accepted the command — physical state is only
+    // ever claimed when a feedback sensor confirms it.
+
+    /// Sends a command and, for covers, drives the cover Live Activity
+    /// through sent → moving → confirmed/finished.
+    func perform(_ command: ActuatorCommand, on actuator: IoTActuator) {
+        if actuator.kind == .cover {
+            LiveActivityService.shared.startCoverOperation(deviceName: actuator.name)
+        }
+        Task { await execute(command, on: actuator) }
+    }
+
+    private func execute(_ command: ActuatorCommand, on actuator: IoTActuator) async {
+        let ok = await send(command, to: actuator)
+
+        if actuator.kind == .relay {
+            guard ok else { return }
+            if let idx = actuators.firstIndex(where: { $0.id == actuator.id }) {
+                actuators[idx].isOn = (command == .turnOn)
+                persist()
+            }
+            return
+        }
+
+        // Cover choreography.
+        guard ok else {
+            LiveActivityService.shared.endCoverOperation(stage: "failed")
+            return
+        }
+        LiveActivityService.shared.updateCover(stage: "moving")
+
+        if let feedbackId = actuator.feedbackSensorId, command != .stop {
+            // Poll until the linked door/window sensor confirms the real
+            // end state — the only honest way to say "open" or "closed".
+            for _ in 0..<10 {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                if let device = devices.first(where: { $0.id == actuator.deviceId }) {
+                    await pollDevice(device)
+                }
+                if let sensor = sensors.first(where: { $0.id == feedbackId }),
+                   let value = sensor.value {
+                    let isOpen = value > 0.5
+                    if command == .open, isOpen {
+                        LiveActivityService.shared.endCoverOperation(stage: "open")
+                        return
+                    }
+                    if command == .close, !isOpen {
+                        LiveActivityService.shared.endCoverOperation(stage: "closed")
+                        return
+                    }
+                }
+            }
+            LiveActivityService.shared.endCoverOperation(stage: "timeout")
+        } else {
+            // No feedback sensor: after the travel window we only claim the
+            // command finished, never a physical state we can't verify.
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            LiveActivityService.shared.endCoverOperation(stage: command == .stop ? "stopped" : "done")
+        }
+    }
+
+    /// Low-level transport; returns whether the controller accepted.
+    func send(_ command: ActuatorCommand, to actuator: IoTActuator) async -> Bool {
+        guard let device = devices.first(where: { $0.id == actuator.deviceId }) else { return false }
+        switch device.connectionProtocol {
+        case .http:
+            guard let url = URL(string: "\(device.baseURL)/command") else { return false }
+            var req = URLRequest(url: url, timeoutInterval: 5)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try? JSONSerialization.data(
+                withJSONObject: ["id": actuator.remoteId, "command": command.rawValue])
+            do {
+                let (_, resp) = try await URLSession.shared.data(for: req)
+                return (200..<300).contains((resp as? HTTPURLResponse)?.statusCode ?? 0)
+            } catch { return false }
+        case .modbusTCP:
+            guard let address = actuator.modbusAddress else { return false }
+            switch actuator.kind {
+            case .relay:
+                guard command == .turnOn || command == .turnOff else { return false }
+                return await writeModbusTCP(
+                    host: device.host, port: device.port,
+                    unitId: UInt8(clamping: device.unitId),
+                    functionCode: 0x05, address: UInt16(address),
+                    value: command == .turnOn ? 0xFF00 : 0x0000)
+            case .cover:
+                let value: UInt16 = command == .open ? 1 : (command == .close ? 2 : 0)
+                return await writeModbusTCP(
+                    host: device.host, port: device.port,
+                    unitId: UInt8(clamping: device.unitId),
+                    functionCode: 0x06, address: UInt16(address), value: value)
+            }
+        }
     }
 
     // MARK: - Polling
@@ -143,6 +262,7 @@ final class IoTService {
         }
         persist()
         checkAutomations()
+        syncLiveSurfaces()
     }
 
     // MARK: - Modbus TCP polling (RS485 gateway)
@@ -172,6 +292,7 @@ final class IoTService {
         markConnected(device.id, connected: anySuccess)
         persist()
         checkAutomations()
+        syncLiveSurfaces()
     }
 
     // Reads one holding register via Modbus TCP (FC 03)
@@ -228,6 +349,86 @@ final class IoTService {
             connection.start(queue: queue)
             queue.asyncAfter(deadline: .now() + 4) { finish(nil) }
         }
+    }
+
+    // Writes one coil (FC 05) or holding register (FC 06) via Modbus TCP.
+    // Success = the device echoes the request (standard write confirmation).
+    private func writeModbusTCP(host: String, port: Int, unitId: UInt8,
+                                functionCode: UInt8, address: UInt16,
+                                value: UInt16) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let endpoint = NWEndpoint.hostPort(
+                host: NWEndpoint.Host(host),
+                port: NWEndpoint.Port(rawValue: UInt16(clamping: port)) ?? 502
+            )
+            let connection = NWConnection(to: endpoint, using: .tcp)
+            // One serial queue for callbacks AND the timeout — same
+            // double-resume guard as readModbusTCPRegister.
+            let queue = DispatchQueue(label: "prvio.modbus.write")
+            var done = false
+
+            func finish(_ result: Bool) {
+                guard !done else { return }
+                done = true
+                continuation.resume(returning: result)
+                connection.cancel()
+            }
+
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    var frame = Data(count: 12)
+                    frame[0] = 0x00; frame[1] = 0x02   // Transaction ID
+                    frame[2] = 0x00; frame[3] = 0x00   // Protocol ID
+                    frame[4] = 0x00; frame[5] = 0x06   // Remaining length
+                    frame[6] = unitId
+                    frame[7] = functionCode
+                    frame[8] = UInt8(address >> 8)
+                    frame[9] = UInt8(address & 0xFF)
+                    frame[10] = UInt8(value >> 8)
+                    frame[11] = UInt8(value & 0xFF)
+
+                    connection.send(content: frame, completion: .contentProcessed { _ in })
+                    connection.receive(minimumIncompleteLength: 8, maximumLength: 256) { data, _, _, _ in
+                        // Echo of the function code confirms the write; the
+                        // high bit set means a Modbus exception.
+                        let ok = (data?.count ?? 0) >= 8 && data?[7] == functionCode
+                        finish(ok)
+                    }
+                case .failed, .cancelled:
+                    finish(false)
+                default:
+                    break
+                }
+            }
+            connection.start(queue: queue)
+            queue.asyncAfter(deadline: .now() + 4) { finish(false) }
+        }
+    }
+
+    // MARK: - Live surfaces (alert + energy Live Activities)
+
+    /// Current draw across power sensors the user did NOT tag as production.
+    var currentConsumptionW: Double? {
+        let values = sensors.filter { $0.isPowerReading && $0.isProduction != true }
+            .compactMap(\.value)
+        return values.isEmpty ? nil : values.reduce(0, +)
+    }
+
+    /// Current output across power sensors tagged as production (solar).
+    var currentProductionW: Double? {
+        let values = sensors.filter { $0.isPowerReading && $0.isProduction == true }
+            .compactMap(\.value)
+        return values.isEmpty ? nil : values.reduce(0, +)
+    }
+
+    /// Pushes the freshly polled reality into the Live Activity layer:
+    /// alerting sensors raise/clear alert islands, and a running energy
+    /// session gets the latest wattage.
+    private func syncLiveSurfaces() {
+        LiveActivityService.shared.syncIoTAlerts(sensors.filter(\.isLiveAlerting))
+        LiveActivityService.shared.updateEnergy(consumptionW: currentConsumptionW,
+                                                productionW: currentProductionW)
     }
 
     // MARK: - Connection test

@@ -24,6 +24,9 @@ extension LiveActivityKind {
         case .plantCare:   return "Plant watering"
         case .workSession: return "Fix kitchen tap"
         case .emergency:   return "la_emergency_active"
+        case .iotAlert:    return "Sensor alerts"
+        case .energy:      return "Energy"
+        case .cover:       return "Garage & gates"
         }
     }
     var previewStatus: LocalizedStringKey {
@@ -34,6 +37,9 @@ extension LiveActivityKind {
         case .plantCare:   return "3 of 5 watered"
         case .workSession: return "12:34"
         case .emergency:   return "02:41"
+        case .iotAlert:    return "23.5 °C"
+        case .energy:      return "2.8 kW"
+        case .cover:       return "la_cover_moving"
         }
     }
     var previewProgress: Double {
@@ -44,6 +50,9 @@ extension LiveActivityKind {
         case .plantCare:   return 0.6
         case .workSession: return 0.5
         case .emergency:   return 0
+        case .iotAlert:    return 0
+        case .energy:      return 0
+        case .cover:       return 0.5
         }
     }
     var showsETA: Bool { self == .delivery }

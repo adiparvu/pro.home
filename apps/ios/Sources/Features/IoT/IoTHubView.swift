@@ -10,6 +10,7 @@ struct IoTHubView: View {
     @State private var showAddAutomation = false
     @State private var selectedDevice: IoTDevice?
     @State private var selectedSensor: IoTSensor?
+    @State private var energyPinned = false
 
     enum HubTab: String, CaseIterable {
         case controllers = "Controllers"
@@ -218,6 +219,12 @@ struct IoTHubView: View {
                 )
             } else {
                 ScrollView(showsIndicators: false) {
+                    if service.currentConsumptionW != nil || service.currentProductionW != nil {
+                        energyCard
+                            .padding(.horizontal, AppSpacing.xl)
+                            .padding(.top, AppSpacing.xxs)
+                            .padding(.bottom, AppSpacing.md)
+                    }
                     LazyVGrid(
                         columns: [GridItem(.flexible()), GridItem(.flexible())],
                         spacing: 12
@@ -233,6 +240,75 @@ struct IoTHubView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Energy card (live wattage + Dynamic Island pin)
+
+    private static func watts(_ w: Double?) -> String? {
+        guard let w else { return nil }
+        return w >= 1000 ? String(format: "%.1f kW", w / 1000)
+                         : String(format: "%.0f W", w)
+    }
+
+    private var energyCard: some View {
+        GlassCard(padding: 16) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.brandGold.opacity(AppOpacity.tintedFill))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "bolt.fill")
+                        .font(AppFont.title3)
+                        .foregroundStyle(Color.brandGold)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        if let consumption = Self.watts(service.currentConsumptionW) {
+                            Text(verbatim: consumption)
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(.primary)
+                                .contentTransition(.numericText())
+                        }
+                        if let production = Self.watts(service.currentProductionW) {
+                            Label {
+                                Text(verbatim: production).font(AppFont.captionStrong)
+                            } icon: {
+                                Image(systemName: "sun.max.fill")
+                            }
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(Color.brandSuccess)
+                            .labelStyle(.titleAndIcon)
+                        }
+                    }
+                    Text("iot_energy_pin_subtitle")
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                Spacer()
+                Button {
+                    if energyPinned {
+                        LiveActivityService.shared.endEnergySession()
+                        energyPinned = false
+                        HapticFeedback.impact(.light)
+                    } else {
+                        LiveActivityService.shared.startEnergySession(
+                            consumptionW: service.currentConsumptionW,
+                            productionW: service.currentProductionW)
+                        energyPinned = LiveActivityService.shared.isActive(.energy)
+                        if energyPinned { HapticFeedback.impact(.medium) }
+                    }
+                } label: {
+                    Image(systemName: energyPinned ? "pin.circle.fill" : "pin.circle")
+                        .font(.system(size: 26))
+                        .foregroundStyle(energyPinned ? Color.brandGold : Color.primary.opacity(0.3))
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(energyPinned ? "emergency_pin_on" : "emergency_pin_off"))
+            }
+        }
+        .onAppear { energyPinned = LiveActivityService.shared.isActive(.energy) }
     }
 
     private func sensorTile(_ sensor: IoTSensor) -> some View {

@@ -242,6 +242,8 @@ struct MainTabView: View {
             ProfileView()
         case .emergency:
             EmergencyModeView()
+        case .iotHub:
+            IoTHubView()
         default:
             EmptyView()
         }

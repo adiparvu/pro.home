@@ -86,6 +86,10 @@ struct IoTSensor: Identifiable, Codable {
     var alertMax: Double?
     var modbusAddress: Int?
     var modbusScale: Double = 1.0
+    /// User-set tag: this power/energy sensor measures production (solar
+    /// inverter output) rather than consumption. Optional so sensor records
+    /// saved before the field existed still decode.
+    var isProduction: Bool?
 
     enum SensorType: String, Codable, CaseIterable {
         case temperature, humidity, motion, doorWindow
@@ -175,6 +179,96 @@ struct IoTSensor: Identifiable, Codable {
         if let min = alertMin, v < min { return true }
         if let max = alertMax, v > max { return true }
         return false
+    }
+
+    /// What the Live Activity layer treats as "alerting": a crossed
+    /// user-set threshold, or a binary hazard sensor reporting positive
+    /// (smoke needs no threshold to be an alarm).
+    var isLiveAlerting: Bool {
+        if isAlerting { return true }
+        if type == .smoke, let v = value, v > 0.5 { return true }
+        return false
+    }
+
+    /// Hazard classes get the critical (red, alerting) treatment; everything
+    /// else is a warning.
+    var isCriticalAlert: Bool {
+        isLiveAlerting && (type == .smoke || type == .gas || type == .water)
+    }
+
+    /// Eligible for the energy dashboard (instantaneous draw in watts).
+    var isPowerReading: Bool { type == .power }
+}
+
+// MARK: - Actuator
+//
+// The write half of the IoT layer: a relay or a cover (garage door, gate)
+// the controller can drive. Commands are capability-gated per kind — the UI
+// never renders a button the actuator didn't declare.
+
+struct IoTActuator: Identifiable, Codable {
+    var id: UUID = UUID()
+    var deviceId: UUID
+    /// Identifier the controller firmware knows ("garage", relay index…).
+    var remoteId: String
+    var name: String
+    var kind: ActuatorKind
+    /// Last commanded relay state (best-effort; nil until first command).
+    var isOn: Bool?
+    /// Modbus target: coil address for relays (FC 05), holding register for
+    /// covers (FC 06, value 1 = open / 2 = close / 0 = stop).
+    var modbusAddress: Int?
+    /// Optional door/window sensor that confirms a cover's real end state —
+    /// without it the app only ever claims "command finished", never "open".
+    var feedbackSensorId: UUID?
+
+    enum ActuatorKind: String, Codable, CaseIterable, Identifiable {
+        case relay, cover
+        var id: String { rawValue }
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .relay: return "iot_actuator_relay"
+            case .cover: return "iot_actuator_cover"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .relay: return "power"
+            case .cover: return "door.garage.closed"
+            }
+        }
+        var commands: [ActuatorCommand] {
+            switch self {
+            case .relay: return [.turnOn, .turnOff]
+            case .cover: return [.open, .close, .stop]
+            }
+        }
+    }
+}
+
+enum ActuatorCommand: String, Codable, CaseIterable {
+    case turnOn = "on"
+    case turnOff = "off"
+    case open, close, stop
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .turnOn:  return "iot_cmd_on"
+        case .turnOff: return "iot_cmd_off"
+        case .open:    return "iot_cmd_open"
+        case .close:   return "iot_cmd_close"
+        case .stop:    return "iot_cmd_stop"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .turnOn:  return "power.circle.fill"
+        case .turnOff: return "power.circle"
+        case .open:    return "arrow.up.circle.fill"
+        case .close:   return "arrow.down.circle.fill"
+        case .stop:    return "stop.circle.fill"
+        }
     }
 }
 

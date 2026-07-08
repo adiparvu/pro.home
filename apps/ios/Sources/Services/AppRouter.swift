@@ -38,6 +38,7 @@ final class AppRouter {
         case profile
         case notifications
         case emergency
+        case iotHub
 
         var id: String { rawValue }
     }
@@ -84,7 +85,8 @@ final class AppRouter {
              pantry, cameras, deliveries, chat, familyChat, scan, receipts,
              notifications, aria, twin, settings, documents, finances,
              inventory, family, profile, contractors, paintColors,
-             photoJournal, addSupply, communities(groupId: UUID?), emergency
+             photoJournal, addSupply, communities(groupId: UUID?), emergency,
+             iotHub
     }
 
     /// Bumped when an external entry point asks for the Communities sheet;
@@ -211,6 +213,10 @@ final class AppRouter {
             // tap, wherever it was pinned from.
             selectedTab = .settings
             push(.emergency)
+        case .iotHub:
+            // Sensor alert / energy / cover Live Activities land here.
+            selectedTab = .settings
+            push(.iotHub)
 
         // Self-contained tasks — sheets / covers.
         case .newTask:
@@ -299,6 +305,8 @@ final class AppRouter {
             navigate(to: .settings)
         case "emergency":
             navigate(to: .emergency)
+        case "iot":
+            navigate(to: .iotHub)
         case "documents":
             navigate(to: .documents)
         case "finances":
