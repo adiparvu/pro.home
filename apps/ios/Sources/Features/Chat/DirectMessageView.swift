@@ -94,7 +94,7 @@ struct DirectMessageView: View {
     }
 
     private var conversationMessages: [DirectMessage] {
-        let all = directMessageService.messages(with: member.name, myName: myName)
+        let all = directMessageService.messages(with: member, myName: myName)
         let kept = ConversationClearStore.filter(all, convId: member.id.uuidString) { $0.date }
         // Keyed by peer NAME — the same key the send path stamps with and the
         // server sync writes to (it used to be member.id, so the setting and
@@ -300,10 +300,10 @@ struct DirectMessageView: View {
             // Freeze the prior last-seen BEFORE markRead overwrites it, so the
             // divider marks where this session started — not messages that
             // arrive while we're reading.
-            unreadSince = directMessageService.lastSeen(for: member.name)
+            unreadSince = directMessageService.lastSeen(for: member)
             resolveUnreadDivider()
-            directMessageService.markRead(partner: member.name)
-            Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
+            directMessageService.markRead(member: member)
+            Task { await directMessageService.markReadRemote(member: member, myName: myName) }
             Task { await flushOutbox() }
             if let pid = propertyService.primary?.id {
                 Task { await presenceService.load(propertyId: pid) }
@@ -349,7 +349,7 @@ struct DirectMessageView: View {
             set: { if !$0 { deleteCandidate = nil } }
         ), titleVisibility: .visible) {
             if let m = deleteCandidate {
-                if m.senderName == myName {
+                if m.isMine(myUserId: directMessageService.myUserId, myName: myName) {
                     Button("Delete for everyone", role: .destructive) {
                         HapticFeedback.warning()
                         Task { await directMessageService.deleteForEveryone(id: m.id) }
@@ -407,7 +407,7 @@ struct DirectMessageView: View {
     private func resolveUnreadDivider() {
         guard !unreadResolved, let since = unreadSince, !conversationMessages.isEmpty else { return }
         unreadDividerId = directMessageService.firstUnreadId(
-            from: member.name, myName: myName, since: since)
+            from: member, myName: myName, since: since)
         unreadResolved = true
     }
 
@@ -442,7 +442,7 @@ struct DirectMessageView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && (conversationMessages.count > visibleCount
                 || (!conversationMessages.isEmpty
-                    && !directMessageService.exhaustedOlder.contains(member.name)))
+                    && !directMessageService.exhaustedOlder.contains(member.id)))
     }
 
     private var pinnedMessages: [DirectMessage] {
@@ -464,7 +464,7 @@ struct DirectMessageView: View {
 
     @ViewBuilder
     private func dmActionOverlay(_ m: DirectMessage) -> some View {
-        let own = m.senderName == myName
+        let own = m.isMine(myUserId: directMessageService.myUserId, myName: myName)
         let isImage = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .image
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
@@ -563,7 +563,7 @@ struct DirectMessageView: View {
                                         // next older page from the server first.
                                         Task {
                                             await directMessageService.loadOlder(
-                                                propertyId: pid, myName: myName, otherName: member.name)
+                                                propertyId: pid, myName: myName, member: member)
                                             visibleCount = target
                                             if let anchor { proxy.scrollTo(anchor, anchor: .top) }
                                         }
@@ -595,7 +595,7 @@ struct DirectMessageView: View {
                                     .padding(.top, AppSpacing.xxl)
                             }
                             ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
-                                let isOwn = msg.senderName == myName
+                                let isOwn = msg.isMine(myUserId: directMessageService.myUserId, myName: myName)
                                 // While searching, `shown` is a sparse subset, so adjacency-based
                                 // grouping is meaningless — show each result as a standalone bubble.
                                 let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -714,7 +714,7 @@ struct DirectMessageView: View {
                         // Prepends (older pages) keep the reading position;
                         // only appends may move the viewport.
                         guard appended else { return }
-                        let isOwnLatest = conversationMessages.last?.senderName == myName
+                        let isOwnLatest = conversationMessages.last?.isMine(myUserId: directMessageService.myUserId, myName: myName) == true
                         if !chatDidLoad {
                             // Entry batches: snap straight to the bottom rest.
                             proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
@@ -730,8 +730,8 @@ struct DirectMessageView: View {
                             // don't mark the (unseen) message read.
                             return
                         }
-                        directMessageService.markRead(partner: member.name)
-                        Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
+                        directMessageService.markRead(member: member)
+                        Task { await directMessageService.markReadRemote(member: member, myName: myName) }
                     }
                     .onChange(of: scrollTarget) { _, target in
                         guard let t = target else { return }

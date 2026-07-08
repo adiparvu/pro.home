@@ -73,6 +73,10 @@ struct FamilyMember: Identifiable, Codable, Hashable {
     var birthday: String?
     var socialLinks: [SocialLink]?
     let createdAt: String
+    /// auth.users id when this member holds an account (identity backbone —
+    /// chat threads/blocks key on ids, names are display only). Defaulted so
+    /// existing memberwise constructions (tests) stay source-compatible.
+    var userId: UUID? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, name, email, phone, role, color, birthday
@@ -81,6 +85,7 @@ struct FamilyMember: Identifiable, Codable, Hashable {
         case avatarUrl   = "avatar_url"
         case socialLinks = "social_links"
         case createdAt   = "created_at"
+        case userId      = "user_id"
     }
 
     var initials: String {

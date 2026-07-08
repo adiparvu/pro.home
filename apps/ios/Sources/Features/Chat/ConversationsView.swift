@@ -113,7 +113,7 @@ struct ConversationsView: View {
                     ($0.body ?? "").localizedCaseInsensitiveContains(q)
                 }
             } else if let member = entry.member {
-                return directMessageService.messages(with: member.name, myName: myName)
+                return directMessageService.messages(with: member, myName: myName)
                     .contains { $0.body.localizedCaseInsensitiveContains(q) }
             }
             return false
@@ -187,10 +187,12 @@ struct ConversationsView: View {
         // Disappearing-message TTLs are conversation state, not device state.
         if let pid { await ChatDisappearStore.syncFromServer(propertyId: pid, myName: myName) }
 
-        // Reflect server-side blocks locally (chat_blocks is keyed by name).
-        let blockedNames = await ChatBlockSync.load()
+        // Reflect server-side blocks locally — by member id first (survives
+        // renames), by name only for legacy rows.
+        let blocked = await ChatBlockSync.load()
         for m in familyService.members {
-            ChatBlockStore.setBlocked(m.id.uuidString, blockedNames.contains(m.name))
+            ChatBlockStore.setBlocked(m.id.uuidString,
+                                      blocked.memberIds.contains(m.id) || blocked.names.contains(m.name))
         }
     }
     private func toggleLocked(_ id: String) {
@@ -204,11 +206,11 @@ struct ConversationsView: View {
         let willBlock = !ChatBlockStore.isBlocked(id)
         ChatBlockStore.setBlocked(id, willBlock)
         // Enforce server-side: chat_blocks is keyed by the blocked person's display
-        // name (so the dm_insert policy can reject them by sender_name).
+        // member id (dm_insert enforces via dm_blocked(); names cover legacy rows).
         let pid = propertyService.primary?.id
         Task {
-            if willBlock { await ChatBlockSync.block(name: member.name, myName: myName, propertyId: pid) }
-            else { await ChatBlockSync.unblock(name: member.name) }
+            if willBlock { await ChatBlockSync.block(member: member, myName: myName, propertyId: pid) }
+            else { await ChatBlockSync.unblock(member: member) }
         }
         HapticFeedback.warning()
     }
@@ -237,7 +239,7 @@ struct ConversationsView: View {
         UserDefaults.standard.set([String](), forKey: "chat.manualUnread")
         for id in wasUnread { syncPrefs(id) }
         messageService.resetUnread()
-        for m in familyService.members { directMessageService.markRead(partner: m.name) }
+        for m in familyService.members { directMessageService.markRead(member: m) }
         if let pid = propertyService.primary?.id {
             Task { await messageService.markRead(propertyId: pid, readerName: myName) }
         }
@@ -672,7 +674,7 @@ struct ConversationsView: View {
                 Task { await messageService.markRead(propertyId: pid, readerName: myName) }
             }
         } else if let m = entry.member {
-            directMessageService.markRead(partner: m.name)
+            directMessageService.markRead(member: m)
         }
     }
 
@@ -872,14 +874,15 @@ struct ConversationsView: View {
         // One pass over the DM store builds every thread's preview state —
         // the per-member lastMessage/unreadCount scans were O(members × dms)
         // and ran several times per render.
-        let summaries = directMessageService.conversationSummaries(myName: myName)
+        let summaries = directMessageService.conversationSummaries(myName: myName,
+                                                                   members: familyService.members)
         for member in familyService.members {
-            guard let last = summaries[member.name]?.last else {
+            guard let last = summaries[member.id]?.last else {
                 continue
             }
             let preview: String = {
                 if last.deletedForAll == true { return String(localized: "convo_prev_deleted") }
-                let prefix = last.senderName == myName ? String(localized: "convo_prev_you") : ""
+                let prefix = last.isMine(myUserId: directMessageService.myUserId, myName: myName) ? String(localized: "convo_prev_you") : ""
                 if last.isContactShare { return prefix + String(localized: "convo_prev_contact") }
                 switch ChatMedia.dmBodyKind(last.body) {
                 case .audio: return prefix + String(localized: "convo_prev_audio")
@@ -893,7 +896,7 @@ struct ConversationsView: View {
                 name: member.name,
                 preview: preview,
                 date: parseISODate(last.createdAt),
-                unread: summaries[member.name]?.unread ?? 0,
+                unread: summaries[member.id]?.unread ?? 0,
                 isGroup: false,
                 member: member
             ))
