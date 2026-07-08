@@ -9,8 +9,15 @@ import RoomPlan
 
 struct FloorPlansView: View {
     @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyZoneService.self) private var zoneService
     @State private var service = FloorPlanService()
 
+    enum DisplayMode: String, CaseIterable {
+        case list, plan
+    }
+
+    @State private var displayMode: DisplayMode = .list
+    @State private var isEditingPlan = false
     @State private var showAddRoom = false
     @State private var showAddFloor = false
     @State private var scanTarget: RoomRecord?
@@ -22,6 +29,9 @@ struct FloorPlansView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
+                if !(service.rooms.isEmpty && service.floors.isEmpty) {
+                    modePicker
+                }
                 if service.isLoading {
                     ProgressView().tint(.accentColor).padding(.top, 80)
                 } else if service.rooms.isEmpty && service.floors.isEmpty {
@@ -45,6 +55,17 @@ struct FloorPlansView: View {
         .navigationTitle("floors_title")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            if displayMode == .plan {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticFeedback.selection()
+                        withAnimation(.snappy(duration: 0.25)) { isEditingPlan.toggle() }
+                    } label: {
+                        Text(isEditingPlan ? "plan_edit_done" : "plan_edit")
+                            .font(AppFont.footnoteEmphasis)
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
@@ -130,6 +151,26 @@ struct FloorPlansView: View {
         } message: { Text(service.error ?? "") }
     }
 
+    // MARK: Mode picker (list ↔ plan)
+
+    private var modePicker: some View {
+        Picker("floors_title", selection: $displayMode.animation(.snappy(duration: 0.25))) {
+            Label("plan_mode_list", systemImage: "list.bullet").tag(DisplayMode.list)
+            Label("plan_mode_plan", systemImage: "square.split.bottomrightquarter").tag(DisplayMode.plan)
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: displayMode) { _, mode in
+            if mode == .list { isEditingPlan = false }
+        }
+    }
+
+    /// Digital Twin health for a room: the zone that shares its name.
+    private func zoneHealth(for room: RoomRecord) -> Int? {
+        zoneService.zones.first {
+            $0.name.compare(room.name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        }?.healthScore
+    }
+
     // MARK: Level section
 
     private func levelSection(_ level: Int) -> some View {
@@ -150,9 +191,31 @@ struct FloorPlansView: View {
             }
             .padding(.leading, AppSpacing.xxs)
 
-            VStack(spacing: 10) {
-                ForEach(service.rooms(onLevel: level)) { room in
-                    roomRow(room)
+            if displayMode == .plan {
+                LevelPlanCanvas(
+                    rooms: service.rooms(onLevel: level),
+                    healthFor: { zoneHealth(for: $0) },
+                    isEditing: isEditingPlan,
+                    onTap: { room in
+                        if room.hasScan {
+                            openScan(room)
+                        } else if RoomCaptureSession.isSupported {
+                            scanTarget = room
+                        }
+                    },
+                    onGeometryChange: { room, rect in
+                        Task {
+                            await service.updateGeometry(room,
+                                                         xPct: rect.minX, yPct: rect.minY,
+                                                         widthPct: rect.width, heightPct: rect.height)
+                        }
+                    }
+                )
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(service.rooms(onLevel: level)) { room in
+                        roomRow(room)
+                    }
                 }
             }
         }

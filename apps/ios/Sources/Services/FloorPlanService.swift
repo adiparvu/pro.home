@@ -187,6 +187,36 @@ final class FloorPlanService {
         }
     }
 
+    /// Persists a room's plan rectangle (percent coordinates, 0–100) after
+    /// a drag/resize on the 2D canvas.
+    func updateGeometry(_ room: RoomRecord, xPct: Double, yPct: Double,
+                        widthPct: Double, heightPct: Double) async {
+        struct Patch: Encodable {
+            let x_pct: Double
+            let y_pct: Double
+            let width_pct: Double
+            let height_pct: Double
+            let updated_at: String
+        }
+        do {
+            try await supabase
+                .from("rooms")
+                .update(Patch(x_pct: xPct, y_pct: yPct,
+                              width_pct: widthPct, height_pct: heightPct,
+                              updated_at: Self.iso.string(from: Date())))
+                .eq("id", value: room.id.uuidString)
+                .execute()
+            if let idx = rooms.firstIndex(where: { $0.id == room.id }) {
+                rooms[idx].xPct = xPct
+                rooms[idx].yPct = yPct
+                rooms[idx].widthPct = widthPct
+                rooms[idx].heightPct = heightPct
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     // MARK: Scans
 
     /// Uploads a RoomPlan .usdz for a room and records its object path.
