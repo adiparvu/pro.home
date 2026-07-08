@@ -55,6 +55,7 @@ struct BlueprintsView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
                 quickActions
+                floorsNav
                 buriedNav
 
                 if service.scans.isEmpty {
@@ -144,6 +145,38 @@ struct BlueprintsView: View {
                 showAddPlan = true
             }
         }
+    }
+
+    private var floorsNav: some View {
+        NavigationLink {
+            FloorPlansView()
+        } label: {
+            GlassCard {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                            .fill(LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "square.3.layers.3d")
+                            .font(AppFont.title3)
+                            .foregroundStyle(.primary)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("floors_title")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        Text("floors_subtitle")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var buriedNav: some View {
