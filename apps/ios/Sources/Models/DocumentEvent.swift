@@ -28,6 +28,7 @@ struct DocumentEvent: Identifiable, Codable, Hashable {
         case expired, renewed
         case fileAdded    = "file_added"
         case fileRemoved  = "file_removed"
+        case replaced     = "replaced"
         case other
 
         var icon: String {
@@ -41,6 +42,7 @@ struct DocumentEvent: Identifiable, Codable, Hashable {
             case .renewed:     return "arrow.triangle.2.circlepath"
             case .fileAdded:   return "paperclip"
             case .fileRemoved: return "trash"
+            case .replaced:    return "arrow.2.squarepath"
             case .other:       return "clock"
             }
         }
@@ -57,6 +59,7 @@ struct DocumentEvent: Identifiable, Codable, Hashable {
             case .renewed:     return "doc_evt_renewed"
             case .fileAdded:   return "doc_evt_file_added"
             case .fileRemoved: return "doc_evt_file_removed"
+            case .replaced:    return "doc_evt_replaced"
             case .other:       return "doc_evt_other"
             }
         }

@@ -186,10 +186,31 @@ struct MemberCircleAvatar: View {
         ZStack {
             Circle()
                 .foregroundStyle(member.swiftColor.opacity(0.18))
-            Text(member.initials)
-                .font(.system(size: size * 0.38, weight: .bold))
-                .foregroundStyle(member.swiftColor)
+            // Show the member's real photo when they have one; the coloured
+            // initials are only the fallback (matches GroupChatAvatar and the
+            // message-bubble avatars — the DM list used to show initials only).
+            if let urlStr = member.avatarUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+                StorageImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFill()
+                    default:
+                        initials
+                    }
+                }
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+            } else {
+                initials
+            }
         }
+        .frame(width: size, height: size)
+    }
+
+    private var initials: some View {
+        Text(member.initials)
+            .font(.system(size: size * 0.38, weight: .bold))
+            .foregroundStyle(member.swiftColor)
     }
 }
 

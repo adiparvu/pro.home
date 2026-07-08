@@ -21,6 +21,13 @@ struct DocumentFilesSection: View {
     @State private var libraryItem: PhotosPickerItem?
     @State private var pendingDelete: DocumentFile?
     @State private var isOpening = false
+    // Versioning (D5): when set, the next imported file replaces this one
+    // instead of being added as a new attachment.
+    @State private var replaceTarget: DocumentFile?
+    @State private var showReplaceSource = false
+    @State private var showReplacePhoto = false
+    // Version groups whose history disclosure is expanded.
+    @State private var expandedGroups: Set<UUID> = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -67,6 +74,7 @@ struct DocumentFilesSection: View {
         .fileImporter(isPresented: $showFileImporter,
                       allowedContentTypes: [.pdf, .jpeg, .png, .webP, .heic, .plainText, .data],
                       allowsMultipleSelection: true) { handleFiles($0) }
+        .photosPicker(isPresented: $showReplacePhoto, selection: $libraryItem, matching: .images)
         .onChange(of: libraryItem) { _, item in
             guard let item else { return }
             Task {
@@ -83,6 +91,18 @@ struct DocumentFilesSection: View {
                 pendingDelete = nil
             }
             Button("Cancel", role: .cancel) { pendingDelete = nil }
+        }
+        .confirmationDialog("doc_ver_replace_source", isPresented: $showReplaceSource,
+                            titleVisibility: .visible) {
+            if DocumentScannerView.isSupported {
+                Button("doc_scan_pdf") { showScanner = true }
+            }
+            Button("Camera") { showCamera = true }
+            Button("Photo Library") { showReplacePhoto = true }
+            Button("doc_import_file") { showFileImporter = true }
+            Button("Cancel", role: .cancel) { replaceTarget = nil }
+        } message: {
+            Text("doc_ver_replace_hint")
         }
     }
 
@@ -119,7 +139,25 @@ struct DocumentFilesSection: View {
         .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.lg)
     }
 
+    @ViewBuilder
     private func fileRow(_ file: DocumentFile) -> some View {
+        let priors = service.priorVersions(of: file)
+        let hasHistory = !priors.isEmpty
+        let isExpanded = expandedGroups.contains(file.groupId)
+        VStack(spacing: 0) {
+            mainRow(file, hasHistory: hasHistory)
+            if hasHistory {
+                historyDisclosure(file, count: priors.count, isExpanded: isExpanded)
+                if isExpanded {
+                    ForEach(priors) { prior in
+                        historyRow(prior)
+                    }
+                }
+            }
+        }
+    }
+
+    private func mainRow(_ file: DocumentFile, hasHistory: Bool) -> some View {
         Button {
             HapticFeedback.selection()
             open(file)
@@ -134,6 +172,12 @@ struct DocumentFilesSection: View {
                     }
                 }
                 Spacer()
+                if hasHistory {
+                    Text(file.versionLabel).font(AppFont.scaled(11, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.12), in: Capsule())
+                }
                 if isOpening { ProgressView().scaleEffect(0.7) }
                 else {
                     Image(systemName: "chevron.right").font(AppFont.scaled(12))
@@ -144,16 +188,77 @@ struct DocumentFilesSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .swipeActions(edge: .leading) {
+            Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
+                .tint(.blue)
+        }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
         }
         .contextMenu {
+            Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
             Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
         }
     }
 
+    /// The "N older versions" toggle bar shown under a file that carries history.
+    private func historyDisclosure(_ file: DocumentFile, count: Int, isExpanded: Bool) -> some View {
+        Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy) {
+                if isExpanded { expandedGroups.remove(file.groupId) }
+                else { expandedGroups.insert(file.groupId) }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                Text("doc_ver_history").font(AppFont.scaled(11, weight: .medium))
+                Text("\(count)").font(AppFont.scaled(11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                Spacer()
+            }
+            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            .padding(.leading, 46).padding(.trailing, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.sm)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// One older version, openable through the same QuickLook path as current.
+    private func historyRow(_ prior: DocumentFile) -> some View {
+        Button {
+            HapticFeedback.selection()
+            open(prior)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "clock.arrow.circlepath").font(AppFont.scaled(13))
+                    .foregroundStyle(Color.primary.opacity(0.35)).frame(width: 34)
+                Text(prior.versionLabel).font(AppFont.scaled(12, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                if !prior.sizeDisplay.isEmpty {
+                    Text(prior.sizeDisplay).font(AppFont.scaled(11))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(AppFont.scaled(11))
+                    .foregroundStyle(Color.primary.opacity(0.2))
+            }
+            .padding(.leading, 46).padding(.trailing, AppSpacing.lg)
+            .padding(.vertical, AppSpacing.sm)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private var divider: some View {
         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 46)
+    }
+
+    private func beginReplace(_ file: DocumentFile) {
+        replaceTarget = file
+        showReplaceSource = true
     }
 
     // MARK: Actions
@@ -170,38 +275,52 @@ struct DocumentFilesSection: View {
         }
     }
 
-    private func addImage(_ image: UIImage) async {
-        guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2400) else { HapticFeedback.error(); return }
-        let ok = await service.add(documentId: documentId,
-                                   data: data,
-                                   name: "photo-\(AppDate.dayString(from: Date())).jpg",
-                                   mimeType: "image/jpeg", kind: "photo")
+    /// Routes an imported file to `replace` when a target is armed, otherwise
+    /// `add` — the one place the versioning branch lives, so every source
+    /// (camera, scan, photo, Files) behaves identically.
+    private func ingest(data: Data, name: String, mimeType: String,
+                        kind: String, pageCount: Int? = nil) async {
+        let ok: Bool
+        if let target = replaceTarget {
+            ok = await service.replace(target, with: data, name: name,
+                                       mimeType: mimeType, kind: kind, pageCount: pageCount)
+            replaceTarget = nil
+        } else {
+            ok = await service.add(documentId: documentId, data: data, name: name,
+                                   mimeType: mimeType, kind: kind, pageCount: pageCount)
+        }
         ok ? HapticFeedback.success() : HapticFeedback.error()
     }
 
+    private func addImage(_ image: UIImage) async {
+        guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2400) else { HapticFeedback.error(); return }
+        await ingest(data: data,
+                     name: "photo-\(AppDate.dayString(from: Date())).jpg",
+                     mimeType: "image/jpeg", kind: "photo")
+    }
+
     private func addScan(_ result: DocumentScanResult) async {
-        let ok = await service.add(documentId: documentId,
-                                   data: result.pdfData,
-                                   name: "scan-\(AppDate.dayString(from: Date())).pdf",
-                                   mimeType: "application/pdf", kind: "scan",
-                                   pageCount: result.pageCount)
-        ok ? HapticFeedback.success() : HapticFeedback.error()
+        await ingest(data: result.pdfData,
+                     name: "scan-\(AppDate.dayString(from: Date())).pdf",
+                     mimeType: "application/pdf", kind: "scan",
+                     pageCount: result.pageCount)
     }
 
     private func handleFiles(_ result: Result<[URL], Error>) {
         guard case .success(let urls) = result else { return }
+        // A replace targets exactly one file, so only the first import applies;
+        // a plain add ingests every selected file.
+        let selected = replaceTarget != nil ? Array(urls.prefix(1)) : urls
         Task {
-            for url in urls {
+            for url in selected {
                 guard url.startAccessingSecurityScopedResource() else { continue }
                 defer { url.stopAccessingSecurityScopedResource() }
                 guard let data = try? Data(contentsOf: url) else { continue }
                 let ext = url.pathExtension.lowercased()
                 let mime = UTType(filenameExtension: ext)?.preferredMIMEType ?? "application/octet-stream"
                 let kind = mime == "application/pdf" ? "pdf" : (mime.hasPrefix("image/") ? "photo" : "file")
-                await service.add(documentId: documentId, data: data,
-                                  name: url.lastPathComponent, mimeType: mime, kind: kind)
+                await ingest(data: data, name: url.lastPathComponent, mimeType: mime, kind: kind)
             }
-            HapticFeedback.success()
         }
     }
 }

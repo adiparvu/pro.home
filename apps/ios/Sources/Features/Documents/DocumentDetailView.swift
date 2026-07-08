@@ -79,6 +79,10 @@ struct DocumentDetailView: View {
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
     @State private var isFavorite = false
+    // Calendar (D5): the outcome of the last "Add to Calendar" attempt, surfaced
+    // honestly — success only when EventKit actually saved the event.
+    @State private var calendarOutcome: CalendarOutcome?
+    @State private var isAddingToCalendar = false
 
     /// Always read the freshest copy so edits reflect immediately.
     private var live: DocumentModel { documentService.documents.first { $0.id == doc.id } ?? doc }
@@ -128,6 +132,40 @@ struct DocumentDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will permanently remove the file and cannot be undone.")
+        }
+        .alert(calendarAlertTitle, isPresented: Binding(
+            get: { calendarOutcome != nil },
+            set: { if !$0 { calendarOutcome = nil } })) {
+            if calendarOutcome == .denied {
+                Button("doc_cal_open_settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
+            }
+        } message: {
+            Text(calendarAlertMessage)
+        }
+    }
+
+    private var calendarAlertTitle: LocalizedStringKey {
+        switch calendarOutcome {
+        case .added:  return "doc_cal_added_title"
+        case .denied: return "doc_cal_denied_title"
+        case .failed: return "doc_cal_failed_title"
+        case .none:   return ""
+        }
+    }
+
+    private var calendarAlertMessage: LocalizedStringKey {
+        switch calendarOutcome {
+        case .added:  return "doc_cal_added_msg"
+        case .denied: return "doc_cal_denied_msg"
+        case .failed: return "doc_cal_failed_msg"
+        case .none:   return ""
         }
     }
 
@@ -234,6 +272,7 @@ struct DocumentDetailView: View {
                 ])
             }
             if !dateRows.isEmpty { infoGroup("doc_sec_dates", "calendar", .orange, dateRows) }
+            calendarActions
             if !issuerRows.isEmpty { infoGroup("doc_sec_issuer", "building.2.fill", .blue, issuerRows) }
             if !idRows.isEmpty { infoGroup("doc_sec_identifiers", "number", .teal, idRows) }
             financialGroup
@@ -259,6 +298,78 @@ struct DocumentDetailView: View {
             rows.append(("arrow.triangle.2.circlepath", "doc_f_recurrence", DocRecurrence.text(rec)))
         }
         return rows
+    }
+
+    // MARK: Calendar actions (D5) — add a renewal/expiry event via EventKit
+
+    private enum CalKind { case renewal, expiry }
+
+    enum CalendarOutcome: Identifiable {
+        case added, denied, failed
+        var id: Int { hashValue }
+    }
+
+    /// Buttons offered only for dates the document actually has. Each creates a
+    /// real EventKit event on that date (with an alarm), gated on live
+    /// authorization; denial is surfaced, never a false success.
+    @ViewBuilder
+    private var calendarActions: some View {
+        let renew  = live.renewAt.flatMap { AppDate.day(from: $0) }
+        let expiry = live.expiresAt.flatMap { AppDate.day(from: $0) }
+        if renew != nil || expiry != nil {
+            VStack(spacing: 8) {
+                if let renew {
+                    calendarButton("doc_cal_add_renewal", date: renew, kind: .renewal)
+                }
+                if let expiry {
+                    calendarButton("doc_cal_add_expiry", date: expiry, kind: .expiry)
+                }
+            }
+        }
+    }
+
+    private func calendarButton(_ title: LocalizedStringKey, date: Date, kind: CalKind) -> some View {
+        Button { addToCalendar(date: date, kind: kind) } label: {
+            HStack(spacing: 10) {
+                if isAddingToCalendar { ProgressView().scaleEffect(0.8) }
+                else { Image(systemName: "calendar.badge.plus").font(AppFont.footnoteEmphasis) }
+                Text(title).font(AppFont.footnoteEmphasis)
+                Spacer()
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+            .background(Color.accentColor.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isAddingToCalendar)
+    }
+
+    private func addToCalendar(date: Date, kind: CalKind) {
+        HapticFeedback.selection()
+        isAddingToCalendar = true
+        Task { @MainActor in
+            defer { isAddingToCalendar = false }
+            // Reuse the app's one EventKit path (TaskCalendarSync): request
+            // access exactly as tasks do; only proceed on a real grant.
+            let access = await TaskCalendarSync.requestEventAccess()
+            guard access != .denied else {
+                calendarOutcome = .denied
+                HapticFeedback.error()
+                return
+            }
+            let format = kind == .renewal
+                ? String(localized: "doc_cal_renewal_title")
+                : String(localized: "doc_cal_expiry_title")
+            let notes = String(localized: "doc_cal_event_notes")
+            // calendarId nil → the store's default calendar, which works for
+            // both full and write-only access.
+            let ok = TaskCalendarSync.addEvent(title: String(format: format, live.name),
+                                               notes: notes, date: date,
+                                               hasTime: false, calendarId: nil)
+            calendarOutcome = ok ? .added : .failed
+            ok ? HapticFeedback.success() : HapticFeedback.error()
+        }
     }
 
     private func infoGroup(_ title: LocalizedStringKey, _ icon: String, _ color: Color,

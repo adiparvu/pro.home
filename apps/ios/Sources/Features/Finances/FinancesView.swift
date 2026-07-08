@@ -7,6 +7,7 @@ struct FinancesView: View {
     @Environment(FinancialService.self) var financialService
     @Environment(BudgetService.self) var budgetService
     @Environment(CurrencyService.self) var currencyService
+    @Environment(DocumentService.self) var documentService
     @Environment(AppSettings.self) var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
@@ -42,6 +43,27 @@ struct FinancesView: View {
 
     var isCurrentMonth: Bool {
         Calendar.current.isDate(displayedMonth, equalTo: Date(), toGranularity: .month)
+    }
+
+    /// Recurring household costs derived (read-time, never persisted) from the
+    /// property's documents that carry a value + monthly/quarterly/yearly
+    /// recurrence. Each is normalised to a monthly equivalent and converted to
+    /// the preferred currency; sorted biggest first.
+    func recurringDocCosts() -> [RecurringDocCostItem] {
+        documentService.documents.compactMap { doc -> RecurringDocCostItem? in
+            guard let rec = doc.recurrence,
+                  ["monthly", "quarterly", "yearly"].contains(rec),
+                  let value = doc.value, value > 0 else { return nil }
+            let monthly: Double
+            switch rec {
+            case "quarterly": monthly = value / 3
+            case "yearly":    monthly = value / 12
+            default:          monthly = value
+            }
+            let converted = currencyService.convert(monthly, from: doc.currency ?? preferred, to: preferred)
+            return RecurringDocCostItem(doc: doc, monthlyAmount: converted, recurrence: rec)
+        }
+        .sorted { $0.monthlyAmount > $1.monthlyAmount }
     }
 
     /// Top expense categories of the displayed month, with their share of
@@ -113,6 +135,10 @@ struct FinancesView: View {
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         ExpenseForecastSection(records: financialService.records)
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
+                        RecurringDocumentCostsSection(items: recurringDocCosts(),
+                                                      format: { fmt($0) })
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         transactionList(filtered)

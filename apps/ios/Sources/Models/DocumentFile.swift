@@ -16,6 +16,14 @@ struct DocumentFile: Identifiable, Codable, Hashable {
     var version: Int
     let createdAt: String
 
+    // ── Versioning (migration 129, phase D5 part 2) ─────────────────────────
+    // Files that occupy the same logical slot share a `versionGroup`; the
+    // newest is "current", older ones carry `supersededAt`/`supersededBy`.
+    // All optional so pre-129 rows and older clients decode unchanged.
+    var versionGroup: UUID?
+    var supersededAt: String?
+    var supersededBy: UUID?
+
     enum CodingKeys: String, CodingKey {
         case id, url, name, kind, version
         case documentId = "document_id"
@@ -23,7 +31,19 @@ struct DocumentFile: Identifiable, Codable, Hashable {
         case size
         case pageCount  = "page_count"
         case createdAt  = "created_at"
+        case versionGroup = "version_group"
+        case supersededAt = "superseded_at"
+        case supersededBy = "superseded_by"
     }
+
+    /// The logical slot this file belongs to (its own id when never grouped).
+    var groupId: UUID { versionGroup ?? id }
+
+    /// A file the user replaced — hidden from the top-level list, kept as history.
+    var isSuperseded: Bool { supersededAt != nil }
+
+    /// "v3" — the version label shown on rows that carry history.
+    var versionLabel: String { "v\(version)" }
 
     var glyph: String {
         switch kind {
