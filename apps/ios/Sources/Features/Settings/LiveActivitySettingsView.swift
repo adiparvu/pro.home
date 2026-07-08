@@ -238,7 +238,7 @@ struct LiveActivitySettingsView: View {
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: kind.icon)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(kind.color)
                     .frame(width: 40, height: 40)
@@ -642,7 +642,7 @@ struct KindLockScreenMock: View {
         } else {
             HStack(spacing: 10) {
                 Image(systemName: kind.icon)
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(kind.color)
+                    .font(AppFont.subheadline).foregroundStyle(kind.color)
                 Text(kind.previewHeadline)
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
                 Spacer()
@@ -667,12 +667,12 @@ struct DynamicIslandMock: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: kind.icon)
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(kind.color)
+                            .font(AppFont.captionEmphasis).foregroundStyle(kind.color)
                         Text(kind.previewHeadline)
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            .font(AppFont.captionEmphasis).foregroundStyle(.white)
                         Spacer()
                         Text(kind.previewStatus)
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(kind.color)
+                            .font(AppFont.captionStrong).foregroundStyle(kind.color)
                     }
                     if showProgress {
                         ProgressView(value: kind.previewProgress).tint(kind.color)
@@ -684,7 +684,7 @@ struct DynamicIslandMock: View {
             case .compact:
                 HStack(spacing: 8) {
                     Image(systemName: kind.icon)
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(kind.color)
+                        .font(AppFont.captionEmphasis).foregroundStyle(kind.color)
                     Text("\(Int(kind.previewProgress * 100))%")
                         .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
                 }
@@ -692,7 +692,7 @@ struct DynamicIslandMock: View {
                 .background(Capsule().fill(Color.black))
             case .minimal:
                 Image(systemName: kind.icon)
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(kind.color)
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(kind.color)
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(Color.black))
             }

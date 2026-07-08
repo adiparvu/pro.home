@@ -121,7 +121,7 @@ struct InAppLinkPlayerSheet: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button { dismiss() } label: {
                             Image(systemName: "xmark")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                         }
                         .accessibilityLabel("Close")
                     }

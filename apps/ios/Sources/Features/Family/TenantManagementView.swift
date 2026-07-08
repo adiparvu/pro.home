@@ -211,7 +211,7 @@ struct TenantManagementView: View {
                             HStack(spacing: 6) {
                                 if let rent = lease.rentDisplay {
                                     Label("\(rent)/\(String(localized: "month"))", systemImage: "banknote.fill")
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(AppFont.label)
                                         .foregroundStyle(Color.brandSuccess)
                                 }
                                 if let end = lease.endDisplay {

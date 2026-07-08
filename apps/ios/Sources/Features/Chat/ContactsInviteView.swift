@@ -227,7 +227,7 @@ struct ContactsInviteView: View {
             ZStack {
                 Circle().fill(Color.accentColor.opacity(0.18))
                 Text(c.initials.isEmpty ? "?" : c.initials)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
             }
             .frame(width: 40, height: 40)

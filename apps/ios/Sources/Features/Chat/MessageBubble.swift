@@ -149,7 +149,7 @@ struct MessageBubble: View {
                 .fill(Color.primary.opacity(AppOpacity.hairline))
                 .frame(width: 34, height: 34)
             Image(systemName: symbol)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(Color.accentColor)
         }
         .scaleEffect(0.55 + 0.45 * progress)

@@ -108,7 +108,7 @@ struct LocationBubble: View {
                             .foregroundStyle(Color.brandSuccess)
                         if let end = live.expiresDate {
                             Text("Se distribuie până la \(end, style: .time)")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(AppFont.caption)
                                 .foregroundStyle(.primary)
                         }
                         Spacer(minLength: 0)
@@ -123,7 +123,7 @@ struct LocationBubble: View {
                             LiveLocationService.shared.stop()
                         } label: {
                             Text("Oprește distribuirea")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(Color.brandDanger)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
@@ -244,7 +244,7 @@ struct LocationDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark").font(.system(size: 15, weight: .semibold))
+                        Image(systemName: "xmark").font(AppFont.subheadline)
                     }
                     .accessibilityLabel("Close")
                 }
@@ -280,7 +280,7 @@ struct LocationDetailSheet: View {
                             dismiss()
                         } label: {
                             Text("Oprește distribuirea")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(Color.brandDanger)
                         }
                         .buttonStyle(.plain)
@@ -299,7 +299,7 @@ struct LocationDetailSheet: View {
                             Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
                                 .font(.system(size: 13))
                             Text(opt.label)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                         }

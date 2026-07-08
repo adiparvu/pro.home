@@ -229,7 +229,7 @@ private struct FabPageRow: View {
                     .tint(.accentColor)
                     .scaleEffect(0.82, anchor: .trailing)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .padding(.horizontal, AppSpacing.base)

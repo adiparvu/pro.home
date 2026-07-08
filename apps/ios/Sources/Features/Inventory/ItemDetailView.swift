@@ -87,7 +87,7 @@ struct ItemDetailView: View {
                             .frame(width: 30, height: 30)
                             .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
                         Image(systemName: live.categoryIcon)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(.white)
                     }
                     .offset(x: 4, y: 4)
@@ -145,7 +145,7 @@ struct ItemDetailView: View {
     private func heroChip(_ text: LocalizedStringKey, icon: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 10, weight: .semibold))
-            Text(text).font(.system(size: 12, weight: .medium))
+            Text(text).font(AppFont.caption)
         }
         .foregroundStyle(.white.opacity(0.9))
         .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)

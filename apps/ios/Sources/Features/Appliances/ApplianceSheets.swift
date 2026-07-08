@@ -253,7 +253,7 @@ struct AddApplianceSheet: View {
                     .foregroundStyle(selectedType == nil ? Color.accentColor : .primary)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
             .padding(.horizontal, AppSpacing.lg)
@@ -269,7 +269,7 @@ struct AddApplianceSheet: View {
             }
         } label: {
             Image(systemName: "chevron.up.chevron.down")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 30, height: 30)
                 .contentShape(Rectangle())

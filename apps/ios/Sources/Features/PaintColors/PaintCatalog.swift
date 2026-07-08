@@ -223,7 +223,7 @@ struct PaintCatalogPicker: View {
                             .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.7)
                     )
                 Text(entry.name)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

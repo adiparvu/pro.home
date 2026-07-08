@@ -368,7 +368,7 @@ struct ContractorsView: View {
                         HapticFeedback.selection()
                     } label: {
                         Image(systemName: favoritesOnly ? "star.fill" : "star")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(favoritesOnly ? .yellow : .primary)
                             .frame(width: 34, height: 32)
                     }
@@ -556,7 +556,7 @@ private struct ContractorChannelMenu: View {
 struct PRVIOAccountBadge: View {
     var body: some View {
         Text(verbatim: "PRVIO")
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             .padding(.horizontal, 7)
             .padding(.vertical, 2.5)

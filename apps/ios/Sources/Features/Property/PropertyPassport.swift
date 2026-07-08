@@ -102,7 +102,7 @@ enum PropertyPassport {
         HStack(alignment: .top) {
             Text(label).font(.system(size: 11)).foregroundStyle(.gray)
                 .frame(width: 170, alignment: .leading)
-            Text(value).font(.system(size: 11, weight: .medium))
+            Text(value).font(AppFont.caption2)
             Spacer(minLength: 0)
         }
         .padding(.vertical, 3)
@@ -122,13 +122,13 @@ enum PropertyPassport {
                 Text("passport_title")
                     .font(.system(size: 26, weight: .bold))
                 Text(input.property.name)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                 Text(verbatim: "\(input.property.addressLine1), \(input.property.city)")
                     .font(.system(size: 13))
                     .foregroundStyle(.gray)
                 if let score = input.property.healthScore {
                     Text(verbatim: String(format: String(localized: "passport_health"), score))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .padding(.horizontal, 14).padding(.vertical, 6)
                         .background(Color(red: 0.15, green: 0.3, blue: 0.6).opacity(0.1),
                                     in: Capsule())

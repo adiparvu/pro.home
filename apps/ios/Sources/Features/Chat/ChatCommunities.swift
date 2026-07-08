@@ -228,7 +228,7 @@ private struct GroupChatView: View {
                                 .fill(Color.accentColor.opacity(0.15))
                                 .frame(width: 30, height: 30)
                             Image(systemName: currentGroup.kindIcon)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(Color.accentColor)
                         }
                         Text(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
@@ -281,7 +281,7 @@ private struct GroupChatView: View {
             // Share a real task into the thread — it lands as a live card.
             Button { showTaskPicker = true } label: {
                 Image(systemName: "checklist")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .frame(width: 34, height: 34)
                     .glassCircle()
@@ -809,11 +809,11 @@ private struct CreateGroupSheet: View {
                             Button { applyTemplate(template) } label: {
                                 VStack(spacing: 6) {
                                     Image(systemName: template.icon)
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(AppFont.title3)
                                         .symbolRenderingMode(.hierarchical)
                                         .foregroundStyle(template.tint)
                                     Text(LocalizedStringKey(template.nameKey))
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(AppFont.caption)
                                         .foregroundStyle(.primary)
                                         .lineLimit(1).minimumScaleFactor(0.8)
                                 }

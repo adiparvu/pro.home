@@ -275,7 +275,7 @@ private struct YearShareCard: View {
                     .font(.system(size: 44, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(propertyName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.white.opacity(0.85))
             }
             .padding(.top, 28)

@@ -379,7 +379,7 @@ private struct WSSyncMock: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(Color.brandSkyBlue)
             Image(systemName: "arrow.down")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
             Image(systemName: "applewatch.radiowaves.left.and.right")
                 .font(.system(size: 30))

@@ -35,7 +35,7 @@ struct AccountMemberRow: View {
             avatar
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile?.bestName ?? member.nickname ?? "—")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 if let email = profile?.email, !email.isEmpty {
                     Text(email)
@@ -49,12 +49,12 @@ struct AccountMemberRow: View {
                 statusChip("Blocked", color: Color.brandDanger, icon: "hand.raised.fill")
             }
             Text(accountRoleLabel(member.role))
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, 9).padding(.vertical, 4)
                 .background(Color.accentColor.opacity(0.14), in: Capsule())
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base)
@@ -202,13 +202,13 @@ struct AccountReviewSheet: View {
 
             HStack(spacing: 6) {
                 Text(accountRoleLabel(live.role))
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.14), in: Capsule())
                 if live.isBlocked {
                     Label(blockedLabel, systemImage: "hand.raised.fill")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(Color.brandDanger)
                         .padding(.horizontal, 10).padding(.vertical, 4)
                         .background(Color.brandDanger.opacity(0.13), in: Capsule())
@@ -309,7 +309,7 @@ struct AccountReviewSheet: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                             Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(AppFont.caption2)
                                 .foregroundStyle(Color.primary.opacity(0.35))
                         }
                         .padding(.horizontal, AppSpacing.lg)

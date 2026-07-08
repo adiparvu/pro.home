@@ -218,7 +218,7 @@ private struct MonthlyShareCard: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.white.opacity(0.9))
             Text(month)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .font(AppFont.title)
                 .foregroundStyle(.white)
             if let property {
                 Text(property)

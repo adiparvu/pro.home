@@ -26,7 +26,7 @@ struct TasksWidgetSmallView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "checklist")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.blue)
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
@@ -49,7 +49,7 @@ struct TasksWidgetSmallView: View {
                 Text(entry.snapshot.overdueTaskCount > 0
                      ? "\(entry.snapshot.overdueTaskCount) \(NSLocalizedString("widget_overdue", comment: ""))"
                      : "\(entry.snapshot.openTaskCount) \(NSLocalizedString("widget_open", comment: ""))")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
             }
@@ -84,13 +84,13 @@ struct TasksMediumView: View {
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "checklist")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.blue)
                 }
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
                     Text(String(format: String(localized: "%d overdue"), entry.snapshot.overdueTaskCount))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(.red)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)

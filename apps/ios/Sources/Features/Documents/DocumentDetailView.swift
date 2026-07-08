@@ -144,13 +144,13 @@ struct DocumentDetailView: View {
                 .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.7)
             HStack(spacing: 8) {
                 Text(LocalizedStringKey(live.category.capitalized))
-                    .font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.9))
+                    .font(AppFont.caption).foregroundStyle(.white.opacity(0.9))
                     .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
                     .background(.white.opacity(0.14), in: Capsule())
                 if live.isCritical {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10))
-                        Text("Critical").font(.system(size: 12, weight: .medium))
+                        Text("Critical").font(AppFont.caption)
                     }
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)

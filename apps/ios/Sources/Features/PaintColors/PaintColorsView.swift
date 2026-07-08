@@ -57,7 +57,7 @@ struct PaintColorsView: View {
                         SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",
                                        render: renderSpecSheet) {
                             Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(.primary)
                                 .frame(width: 34, height: 32)
                         }
@@ -274,7 +274,7 @@ private struct PaintColorsSpecSheet: View {
             }
             if !propertyName.isEmpty {
                 Text(propertyName)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(faint)
             }
             Rectangle().fill(Color(white: 0.9)).frame(height: 1).padding(.top, 6)
@@ -292,7 +292,7 @@ private struct PaintColorsSpecSheet: View {
                 )
             VStack(alignment: .leading, spacing: 3) {
                 Text(color.colorName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(ink)
                 HStack(spacing: 8) {
                     if let brand = color.brand, !brand.isEmpty { tag(brand) }
@@ -310,7 +310,7 @@ private struct PaintColorsSpecSheet: View {
 
     private func tag(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .medium))
+            .font(AppFont.caption2)
             .foregroundStyle(faint)
     }
 

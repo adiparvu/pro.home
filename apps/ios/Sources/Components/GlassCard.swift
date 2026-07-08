@@ -133,7 +133,7 @@ struct GlassActionButton: View {
                     .frame(width: 52, height: 52)
                     .glassCircle()
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

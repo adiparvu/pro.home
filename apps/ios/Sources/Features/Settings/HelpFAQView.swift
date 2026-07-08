@@ -146,7 +146,7 @@ struct HelpFAQView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: section.icon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(section.tint)
                 Text(section.title)

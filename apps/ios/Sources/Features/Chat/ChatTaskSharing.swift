@@ -67,7 +67,7 @@ struct TaskCardBubble: View {
                                 in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
                     Text(payload.title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(isOwn ? onBubble : .primary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
@@ -80,7 +80,7 @@ struct TaskCardBubble: View {
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle((isOwn ? onBubble : Color.primary).opacity(0.4))
             }
             .padding(.horizontal, AppSpacing.base)

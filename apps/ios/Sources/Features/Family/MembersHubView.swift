@@ -109,7 +109,7 @@ struct MembersHubView: View {
                     showAdd = true
                 } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.accentColor)
                 }
                 .accessibilityLabel("Add member")
@@ -156,7 +156,7 @@ struct MembersHubView: View {
                     withAnimation(.snappy) { segment = seg }
                 } label: {
                     HStack(spacing: 5) {
-                        Image(systemName: seg.icon).font(.system(size: 11, weight: .semibold))
+                        Image(systemName: seg.icon).font(AppFont.label)
                         Text(seg.title).font(AppFont.captionEmphasis)
                         if seg == .invitations, pendingInviteCount > 0 {
                             Text("\(pendingInviteCount)")
@@ -202,7 +202,7 @@ struct MembersHubView: View {
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.brandPurple)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(Color.primary.opacity(0.25))
                     }
                     .padding(AppSpacing.base)
@@ -379,7 +379,7 @@ private struct MemberHubRow: View {
             MemberAvatar(member: member, size: 42)
             VStack(alignment: .leading, spacing: 2) {
                 Text(member.name)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 if let email = member.email, !email.isEmpty {
                     Text(email)
@@ -390,12 +390,12 @@ private struct MemberHubRow: View {
             }
             Spacer()
             Text(LocalizedStringKey(kRoleLabels[member.role] ?? member.role.capitalized))
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(member.swiftColor)
                 .padding(.horizontal, 9).padding(.vertical, 4)
                 .background(member.swiftColor.opacity(0.14), in: Capsule())
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base)
@@ -433,7 +433,7 @@ private struct InvitationRow: View {
                 }
                 Spacer()
                 Text(status.text)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(status.color)
                     .padding(.horizontal, 9).padding(.vertical, 4)
                     .background(status.color.opacity(0.13), in: Capsule())
@@ -448,7 +448,7 @@ private struct InvitationRow: View {
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Text(LocalizedStringKey(kRoleLabels[invitation.role] ?? invitation.role.capitalized))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Spacer()
@@ -456,7 +456,7 @@ private struct InvitationRow: View {
                 if !invitation.accepted && !invitation.isRevoked {
                     Button { onResend() } label: {
                         Text("Resend")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -464,7 +464,7 @@ private struct InvitationRow: View {
                 if !invitation.isRevoked {
                     Button(role: .destructive) { onRevoke() } label: {
                         Text("Revoke")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)

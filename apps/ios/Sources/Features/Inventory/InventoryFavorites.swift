@@ -103,7 +103,7 @@ struct InventoryItemPreview: View {
                     Label(String(format: String(localized: "Loaned to %@ · %dd"),
                                  loan.borrowerName, loan.daysOut),
                           systemImage: "person.fill")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(.orange)
                 }
 
@@ -125,7 +125,7 @@ struct InventoryItemPreview: View {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .semibold))
             label
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
         }
         .foregroundStyle(color)
         .padding(.horizontal, 9)

@@ -208,7 +208,7 @@ struct CamerasView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                 Text(verbatim: actionSet.name)
                     .font(AppFont.captionEmphasis)
                     .lineLimit(1)
@@ -280,7 +280,7 @@ struct CamerasView: View {
             .overlay(alignment: .topTrailing) {
                 if isStale {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.brandWarning)
                         .padding(6)
                         .mediaGlass(in: Circle())

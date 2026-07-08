@@ -284,7 +284,7 @@ struct ContactCardBubble: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(isOwn ? onBubble : .primary)
                         .lineLimit(1)
                     Text(payloads.count == 1
@@ -296,7 +296,7 @@ struct ContactCardBubble: View {
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle((isOwn ? onBubble : Color.primary).opacity(0.4))
             }
             .padding(.horizontal, AppSpacing.base)
@@ -334,7 +334,7 @@ struct SharedContactDetailSheet: View {
                                     .font(.system(size: 17, weight: .semibold))
                                 if isHouseholdMember(p) {
                                     Label(String(localized: "Membru al casei"), systemImage: "house.fill")
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(AppFont.caption)
                                         .foregroundStyle(Color.brandSuccess)
                                 }
                             }

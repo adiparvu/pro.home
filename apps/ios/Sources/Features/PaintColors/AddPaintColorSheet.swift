@@ -217,7 +217,7 @@ struct AddPaintColorSheet: View {
                 }
             } label: {
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 30, height: 30)
                     .contentShape(Rectangle())

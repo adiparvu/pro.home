@@ -349,7 +349,7 @@ struct AddPlantSheet: View {
                         HStack(spacing: 5) {
                             if healthStatus == opt.id {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .symbolRenderingMode(.hierarchical)
                             }
                             Text(LocalizedStringKey(opt.label))

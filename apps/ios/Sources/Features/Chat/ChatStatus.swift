@@ -311,7 +311,7 @@ struct TextStatusComposer: View {
                 Spacer()
 
                 TextField("", text: $text, axis: .vertical)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(AppFont.title)
                     .foregroundStyle(.white)
                     .tint(.white)
                     .multilineTextAlignment(.center)
@@ -319,7 +319,7 @@ struct TextStatusComposer: View {
                     .overlay(alignment: .center) {
                         if text.isEmpty {
                             Text("Type a status")
-                                .font(.system(size: 30, weight: .bold, design: .rounded))
+                                .font(AppFont.title)
                                 .foregroundStyle(.white.opacity(0.5))
                                 .allowsHitTesting(false)
                         }

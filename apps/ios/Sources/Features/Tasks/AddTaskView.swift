@@ -343,7 +343,7 @@ struct AddTaskView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.35))
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)

@@ -180,7 +180,7 @@ struct PantryView: View {
             withAnimation(.snappy(duration: 0.2)) { action() }
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(enabled ? Color.primary : Color.primary.opacity(0.25))
                 .frame(width: 30, height: 30)
                 .mediaGlass(in: Circle(), interactive: true)

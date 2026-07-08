@@ -111,7 +111,7 @@ struct ARIAView: View {
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(Color.primary.opacity(0.35))
                             }
                         }

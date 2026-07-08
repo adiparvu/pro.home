@@ -174,7 +174,7 @@ struct PropertyInsightsSections: View {
                             Image(systemName: "plus")
                                 .font(.system(size: 20, weight: .medium))
                             Text("Add")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(AppFont.caption2)
                         }
                         .foregroundStyle(Color.accentColor)
                     }

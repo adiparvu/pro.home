@@ -253,7 +253,7 @@ struct VoiceReviewRow: View {
                             .fill(Color.primary.opacity(0.08))
                             .frame(width: 36, height: 36)
                         Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                     }
                 }

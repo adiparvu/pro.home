@@ -26,7 +26,7 @@ struct PlantsSmallView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.green)
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
@@ -47,7 +47,7 @@ struct PlantsSmallView: View {
                 Text(entry.snapshot.plantsNeedingWater > 0
                      ? LocalizedStringKey("Needs water")
                      : LocalizedStringKey("All watered"))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
             }
         }
@@ -81,13 +81,13 @@ struct PlantsMediumView: View {
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "leaf.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.green)
                 }
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
                     Text(String(format: String(localized: "%d need water"), entry.snapshot.plantsNeedingWater))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(Color(red: 1.0, green: 0.62, blue: 0.1))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)

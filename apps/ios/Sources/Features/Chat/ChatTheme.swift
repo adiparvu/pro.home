@@ -550,7 +550,7 @@ struct BackgroundPicker: View {
                             ZStack(alignment: .bottom) {
                                 AnimatedChatBackground(preset: preset)
                                 Text(preset.name)
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, AppSpacing.sm)
                                     .padding(.vertical, 3)
@@ -602,7 +602,7 @@ struct BackgroundPicker: View {
                         tile(selected: false) {
                             VStack(spacing: 6) {
                                 Image(systemName: "photo.badge.plus").font(.system(size: 24, weight: .semibold))
-                                Text("Upload").font(.system(size: 12, weight: .medium))
+                                Text("Upload").font(AppFont.caption)
                             }
                             .foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

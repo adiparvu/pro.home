@@ -250,7 +250,7 @@ struct SuppliesView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
             }

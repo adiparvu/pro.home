@@ -80,7 +80,7 @@ struct LanguageSettingsView: View {
                 if isCurrent {
                     if following {
                         Text(String(localized: "lang_follows_ios"))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(.secondary)
                     } else {
                         Image(systemName: "checkmark.circle.fill")
@@ -130,7 +130,7 @@ struct LanguageSettingsView: View {
 
     private func iconBadge(_ systemName: String, tint: Color) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 16, weight: .semibold))
+            .font(AppFont.headline)
             .foregroundStyle(tint)
             .frame(width: 34, height: 34)
             .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))

@@ -105,7 +105,7 @@ struct CurrencyView: View {
                     withAnimation(.snappy(duration: 0.25)) { reversed.toggle() }
                 } label: {
                     Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.primary)
                         .frame(width: 32, height: 32)
                         .glassCircle()

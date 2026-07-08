@@ -72,7 +72,7 @@ struct InfoActionCard: View {
                     .frame(width: 52, height: 52)
                     .glassCircle()
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             .frame(maxWidth: .infinity)

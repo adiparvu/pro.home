@@ -221,7 +221,7 @@ private struct IntegrationIdentityEditor: View {
                             HapticFeedback.selection()
                         } label: {
                             Image(systemName: symbol)
-                                .font(.system(size: 15, weight: .medium))
+                                .font(AppFont.body)
                                 .foregroundStyle(icon == symbol ? tint : Color.primary.opacity(AppOpacity.mediumText))
                                 .frame(width: 36, height: 36)
                                 .background(
@@ -429,7 +429,7 @@ private struct IntegrationDetailSheet: View {
                 Task { await service.rotateToken(integration) }
             } label: {
                 Label("Rotate token", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
@@ -519,7 +519,7 @@ private struct IntegrationDetailSheet: View {
                 HapticFeedback.selection()
             } label: {
                 Image(systemName: copied == key ? "checkmark" : "doc.on.doc")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(copied == key ? Color.brandSuccess : Color.accentColor)
             }
             .buttonStyle(.plain)

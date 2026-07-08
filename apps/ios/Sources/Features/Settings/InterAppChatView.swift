@@ -167,7 +167,7 @@ struct InterAppChatView: View {
                             Task { await service.regenerateToken(propertyId: pid) }
                         } label: {
                             Label("Rotate token", systemImage: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(.orange)
                         }
                         .buttonStyle(.plain)
@@ -297,7 +297,7 @@ struct InterAppChatView: View {
                 HapticFeedback.selection()
             } label: {
                 Image(systemName: copied == key ? "checkmark" : "doc.on.doc")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(copied == key ? Color.brandSuccess : Color.accentColor)
             }
             .buttonStyle(.plain)

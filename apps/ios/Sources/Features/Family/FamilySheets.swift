@@ -194,7 +194,7 @@ struct AddFamilyMemberSheet: View {
                     showRoleInfo = true
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)

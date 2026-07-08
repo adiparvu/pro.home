@@ -139,7 +139,7 @@ struct TwinTimeMachineOverlay: View {
                 Spacer()
                 Text("Today")
             }
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.white.opacity(0.7))
         }
         .padding(AppSpacing.base)

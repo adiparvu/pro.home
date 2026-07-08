@@ -157,9 +157,9 @@ struct ChatSettingsView: View {
                 .overlay(alignment: .bottomTrailing) {
                     HStack(spacing: 5) {
                         Image(systemName: "paintbrush.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                         Text("Personalizează")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                     }
                     .foregroundStyle(.primary)
                     .padding(.horizontal, AppSpacing.md)

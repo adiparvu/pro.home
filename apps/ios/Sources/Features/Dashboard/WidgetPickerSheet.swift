@@ -285,7 +285,7 @@ struct WidgetPickerSheet: View {
                 }
             } label: {
                 Image(systemName: config.size.icon)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.primary)
                     .contentTransition(.symbolEffect(.replace))

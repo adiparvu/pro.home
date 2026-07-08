@@ -72,7 +72,7 @@ struct NotificationCenterView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                             .frame(width: 34, height: 34)
                             .glassCircle()
@@ -223,7 +223,7 @@ private struct NotificationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: category.icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(category.color)
                 .frame(width: 40, height: 40)

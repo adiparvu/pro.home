@@ -266,7 +266,7 @@ struct LockScreenNextTaskView: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(critical)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .lineLimit(2)
             } else if let next = entry.snapshot.nextMaintenanceTitle {
                 HStack(spacing: 4) {
@@ -279,7 +279,7 @@ struct LockScreenNextTaskView: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(next)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .lineLimit(1)
                 if let due = entry.snapshot.nextMaintenanceDue {
                     Text(due)
@@ -289,10 +289,10 @@ struct LockScreenNextTaskView: View {
             } else {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .widgetAccentable()
                     Text("All caught up")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                 }
                 Text("No upcoming tasks")
                     .font(.system(size: 11))
@@ -333,7 +333,7 @@ struct LockScreenDashboardView: View {
                         .font(.system(size: 10, weight: .semibold))
                         .widgetAccentable()
                     Text(entry.snapshot.propertyName ?? "PRVIO")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .lineLimit(1)
                     if let score = entry.snapshot.propertyHealthScore {
                         Spacer(minLength: 4)

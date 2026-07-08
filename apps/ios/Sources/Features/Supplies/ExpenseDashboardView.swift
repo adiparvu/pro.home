@@ -101,7 +101,7 @@ struct ExpenseDashboardView: View {
                 }
                 Spacer()
                 Text(receiptService.monthDisplayName(selectedMonth))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
                 Spacer()

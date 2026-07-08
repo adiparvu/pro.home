@@ -31,7 +31,7 @@ private struct MinimalLockRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(tint)
             Text(title)
                 .font(.system(size: 13, weight: .medium))
@@ -65,7 +65,7 @@ struct ShoppingLiveActivity: Widget {
                     Group {
                         if LA.expandedData("shopping") {
                             Label(context.attributes.listName, systemImage: "cart.fill")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(.blue)
                         } else {
                             Image(systemName: "cart.fill").foregroundStyle(.blue)
@@ -96,7 +96,7 @@ struct ShoppingLiveActivity: Widget {
                                 Spacer()
                                 if context.state.itemsBought == context.state.totalItems {
                                     Text("Complete! 🎉")
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(AppFont.captionStrong)
                                         .foregroundStyle(.green)
                                 }
                             }
@@ -106,7 +106,7 @@ struct ShoppingLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: "cart.fill")
                     .foregroundStyle(.blue)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
             } compactTrailing: {
                 if LA.island("shopping") {
                     Text("\(context.state.itemsBought)/\(context.state.totalItems)")
@@ -137,12 +137,12 @@ struct ShoppingLockScreenView: View {
                     .fill(Color.blue.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: "cart.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(.blue)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(context.attributes.listName)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                 if LA.progress("shopping") {
                     ProgressView(value: progress).tint(.blue)
@@ -188,7 +188,7 @@ struct MaintenanceLiveActivity: Widget {
                     Group {
                         if LA.expandedData("maintenance") {
                             Label(context.attributes.taskTitle, systemImage: "wrench.fill")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(.orange)
                                 .lineLimit(1)
                         } else {
@@ -244,12 +244,12 @@ struct MaintenanceLockScreenView: View {
                     .fill(Color.orange.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(context.state.isComplete ? .green : .orange)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(context.attributes.taskTitle)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 if LA.progress("maintenance") {
@@ -297,7 +297,7 @@ struct WorkSessionLiveActivity: Widget {
                     Group {
                         if LA.expandedData("workSession") {
                             Label(context.attributes.taskTitle, systemImage: "timer")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(.teal)
                                 .lineLimit(1)
                         } else {
@@ -321,13 +321,13 @@ struct WorkSessionLiveActivity: Widget {
                         HStack(spacing: 10) {
                             Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
                                 Label("la_session_complete", systemImage: "checkmark.circle.fill")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.teal)
                             Button(intent: EndWorkSessionIntent()) {
                                 Text("la_session_end")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                             }
                             .buttonStyle(.bordered)
                         }
@@ -364,12 +364,12 @@ struct WorkSessionLockScreenView: View {
                         .fill(Color.teal.opacity(0.15))
                         .frame(width: 44, height: 44)
                     Image(systemName: context.state.isComplete ? "checkmark.circle.fill" : "timer")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(context.state.isComplete ? .green : .teal)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.attributes.taskTitle)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if LA.property("workSession"),
@@ -391,14 +391,14 @@ struct WorkSessionLockScreenView: View {
                 HStack(spacing: 10) {
                     Button(intent: CompleteWorkSessionIntent(taskId: context.attributes.taskId)) {
                         Label("la_session_complete", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.teal)
                     Button(intent: EndWorkSessionIntent()) {
                         Text("la_session_end")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -430,7 +430,7 @@ struct DeliveryLiveActivity: Widget {
                     Group {
                         if LA.expandedData("delivery") {
                             Label(context.attributes.carrier, systemImage: "shippingbox.fill")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(.blue)
                         } else {
                             Image(systemName: "shippingbox.fill").foregroundStyle(.blue)
@@ -441,7 +441,7 @@ struct DeliveryLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     if LA.expandedData("delivery") {
                         Text(context.state.statusLabel)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(deliveryColor(context.state.status))
                     }
                 }
@@ -497,12 +497,12 @@ struct DeliveryLockScreenView: View {
                     .fill(Color.blue.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(.blue)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(context.attributes.description)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 if LA.property("delivery"), let property = context.attributes.propertyName, !property.isEmpty {
@@ -547,7 +547,7 @@ struct PlantCareLiveActivity: Widget {
                     Group {
                         if LA.expandedData("plantCare") {
                             Label("Plant watering", systemImage: "drop.fill")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(.blue)
                         } else {
                             Image(systemName: "drop.fill").foregroundStyle(.blue)
@@ -613,12 +613,12 @@ struct PlantCareLockScreenView: View {
                     .fill(Color.blue.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(.blue)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("Plant watering")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                 if LA.progress("plantCare") {
                     ProgressView(value: progress).tint(.blue)

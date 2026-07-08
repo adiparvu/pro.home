@@ -204,7 +204,7 @@ struct BlueprintsView: View {
                         .overlay(alignment: .topTrailing) {
                             if locked {
                                 Image(systemName: "lock.fill")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(.teal)
                                     .padding(6)
                                     .background(.ultraThinMaterial, in: Circle())

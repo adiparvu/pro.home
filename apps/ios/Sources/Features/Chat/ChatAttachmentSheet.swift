@@ -76,7 +76,7 @@ struct ChatAttachmentSheet: View {
                         .fill(LinearGradient(colors: colors,
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.white)
                 }
                 .frame(width: 34, height: 34)

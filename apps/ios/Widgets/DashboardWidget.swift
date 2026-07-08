@@ -134,7 +134,7 @@ struct DashboardMediumView: View {
     private func statPill(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(color)
             Text(value)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -251,10 +251,10 @@ struct DashboardLargeView: View {
     private func largeStat(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(AppFont.title2)
                 .foregroundStyle(.white)
             Text(label)
                 .font(.system(size: 9, weight: .medium))

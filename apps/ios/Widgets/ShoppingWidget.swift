@@ -24,7 +24,7 @@ struct ShoppingSmallView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "cart.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
                 Spacer()
                 Text("\(entry.snapshot.pendingSupplyCount)")
@@ -39,7 +39,7 @@ struct ShoppingSmallView: View {
                 Text(entry.snapshot.pendingSupplyCount > 0
                      ? LocalizedStringKey("\(entry.snapshot.pendingSupplyCount) items")
                      : LocalizedStringKey("Empty list"))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
             }
         }
@@ -73,13 +73,13 @@ struct ShoppingMediumView: View {
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "cart.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
                 }
                 Spacer()
                 if entry.snapshot.pendingSupplyCount > 0 {
                     Text(LocalizedStringKey("\(entry.snapshot.pendingSupplyCount) items"))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)

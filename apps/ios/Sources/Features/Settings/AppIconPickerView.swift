@@ -185,7 +185,7 @@ struct AppIconPickerView: View {
     private var variantRow: some View {
         VStack(spacing: AppSpacing.md) {
             Text(current.name)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.primary)
                 .contentTransition(.opacity)
                 .animation(.smooth(duration: 0.25), value: current.id)

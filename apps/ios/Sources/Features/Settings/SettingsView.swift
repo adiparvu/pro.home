@@ -348,7 +348,7 @@ struct SettingsView: View {
                                 .font(AppFont.subheadline)
                                 .foregroundStyle(shortcutColor(f))
                             Text(shortcutLabel(f))
-                                .font(.system(size: 11, weight: .medium))
+                                .font(AppFont.caption2)
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)

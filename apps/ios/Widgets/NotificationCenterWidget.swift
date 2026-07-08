@@ -116,7 +116,7 @@ struct NotificationCenterSmallView: View {
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(statusColor)
                         Text(alertCount == 1 ? String(localized: "1 alert") : String(format: String(localized: "%d alerts"), alertCount))
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(statusColor)
                     }
                     .padding(.horizontal, 8)
