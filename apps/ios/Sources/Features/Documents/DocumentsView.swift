@@ -23,14 +23,23 @@ struct DocumentsView: View {
                                "certificate", "manual", "invoice", "permit", "tax", "utility",
                                "photo", "other"]
 
-    var filteredDocuments: [DocumentModel] {
-        _ = favRefresh
+    enum DocSort: String {
+        case recent, name, expiry
+    }
+
+    @State private var sortOrder: DocSort = .recent
+
+    private func filtered(favs: Set<String>) -> [DocumentModel] {
         var docs = documentService.documents
-        if selectedCategory == "Favorite" {
-            let favs = DocumentFavoritesStore.ids()
+        switch selectedCategory {
+        case "Favorite":
             docs = docs.filter { favs.contains($0.id.uuidString) }
-        } else if let cat = selectedCategory, cat != "All" {
+        case "Expiring":
+            docs = docs.filter(\.isExpiringSoon)
+        case let cat? where cat != "All":
             docs = docs.filter { $0.category == cat }
+        default:
+            break
         }
         if !search.isEmpty {
             docs = docs.filter {
@@ -38,31 +47,54 @@ struct DocumentsView: View {
                 $0.category.localizedCaseInsensitiveContains(search)
             }
         }
-        return docs
+        switch sortOrder {
+        case .recent:
+            return docs   // service order: newest first
+        case .name:
+            return docs.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        case .expiry:
+            // Documents with an expiry first, soonest first (ISO strings
+            // compare chronologically); undated ones sink to the bottom.
+            return docs.sorted {
+                switch ($0.expiresAt, $1.expiresAt) {
+                case let (a?, b?): return a < b
+                case (_?, nil):    return true
+                default:           return false
+                }
+            }
+        }
     }
 
     var body: some View {
+        // One pass per render: favorites are read once (they were hitting
+        // UserDefaults per row) and the filter runs once instead of per use.
+        let _ = favRefresh
+        let favs = DocumentFavoritesStore.ids()
+        let docs = filtered(favs: favs)
+        let expiringCount = documentService.expiringDocs.count
+
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                categoryChips(favs: favs, expiringCount: expiringCount)
                 if documentService.isLoading {
                     Spacer()
                     ProgressView().tint(.white)
                     Spacer()
-                } else if filteredDocuments.isEmpty {
+                } else if docs.isEmpty {
                     emptyState
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 12) {
-                            if !documentService.expiringDocs.isEmpty && selectedCategory == nil && search.isEmpty {
+                            if expiringCount > 0 && selectedCategory == nil && search.isEmpty {
                                 expiringBanner
                             }
-                            ForEach(filteredDocuments) { doc in
+                            ForEach(docs) { doc in
                                 let locked = ItemLockStore.isLocked(doc.id.uuidString, in: .documents)
                                 DocumentRow(
                                     doc: doc,
-                                    isFavorite: DocumentFavoritesStore.isFavorite(doc.id),
+                                    isFavorite: favs.contains(doc.id.uuidString),
                                     isLocked: locked,
                                     onOpen: { withLockCheck(doc) { selectedDoc = doc } },
                                     onPreview: { withLockCheck(doc) { openDocument(doc) } },
@@ -95,7 +127,7 @@ struct DocumentsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    filterMenu
+                    sortMenu
                         .frame(width: 38, height: 32)
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))
@@ -236,32 +268,80 @@ struct DocumentsView: View {
             .padding(.horizontal, AppSpacing.xxl)
     }
 
-    // MARK: - Category filter menu
+    // MARK: - Category chips (filters, always visible — the old toolbar
+    // menu hid the categories behind a tap nobody discovered)
 
-    private var filterMenu: some View {
-        Menu {
-            Button {
-                withAnimation(.spring(response: 0.25)) { selectedCategory = nil }
-            } label: {
-                Label("All  (\(documentService.documents.count))",
-                      systemImage: selectedCategory == nil ? "checkmark" : "square.grid.2x2.fill")
-            }
-            ForEach(categories.dropFirst(), id: \.self) { cat in
-                Button {
-                    withAnimation(.spring(response: 0.25)) { selectedCategory = cat }
-                } label: {
-                    Label("\(docCategoryName(cat))  (\(countFor(cat)))",
-                          systemImage: selectedCategory == cat ? "checkmark" : categoryIcon(for: cat))
+    private func categoryChips(favs: Set<String>, expiringCount: Int) -> some View {
+        let counts = Dictionary(grouping: documentService.documents, by: \.category)
+            .mapValues(\.count)
+        let favCount = documentService.documents.filter { favs.contains($0.id.uuidString) }.count
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.sm) {
+                chip(nil, label: docCategoryName("All"), icon: "square.grid.2x2.fill",
+                     count: documentService.documents.count)
+                if expiringCount > 0 {
+                    chip("Expiring", label: String(localized: "doc_filter_expiring"),
+                         icon: "exclamationmark.triangle.fill", count: expiringCount)
+                }
+                if favCount > 0 {
+                    chip("Favorite", label: docCategoryName("Favorite"),
+                         icon: "star.fill", count: favCount)
+                }
+                // Only categories that actually contain documents.
+                ForEach(categories.dropFirst(2), id: \.self) { cat in
+                    if let count = counts[cat], count > 0 {
+                        chip(cat, label: docCategoryName(cat),
+                             icon: categoryIcon(for: cat), count: count)
+                    }
                 }
             }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.sm)
+        }
+    }
+
+    private func chip(_ value: String?, label: String, icon: String, count: Int) -> some View {
+        let isOn = selectedCategory == value
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.25)) { selectedCategory = value }
         } label: {
-            Image(systemName: selectedCategory == nil
-                  ? "line.3.horizontal.decrease"
-                  : selectedCategory.map { categoryIcon(for: $0) } ?? "line.3.horizontal.decrease")
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(AppFont.caption)
+                Text(label)
+                    .font(AppFont.captionEmphasis)
+                Text("\(count)")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(isOn ? 0.6 : 0.35))
+                    .monospacedDigit()
+            }
+            .foregroundStyle(isOn ? Color.primary : Color.secondary)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, 7)
+            .background(isOn ? Color.accentColor.opacity(0.18) : Color.subtleFill, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: label))
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+    }
+
+    // MARK: - Sort menu
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("doc_sort_menu", selection: $sortOrder) {
+                Label("doc_sort_recent", systemImage: "clock").tag(DocSort.recent)
+                Label("doc_sort_name", systemImage: "textformat").tag(DocSort.name)
+                Label("doc_sort_expiry", systemImage: "calendar.badge.exclamationmark").tag(DocSort.expiry)
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
                 .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
-        .accessibilityLabel("Filter documents")
+        .accessibilityLabel("doc_sort_menu")
     }
 
     private func categoryIcon(for cat: String) -> String {
@@ -282,18 +362,10 @@ struct DocumentsView: View {
         }
     }
 
-    private func countFor(_ cat: String) -> Int {
-        if cat == "Favorite" {
-            _ = favRefresh
-            let favs = DocumentFavoritesStore.ids()
-            return documentService.documents.filter { favs.contains($0.id.uuidString) }.count
-        }
-        return documentService.documents.filter { $0.category == cat }.count
-    }
-
     private func docCategoryName(_ cat: String) -> String {
         let ro = Locale.appIsRomanian
         switch cat {
+        case "All":         return ro ? "Toate" : "All"
         case "Favorite":    return ro ? "Favorite" : "Favorites"
         case "warranty":    return ro ? "Garanție" : "Warranty"
         case "contract":    return ro ? "Contract" : "Contract"
@@ -313,19 +385,28 @@ struct DocumentsView: View {
     // MARK: - Expiring banner
 
     private var expiringBanner: some View {
-        GlassCard {
-            HStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange).font(.system(size: 18))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
-                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                    Text("Review and renew before they expire")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+        Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.25)) { selectedCategory = "Expiring" }
+        } label: {
+            GlassCard {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange).font(.system(size: 18))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                        Text("Review and renew before they expire")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(0.25))
                 }
-                Spacer()
             }
         }
+        .buttonStyle(.plain)
         .padding(.horizontal, AppSpacing.xl)
     }
 
