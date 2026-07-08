@@ -270,7 +270,7 @@ struct PlantEncyclopediaView: View {
 
     /// The shared card chrome: an icon + title header over arbitrary content.
     private func sectionCard<Content: View>(_ title: LocalizedStringKey, icon: String,
-                                            @ViewBuilder content: () -> Content) -> some View {
+                                            @ViewBuilder content: @escaping () -> Content) -> some View {
         GlassCard(padding: AppSpacing.lg) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Label(title, systemImage: icon)
