@@ -21,7 +21,7 @@ struct ElementAutomationsSection: View {
                     Spacer()
                     Button { showAdd = true } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
                     .accessibilityLabel("Add automation")
                 }
@@ -70,7 +70,7 @@ struct ElementAutomationsSection: View {
                 Text(a.name).font(AppFont.footnote)
                     .foregroundStyle(a.isActive ? .primary : .secondary)
                 Text(a.summary + (a.createsTask ? " · " + String(localized: "creates task") : ""))
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .font(AppFont.scaled(11)).foregroundStyle(.secondary)
             }
             Spacer()
             Toggle("", isOn: Binding(

@@ -55,7 +55,7 @@ struct ContractorDetailSheet: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                     }
                     .accessibilityLabel("Menu")
@@ -82,17 +82,17 @@ struct ContractorDetailSheet: View {
                     .fill(Color.teal.opacity(0.18))
                     .frame(width: 72, height: 72)
                 Image(systemName: contractor.specialtyIcon)
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(AppFont.scaled(28, weight: .semibold))
                     .foregroundStyle(Color.teal)
             }
 
             VStack(spacing: 4) {
                 Text(currentContractor.name)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
 
                 Text(LocalizedStringKey(currentContractor.specialty.capitalized))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(.secondary)
             }
 
@@ -106,7 +106,7 @@ struct ContractorDetailSheet: View {
         HStack(spacing: 6) {
             ForEach(1...5, id: \.self) { star in
                 Image(systemName: star <= localRating ? "star.fill" : "star")
-                    .font(.system(size: 22))
+                    .font(AppFont.scaled(22))
                     .foregroundStyle(star <= localRating ? Color.yellow : Color.primary.opacity(0.25))
                     .onTapGesture {
                         HapticFeedback.selection()
@@ -159,11 +159,11 @@ struct ContractorDetailSheet: View {
             HStack(spacing: 14) {
                 ZStack {
                     Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+                    Image(systemName: icon).font(AppFont.scaled(16)).foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
-                    Text(value).font(.system(size: 15)).foregroundStyle(.primary).lineLimit(1)
+                    Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
+                    Text(value).font(AppFont.scaled(15)).foregroundStyle(.primary).lineLimit(1)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -188,7 +188,7 @@ struct ContractorDetailSheet: View {
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                 Text(currentContractor.notes ?? "")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.75))
             }
         }
@@ -238,7 +238,7 @@ struct ContractorDetailSheet: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+                    Image(systemName: icon).font(AppFont.scaled(16)).foregroundStyle(color)
                 }
                 Text(label)
                     .font(AppFont.body)
@@ -320,8 +320,8 @@ struct EditContractorSheet: View {
 
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(placeholder, text: binding).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 

@@ -31,25 +31,25 @@ struct LockScreenTasksView: View {
             if entry.snapshot.overdueTaskCount > 0 {
                 VStack(spacing: 0) {
                     Text("\(entry.snapshot.overdueTaskCount)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                         .widgetAccentable()
                     Text("late")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                 }
             } else if entry.snapshot.openTaskCount > 0 {
                 VStack(spacing: 0) {
                     Text("\(entry.snapshot.openTaskCount)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                         .widgetAccentable()
                     Image(systemName: "checklist")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 26, weight: .medium))
+                    .font(AppFont.scaled(26, weight: .medium))
                     .widgetAccentable()
             }
         }
@@ -82,15 +82,15 @@ struct LockScreenPlantsView: View {
             if entry.snapshot.plantsNeedingWater > 0 {
                 VStack(spacing: 0) {
                     Text("\(entry.snapshot.plantsNeedingWater)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                         .widgetAccentable()
                     Image(systemName: "drop.fill")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
             } else {
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 24, weight: .medium))
+                    .font(AppFont.scaled(24, weight: .medium))
                     .widgetAccentable()
             }
         }
@@ -125,7 +125,7 @@ struct LockScreenHealthView: View {
                 Image(systemName: "house.fill")
             } currentValueLabel: {
                 Text("\(score)")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(18, weight: .bold, design: .rounded))
             }
             .gaugeStyle(.accessoryCircular)
             .widgetAccentable()
@@ -173,15 +173,15 @@ struct LockScreenDeliveriesView: View {
                 if entry.snapshot.activeDeliveryCount > 0 {
                     VStack(spacing: 0) {
                         Text("\(entry.snapshot.activeDeliveryCount)")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                             .widgetAccentable()
                         Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(AppFont.scaled(9, weight: .semibold))
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     Image(systemName: "shippingbox")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(AppFont.scaled(22, weight: .medium))
                         .foregroundStyle(.secondary)
                         .widgetAccentable()
                 }
@@ -216,15 +216,15 @@ struct LockScreenMessagesView: View {
             if entry.snapshot.unreadMessages > 0 {
                 VStack(spacing: 0) {
                     Text("\(entry.snapshot.unreadMessages)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                         .widgetAccentable()
                     Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(AppFont.scaled(8, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
             } else {
                 Image(systemName: "bubble.left.and.bubble.right")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(AppFont.scaled(20, weight: .medium))
                     .foregroundStyle(.secondary)
                     .widgetAccentable()
             }
@@ -258,10 +258,10 @@ struct LockScreenNextTaskView: View {
             if let critical = entry.snapshot.criticalTaskTitle {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .widgetAccentable()
                     Text("Overdue")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                 }
@@ -271,10 +271,10 @@ struct LockScreenNextTaskView: View {
             } else if let next = entry.snapshot.nextMaintenanceTitle {
                 HStack(spacing: 4) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .widgetAccentable()
                     Text("Next task")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                 }
@@ -283,7 +283,7 @@ struct LockScreenNextTaskView: View {
                     .lineLimit(1)
                 if let due = entry.snapshot.nextMaintenanceDue {
                     Text(due)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -295,7 +295,7 @@ struct LockScreenNextTaskView: View {
                         .font(AppFont.captionEmphasis)
                 }
                 Text("No upcoming tasks")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.secondary)
             }
         }
@@ -330,7 +330,7 @@ struct LockScreenDashboardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 4) {
                     Image(systemName: "house.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .widgetAccentable()
                     Text(entry.snapshot.propertyName ?? "PRVIO")
                         .font(AppFont.label)
@@ -338,20 +338,20 @@ struct LockScreenDashboardView: View {
                     if let score = entry.snapshot.propertyHealthScore {
                         Spacer(minLength: 4)
                         Text("\(score)")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(11, weight: .bold, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                 }
                 HStack(spacing: 10) {
                     Label("\(entry.snapshot.overdueTaskCount)", systemImage: "checklist")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                     Label("\(entry.snapshot.plantsNeedingWater)", systemImage: "leaf.fill")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                     Label("\(entry.snapshot.activeDeliveryCount)", systemImage: "shippingbox.fill")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                     if entry.snapshot.unreadMessages > 0 {
                         Label("\(entry.snapshot.unreadMessages)", systemImage: "bubble.left.fill")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                     }
                 }
                 .foregroundStyle(.secondary)

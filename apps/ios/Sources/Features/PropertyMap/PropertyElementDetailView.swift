@@ -92,7 +92,7 @@ struct PropertyElementDetailView: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
-                            .font(.system(size: 22))
+                            .font(AppFont.scaled(22))
                     }
                     .accessibilityLabel("Close")
                 }
@@ -125,7 +125,7 @@ struct PropertyElementDetailView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                             .foregroundStyle(.secondary)
-                            .font(.system(size: 20))
+                            .font(AppFont.scaled(20))
                     }
                 }
             }
@@ -218,7 +218,7 @@ struct PropertyElementDetailView: View {
                     .fill(localElement.elementType.accentColor.opacity(0.2))
                     .frame(width: 60, height: 60)
                 Image(systemName: localElement.elementType.icon)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(AppFont.scaled(24, weight: .semibold))
                     .foregroundStyle(localElement.elementType.accentColor)
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -261,10 +261,10 @@ struct PropertyElementDetailView: View {
         let status = localElement.warrantyStatus
         return VStack(spacing: 2) {
             Image(systemName: status == .none ? "shield.slash" : "shield.fill")
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(status.color)
             Text(status.label)
-                .font(.system(size: 9, weight: .medium))
+                .font(AppFont.scaled(9, weight: .medium))
                 .foregroundStyle(status.color)
                 .multilineTextAlignment(.center)
         }

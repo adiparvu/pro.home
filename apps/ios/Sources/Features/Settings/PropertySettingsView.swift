@@ -90,10 +90,10 @@ struct PropertySettingsView: View {
                 propertyThumb(p)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(p.name)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(AppFont.scaled(17, weight: .bold))
                         .foregroundStyle(.primary)
                     Text("\(p.addressLine1), \(p.city)")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.55))
                         .lineLimit(1)
                     HStack(spacing: 8) {
@@ -104,7 +104,7 @@ struct PropertySettingsView: View {
                             .background(.blue.opacity(0.15), in: Capsule())
                         if let score = p.healthScore {
                             HStack(spacing: 3) {
-                                Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(.red.opacity(0.7))
+                                Image(systemName: "heart.fill").font(AppFont.scaled(9)).foregroundStyle(.red.opacity(0.7))
                                 Text("\(score)").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.6))
                             }
                         }
@@ -112,7 +112,7 @@ struct PropertySettingsView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
         }
@@ -137,7 +137,7 @@ struct PropertySettingsView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
             Image(systemName: "house.fill")
-                .font(.system(size: 24, weight: .semibold))
+                .font(AppFont.scaled(24, weight: .semibold))
                 .foregroundStyle(.white)
         }
     }
@@ -165,7 +165,7 @@ struct PropDetailRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)

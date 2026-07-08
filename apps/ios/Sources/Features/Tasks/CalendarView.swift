@@ -70,7 +70,7 @@ struct CalendarView: View {
             .accessibilityLabel("Previous month")
             Spacer()
             Text(LocalizedStringKey(monthTitle))
-                .font(.system(size: 17, weight: .semibold))
+                .font(AppFont.scaled(17, weight: .semibold))
                 .foregroundStyle(.primary)
             Spacer()
             Button {
@@ -148,7 +148,7 @@ struct CalendarView: View {
                 VStack(spacing: 8) {
                     Spacer()
                     Image(systemName: "checkmark.circle")
-                        .font(.system(size: 30))
+                        .font(AppFont.scaled(30))
                         .foregroundStyle(Color.primary.opacity(0.2))
                     Text("Nothing scheduled")
                         .font(.subheadline)
@@ -299,7 +299,7 @@ private struct DayCell: View {
                         .fill(isSelected ? Color.white : isToday ? Color.primary.opacity(0.15) : Color.clear)
                         .frame(width: 32, height: 32)
                     Text("\(day)")
-                        .font(.system(size: 14, weight: isToday || isSelected ? .bold : .regular))
+                        .font(AppFont.scaled(14, weight: isToday || isSelected ? .bold : .regular))
                         .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(isToday ? 1 : 0.7))
                 }
                 HStack(spacing: 3) {
@@ -332,7 +332,7 @@ private struct CalendarEventRow: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(subtitle))
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()

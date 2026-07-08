@@ -395,7 +395,7 @@ struct ConversationsView: View {
                     ZStack {
                         Circle().fill(Color.accentColor).frame(width: 40, height: 40)
                         Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                     }
                 }
@@ -404,7 +404,7 @@ struct ConversationsView: View {
             }
 
             Text("Chat")
-                .font(.system(size: 32, weight: .bold))
+                .font(AppFont.scaled(32, weight: .bold))
 
             searchField
         }
@@ -446,11 +446,11 @@ struct ConversationsView: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: lockedRevealed ? "lock.open.fill" : "lock.fill")
-                                    .font(.system(size: 16))
+                                    .font(AppFont.scaled(16))
                                     .foregroundStyle(Color.primary.opacity(0.6))
                                     .frame(width: 40)
                                 Text(lockedRevealed ? "Locked chats (visible)" : "Locked chats")
-                                    .font(.system(size: 16, weight: .medium))
+                                    .font(AppFont.scaled(16, weight: .medium))
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -596,15 +596,15 @@ struct ConversationsView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Caută grupuri, persoane…", text: $searchText)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .autocorrectionDisabled()
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)
@@ -643,7 +643,7 @@ struct ConversationsView: View {
             }
             .accessibilityLabel(Text("Back"))
             Text("Conversații arhivate")
-                .font(.system(size: 17, weight: .bold))
+                .font(AppFont.scaled(17, weight: .bold))
             Spacer()
         }
         .padding(.horizontal, AppSpacing.lg)
@@ -654,7 +654,7 @@ struct ConversationsView: View {
             ZStack {
                 Circle().fill(Color.primary.opacity(0.08))
                 Image(systemName: "archivebox.fill")
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .frame(width: 52, height: 52)
@@ -662,7 +662,7 @@ struct ConversationsView: View {
                 .font(AppFont.headline)
             Spacer()
             Text("\(archivedList.count)")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Image(systemName: "chevron.right")
                 .font(AppFont.captionEmphasis)
@@ -678,7 +678,7 @@ struct ConversationsView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA")
                     .font(AppFont.headline)
-                Text("AI Assistant").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                Text("AI Assistant").font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))

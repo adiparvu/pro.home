@@ -25,11 +25,11 @@ struct AddPropertyValueSheet: View {
             FormGroup(title: "Value") {
                 HStack(spacing: 10) {
                     Image(systemName: "banknote.fill")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                     TextField("0", text: $valueText)
-                        .font(.system(size: 22, weight: .bold))
+                        .font(AppFont.scaled(22, weight: .bold))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .keyboardType(.decimalPad)
@@ -55,7 +55,7 @@ struct AddPropertyValueSheet: View {
                     displayedComponents: .date
                 )
                 .tint(.accentColor)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, AppSpacing.md)
@@ -64,12 +64,12 @@ struct AddPropertyValueSheet: View {
             FormGroup(title: "Notes") {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "note.text")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                         .padding(.top, 2)
                     TextField("Optional notes…", text: $notes, axis: .vertical)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .lineLimit(3...6)
@@ -84,11 +84,11 @@ struct AddPropertyValueSheet: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "doc.text.fill")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 TextField("Source (e.g. Bank appraisal)", text: $source)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
@@ -105,7 +105,7 @@ struct AddPropertyValueSheet: View {
                                 HapticFeedback.impact(.light)
                             } label: {
                                 Text(LocalizedStringKey(s))
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, AppSpacing.xs)

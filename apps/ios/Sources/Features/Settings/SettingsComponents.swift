@@ -39,12 +39,12 @@ struct NavSettingsRow<D: View>: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: icon, color: color)
                     Text(label)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     if let value {
                         Text(value)
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .lineLimit(1)
                     }
@@ -81,7 +81,7 @@ struct TapSettingsRow: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
                 Text(label)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -107,7 +107,7 @@ struct ToggleSettingsRow: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: $value)
@@ -133,11 +133,11 @@ struct InfoSettingsRow: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.38))
         }
         .padding(.horizontal, AppSpacing.base)
@@ -182,18 +182,18 @@ struct SettingsPlaceholder: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: icon)
-                .font(.system(size: 52))
+                .font(AppFont.scaled(52))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text(title)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(.primary)
             Text(description)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Text("Coming soon")
-                .font(.system(size: 13, weight: .medium))
+                .font(AppFont.scaled(13, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, AppSpacing.sm)

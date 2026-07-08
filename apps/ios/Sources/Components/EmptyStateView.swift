@@ -20,7 +20,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 30, weight: .medium))
+                .font(AppFont.scaled(30, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.primary)
                 .frame(width: 76, height: 76)

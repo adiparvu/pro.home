@@ -163,7 +163,7 @@ struct MembersHubView: View {
                         Text(seg.title).font(AppFont.captionEmphasis)
                         if seg == .invitations, pendingInviteCount > 0 {
                             Text("\(pendingInviteCount)")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .font(AppFont.scaled(10, weight: .bold, design: .rounded))
                                 .padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(Color.orange.opacity(0.25), in: Capsule())
                         }
@@ -197,7 +197,7 @@ struct MembersHubView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Supervision").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                             Text("Screen rules and protection for children")
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                         Spacer()
@@ -360,7 +360,7 @@ struct MembersHubView: View {
     private func emptyState(icon: String, text: LocalizedStringKey) -> some View {
         VStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 34))
+                .font(AppFont.scaled(34))
                 .foregroundStyle(Color.primary.opacity(0.25))
             Text(text)
                 .font(AppFont.subheadline)
@@ -386,7 +386,7 @@ private struct MemberHubRow: View {
                     .foregroundStyle(.primary)
                 if let email = member.email, !email.isEmpty {
                     Text(email)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -430,7 +430,7 @@ private struct InvitationRow: View {
                     Text(invitation.name?.isEmpty == false ? invitation.name! : invitation.email)
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Text(invitation.email)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -444,9 +444,9 @@ private struct InvitationRow: View {
             HStack(spacing: 10) {
                 Label {
                     Text(String(format: String(localized: "Sent %@"), invitation.sentDisplay))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                 } icon: {
-                    Image(systemName: "paperplane").font(.system(size: 10))
+                    Image(systemName: "paperplane").font(AppFont.scaled(10))
                 }
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
@@ -509,7 +509,7 @@ struct EditMemberSheet: View {
                             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
                             Text(String(name.prefix(2)).uppercased())
-                                .font(.system(size: 26, weight: .bold))
+                                .font(AppFont.scaled(26, weight: .bold))
                                 .foregroundStyle(Color(hex: color) ?? .blue)
                         }
                         .frame(width: 76, height: 76)
@@ -537,8 +537,8 @@ struct EditMemberSheet: View {
                             div
                             HStack(spacing: 12) {
                                 Image(systemName: kRoleIcons[role] ?? "person.fill")
-                                    .font(.system(size: 14)).foregroundStyle(.purple).frame(width: 28)
-                                Text("Role").font(.system(size: 15)).foregroundStyle(.primary)
+                                    .font(AppFont.scaled(14)).foregroundStyle(.purple).frame(width: 28)
+                                Text("Role").font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 Spacer()
                                 Picker("", selection: $role) {
                                     ForEach(kRoles.filter { $0 != "owner" } + (role == "owner" ? ["owner"] : []), id: \.self) { r in
@@ -552,7 +552,7 @@ struct EditMemberSheet: View {
                         .liquidGlass(cornerRadius: AppRadius.lg)
 
                         if let err = errorMessage {
-                            Text(err).font(.system(size: 13)).foregroundStyle(.red)
+                            Text(err).font(AppFont.scaled(13)).foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
                         }
 
@@ -638,9 +638,9 @@ struct EditMemberSheet: View {
     private func editRow(icon: String, tint: Color, placeholder: LocalizedStringKey,
                          text: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(tint).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(tint).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard)
                 .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
         }

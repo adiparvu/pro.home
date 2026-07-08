@@ -99,14 +99,14 @@ struct ItemDetailView: View {
                         .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
                         .overlay(
                             Image(systemName: live.categoryIcon)
-                                .font(.system(size: 38, weight: .semibold))
+                                .font(AppFont.scaled(38, weight: .semibold))
                                 .foregroundStyle(tint)
                         )
                 }
             }
 
             Text(live.name)
-                .font(.system(size: 24, weight: .bold))
+                .font(AppFont.scaled(24, weight: .bold))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2).minimumScaleFactor(0.7)
@@ -144,7 +144,7 @@ struct ItemDetailView: View {
 
     private func heroChip(_ text: LocalizedStringKey, icon: String) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10, weight: .semibold))
+            Image(systemName: icon).font(AppFont.scaled(10, weight: .semibold))
             Text(text).font(AppFont.caption)
         }
         .foregroundStyle(.white.opacity(0.9))
@@ -181,11 +181,11 @@ struct ItemDetailView: View {
                         ForEach(live.loanHistory) { loan in
                             rowDiv
                             HStack(spacing: 12) {
-                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
+                                Image(systemName: "person.fill").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(loan.borrowerName).font(.system(size: 13)).foregroundStyle(.primary)
+                                    Text(loan.borrowerName).font(AppFont.scaled(13)).foregroundStyle(.primary)
                                     Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
-                                        .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                                        .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                                 }
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
@@ -199,10 +199,10 @@ struct ItemDetailView: View {
     @ViewBuilder
     private func dRow(_ icon: String, _ label: LocalizedStringKey, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
-            Text(label).font(.system(size: 14)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
-            Text(value).font(.system(size: 13)).foregroundStyle(color)
+            Text(value).font(AppFont.scaled(13)).foregroundStyle(color)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
@@ -240,10 +240,10 @@ struct ItemDetailView: View {
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.isLoaned {
-                        Text("OUT").font(.system(size: 11, weight: .bold)).foregroundStyle(.orange)
+                        Text("OUT").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(.orange)
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
                     } else {
-                        Text("IN").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                        Text("IN").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     }
                 }
@@ -279,9 +279,9 @@ struct ItemDetailView: View {
 
     private func loanRow(_ label: LocalizedStringKey, _ value: String, highlight: Bool = false) -> some View {
         HStack {
-            Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Spacer()
-            Text(value).font(.system(size: 13, weight: highlight ? .semibold : .regular))
+            Text(value).font(AppFont.scaled(13, weight: highlight ? .semibold : .regular))
                 .foregroundStyle(highlight ? .orange : Color.primary.opacity(AppOpacity.emphasis))
         }
     }
@@ -292,12 +292,12 @@ struct ItemDetailView: View {
                 HStack {
                     Label("QR Code", systemImage: "qrcode").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
-                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    Text("Scan to identify").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
                 Button { shareQR() } label: {
                     Label("Share / Print", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -323,7 +323,7 @@ struct ItemDetailView: View {
                     Label("Location & Tracker", systemImage: "location.fill")
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
-                    if live.hasLocation { Text("📍").font(.system(size: 14)) }
+                    if live.hasLocation { Text("📍").font(AppFont.scaled(14)) }
                     if !live.trackerType.isEmpty {
                         Text(LocalizedStringKey(live.trackerType == "airtag" ? "AirTag" : live.trackerType.capitalized))
                             .font(AppFont.label).foregroundStyle(.orange)
@@ -349,7 +349,7 @@ struct ItemDetailView: View {
                         }
                     } label: {
                         Label("Open in Maps", systemImage: "map.fill")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity).padding(.vertical, 10)
                             .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
@@ -357,9 +357,9 @@ struct ItemDetailView: View {
                 if !live.trackerIdentifier.isEmpty {
                     HStack {
                         Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                         Text("Tracker: \(live.trackerIdentifier)")
-                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.65))
+                            .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.65))
                         Spacer()
                     }
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
@@ -367,7 +367,7 @@ struct ItemDetailView: View {
                 Button { showLocationPicker = true } label: {
                     Label(LocalizedStringKey(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker"),
                           systemImage: live.hasLocation ? "pencil" : "plus.circle.fill")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -383,17 +383,17 @@ struct ItemDetailView: View {
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.publicProfile != nil {
-                        Text("ON").font(.system(size: 11, weight: .bold))
+                        Text("ON").font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     } else {
-                        Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
+                        Text("OFF").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                 }
                 Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4)).lineSpacing(2)
+                    .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4)).lineSpacing(2)
                 if let p = live.publicProfile {
                     VStack(spacing: 4) {
                         if !p.ownerName.isEmpty    { publicRow("person.fill",  p.ownerName) }
@@ -405,7 +405,7 @@ struct ItemDetailView: View {
                 Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
                     Label(LocalizedStringKey(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info"),
                           systemImage: live.publicProfile == nil ? "plus.circle.fill" : "pencil")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -415,8 +415,8 @@ struct ItemDetailView: View {
 
     private func publicRow(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 16)
-            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.65))
+            Image(systemName: icon).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 16)
+            Text(text).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.65))
             Spacer()
         }
     }
@@ -425,7 +425,7 @@ struct ItemDetailView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Notes", systemImage: "note.text").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                Text(live.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
+                Text(live.notes).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.8))
             }
         }
     }

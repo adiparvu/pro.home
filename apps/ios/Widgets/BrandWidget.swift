@@ -58,7 +58,7 @@ private struct BrandWidgetView: View {
 
     private var wordmark: some View {
         Text("PRVIO")
-            .font(.system(size: 24, weight: .heavy, design: .rounded))
+            .font(AppFont.scaled(24, weight: .heavy, design: .rounded))
             .tracking(2)
             .foregroundStyle(.white)
     }

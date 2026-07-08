@@ -233,7 +233,7 @@ struct UtilityView: View {
                     HapticFeedback.impact(.medium)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add utility bill")
@@ -265,7 +265,7 @@ struct UtilityView: View {
                     .cornerRadius(6)
                     .annotation(position: .top) {
                         Text(verbatim: CurrencyService.money(e.amount, code: currencyCode, whole: true))
-                            .font(.system(size: 9))
+                            .font(AppFont.scaled(9))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
@@ -338,8 +338,8 @@ struct UtilityView: View {
 
     private func statCell(title: LocalizedStringKey, value: String, color: Color) -> some View {
         VStack(spacing: 3) {
-            Text(value).font(.system(size: 16, weight: .bold)).foregroundStyle(color)
-            Text(title).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+            Text(value).font(AppFont.scaled(16, weight: .bold)).foregroundStyle(color)
+            Text(title).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
     }
@@ -382,16 +382,16 @@ private struct UtilitySummaryCard: View {
             }
             if let entry = currentEntry {
                 Text(verbatim: CurrencyService.money(entry.amount, code: code, whole: false))
-                    .font(.system(size: 17, weight: .bold))
+                    .font(AppFont.scaled(17, weight: .bold))
                     .foregroundStyle(isSelected ? .black : type.color)
                 if entry.consumption > 0 {
                     Text("\(String(format: "%.0f", entry.consumption)) \(type.unit)")
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(isSelected ? .black.opacity(0.6) : Color.primary.opacity(0.4))
                 }
             } else {
                 Text("No data")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(isSelected ? .black.opacity(0.5) : Color.primary.opacity(0.3))
             }
         }
@@ -433,12 +433,12 @@ private struct UtilityEntryRow: View {
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     if entry.consumption > 0 {
                         Text("\(String(format: "%.0f", entry.consumption)) \(entry.unit)")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
                 Spacer()
                 Text(verbatim: CurrencyService.money(entry.amount, code: code, whole: false))
-                    .font(.system(size: 16, weight: .bold)).foregroundStyle(color)
+                    .font(AppFont.scaled(16, weight: .bold)).foregroundStyle(color)
             }
         }
     }

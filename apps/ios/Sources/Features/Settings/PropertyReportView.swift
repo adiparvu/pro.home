@@ -57,20 +57,20 @@ struct PropertyReportView: View {
                             .fill(.white.opacity(0.2))
                             .frame(width: 44, height: 44)
                         Image(systemName: "house.fill")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(AppFont.scaled(20, weight: .semibold))
                             .foregroundStyle(.white)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(propertyService.primary?.name ?? "My Home")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                         Text("Generated · \(formattedToday)")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.white.opacity(0.7))
                     }
                     Spacer()
                     Image(systemName: "doc.richtext.fill")
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -113,10 +113,10 @@ struct PropertyReportView: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
             Text(label)
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
@@ -151,7 +151,7 @@ struct PropertyReportView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: binding)

@@ -82,7 +82,7 @@ struct SwipeableRow<Content: View>: View {
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: a.icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(AppFont.scaled(20, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(LocalizedStringKey(a.label))
                     .font(AppFont.label)

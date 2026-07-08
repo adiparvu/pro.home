@@ -209,7 +209,7 @@ struct LiveActivitySettingsView: View {
                             lineWidth: 1.2)
                     )
                 Text(kind.title)
-                    .font(.system(size: 10, weight: selected ? .semibold : .regular))
+                    .font(AppFont.scaled(10, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? .primary : Color.secondaryTextColor)
                     .lineLimit(1).minimumScaleFactor(0.7)
             }
@@ -226,7 +226,7 @@ struct LiveActivitySettingsView: View {
                     Text("Live Activities are off in iOS")
                         .font(AppFont.footnoteEmphasis)
                     Text("Enable them in Settings › Face ID & Passcode and per-app to see them here.")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
@@ -261,8 +261,8 @@ private struct KindNavRow: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kind.icon, color: kind.color)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(kind.title).font(.system(size: 15)).foregroundStyle(.primary)
-                    Text(kind.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    Text(kind.title).font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Text(kind.subtitle).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 if isActive {
@@ -449,7 +449,7 @@ struct LiveActivityKindDetailView: View {
                     .font(AppFont.subheadline).foregroundStyle(.primary)
                 Text(isActive ? "Live on your Lock Screen and Dynamic Island"
                               : "Starts when there's activity to track")
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             Spacer()
             if isActive {
@@ -509,8 +509,8 @@ private struct LAToggleRow: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 15)).foregroundStyle(.primary)
-                Text(subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                Text(title).font(AppFont.scaled(15)).foregroundStyle(.primary)
+                Text(subtitle).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
             Toggle("", isOn: $isOn).labelsHidden()
@@ -556,7 +556,7 @@ struct KindPreviewPane: View {
 
     private func caption(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold))
+            .font(AppFont.scaled(10, weight: .bold))
             .foregroundStyle(Color.primary.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -579,21 +579,21 @@ struct KindLockScreenMock: View {
                         RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(kind.color.opacity(0.2)).frame(width: 44, height: 44)
                         Image(systemName: kind.icon)
-                            .font(.system(size: 20)).foregroundStyle(kind.color)
+                            .font(AppFont.scaled(20)).foregroundStyle(kind.color)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(kind.previewHeadline)
                             .font(AppFont.subheadline).foregroundStyle(.primary)
                         Text(showProperty ? "Lakeside House · PRVIO" : "PRVIO")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(kind.previewStatus)
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(kind.color)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(kind.color)
                         if showETA && kind.showsETA {
                             Text("ETA 14:30")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                     }
                 }
@@ -608,7 +608,7 @@ struct KindLockScreenMock: View {
                 Image(systemName: kind.icon)
                     .font(AppFont.subheadline).foregroundStyle(kind.color)
                 Text(kind.previewHeadline)
-                    .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
+                    .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -650,7 +650,7 @@ struct DynamicIslandMock: View {
                     Image(systemName: kind.icon)
                         .font(AppFont.captionEmphasis).foregroundStyle(kind.color)
                     Text("\(Int(kind.previewProgress * 100))%")
-                        .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                        .font(AppFont.scaled(13, weight: .bold, design: .rounded)).foregroundStyle(.white)
                 }
                 .padding(.horizontal, 18).padding(.vertical, 10)
                 .background(Capsule().fill(Color.black))

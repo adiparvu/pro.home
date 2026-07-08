@@ -201,12 +201,12 @@ struct ContactDetailsView: View {
                                   avatarURL: memberAvatarURL(member),
                                   size: 96)
                 Text(member.name)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                 heroSubtitle
                 if let phone = member.phone, !phone.isEmpty {
                     Text(phone)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(0.38))
                 }
             }
@@ -215,10 +215,10 @@ struct ContactDetailsView: View {
             Button { showEditLabel = true } label: {
                 if memberLabel.isEmpty {
                     Label("Add a member label", systemImage: "tag")
-                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                 } else {
                     Label(memberLabel, systemImage: "tag.fill")
-                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                 }
             }
             .buttonStyle(.plain)
@@ -245,7 +245,7 @@ struct ContactDetailsView: View {
                 EmptyView()
             }
         }
-        .font(.system(size: 15))
+        .font(AppFont.scaled(15))
     }
 
     @ToolbarContentBuilder
@@ -274,8 +274,8 @@ struct ContactDetailsView: View {
 
     private func destructiveRow(icon: String, label: String) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(.red).frame(width: 26)
-            Text(label).font(.system(size: 16)).foregroundStyle(.red)
+            Image(systemName: icon).font(AppFont.scaled(16)).foregroundStyle(.red).frame(width: 26)
+            Text(label).font(AppFont.scaled(16)).foregroundStyle(.red)
             Spacer()
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -494,10 +494,10 @@ struct GroupDetailsView: View {
                 GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
                     .frame(width: 96, height: 96)
                 Text(groupName)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                 Text("Group · \(members.count + 1) members")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .accessibilityElement(children: .combine)
@@ -505,11 +505,11 @@ struct GroupDetailsView: View {
             Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
                 if description.isEmpty {
                     Label("Add group description", systemImage: "pencil")
-                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                 } else {
                     (Text(description).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                      + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                 }
@@ -542,12 +542,12 @@ struct GroupDetailsView: View {
                     .frame(width: 44, height: 44)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(name).font(.system(size: 16, weight: .medium)).foregroundStyle(.primary)
+                    Text(name).font(AppFont.scaled(16, weight: .medium)).foregroundStyle(.primary)
                     if label.isEmpty {
                         Text("Add a member label")
-                            .font(.system(size: 12)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.accentColor)
                     } else {
-                        Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -605,7 +605,7 @@ struct EditGroupDetailsSheet: View {
                             .frame(width: 120, height: 120)
                             .clipShape(Circle())
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 13)).foregroundStyle(.white)
+                                .font(AppFont.scaled(13)).foregroundStyle(.white)
                                 .padding(AppSpacing.sm).background(Circle().fill(Color.accentColor))
                         }
                     }
@@ -619,7 +619,7 @@ struct EditGroupDetailsSheet: View {
 
                     HStack(spacing: 8) {
                         TextField("Numele grupului", text: $name)
-                            .font(.system(size: 17))
+                            .font(AppFont.scaled(17))
                             .focused($focused)
                         if !name.isEmpty {
                             Button { name = "" } label: {

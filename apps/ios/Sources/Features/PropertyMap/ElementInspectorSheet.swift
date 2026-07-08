@@ -83,7 +83,7 @@ struct ElementInspectorSheet: View {
                     ColoredIconBadge(icon: "cube.transparent.fill", color: Color.brandPurple, size: 38)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(scan.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
-                        Text(scan.kindLabel).font(.system(size: 12)).foregroundStyle(.secondary)
+                        Text(scan.kindLabel).font(AppFont.scaled(12)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button {
@@ -150,11 +150,11 @@ struct ElementInspectorSheet: View {
             thumbnail
             VStack(alignment: .leading, spacing: 3) {
                 Text(current.name)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 HStack(spacing: 6) {
-                    Image(systemName: current.elementType.icon).font(.system(size: 11))
+                    Image(systemName: current.elementType.icon).font(AppFont.scaled(11))
                     Text(current.elementType.displayName).font(AppFont.caption)
                     if let zoneName {
                         Text("·").font(AppFont.caption)
@@ -190,7 +190,7 @@ struct ElementInspectorSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         } else {
             Image(systemName: current.elementType.icon)
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppFont.scaled(20, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(current.elementType.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -276,11 +276,11 @@ struct ElementInspectorSheet: View {
         VStack(spacing: 5) {
             Image(systemName: icon).font(AppFont.footnoteEmphasis).foregroundStyle(color)
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+            Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.md)

@@ -77,7 +77,7 @@ struct GuestModeView: View {
                     shareGuestInfo()
                 } label: {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Share guest info")
@@ -91,23 +91,23 @@ struct GuestModeView: View {
         GlassCard {
             HStack(spacing: 14) {
                 Image(systemName: "house.fill")
-                    .font(.system(size: 24))
+                    .font(AppFont.scaled(24))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 48, height: 48)
                     .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(propertyName)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(AppFont.scaled(17, weight: .bold))
                         .foregroundStyle(.primary)
                     if let address = propertyService.primary?.addressLine1, !address.isEmpty {
                         Text(address)
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .lineLimit(2)
                     }
                     Text("Guest information sheet")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.accentColor)
                 }
 
@@ -140,11 +140,11 @@ struct GuestModeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
                         Image(systemName: "list.bullet.clipboard.fill")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
                         Text("Rules")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
@@ -152,7 +152,7 @@ struct GuestModeView: View {
                         text: $houseRules,
                         axis: .vertical
                     )
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .lineLimit(4...12)
@@ -170,11 +170,11 @@ struct GuestModeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
                         Image(systemName: "note.text")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
                         Text("Notes")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
@@ -182,7 +182,7 @@ struct GuestModeView: View {
                         text: $guestNotes,
                         axis: .vertical
                     )
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .lineLimit(4...10)
@@ -218,11 +218,11 @@ struct GuestModeView: View {
     private func editableRow(icon: String, placeholder: String, text: Binding<String>, isSecure: Bool = false) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()

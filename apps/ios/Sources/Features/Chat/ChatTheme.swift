@@ -283,7 +283,7 @@ struct ChatThemePicker: View {
                         .padding(.horizontal, AppSpacing.lg)
 
                         Text("Both the chat bubble and the conversation background will change.")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, AppSpacing.xl).padding(.top, 2)
 
@@ -348,8 +348,8 @@ struct ChatThemePicker: View {
                                             @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
-            Text(LocalizedStringKey(label)).font(.system(size: 16)).foregroundStyle(.primary)
+                .font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
+            Text(LocalizedStringKey(label)).font(AppFont.scaled(16)).foregroundStyle(.primary)
             Spacer()
             trailing()
             Image(systemName: "chevron.right")
@@ -380,7 +380,7 @@ struct ChatThemePicker: View {
             .padding(AppSpacing.sm)
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFont.scaled(16, weight: .bold))
                     .foregroundStyle(.white, theme.outgoingBubble)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding(AppSpacing.xs)
@@ -426,7 +426,7 @@ struct BubbleColorPicker: View {
                                 if bubbleHex == hex {
                                     Circle().strokeBorder(Color.primary, lineWidth: 3)
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(AppFont.scaled(20, weight: .bold))
                                         .foregroundStyle(color.isLight ? .black : .white)
                                 }
                             }
@@ -601,7 +601,7 @@ struct BackgroundPicker: View {
                     PhotosPicker(selection: $photoItem, matching: .images) {
                         tile(selected: false) {
                             VStack(spacing: 6) {
-                                Image(systemName: "photo.badge.plus").font(.system(size: 24, weight: .semibold))
+                                Image(systemName: "photo.badge.plus").font(AppFont.scaled(24, weight: .semibold))
                                 Text("Upload").font(AppFont.caption)
                             }
                             .foregroundStyle(Color.accentColor)
@@ -660,7 +660,7 @@ struct BackgroundPicker: View {
             content()
             if selected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFont.scaled(18, weight: .bold))
                     .foregroundStyle(.white, Color.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding(AppSpacing.xs)

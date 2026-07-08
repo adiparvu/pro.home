@@ -47,10 +47,10 @@ struct PageSearchField: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField(placeholder, text: $text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()
@@ -58,7 +58,7 @@ struct PageSearchField: View {
             if !text.isEmpty {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)

@@ -76,7 +76,7 @@ struct AddTaskView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("Title")
             TextField("What needs to be done?", text: $title)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
@@ -87,7 +87,7 @@ struct AddTaskView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("Description (optional)")
             TextField("Add details…", text: $description, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
                 .padding(AppSpacing.base)
@@ -102,7 +102,7 @@ struct AddTaskView: View {
                 ForEach(priorities, id: \.self) { p in
                     Button { priority = p } label: {
                         Text(LocalizedStringKey(p.capitalized))
-                            .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
+                            .font(AppFont.scaled(13, weight: priority == p ? .semibold : .regular))
                             .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
                             .background(priority == p ? priorityColor(p) : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
@@ -121,7 +121,7 @@ struct AddTaskView: View {
                     ForEach(categories, id: \.self) { cat in
                         Button { category = cat } label: {
                             Text(LocalizedStringKey(cat.capitalized))
-                                .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: category == cat ? .semibold : .regular))
                                 .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
                                 .background(category == cat ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
@@ -150,7 +150,7 @@ struct AddTaskView: View {
                         withAnimation { hasDueTime.toggle() }
                     } label: {
                         Label(hasDueTime ? "Remove time" : "Add time", systemImage: "clock")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(AppOpacity.secondaryText))
                             .labelStyle(.iconOnly)
                             .padding(AppSpacing.sm)
@@ -182,10 +182,10 @@ struct AddTaskView: View {
                 HStack(spacing: 10) {
                     if assigneeIds.isEmpty {
                         Image(systemName: "person.badge.plus")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(0.4))
                         Text("Add team members…")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     } else {
                         ForEach(Array(zip(assigneeIds, assigneeNames)), id: \.0) { _, name in
@@ -196,13 +196,13 @@ struct AddTaskView: View {
                             }
                         }
                         Text(assigneeNames.joined(separator: ", "))
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .lineLimit(1)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .padding(AppSpacing.base)
@@ -215,7 +215,7 @@ struct AddTaskView: View {
     private func personIcon(name: String) -> some View {
         ZStack {
             Circle().fill(.blue.opacity(0.25))
-            Text(String(name.prefix(1)).uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(Color.accentColor)
+            Text(String(name.prefix(1)).uppercased()).font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.accentColor)
         }
         .frame(width: 30, height: 30)
     }
@@ -226,16 +226,16 @@ struct AddTaskView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Add to Calendar")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     if !hasDueDate {
                         Text("Set a due date to enable")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -256,11 +256,11 @@ struct AddTaskView: View {
 
             HStack(spacing: 12) {
                 Image(systemName: "checklist")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.brandWarning)
                     .frame(width: 28)
                 Text("Add to Apple Reminders")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
                 Toggle("", isOn: $addToReminders)
@@ -272,7 +272,7 @@ struct AddTaskView: View {
 
             if let syncHint {
                 Text(syncHint)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.brandWarning)
                     .padding(.horizontal, AppSpacing.base)
                     .padding(.bottom, AppSpacing.md)
@@ -333,11 +333,11 @@ struct AddTaskView: View {
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedCalendar?.title ?? String(localized: "Default calendar"))
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     if let source = selectedCalendar?.source?.title, !source.isEmpty {
                         Text(source)
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -482,7 +482,7 @@ struct AddTaskView: View {
     // MARK: - Helpers
 
     private func fieldLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+        Text(key).font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
     }
 
     private func priorityColor(_ p: String) -> Color {

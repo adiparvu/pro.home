@@ -56,7 +56,7 @@ struct TenantManagementView: View {
                     HapticFeedback.impact(.medium)
                 } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 19, weight: .medium))
+                        .font(AppFont.scaled(19, weight: .medium))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add tenant")
@@ -119,10 +119,10 @@ struct TenantManagementView: View {
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(label)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .lineLimit(1)
             }
@@ -156,7 +156,7 @@ struct TenantManagementView: View {
                                                            ? "tenant_lease_ended %@"
                                                            : "tenant_lease_ending %@"),
                                             tenant.name))
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(.primary)
                                     .multilineTextAlignment(.leading)
                                 Spacer()
@@ -187,7 +187,7 @@ struct TenantManagementView: View {
 
                         HStack(spacing: 6) {
                             Image(systemName: "key.fill")
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                                 .foregroundStyle(tenant.swiftColor)
                             Text("Tenant")
                                 .font(AppFont.caption)
@@ -198,13 +198,13 @@ struct TenantManagementView: View {
 
                         if let email = tenant.email, !email.isEmpty {
                             Label(email, systemImage: "envelope.fill")
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .lineLimit(1)
                         }
 
                         Label(memberSinceLabel(tenant), systemImage: "calendar")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
 
                         if let lease = familyService.leases[tenant.id] {
@@ -219,14 +219,14 @@ struct TenantManagementView: View {
                                     // orange inside the renewal window, red
                                     // once the lease is over.
                                     Label(String(format: String(localized: "until %@"), end), systemImage: "calendar.badge.exclamationmark")
-                                        .font(.system(size: 11, weight: lease.isEndingSoon || lease.hasEnded ? .semibold : .regular))
+                                        .font(AppFont.scaled(11, weight: lease.isEndingSoon || lease.hasEnded ? .semibold : .regular))
                                         .foregroundStyle(lease.hasEnded ? Color.brandDanger
                                                          : lease.isEndingSoon ? .orange
                                                          : Color.primary.opacity(AppOpacity.mediumText))
                                 }
                                 if lease.isEndingSoon, let days = lease.daysUntilEnd {
                                     Text(String(format: String(localized: "tenant_lease_days_left %lld"), days))
-                                        .font(.system(size: 10, weight: .semibold))
+                                        .font(AppFont.scaled(10, weight: .semibold))
                                         .foregroundStyle(.orange)
                                         .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                                         .background(Color.orange.opacity(0.12), in: Capsule())
@@ -292,7 +292,7 @@ struct TenantManagementView: View {
     private func quickActionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(color)
                 .frame(width: 32, height: 32)
                 .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -329,7 +329,7 @@ struct TenantManagementView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "key.fill")
-                .font(.system(size: 30, weight: .medium))
+                .font(AppFont.scaled(30, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.primary)
                 .frame(width: 80, height: 80)
@@ -338,7 +338,7 @@ struct TenantManagementView: View {
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Add tenants to manage their contact info\nand lease details in one place.")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)

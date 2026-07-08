@@ -51,12 +51,12 @@ struct AddPaintColorSheet: View {
             FormGroup(title: "Notes") {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "note.text")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                         .padding(.top, 2)
                     TextField("Additional notes…", text: $notes, axis: .vertical)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .lineLimit(3...6)
@@ -80,7 +80,7 @@ struct AddPaintColorSheet: View {
                 } label: {
                     HStack {
                         Text("Choose existing room")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
@@ -91,7 +91,7 @@ struct AddPaintColorSheet: View {
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "house.fill")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                     Picker("Room", selection: $roomName) {
@@ -100,7 +100,7 @@ struct AddPaintColorSheet: View {
                         }
                     }
                     .tint(.accentColor)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .onAppear {
                         if roomName.isEmpty { roomName = paintColorService.roomNames.first ?? "" }
                     }
@@ -114,7 +114,7 @@ struct AddPaintColorSheet: View {
                 } label: {
                     HStack {
                         Text("Add new room")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
@@ -129,7 +129,7 @@ struct AddPaintColorSheet: View {
     private var surfacePicker: some View {
         HStack(spacing: 10) {
             Image(systemName: "square.fill")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Surface", selection: $surface) {
@@ -138,7 +138,7 @@ struct AddPaintColorSheet: View {
                 }
             }
             .tint(.accentColor)
-            .font(.system(size: 15))
+            .font(AppFont.scaled(15))
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
@@ -147,7 +147,7 @@ struct AddPaintColorSheet: View {
     private var finishPickerRow: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Finish", selection: $finish) {
@@ -156,7 +156,7 @@ struct AddPaintColorSheet: View {
                 }
             }
             .tint(.accentColor)
-            .font(.system(size: 15))
+            .font(AppFont.scaled(15))
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
@@ -168,11 +168,11 @@ struct AddPaintColorSheet: View {
         Button { showCatalog = true } label: {
             HStack(spacing: 10) {
                 Image(systemName: "swatchpalette.fill")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 Text("paint_catalog_pick")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.accentColor)
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -197,11 +197,11 @@ struct AddPaintColorSheet: View {
     private var brandRow: some View {
         HStack(spacing: 10) {
             Image(systemName: "building.2.fill")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField("Brand (e.g. Farrow & Ball)", text: $brand)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
             Menu {
@@ -243,7 +243,7 @@ struct AddPaintColorSheet: View {
                 .font(AppFont.body)
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Hex Color (e.g. F5E6D0)", text: $hexColor)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()
@@ -265,11 +265,11 @@ struct AddPaintColorSheet: View {
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }

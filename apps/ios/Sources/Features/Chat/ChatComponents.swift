@@ -51,9 +51,9 @@ struct CallPickerSheet: View {
                     VStack(spacing: 12) {
                         Spacer()
                         Image(systemName: isVideo ? "video.slash.fill" : "phone.slash.fill")
-                            .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
+                            .font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.18))
                         Text("No family members yet")
-                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                     }
                 } else {
@@ -122,7 +122,7 @@ private struct MemberCallRow: View {
                     ZStack {
                         Circle().fill(member.swiftColor.opacity(0.18))
                         Text(member.initials)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFont.scaled(13, weight: .bold))
                             .foregroundStyle(member.swiftColor)
                     }
                     .frame(width: 38, height: 38)
@@ -132,13 +132,13 @@ private struct MemberCallRow: View {
                         Text(member.name)
                             .font(AppFont.subheadline).foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.roleLabel))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
 
                 if callOptions.isEmpty {
                     Text("No contact info available")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 } else {
                     VStack(spacing: 6) {
                         ForEach(Array(callOptions.enumerated()), id: \.offset) { _, opt in
@@ -148,11 +148,11 @@ private struct MemberCallRow: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: opt.icon)
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.accentColor)
                                         .frame(width: 20)
                                     Text(opt.label)
-                                        .font(.system(size: 13))
+                                        .font(AppFont.scaled(13))
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "arrow.up.right")
@@ -215,14 +215,14 @@ struct ChatReplyBanner: View {
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.accentColor)
                 Text(snippet)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.6))
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
             Button(action: onCancel) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
                     .foregroundStyle(Color.primary.opacity(0.35))
             }
             .buttonStyle(.plain)
@@ -330,7 +330,7 @@ struct ReactionPickerView: View {
                     dismiss()
                 } label: {
                     Text(emoji)
-                        .font(.system(size: 28))
+                        .font(AppFont.scaled(28))
                         .scaleEffect(myReaction == emoji ? 1.2 : 1.0)
                         .padding(AppSpacing.sm)
                         .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.clear,

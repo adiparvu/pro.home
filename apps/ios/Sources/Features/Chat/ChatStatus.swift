@@ -242,7 +242,7 @@ struct StatusView: View {
 
     private var plusGlyph: some View {
         Image(systemName: "plus.circle.fill")
-            .font(.system(size: 20, weight: .semibold))
+            .font(AppFont.scaled(20, weight: .semibold))
             .symbolRenderingMode(.palette)
             .foregroundStyle(.white, Color.brandPrimaryBlue)
             .background(Circle().fill(Color(.systemBackground)).padding(-2))
@@ -284,7 +284,7 @@ struct TextStatusComposer: View {
         ZStack {
             gradient
             Text(text.isEmpty ? " " : text)
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .padding(36)
@@ -343,7 +343,7 @@ struct TextStatusComposer: View {
                            action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
+                .font(AppFont.scaled(17, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
                 .mediaGlass(in: Circle(), interactive: true)

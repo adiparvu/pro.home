@@ -67,7 +67,7 @@ struct ChatActionOverlay: View {
                     HapticFeedback.impact(.light); onReact(e); onDismiss()
                 } label: {
                     Text(e)
-                        .font(.system(size: 28))
+                        .font(AppFont.scaled(28))
                         .scaleEffect(myReaction == e ? 1.2 : 1)
                         .padding(AppSpacing.xxs)
                         .background(myReaction == e ? Color.accentColor.opacity(0.18) : Color.clear, in: Circle())
@@ -119,7 +119,7 @@ struct ChatActionOverlay: View {
             }
         } else {
             Text(previewText)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(isOwn ? .white : .primary)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                 .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
@@ -137,10 +137,10 @@ struct ChatActionOverlay: View {
                 } label: {
                     HStack {
                         Text(LocalizedStringKey(item.label))
-                            .font(.system(size: 17))
+                            .font(AppFont.scaled(17))
                         Spacer()
                         Image(systemName: item.icon)
-                            .font(.system(size: 17))
+                            .font(AppFont.scaled(17))
                     }
                     .foregroundStyle(item.destructive ? Color.red : Color.primary)
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -186,7 +186,7 @@ struct EmojiGridPicker: View {
                                     Button {
                                         HapticFeedback.impact(.light); onSelect(e)
                                     } label: {
-                                        Text(e).font(.system(size: 30))
+                                        Text(e).font(AppFont.scaled(30))
                                             .frame(maxWidth: .infinity, minHeight: 42)
                                     }
                                     .buttonStyle(.plain)

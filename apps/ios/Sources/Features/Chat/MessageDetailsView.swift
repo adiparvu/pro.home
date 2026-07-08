@@ -12,8 +12,8 @@ private struct DeliveryCheck: View {
     let read: Bool
     var body: some View {
         ZStack(alignment: .leading) {
-            Image(systemName: "checkmark").font(.system(size: 12, weight: .bold))
-            Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).offset(x: 5)
+            Image(systemName: "checkmark").font(AppFont.scaled(12, weight: .bold))
+            Image(systemName: "checkmark").font(AppFont.scaled(12, weight: .bold)).offset(x: 5)
         }
         .frame(width: 22, alignment: .leading)
         .foregroundStyle(read ? Color.blue : Color.primary.opacity(AppOpacity.secondaryText))
@@ -29,12 +29,12 @@ private struct DetailRow: View {
         HStack(spacing: 12) {
             DeliveryCheck(read: read)
             Text(LocalizedStringKey(label))
-                .font(.system(size: 17))
+                .font(AppFont.scaled(17))
                 .foregroundStyle(.primary)
             Spacer()
             if let dateTime {
                 Text(dateTime)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             } else {
                 Text("—").foregroundStyle(Color.primary.opacity(0.3))
@@ -128,15 +128,15 @@ struct MessageDetailsView: View {
                 Spacer(minLength: 50)
                 VStack(alignment: .trailing, spacing: 3) {
                     Text(summary)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.white)
                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(bubbleColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     HStack(spacing: 4) {
                         Text(message.timeDisplay)
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(0.4))
-                        Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                        Image(systemName: "checkmark").font(AppFont.scaled(9, weight: .bold))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -177,13 +177,13 @@ struct DMMessageDetailsView: View {
                 if isOwn { Spacer(minLength: 50) }
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                     Text(summary)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(isOwn ? .white : .primary)
                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(isOwn ? bubbleColor : Color.primary.opacity(0.12),
                                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     Text(message.timeDisplay)
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
                 if !isOwn { Spacer(minLength: 50) }

@@ -30,7 +30,7 @@ struct ElementNotesSection: View {
                     Spacer()
                     Button { showNewEditor = true } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
                     .accessibilityLabel("Add note")
                 }
@@ -70,7 +70,7 @@ struct ElementNotesSection: View {
                 HStack(spacing: 10) {
                     Image(systemName: "lock.fill").foregroundStyle(.orange)
                     Text("Locked note — tap to unlock")
-                        .font(.system(size: 14)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(14)).foregroundStyle(.secondary)
                     Spacer()
                     Image(systemName: lock.biometryAvailable ? "faceid" : "key.fill")
                         .foregroundStyle(.secondary)
@@ -82,10 +82,10 @@ struct ElementNotesSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 10) {
                     if note.isLocked {
-                        Image(systemName: "lock.open.fill").font(.system(size: 12)).foregroundStyle(.orange).padding(.top, 2)
+                        Image(systemName: "lock.open.fill").font(AppFont.scaled(12)).foregroundStyle(.orange).padding(.top, 2)
                     }
                     Text(noteService.displayBody(note))
-                        .font(.system(size: 14)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(14)).foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Menu {
                         Button { editorNote = note } label: { Label("Edit", systemImage: "pencil") }
@@ -106,7 +106,7 @@ struct ElementNotesSection: View {
                                     Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                         .foregroundStyle(item.done ? Color.green : .secondary)
                                     Text(item.text)
-                                        .font(.system(size: 13))
+                                        .font(AppFont.scaled(13))
                                         .strikethrough(item.done)
                                         .foregroundStyle(item.done ? .secondary : .primary)
                                     Spacer()
@@ -181,7 +181,7 @@ struct ElementNoteEditorSheet: View {
                             TextEditor(text: $body_)
                                 .frame(minHeight: 140)
                                 .scrollContentBackground(.hidden)
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                         }
                         GlassCard(padding: 14) {
                             Toggle(isOn: $locked) {
@@ -251,17 +251,17 @@ struct ElementNoteEditorSheet: View {
                             Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(item.done ? Color.green : .secondary)
                         }.buttonStyle(.plain)
-                        TextField("Item", text: $item.text).font(.system(size: 14))
+                        TextField("Item", text: $item.text).font(AppFont.scaled(14))
                         Button { checklist.removeAll { $0.id == item.id } } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                         }.buttonStyle(.plain)
                     }
                 }
                 HStack(spacing: 8) {
-                    TextField("Add item", text: $newItem).font(.system(size: 14))
+                    TextField("Add item", text: $newItem).font(AppFont.scaled(14))
                         .onSubmit(addChecklistItem)
                     Button(action: addChecklistItem) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }.buttonStyle(.plain).disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -276,7 +276,7 @@ struct ElementNoteEditorSheet: View {
                     Spacer()
                     if uploading { ProgressView().scaleEffect(0.7) }
                     PhotosPicker(selection: $photoItem, matching: .images) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
                 }
                 if !photoURLs.isEmpty {
@@ -355,7 +355,7 @@ struct NotePINSheet: View {
                 Color.clear
                 VStack(spacing: 18) {
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 44)).foregroundStyle(.orange)
+                        .font(AppFont.scaled(44)).foregroundStyle(.orange)
                     Text(mode == .setup ? "Set a PIN for locked notes" : "Enter your PIN")
                         .font(.headline)
                     SecureField("PIN (min 4 digits)", text: $pin)

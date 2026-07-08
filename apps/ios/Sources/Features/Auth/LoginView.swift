@@ -32,7 +32,7 @@ struct LoginView: View {
 
                     VStack(spacing: 4) {
                         Text("PRVIO")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                         Text("Property management")
                             .font(AppFont.footnote)
@@ -128,7 +128,7 @@ private struct GlassTextField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
+                .font(AppFont.scaled(16, weight: .medium))
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 

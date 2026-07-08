@@ -166,11 +166,11 @@ struct PlantsView: View {
     private func statCell(value: String, label: LocalizedStringKey, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(color)
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -289,7 +289,7 @@ struct PlantCard: View {
                         .frame(height: 80)
 
                         Text(plant.emoji)
-                            .font(.system(size: 44))
+                            .font(AppFont.scaled(44))
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -300,7 +300,7 @@ struct PlantCard: View {
 
                         if let species = plant.species, !species.isEmpty {
                             Text(species)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
@@ -316,10 +316,10 @@ struct PlantCard: View {
 
                         HStack(spacing: 4) {
                             Image(systemName: "drop.fill")
-                                .font(.system(size: 9))
+                                .font(AppFont.scaled(9))
                                 .foregroundStyle(Color.primary.opacity(0.3))
                             Text(LocalizedStringKey(plant.lastWateredDisplay))
-                                .font(.system(size: 11))
+                                .font(AppFont.scaled(11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
                         }
                     }

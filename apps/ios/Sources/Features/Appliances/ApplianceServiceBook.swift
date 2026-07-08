@@ -71,7 +71,7 @@ struct ApplianceServiceBookSection: View {
                 VStack(spacing: 0) {
                     if interventions.isEmpty {
                         Text("service_book_empty")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(AppSpacing.lg)
@@ -92,7 +92,7 @@ struct ApplianceServiceBookSection: View {
                         .font(AppFont.caption)
                         .foregroundStyle(Color.brandWarning)
                     Text("service_book_replace_signal")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.6))
                 }
                 .padding(.horizontal, AppSpacing.xxs)
@@ -123,12 +123,12 @@ struct ApplianceServiceBookSection: View {
                         Text(details).lineLimit(1)
                     }
                 }
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.45))
             }
             Spacer()
             Text(verbatim: money(record.amount, currency: record.currency))
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(13, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
         }
         .padding(.horizontal, AppSpacing.lg)
@@ -138,11 +138,11 @@ struct ApplianceServiceBookSection: View {
     @ViewBuilder private var totalsRows: some View {
         HStack {
             Text("service_book_total_repairs")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(verbatim: money(totalRepairs, currency: appSettings.preferredCurrency))
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(13, weight: .bold, design: .rounded))
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
@@ -152,11 +152,11 @@ struct ApplianceServiceBookSection: View {
                 .frame(height: 0.5).padding(.leading, AppSpacing.lg)
             HStack {
                 Text("service_book_tco")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 Spacer()
                 Text(verbatim: money(price + totalRepairs, currency: appSettings.preferredCurrency))
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(13, weight: .bold, design: .rounded))
                     .foregroundStyle(replacementSignal ? Color.brandWarning : .primary)
             }
             .padding(.horizontal, AppSpacing.lg)
@@ -199,7 +199,7 @@ private struct AddServiceInterventionSheet: View {
             FormGroup {
                 FormRow(icon: "wrench.and.screwdriver.fill") {
                     TextField(String(localized: "service_intervention_placeholder"), text: $title)
-                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 }
             }
             FormGroup {
@@ -207,7 +207,7 @@ private struct AddServiceInterventionSheet: View {
                     HStack(spacing: 8) {
                         TextField("0", text: $amountText)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                         Text(appSettings.preferredCurrency)
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -217,7 +217,7 @@ private struct AddServiceInterventionSheet: View {
             FormGroup {
                 DatePicker(selection: $date, in: ...Date(), displayedComponents: .date) {
                     Label("Date", systemImage: "calendar")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                 }
                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
             }
@@ -225,7 +225,7 @@ private struct AddServiceInterventionSheet: View {
                 FormGroup {
                     HStack(spacing: 12) {
                         Label("comm_externals", systemImage: "person.crop.circle")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                         Spacer()
                         Picker("", selection: $contractorId) {
                             Text("service_no_contractor").tag(UUID?.none)
@@ -242,7 +242,7 @@ private struct AddServiceInterventionSheet: View {
                 FormRow(icon: "note.text") {
                     TextField(String(localized: "Notes"), text: $notes, axis: .vertical)
                         .lineLimit(1...3)
-                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 }
             }
         }

@@ -56,11 +56,11 @@ struct ElementTypePickerSheet: View {
                                 .fill(type.accentColor.opacity(selected == type ? 0.95 : 0.16))
                                 .frame(width: 50, height: 50)
                             Image(systemName: type.icon)
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(AppFont.scaled(20, weight: .semibold))
                                 .foregroundStyle(selected == type ? .white : type.accentColor)
                         }
                         Text(LocalizedStringKey(type.displayName))
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)

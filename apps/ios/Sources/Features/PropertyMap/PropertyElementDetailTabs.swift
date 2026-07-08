@@ -119,7 +119,7 @@ extension PropertyElementDetailView {
                     if isUploading { ProgressView().scaleEffect(0.7) }
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 5, matching: .images) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20))
+                            .font(AppFont.scaled(20))
                             .foregroundStyle(Color.accentColor)
                     }
                 }
@@ -161,7 +161,7 @@ extension PropertyElementDetailView {
                 ZStack {
                     Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
                     Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
-                        .font(.system(size: 17))
+                        .font(AppFont.scaled(17))
                         .foregroundStyle(Color.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
@@ -245,7 +245,7 @@ extension PropertyElementDetailView {
         GlassCard {
             VStack(spacing: 10) {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                    .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                 Text("No records")
                     .font(.subheadline).foregroundStyle(.secondary)
                 Text("Add the first job, cost or note")
@@ -280,7 +280,7 @@ extension PropertyElementDetailView {
                 GlassCard {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.fill")
-                            .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                            .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                         Text("No linked documents")
                             .font(.subheadline).foregroundStyle(.secondary)
                         Text("Link manuals, warranties or invoices to this item")
@@ -326,7 +326,7 @@ extension PropertyElementDetailView {
                 GlassCard {
                     VStack(spacing: 10) {
                         Image(systemName: "checklist")
-                            .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                            .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                         Text("No linked tasks")
                             .font(.subheadline).foregroundStyle(.secondary)
                         Text("Link maintenance tasks to this item")

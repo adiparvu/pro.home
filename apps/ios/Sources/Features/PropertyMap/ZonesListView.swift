@@ -161,7 +161,7 @@ struct ZoneListRow: View {
                     .fill(zone.tint.opacity(0.18))
                     .frame(width: 46, height: 46)
                 Image(systemName: zone.icon)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(AppFont.scaled(19, weight: .semibold))
                     .foregroundStyle(zone.tint)
             }
 
@@ -170,7 +170,7 @@ struct ZoneListRow: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 

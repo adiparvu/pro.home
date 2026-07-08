@@ -64,6 +64,28 @@ enum AppFont {
     // Live Activity metrics — the rounded numerals in the Dynamic Island and
     // on Lock Screen cards (counts, percentages, timers). Rounded + bold like
     // Apple's own activities, and Dynamic-Type-relative like every token.
+    /// Dynamic-Type-relative stand-in for a legacy `Font.system(size:)`
+    /// literal: identical size/weight/design at the default (Large) content
+    /// size, but scaling with the user's setting — anchored to the nearest
+    /// system text style by size. New code should reach for the semantic
+    /// tokens above; this exists so the ~1750 migrated legacy call sites
+    /// gain accessibility without any visual change.
+    static func scaled(_ size: CGFloat, weight: Font.Weight = .regular,
+                       design: Font.Design = .default) -> Font {
+        let style: UIFont.TextStyle = switch size {
+        case ..<12:      .caption2
+        case ..<14:      .caption1
+        case ..<15:      .footnote
+        case ..<16:      .subheadline
+        case ..<18:      .body
+        case ..<21:      .title3
+        case ..<26:      .title2
+        case ..<32:      .title1
+        default:         .largeTitle
+        }
+        return scaled(size, weight: weight, design: design, relativeTo: style)
+    }
+
     /// 12pt bold rounded — compact island trailing metric.
     static var metricSmall: Font { scaled(12, weight: .bold, design: .rounded, relativeTo: .caption1) }
     /// 15pt bold rounded — expanded island trailing metric.

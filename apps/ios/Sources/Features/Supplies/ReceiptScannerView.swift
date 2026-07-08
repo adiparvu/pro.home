@@ -326,7 +326,7 @@ private struct ScannerEntryView: View {
             VStack(spacing: AppSpacing.xxl) {
                 VStack(spacing: AppSpacing.lg) {
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 42, weight: .light))
+                        .font(AppFont.scaled(42, weight: .light))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.primary)
                         .frame(width: 104, height: 104)
@@ -447,7 +447,7 @@ private struct ScannerProcessingView: View {
             Spacer()
 
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 34, weight: .light))
+                .font(AppFont.scaled(34, weight: .light))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.primary)
                 .frame(width: 88, height: 88)
@@ -548,11 +548,11 @@ private struct ReceiptReviewView: View {
     private var pantryNote: some View {
         HStack(spacing: 8) {
             Image(systemName: "basket.fill")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
             Text(String(format: String(localized: "pantry_stock_note"), parsed.items.count))
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)

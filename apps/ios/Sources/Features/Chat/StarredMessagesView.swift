@@ -70,18 +70,18 @@ private struct StarredRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "flag.fill")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message.senderName)
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(sender?.swiftColor ?? .primary)
                 Text(snippet)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(2)
                 Text(message.timeDisplay)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             Spacer()

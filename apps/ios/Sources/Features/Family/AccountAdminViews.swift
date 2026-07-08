@@ -39,7 +39,7 @@ struct AccountMemberRow: View {
                     .foregroundStyle(.primary)
                 if let email = profile?.email, !email.isEmpty {
                     Text(email)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -90,15 +90,15 @@ struct AccountMemberRow: View {
         ZStack {
             Circle().fill(Color.accentColor.opacity(0.18))
             Text(String((profile?.bestName ?? "?").prefix(2)).uppercased())
-                .font(.system(size: 14, weight: .bold))
+                .font(AppFont.scaled(14, weight: .bold))
                 .foregroundStyle(Color.accentColor)
         }
     }
 
     private func statusChip(_ text: LocalizedStringKey, color: Color, icon: String) -> some View {
         HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 8, weight: .bold))
-            Text(text).font(.system(size: 10, weight: .semibold))
+            Image(systemName: icon).font(AppFont.scaled(8, weight: .bold))
+            Text(text).font(AppFont.scaled(10, weight: .semibold))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 7).padding(.vertical, 4)
@@ -150,7 +150,7 @@ struct AccountReviewSheet: View {
                         }
                         if let errorMessage {
                             Text(errorMessage)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(Color.brandDanger)
                                 .multilineTextAlignment(.center)
                         }
@@ -222,7 +222,7 @@ struct AccountReviewSheet: View {
         ZStack {
             Circle().fill(Color.accentColor.opacity(0.18))
             Text(String((profile?.bestName ?? "?").prefix(2)).uppercased())
-                .font(.system(size: 28, weight: .bold))
+                .font(AppFont.scaled(28, weight: .bold))
                 .foregroundStyle(Color.accentColor)
         }
     }
@@ -261,10 +261,10 @@ struct AccountReviewSheet: View {
         GlassCard(padding: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "person.text.rectangle.fill")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.brandPurple)
                     .frame(width: 28)
-                Text("Role").font(.system(size: 15)).foregroundStyle(.primary)
+                Text("Role").font(AppFont.scaled(15)).foregroundStyle(.primary)
                 Spacer()
                 Picker("", selection: $role) {
                     ForEach(kAssignableRoles, id: \.self) { r in
@@ -301,11 +301,11 @@ struct AccountReviewSheet: View {
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "hand.raised.fill")
-                                .font(.system(size: 14))
+                                .font(AppFont.scaled(14))
                                 .foregroundStyle(Color.brandWarning)
                                 .frame(width: 28)
                             Text("Block access")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
                             Spacer()
                             Image(systemName: "chevron.up.chevron.down")
@@ -399,13 +399,13 @@ struct AccountReviewSheet: View {
     private func infoRow(_ icon: String, _ label: LocalizedStringKey, _ value: String, _ color: Color) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(color)
                 .frame(width: 28)
-            Text(label).font(.system(size: 14)).foregroundStyle(.primary)
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.trailing)
         }
@@ -418,10 +418,10 @@ struct AccountReviewSheet: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(color)
                     .frame(width: 28)
-                Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+                Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.lg)

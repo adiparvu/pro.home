@@ -197,7 +197,7 @@ struct AnimatedTabBar: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 4) {
                 iconView(tab, isSelected: isSelected)
-                    .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+                    .font(AppFont.scaled(22, weight: isSelected ? .semibold : .regular))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.4))
                     .contentTransition(.symbolEffect(.replace))
@@ -214,7 +214,7 @@ struct AnimatedTabBar: View {
 
             if tab == .tasks && overdueCount > 0 {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)
@@ -232,7 +232,7 @@ struct AnimatedTabBar: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 5) {
                 iconView(tab, isSelected: isSelected)
-                    .font(.system(size: 23, weight: isSelected ? .semibold : .regular))
+                    .font(AppFont.scaled(23, weight: isSelected ? .semibold : .regular))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.33))
                     .contentTransition(.symbolEffect(.replace))
@@ -249,7 +249,7 @@ struct AnimatedTabBar: View {
 
             if tab == .tasks && overdueCount > 0 {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)

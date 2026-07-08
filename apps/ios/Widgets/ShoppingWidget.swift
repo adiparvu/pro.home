@@ -28,13 +28,13 @@ struct ShoppingSmallView: View {
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
                 Spacer()
                 Text("\(entry.snapshot.pendingSupplyCount)")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
                 Text("SHOPPING")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.pendingSupplyCount > 0
                      ? LocalizedStringKey("\(entry.snapshot.pendingSupplyCount) items")
@@ -69,7 +69,7 @@ struct ShoppingMediumView: View {
             HStack {
                 Label {
                     Text("SHOPPING")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "cart.fill")
@@ -92,7 +92,7 @@ struct ShoppingMediumView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text("Empty list")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxHeight: .infinity)
@@ -101,16 +101,16 @@ struct ShoppingMediumView: View {
                     ForEach(pending, id: \.id) { item in
                         HStack(spacing: 8) {
                             Image(systemName: "cart")
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(.secondary)
                             Text(item.name)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
                             Button(intent: makeCheckIntent(item)) {
                                 Image(systemName: "circle")
-                                    .font(.system(size: 16))
+                                    .font(AppFont.scaled(16))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)

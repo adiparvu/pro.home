@@ -32,8 +32,8 @@ struct PublicContactSheet: View {
                     VStack(spacing: 16) {
                         GlassCard {
                             HStack(spacing: 12) {
-                                Image(systemName: "qrcode.viewfinder").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                                Text("Show on public QR page").font(.system(size: 15)).foregroundStyle(.primary)
+                                Image(systemName: "qrcode.viewfinder").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                                Text("Show on public QR page").font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 Spacer()
                                 Toggle("", isOn: $isEnabled).tint(.accentColor).labelsHidden()
                             }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -51,7 +51,7 @@ struct PublicContactSheet: View {
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
                             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                             Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
-                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                         }
                         Spacer(minLength: 60)
@@ -82,8 +82,8 @@ struct PublicContactSheet: View {
 
     private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(ph, text: b).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
@@ -105,13 +105,13 @@ struct LoanItemSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
-                            Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                            TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                            Image(systemName: "person.fill").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                            TextField("Borrower's name", text: $borrower).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
                         HStack(spacing: 12) {
-                            Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                            Text("Expected return").font(.system(size: 15)).foregroundStyle(.primary)
+                            Image(systemName: "calendar.badge.clock").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                            Text("Expected return").font(AppFont.scaled(15)).foregroundStyle(.primary)
                             Spacer()
                             Toggle("", isOn: $hasReturnDate).tint(.accentColor).labelsHidden()
                         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -127,7 +127,7 @@ struct LoanItemSheet: View {
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     Text("You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                     Spacer()
                 }
@@ -210,7 +210,7 @@ struct ItemLocationSheet: View {
                                     ForEach(trackerTypes, id: \.self) { t in
                                         Button { trackerType = t } label: {
                                             Text(LocalizedStringKey(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : (t == "gps" ? "GPS" : t.capitalized))))
-                                                .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
+                                                .font(AppFont.scaled(13, weight: trackerType == t ? .semibold : .regular))
                                                 .foregroundStyle(trackerType == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                                 .background(trackerType == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
@@ -222,9 +222,9 @@ struct ItemLocationSheet: View {
                         if !trackerType.isEmpty {
                             VStack(spacing: 0) {
                                 HStack(spacing: 12) {
-                                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                                    Image(systemName: "antenna.radiowaves.left.and.right").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                     TextField("Tracker name / serial (optional)", text: $trackerIdentifier)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                                 }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
@@ -234,7 +234,7 @@ struct ItemLocationSheet: View {
                                     HStack(spacing: 10) {
                                         Image(systemName: "info.circle.fill").foregroundStyle(Color.accentColor)
                                         Text("Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking.")
-                                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.55))
+                                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.55))
                                     }
                                 }
                             }
@@ -271,10 +271,10 @@ struct ItemLocationSheet: View {
 
     private func coordRow(_ label: String, _ binding: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+            Image(systemName: "location.fill").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
-            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).tint(.accentColor)
+            TextField("0.000000", text: binding).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).tint(.accentColor)
                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 110)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }

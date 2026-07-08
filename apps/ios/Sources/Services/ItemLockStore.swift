@@ -51,7 +51,7 @@ struct LockedItemPreview: View {
             ZStack {
                 Circle().fill(Color.teal.opacity(0.15)).frame(width: 72, height: 72)
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(AppFont.scaled(28, weight: .semibold))
                     .foregroundStyle(.teal)
             }
             Text(name)

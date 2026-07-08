@@ -38,7 +38,7 @@ struct MemberAvatarStack: View {
                 }
                 if extraCount > 0 {
                     Text("+\(extraCount)")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFont.scaled(9, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: size, height: size)
                         .background(.gray.opacity(0.8), in: Circle())

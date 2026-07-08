@@ -136,14 +136,14 @@ struct InterAppChatView: View {
                         }
                     ).animation()) {
                         Text("Enable")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                     .liquidGlass(cornerRadius: AppRadius.lg)
 
                     Text("Lets other apps and services send messages into your house chat.")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .padding(.horizontal, AppSpacing.xs)
                 }
@@ -174,7 +174,7 @@ struct InterAppChatView: View {
                         .padding(.leading, AppSpacing.xxs)
 
                         Text("Any app that can send a POST request can deliver messages: Shortcuts automations, Zapier, IFTTT, a home server. Rotating the token instantly disconnects everything using the old one.")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, AppSpacing.xs)
                     }
@@ -187,7 +187,7 @@ struct InterAppChatView: View {
                             .padding(.leading, AppSpacing.xxs)
                         let sample = "{\n  \"token\": \"\(channel.token.uuidString.lowercased())\",\n  \"sender\": \"Aria\",\n  \"text\": \"Salut din altă aplicație!\"\n}"
                         Text(sample)
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(AppFont.scaled(12, design: .monospaced))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(AppSpacing.base)
@@ -199,7 +199,7 @@ struct InterAppChatView: View {
                             }
                         if copied == "sample" {
                             Label("Copied", systemImage: "checkmark")
-                                .font(.system(size: 11)).foregroundStyle(Color.brandSuccess)
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.brandSuccess)
                                 .padding(.leading, AppSpacing.xxs)
                         }
                     }
@@ -245,14 +245,14 @@ struct InterAppChatView: View {
                             }
                         )) {
                             Text("Notify on external messages")
-                                .font(.system(size: 16))
+                                .font(AppFont.scaled(16))
                                 .foregroundStyle(.primary)
                         }
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .liquidGlass(cornerRadius: AppRadius.lg)
 
                         Text("External messages appear in chat marked with ⥂ and the sender's app name.")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, AppSpacing.xs)
                     }
@@ -263,7 +263,7 @@ struct InterAppChatView: View {
                 }
 
                 if let err = service.error {
-                    Text(err).font(.system(size: 12)).foregroundStyle(.red)
+                    Text(err).font(AppFont.scaled(12)).foregroundStyle(.red)
                 }
 
                 Spacer(minLength: 60)
@@ -286,7 +286,7 @@ struct InterAppChatView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                 Text(masked ? String(value.prefix(8)) + "••••••••" : value)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(AppFont.scaled(12, design: .monospaced))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
             }

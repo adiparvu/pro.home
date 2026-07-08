@@ -97,7 +97,7 @@ struct TrustedPersonsView: View {
                     ))
                     .frame(width: 40, height: 40)
                 Text(person.initials)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.scaled(14, weight: .bold))
                     .foregroundStyle(.white)
             }
 
@@ -106,7 +106,7 @@ struct TrustedPersonsView: View {
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(person.email)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
                     .lineLimit(1)
                 if person.canEmergencyAccess || person.canApproveRecovery || person.canTransferOwnership {
@@ -135,7 +135,7 @@ struct TrustedPersonsView: View {
 
     private func permTag(_ label: String, color: Color) -> some View {
         Text(LocalizedStringKey(label))
-            .font(.system(size: 10, weight: .semibold))
+            .font(AppFont.scaled(10, weight: .semibold))
             .foregroundStyle(color)
             .padding(.horizontal, AppSpacing.xs)
             .padding(.vertical, 2)
@@ -172,7 +172,7 @@ struct TrustedPersonsView: View {
 
     private var footerText: some View {
         Text("Persoanele de încredere te pot ajuta cu recuperarea contului și accesul de urgență.")
-            .font(.system(size: 12))
+            .font(AppFont.scaled(12))
             .foregroundStyle(Color.primary.opacity(0.38))
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.sm)
@@ -294,7 +294,7 @@ private struct AddTrustedPersonSheet: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
                 .keyboardType(keyboard)
@@ -310,10 +310,10 @@ private struct AddTrustedPersonSheet: View {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(title))
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(subtitle))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()

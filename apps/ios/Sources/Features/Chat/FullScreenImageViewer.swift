@@ -14,7 +14,7 @@ struct VideoPlayerSheet: View {
                 .ignoresSafeArea()
             Button { dismiss() } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 30))
+                    .font(AppFont.scaled(30))
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(AppSpacing.lg)
             }
@@ -66,7 +66,7 @@ struct FullScreenImageViewer: View {
                         }
                 case .failure:
                     Image(systemName: "photo")
-                        .font(.system(size: 60))
+                        .font(AppFont.scaled(60))
                         .foregroundStyle(.white.opacity(0.4))
                 default:
                     ProgressView().tint(.white)
@@ -78,7 +78,7 @@ struct FullScreenImageViewer: View {
                     Spacer()
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(AppFont.scaled(15, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(AppSpacing.md)
                             .background(.ultraThinMaterial, in: Circle())

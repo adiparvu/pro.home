@@ -68,7 +68,7 @@ struct PaintColorsView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)
                             .frame(width: 34, height: 32)
                     }
@@ -150,7 +150,7 @@ struct PaintColorsView: View {
             HapticFeedback.impact(.light)
         }) {
             Text(label)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 7)
@@ -180,7 +180,7 @@ struct PaintColorsView: View {
                     .foregroundStyle(.primary)
                 Spacer()
                 Text(colors.count == 1 ? "\(colors.count) color" : "\(colors.count) colors")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
 
@@ -249,7 +249,7 @@ private struct PaintColorsSpecSheet: View {
             ForEach(rooms, id: \.0) { room, colors in
                 VStack(alignment: .leading, spacing: 10) {
                     Text(room)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(AppFont.scaled(17, weight: .bold))
                         .foregroundStyle(ink)
                     ForEach(colors) { color in row(color) }
                 }
@@ -266,10 +266,10 @@ private struct PaintColorsSpecSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: "paintpalette.fill")
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
                     .foregroundStyle(Color(red: 0.30, green: 0.20, blue: 0.62))
                 Text(Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors")
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(AppFont.scaled(22, weight: .heavy))
                     .foregroundStyle(ink)
             }
             if !propertyName.isEmpty {
@@ -318,7 +318,7 @@ private struct PaintColorsSpecSheet: View {
         HStack {
             Spacer()
             Text("PRVIO")
-                .font(.system(size: 11, weight: .bold))
+                .font(AppFont.scaled(11, weight: .bold))
                 .tracking(1.5)
                 .foregroundStyle(Color(white: 0.75))
             Spacer()
@@ -351,14 +351,14 @@ private struct PaintSwatch: View {
 
             if let code = paintColor.code, !code.isEmpty {
                 Text(code)
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(Color.primary.opacity(0.4))
                     .lineLimit(1)
                     .frame(width: 70)
             }
 
             Text(LocalizedStringKey(paintColor.finishDisplay))
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(width: 70)
         }

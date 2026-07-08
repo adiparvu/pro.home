@@ -92,11 +92,11 @@ struct MonthlyRecapView: View {
     private var heroCard: some View {
         VStack(spacing: 10) {
             Image(systemName: "moon.stars.fill")
-                .font(.system(size: 34))
+                .font(AppFont.scaled(34))
                 .foregroundStyle(.indigo)
                 .symbolRenderingMode(.hierarchical)
             Text(verbatim: "\(tasksCompleted)")
-                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(44, weight: .bold, design: .rounded))
                 .contentTransition(.numericText())
             Text("monthly_tasks_done")
                 .font(AppFont.footnote)
@@ -215,14 +215,14 @@ private struct MonthlyShareCard: View {
     var body: some View {
         VStack(spacing: 18) {
             Image(systemName: "moon.stars.fill")
-                .font(.system(size: 44))
+                .font(AppFont.scaled(44))
                 .foregroundStyle(.white.opacity(0.9))
             Text(month)
                 .font(AppFont.title)
                 .foregroundStyle(.white)
             if let property {
                 Text(property)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
             }
             HStack(spacing: 26) {
@@ -233,11 +233,11 @@ private struct MonthlyShareCard: View {
             .padding(.top, 6)
             ForEach(spending, id: \.self) { line in
                 Text(line)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(18, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.9))
             }
             Text(verbatim: "PRVIO")
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(.white.opacity(0.5))
                 .padding(.top, 8)
         }
@@ -251,10 +251,10 @@ private struct MonthlyShareCard: View {
     private func shareStat(value: Int, label: String) -> some View {
         VStack(spacing: 4) {
             Text(verbatim: "\(value)")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 13, weight: .medium))
+                .font(AppFont.scaled(13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.7))
         }
     }

@@ -144,7 +144,7 @@ struct LevelPlanCanvas: View {
             .frame(width: 22, height: 22)
             .overlay(
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.white)
             )
             .gesture(
@@ -191,11 +191,11 @@ private struct RoomTile: View {
                 .strokeBorder(tint.opacity(0.55), lineWidth: 1.5)
             VStack(spacing: 3) {
                 Image(systemName: room.kindIcon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.scaled(13, weight: .semibold))
                     .foregroundStyle(tint)
                 if showsName {
                     Text(room.name)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFont.scaled(10, weight: .medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -206,7 +206,7 @@ private struct RoomTile: View {
         .overlay(alignment: .topTrailing) {
             if room.hasScan {
                 Image(systemName: "cube.transparent.fill")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(AppFont.scaled(8, weight: .bold))
                     .foregroundStyle(.purple)
                     .padding(3)
             }

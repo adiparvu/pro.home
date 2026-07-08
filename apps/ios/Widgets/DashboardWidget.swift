@@ -54,7 +54,7 @@ struct DashboardSmallView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let name = entry.snapshot.propertyName {
                     Text(name)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(AppFont.scaled(13, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                 }
@@ -76,10 +76,10 @@ struct DashboardSmallView: View {
     private func miniStat(icon: String, value: String, color: Color) -> some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(AppFont.scaled(10, weight: .semibold))
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
         }
     }
@@ -100,7 +100,7 @@ struct DashboardMediumView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let name = entry.snapshot.propertyName {
                     Text(name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFont.scaled(15, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                 }
@@ -137,10 +137,10 @@ struct DashboardMediumView: View {
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 9, weight: .medium))
+                .font(AppFont.scaled(9, weight: .medium))
                 .foregroundStyle(.white.opacity(0.65))
         }
         .frame(maxWidth: .infinity)
@@ -172,13 +172,13 @@ struct DashboardLargeView: View {
                 HStack(alignment: .firstTextBaseline) {
                     if let name = entry.snapshot.propertyName {
                         Text(name)
-                            .font(.system(size: 17, weight: .bold))
+                            .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
                     }
                     Spacer()
                     Text(relativeTime)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.white.opacity(0.55))
                 }
 
@@ -208,13 +208,13 @@ struct DashboardLargeView: View {
                 if !pendingTasks.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("URGENT")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(AppFont.scaled(9, weight: .bold))
                             .foregroundStyle(.white.opacity(0.5))
                         ForEach(pendingTasks, id: \.id) { task in
                             HStack(spacing: 6) {
                                 Circle().fill(Color.red).frame(width: 5, height: 5)
                                 Text(task.title)
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
                             }
@@ -226,14 +226,14 @@ struct DashboardLargeView: View {
                 if !needsWater.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("NEEDS WATER")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(AppFont.scaled(9, weight: .bold))
                             .foregroundStyle(.white.opacity(0.5))
                         HStack(spacing: 10) {
                             ForEach(needsWater, id: \.id) { plant in
                                 HStack(spacing: 4) {
-                                    Text(plant.emoji).font(.system(size: 13))
+                                    Text(plant.emoji).font(AppFont.scaled(13))
                                     Text(plant.name)
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
                                 }
@@ -257,7 +257,7 @@ struct DashboardLargeView: View {
                 .font(AppFont.title2)
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 9, weight: .medium))
+                .font(AppFont.scaled(9, weight: .medium))
                 .foregroundStyle(.white.opacity(0.65))
         }
         .frame(maxWidth: .infinity)

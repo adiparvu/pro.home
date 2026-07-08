@@ -178,12 +178,12 @@ struct DashboardView: View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(dateString)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 // Composed from Texts so both parts resolve through the
                 // in-app locale — never the device language.
                 greetingTitle
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(26, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -203,7 +203,7 @@ struct DashboardView: View {
 
             Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
                 Image(systemName: "bell.fill")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
                     .overlay(alignment: .topTrailing) {
@@ -212,7 +212,7 @@ struct DashboardView: View {
                         if notificationService.unreadCount > 0 {
                             Text(notificationService.unreadCount > 99
                                  ? "99+" : "\(notificationService.unreadCount)")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(AppFont.scaled(10, weight: .bold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 4.5).padding(.vertical, 1.5)
                                 .background(Color.red, in: Capsule())
@@ -270,13 +270,13 @@ struct DashboardView: View {
                             .clipShape(Circle())
                     } else {
                         Text(avatarInitial)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(AppFont.scaled(15, weight: .bold))
                             .foregroundStyle(.white)
                     }
                 }
             } else {
                 Text(avatarInitial)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(AppFont.scaled(15, weight: .bold))
                     .foregroundStyle(.white)
             }
         }
@@ -347,7 +347,7 @@ struct DashboardView: View {
                         .foregroundStyle(.white.opacity(0.9))
                     if let addr = propertyService.primary?.addressLine1 {
                         Text(addr)
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(.white.opacity(0.5))
                             .lineLimit(1)
                     }

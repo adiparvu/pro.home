@@ -10,6 +10,7 @@ struct WeatherWidget: View {
 
     @State private var weatherService = WeatherKitService.shared
     @State private var shimmer = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -31,7 +32,7 @@ struct WeatherWidget: View {
                             Image(systemName: weatherService.currentWeather != nil
                                   ? weatherService.conditionSymbol
                                   : weatherIcon(for: ctx.date))
-                                .font(.system(size: 44, weight: .light))
+                                .font(AppFont.scaled(44, weight: .light))
                                 .foregroundStyle(.white)
                                 .symbolEffect(.pulse, options: .repeating)
                                 .shadow(color: .white.opacity(0.35), radius: 12)
@@ -43,11 +44,11 @@ struct WeatherWidget: View {
                                     .lineLimit(1)
                                 if let w = weatherService.currentWeather {
                                     Text(w.condition.description)
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 } else {
                                     Text("Tap for forecast")
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 }
                             }
@@ -59,18 +60,18 @@ struct WeatherWidget: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             if weatherService.currentWeather != nil {
                                 Text(weatherService.temperatureString)
-                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .font(AppFont.scaled(38, weight: .thin, design: .rounded))
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(weatherService.feelsLikeString)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(.white.opacity(0.70))
                                 Text(weatherService.humidityString)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(.white.opacity(0.70))
                             } else {
                                 Text(timeString(ctx.date))
-                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .font(AppFont.scaled(38, weight: .thin, design: .rounded))
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(dateString(ctx.date))
@@ -92,8 +93,10 @@ struct WeatherWidget: View {
         )
         .shadow(color: gradientColors(for: Date())[0].opacity(0.55), radius: 20, y: 8)
         .onAppear {
-            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                shimmer = true
+            if !reduceMotion {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    shimmer = true
+                }
             }
             if let coord = coordinate {
                 Task { await WeatherKitService.shared.fetch(for: coord) }
@@ -145,12 +148,12 @@ struct CalendarLargeWidget: View {
                     // Big day number
                     VStack(alignment: .leading, spacing: 2) {
                         Text(dayNumber(ctx.date))
-                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(72, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                             .contentTransition(.numericText())
                             .animation(.spring(response: 0.5), value: dayNumber(ctx.date))
                         Text(monthYear(ctx.date))
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     .padding(.leading, AppSpacing.xl)
@@ -172,10 +175,10 @@ struct CalendarLargeWidget: View {
                                 let isToday = Calendar.current.isDateInToday(day)
                                 VStack(spacing: 2) {
                                     Text(weekDayLetter(day))
-                                        .font(.system(size: 9, weight: .medium))
+                                        .font(AppFont.scaled(9, weight: .medium))
                                         .foregroundStyle(isToday ? .white : Color.primary.opacity(0.3))
                                     Text(dayNum(day))
-                                        .font(.system(size: 12, weight: isToday ? .bold : .regular))
+                                        .font(AppFont.scaled(12, weight: isToday ? .bold : .regular))
                                         .foregroundStyle(isToday ? .white : Color.primary.opacity(0.55))
                                 }
                                 .frame(width: 26, height: 36)

@@ -132,7 +132,7 @@ struct DeliveriesView: View {
                     .fill(Color.accentColor)
                     .frame(width: 8, height: 8)
                 Text("\(active) active")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(.primary)
             }
             Rectangle()
@@ -143,7 +143,7 @@ struct DeliveriesView: View {
                     .fill(Color.brandSuccess)
                     .frame(width: 8, height: 8)
                 Text("\(delivered) delivered")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(.primary)
             }
             if !deliveryService.todayDeliveries.isEmpty {
@@ -152,7 +152,7 @@ struct DeliveriesView: View {
                     .frame(width: 1, height: 14)
                 HStack(spacing: 5) {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(.orange)
                     Text("\(deliveryService.todayDeliveries.count) today")
                         .font(AppFont.captionEmphasis)
@@ -209,7 +209,7 @@ struct DeliveriesView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(AppFont.scaled(10, weight: .semibold))
                         Text("DELIVERED · \(completed.count)")
                             .font(AppFont.label)
                             .tracking(0.5)
@@ -245,13 +245,13 @@ struct DeliveriesView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "shippingbox")
-                .font(.system(size: 56))
+                .font(AppFont.scaled(56))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No deliveries tracked")
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add packages to track\nyour deliveries.")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
             Button { showAddDelivery = true } label: {
@@ -301,7 +301,7 @@ struct DeliveryRow: View {
                     HStack(spacing: 4) {
                         if let carrier = delivery.carrier, !carrier.isEmpty {
                             Text(carrier)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(.secondary)
                         }
 
@@ -309,7 +309,7 @@ struct DeliveryRow: View {
                             Text("·")
                                 .foregroundStyle(Color.primary.opacity(0.3))
                             Text(tn)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
@@ -318,10 +318,10 @@ struct DeliveryRow: View {
                     if let expected = delivery.expectedDisplay {
                         HStack(spacing: 4) {
                             Image(systemName: "calendar")
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             Text(expected)
-                                .font(.system(size: 11))
+                                .font(AppFont.scaled(11))
                                 .foregroundStyle(
                                     expected == "Today"
                                         ? Color.orange

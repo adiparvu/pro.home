@@ -21,17 +21,17 @@ extension PlantDetailSheet {
                     .frame(height: 100)
 
                     Text(isEditing ? editedPlant.emoji : plant.emoji)
-                        .font(.system(size: 56))
+                        .font(AppFont.scaled(56))
                 }
 
                 VStack(spacing: 4) {
                     Text(isEditing ? editedPlant.name : plant.name)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                         .foregroundStyle(.primary)
 
                     if let species = (isEditing ? editedPlant.species : plant.species), !species.isEmpty {
                         Text(species)
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -94,7 +94,7 @@ extension PlantDetailSheet {
                             .font(AppFont.captionStrong)
                             .foregroundStyle(.secondary)
                         Text(notes)
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(Color.primary.opacity(0.8))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -110,15 +110,15 @@ extension PlantDetailSheet {
                     .fill(iconColor.opacity(0.12))
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(iconColor)
             }
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.trailing)
         }
@@ -175,7 +175,7 @@ extension PlantDetailSheet {
                             HapticFeedback.selection()
                         } label: {
                             Text(emoji)
-                                .font(.system(size: 26))
+                                .font(AppFont.scaled(26))
                                 .frame(width: 40, height: 40)
                                 .background(
                                     editedPlant.emoji == emoji
@@ -199,7 +199,7 @@ extension PlantDetailSheet {
             VStack(alignment: .leading, spacing: 8) {
                 fieldLabel("NAME *")
                 TextField("Plant name", text: $editedPlant.name)
-                    .font(.system(size: 16))
+                    .font(AppFont.scaled(16))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .padding(AppSpacing.base)
@@ -212,7 +212,7 @@ extension PlantDetailSheet {
                     get: { editedPlant.species ?? "" },
                     set: { editedPlant.species = $0.isEmpty ? nil : $0 }
                 ))
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -225,7 +225,7 @@ extension PlantDetailSheet {
                     get: { editedPlant.location ?? "" },
                     set: { editedPlant.location = $0.isEmpty ? nil : $0 }
                 ))
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -241,7 +241,7 @@ extension PlantDetailSheet {
                             HapticFeedback.selection()
                         } label: {
                             Text(LocalizedStringKey(opt.label))
-                                .font(.system(size: 12, weight: editedPlant.healthStatus == opt.id ? .semibold : .regular))
+                                .font(AppFont.scaled(12, weight: editedPlant.healthStatus == opt.id ? .semibold : .regular))
                                 .foregroundStyle(
                                     editedPlant.healthStatus == opt.id ? .white : Color.primary.opacity(0.65)
                                 )
@@ -264,7 +264,7 @@ extension PlantDetailSheet {
                 fieldLabel("WATERING INTERVAL")
                 HStack {
                     Text(editedPlant.wateringIntervalDays == 1 ? "Every \(editedPlant.wateringIntervalDays) day" : "Every \(editedPlant.wateringIntervalDays) days")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     Stepper("", value: $editedPlant.wateringIntervalDays, in: 1...30)
@@ -280,7 +280,7 @@ extension PlantDetailSheet {
                     get: { editedPlant.notes ?? "" },
                     set: { editedPlant.notes = $0.isEmpty ? nil : $0 }
                 ), axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...6)

@@ -91,7 +91,7 @@ struct StickerPicker: View {
     private var memojiPane: some View {
         VStack(spacing: 14) {
             Text("Open the emoji keyboard and tap a sticker — it sends as an image.")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.secondaryTextColor)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.xl)
@@ -114,9 +114,9 @@ struct StickerPicker: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "face.smiling")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                 Text("Memoji, animals, hands — everything from your sticker drawer works.")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
             }
             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             .padding(.horizontal, AppSpacing.xl)
@@ -138,11 +138,11 @@ struct StickerPicker: View {
     private var header: some View {
         HStack {
             Text("PRVIO Stickers")
-                .font(.system(size: 17, weight: .semibold))
+                .font(AppFont.scaled(17, weight: .semibold))
             Spacer()
             Button { dismiss() } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 22))
+                    .font(AppFont.scaled(22))
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .symbolRenderingMode(.hierarchical)
             }
@@ -184,7 +184,7 @@ struct StickerPicker: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(selected ? color.opacity(0.16) : Color.primary.opacity(AppOpacity.hairline))
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: selected ? .semibold : .regular))
+                    .font(AppFont.scaled(15, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? color : Color.primary.opacity(0.4))
             }
             .frame(width: 38, height: 38)
@@ -249,7 +249,7 @@ struct StickerCell: View {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
                     Text(sticker.emoji)
-                        .font(.system(size: 44))
+                        .font(AppFont.scaled(44))
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
                         .background(
@@ -259,14 +259,14 @@ struct StickerCell: View {
 
                     if isFavorite {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 8))
+                            .font(AppFont.scaled(8))
                             .foregroundStyle(.pink)
                             .padding(AppSpacing.xxs)
                     }
                 }
 
                 Text(LocalizedStringKey(sticker.label))
-                    .font(.system(size: 9, weight: .medium))
+                    .font(AppFont.scaled(9, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -304,7 +304,7 @@ struct StickerBubble: View {
     var body: some View {
         VStack(spacing: 5) {
             Text(sticker?.emoji ?? "🏠")
-                .font(.system(size: 84))
+                .font(AppFont.scaled(84))
                 .frame(width: 110, height: 100)
                 .scaleEffect(appeared ? 1.0 : 0.6)
                 .opacity(appeared ? 1.0 : 0.0)

@@ -72,7 +72,7 @@ struct InventoryView: View {
                 } else if filtered.isEmpty {
                     VStack {
                         Spacer()
-                        Text("No items in this category").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text("No items in this category").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
                         Spacer()
                     }
                 } else {
@@ -235,10 +235,10 @@ struct InventoryView: View {
             VStack(spacing: 3) {
                 // Was `.white`, which is invisible on the light-mode card. Use
                 // `.primary` so it's readable in both light and dark.
-                Text(value).font(.system(size: 15, weight: .bold))
+                Text(value).font(AppFont.scaled(15, weight: .bold))
                     .foregroundStyle(highlight ? .orange : .primary)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(.system(size: 10, weight: .medium))
+                Text(label).font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }.frame(maxWidth: .infinity)
         }
@@ -247,9 +247,9 @@ struct InventoryView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
+            Image(systemName: "cube.box.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.18))
+            Text("No inventory yet").font(AppFont.scaled(17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Button("Add first item") { showAdd = true }.font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

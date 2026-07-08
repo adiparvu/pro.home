@@ -19,7 +19,7 @@ struct ChatFileBubble: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "doc.fill")
-                .font(.system(size: 20))
+                .font(AppFont.scaled(20))
                 .foregroundStyle(isOwn ? onBubble : Color.accentColor)
             Text(name ?? "File")
                 .font(AppFont.footnote)
@@ -28,7 +28,7 @@ struct ChatFileBubble: View {
             if url != nil {
                 Spacer()
                 Image(systemName: "eye.fill")
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
                     .foregroundStyle(isOwn ? onBubble.opacity(0.8) : Color.accentColor)
                     .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
                     .accessibilityLabel(Text("Preview"))
@@ -60,7 +60,7 @@ struct ChatVideoBubble: View {
             Color.black.opacity(0.85)
                 .frame(width: 200, height: 140)
             Image(systemName: "play.circle.fill")
-                .font(.system(size: 44))
+                .font(AppFont.scaled(44))
                 .foregroundStyle(.white.opacity(0.9))
         }
         .clipShape(shape)
@@ -99,7 +99,7 @@ struct ChatImageBubble: View {
             .onTapGesture { if let url { onTap(url) } }
             if let caption, !caption.isEmpty {
                 Text(caption)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(isOwn ? ownBubbleColor.readableText : .primary)
                     .padding(.horizontal, 10).padding(.top, AppSpacing.xs)
                     .frame(maxWidth: 220, alignment: .leading)

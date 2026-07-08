@@ -69,7 +69,7 @@ struct AddPropertyElementView: View {
                                     Spacer()
                                     Button { showTypePicker = true } label: {
                                         HStack(spacing: 4) {
-                                            Image(systemName: "square.grid.2x2.fill").font(.system(size: 11))
+                                            Image(systemName: "square.grid.2x2.fill").font(AppFont.scaled(11))
                                             Text("All types").font(.caption.weight(.semibold))
                                         }
                                         .foregroundStyle(Color.accentColor)
@@ -330,7 +330,7 @@ struct AddPropertyElementView: View {
                                 .fill(Color.primary.opacity(0.05))
                                 .overlay(
                                     VStack(spacing: 6) {
-                                        Image(systemName: "photo.badge.plus").font(.system(size: 24))
+                                        Image(systemName: "photo.badge.plus").font(AppFont.scaled(24))
                                         Text("Add cover").font(.caption)
                                     }.foregroundStyle(.secondary)
                                 )
@@ -372,7 +372,7 @@ struct AddPropertyElementView: View {
                             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(width: 78, height: 78)
-                                .overlay(Image(systemName: "plus").font(.system(size: 20)).foregroundStyle(Color.accentColor))
+                                .overlay(Image(systemName: "plus").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor))
                         }
                         .buttonStyle(.plain)
                     }
@@ -515,14 +515,14 @@ private struct TypeChip: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: type.icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(isSelected ? type.accentColor : Color.secondary)
                     .frame(width: 32, height: 32)
                     .background(
                         Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline))
                     )
                 Text(LocalizedStringKey(type.displayName))
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)

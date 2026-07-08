@@ -296,7 +296,7 @@ struct CamerasView: View {
                         .lineLimit(1)
                     if let snap {
                         Text(snap.at, style: .relative)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(AppFont.scaled(10, weight: .medium))
                             .monospacedDigit()
                             .foregroundStyle(.white.opacity(0.75))
                     }

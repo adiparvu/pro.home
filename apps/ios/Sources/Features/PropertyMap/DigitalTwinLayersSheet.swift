@@ -18,7 +18,7 @@ struct TwinLayersSheet: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 Text("Layers")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                 Spacer()
                 Button {
                     HapticFeedback.impact(.light)
@@ -59,7 +59,7 @@ struct TwinLayersSheet: View {
             ColoredIconBadge(icon: icon, color: color, size: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppFont.subheadline).foregroundStyle(.primary)
-                Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
+                Text(subtitle).font(AppFont.scaled(12)).foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
             Spacer()
@@ -94,7 +94,7 @@ struct TwinLayersLegend: View {
                     ForEach([Color.brandSuccess, .orange, .red], id: \.self) { c in
                         Circle().fill(c).frame(width: 7, height: 7)
                     }
-                    Text("Health").font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+                    Text("Health").font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(.white)
                 }
             }
             if journal { legendRow(color: .orange, dashed: false, label: "Journal", icon: "photo.fill") }
@@ -109,14 +109,14 @@ struct TwinLayersLegend: View {
     private func legendRow(color: Color, dashed: Bool, label: LocalizedStringKey, icon: String? = nil) -> some View {
         HStack(spacing: 5) {
             if let icon {
-                Image(systemName: icon).font(.system(size: 8, weight: .bold)).foregroundStyle(color)
+                Image(systemName: icon).font(AppFont.scaled(8, weight: .bold)).foregroundStyle(color)
             } else if dashed {
                 Rectangle().fill(color).frame(width: 12, height: 2)
                     .mask(HStack(spacing: 2) { ForEach(0..<3, id: \.self) { _ in Rectangle().frame(width: 3) } })
             } else {
                 Circle().fill(color).frame(width: 7, height: 7)
             }
-            Text(label).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+            Text(label).font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(.white)
         }
     }
 }

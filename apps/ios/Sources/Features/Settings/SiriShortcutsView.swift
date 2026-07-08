@@ -50,7 +50,7 @@ struct SiriShortcutsView: View {
             HStack(spacing: 14) {
                 // Siri's colour lives on the glyph — the surface stays glass.
                 Image(systemName: "waveform")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(AppFont.scaled(22, weight: .semibold))
                     .foregroundStyle(
                         LinearGradient(colors: [Color.brandSkyBlue, Color.brandPurple],
                                        startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -63,7 +63,7 @@ struct SiriShortcutsView: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Control PRVIO with your voice")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -126,7 +126,7 @@ struct SiriShortcutsView: View {
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "mic.fill")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.25))
                     .accessibilityHidden(true)
             }
@@ -135,10 +135,10 @@ struct SiriShortcutsView: View {
                 ForEach(cmd.phrases, id: \.self) { phrase in
                     HStack(spacing: 6) {
                         Image(systemName: "quote.opening")
-                            .font(.system(size: 9))
+                            .font(AppFont.scaled(9))
                             .foregroundStyle(Color.primary.opacity(0.3))
                         Text(LocalizedStringKey(phrase))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .italic()
                     }
@@ -183,7 +183,7 @@ struct SiriShortcutsView: View {
             }
 
             Text(String(format: String(localized: "siri_footer"), Self.shortcutCount))
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.sm)

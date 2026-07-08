@@ -93,17 +93,17 @@ struct NotificationCenterSmallView: View {
 
                     VStack(spacing: 0) {
                         Text("\(healthScore)")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(16, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text("%")
-                            .font(.system(size: 8, weight: .medium))
+                            .font(AppFont.scaled(8, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.top, 12)
 
                 Text("Health")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(AppFont.scaled(9, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
 
@@ -113,7 +113,7 @@ struct NotificationCenterSmallView: View {
                 if alertCount > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: statusIcon)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(AppFont.scaled(10, weight: .semibold))
                             .foregroundStyle(statusColor)
                         Text(alertCount == 1 ? String(localized: "1 alert") : String(format: String(localized: "%d alerts"), alertCount))
                             .font(AppFont.label)
@@ -124,7 +124,7 @@ struct NotificationCenterSmallView: View {
                     .background(statusColor.opacity(0.12), in: Capsule())
                 } else if let name = entry.snapshot.propertyName {
                     Text(name)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFont.scaled(10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -132,7 +132,7 @@ struct NotificationCenterSmallView: View {
                 // Critical task
                 if let critical = entry.snapshot.criticalTaskTitle {
                     Text(critical)
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(.primary.opacity(0.6))
                         .lineLimit(1)
                         .padding(.top, 2)
@@ -158,13 +158,13 @@ struct NotificationCenterRectangularView: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 4) {
                 Image(systemName: alertCount > 0 ? "exclamationmark.triangle.fill" : "house.fill")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(AppFont.scaled(10, weight: .semibold))
                     .widgetAccentable()
                 Text("PRVIO")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(AppFont.scaled(11, weight: .bold))
                 Spacer()
                 Text(String(format: String(localized: "Health %d%%"), healthScore))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(.secondary)
             }
 
@@ -172,18 +172,18 @@ struct NotificationCenterRectangularView: View {
                 HStack(spacing: 8) {
                     if entry.snapshot.overdueTaskCount > 0 {
                         Label(String(format: String(localized: "%d overdue"), entry.snapshot.overdueTaskCount), systemImage: "checklist")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(.red)
                     }
                     if entry.snapshot.plantsNeedingWater > 0 {
                         Label(String(format: String(localized: "%d plants"), entry.snapshot.plantsNeedingWater), systemImage: "drop.fill")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(.orange)
                     }
                 }
             } else {
                 Text("All clear — no urgent alerts")
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(.secondary)
             }
         }

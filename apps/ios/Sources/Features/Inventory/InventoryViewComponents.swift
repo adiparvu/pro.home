@@ -25,7 +25,7 @@ struct InventoryRow: View {
                                     .frame(width: 17, height: 17)
                                     .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 0.5))
                                 Image(systemName: item.categoryIcon)
-                                    .font(.system(size: 8, weight: .semibold))
+                                    .font(AppFont.scaled(8, weight: .semibold))
                                     .foregroundStyle(.white)
                             }
                             .offset(x: 4, y: 4)
@@ -38,20 +38,20 @@ struct InventoryRow: View {
                         Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                         if isFavorite {
                             Image(systemName: "star.fill")
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                                 .foregroundStyle(.yellow)
                         }
                     }
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
-                            Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                            Text(item.brand).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                         }
-                        Text(LocalizedStringKey(item.location.capitalized)).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text(LocalizedStringKey(item.location.capitalized)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
                         Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")
-                            .font(.system(size: 10, weight: .medium)).foregroundStyle(.orange)
+                            .font(AppFont.scaled(10, weight: .medium)).foregroundStyle(.orange)
                     }
                 }
                 Spacer()
@@ -60,8 +60,8 @@ struct InventoryRow: View {
                         Text(CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)).font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
-                    case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
-                    case .expired:     Image(systemName: "xmark.shield.fill").font(.system(size: 11)).foregroundStyle(.red.opacity(0.7))
+                    case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(AppFont.scaled(11)).foregroundStyle(.orange)
+                    case .expired:     Image(systemName: "xmark.shield.fill").font(AppFont.scaled(11)).foregroundStyle(.red.opacity(0.7))
                     default: EmptyView()
                     }
                 }
@@ -145,15 +145,15 @@ struct AddInventorySheet: View {
                                 div
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
-                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(.system(size: 15)).foregroundStyle(.primary)
+                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                             }
                         }
                         card {
                             HStack(spacing: 12) {
-                                Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                                Image(systemName: "note.text").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 TextField("Note (opțional)", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
+                                    .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
@@ -214,10 +214,10 @@ struct AddInventorySheet: View {
                             .overlay(
                                 VStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
-                                        .font(.system(size: 28))
+                                        .font(AppFont.scaled(28))
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
@@ -230,7 +230,7 @@ struct AddInventorySheet: View {
                                     selectedImageData = nil
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(AppFont.scaled(22))
                                         .foregroundStyle(.white)
                                         .shadow(radius: 2)
                                 }
@@ -304,22 +304,22 @@ struct AddInventorySheet: View {
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(ph, text: b).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
             Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: b).tint(.accentColor).labelsHidden()
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -340,15 +340,15 @@ struct QRScannerSheet: View {
             } else {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 16) {
-                    Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.25))
-                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
+                    Image(systemName: "camera.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
                 }
             }
             VStack {
                 HStack {
                     Spacer()
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 30))
+                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(30))
                             .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
                     }
                     .accessibilityLabel("Close scanner")

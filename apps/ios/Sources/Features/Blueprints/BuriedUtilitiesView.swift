@@ -49,7 +49,7 @@ struct BuriedUtilitiesView: View {
                     HapticFeedback.impact(.medium)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add buried line")
@@ -73,7 +73,7 @@ struct BuriedUtilitiesView: View {
                         Circle().fill(u.swiftColor).frame(width: 28, height: 28)
                             .overlay(Circle().strokeBorder(.white, lineWidth: 2))
                         Image(systemName: u.icon)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.scaled(12, weight: .bold))
                             .foregroundStyle(.primary)
                     }
                     .shadow(radius: 3)
@@ -121,7 +121,7 @@ struct BuriedUtilitiesView: View {
                     HStack(spacing: 5) {
                         Circle().fill(BuriedUtilityKind.color(t)).frame(width: 8, height: 8)
                         Text(LocalizedStringKey(BuriedUtilityKind.label(t)))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
             }

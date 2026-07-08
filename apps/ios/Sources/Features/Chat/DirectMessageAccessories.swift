@@ -57,7 +57,7 @@ struct DMAttachmentOption: View {
                         .fill(color.opacity(0.15))
                         .frame(width: 58, height: 58)
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(AppFont.scaled(24, weight: .semibold))
                         .foregroundStyle(color)
                 }
                 Text(label)
@@ -92,12 +92,12 @@ struct DMStarredView: View {
                     VStack(spacing: 14) {
                         Spacer()
                         Image(systemName: "flag.slash")
-                            .font(.system(size: 44))
+                            .font(AppFont.scaled(44))
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("No starred messages")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(AppFont.scaled(17, weight: .semibold))
                         Text("Mark a message to find it here later.")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(0.4))
                             .multilineTextAlignment(.center)
                         Spacer()
@@ -113,18 +113,18 @@ struct DMStarredView: View {
                                 } label: {
                                     HStack(spacing: 10) {
                                         Image(systemName: "flag.fill")
-                                            .font(.system(size: 13))
+                                            .font(AppFont.scaled(13))
                                             .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(msg.senderName)
                                                 .font(AppFont.captionEmphasis)
                                                 .foregroundStyle(.primary)
                                             Text(snippet(msg))
-                                                .font(.system(size: 14))
+                                                .font(AppFont.scaled(14))
                                                 .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                                 .lineLimit(2)
                                             Text(msg.timeDisplay)
-                                                .font(.system(size: 11))
+                                                .font(AppFont.scaled(11))
                                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                         }
                                         Spacer()

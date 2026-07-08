@@ -87,7 +87,7 @@ private struct AccountRow: View {
                             .foregroundStyle(.primary)
                     }
                     Text(account.email)
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.55))
                 }
 
@@ -96,7 +96,7 @@ private struct AccountRow: View {
                 if isCurrent {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.accentColor)
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                 } else if isSwitching {
                     ProgressView()
                         .scaleEffect(0.8)
@@ -135,7 +135,7 @@ private struct AvatarCircle: View {
             Circle()
                 .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(account.initial)
-                .font(.system(size: 16, weight: .bold))
+                .font(AppFont.scaled(16, weight: .bold))
                 .foregroundStyle(.white)
         }
     }

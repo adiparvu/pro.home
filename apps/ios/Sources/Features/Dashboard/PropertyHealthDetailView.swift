@@ -71,20 +71,20 @@ struct PropertyHealthDetailView: View {
                     .frame(width: 160, height: 160)
                 VStack(spacing: 4) {
                     Text("\(score)")
-                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(56, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                     Text("/ 100")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
 
             VStack(spacing: 6) {
                 Text(scoreLabel)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(scoreColor)
                 Text(scoreDescription)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.xl)
@@ -113,7 +113,7 @@ struct PropertyHealthDetailView: View {
     private var categoryBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Breakdown")
-                .font(.system(size: 17, weight: .bold))
+                .font(AppFont.scaled(17, weight: .bold))
                 .foregroundStyle(.primary)
 
             categoryRow(
@@ -171,7 +171,7 @@ struct PropertyHealthDetailView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("\(pct)%")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.scaled(14, weight: .bold))
                         .foregroundStyle(pct >= 80 ? color : pct >= 60 ? .orange : .red)
                 }
                 GeometryReader { geo in
@@ -184,7 +184,7 @@ struct PropertyHealthDetailView: View {
                 }
                 .frame(height: 5)
                 Text(detail)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
@@ -199,7 +199,7 @@ struct PropertyHealthDetailView: View {
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.brandPurple)
                 Text("How to Improve")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(AppFont.scaled(17, weight: .bold))
                     .foregroundStyle(.primary)
             }
 
@@ -216,13 +216,13 @@ struct PropertyHealthDetailView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                         Text(tip.body)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
                     Text("+\(tip.points)pts")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(tip.color)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(tip.color.opacity(0.12), in: Capsule())
@@ -245,7 +245,7 @@ struct PropertyHealthDetailView: View {
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("The property health score is calculated from four categories: Maintenance (30%), Utilities (25%), Security (25%), and Tasks completion (20%). Completing tasks, keeping documents current, and resolving alerts all raise your score.")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -110,7 +110,7 @@ struct ContactMultiPicker: View {
                     } else if accessDenied {
                         Section {
                             Text("Permite accesul la Contacte din Setări pentru a partaja din agendă.")
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -153,13 +153,13 @@ struct ContactMultiPicker: View {
                         ZStack(alignment: .topTrailing) {
                             ContactAvatar(payload: p, size: 46)
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .symbolRenderingMode(.palette)
                                 .foregroundStyle(.white, Color(.systemGray))
                                 .offset(x: 4, y: -4)
                         }
                         Text(p.name.split(separator: " ").first.map(String.init) ?? p.name)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(AppFont.scaled(10, weight: .medium))
                             .lineLimit(1)
                             .frame(width: 52)
                     }
@@ -179,17 +179,17 @@ struct ContactMultiPicker: View {
                 ContactAvatar(payload: p, size: 38)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(p.name)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     if let phone = p.phones.first {
                         Text(phone)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
                 Image(systemName: isSelected(p) ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 21))
+                    .font(AppFont.scaled(21))
                     .foregroundStyle(isSelected(p) ? Color.accentColor : Color.primary.opacity(0.22))
             }
             .contentShape(Rectangle())
@@ -290,7 +290,7 @@ struct ContactCardBubble: View {
                     Text(payloads.count == 1
                          ? (payloads.first?.phones.first ?? String(localized: "Contact"))
                          : String(format: String(localized: "%d contacte"), payloads.count))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle((isOwn ? onBubble : Color.primary).opacity(0.6))
                         .lineLimit(1)
                 }
@@ -331,7 +331,7 @@ struct SharedContactDetailSheet: View {
                             ContactAvatar(payload: p, size: 52)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(p.name)
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(AppFont.scaled(17, weight: .semibold))
                                 if isHouseholdMember(p) {
                                     Label(String(localized: "Membru al casei"), systemImage: "house.fill")
                                         .font(AppFont.caption)
@@ -343,11 +343,11 @@ struct SharedContactDetailSheet: View {
 
                         ForEach(p.phones, id: \.self) { phone in
                             Label(phone, systemImage: "phone")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                         }
                         ForEach(p.emails, id: \.self) { email in
                             Label(email, systemImage: "envelope")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                         }
 
                         actionRow(p)

@@ -13,9 +13,9 @@ struct DetailTabBar: View {
                 } label: {
                     VStack(spacing: 3) {
                         Image(systemName: tab.icon)
-                            .font(.system(size: 14, weight: selected == tab ? .semibold : .regular))
+                            .font(AppFont.scaled(14, weight: selected == tab ? .semibold : .regular))
                         Text(LocalizedStringKey(tab.rawValue))
-                            .font(.system(size: 11, weight: selected == tab ? .semibold : .regular))
+                            .font(AppFont.scaled(11, weight: selected == tab ? .semibold : .regular))
                     }
                     .foregroundStyle(selected == tab ? Color.white : Color.secondary)
                     .frame(maxWidth: .infinity)
@@ -56,7 +56,7 @@ struct LinkedDocumentRow: View {
                 Spacer()
                 Button(action: onOpen) {
                     Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: 16)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             }
@@ -99,7 +99,7 @@ struct DocumentLinkPicker: View {
                                     GlassCard(padding: 12) {
                                         HStack(spacing: 12) {
                                             Image(systemName: doc.categoryIcon)
-                                                .font(.system(size: 15)).foregroundStyle(Color.accentColor).frame(width: 28)
+                                                .font(AppFont.scaled(15)).foregroundStyle(Color.accentColor).frame(width: 28)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(doc.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
                                                 Text(LocalizedStringKey(doc.category.capitalized)).font(.caption).foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ struct LinkedTaskRow: View {
             HStack(spacing: 12) {
                 Button(action: onToggle) {
                     Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22))
+                        .font(AppFont.scaled(22))
                         .foregroundStyle(task.isCompleted ? Color.brandSuccess : Color.secondary)
                 }
                 .buttonStyle(.plain)

@@ -93,33 +93,33 @@ struct ConversationRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(entry.name)
-                        .font(.system(size: 16, weight: isUnread ? .bold : .semibold))
+                        .font(AppFont.scaled(16, weight: isUnread ? .bold : .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if muted {
                         Image(systemName: "bell.slash.fill")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Spacer()
                     if pinned {
                         Image(systemName: "pin.fill")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Text(entry.formattedTime)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(AppOpacity.disabled))
                 }
                 HStack {
                     Text(entry.preview)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(isUnread ? Color.primary.opacity(0.65) : Color.primary.opacity(0.4))
                         .lineLimit(1)
                     Spacer()
                     if entry.unread > 0 {
                         Text("\(entry.unread)")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.scaled(12, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, AppSpacing.xs)
                             .padding(.vertical, 2)
@@ -206,7 +206,7 @@ struct GroupChatAvatar: View {
             Circle()
                 .foregroundStyle(Color.accentColor.opacity(0.15))
             Image(systemName: "person.2.fill")
-                .font(.system(size: 22))
+                .font(AppFont.scaled(22))
                 .foregroundStyle(Color.accentColor)
         }
     }

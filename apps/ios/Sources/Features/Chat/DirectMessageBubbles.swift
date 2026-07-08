@@ -252,7 +252,7 @@ struct DMBubble: View {
                     onReact?(emoji)
                 } label: {
                     HStack(spacing: 2) {
-                        Text(emoji).font(.system(size: 13))
+                        Text(emoji).font(AppFont.scaled(13))
                         if count > 1 {
                             Text("\(count)").font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -277,21 +277,21 @@ struct DMBubble: View {
     private var statusRow: some View {
         HStack(spacing: 4) {
             Text(message.timeDisplay)
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             if message.editedAt != nil, messageType != .deleted {
                 Text("· edited")
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             if message.pinned == true {
                 Image(systemName: "pin.fill")
-                    .font(.system(size: 8))
+                    .font(AppFont.scaled(8))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             if message.isMarked == true {
                 Image(systemName: "flag.fill")
-                    .font(.system(size: 8))
+                    .font(AppFont.scaled(8))
                     .foregroundStyle(.orange.opacity(0.7))
             }
             if isOwn, messageType != .deleted {
@@ -319,7 +319,7 @@ struct DMBubble: View {
                     .font(AppFont.label)
                     .foregroundStyle(accent)
                 Text(preview)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.6))
                     .lineLimit(1)
             }
@@ -333,10 +333,10 @@ struct DMBubble: View {
     private var deletedBubble: some View {
         HStack(spacing: 6) {
             Image(systemName: "slash.circle")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Text("This message was deleted")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .italic()
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
         }
@@ -349,7 +349,7 @@ struct DMBubble: View {
         // Foreground tracks the bubble colour's luminance so a light custom
         // theme colour gets dark text instead of unreadable white.
         return Text(message.body)
-            .font(.system(size: 15))
+            .font(AppFont.scaled(15))
             .foregroundStyle(isOwn ? fill.readableText : .primary)
             .tint(isOwn ? fill.readableText : Color.accentColor)
             .padding(.horizontal, 13)

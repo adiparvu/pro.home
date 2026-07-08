@@ -160,7 +160,7 @@ struct RoomInspectorSheet: View {
                     .foregroundStyle(.primary)
                 Spacer()
                 Text("\(score)%")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(17, weight: .bold, design: .rounded))
                     .foregroundStyle(tint)
                     .monospacedDigit()
             }

@@ -19,7 +19,7 @@ struct ElementObjectsSection: View {
                         .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Spacer()
                     Button { showLink = true } label: {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
                     .accessibilityLabel("Link object")
                 }
@@ -30,11 +30,11 @@ struct ElementObjectsSection: View {
                     ForEach(linked) { item in
                         HStack(spacing: 10) {
                             Image(systemName: item.categoryIcon)
-                                .font(.system(size: 14)).foregroundStyle(item.categoryColor).frame(width: 24)
+                                .font(AppFont.scaled(14)).foregroundStyle(item.categoryColor).frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(item.name).font(AppFont.footnote)
                                 if !item.brand.isEmpty {
-                                    Text(item.brand).font(.system(size: 11)).foregroundStyle(.secondary)
+                                    Text(item.brand).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                                 }
                             }
                             Spacer()
@@ -79,7 +79,7 @@ private struct LinkObjectsSheet: View {
                 appBackground.ignoresSafeArea()
                 if inv.items.isEmpty {
                     VStack(spacing: 12) {
-                        Image(systemName: "shippingbox").font(.system(size: 40)).foregroundStyle(.secondary)
+                        Image(systemName: "shippingbox").font(AppFont.scaled(40)).foregroundStyle(.secondary)
                         Text("No inventory items").font(.headline)
                         Text("Add items in Inventory first, then link them here.")
                             .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)

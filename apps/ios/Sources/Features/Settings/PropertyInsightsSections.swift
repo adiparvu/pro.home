@@ -52,7 +52,7 @@ struct PropertyInsightsSections: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.brandDanger)
                         Text("this month")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(Color.secondaryTextColor)
                     }
                 }
@@ -86,12 +86,12 @@ struct PropertyInsightsSections: View {
                     .chartYAxis {
                         AxisMarks(position: .trailing) { _ in
                             AxisGridLine().foregroundStyle(Color.primary.opacity(AppOpacity.hairline))
-                            AxisValueLabel().font(.system(size: 9)).foregroundStyle(Color.secondaryTextColor)
+                            AxisValueLabel().font(AppFont.scaled(9)).foregroundStyle(Color.secondaryTextColor)
                         }
                     }
                     .chartXAxis {
                         AxisMarks { _ in
-                            AxisValueLabel().font(.system(size: 10)).foregroundStyle(Color.secondaryTextColor)
+                            AxisValueLabel().font(AppFont.scaled(10)).foregroundStyle(Color.secondaryTextColor)
                         }
                     }
                     .frame(height: 140)
@@ -150,7 +150,7 @@ struct PropertyInsightsSections: View {
                 }
                 if let galleryError {
                     Text(galleryError)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.brandDanger)
                 }
             }
@@ -172,7 +172,7 @@ struct PropertyInsightsSections: View {
                     } else {
                         VStack(spacing: 4) {
                             Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .medium))
+                                .font(AppFont.scaled(20, weight: .medium))
                             Text("Add")
                                 .font(AppFont.caption2)
                         }
@@ -230,7 +230,7 @@ struct PropertyInsightsSections: View {
                     let latest = sortedValues[sortedValues.count - 1]
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
                         Text(CurrencyService.money(latest.valueAmount, code: latest.currency, whole: true))
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         if sortedValues.count >= 2 {
                             let prev = sortedValues[sortedValues.count - 2].valueAmount
@@ -267,13 +267,13 @@ struct PropertyInsightsSections: View {
                         .chartYAxis {
                             AxisMarks(position: .trailing) { _ in
                                 AxisGridLine().foregroundStyle(Color.primary.opacity(AppOpacity.hairline))
-                                AxisValueLabel().font(.system(size: 9)).foregroundStyle(Color.secondaryTextColor)
+                                AxisValueLabel().font(AppFont.scaled(9)).foregroundStyle(Color.secondaryTextColor)
                             }
                         }
                         .chartXAxis {
                             AxisMarks { _ in
                                 AxisValueLabel(format: .dateTime.month(.abbreviated))
-                                    .font(.system(size: 10)).foregroundStyle(Color.secondaryTextColor)
+                                    .font(AppFont.scaled(10)).foregroundStyle(Color.secondaryTextColor)
                             }
                         }
                         .frame(height: 130)
@@ -281,7 +281,7 @@ struct PropertyInsightsSections: View {
 
                     if let source = latest.source, !source.isEmpty {
                         Text(String(format: String(localized: "Latest estimate: %@"), source))
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(Color.secondaryTextColor)
                     }
                 }

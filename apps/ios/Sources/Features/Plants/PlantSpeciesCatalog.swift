@@ -234,7 +234,7 @@ struct PlantSpeciesPicker: View {
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Text(entry.emoji)
-                    .font(.system(size: 19))
+                    .font(AppFont.scaled(19))
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(AppOpacity.hairline), in: Circle())
                 VStack(alignment: .leading, spacing: 2) {

@@ -50,7 +50,7 @@ struct FamilyView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(AppFont.scaled(20, weight: .medium))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add member")
@@ -77,10 +77,10 @@ struct FamilyView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
+            Image(systemName: "person.2.fill").font(AppFont.scaled(52)).foregroundStyle(Color.primary.opacity(0.15))
             Text("No members").font(AppFont.title3).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center).padding(.horizontal, 40)
-            Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
+            Text("Add family members to collaborate on tasks and chat.").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center).padding(.horizontal, 40)
+            Button("Add first member") { showAdd = true }.font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
     }
@@ -102,15 +102,15 @@ struct FamilyMemberRow: View {
                         .foregroundStyle(.primary)
                     HStack(spacing: 6) {
                         Text(LocalizedStringKey(member.roleLabel))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         if let bd = member.birthdayDate {
                             let calendar = Calendar.current
                             let comps = calendar.dateComponents([.month, .day], from: bd)
                             if let m = comps.month, let d = comps.day {
-                                Text("·").foregroundStyle(Color.primary.opacity(0.2)).font(.system(size: 12))
+                                Text("·").foregroundStyle(Color.primary.opacity(0.2)).font(AppFont.scaled(12))
                                 Text("🎂 \(d)/\(m)")
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(Color.primary.opacity(0.4))
                             }
                         }
@@ -142,7 +142,7 @@ struct FamilyMemberRow: View {
     private func quickActionBtn(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(.primary)
                 .frame(width: 34, height: 34)
         }
@@ -205,11 +205,11 @@ struct MemberPickerView: View {
                 } label: {
                     HStack(spacing: 12) {
                         MemberAvatar(member: m, size: 36)
-                        Text(m.name).font(.system(size: 15)).foregroundStyle(.primary)
+                        Text(m.name).font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Spacer()
                         if selected {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(m.swiftColor).font(.system(size: 20))
+                                .foregroundStyle(m.swiftColor).font(AppFont.scaled(20))
                         } else {
                             Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
                                 .frame(width: 22, height: 22)

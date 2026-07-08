@@ -29,7 +29,7 @@ struct AuditLogView: View {
                         showClearConfirm = true
                     } label: {
                         Text("Șterge tot")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(.red)
                     }
                 }
@@ -106,13 +106,13 @@ struct AuditLogView: View {
                     .foregroundStyle(.primary)
                 HStack(spacing: 4) {
                     Text(timeString(from: event.timestamp))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     Text("·")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.25))
                     Text(event.deviceName)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.38))
                         .lineLimit(1)
                 }

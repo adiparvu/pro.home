@@ -163,7 +163,7 @@ struct NotificationCenterView: View {
             let content = HStack(spacing: 5) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                 }
                 label.font(AppFont.captionEmphasis)
                 Text("\(count)")
@@ -232,23 +232,23 @@ private struct NotificationRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(ServerNotificationLocalizer.title(notification.title))
-                        .font(.system(size: 14, weight: notification.isUnread ? .semibold : .regular))
+                        .font(AppFont.scaled(14, weight: notification.isUnread ? .semibold : .regular))
                         .foregroundStyle(Color.primary)
                         .lineLimit(2)
                     Spacer()
                     Text(notification.timeDisplay)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                 }
                 if let body = ServerNotificationLocalizer.body(notification.body), !body.isEmpty {
                     Text(body)
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.6))
                         .lineLimit(2)
                 }
                 HStack(spacing: 4) {
                     Image(systemName: category.icon)
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(AppFont.scaled(8, weight: .semibold))
                     Text(category.label)
                         .font(AppFont.caption2)
                 }

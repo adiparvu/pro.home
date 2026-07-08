@@ -124,13 +124,13 @@ struct PRVIOTimelineView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 42, weight: .light))
+                .font(AppFont.scaled(42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No events")
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("No activity in this time range")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(0.3))
         }
         .frame(maxWidth: .infinity)
@@ -264,7 +264,7 @@ struct TimelineEventCard: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                 Text(LocalizedStringKey(event.subtitle))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 

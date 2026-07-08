@@ -285,11 +285,11 @@ struct ChatView: View {
                             // Transient typing status wins; otherwise show who's online.
                             if let t = typingText {
                                 Text(t)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(Color.accentColor)
                             } else if let o = onlineText {
                                 Text(o)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(Color.brandSuccess)
                             }
                         }
@@ -569,7 +569,7 @@ struct ChatView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "pin.fill")
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.accentColor)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(pinnedMessages.count > 1
@@ -578,7 +578,7 @@ struct ChatView: View {
                                     .font(AppFont.label)
                                     .foregroundStyle(Color.accentColor)
                                 Text(pinnedSnippet(pinned))
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(Color.primary.opacity(0.6))
                                     .lineLimit(1)
                             }
@@ -587,7 +587,7 @@ struct ChatView: View {
                                 Task { await messageService.togglePin(pinned) }
                             } label: {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 11, weight: .bold))
+                                    .font(AppFont.scaled(11, weight: .bold))
                                     .foregroundStyle(Color.primary.opacity(0.4))
                                     .frame(width: 26, height: 26)
                             }
@@ -620,7 +620,7 @@ struct ChatView: View {
                                 ProgressView().controlSize(.small)
                             } else {
                                 Text("Load older messages")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(AppFont.scaled(13, weight: .medium))
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
@@ -707,10 +707,10 @@ struct ChatView: View {
                                 Spacer(minLength: 60)
                                 HStack(spacing: 6) {
                                     Text(pm.body ?? "")
-                                        .font(.system(size: 15))
+                                        .font(AppFont.scaled(15))
                                         .foregroundStyle(pendingFill.readableText)
                                     Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
-                                        .font(.system(size: 10))
+                                        .font(AppFont.scaled(10))
                                         .foregroundStyle(pendingFill.readableText.opacity(0.75))
                                 }
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
@@ -729,7 +729,7 @@ struct ChatView: View {
                             }
                             if !outbox.isOnline {
                                 Text("Not delivered · tap to retry")
-                                    .font(.system(size: 10))
+                                    .font(AppFont.scaled(10))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                     .padding(.trailing, AppSpacing.xxs)
                             }
@@ -870,13 +870,13 @@ struct ChatView: View {
                         Text("Edit message")
                             .font(AppFont.label).foregroundStyle(Color.accentColor)
                         Text(editingMessage?.body ?? "")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
                     }
                     Spacer()
                     Button {
                         withAnimation { editingMessage = nil; editText = "" }
                     } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
+                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
                     }.buttonStyle(.plain)
                     .accessibilityLabel("Cancel edit")
                 }
@@ -900,7 +900,7 @@ struct ChatView: View {
                                     mentionedIds.removeAll { $0 == id }
                                     mentionedNames.removeAll { $0 == name }
                                 } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                    Image(systemName: "xmark").font(AppFont.scaled(9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 }
                                 .accessibilityLabel("Remove mention of \(name)")
                             }
@@ -947,7 +947,7 @@ struct ChatView: View {
                         showAttachmentSheet = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(AppFont.scaled(17, weight: .medium))
                             .foregroundStyle(.primary)
                             .frame(width: 36, height: 36)
                             // Clear Liquid Glass on iOS 26; legible material
@@ -960,7 +960,7 @@ struct ChatView: View {
 
                     HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                         TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .foregroundStyle(.primary)
                             .tint(.accentColor)
                             .lineLimit(1...6)
@@ -977,7 +977,7 @@ struct ChatView: View {
                                 editingMessage = nil; editText = ""; focused = false
                             } label: {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 28))
+                                    .font(AppFont.scaled(28))
                                     .foregroundStyle(Color.accentColor)
                             }
                             .buttonStyle(.plain)
@@ -993,7 +993,7 @@ struct ChatView: View {
                                 HapticFeedback.impact(.medium)
                             } label: {
                                 Image(systemName: "mic.fill")
-                                    .font(.system(size: 17, weight: .medium))
+                                    .font(AppFont.scaled(17, weight: .medium))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                     .frame(width: 28, height: 28)
                             }
@@ -1013,7 +1013,7 @@ struct ChatView: View {
                                         .background(Circle().fill(Color.accentColor))
                                 } else {
                                     Image(systemName: "arrow.up.circle.fill")
-                                        .font(.system(size: 28))
+                                        .font(AppFont.scaled(28))
                                         .foregroundStyle(.white, Color.accentColor)
                                 }
                             }

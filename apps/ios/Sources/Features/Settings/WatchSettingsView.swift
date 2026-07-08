@@ -121,11 +121,11 @@ struct WatchSettingsView: View {
                                                        : (Self.meta[key]?.label ?? "")
         return HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 9, weight: .semibold))
+                .font(AppFont.scaled(9, weight: .semibold))
                 .foregroundStyle(color)
                 .frame(width: 12)
             Text(label)
-                .font(.system(size: 10, weight: .medium))
+                .font(AppFont.scaled(10, weight: .medium))
                 .foregroundStyle(.white)
                 .lineLimit(1)
             Spacer(minLength: 0)
@@ -141,7 +141,7 @@ struct WatchSettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "applewatch", color: .blue)
                     Text("watch_sync_paired")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                     Spacer()
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.brandSuccess)
@@ -149,7 +149,7 @@ struct WatchSettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "square.and.arrow.down.on.square", color: .indigo)
                     Text(link.installed ? "watch_sync_installed" : "watch_sync_not_installed")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                     Spacer()
                     Image(systemName: link.installed ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundStyle(link.installed ? Color.brandSuccess : Color.brandWarning)
@@ -157,7 +157,7 @@ struct WatchSettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "arrow.triangle.2.circlepath", color: .teal)
                     Text("watch_sync_last_push")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                     Spacer()
                     if let lastPush {
                         Text(lastPush, style: .relative)
@@ -177,7 +177,7 @@ struct WatchSettingsView: View {
                         HStack(spacing: 12) {
                             ColoredIconBadge(icon: "arrow.up.applewatch", color: .green)
                             Text("watch_sync_now")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(Color.accentColor)
                             Spacer()
                         }
@@ -187,7 +187,7 @@ struct WatchSettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "applewatch.slash", color: .gray)
                     Text("watch_sync_not_paired")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -203,7 +203,7 @@ struct WatchSettingsView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "house.fill", color: .blue)
                 Text("watch_page_today")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                 Spacer()
                 Image(systemName: "lock.fill")
                     .font(AppFont.caption)
@@ -221,7 +221,7 @@ struct WatchSettingsView: View {
                     ColoredIconBadge(icon: Self.meta[item.key]?.icon ?? "circle",
                                      color: Self.meta[item.key]?.color ?? .gray)
                     Text(Self.meta[item.key]?.label ?? "")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                     Spacer()
                     Toggle("", isOn: $item.enabled)
                         .labelsHidden()
@@ -269,7 +269,7 @@ struct WatchSettingsView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
             Spacer()
             Text("\(count)")
                 .font(AppFont.captionEmphasis)
@@ -283,7 +283,7 @@ struct WatchSettingsView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
             Spacer()
             Image(systemName: present ? "checkmark.circle.fill" : "minus.circle")
                 .foregroundStyle(present ? Color.brandSuccess : Color.secondary)
@@ -297,12 +297,12 @@ struct WatchSettingsView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "checkmark.circle.fill", color: .teal)
                 Text("watch_siri_complete_task")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
             }
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "drop.fill", color: .blue)
                 Text("watch_siri_water")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
             }
         } header: {
             Text("watch_siri_header")

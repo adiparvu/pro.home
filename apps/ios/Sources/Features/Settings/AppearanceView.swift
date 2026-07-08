@@ -106,9 +106,9 @@ struct AppearanceView: View {
                     ColoredIconBadge(icon: "paintpalette.fill", color: appSettings.accentEnabled ? currentColor : Color.primary.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Accent Color")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(accentSubtitle)
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Toggle("", isOn: Binding(
@@ -184,9 +184,9 @@ struct AppearanceView: View {
                 ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Haptic feedback")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Text("Vibrations on app interactions")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 Toggle("", isOn: $appSettings.hapticEnabled)
@@ -222,11 +222,11 @@ private struct ThemeOptionRow: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: icon, color: isSelected ? accentColor : Color.primary.opacity(0.4), size: 36)
                 Text(title)
-                    .font(.system(size: 15)).foregroundStyle(.primary)
+                    .font(AppFont.scaled(15)).foregroundStyle(.primary)
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20)).foregroundStyle(accentColor)
+                        .font(AppFont.scaled(20)).foregroundStyle(accentColor)
                         .transition(.scale.combined(with: .opacity))
                 } else {
                     Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)

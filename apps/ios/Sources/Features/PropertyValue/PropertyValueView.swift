@@ -45,7 +45,7 @@ struct PropertyValueView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add entry")
@@ -100,14 +100,14 @@ struct PropertyValueView: View {
 
                         if let latest = latestValue {
                             Text(formatValue(latest, currency: propertyValueService.latestValue?.currency ?? "EUR"))
-                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                                 .foregroundStyle(.primary)
                                 .contentTransition(.numericText())
                         }
                     }
                     Spacer()
                     Image(systemName: "house.fill")
-                        .font(.system(size: 24))
+                        .font(AppFont.scaled(24))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 48, height: 48)
                         .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -123,10 +123,10 @@ struct PropertyValueView: View {
                             .font(AppFont.subheadline)
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4) : .red)
                         Text("(\(change >= 0 ? "+" : "")\(String(format: "%.1f", pct))%)")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4).opacity(0.75) : .red.opacity(0.75))
                         Text("since first entry")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.4))
                         Spacer()
                     }
@@ -181,7 +181,7 @@ struct PropertyValueView: View {
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
@@ -190,7 +190,7 @@ struct PropertyValueView: View {
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
@@ -229,26 +229,26 @@ struct PropertyValueView: View {
         GlassCard {
             HStack(spacing: 14) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 36, height: 36)
                     .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(formatValue(entry.valueAmount, currency: entry.currency))
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFont.scaled(16, weight: .bold))
                         .foregroundStyle(.primary)
 
                     HStack(spacing: 6) {
                         if let date = entry.enteredDate {
                             Text(Self.dateFormatter.string(from: date))
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let source = entry.source, !source.isEmpty {
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                             Text(source)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
@@ -256,7 +256,7 @@ struct PropertyValueView: View {
 
                     if let notes = entry.notes, !notes.isEmpty {
                         Text(notes)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .lineLimit(2)
                     }
@@ -273,13 +273,13 @@ struct PropertyValueView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 52))
+                .font(AppFont.scaled(52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Track your property value")
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Log manual estimates and bank appraisals to see how your property value changes over time.")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)

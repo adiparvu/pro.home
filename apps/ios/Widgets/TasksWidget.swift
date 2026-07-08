@@ -31,11 +31,11 @@ struct TasksWidgetSmallView: View {
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
                     Text("\(entry.snapshot.overdueTaskCount)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(.red)
                 } else {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(AppFont.scaled(24))
                         .foregroundStyle(.green)
                 }
             }
@@ -44,7 +44,7 @@ struct TasksWidgetSmallView: View {
                 Text(entry.snapshot.overdueTaskCount > 0
                      ? NSLocalizedString("widget_overdue_label", comment: "")
                      : NSLocalizedString("widget_tasks_label", comment: ""))
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.overdueTaskCount > 0
                      ? "\(entry.snapshot.overdueTaskCount) \(NSLocalizedString("widget_overdue", comment: ""))"
@@ -80,7 +80,7 @@ struct TasksMediumView: View {
             HStack {
                 Label {
                     Text("TASKS")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "checklist")
@@ -103,7 +103,7 @@ struct TasksMediumView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text("All tasks are complete!")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxHeight: .infinity)
@@ -115,13 +115,13 @@ struct TasksMediumView: View {
                                 .fill(task.priority == "high" ? Color.red : task.priority == "medium" ? Color.orange : Color.blue)
                                 .frame(width: 6, height: 6)
                             Text(task.title)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
                             Button(intent: makeCompleteTaskIntent(id: task.id, title: task.title, priority: task.priority)) {
                                 Image(systemName: "circle")
-                                    .font(.system(size: 16))
+                                    .font(AppFont.scaled(16))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)

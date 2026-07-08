@@ -123,7 +123,7 @@ struct AddFamilyMemberSheet: View {
             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
             Text(fullName.isEmpty ? "?" : String(fullName.prefix(2)).uppercased())
-                .font(.system(size: 28, weight: .bold))
+                .font(AppFont.scaled(28, weight: .bold))
                 .foregroundStyle(Color(hex: color) ?? .blue)
         }
         .frame(width: 80, height: 80)
@@ -165,13 +165,13 @@ struct AddFamilyMemberSheet: View {
         VStack(spacing: 0) {
             Button { withAnimation { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
+                    Image(systemName: "gift.fill").font(AppFont.scaled(14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
@@ -208,7 +208,7 @@ struct AddFamilyMemberSheet: View {
                         .font(AppFont.subheadline).foregroundStyle(.primary)
                     if let desc = kRoleDescriptions[role] {
                         Text(LocalizedStringKey(desc))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -239,11 +239,11 @@ struct AddFamilyMemberSheet: View {
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
                             ))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.6))
                         }
                         Spacer()
                         Button { socialLinks.remove(at: idx) } label: {
-                            Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
+                            Image(systemName: "minus.circle.fill").font(AppFont.scaled(18)).foregroundStyle(.red.opacity(0.8))
                         }
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
@@ -256,8 +256,8 @@ struct AddFamilyMemberSheet: View {
                     showAddSocial = true
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
-                        Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
+                        Text("Add social network").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -277,7 +277,7 @@ struct AddFamilyMemberSheet: View {
                     ColoredIconBadge(icon: "envelope.badge.fill", color: .blue, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Send invitation").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                        Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        Text("The person will receive an invitation email").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     Toggle("", isOn: $sendInvite).labelsHidden().tint(.accentColor)
@@ -290,12 +290,12 @@ struct AddFamilyMemberSheet: View {
 
             if !isEmailValid {
                 Label("Enter a valid email to send the invitation", systemImage: "exclamationmark.circle")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.orange)
                     .padding(.leading, AppSpacing.xxs)
             } else if sendInvite {
                 Label("The invitation is valid for 7 days; you can track and resend it from Members → Invitations.", systemImage: "clock")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .padding(.leading, AppSpacing.xxs)
             }
@@ -311,9 +311,9 @@ struct AddFamilyMemberSheet: View {
     private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>,
                           keyboard: UIKeyboardType = .default, autocap: TextInputAutocapitalization = .words) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(color).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -414,7 +414,7 @@ struct AddSocialLinkSheet: View {
                                                 .strokeBorder(platform == p ? sl.platformColor : .clear, lineWidth: 2)
                                         )
                                     Text(LocalizedStringKey(sl.platformLabel))
-                                        .font(.system(size: 9, weight: .medium))
+                                        .font(AppFont.scaled(9, weight: .medium))
                                         .foregroundStyle(platform == p ? sl.platformColor : Color.primary.opacity(0.4))
                                 }
                             }
@@ -426,7 +426,7 @@ struct AddSocialLinkSheet: View {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         TextField("@username", text: $handle)
-                            .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -542,7 +542,7 @@ struct RolePermissionsSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 14) {
                         Text("Every role sees only its own slice of the home. Owners and partners can change a member's role at any time.")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.secondaryTextColor)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -580,7 +580,7 @@ struct RolePermissionsSheet: View {
                             .foregroundStyle(.primary)
                         if isCurrent {
                             Text("Selected")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(AppFont.scaled(10, weight: .bold))
                                 .foregroundStyle(Color.accentColor)
                                 .padding(.horizontal, 7).padding(.vertical, 2)
                                 .background(Color.accentColor.opacity(0.14), in: Capsule())
@@ -588,7 +588,7 @@ struct RolePermissionsSheet: View {
                     }
                     if let desc = kRoleDescriptions[spec.id] {
                         Text(LocalizedStringKey(desc))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.secondaryTextColor)
                     }
                 }
@@ -639,10 +639,10 @@ private struct FlowLayoutChips: View {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 HStack(spacing: 5) {
                     Image(systemName: icon)
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(tint)
                     Text(item)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)

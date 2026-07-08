@@ -71,7 +71,7 @@ struct PlantDetailSheet: View {
                             withAnimation { isEditing = true }
                         } label: {
                             Text("Edit")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(Color.accentColor)
                         }
                     }

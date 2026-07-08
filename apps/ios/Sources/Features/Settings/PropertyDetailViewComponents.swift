@@ -108,7 +108,7 @@ extension PropertyDetailView {
                 endPoint: .bottomTrailing
             )
             Image(systemName: "house.fill")
-                .font(.system(size: 72, weight: .semibold))
+                .font(AppFont.scaled(72, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.25))
         }
     }
@@ -160,7 +160,7 @@ extension PropertyDetailView {
                     .foregroundStyle(color)
             }
             Text(label)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)
@@ -189,7 +189,7 @@ extension PropertyDetailView {
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
                 Text(story)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -226,7 +226,7 @@ extension PropertyDetailView {
                                 Text(r.title)
                                     .font(AppFont.footnoteEmphasis)
                                 Text(r.yearRange)
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(.secondary)
                             }
                             .padding(.bottom, idx < renovations.count - 1 ? 22 : 0)
@@ -258,14 +258,14 @@ extension PropertyDetailView {
                                         .fill(Color.primary.opacity(0.08))
                                         .frame(width: 36, height: 36)
                                     Image(systemName: "person.fill")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.scaled(14))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(owner.name)
                                         .font(AppFont.footnoteEmphasis)
                                     Text(owner.yearRange)
-                                        .font(.system(size: 12))
+                                        .font(AppFont.scaled(12))
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
@@ -304,7 +304,7 @@ extension PropertyDetailView {
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
             .padding(AppSpacing.lg)

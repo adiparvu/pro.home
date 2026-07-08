@@ -123,12 +123,12 @@ struct HelpFAQView: View {
                 .font(AppFont.subheadline)
                 .foregroundStyle(.secondary)
             TextField(String(localized: "faq_search_prompt"), text: $search)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .submitLabel(.search)
             if !search.isEmpty {
                 Button { search = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
@@ -195,7 +195,7 @@ struct HelpFAQView: View {
 
             if isOpen {
                 Text(entry.answer)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.65))
                     .lineSpacing(3)
                     .multilineTextAlignment(.leading)
@@ -217,7 +217,7 @@ struct HelpFAQView: View {
     private var contactCard: some View {
         VStack(spacing: 14) {
             Image(systemName: "envelope.open.fill")
-                .font(.system(size: 26))
+                .font(AppFont.scaled(26))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 56, height: 56)
@@ -227,7 +227,7 @@ struct HelpFAQView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.primary)
                 Text("faq_support_note")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
             }

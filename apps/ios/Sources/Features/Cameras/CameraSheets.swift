@@ -47,7 +47,7 @@ struct CameraFormSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     field(label: "cameras_field_name") {
                         TextField(String(localized: "cameras_name_placeholder"), text: $name)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .padding(AppSpacing.base)
                             .background(Color.subtleFill,
                                         in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
@@ -56,7 +56,7 @@ struct CameraFormSheet: View {
                     field(label: "cameras_field_url") {
                         VStack(alignment: .leading, spacing: 6) {
                             TextField(String(localized: "cameras_url_placeholder"), text: $snapshotURL)
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .keyboardType(.URL)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -72,7 +72,7 @@ struct CameraFormSheet: View {
 
                     field(label: "cameras_field_username") {
                         TextField(String(localized: "cameras_username_placeholder"), text: $username)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .padding(AppSpacing.base)
@@ -83,7 +83,7 @@ struct CameraFormSheet: View {
                     field(label: "cameras_field_password") {
                         VStack(alignment: .leading, spacing: 6) {
                             SecureField(String(localized: "cameras_field_password"), text: $password)
-                                .font(.system(size: 16))
+                                .font(AppFont.scaled(16))
                                 .textInputAutocapitalization(.never)
                                 .padding(AppSpacing.base)
                                 .background(Color.subtleFill,
@@ -98,7 +98,7 @@ struct CameraFormSheet: View {
                     field(label: "cameras_field_notes") {
                         TextField(String(localized: "cameras_notes_placeholder"),
                                   text: $notes, axis: .vertical)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .lineLimit(2...4)
                             .padding(AppSpacing.base)
                             .background(Color.subtleFill,
@@ -120,7 +120,7 @@ struct CameraFormSheet: View {
                             dismiss()
                         } label: {
                             Text("cameras_delete")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.red)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.md)

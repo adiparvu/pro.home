@@ -228,7 +228,7 @@ struct PaintCatalogPicker: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(entry.code)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.secondary)
             }
         }

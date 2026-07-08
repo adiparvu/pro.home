@@ -49,7 +49,7 @@ struct ZoneEditSheet: View {
                     preview
                     field("NAME") {
                         TextField("Zone name", text: $name)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .padding(AppSpacing.base)
                             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     }
@@ -125,7 +125,7 @@ struct ZoneEditSheet: View {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.plus")
-                                .font(.system(size: 26, weight: .light))
+                                .font(AppFont.scaled(26, weight: .light))
                             Text("Add cover photo")
                                 .font(AppFont.caption)
                         }
@@ -158,7 +158,7 @@ struct ZoneEditSheet: View {
     private var preview: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(AppFont.scaled(22, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 54, height: 54)
                 .background(tint, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
@@ -170,10 +170,10 @@ struct ZoneEditSheet: View {
                         Text(LocalizedStringKey(name))
                     }
                 }
-                .font(.system(size: 18, weight: .bold))
+                .font(AppFont.scaled(18, weight: .bold))
                 .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.4) : .primary)
                 Text(LocalizedStringKey(layer.displayName))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(.secondary)
             }
             Spacer()

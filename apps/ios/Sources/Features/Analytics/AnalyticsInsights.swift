@@ -42,7 +42,7 @@ struct MonthInsightsCard: View {
                                 .foregroundStyle(insight.color)
                                 .frame(width: 18)
                             Text(insight.text)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.primary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

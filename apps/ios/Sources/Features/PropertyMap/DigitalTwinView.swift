@@ -486,7 +486,7 @@ struct DigitalTwinView: View {
                     .foregroundStyle(tint)
                 if let label {
                     Text(LocalizedStringKey(label))
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFont.scaled(9, weight: .bold))
                         .foregroundStyle(tint)
                 }
             }
@@ -525,7 +525,7 @@ struct DigitalTwinView: View {
     private func zoneToolButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                Image(systemName: icon).font(AppFont.scaled(13, weight: .bold))
                 Text(LocalizedStringKey(title)).font(AppFont.footnoteEmphasis)
             }
             .foregroundStyle(tint)
@@ -624,7 +624,7 @@ struct DigitalTwinView: View {
                     .font(AppFont.captionEmphasis)
                 Text(categoryFilter?.displayName ?? String(localized: "Objects"))
                     .font(AppFont.captionEmphasis).lineLimit(1)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+                Image(systemName: "chevron.down").font(AppFont.scaled(10, weight: .bold))
             }
             .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
@@ -778,7 +778,7 @@ struct DigitalTwinView: View {
                     .font(AppFont.captionEmphasis)
                 Text(zoneViewLabel)
                     .font(AppFont.captionEmphasis).lineLimit(1)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+                Image(systemName: "chevron.down").font(AppFont.scaled(10, weight: .bold))
             }
             .foregroundStyle(.white)
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)

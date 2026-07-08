@@ -198,17 +198,17 @@ struct BlueprintsView: View {
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     if !service.utilities.isEmpty {
                         Text("\(service.utilities.count)")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFont.scaled(13, weight: .bold))
                             .foregroundStyle(Color.primary.opacity(0.6))
                     }
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
             }

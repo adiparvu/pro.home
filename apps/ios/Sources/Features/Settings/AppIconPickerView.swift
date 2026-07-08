@@ -99,11 +99,11 @@ struct AppIconPickerView: View {
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(ro ? "Personalizează iconița" : "Customize Your Icon")
-                .font(.system(size: 28, weight: .bold))
+                .font(AppFont.scaled(28, weight: .bold))
                 .foregroundStyle(.primary)
             Text(ro ? "Alege iconița și nuanța care arată așa cum vrei tu PRVIO pe ecranul principal."
                     : "Pick an icon and tint that matches how you want PRVIO to look on your Home Screen.")
-                .font(.system(size: 17))
+                .font(AppFont.scaled(17))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -172,7 +172,7 @@ struct AppIconPickerView: View {
                         .offset(x: (trackWidth - thumbWidth) * progress)
                 }
             Text("\(index + 1)/\(families.count)")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(11, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }

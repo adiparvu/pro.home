@@ -53,18 +53,18 @@ struct ReceiptDetailView: View {
                         .fill(receipt.categoryColor.opacity(0.15))
                         .frame(width: 60, height: 60)
                     Image(systemName: receipt.categoryIcon)
-                        .font(.system(size: 26, weight: .semibold))
+                        .font(AppFont.scaled(26, weight: .semibold))
                         .foregroundStyle(receipt.categoryColor)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                     HStack(spacing: 10) {
                         Text(receipt.formattedDate)
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(.secondary)
                         Text(ReceiptCategory.label(for: receipt.category))
                             .font(AppFont.caption)
@@ -82,7 +82,7 @@ struct ReceiptDetailView: View {
                         .foregroundStyle(.primary)
                         .monospacedDigit()
                     Text(String(localized: "receipt_total_label"))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -108,7 +108,7 @@ struct ReceiptDetailView: View {
                                         .lineLimit(2)
                                     if item.quantity != 1 {
                                         Text(String(format: "%.0f × %@", item.quantity, Receipt.format(item.unitPrice)))
-                                            .font(.system(size: 11))
+                                            .font(AppFont.scaled(11))
                                             .foregroundStyle(.secondary)
                                     }
                                 }
@@ -132,7 +132,7 @@ struct ReceiptDetailView: View {
                             .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Spacer()
                         Text(receipt.formattedTotal)
-                            .font(.system(size: 15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
+                            .font(AppFont.scaled(15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                 }
@@ -150,7 +150,7 @@ struct ReceiptDetailView: View {
                     .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 14) {
                     Text(notes)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

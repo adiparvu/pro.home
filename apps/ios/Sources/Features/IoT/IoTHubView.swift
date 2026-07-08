@@ -62,7 +62,7 @@ struct IoTHubView: View {
                     }
                     Button { addAction() } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                     .accessibilityLabel("Add item")
@@ -102,9 +102,9 @@ struct IoTHubView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: t.icon)
-                            .font(.system(size: 14, weight: tab == t ? .semibold : .regular))
+                            .font(AppFont.scaled(14, weight: tab == t ? .semibold : .regular))
                         Text(t.rawValue)
-                            .font(.system(size: 11, weight: tab == t ? .semibold : .regular))
+                            .font(AppFont.scaled(11, weight: tab == t ? .semibold : .regular))
                     }
                     .foregroundStyle(tab == t ? Color.accentColor : Color.primary.opacity(0.4))
                     .frame(maxWidth: .infinity)
@@ -162,7 +162,7 @@ struct IoTHubView: View {
                         .fill(device.type.color.opacity(0.15))
                         .frame(width: 48, height: 48)
                     Image(systemName: device.type.icon)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(AppFont.scaled(20, weight: .semibold))
                         .foregroundStyle(device.type.color)
                 }
 
@@ -176,13 +176,13 @@ struct IoTHubView: View {
                             .frame(width: 7, height: 7)
                     }
                     Text("\(device.host):\(device.port) · \(device.connectionProtocol.rawValue)")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     HStack(spacing: 4) {
                         Image(systemName: "sensor.tag.radiowaves.forward.fill")
-                            .font(.system(size: 9))
+                            .font(AppFont.scaled(9))
                         Text("\(service.sensorsForDevice(device).count) sensors")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                     }
                     .foregroundStyle(Color.primary.opacity(0.4))
                 }
@@ -193,7 +193,7 @@ struct IoTHubView: View {
                     selectedDevice = device
                 } label: {
                     Image(systemName: "ellipsis.circle.fill")
-                        .font(.system(size: 22))
+                        .font(AppFont.scaled(22))
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .buttonStyle(.plain)
@@ -302,7 +302,7 @@ struct IoTHubView: View {
                     }
                 } label: {
                     Image(systemName: energyPinned ? "pin.circle.fill" : "pin.circle")
-                        .font(.system(size: 26))
+                        .font(AppFont.scaled(26))
                         .foregroundStyle(energyPinned ? Color.brandGold : Color.primary.opacity(0.3))
                         .contentTransition(.symbolEffect(.replace))
                 }
@@ -328,7 +328,7 @@ struct IoTHubView: View {
                     Spacer()
                     if sensor.isAlerting {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.orange)
                     }
                 }
@@ -346,11 +346,11 @@ struct IoTHubView: View {
                         .lineLimit(1)
                     if !sensor.linkedZoneName.isEmpty {
                         Text(sensor.linkedZoneName)
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     } else if let updated = sensor.lastUpdated {
                         Text(relativeTime(updated))
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
@@ -444,7 +444,7 @@ struct IoTHubView: View {
                         .fill(Color.accentColor.opacity(0.12))
                         .frame(width: 42, height: 42)
                     Image(systemName: auto.action.icon)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                 }
 
@@ -453,10 +453,10 @@ struct IoTHubView: View {
                         .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text("IF \(auto.conditionDescription)")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Text("THEN \(auto.action.rawValue)")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.accentColor.opacity(0.7))
                 }
 

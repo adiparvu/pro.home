@@ -152,7 +152,7 @@ struct AddPhotoJournalSheet: View {
                         )
                         .frame(width: 64, height: 64)
                     Image(systemName: "photo.badge.plus")
-                        .font(.system(size: 26, weight: .medium))
+                        .font(AppFont.scaled(26, weight: .medium))
                         .foregroundStyle(Color.accentColor)
                 }
                 VStack(spacing: 4) {
@@ -160,7 +160,7 @@ struct AddPhotoJournalSheet: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Camera, library or files")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.secondaryTextColor)
                 }
             }
@@ -197,7 +197,7 @@ struct AddPhotoJournalSheet: View {
                 HapticFeedback.impact(.light)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFont.scaled(10, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(6)
                     .background(.black.opacity(0.55), in: Circle())
@@ -215,7 +215,7 @@ struct AddPhotoJournalSheet: View {
                 .aspectRatio(1, contentMode: .fit)
                 .overlay(
                     Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(AppFont.scaled(22, weight: .medium))
                         .foregroundStyle(Color.accentColor)
                 )
                 .overlay(
@@ -237,12 +237,12 @@ struct AddPhotoJournalSheet: View {
                 divider
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "text.alignleft")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                         .padding(.top, 2)
                     TextField("Caption (optional)…", text: $caption, axis: .vertical)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .lineLimit(3...6)
@@ -268,12 +268,12 @@ struct AddPhotoJournalSheet: View {
             sectionLabel("Details", count: nil)
             HStack(spacing: 10) {
                 Image(systemName: "calendar")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 DatePicker("Taken on", selection: $takenOn,
                            in: ...Date(), displayedComponents: .date)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, AppSpacing.sm)
@@ -341,11 +341,11 @@ struct AddPhotoJournalSheet: View {
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }

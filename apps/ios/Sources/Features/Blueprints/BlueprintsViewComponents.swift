@@ -15,14 +15,14 @@ struct QuickActionButton: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(AppFont.scaled(24, weight: .semibold))
                     .foregroundStyle(.primary)
                 Spacer(minLength: 8)
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFont.scaled(16, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -56,7 +56,7 @@ struct ScanCard: View {
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     )
                     Image(systemName: scan.icon)
-                        .font(.system(size: 34, weight: .semibold))
+                        .font(AppFont.scaled(34, weight: .semibold))
                         .foregroundStyle(scan.accent)
                 }
             }
@@ -70,7 +70,7 @@ struct ScanCard: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(scan.kindLabel))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(scan.accent)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -202,7 +202,7 @@ struct AddPlanSheet: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(AppFont.scaled(20, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(label)
                     .font(AppFont.caption)
@@ -226,8 +226,8 @@ struct AddPlanSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             } else {
                 HStack(spacing: 10) {
-                    Image(systemName: "doc.richtext.fill").foregroundStyle(.red).font(.system(size: 22))
-                    Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    Image(systemName: "doc.richtext.fill").foregroundStyle(.red).font(AppFont.scaled(22))
+                    Text("PDF ready to save").font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     Spacer()
                 }
                 .padding(AppSpacing.base)
@@ -238,9 +238,9 @@ struct AddPlanSheet: View {
 
     private var nameField: some View {
         HStack(spacing: 12) {
-            Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Image(systemName: "textformat").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField("Name", text: $name)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
@@ -255,7 +255,7 @@ struct AddPlanSheet: View {
                     ForEach(kinds, id: \.self) { k in
                         Button { kind = k } label: {
                             Text(LocalizedStringKey(kindLabel(k)))
-                                .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: kind == k ? .semibold : .regular))
                                 .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(kind == k ? Color.white : Color.primary.opacity(0.08), in: Capsule())

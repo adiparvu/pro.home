@@ -46,7 +46,7 @@ struct BudgetManagementView: View {
         GlassCard(padding: 16) {
             VStack(spacing: 10) {
                 HStack {
-                    Image(systemName: "target").font(.system(size: 18)).foregroundStyle(Color.accentColor)
+                    Image(systemName: "target").font(AppFont.scaled(18)).foregroundStyle(Color.accentColor)
                     Text(LocalizedStringKey(receiptService.monthDisplayName(currentMonth)))
                         .font(AppFont.subheadline)
                     Spacer()
@@ -58,7 +58,7 @@ struct BudgetManagementView: View {
                                 .font(AppFont.captionEmphasis)
                                 .foregroundStyle(totalSpent > totalBudget ? .red : .primary)
                             Text(String(localized: "budget_total_label"))
-                                .font(.system(size: 10)).foregroundStyle(.secondary)
+                                .font(AppFont.scaled(10)).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -80,7 +80,7 @@ struct BudgetManagementView: View {
                 }
 
                 Text(String(localized: "budget_description"))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,14 +126,14 @@ struct BudgetManagementView: View {
                     if let budget, budget.monthlyLimit > 0 {
                         let pct = min(spent / budget.monthlyLimit * 100, 100)
                         Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit)) · \(Int(pct))%")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(isOver ? .red : .secondary)
                     } else if spent > 0 {
                         Text(String(format: String(localized: "budget_spent_no_limit"), Receipt.format(spent)))
-                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                            .font(AppFont.scaled(11)).foregroundStyle(.secondary)
                     } else {
                         Text(String(localized: "budget_no_budget_set"))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.3))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.3))
                     }
                 }
 
@@ -141,11 +141,11 @@ struct BudgetManagementView: View {
 
                 if isOver {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 13)).foregroundStyle(.red)
+                        .font(AppFont.scaled(13)).foregroundStyle(.red)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.25))
+                    .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
@@ -170,13 +170,13 @@ struct BudgetManagementView: View {
                     // Icon + label
                     VStack(spacing: 12) {
                         Image(systemName: ReceiptCategory.icon(for: category))
-                            .font(.system(size: 30, weight: .semibold))
+                            .font(AppFont.scaled(30, weight: .semibold))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(ReceiptCategory.color(for: category))
                             .frame(width: 72, height: 72)
                             .mediaGlass(in: Circle())
                         Text(LocalizedStringKey(label))
-                            .font(.system(size: 20, weight: .bold))
+                            .font(AppFont.scaled(20, weight: .bold))
                     }
                     .padding(.top, AppSpacing.xl)
 
@@ -193,7 +193,7 @@ struct BudgetManagementView: View {
                             },
                             set: { budgetInput = $0 }
                         ))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(36, weight: .bold, design: .rounded))
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, AppSpacing.xl)
@@ -201,7 +201,7 @@ struct BudgetManagementView: View {
                         let spent = receiptService.spent(for: category, in: currentMonth)
                         if spent > 0 {
                             Text(String(format: String(localized: "budget_already_spent"), Receipt.format(spent)))
-                                .font(.system(size: 13)).foregroundStyle(.secondary)
+                                .font(AppFont.scaled(13)).foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal, AppSpacing.xl)
@@ -220,7 +220,7 @@ struct BudgetManagementView: View {
                                 }
                             } label: {
                                 Text(String(localized: "budget_remove"))
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             }

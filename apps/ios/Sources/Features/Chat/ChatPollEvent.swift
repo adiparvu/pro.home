@@ -107,7 +107,7 @@ struct PollBubble: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Image(systemName: "chart.bar.fill").font(.system(size: 12))
+                Image(systemName: "chart.bar.fill").font(AppFont.scaled(12))
                 Text(poll.multi ? "Selectează una sau mai multe" : "Selectează una")
                     .font(AppFont.label)
             }
@@ -125,7 +125,7 @@ struct PollBubble: View {
             }
 
             Text(totalVoters == 1 ? "1 vot" : "\(totalVoters) voturi")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(isOwn ? onBubble.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
 
             Divider().overlay(isOwn ? onBubble.opacity(0.25) : Color.primary.opacity(0.12))
@@ -157,10 +157,10 @@ struct PollBubble: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: mine ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(mine ? (isOwn ? onBubble : Color.accentColor) : (isOwn ? onBubble.opacity(0.6) : Color.primary.opacity(0.4)))
                 Text(opt)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(isOwn ? onBubble : .primary)
                 Spacer()
                 Text("\(c)")
@@ -230,7 +230,7 @@ struct EventBubble: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "calendar").font(.system(size: 12))
+                Image(systemName: "calendar").font(AppFont.scaled(12))
                 Text("Event").font(AppFont.label)
             }
             .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.red)
@@ -240,18 +240,18 @@ struct EventBubble: View {
                 .foregroundStyle(isOwn ? onBubble : .primary)
 
             if let d = event.d, !d.isEmpty {
-                Text(d).font(.system(size: 13))
+                Text(d).font(AppFont.scaled(13))
                     .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(3)
             }
 
             Label(event.dateDisplay, systemImage: "clock")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
 
             if let loc = event.loc, !loc.isEmpty {
                 Label(loc, systemImage: "mappin.and.ellipse")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
                     .lineLimit(1)
             }

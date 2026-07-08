@@ -50,7 +50,7 @@ struct PhotoJournalView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add photo")
@@ -322,18 +322,18 @@ private struct PhotoEntryDetailSheet: View {
 
                         VStack(alignment: .leading, spacing: 16) {
                             Text(entry.title)
-                                .font(.system(size: 22, weight: .bold))
+                                .font(AppFont.scaled(22, weight: .bold))
                                 .foregroundStyle(.white)
 
                             if let date = entry.takenDate {
                                 Label(Self.dateFormatter.string(from: date), systemImage: "calendar")
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(.white.opacity(0.6))
                             }
 
                             if let caption = entry.caption, !caption.isEmpty {
                                 Text(caption)
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.white.opacity(0.8))
                             }
 

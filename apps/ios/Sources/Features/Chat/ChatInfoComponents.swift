@@ -21,14 +21,14 @@ struct EditTextSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     TextEditor(text: $text)
                         .focused($focused)
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .scrollContentBackground(.hidden)
                         .frame(minHeight: 90, maxHeight: 200)
                         .padding(.horizontal, AppSpacing.sm)
                         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md))
                     if let note {
                         Text(note)
-                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                 }
@@ -67,7 +67,7 @@ struct InfoActionCard: View {
             VStack(spacing: 7) {
                 // Liquid Glass circular action button (iOS Contacts idiom).
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(AppFont.scaled(19, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 52, height: 52)
                     .glassCircle()
@@ -178,7 +178,7 @@ struct ThemeInfoRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: "paintpalette")
-                    .font(.system(size: 17))
+                    .font(AppFont.scaled(17))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     .frame(width: 26)
                 Text("Conversation theme")
@@ -189,7 +189,7 @@ struct ThemeInfoRow: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .font(.system(size: 16))
+            .font(AppFont.scaled(16))
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .contentShape(Rectangle())
         }
@@ -220,7 +220,7 @@ struct InfoRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 17))
+                    .font(AppFont.scaled(17))
                     .foregroundStyle(tint == .primary ? Color.primary.opacity(AppOpacity.emphasis) : tint)
                     .frame(width: 26)
                 Text(LocalizedStringKey(label))
@@ -236,7 +236,7 @@ struct InfoRow: View {
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
             }
-            .font(.system(size: 16))
+            .font(AppFont.scaled(16))
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .contentShape(Rectangle())
         }
@@ -253,7 +253,7 @@ struct InfoRowLabel: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 17))
+                .font(AppFont.scaled(17))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 .frame(width: 26)
             Text(LocalizedStringKey(label))
@@ -267,7 +267,7 @@ struct InfoRowLabel: View {
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .font(.system(size: 16))
+        .font(AppFont.scaled(16))
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
         .contentShape(Rectangle())
     }
@@ -286,11 +286,11 @@ struct SecureChatToggle: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
+                .font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Secure conversation").font(.system(size: 16))
+                Text("Secure conversation").font(AppFont.scaled(16))
                 Text("Lock and hide this chat on this device.")
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
             Spacer()
             Toggle("", isOn: $secured).labelsHidden()
@@ -336,7 +336,7 @@ struct GroupChatAvatarLarge: View {
         ZStack {
             Circle().fill(Color.accentColor.opacity(0.15))
             Image(systemName: "person.2.fill")
-                .font(.system(size: 40))
+                .font(AppFont.scaled(40))
                 .foregroundStyle(Color.accentColor)
         }
     }

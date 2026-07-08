@@ -113,7 +113,7 @@ struct TasksView: View {
                         .environment(documentService)
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                         .foregroundStyle(Color.primary.opacity(0.85))
                 }
                 .accessibilityLabel("Calendar")
@@ -259,7 +259,7 @@ struct TasksView: View {
                         HapticFeedback.selection()
                     } label: {
                         Text(LocalizedStringKey(period.rawValue))
-                            .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
+                            .font(AppFont.scaled(12, weight: historyPeriod == period ? .semibold : .regular))
                             .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.vertical, AppSpacing.xs)
@@ -305,7 +305,7 @@ struct FilterChip: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Text(label)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
                 if count > 0 {
                     Text("\(count)")
                         .font(AppFont.label)
@@ -341,7 +341,7 @@ struct TaskRowView: View {
                 Task { await taskService.toggleComplete(task) }
             } label: {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
+                    .font(AppFont.scaled(24))
                     .foregroundStyle(
                         task.isCompleted
                             ? Color(red: 0.25, green: 0.85, blue: 0.52)
@@ -360,13 +360,13 @@ struct TaskRowView: View {
 
                 HStack(spacing: 6) {
                     Text(LocalizedStringKey(task.category.capitalized))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     if task.dueDate != nil {
                         Text("·")
                             .foregroundStyle(Color.primary.opacity(0.22))
                         Text(LocalizedStringKey(task.dueDateDisplay))
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
                     }
                 }
@@ -380,7 +380,7 @@ struct TaskRowView: View {
                     .frame(width: 7, height: 7)
                 if task.isOverdue {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.red.opacity(0.7))
                 }
             }

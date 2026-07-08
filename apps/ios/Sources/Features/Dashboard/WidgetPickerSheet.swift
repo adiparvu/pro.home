@@ -271,7 +271,7 @@ struct WidgetPickerSheet: View {
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(config.size.title)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
 
@@ -297,7 +297,7 @@ struct WidgetPickerSheet: View {
             .accessibilityValue(Text(verbatim: config.size.title))
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 22))
+                .font(AppFont.scaled(22))
                 .foregroundStyle(Color.accentColor)
         }
         .padding(.vertical, AppSpacing.xxs)
@@ -315,7 +315,7 @@ struct WidgetPickerSheet: View {
             Spacer()
 
             Image(systemName: "plus.circle")
-                .font(.system(size: 22))
+                .font(AppFont.scaled(22))
                 .foregroundStyle(Color.primary.opacity(0.3))
         }
         .padding(.vertical, AppSpacing.xxs)

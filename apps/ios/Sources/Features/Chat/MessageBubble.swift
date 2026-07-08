@@ -341,7 +341,7 @@ struct MessageBubble: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(accent)
                 Text(Self.replyPreview(replied))
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.65))
                     .lineLimit(1)
             }
@@ -381,7 +381,7 @@ struct MessageBubble: View {
                     if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
                 } label: {
                     HStack(spacing: 2) {
-                        Text(emoji).font(.system(size: 13))
+                        Text(emoji).font(AppFont.scaled(13))
                         if count > 1 {
                             Text("\(count)").font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -428,11 +428,11 @@ struct MessageBubble: View {
             } label: {
                 HStack(spacing: 4) {
                     Text(message.timeDisplay)
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(Color.primary.opacity(0.3))
                     if message.editedAt != nil, !isDeleted {
                         Text("· edited")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(0.3))
                     }
                     if !isDeleted { MessageTick(status: tickStatus) }
@@ -444,11 +444,11 @@ struct MessageBubble: View {
         } else {
             HStack(spacing: 4) {
                 Text(message.timeDisplay)
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(Color.primary.opacity(0.3))
                 if message.editedAt != nil, !isDeleted {
                     Text("· edited")
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
             }
@@ -476,13 +476,13 @@ struct MessageBubble: View {
                         img.resizable().scaledToFill()
                     } else {
                         Text(initials)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(color)
                     }
                 }
             } else {
                 Text(initials)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(AppFont.scaled(11, weight: .bold))
                     .foregroundStyle(color)
             }
         }
@@ -516,10 +516,10 @@ struct MessageBubble: View {
         if isDeleted {
             HStack(spacing: 6) {
                 Image(systemName: "slash.circle")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(0.4))
                 Text("This message was deleted")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .italic()
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
@@ -568,7 +568,7 @@ struct MessageBubble: View {
             ChatVideoBubble(stored: urlStr, isOwn: isOwn, hasTail: isGroupEnd) { resolved in videoItem = ImageViewerItem(url: resolved) }
         } else {
             Text(message.body ?? "")
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(isOwn ? ownTextColor : .primary)
                 .tint(isOwn ? ownTextColor : Color.accentColor)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
@@ -612,12 +612,12 @@ private struct SeenBySheet: View {
                                         .font(AppFont.subheadline)
                                         .foregroundStyle(.primary)
                                     Text("Seen \(read.readTimeDisplay)")
-                                        .font(.system(size: 12))
+                                        .font(AppFont.scaled(12))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 Spacer()
                                 Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 16))
+                                    .font(AppFont.scaled(16))
                                     .foregroundStyle(Color.accentColor)
                             }
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -638,7 +638,7 @@ private struct SeenBySheet: View {
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFont.scaled(14, weight: .bold))
                                         .foregroundStyle(Color.primary.opacity(0.4))
                                 }
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -667,7 +667,7 @@ private struct SeenBySheet: View {
         ZStack {
             Circle().fill(color.opacity(0.2))
             Text(m?.initials ?? String(read.readerName.prefix(1)).uppercased())
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(color)
         }
         .frame(width: 38, height: 38)

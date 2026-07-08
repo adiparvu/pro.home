@@ -73,7 +73,7 @@ struct TrustedContactView: View {
                                         startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.badge.shield.checkmark.fill")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(AppFont.scaled(28, weight: .semibold))
                     .foregroundStyle(.white)
             }
 
@@ -83,7 +83,7 @@ struct TrustedContactView: View {
                 .multilineTextAlignment(.center)
 
             Text("This person can be notified in emergency situations related to your home. Information is stored locally on the device.")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
@@ -111,7 +111,7 @@ struct TrustedContactView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .keyboardType(keyboard)
@@ -134,7 +134,7 @@ struct TrustedContactView: View {
         Button { showRemoveConfirm = true } label: {
             HStack(spacing: 8) {
                 Image(systemName: "trash.fill")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                 Text("Remove trusted contact")
                     .font(AppFont.footnote)
             }
@@ -153,7 +153,7 @@ struct TrustedContactView: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             Text("Contact saved")
-                .font(.system(size: 13, weight: .medium))
+                .font(AppFont.scaled(13, weight: .medium))
         }
         .foregroundStyle(.primary)
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)

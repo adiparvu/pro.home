@@ -65,7 +65,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NAME")
             TextField("What needs to be bought?", text: $name)
-                .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -75,7 +75,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("QUANTITY (OPTIONAL)")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -85,7 +85,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -95,7 +95,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...5).padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -109,8 +109,8 @@ struct AddSupplyItemSheet: View {
                     ForEach(supplyService.lists) { l in
                         Button { selectedListId = l.id; HapticFeedback.selection() } label: {
                             HStack(spacing: 6) {
-                                Image(systemName: l.icon).font(.system(size: 12))
-                                Text(l.name).font(.system(size: 13))
+                                Image(systemName: l.icon).font(AppFont.scaled(12))
+                                Text(l.name).font(AppFont.scaled(13))
                             }
                             .foregroundStyle(selectedListId == l.id ? .white : .primary)
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
@@ -132,7 +132,7 @@ struct AddSupplyItemSheet: View {
                     ForEach(supplyCategories, id: \.id) { cat in
                         Button { category = cat.id; HapticFeedback.selection() } label: {
                             Text(cat.label)
-                                .font(.system(size: 13, weight: category == cat.id ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: category == cat.id ? .semibold : .regular))
                                 .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, 13).padding(.vertical, 7)
                                 .background(category == cat.id ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
@@ -156,7 +156,7 @@ struct AddSupplyItemSheet: View {
                                          isCompleted: false, createdAt: "", updatedAt: "")
                     Button { priority = p.id; HapticFeedback.selection() } label: {
                         Text(p.label)
-                            .font(.system(size: 13, weight: priority == p.id ? .semibold : .regular))
+                            .font(AppFont.scaled(13, weight: priority == p.id ? .semibold : .regular))
                             .foregroundStyle(priority == p.id ? .white : Color.primary.opacity(0.65))
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(priority == p.id ? item.priorityColor : Color.primary.opacity(AppOpacity.subtleFill),

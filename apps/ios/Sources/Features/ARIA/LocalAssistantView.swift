@@ -187,7 +187,7 @@ struct LocalAssistantView: View {
     private var inputBar: some View {
         HStack(spacing: 10) {
             TextField("Ask about your property…", text: $input, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .focused($focused)
@@ -201,7 +201,7 @@ struct LocalAssistantView: View {
                 send()
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 32))
+                    .font(AppFont.scaled(32))
                     .foregroundStyle(input.isEmpty ? Color.primary.opacity(0.2) : Color.accentColor)
             }
             .disabled(input.isEmpty || isThinking)
@@ -286,12 +286,12 @@ private struct LocalMessageBubble: View {
                         .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 30, height: 30)
                     Image(systemName: "cpu.fill")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.primary)
                 }
             }
             Text(message.text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
@@ -308,13 +308,14 @@ private struct LocalMessageBubble: View {
 
 private struct ThinkingBubble: View {
     @State private var phase = 0.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             ZStack {
                 Circle()
                     .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 30, height: 30)
-                Image(systemName: "cpu.fill").font(.system(size: 12)).foregroundStyle(.primary)
+                Image(systemName: "cpu.fill").font(AppFont.scaled(12)).foregroundStyle(.primary)
             }
             HStack(spacing: 5) {
                 ForEach(0..<3) { i in
@@ -322,7 +323,7 @@ private struct ThinkingBubble: View {
                         .fill(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(width: 7, height: 7)
                         .scaleEffect(phase == Double(i) ? 1.3 : 0.8)
-                        .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)

@@ -36,7 +36,7 @@ struct SectionLockGate<Content: View>: View {
                         .fill(section.color.opacity(0.16))
                         .frame(width: 108, height: 108)
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 40, weight: .semibold))
+                        .font(AppFont.scaled(40, weight: .semibold))
                         .foregroundStyle(section.color)
                 }
 

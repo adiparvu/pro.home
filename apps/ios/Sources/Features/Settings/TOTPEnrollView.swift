@@ -25,7 +25,7 @@ struct TOTPEnrollView: View {
                         if isLoading {
                             ProgressView().tint(.primary).padding(.top, 60)
                             Text("Preparing enrollment…")
-                                .font(.system(size: 13)).foregroundStyle(.secondary)
+                                .font(AppFont.scaled(13)).foregroundStyle(.secondary)
                         } else if let error, factorId == nil {
                             errorState(error)
                         } else {
@@ -33,7 +33,7 @@ struct TOTPEnrollView: View {
                             qrCard
                             secretCard
                             codeEntry
-                            if let error { Text(LocalizedStringKey(error)).font(.system(size: 13)).foregroundStyle(.red).multilineTextAlignment(.center) }
+                            if let error { Text(LocalizedStringKey(error)).font(AppFont.scaled(13)).foregroundStyle(.red).multilineTextAlignment(.center) }
                             verifyButton
                         }
                     }
@@ -59,7 +59,7 @@ struct TOTPEnrollView: View {
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Scan the code with an authenticator app (Google Authenticator, 1Password, Authy) or enter the key manually, then type the 6-digit code.")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.6))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -79,7 +79,7 @@ struct TOTPEnrollView: View {
             Text("MANUAL KEY").font(AppFont.label).foregroundStyle(.secondary)
             HStack {
                 Text(secret)
-                    .font(.system(size: 15, weight: .medium, design: .monospaced))
+                    .font(AppFont.scaled(15, weight: .medium, design: .monospaced))
                     .foregroundStyle(.primary)
                     .lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
@@ -101,7 +101,7 @@ struct TOTPEnrollView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("6-DIGIT CODE").font(AppFont.label).foregroundStyle(.secondary)
             TextField("000000", text: $code)
-                .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                .font(AppFont.scaled(22, weight: .semibold, design: .monospaced))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .padding(AppSpacing.base)
@@ -129,11 +129,11 @@ struct TOTPEnrollView: View {
 
     private func errorState(_ message: String) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.shield.fill").font(.system(size: 40)).foregroundStyle(.orange)
+            Image(systemName: "exclamationmark.shield.fill").font(AppFont.scaled(40)).foregroundStyle(.orange)
             Text("Could not start enrollment")
                 .font(AppFont.headline)
             Text(LocalizedStringKey(message))
-                .font(.system(size: 13)).foregroundStyle(.secondary)
+                .font(AppFont.scaled(13)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 40)

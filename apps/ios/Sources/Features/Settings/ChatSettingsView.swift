@@ -187,12 +187,12 @@ struct ChatSettingsView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: icon, color: .yellow)
                 Text(label)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
                 if let value {
                     Text(value)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(0.38))
                         .monospacedDigit()
                 }

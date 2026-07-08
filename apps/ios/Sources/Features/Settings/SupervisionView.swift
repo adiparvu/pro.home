@@ -123,23 +123,23 @@ struct SupervisionView: View {
 
                 HStack(spacing: -8) {
                     Image(systemName: "person.fill")
-                        .font(.system(size: 48))
+                        .font(AppFont.scaled(48))
                         .foregroundStyle(.white.opacity(0.5))
                     Image(systemName: "person.fill")
-                        .font(.system(size: 64))
+                        .font(AppFont.scaled(64))
                         .foregroundStyle(.white.opacity(0.75))
                     Image(systemName: "person.fill")
-                        .font(.system(size: 40))
+                        .font(AppFont.scaled(40))
                         .foregroundStyle(.white.opacity(0.45))
                 }
                 .offset(x: 180, y: -10)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Family Supervision")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(.white)
                     Text("Control what each family member\ncan see and access in the app.")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.white.opacity(0.82))
                         .lineSpacing(3)
                 }
@@ -161,13 +161,13 @@ struct SupervisionView: View {
                 GlassCard(padding: 24) {
                     VStack(spacing: 10) {
                         Image(systemName: "person.2.slash")
-                            .font(.system(size: 32))
+                            .font(AppFont.scaled(32))
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("No members added")
                             .font(AppFont.footnote)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         Text("Add members in the Family Members section to configure supervision.")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.3))
                             .multilineTextAlignment(.center)
                     }
@@ -196,7 +196,7 @@ struct SupervisionView: View {
                             .font(AppFont.body)
                             .foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.role.capitalized))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.secondary)
                     }
 

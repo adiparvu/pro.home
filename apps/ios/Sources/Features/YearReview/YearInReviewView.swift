@@ -94,7 +94,7 @@ struct YearInReviewView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "\(year)")
-                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .font(AppFont.scaled(34, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(propertyService.primary?.name ?? "")
                     .font(AppFont.subheadline)
@@ -133,13 +133,13 @@ struct YearInReviewView: View {
                 .font(AppFont.headline)
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -191,7 +191,7 @@ struct YearInReviewView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppFont.subheadline).foregroundStyle(.primary)
                 Text(detail)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
             }
@@ -272,7 +272,7 @@ private struct YearShareCard: View {
         VStack(spacing: 18) {
             VStack(spacing: 2) {
                 Text(verbatim: "\(year)")
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
+                    .font(AppFont.scaled(44, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(propertyName)
                     .font(AppFont.headline)
@@ -291,7 +291,7 @@ private struct YearShareCard: View {
             Spacer()
 
             Text(verbatim: "PRVIO")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(13, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.6))
                 .padding(.bottom, 20)
         }
@@ -307,11 +307,11 @@ private struct YearShareCard: View {
     private func cardStat(_ value: String, _ label: LocalizedStringKey) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(.white.opacity(0.75))
             Spacer()
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, 16)

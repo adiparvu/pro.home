@@ -5,7 +5,7 @@ import SwiftUI
 struct PropertyHomeMarker: View {
     var body: some View {
         Image(systemName: "house.fill")
-            .font(.system(size: 15, weight: .bold))
+            .font(AppFont.scaled(15, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 34, height: 34)
             .background(
@@ -33,14 +33,14 @@ struct ZoneBadge: View {
         Button(action: onTap) {
             VStack(spacing: 3) {
                 Image(systemName: zone.icon)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(AppFont.scaled(13, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 32, height: 32)
                     .background(color.opacity(0.95), in: Circle())
                     .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: selected ? 2.5 : 1.5))
                     .shadow(color: .black.opacity(0.3), radius: 5, y: 2)
                 Text(zone.name)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFont.scaled(10, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                     .background(.black.opacity(0.45), in: Capsule())
@@ -71,7 +71,7 @@ struct VertexHandle: View {
 struct MoveHandle: View {
     var body: some View {
         Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
-            .font(.system(size: 13, weight: .bold))
+            .font(AppFont.scaled(13, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 34, height: 34)
             .background(Color.accentColor, in: Circle())
@@ -88,7 +88,7 @@ struct ObjectMarker: View {
 
     var body: some View {
         Image(systemName: element.elementType.icon)
-            .font(.system(size: 11, weight: .bold))
+            .font(AppFont.scaled(11, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 26, height: 26)
             .background(element.healthColor.opacity(0.95), in: Circle())

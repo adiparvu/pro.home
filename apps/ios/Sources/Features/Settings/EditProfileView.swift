@@ -42,7 +42,7 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel(label)
             TextField(placeholder, text: text)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
@@ -51,7 +51,7 @@ struct EditProfileView: View {
 
     private func fieldLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
-            .font(.system(size: 13, weight: .medium))
+            .font(AppFont.scaled(13, weight: .medium))
             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -89,7 +89,7 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("Notes")
             TextField("Notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
                 .padding(AppSpacing.base)
@@ -115,7 +115,7 @@ struct EditProfileView: View {
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                        .font(AppFont.scaled(20))
                         .foregroundStyle(.tint)
                 }
                 .accessibilityLabel(Text("Add account"))
@@ -123,19 +123,19 @@ struct EditProfileView: View {
 
             if socialLinks.isEmpty {
                 Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .padding(.vertical, AppSpacing.xxs)
             } else {
                 ForEach($socialLinks) { $link in
                     HStack(spacing: 10) {
                         Image(systemName: link.platformIcon)
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(link.platformColor)
                             .frame(width: 26, height: 26)
                             .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                         TextField(link.platformLabel, text: $link.handle)
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                             .textInputAutocapitalization(.never)
                         Button {

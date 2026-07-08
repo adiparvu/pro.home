@@ -460,12 +460,12 @@ struct SensorDetailSheet: View {
                                 .fill(sensor.type.color.opacity(0.15))
                                 .frame(width: 56, height: 56)
                             Image(systemName: sensor.type.icon)
-                                .font(.system(size: 24, weight: .semibold))
+                                .font(AppFont.scaled(24, weight: .semibold))
                                 .foregroundStyle(sensor.type.color)
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             Text(sensor.displayValue)
-                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                                 .foregroundStyle(sensor.isAlerting ? .orange : .primary)
                             if let updated = sensor.lastUpdated {
                                 Text(updated, format: .relative(presentation: .named))

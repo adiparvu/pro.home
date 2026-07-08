@@ -61,7 +61,7 @@ struct MemberProfileSheet: View {
         VStack(spacing: 10) {
             headerAvatar
             Text(resolvedMember.name)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(.primary)
             Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
@@ -81,7 +81,7 @@ struct MemberProfileSheet: View {
             MemberAvatar(member: resolvedMember, size: 80)
         } else {
             Text(resolvedMember.initials)
-                .font(.system(size: 26, weight: .bold))
+                .font(AppFont.scaled(26, weight: .bold))
                 .foregroundStyle(.primary)
                 .frame(width: 80, height: 80)
                 .glassCircle()
@@ -177,7 +177,7 @@ struct MemberProfileSheet: View {
                                 .fill(link.platformColor.opacity(0.13))
                                 .frame(width: 46, height: 46)
                             Image(systemName: link.platformIcon)
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(AppFont.scaled(17, weight: .semibold))
                                 .foregroundStyle(link.platformColor)
                         }
                     }
@@ -191,7 +191,7 @@ struct MemberProfileSheet: View {
     private func contactRow(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color, size: 36)
-            Text(value).font(.system(size: 14)).foregroundStyle(.primary)
+            Text(value).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)

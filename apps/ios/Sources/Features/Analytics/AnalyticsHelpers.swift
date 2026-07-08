@@ -61,7 +61,7 @@ struct TrendKPICard: View {
                     .symbolRenderingMode(.hierarchical)
 
                 Text(value)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(AppFont.scaled(17, weight: .bold))
                     .foregroundStyle(highlightValue
                         ? (positiveValue ? Color.brandSuccess : .red)
                         : .primary)
@@ -72,9 +72,9 @@ struct TrendKPICard: View {
                 if let pct = trendPct {
                     HStack(spacing: 2) {
                         Image(systemName: pct >= 0 ? "arrow.up" : "arrow.down")
-                            .font(.system(size: 8, weight: .bold))
+                            .font(AppFont.scaled(8, weight: .bold))
                         Text(String(format: "%.0f%%", abs(pct)))
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(AppFont.scaled(10, weight: .semibold))
                     }
                     .foregroundStyle(trendPositive
                         ? Color.brandSuccess
@@ -87,7 +87,7 @@ struct TrendKPICard: View {
                 }
 
                 Text(label)
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }

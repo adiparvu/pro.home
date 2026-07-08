@@ -143,7 +143,7 @@ struct TenantFormSheet: View {
                                         Text("Send invitation email")
                                             .font(AppFont.subheadline).foregroundStyle(.primary)
                                         Text("The tenant gets app access with the tenant role")
-                                            .font(.system(size: 12)).foregroundStyle(Color.secondaryTextColor)
+                                            .font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor)
                                     }
                                 }
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
@@ -161,7 +161,7 @@ struct TenantFormSheet: View {
                 Circle().fill((Color(hex: color) ?? .purple).opacity(0.2))
                     .frame(width: 72, height: 72)
                 Image(systemName: "key.fill")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(AppFont.scaled(28, weight: .semibold))
                     .foregroundStyle(Color(hex: color) ?? .purple)
             }
             Text(fullName.isEmpty ? String(localized: "New Tenant") : fullName)

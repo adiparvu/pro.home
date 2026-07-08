@@ -199,7 +199,7 @@ struct ObjectListRow: View {
                     .fill(element.layer.color.opacity(0.18))
                     .frame(width: 46, height: 46)
                 Image(systemName: element.elementType.icon)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(AppFont.scaled(19, weight: .semibold))
                     .foregroundStyle(element.layer.color)
             }
 
@@ -209,11 +209,11 @@ struct ObjectListRow: View {
                     .foregroundStyle(.primary)
                 if let zone = zoneName {
                     Text(zone)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 } else {
                     Text(element.elementType.displayName)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
@@ -230,7 +230,7 @@ struct ObjectListRow: View {
 
             // Health score badge
             Text("\(element.healthScore)")
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(element.healthColor)
                 .frame(width: 36, height: 28)
                 .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))

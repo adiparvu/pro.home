@@ -313,6 +313,7 @@ extension DashboardView {
     }
 
     func startPulse() {
+        guard !UIAccessibility.isReduceMotionEnabled else { return }
         withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
             pulsing = true
         }

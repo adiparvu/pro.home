@@ -42,14 +42,14 @@ struct ForcePasswordView: View {
                         Circle().fill(Color.accentColor.opacity(0.14))
                             .frame(width: 84, height: 84)
                         Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 38))
+                            .font(AppFont.scaled(38))
                             .foregroundStyle(Color.accentColor)
                     }
                     .padding(.top, 48)
 
                     VStack(spacing: 8) {
                         Text("Secure your account")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(24, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text("You signed in with an invitation link. Set a strong password to protect your account — you'll use it for future sign-ins.")
                             .font(AppFont.subheadline)
@@ -71,19 +71,19 @@ struct ForcePasswordView: View {
                             let ok = rule.passes(password)
                             HStack(spacing: 8) {
                                 Image(systemName: ok ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(ok ? Color.brandSuccess : Color.primary.opacity(0.25))
                                 Text(rule.label)
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(ok ? .primary : Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
                         if !confirm.isEmpty && confirm != password {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.system(size: 13)).foregroundStyle(.red)
+                                    .font(AppFont.scaled(13)).foregroundStyle(.red)
                                 Text("Passwords don't match")
-                                    .font(.system(size: 13)).foregroundStyle(.red)
+                                    .font(AppFont.scaled(13)).foregroundStyle(.red)
                             }
                         }
                     }
@@ -92,7 +92,7 @@ struct ForcePasswordView: View {
                     .liquidGlass(cornerRadius: AppRadius.lg)
 
                     if let err = errorMessage {
-                        Text(err).font(.system(size: 13)).foregroundStyle(.red)
+                        Text(err).font(AppFont.scaled(13)).foregroundStyle(.red)
                             .multilineTextAlignment(.center)
                     }
 
@@ -140,10 +140,10 @@ struct ForcePasswordView: View {
 
     private func secureRow(icon: String, placeholder: LocalizedStringKey, text: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14))
+            Image(systemName: icon).font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor).frame(width: 28)
             SecureField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .textContentType(.newPassword)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)

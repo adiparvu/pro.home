@@ -112,7 +112,7 @@ struct EditPropertySheet: View {
                                 ForEach(propertyTypes, id: \.self) { type in
                                     Button { propertyType = type } label: {
                                         Text(LocalizedStringKey(type.capitalized))
-                                            .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
+                                            .font(AppFont.scaled(13, weight: propertyType == type ? .semibold : .regular))
                                             .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())

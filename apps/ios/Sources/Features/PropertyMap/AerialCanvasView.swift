@@ -354,7 +354,7 @@ struct AerialCanvasView: View {
                     .overlay(Circle().fill(Color.accentColor.opacity(0.55)))
                     .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 1.5))
                     .frame(width: 34, height: 34)
-                Text("\(els.count)").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Text("\(els.count)").font(AppFont.scaled(14, weight: .bold)).foregroundStyle(.white)
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
         }
@@ -379,9 +379,9 @@ struct AerialCanvasView: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "photo.fill")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFont.scaled(10, weight: .bold))
                 Text("\(badge.count)")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(11, weight: .bold, design: .rounded))
             }
             .foregroundStyle(.white)
             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 4)
@@ -553,14 +553,14 @@ private struct AerialElementPin: View {
                         .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1))
                         .frame(width: size, height: size)
                     Image(systemName: element.elementType.icon)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppFont.scaled(12, weight: .bold))
                         .foregroundStyle(.white)
                 }
             }
             .overlay(alignment: .topTrailing) {
                 if element.isFavorite {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFont.scaled(9, weight: .bold))
                         .foregroundStyle(.yellow)
                         .padding(2)
                         .background(Circle().fill(.black.opacity(0.55)))
@@ -576,7 +576,7 @@ private struct AerialElementPin: View {
             .overlay(alignment: .bottomTrailing) {
                 if has3D {
                     Text(verbatim: "3D")
-                        .font(.system(size: 7, weight: .heavy, design: .rounded))
+                        .font(AppFont.scaled(7, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 4).padding(.vertical, 1.5)
                         .background(Capsule().fill(Color.brandPurple))
@@ -589,7 +589,7 @@ private struct AerialElementPin: View {
 
             if showName {
                 Text(element.name)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(AppFont.scaled(9, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)

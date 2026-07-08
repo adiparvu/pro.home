@@ -81,7 +81,7 @@ struct ChatAttachmentSheet: View {
                 }
                 .frame(width: 34, height: 34)
                 Text(label)
-                    .font(.system(size: 17))
+                    .font(AppFont.scaled(17))
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)
             }

@@ -84,7 +84,7 @@ struct PropertyMapCanvas: View {
                     if elements.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "map")
-                                .font(.system(size: 40))
+                                .font(AppFont.scaled(40))
                                 .foregroundStyle(Color.primary.opacity(0.2))
                             Text("No elements on map")
                                 .font(.subheadline)
@@ -221,7 +221,7 @@ private struct ElementPin: View {
                 // Edit mode indicator
                 if isEditMode {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(AppFont.scaled(8, weight: .bold))
                         .foregroundStyle(.primary)
                         .padding(3)
                         .background(Circle().fill(Color.black.opacity(0.5)))
@@ -231,7 +231,7 @@ private struct ElementPin: View {
 
             // Label
             Text(element.name)
-                .font(.system(size: 10, weight: .medium))
+                .font(AppFont.scaled(10, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(0.9))
                 .lineLimit(1)
                 .padding(.horizontal, AppSpacing.xs)

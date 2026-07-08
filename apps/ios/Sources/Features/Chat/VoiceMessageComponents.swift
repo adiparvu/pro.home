@@ -179,7 +179,7 @@ struct VoiceRecordingPill: View {
                 .padding(.leading, AppSpacing.md)
 
             Text(recorder.durationText)
-                .font(.system(size: 17, weight: .regular, design: .rounded))
+                .font(AppFont.scaled(17, weight: .regular, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.red)
                 .contentTransition(.numericText())
@@ -229,7 +229,7 @@ struct VoiceReviewRow: View {
                 HapticFeedback.impact(.light)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
                     .mediaGlass(in: Circle(), interactive: true)
@@ -264,7 +264,7 @@ struct VoiceReviewRow: View {
                     .frame(maxWidth: .infinity)
 
                 Text(verbatim: "+ \(preview.durationText)")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .font(AppFont.scaled(16, weight: .regular, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 12)
@@ -285,7 +285,7 @@ struct VoiceReviewRow: View {
                             ProgressView().controlSize(.small)
                         } else {
                             Image(systemName: "arrow.up")
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(AppFont.scaled(17, weight: .semibold))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
@@ -450,7 +450,7 @@ struct AudioBubble: View {
             .clipShape(Circle())
 
             Image(systemName: "mic.fill")
-                .font(.system(size: 9, weight: .bold))
+                .font(AppFont.scaled(9, weight: .bold))
                 .foregroundStyle(isOwn ? bubbleColor.opacity(1) : Color.accentColor)
                 .padding(AppSpacing.xxs)
                 .background(Circle().fill(isOwn ? bubbleColor.readableText : .white))
@@ -474,7 +474,7 @@ struct AudioBubble: View {
             else if let url { player.play(url: url) }
         } label: {
             Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: 24, weight: .medium))
+                .font(AppFont.scaled(24, weight: .medium))
                 .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                 .frame(width: 26)
         }
@@ -509,12 +509,12 @@ struct AudioBubble: View {
     private var bottomRow: some View {
         HStack(spacing: 6) {
             Text(player.isPlaying ? player.positionText : durationText)
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(subFg)
             if player.isPlaying {
                 Button { player.cycleRate() } label: {
                     Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFont.scaled(9, weight: .bold))
                         .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                         .padding(.horizontal, 5).padding(.vertical, 2)
                         .background((isOwn ? onBubble.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
@@ -524,7 +524,7 @@ struct AudioBubble: View {
             Spacer(minLength: 4)
             if !timeText.isEmpty {
                 Text(timeText)
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(subFg)
             }
             tickView

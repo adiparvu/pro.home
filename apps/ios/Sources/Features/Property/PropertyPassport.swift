@@ -83,10 +83,10 @@ enum PropertyPassport {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text(title)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                     Spacer()
                     Text(verbatim: "PRVIO")
-                        .font(.system(size: 12, weight: .heavy))
+                        .font(AppFont.scaled(12, weight: .heavy))
                         .foregroundStyle(Color(red: 0.15, green: 0.3, blue: 0.6))
                 }
                 Rectangle().fill(Color.black.opacity(0.15)).frame(height: 1)
@@ -100,7 +100,7 @@ enum PropertyPassport {
 
     private static func row(_ label: String, _ value: String) -> some View {
         HStack(alignment: .top) {
-            Text(label).font(.system(size: 11)).foregroundStyle(.gray)
+            Text(label).font(AppFont.scaled(11)).foregroundStyle(.gray)
                 .frame(width: 170, alignment: .leading)
             Text(value).font(AppFont.caption2)
             Spacer(minLength: 0)
@@ -117,14 +117,14 @@ enum PropertyPassport {
             VStack(spacing: 18) {
                 Spacer()
                 Image(systemName: "house.fill")
-                    .font(.system(size: 56, weight: .semibold))
+                    .font(AppFont.scaled(56, weight: .semibold))
                     .foregroundStyle(Color(red: 0.15, green: 0.3, blue: 0.6))
                 Text("passport_title")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(26, weight: .bold))
                 Text(input.property.name)
                     .font(AppFont.title3)
                 Text(verbatim: "\(input.property.addressLine1), \(input.property.city)")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(.gray)
                 if let score = input.property.healthScore {
                     Text(verbatim: String(format: String(localized: "passport_health"), score))
@@ -136,7 +136,7 @@ enum PropertyPassport {
                 Spacer()
                 Text(verbatim: String(format: String(localized: "passport_generated"),
                                       AppDate.dayString(from: Date())))
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(.gray)
                 Spacer().frame(height: 30)
             }
@@ -153,7 +153,7 @@ enum PropertyPassport {
         var body: some View {
             PageChrome(title: "passport_sec_documents") {
                 if valid.isEmpty {
-                    Text("passport_none").font(.system(size: 11)).foregroundStyle(.gray)
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
                 }
                 ForEach(valid) { doc in
                     PropertyPassport.row(
@@ -184,7 +184,7 @@ enum PropertyPassport {
                                      "\(input.tasks.filter { !$0.isCompleted }.count)")
                 Rectangle().fill(Color.black.opacity(0.08)).frame(height: 0.7)
                 if completed.isEmpty {
-                    Text("passport_none").font(.system(size: 11)).foregroundStyle(.gray)
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
                 }
                 ForEach(completed) { task in
                     PropertyPassport.row(task.dueDateDisplay, task.title)
@@ -217,7 +217,7 @@ enum PropertyPassport {
         var body: some View {
             PageChrome(title: "passport_sec_finances") {
                 Text("passport_finances_note")
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(.gray)
                 ForEach(byCategory, id: \.0) { category, sums in
                     PropertyPassport.row(
@@ -226,18 +226,18 @@ enum PropertyPassport {
                             .joined(separator: " + "))
                 }
                 if byCategory.isEmpty {
-                    Text("passport_none").font(.system(size: 11)).foregroundStyle(.gray)
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
                 }
                 Rectangle().fill(Color.black.opacity(0.08)).frame(height: 0.7)
                 Text("passport_sec_valuations")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(AppFont.scaled(13, weight: .bold))
                 ForEach(Array(input.valuations.prefix(8))) { entry in
                     PropertyPassport.row(
                         entry.enteredDate.map { AppDate.dayString(from: $0) } ?? entry.enteredAt,
                         CurrencyService.money(entry.valueAmount, code: entry.currency, whole: true))
                 }
                 if input.valuations.isEmpty {
-                    Text("passport_none").font(.system(size: 11)).foregroundStyle(.gray)
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
                 }
             }
         }
@@ -249,7 +249,7 @@ enum PropertyPassport {
         var body: some View {
             PageChrome(title: "passport_sec_appliances") {
                 if input.appliances.isEmpty {
-                    Text("passport_none").font(.system(size: 11)).foregroundStyle(.gray)
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
                 }
                 ForEach(Array(input.appliances.prefix(22))) { appliance in
                     PropertyPassport.row(
@@ -284,7 +284,7 @@ struct PropertyPassportSheet: View {
             VStack(spacing: 20) {
                 Spacer()
                 Image(systemName: "doc.richtext.fill")
-                    .font(.system(size: 40))
+                    .font(AppFont.scaled(40))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 84, height: 84)
@@ -293,7 +293,7 @@ struct PropertyPassportSheet: View {
                     Text("passport_title")
                         .font(AppFont.headline)
                     Text("passport_sheet_note")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, AppSpacing.xl)

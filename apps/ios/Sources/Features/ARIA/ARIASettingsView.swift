@@ -117,11 +117,11 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "person.text.rectangle.fill", color: .blue)
                     Text("Assistant Name")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(assistantName)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption)
@@ -140,7 +140,7 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: avatarIcon, color: .purple)
                     Text("Avatar Style")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                 }
@@ -219,7 +219,7 @@ struct ARIASettingsView: View {
             rowDivider
 
             Text("Your AI assistant's identity is private to you")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
@@ -249,7 +249,7 @@ struct ARIASettingsView: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: option.icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(AppFont.scaled(18, weight: .medium))
                     .foregroundStyle(isSelected ? .white : .primary)
                     .frame(width: 42, height: 42)
                     .background(
@@ -259,7 +259,7 @@ struct ARIASettingsView: View {
                         in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     )
                 Text(option.label)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(isSelected ? .primary : Color.primary.opacity(AppOpacity.mediumText))
             }
         }
@@ -281,7 +281,7 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "paintbrush.fill", color: .indigo)
                     Text("Chat background")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -381,7 +381,7 @@ struct ARIASettingsView: View {
             .liquidGlass(cornerRadius: AppRadius.xl)
 
             Text("Disable to prevent \(assistantName) from accessing this data type in conversations")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.sm)
                 .padding(.top, 2)
@@ -392,7 +392,7 @@ struct ARIASettingsView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: value)
@@ -415,7 +415,7 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "sparkles", color: .blue)
                     Text("Claude (Default)")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     if !useCustomModel {
@@ -440,15 +440,15 @@ struct ARIASettingsView: View {
                     ColoredIconBadge(icon: "key.fill", color: .orange)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Custom API Key")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                         Text("Advanced")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Text(LocalizedStringKey(customApiKey.isEmpty ? "Not set" : "Configured"))
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(customApiKey.isEmpty
                             ? Color.primary.opacity(AppOpacity.disabled)
                             : Color.brandSuccess)
@@ -468,7 +468,7 @@ struct ARIASettingsView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "cpu", color: .indigo)
                 Text("Use Custom Model")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
                 Toggle("", isOn: $useCustomModel)
@@ -492,7 +492,7 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "square.and.arrow.up", color: .blue)
                     Text("Export conversation history")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -513,7 +513,7 @@ struct ARIASettingsView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "trash.fill", color: .red)
                     Text("Clear conversation history")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.red)
                     Spacer()
                     if isDeletingHistory {
@@ -626,13 +626,13 @@ private struct ApiKeyEditorSheet: View {
                                         .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
                                 )
                             Image(systemName: "key.fill")
-                                .font(.system(size: 26, weight: .semibold))
+                                .font(AppFont.scaled(26, weight: .semibold))
                                 .foregroundStyle(.orange)
                         }
                         Text("Custom API Key")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(AppFont.scaled(20, weight: .bold))
                         Text("Bring your own Anthropic API key")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     .padding(.top, AppSpacing.lg)
@@ -645,7 +645,7 @@ private struct ApiKeyEditorSheet: View {
                             .padding(.leading, AppSpacing.xxs)
 
                         SecureField("sk-ant-api03-...", text: $draft)
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(AppFont.scaled(14, design: .monospaced))
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                             .padding(.horizontal, AppSpacing.base)
@@ -656,10 +656,10 @@ private struct ApiKeyEditorSheet: View {
                     // Security notice
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 18))
+                            .font(AppFont.scaled(18))
                             .foregroundStyle(.green)
                         Text("Your API key is stored securely on this device and never shared with PRVIO servers.")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(0.65))
                             .fixedSize(horizontal: false, vertical: true)
                     }

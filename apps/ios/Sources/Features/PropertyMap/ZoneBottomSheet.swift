@@ -66,17 +66,17 @@ struct ZoneBottomSheet: View {
     private var header: some View {
         HStack(spacing: 14) {
             Image(systemName: zone.icon)
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppFont.scaled(20, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(zone.tint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(zone.name)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
                 HStack(spacing: 6) {
-                    Image(systemName: zone.layer.icon).font(.system(size: 11))
+                    Image(systemName: zone.layer.icon).font(AppFont.scaled(11))
                     Text(zone.layer.displayName).font(AppFont.caption)
                 }
                 .foregroundStyle(.secondary)
@@ -94,7 +94,7 @@ struct ZoneBottomSheet: View {
                 .stroke(healthColor, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(zoneHealth)")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
         }
         .frame(width: 48, height: 48)
@@ -125,8 +125,8 @@ struct ZoneBottomSheet: View {
     private func statTile(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
         VStack(spacing: 5) {
             Image(systemName: icon).font(AppFont.footnoteEmphasis).foregroundStyle(color)
-            Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(.primary)
-            Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+            Text(value).font(AppFont.scaled(16, weight: .bold, design: .rounded)).foregroundStyle(.primary)
+            Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.md)
@@ -164,10 +164,10 @@ struct ZoneBottomSheet: View {
     private var emptyObjects: some View {
         VStack(spacing: 8) {
             Image(systemName: "cube.transparent")
-                .font(.system(size: 30))
+                .font(AppFont.scaled(30))
                 .foregroundStyle(Color.primary.opacity(0.25))
             Text("No objects in this zone")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -185,18 +185,18 @@ private struct ObjectRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: element.elementType.icon)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(element.elementType.accentColor)
                     .frame(width: 38, height: 38)
                     .background(element.elementType.accentColor.opacity(0.15),
                                 in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(element.name).font(AppFont.body).foregroundStyle(.primary)
-                    Text(element.elementType.displayName).font(.system(size: 12)).foregroundStyle(.secondary)
+                    Text(element.elementType.displayName).font(AppFont.scaled(12)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text("\(element.healthScore)")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(13, weight: .bold, design: .rounded))
                     .foregroundStyle(element.healthColor)
                 Image(systemName: "chevron.right")
                     .font(AppFont.label)

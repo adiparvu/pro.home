@@ -89,7 +89,7 @@ struct SearchView: View {
                 .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
             TextField("Tasks, plants, documents…", text: $query)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .focused($focused)
@@ -98,7 +98,7 @@ struct SearchView: View {
             if speech.isListening {
                 Button { speech.stop() } label: {
                     Image(systemName: "waveform.circle.fill")
-                        .font(.system(size: 22))
+                        .font(AppFont.scaled(22))
                         .foregroundStyle(.red)
                         .symbolEffect(.pulse)
                 }
@@ -115,7 +115,7 @@ struct SearchView: View {
                     Task { await speech.startListening() }
                 } label: {
                     Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 22))
+                        .font(AppFont.scaled(22))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .accessibilityLabel("Voice search")
@@ -142,7 +142,7 @@ struct SearchView: View {
         VStack(spacing: 24) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 40))
+                .font(AppFont.scaled(40))
                 .foregroundStyle(Color.primary.opacity(0.12))
             VStack(spacing: 8) {
                 Text("Search tasks, plants, documents, and deliveries")
@@ -152,7 +152,7 @@ struct SearchView: View {
                     .padding(.horizontal, 40)
                 HStack(spacing: 6) {
                     Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.2))
                     Text("Tap the microphone for voice search")
                         .font(.caption)
@@ -294,7 +294,7 @@ private struct SearchSection<Content: View>: View {
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Text("(\(count))")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.2))
             }
             .padding(.leading, AppSpacing.xxs)
@@ -322,14 +322,14 @@ private struct SearchRow: View {
                     .lineLimit(1)
                 if !subtitle.isEmpty {
                     Text(LocalizedStringKey(subtitle))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
             Spacer()
             if let badge = badge {
                 Text(badge)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(AppFont.scaled(10, weight: .semibold))
                     .foregroundStyle(badgeColor)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)

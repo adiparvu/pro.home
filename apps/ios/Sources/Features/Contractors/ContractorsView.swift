@@ -206,10 +206,10 @@ struct ContractorsView: View {
                 } else if filtered.isEmpty {
                     VStack(spacing: 14) {
                         Spacer()
-                        Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-                        Text(LocalizedStringKey(service.contractors.isEmpty ? "No contractors yet" : "No results")).font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        Image(systemName: "person.badge.key.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.18))
+                        Text(LocalizedStringKey(service.contractors.isEmpty ? "No contractors yet" : "No results")).font(AppFont.scaled(17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         if service.contractors.isEmpty {
-                            Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                            Button("Add your first contractor") { showAdd = true }.font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                         }
                         Spacer()
                     }
@@ -374,7 +374,7 @@ struct ContractorsView: View {
                     }
                     .accessibilityLabel(favoritesOnly ? "Show all contractors" : "Show favorites")
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
+                        Image(systemName: "plus").font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(.primary)
                             .frame(width: 34, height: 32)
                     }
                     .accessibilityLabel("Add contractor")
@@ -424,10 +424,10 @@ private struct ContractorRow: View {
                             PRVIOAccountBadge()
                         }
                         if isFavorite {
-                            Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(.yellow)
+                            Image(systemName: "star.fill").font(AppFont.scaled(11)).foregroundStyle(.yellow)
                         }
                     }
-                    Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    Text(LocalizedStringKey(contractor.specialty.capitalized)).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()
                 // Two-layer quick actions: default tap = the primary channel
@@ -482,7 +482,7 @@ private struct ContractorRow: View {
 
     private func quickActionIcon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 16))
+            .font(AppFont.scaled(16))
             .foregroundStyle(.primary)
             .frame(width: 38, height: 38)
     }
@@ -583,7 +583,7 @@ struct ContractorPeekCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Text(contractor.name)
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         if member != nil {
@@ -591,7 +591,7 @@ struct ContractorPeekCard: View {
                         }
                     }
                     Text(LocalizedStringKey(contractor.specialty.capitalized))
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer(minLength: 0)
@@ -609,10 +609,10 @@ struct ContractorPeekCard: View {
             if historyCount > 0 {
                 HStack(spacing: 8) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     Text("Activitate pe proprietate: \(historyCount)")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
             }
@@ -630,7 +630,7 @@ struct ContractorPeekCard: View {
                 Circle().fill(.ultraThinMaterial)
                 Circle().strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 1)
                 Text(initials)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFont.scaled(18, weight: .bold))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             .frame(width: 56, height: 56)
@@ -648,11 +648,11 @@ struct ContractorPeekCard: View {
     private func contactLine(_ icon: String, _ value: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 .frame(width: 20)
             Text(value)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -704,8 +704,8 @@ private struct AddContractorSheet: View {
 
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(placeholder, text: binding).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }

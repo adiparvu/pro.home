@@ -9,7 +9,7 @@ extension PropertyMapView {
             Image(systemName: "heart.fill")
                 .font(AppFont.label)
             Text("\(elementService.overallHealthScore)")
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
         }
         .foregroundStyle(healthColor(elementService.overallHealthScore))
         .padding(.horizontal, 10)
@@ -94,10 +94,10 @@ extension PropertyMapView {
                         .foregroundStyle(.secondary)
                 }
                 Text(value)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(sub)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -152,7 +152,7 @@ extension PropertyMapView {
                         .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text(element.layer.displayName)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
 
@@ -173,7 +173,7 @@ extension PropertyMapView {
 
     private func healthPill(_ score: Int) -> some View {
         Text("\(score)%")
-            .font(.system(size: 11, weight: .bold))
+            .font(AppFont.scaled(11, weight: .bold))
             .foregroundStyle(healthColor(score))
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
@@ -190,17 +190,17 @@ extension PropertyMapView {
                         .fill(Color.blue.opacity(0.12))
                         .frame(width: 64, height: 64)
                     Image(systemName: "map.fill")
-                        .font(.system(size: 28))
+                        .font(AppFont.scaled(28))
                         .foregroundStyle(.blue)
                         .symbolRenderingMode(.hierarchical)
                 }
 
                 VStack(spacing: 6) {
                     Text("Start your property map")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFont.scaled(16, weight: .bold))
                         .foregroundStyle(.primary)
                     Text("Add rooms, appliances, systems and track their condition")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -248,7 +248,7 @@ extension PropertyMapView {
             showAddElement = true
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppFont.scaled(20, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 52, height: 52)
         }
@@ -301,10 +301,10 @@ struct LayerChip: View {
                 Image(systemName: icon)
                     .font(AppFont.label)
                 Text(label)
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                    .font(AppFont.scaled(12, weight: isSelected ? .semibold : .regular))
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFont.scaled(10, weight: .bold))
                         .foregroundStyle(isSelected ? Color.white.opacity(0.8) : Color.secondary)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)

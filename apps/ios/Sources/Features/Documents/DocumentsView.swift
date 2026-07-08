@@ -260,7 +260,7 @@ struct DocumentsView: View {
 
     private func toastView(_ message: String) -> some View {
         Text(LocalizedStringKey(message))
-            .font(.system(size: 13, weight: .medium))
+            .font(AppFont.scaled(13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -392,12 +392,12 @@ struct DocumentsView: View {
             GlassCard {
                 HStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange).font(.system(size: 18))
+                        .foregroundStyle(.orange).font(AppFont.scaled(18))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
                             .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Text("Review and renew before they expire")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -453,7 +453,7 @@ struct DocumentRow: View {
                         RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(Color.primary.opacity(0.08)).frame(width: 48, height: 48)
                         Image(systemName: doc.categoryIcon)
-                            .font(.system(size: 18, weight: .medium))
+                            .font(AppFont.scaled(18, weight: .medium))
                             .foregroundStyle(categoryColor)
                     }
 
@@ -464,15 +464,15 @@ struct DocumentRow: View {
                                 .foregroundStyle(.primary).lineLimit(1)
                             if isLocked {
                                 Image(systemName: "lock.fill")
-                                    .font(.system(size: 11)).foregroundStyle(.teal)
+                                    .font(AppFont.scaled(11)).foregroundStyle(.teal)
                             }
                             if isFavorite {
                                 Image(systemName: "star.fill")
-                                    .font(.system(size: 11)).foregroundStyle(.yellow)
+                                    .font(AppFont.scaled(11)).foregroundStyle(.yellow)
                             }
                             if doc.isCritical {
                                 Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.system(size: 12)).foregroundStyle(.red)
+                                    .font(AppFont.scaled(12)).foregroundStyle(.red)
                             }
                         }
                         HStack(spacing: 8) {
@@ -483,13 +483,13 @@ struct DocumentRow: View {
                                 .background(categoryColor.opacity(0.12), in: Capsule())
                             if !doc.fileSizeDisplay.isEmpty {
                                 Text(doc.fileSizeDisplay)
-                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             }
                         }
                         if let expiry = doc.expiresDisplay {
                             HStack(spacing: 4) {
-                                Image(systemName: "calendar").font(.system(size: 10))
-                                Text("Expires \(expiry)").font(.system(size: 11))
+                                Image(systemName: "calendar").font(AppFont.scaled(10))
+                                Text("Expires \(expiry)").font(AppFont.scaled(11))
                             }
                             .foregroundStyle(doc.isExpiringSoon ? .orange : Color.primary.opacity(0.4))
                         }
@@ -498,7 +498,7 @@ struct DocumentRow: View {
                     Spacer()
 
                     Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: 18)).foregroundStyle(Color.accentColor.opacity(0.7))
+                        .font(AppFont.scaled(18)).foregroundStyle(Color.accentColor.opacity(0.7))
                 }
             }
         }

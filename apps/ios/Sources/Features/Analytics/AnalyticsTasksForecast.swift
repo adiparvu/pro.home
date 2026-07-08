@@ -43,7 +43,7 @@ struct TasksSection: View {
                             .font(AppFont.subheadline)
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
-                            .font(.system(size: 18, weight: .bold))
+                            .font(AppFont.scaled(18, weight: .bold))
                             .foregroundStyle(completionRate >= 70 ? Color.brandSuccess : .orange)
                     }
                     GeometryReader { geo in
@@ -83,12 +83,12 @@ struct TasksSection: View {
                             AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
                                     .foregroundStyle(Color.primary.opacity(0.05))
-                                AxisValueLabel().foregroundStyle(.secondary).font(.system(size: 10))
+                                AxisValueLabel().foregroundStyle(.secondary).font(AppFont.scaled(10))
                             }
                         }
                         .chartYAxis {
                             AxisMarks { _ in
-                                AxisValueLabel().foregroundStyle(.secondary).font(.system(size: 11))
+                                AxisValueLabel().foregroundStyle(.secondary).font(AppFont.scaled(11))
                             }
                         }
                         .frame(height: 110)
@@ -125,7 +125,7 @@ struct ForecastSection: View {
                             Text("12-month projection")
                                 .font(AppFont.subheadline)
                             Text("Based on the last \(financialService.monthlyData.count) months")
-                                .font(.system(size: 11))
+                                .font(AppFont.scaled(11))
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -175,12 +175,12 @@ struct ForecastSection: View {
                             AxisMarks { _ in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
                                     .foregroundStyle(Color.primary.opacity(0.05))
-                                AxisValueLabel().foregroundStyle(.secondary).font(.system(size: 10))
+                                AxisValueLabel().foregroundStyle(.secondary).font(AppFont.scaled(10))
                             }
                         }
                         .chartXAxis {
                             AxisMarks { _ in
-                                AxisValueLabel().foregroundStyle(.secondary).font(.system(size: 10))
+                                AxisValueLabel().foregroundStyle(.secondary).font(AppFont.scaled(10))
                             }
                         }
                         .frame(height: 130)
@@ -192,7 +192,7 @@ struct ForecastSection: View {
                 GlassCard(padding: 20) {
                     VStack(spacing: 10) {
                         Image(systemName: "chart.bar.doc.horizontal")
-                            .font(.system(size: 32))
+                            .font(AppFont.scaled(32))
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("Add financial records to see the forecast")
                             .font(.subheadline)

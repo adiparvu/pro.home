@@ -46,7 +46,7 @@ struct BudgetView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("This month")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
 
@@ -57,10 +57,10 @@ struct BudgetView: View {
 
                 HStack(alignment: .bottom, spacing: 4) {
                     Text(financialService.moneyDisplay(spent))
-                        .font(.system(size: 32, weight: .bold))
+                        .font(AppFont.scaled(32, weight: .bold))
                         .foregroundStyle(.primary)
                     Text("/ " + financialService.moneyDisplay(total))
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .padding(.bottom, AppSpacing.xxs)
                 }
@@ -85,7 +85,7 @@ struct BudgetView: View {
                         .foregroundStyle(remaining >= 0 ? Color.brandSuccess : Color.red)
                     Spacer()
                     Text(String(format: String(localized: "%.0f%% used"), progress * 100))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
@@ -123,12 +123,12 @@ struct BudgetView: View {
                                                 .foregroundStyle(progress > 0.9 ? .red : .white)
                                         } else {
                                             Text("Set budget")
-                                                .font(.system(size: 12))
+                                                .font(AppFont.scaled(12))
                                                 .foregroundStyle(Color.accentColor)
                                         }
                                         if budget > 0 {
                                             Text(String(format: "%.0f%%", progress * 100))
-                                                .font(.system(size: 10))
+                                                .font(AppFont.scaled(10))
                                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                         }
                                     }
@@ -211,10 +211,10 @@ private struct EditBudgetSheet: View {
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             HStack(spacing: 8) {
                                 Text("€")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(AppFont.scaled(32, weight: .light))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)
-                                    .font(.system(size: 40, weight: .light))
+                                    .font(AppFont.scaled(40, weight: .light))
                                     .foregroundStyle(.primary)
                                     .tint(.accentColor)
                                     .keyboardType(.decimalPad)

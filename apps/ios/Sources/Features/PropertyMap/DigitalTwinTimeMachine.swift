@@ -127,7 +127,7 @@ struct TwinTimeMachineOverlay: View {
     private var timeline: some View {
         VStack(spacing: 10) {
             Text(current.title)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(17, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
 

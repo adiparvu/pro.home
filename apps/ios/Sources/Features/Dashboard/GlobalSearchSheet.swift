@@ -294,7 +294,7 @@ struct GlobalSearchSheet: View {
                 .font(AppFont.subheadline)
                 .foregroundStyle(.secondary)
             TextField("People, tasks, documents, appliances…", text: $query)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .focused($focused)
@@ -302,7 +302,7 @@ struct GlobalSearchSheet: View {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
@@ -321,13 +321,13 @@ struct GlobalSearchSheet: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 48))
+                .font(AppFont.scaled(48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("Search the entire app")
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tasks · Chat · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries · Contractors · Zones · Paint · Photos")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -340,10 +340,10 @@ struct GlobalSearchSheet: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "questionmark.magnifyingglass")
-                .font(.system(size: 48))
+                .font(AppFont.scaled(48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No results for")
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("\"\(query)\"")
                 .font(AppFont.headline)
@@ -873,14 +873,14 @@ struct GlobalSearchSheet: View {
                             .lineLimit(1)
                         if !subtitle.isEmpty {
                             Text(LocalizedStringKey(subtitle))
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.22))
                 }
                 .padding(.horizontal, AppSpacing.base)

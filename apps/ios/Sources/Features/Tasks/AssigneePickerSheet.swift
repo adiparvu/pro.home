@@ -36,7 +36,7 @@ struct AssigneePickerSheet: View {
                             if showCustom {
                                 HStack(spacing: 10) {
                                     TextField("Name", text: $customName)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
                                     Button {
@@ -52,7 +52,7 @@ struct AssigneePickerSheet: View {
                                         HapticFeedback.success()
                                     } label: {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 28)).foregroundStyle(Color.accentColor)
+                                            .font(AppFont.scaled(28)).foregroundStyle(Color.accentColor)
                                     }
                                     .accessibilityLabel("Confirm assignee")
                                 }
@@ -62,8 +62,8 @@ struct AssigneePickerSheet: View {
                                     HapticFeedback.impact(.light)
                                 } label: {
                                     HStack(spacing: 10) {
-                                        Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                                        Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
+                                        Image(systemName: "person.badge.plus").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
+                                        Text("Add someone else…").font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
                                     .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -76,8 +76,8 @@ struct AssigneePickerSheet: View {
                                 ForEach(assigneeIds.filter { $0.hasPrefix("custom_") }, id: \.self) { id in
                                     let name = String(id.dropFirst("custom_".count))
                                     HStack {
-                                        Image(systemName: "person.fill").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
-                                        Text(name).font(.system(size: 14)).foregroundStyle(.primary)
+                                        Image(systemName: "person.fill").font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
+                                        Text(name).font(AppFont.scaled(14)).foregroundStyle(.primary)
                                         Spacer()
                                         Button {
                                             assigneeIds.removeAll { $0 == id }

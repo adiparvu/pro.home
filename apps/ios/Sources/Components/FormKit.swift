@@ -103,7 +103,7 @@ struct FormRow<Content: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(tint)
                 .frame(width: 22)
             content()

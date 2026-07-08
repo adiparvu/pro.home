@@ -102,7 +102,7 @@ struct ZoneDetailView: View {
                 HStack(spacing: 10) {
                     ShareLink(item: shareText, preview: SharePreview(zone.name)) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                     }
                     Menu {
@@ -114,7 +114,7 @@ struct ZoneDetailView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                     }
                 }
@@ -190,7 +190,7 @@ struct ZoneDetailView: View {
 
             // Zone icon centered
             Image(systemName: zone.icon)
-                .font(.system(size: 72, weight: .semibold))
+                .font(AppFont.scaled(72, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.9))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.bottom, 50)
@@ -198,7 +198,7 @@ struct ZoneDetailView: View {
             // Bottom bar: name + health badge
             HStack {
                 Text(zone.name)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
                 HStack(spacing: 5) {
@@ -206,7 +206,7 @@ struct ZoneDetailView: View {
                         .fill(zone.healthColor)
                         .frame(width: 8, height: 8)
                     Text("\(zone.healthScore)")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.scaled(14, weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 10)
@@ -246,10 +246,10 @@ struct ZoneDetailView: View {
     private func miniStatCard(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(color)
             Text(label)
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -268,7 +268,7 @@ struct ZoneDetailView: View {
                     .tracking(1.2)
                 if zoneType != .generic {
                     Text("Estimated")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFont.scaled(10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
@@ -373,16 +373,16 @@ struct ZoneDetailView: View {
                     .frame(width: 48, height: 48)
                 Image(systemName: icon)
                     .foregroundStyle(color)
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(value)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
                 Text(label)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -489,7 +489,7 @@ struct ZoneDetailView: View {
                         .fill(color.opacity(0.15))
                         .frame(width: 48, height: 48)
                     Image(systemName: icon)
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                         .foregroundStyle(color)
                 }
                 Text(label)

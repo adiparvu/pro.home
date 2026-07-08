@@ -96,10 +96,10 @@ struct SupplyListDetailView: View {
         } label: {
             HStack(spacing: 5) {
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                    .font(AppFont.scaled(12, weight: isSelected ? .semibold : .regular))
                 if count > 0 && !isSelected {
                     Text("\(count)")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(Color.primary.opacity(0.12), in: Capsule())
                 }
@@ -164,7 +164,7 @@ struct SupplyListDetailView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(AppFont.scaled(10, weight: .semibold))
                                 Text("COMPLETED · \(completed.count)")
                                     .font(AppFont.label)
                                     .tracking(0.5)
@@ -202,11 +202,11 @@ struct SupplyListDetailView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "cart")
-                .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
+                .font(AppFont.scaled(48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No items in this list")
                 .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tap + to add the first item.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
+                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -217,7 +217,7 @@ struct SupplyListDetailView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 36)).foregroundStyle(Color.primary.opacity(0.12))
+                .font(AppFont.scaled(36)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No results")
                 .font(AppFont.subheadline).foregroundStyle(Color.primary.opacity(0.4))
             Spacer()

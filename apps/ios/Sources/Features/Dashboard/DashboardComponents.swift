@@ -27,13 +27,13 @@ struct HomeWidget: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     Image(systemName: icon)
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(AppFont.scaled(22, weight: .semibold))
                         .foregroundStyle(iconColor)
                         .frame(width: 36, height: 36)
                     Spacer()
                     if badge > 0 {
                         Text("\(min(badge, 99))")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                             .background(Color.red, in: Capsule())
@@ -41,12 +41,12 @@ struct HomeWidget: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(value)
-                        .font(.system(size: 22, weight: .bold))
+                        .font(AppFont.scaled(22, weight: .bold))
                         .foregroundStyle(.primary)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text(subtitle)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -78,7 +78,7 @@ struct DashQuickActionButton: View {
                         .fill(color.opacity(0.13))
                         .frame(width: 50, height: 50)
                     Image(systemName: icon)
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(AppFont.scaled(19, weight: .semibold))
                         .foregroundStyle(color)
                 }
                 Text(label)
@@ -94,6 +94,7 @@ struct DashQuickActionButton: View {
 
 struct PropertyCoreMarker: View {
     @Binding var pulsing: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onTap: () -> Void
 
     var body: some View {
@@ -103,13 +104,13 @@ struct PropertyCoreMarker: View {
                     .fill(Color(red: 0.2, green: 0.85, blue: 0.45).opacity(pulsing ? 0.08 : 0.22))
                     .frame(width: 80, height: 80)
                     .scaleEffect(pulsing ? 1.15 : 0.9)
-                    .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: pulsing)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: pulsing)
 
                 Circle()
                     .fill(Color(red: 0.2, green: 0.85, blue: 0.45).opacity(pulsing ? 0.15 : 0.3))
                     .frame(width: 58, height: 58)
                     .scaleEffect(pulsing ? 1.08 : 0.95)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(0.2), value: pulsing)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(0.2), value: pulsing)
 
                 Circle()
                     .fill(LinearGradient(
@@ -121,7 +122,7 @@ struct PropertyCoreMarker: View {
                     .shadow(color: Color(red: 0.2, green: 0.9, blue: 0.45).opacity(0.4), radius: 30)
 
                 Image(systemName: "house.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFont.scaled(16, weight: .bold))
                     .foregroundStyle(.white)
             }
         }
@@ -188,11 +189,11 @@ struct ThumbnailCard: View {
                         )
                         .shadow(color: isSelected ? section.color.opacity(0.4) : .black.opacity(0.2), radius: isSelected ? 12 : 4)
                     Image(systemName: section.icon)
-                        .font(.system(size: 24, weight: .medium))
+                        .font(AppFont.scaled(24, weight: .medium))
                         .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
                 }
                 Text(LocalizedStringKey(section.name))
-                    .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
+                    .font(AppFont.scaled(10, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
                     .lineLimit(1)
             }
@@ -266,10 +267,10 @@ struct HealthScoreCard: View {
                         .animation(.spring(response: 1.1, dampingFraction: 0.8), value: score)
                     VStack(spacing: 1) {
                         Text(isLoading ? "–" : "\(score)")
-                            .font(.system(size: 26, weight: .bold))
+                            .font(AppFont.scaled(26, weight: .bold))
                             .foregroundStyle(.primary)
                         Text("/ 100")
-                            .font(.system(size: 10))
+                            .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -280,10 +281,10 @@ struct HealthScoreCard: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(isLoading ? "Loading…" : label)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(color)
                     Text(isLoading ? " " : healthMessage)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .lineLimit(2)
                 }
@@ -304,10 +305,10 @@ struct DashStatCard: View {
         GlassCard(padding: 14) {
             VStack(spacing: 4) {
                 Text(value)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(26, weight: .bold))
                     .foregroundStyle(color)
                 Text(label)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -336,14 +337,14 @@ struct DashTaskRow: View {
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(AppOpacity.disabled))
                     .lineLimit(1)
                 Text(task.dueDateDisplay)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
             }
 
             Spacer()
 
             Text(task.statusDisplay)
-                .font(.system(size: 10, weight: .medium))
+                .font(AppFont.scaled(10, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, AppSpacing.sm)
                 .padding(.vertical, AppSpacing.xxs)
@@ -373,7 +374,7 @@ struct FinancesSnapshotCard: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("This month")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
                 if isLoading {
@@ -407,7 +408,7 @@ private struct FinStat: View {
                 .font(AppFont.subheadline)
                 .foregroundStyle(color)
             Text(label)
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
         }
         .frame(maxWidth: .infinity)
@@ -498,10 +499,10 @@ struct StatChip: View {
                     .foregroundStyle(color)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(value)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFont.scaled(15, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(label)
-                        .font(.system(size: 10))
+                        .font(AppFont.scaled(10))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
             }
@@ -524,7 +525,7 @@ struct CategoryFilterChip: View {
     var body: some View {
         Button(action: { HapticFeedback.selection(); action() }) {
             Text(label)
-                .font(.system(size: 13, weight: isActive ? .semibold : .medium))
+                .font(AppFont.scaled(13, weight: isActive ? .semibold : .medium))
                 .foregroundStyle(isActive ? .primary : Color.primary.opacity(0.55))
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, AppSpacing.sm)
@@ -579,7 +580,7 @@ struct PropertyHealthDashCard: View {
                         .font(AppFont.title)
                         .foregroundStyle(.white)
                     Text("Health")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                         .foregroundStyle(scoreColor)
                 }
             }
@@ -609,7 +610,7 @@ struct PropertyHealthDashCard: View {
     private func metricRow(_ icon: String, label: LocalizedStringKey, pct: Int, color: Color) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(AppFont.scaled(10, weight: .semibold))
                 .foregroundStyle(color)
                 .frame(width: 14)
             Text(label)
@@ -625,7 +626,7 @@ struct PropertyHealthDashCard: View {
             }
             .frame(height: 4)
             Text("\(pct)%")
-                .font(.system(size: 10, weight: .semibold))
+                .font(AppFont.scaled(10, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .frame(width: 28, alignment: .trailing)
         }
@@ -656,10 +657,10 @@ struct DashStatsStrip: View {
                 } label: {
                     VStack(spacing: 2) {
                         Text(item.value)
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(17, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text(item.label)
-                            .font(.system(size: 9, weight: .medium))
+                            .font(AppFont.scaled(9, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     .frame(maxWidth: .infinity)
@@ -692,14 +693,14 @@ struct ProactiveInsightsStrip: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(Color.brandPurple)
                     Text("Property Insights")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                     Text("\(engine.activeInsights.count)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Color.brandPurple, in: Capsule())
@@ -730,14 +731,14 @@ private struct InsightRow: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                 Text(insight.body)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .lineLimit(2)
             }
             Spacer()
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFont.scaled(10, weight: .bold))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             .accessibilityLabel("Dismiss")

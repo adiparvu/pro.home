@@ -41,7 +41,7 @@ struct CustomIntegrationsView: View {
                 addButton
 
                 if let err = service.error {
-                    Text(err).font(.system(size: 12)).foregroundStyle(.red)
+                    Text(err).font(AppFont.scaled(12)).foregroundStyle(.red)
                 }
 
                 Spacer(minLength: 60)
@@ -79,7 +79,7 @@ struct CustomIntegrationsView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.primary)
                 Text("Every service you connect gets its own name and secret key. Anything that can send a web request — automations, servers, sensors, bots — posts straight into your house chat.")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -160,12 +160,12 @@ private struct IntegrationCardRow: View {
             HStack(spacing: 4) {
                 Circle().fill(Color.brandSuccess).frame(width: 6, height: 6)
                 Text("Last used \(date, format: .relative(presentation: .named))")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
         } else {
             Text("Never used yet")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
     }
@@ -197,14 +197,14 @@ private struct IntegrationIdentityEditor: View {
             ZStack {
                 Circle().fill(tint.opacity(0.18)).frame(width: 76, height: 76)
                 Image(systemName: icon)
-                    .font(.system(size: 32, weight: .medium))
+                    .font(AppFont.scaled(32, weight: .medium))
                     .foregroundStyle(tint)
             }
             .animation(.smooth(duration: 0.25), value: icon)
             .animation(.smooth(duration: 0.25), value: color)
 
             TextField("Integration name", text: $name, prompt: Text("e.g. Home Assistant"))
-                .font(.system(size: 17, weight: .semibold))
+                .font(AppFont.scaled(17, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .padding(.vertical, AppSpacing.md)
                 .padding(.horizontal, AppSpacing.lg)
@@ -249,7 +249,7 @@ private struct IntegrationIdentityEditor: View {
                                 .overlay {
                                     if color == hex {
                                         Image(systemName: "checkmark")
-                                            .font(.system(size: 11, weight: .bold))
+                                            .font(AppFont.scaled(11, weight: .bold))
                                             .foregroundStyle(.white)
                                     }
                                 }
@@ -286,7 +286,7 @@ private struct IntegrationEditorSheet: View {
                     IntegrationIdentityEditor(name: $name, icon: $icon, color: $color)
 
                     Text("After you create it, open the integration to copy its secret key into the external service.")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .multilineTextAlignment(.center)
 
@@ -365,7 +365,7 @@ private struct IntegrationDetailSheet: View {
                     dangerSection
 
                     if let err = service.error {
-                        Text(err).font(.system(size: 12)).foregroundStyle(.red)
+                        Text(err).font(AppFont.scaled(12)).foregroundStyle(.red)
                     }
 
                     Spacer(minLength: 40)
@@ -437,7 +437,7 @@ private struct IntegrationDetailSheet: View {
 
             let sample = "{\n  \"token\": \"\(integration.token.uuidString.lowercased())\",\n  \"text\": \"Salut din \(integration.name)!\"\n}"
             Text(sample)
-                .font(.system(size: 12, design: .monospaced))
+                .font(AppFont.scaled(12, design: .monospaced))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(AppSpacing.base)
@@ -449,7 +449,7 @@ private struct IntegrationDetailSheet: View {
                 }
             if copied == "sample" {
                 Label("Copied", systemImage: "checkmark")
-                    .font(.system(size: 11)).foregroundStyle(Color.brandSuccess)
+                    .font(AppFont.scaled(11)).foregroundStyle(Color.brandSuccess)
                     .padding(.leading, AppSpacing.xxs)
             }
         }
@@ -508,7 +508,7 @@ private struct IntegrationDetailSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                 Text(masked ? String(value.prefix(8)) + "••••••••" : value)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(AppFont.scaled(12, design: .monospaced))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
             }

@@ -49,15 +49,15 @@ struct DocumentRowPreview: View {
         VStack(spacing: 14) {
             ZStack {
                 Circle().fill(tint.opacity(0.16)).frame(width: 76, height: 76)
-                Image(systemName: doc.categoryIcon).font(.system(size: 30, weight: .semibold)).foregroundStyle(tint)
+                Image(systemName: doc.categoryIcon).font(AppFont.scaled(30, weight: .semibold)).foregroundStyle(tint)
             }
             VStack(spacing: 4) {
-                Text(doc.name).font(.system(size: 17, weight: .semibold))
+                Text(doc.name).font(AppFont.scaled(17, weight: .semibold))
                     .foregroundStyle(.primary).multilineTextAlignment(.center).lineLimit(2)
                 Text(LocalizedStringKey(doc.category.capitalized))
-                    .font(.system(size: 12)).foregroundStyle(tint)
+                    .font(AppFont.scaled(12)).foregroundStyle(tint)
                 if !doc.fileSizeDisplay.isEmpty {
-                    Text(doc.fileSizeDisplay).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(doc.fileSizeDisplay).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -136,11 +136,11 @@ struct DocumentDetailView: View {
                     .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
                     .shadow(color: tint.opacity(0.45), radius: 16, y: 8)
                 Image(systemName: live.categoryIcon)
-                    .font(.system(size: 36, weight: .semibold))
+                    .font(AppFont.scaled(36, weight: .semibold))
                     .foregroundStyle(tint)
             }
             Text(live.name)
-                .font(.system(size: 23, weight: .bold)).foregroundStyle(.white)
+                .font(AppFont.scaled(23, weight: .bold)).foregroundStyle(.white)
                 .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.7)
             HStack(spacing: 8) {
                 Text(LocalizedStringKey(live.category.capitalized))
@@ -149,7 +149,7 @@ struct DocumentDetailView: View {
                     .background(.white.opacity(0.14), in: Capsule())
                 if live.isCritical {
                     HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10))
+                        Image(systemName: "exclamationmark.circle.fill").font(AppFont.scaled(10))
                         Text("Critical").font(AppFont.caption)
                     }
                     .foregroundStyle(.white)
@@ -178,11 +178,11 @@ struct DocumentDetailView: View {
         GlassCard {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
-                    Image(systemName: fileGlyph).font(.system(size: 22)).foregroundStyle(tint).frame(width: 40)
+                    Image(systemName: fileGlyph).font(AppFont.scaled(22)).foregroundStyle(tint).frame(width: 40)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(live.fileName).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                         Text(live.fileSizeDisplay.isEmpty ? (live.mimeType ?? "File") : live.fileSizeDisplay)
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Spacer()
                 }
@@ -210,11 +210,11 @@ struct DocumentDetailView: View {
                 if !live.tags.isEmpty {
                     div
                     HStack {
-                        Image(systemName: "tag.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+                        Image(systemName: "tag.fill").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 6) {
                                 ForEach(live.tags, id: \.self) { t in
-                                    Text(t).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.7))
+                                    Text(t).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.7))
                                         .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                                         .background(Color.primary.opacity(0.08), in: Capsule())
                                 }
@@ -226,8 +226,8 @@ struct DocumentDetailView: View {
                 div
                 Button(role: .destructive) { HapticFeedback.warning(); showDeleteConfirm = true } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "trash").font(.system(size: 13)).frame(width: 28)
-                        Text("Delete document").font(.system(size: 14))
+                        Image(systemName: "trash").font(AppFont.scaled(13)).frame(width: 28)
+                        Text("Delete document").font(AppFont.scaled(14))
                         Spacer()
                     }
                     .foregroundStyle(.red)
@@ -249,10 +249,10 @@ struct DocumentDetailView: View {
 
     private func row(_ icon: String, _ label: LocalizedStringKey, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
-            Text(label).font(.system(size: 14)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
-            Text(value).font(.system(size: 13)).foregroundStyle(color).lineLimit(2).multilineTextAlignment(.trailing)
+            Text(value).font(AppFont.scaled(13)).foregroundStyle(color).lineLimit(2).multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }

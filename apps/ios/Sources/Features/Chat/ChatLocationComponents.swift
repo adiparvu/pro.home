@@ -104,7 +104,7 @@ struct LocationBubble: View {
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
                         Image(systemName: "location.fill")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(Color.brandSuccess)
                         if let end = live.expiresDate {
                             Text("Se distribuie până la \(end, style: .time)")
@@ -269,7 +269,7 @@ struct LocationDetailSheet: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                         Text(String(format: String(localized: "Timp rămas: %d min"), live.minutesLeft))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.secondaryTextColor)
                     }
                     Spacer()
@@ -297,7 +297,7 @@ struct LocationDetailSheet: View {
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                             Text(opt.label)
                                 .font(AppFont.captionEmphasis)
                                 .lineLimit(1)
@@ -419,7 +419,7 @@ struct LocationShareSheet: View {
                                         Text(live.othersSharing.count == 1
                                              ? String(format: String(localized: "%@ is sharing live location"), live.othersSharing[0].userName)
                                              : String(format: String(localized: "%d people are sharing live location"), live.othersSharing.count))
-                                            .font(.system(size: 12)).foregroundStyle(.orange)
+                                            .font(AppFont.scaled(12)).foregroundStyle(.orange)
                                     }
                                     liveShareRow
                                     nearbyPlacesSection
@@ -433,7 +433,7 @@ struct LocationShareSheet: View {
                         Spacer()
                         ProgressView().tint(.white)
                         Text(LocalizedStringKey(locMgr.denied ? "Location access denied. Enable in Settings." : "Getting your location…"))
-                            .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                     }
                 }
@@ -469,7 +469,7 @@ struct LocationShareSheet: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").foregroundStyle(Color.primary.opacity(0.4))
             TextField("Caută sau introdu o adresă", text: $searchText)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
             if !searchText.isEmpty {
                 Button { searchText = ""; pickedPlace = nil } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
@@ -498,7 +498,7 @@ struct LocationShareSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(r.title).font(AppFont.body).foregroundStyle(.primary)
                         if !r.subtitle.isEmpty {
-                            Text(r.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            Text(r.subtitle).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -523,7 +523,7 @@ struct LocationShareSheet: View {
                     .buttonStyle(.plain)
                     if let exp = live.sharingExpiresAt {
                         Text("Sharing live until \(exp, style: .time)")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
             } else {
@@ -533,7 +533,7 @@ struct LocationShareSheet: View {
                     Button("8 hours")    { pendingLiveDuration = 28800 }
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "location.circle.fill").font(.system(size: 18))
+                        Image(systemName: "location.circle.fill").font(AppFont.scaled(18))
                         Text("Distribuie locația în timp real").font(AppFont.body)
                         Spacer()
                     }
@@ -574,12 +574,12 @@ struct LocationShareSheet: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "location.circle.fill")
-                        .font(.system(size: 22)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(22)).foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Trimite locația curentă").font(AppFont.body).foregroundStyle(.primary)
                         if let acc = locMgr.location?.horizontalAccuracy, acc > 0 {
                             Text("Cu o aproximație de \(Int(acc))m")
-                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     Spacer()
@@ -597,11 +597,11 @@ struct LocationShareSheet: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: 22)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(22)).foregroundStyle(Color.primary.opacity(0.4))
                         VStack(alignment: .leading, spacing: 1) {
                             Text(item.name ?? "").font(AppFont.body).foregroundStyle(.primary)
                             if let addr = item.placemark.title {
-                                Text(addr).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).lineLimit(1)
+                                Text(addr).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).lineLimit(1)
                             }
                         }
                         Spacer()

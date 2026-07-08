@@ -37,7 +37,7 @@ struct AddReceiptSheet: View {
     private var storeField: some View {
         formField("STORE") {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -59,8 +59,8 @@ struct AddReceiptSheet: View {
                     ForEach(ReceiptCategory.all, id: \.id) { cat in
                         Button { category = cat.id; HapticFeedback.selection() } label: {
                             HStack(spacing: 5) {
-                                Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
-                                Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
+                                Image(systemName: ReceiptCategory.icon(for: cat.id)).font(AppFont.scaled(11))
+                                Text(LocalizedStringKey(cat.label)).font(AppFont.scaled(13))
                             }
                             .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
@@ -86,7 +86,7 @@ struct AddReceiptSheet: View {
                     HapticFeedback.selection()
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add item")
@@ -98,7 +98,7 @@ struct AddReceiptSheet: View {
                         ForEach($items) { $item in
                             HStack(spacing: 8) {
                                 TextField(String(localized: "add_receipt_item_name"), text: $item.name)
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .frame(maxWidth: .infinity)
                                 TextField("0.00", text: $item.priceText)
                                     .font(AppFont.captionEmphasis)
@@ -110,7 +110,7 @@ struct AddReceiptSheet: View {
                                     items.removeAll { $0.id == item.id }
                                 } label: {
                                     Image(systemName: "minus.circle.fill")
-                                        .font(.system(size: 16)).foregroundStyle(.red.opacity(0.7))
+                                        .font(AppFont.scaled(16)).foregroundStyle(.red.opacity(0.7))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -126,7 +126,7 @@ struct AddReceiptSheet: View {
                         total = String(format: "%.2f", computed)
                     } label: {
                         Text(String(format: String(localized: "add_receipt_use_computed"), Receipt.format(computed)))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -149,7 +149,7 @@ struct AddReceiptSheet: View {
     private var notesField: some View {
         formField("NOTES (OPTIONAL)") {
             TextField(String(localized: "add_receipt_notes_placeholder"), text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .lineLimit(2...4)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))

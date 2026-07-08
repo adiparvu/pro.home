@@ -12,8 +12,8 @@ extension EditPropertySheet {
                 Image(systemName: "map.fill").foregroundStyle(Color.accentColor)
                 Text("Location on map").font(AppFont.footnote).foregroundStyle(.primary)
                 Spacer()
-                Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
-                if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
+                Image(systemName: showMap ? "chevron.up" : "chevron.down").font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
+                if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(AppFont.scaled(14)) }
             }
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
@@ -33,8 +33,8 @@ extension EditPropertySheet {
                     lonText = String(format: "%.6f", ctx.camera.centerCoordinate.longitude)
                 }
             VStack(spacing: 0) {
-                Image(systemName: "mappin.circle.fill").font(.system(size: 30, weight: .semibold)).foregroundStyle(.red).shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                Image(systemName: "triangle.fill").font(.system(size: 7)).foregroundStyle(.red).rotationEffect(.degrees(180)).offset(y: -3)
+                Image(systemName: "mappin.circle.fill").font(AppFont.scaled(30, weight: .semibold)).foregroundStyle(.red).shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                Image(systemName: "triangle.fill").font(AppFont.scaled(7)).foregroundStyle(.red).rotationEffect(.degrees(180)).offset(y: -3)
                 Spacer()
             }.padding(.top, 46)
             VStack { Spacer(); HStack {
@@ -48,7 +48,7 @@ extension EditPropertySheet {
                     ZStack {
                         Circle().fill(.ultraThinMaterial).frame(width: 36, height: 36)
                         if isLocating { ProgressView().tint(.accentColor).scaleEffect(0.7) }
-                        else { Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor) }
+                        else { Image(systemName: "location.fill").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor) }
                     }
                 }.buttonStyle(.plain).accessibilityLabel(Text("Use current location")).padding(.trailing, 10).padding(.bottom, 10)
             }}
@@ -59,7 +59,7 @@ extension EditPropertySheet {
             formCoordField("Latitude", text: $latText, placeholder: "e.g. 44.426800")
             formCoordField("Longitude", text: $lonText, placeholder: "e.g. 26.102500")
             Button { applyManualCoords() } label: {
-                Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
+                Image(systemName: "arrow.right.circle.fill").font(AppFont.scaled(28)).foregroundStyle(Color.accentColor)
             }.buttonStyle(.plain)
             .accessibilityLabel("Apply coordinates")
         }.padding(.top, AppSpacing.sm)
@@ -75,10 +75,10 @@ extension EditPropertySheet {
                 RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).fill(Color.primary.opacity(0.04))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 if story.isEmpty {
-                    Text("Write a story about this property…").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.28))
+                    Text("Write a story about this property…").font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(0.28))
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                 }
-                TextEditor(text: $story).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                TextEditor(text: $story).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                     .scrollContentBackground(.hidden).background(.clear).frame(minHeight: 100)
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
             }
@@ -94,7 +94,7 @@ extension EditPropertySheet {
                 Spacer()
                 Button { withAnimation { showRenovationForm.toggle() } } label: {
                     Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
-                        .foregroundStyle(Color.accentColor).font(.system(size: 18))
+                        .foregroundStyle(Color.accentColor).font(AppFont.scaled(18))
                 }.buttonStyle(.plain)
                 .accessibilityLabel(showRenovationForm ? Text("Hide form") : Text("Add renovation"))
             }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
@@ -106,11 +106,11 @@ extension EditPropertySheet {
                             Circle().fill(.blue).frame(width: 8, height: 8)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(r.title).font(AppFont.footnote)
-                                Text(r.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
+                                Text(r.yearRange).font(AppFont.scaled(12)).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Button { renovations.removeAll { $0.id == r.id } } label: {
-                                Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
+                                Image(systemName: "xmark.circle.fill").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
                             .accessibilityLabel(Text("Delete"))
                         }
@@ -157,7 +157,7 @@ extension EditPropertySheet {
                 Spacer()
                 Button { withAnimation { showOwnerForm.toggle() } } label: {
                     Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
-                        .foregroundStyle(Color.accentColor).font(.system(size: 18))
+                        .foregroundStyle(Color.accentColor).font(AppFont.scaled(18))
                 }.buttonStyle(.plain)
                 .accessibilityLabel(showOwnerForm ? Text("Hide form") : Text("Add owner"))
             }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
@@ -166,14 +166,14 @@ extension EditPropertySheet {
                 VStack(spacing: 0) {
                     ForEach(owners) { o in
                         HStack(spacing: 10) {
-                            Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 20)
+                            Image(systemName: "person.fill").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 20)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(o.name).font(AppFont.footnote)
-                                Text(o.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
+                                Text(o.yearRange).font(AppFont.scaled(12)).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Button { owners.removeAll { $0.id == o.id } } label: {
-                                Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
+                                Image(systemName: "xmark.circle.fill").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
                             .accessibilityLabel(Text("Delete"))
                         }

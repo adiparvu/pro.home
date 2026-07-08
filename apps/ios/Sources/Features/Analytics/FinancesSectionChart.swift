@@ -83,7 +83,7 @@ extension FinancesSection {
                         }
                     } label: {
                         Text(LocalizedStringKey(r.rawValue))
-                            .font(.system(size: 12, weight: chartRange == r ? .semibold : .regular))
+                            .font(AppFont.scaled(12, weight: chartRange == r ? .semibold : .regular))
                             .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
                             .padding(.horizontal, 11)
                             .padding(.vertical, 5)
@@ -163,13 +163,13 @@ extension FinancesSection {
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
                                 .foregroundStyle(Color.primary.opacity(0.05))
                             AxisValueLabel().foregroundStyle(.secondary)
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                         }
                     }
                     .chartXAxis {
                         AxisMarks { _ in
                             AxisValueLabel().foregroundStyle(.secondary)
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                         }
                     }
                     .frame(height: 160)
@@ -217,7 +217,7 @@ extension FinancesSection {
     var emptyChartPlaceholder: some View {
         VStack(spacing: 10) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 28))
+                .font(AppFont.scaled(28))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Add transactions to see the chart")
                 .font(.subheadline)

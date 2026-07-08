@@ -59,7 +59,7 @@ struct CurrencyView: View {
     private var heroCard: some View {
         VStack(spacing: 12) {
             Text(CurrencyService.symbol(for: code))
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
                 .frame(width: 72, height: 72)
                 .glassCircle()
@@ -89,7 +89,7 @@ struct CurrencyView: View {
                     TextField(String(localized: "currency_amount"), text: $amountText)
                         .keyboardType(.decimalPad)
                         .focused($amountFocused)
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(AppFont.scaled(17, weight: .semibold, design: .rounded))
                         .frame(minWidth: 60)
                         .fixedSize(horizontal: true, vertical: false)
                     Text(fromCode)
@@ -114,7 +114,7 @@ struct CurrencyView: View {
                 .accessibilityLabel(Text("currency_swap"))
 
                 Text(convertedDisplay)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(17, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.brandSuccess)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
@@ -158,17 +158,17 @@ struct CurrencyView: View {
         } label: {
             HStack(spacing: 14) {
                 Text(cur.symbol)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(15, weight: .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.mediumText))
                     .frame(width: 40, height: 40)
                     .glassCircle()
 
                 VStack(alignment: .leading, spacing: 2) {
                     (Text(verbatim: "\(cur.code) — ") + Text(LocalizedStringKey(cur.name)))
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Text(currencyService.rateDisplay(for: cur.code))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
 
@@ -176,7 +176,7 @@ struct CurrencyView: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
+                        .font(AppFont.scaled(20))
                         .foregroundStyle(.tint)
                         .transition(.scale.combined(with: .opacity))
                 } else {
@@ -199,10 +199,10 @@ struct CurrencyView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 4) {
                 Image(systemName: "building.columns")
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                 Text(verbatim: "\(currencyService.sourceDisplay) · "
                      + String(format: String(localized: "currency_updated"), currencyService.lastUpdatedDisplay))
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
             }
             .foregroundStyle(Color.primary.opacity(0.3))
 
@@ -223,7 +223,7 @@ struct CurrencyView: View {
             .disabled(currencyService.isLoading)
 
             Text("currency_impact_note")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.3))
         }
         .frame(maxWidth: .infinity, alignment: .leading)

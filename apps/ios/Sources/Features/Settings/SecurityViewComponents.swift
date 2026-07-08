@@ -26,7 +26,7 @@ struct ActiveSessionsSheet: View {
                     .padding(.top, AppSpacing.lg)
 
                     Text("You can sign out other sessions if you notice suspicious activity.")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, 28).padding(.top, AppSpacing.lg)
 
                     Button {
@@ -56,15 +56,15 @@ struct ActiveSessionsSheet: View {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(title).font(.system(size: 15)).foregroundStyle(.primary)
+                    Text(title).font(AppFont.scaled(15)).foregroundStyle(.primary)
                     if isCurrent {
                         Text("CURRENT")
-                            .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                            .font(AppFont.scaled(9, weight: .bold)).foregroundStyle(.white)
                             .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                             .background(color, in: Capsule())
                     }
                 }
-                Text(subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                Text(subtitle).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
         }

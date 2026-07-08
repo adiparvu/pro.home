@@ -87,11 +87,11 @@ struct AddApplianceSheet: View {
                             Toggle(isOn: $hasPurchaseDate) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "calendar")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.scaled(14))
                                         .foregroundStyle(Color.accentColor)
                                         .frame(width: 28)
                                     Text("Purchase Date")
-                                        .font(.system(size: 15))
+                                        .font(AppFont.scaled(15))
                                         .foregroundStyle(.primary)
                                 }
                             }
@@ -114,11 +114,11 @@ struct AddApplianceSheet: View {
                             Toggle(isOn: $hasWarrantyDate) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "shield.fill")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.scaled(14))
                                         .foregroundStyle(Color.accentColor)
                                         .frame(width: 28)
                                     Text("Warranty Until")
-                                        .font(.system(size: 15))
+                                        .font(AppFont.scaled(15))
                                         .foregroundStyle(.primary)
                                 }
                             }
@@ -143,12 +143,12 @@ struct AddApplianceSheet: View {
                         formSection("Notes") {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "note.text")
-                                    .font(.system(size: 14))
+                                    .font(AppFont.scaled(14))
                                     .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                     .padding(.top, 2)
                                 TextField("Additional notes…", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
@@ -214,11 +214,11 @@ struct AddApplianceSheet: View {
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .keyboardType(keyboard)
@@ -245,11 +245,11 @@ struct AddApplianceSheet: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: selectedType?.icon ?? "square.grid.2x2.fill")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 (selectedType.map { Text(verbatim: $0.name) } ?? Text("appliance_type_pick"))
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(selectedType == nil ? Color.accentColor : .primary)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
@@ -302,7 +302,7 @@ struct AddApplianceSheet: View {
     private var categoryPicker: some View {
         HStack(spacing: 10) {
             Image(systemName: "square.grid.2x2.fill")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Category", selection: $category) {
@@ -311,7 +311,7 @@ struct AddApplianceSheet: View {
                 }
             }
             .tint(.accentColor)
-            .font(.system(size: 15))
+            .font(AppFont.scaled(15))
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)

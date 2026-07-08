@@ -253,7 +253,7 @@ struct FinancesSection: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.0f%%", max(0, savingsRate)))
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 0 ? .orange : .red)
                 }
                 GeometryReader { geo in
@@ -272,7 +272,7 @@ struct FinancesSection: View {
                 }
                 .frame(height: 8)
                 Text(LocalizedStringKey(savingsInsight(rate: savingsRate)))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(.secondary)
             }
         }
@@ -310,7 +310,7 @@ struct FinancesSection: View {
                             HStack(spacing: 6) {
                                 Circle().fill(cat.color).frame(width: 8, height: 8)
                                 Text(LocalizedStringKey(cat.name))
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                 Spacer()

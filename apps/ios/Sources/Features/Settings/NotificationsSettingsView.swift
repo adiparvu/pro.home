@@ -50,7 +50,7 @@ struct NotificationsSettingsView: View {
                             .fill(statusColor.opacity(0.18))
                             .frame(width: 48, height: 48)
                         Image(systemName: statusIcon)
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(AppFont.scaled(20, weight: .semibold))
                             .foregroundStyle(statusColor)
                     }
                     VStack(alignment: .leading, spacing: 3) {
@@ -58,7 +58,7 @@ struct NotificationsSettingsView: View {
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
@@ -270,10 +270,10 @@ private struct NotifToggleRow: View {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()

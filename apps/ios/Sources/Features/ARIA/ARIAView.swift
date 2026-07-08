@@ -107,7 +107,7 @@ struct ARIAView: View {
                                         .font(AppFont.subheadline)
                                         .foregroundStyle(.primary)
                                     Text("AI Assistant")
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 Image(systemName: "chevron.right")
@@ -228,7 +228,7 @@ struct ARIAView: View {
             // a stop control while the assistant is answering.
             HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                 TextField("Message…", text: $input, axis: .vertical)
-                    .font(.system(size: 16))
+                    .font(AppFont.scaled(16))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .lineLimit(1...6)
@@ -243,7 +243,7 @@ struct ARIAView: View {
                         isThinking = false
                     } label: {
                         Image(systemName: "stop.circle.fill")
-                            .font(.system(size: 28))
+                            .font(AppFont.scaled(28))
                             .foregroundStyle(.white, Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -263,7 +263,7 @@ struct ARIAView: View {
                             }
                         } label: {
                             Image(systemName: speech.isListening ? "waveform" : "mic.fill")
-                                .font(.system(size: 17, weight: .medium))
+                                .font(AppFont.scaled(17, weight: .medium))
                                 .foregroundStyle(speech.isListening
                                     ? Color.red
                                     : Color.primary.opacity(AppOpacity.disabled))
@@ -279,7 +279,7 @@ struct ARIAView: View {
                         sendRaw()
                     } label: {
                         Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 28))
+                            .font(AppFont.scaled(28))
                             .foregroundStyle(.white, Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -532,7 +532,7 @@ private struct ARIAMessageRow: View {
             if isUser {
                 Spacer(minLength: 60)
                 Text(message.content)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     // Adaptive text: a light custom bubble gets dark text,
                     // not invisible white — same rule as MessageBubble.
                     .foregroundStyle(ownBubbleColor.readableText)
@@ -548,7 +548,7 @@ private struct ARIAMessageRow: View {
                 // LocalizedStringKey renders the assistant's inline Markdown
                 // (bold, lists, links) the way Text was designed to.
                 Text(LocalizedStringKey(message.content))
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(Color.accentColor)
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
@@ -616,7 +616,7 @@ private struct ARIAActionBanner: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(AppFont.scaled(12, weight: .bold))
                     .foregroundStyle(.yellow)
                 Text(action.displayText)
                     .font(AppFont.footnoteEmphasis)

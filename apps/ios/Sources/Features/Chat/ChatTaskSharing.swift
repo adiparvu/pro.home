@@ -59,7 +59,7 @@ struct TaskCardBubble: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "checklist")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(AppFont.scaled(17, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(isOwn ? onBubble : payload.priorityColor)
                     .frame(width: 38, height: 38)
@@ -74,7 +74,7 @@ struct TaskCardBubble: View {
                     Text(payload.due?.isEmpty == false
                          ? payload.due ?? ""
                          : String(localized: "task_card_no_due"))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle((isOwn ? onBubble : Color.primary).opacity(0.6))
                         .lineLimit(1)
                 }
@@ -137,7 +137,7 @@ struct TaskSharePicker: View {
                                         .foregroundStyle(.primary)
                                         .lineLimit(1)
                                     Text(task.dueDateDisplay)
-                                        .font(.system(size: 12))
+                                        .font(AppFont.scaled(12))
                                         .foregroundStyle(Color.primary.opacity(0.45))
                                         .lineLimit(1)
                                 }

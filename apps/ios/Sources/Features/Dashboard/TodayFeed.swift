@@ -139,7 +139,7 @@ struct TodayRow: View {
                         if completing {
                             Circle().fill(item.tint)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.scaled(11, weight: .bold))
                                 .foregroundStyle(.white)
                                 .transition(.scale.combined(with: .opacity))
                         }
@@ -165,7 +165,7 @@ struct TodayRow: View {
                             .lineLimit(1)
                             .strikethrough(completing, color: .secondary)
                         Text(item.subtitle)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(item.urgent ? item.tint : Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
@@ -246,7 +246,7 @@ struct TodayCard: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 Text("Nothing needs you right now — enjoy your home.")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             Spacer()

@@ -15,7 +15,7 @@ extension IntegrationsView {
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 44, height: 44)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(AppFont.scaled(19, weight: .semibold))
                         .foregroundStyle(.white)
                 }
 
@@ -24,7 +24,7 @@ extension IntegrationsView {
                         .font(AppFont.headline)
                         .foregroundStyle(.primary)
                     Text("Create your own integrations — each service gets its own secret key and posts straight into your chat.")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(2)
                 }
@@ -452,7 +452,7 @@ struct IntegrationRow: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .lineLimit(2)
                 }
@@ -543,7 +543,7 @@ struct IntegrationRowContent: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .lineLimit(2)
                 }

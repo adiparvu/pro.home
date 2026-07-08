@@ -56,7 +56,7 @@ struct AddSupplyListSheet: View {
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
                     .frame(height: 72)
                     Image(systemName: selectedIcon)
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(AppFont.scaled(28, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.92))
                         .padding(AppSpacing.base)
                 }
@@ -77,7 +77,7 @@ struct AddSupplyListSheet: View {
             Text("NAME")
                 .font(AppFont.label).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
-                .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -88,7 +88,7 @@ struct AddSupplyListSheet: View {
             Text("NOTE (OPTIONAL)")
                 .font(AppFont.label).foregroundStyle(.secondary)
             TextField("Note about this list…", text: $note, axis: .vertical)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...4).padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -111,7 +111,7 @@ struct AddSupplyListSheet: View {
                                         .strokeBorder(selectedIcon == icon ? color : Color.clear, lineWidth: 2)
                                 )
                             Image(systemName: icon)
-                                .font(.system(size: 22, weight: .medium))
+                                .font(AppFont.scaled(22, weight: .medium))
                                 .foregroundStyle(selectedIcon == icon ? color : Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
@@ -133,7 +133,7 @@ struct AddSupplyListSheet: View {
                             Circle().fill(c).frame(width: 32, height: 32)
                             if selectedColor == opt.hex {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(AppFont.scaled(13, weight: .bold))
                                     .foregroundStyle(.white)
                             }
                         }
@@ -153,7 +153,7 @@ struct AddSupplyListSheet: View {
                         .frame(width: 32, height: 32)
                     if !SupplyList.colorOptions.map(\.hex).contains(selectedColor) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFont.scaled(13, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     ColorPicker("", selection: Binding(

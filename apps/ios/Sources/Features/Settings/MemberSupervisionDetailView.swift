@@ -53,7 +53,7 @@ struct MemberSupervisionDetailView: View {
                     Text("Enable supervision")
                         .font(AppFont.body)
                     Text(LocalizedStringKey(supervised ? "Restrictions are active" : "Member has full access"))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -93,7 +93,7 @@ struct MemberSupervisionDetailView: View {
                                         .foregroundStyle(section.color)
                                 }
                                 Text(LocalizedStringKey(section.label))
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Toggle("", isOn: Binding(
@@ -141,9 +141,9 @@ struct MemberSupervisionDetailView: View {
                     }
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Task notifications")
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                         Text("Receive a notification when a task is assigned to you")
-                            .font(.system(size: 11))
+                            .font(AppFont.scaled(11))
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -166,13 +166,13 @@ struct MemberSupervisionDetailView: View {
         GlassCard(padding: 16) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
                     .foregroundStyle(.blue)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("How it works")
                         .font(AppFont.captionEmphasis)
                     Text("Restrictions apply at the device level. \(member.name) will only see the enabled sections. Assigned tasks will automatically send them a notification.")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.secondary)
                         .lineSpacing(3)
                 }

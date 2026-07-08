@@ -82,12 +82,12 @@ struct SettingsView: View {
                             .font(AppFont.headline)
                             .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
             }
@@ -114,7 +114,7 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "house.fill", color: .blue)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Property")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             if let name = propertyService.primary?.name {
                                 Text(name)
                                     .font(AppFont.footnote).foregroundStyle(.primary)
@@ -127,7 +127,7 @@ struct SettingsView: View {
                         }
                         Spacer()
                         Image(systemName: "arrow.2.squarepath")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(.blue)
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
@@ -141,14 +141,14 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "person.circle.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Account")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             Text(auth.session?.user.email ?? "—")
                                 .font(AppFont.footnote).foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         Spacer()
                         Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(.blue)
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
@@ -174,7 +174,7 @@ struct SettingsView: View {
         GlassCard {
             VStack(spacing: 12) {
                 Image(systemName: "house.badge.exclamationmark")
-                    .font(.system(size: 30, weight: .medium))
+                    .font(AppFont.scaled(30, weight: .medium))
                     .foregroundStyle(.blue)
                 Text("No property yet")
                     .font(AppFont.headline)
@@ -225,7 +225,7 @@ struct SettingsView: View {
             Circle()
                 .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(initial)
-                .font(.system(size: 20, weight: .bold))
+                .font(AppFont.scaled(20, weight: .bold))
                 .foregroundStyle(.primary)
         }
     }

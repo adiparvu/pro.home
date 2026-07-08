@@ -74,8 +74,8 @@ struct ExpenseDashboardView: View {
             HapticFeedback.selection()
         } label: {
             VStack(spacing: 2) {
-                Text(value).font(.system(size: 22, weight: .bold)).contentTransition(.numericText())
-                Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(value).font(AppFont.scaled(22, weight: .bold)).contentTransition(.numericText())
+                Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
         }
@@ -116,7 +116,7 @@ struct ExpenseDashboardView: View {
 
             VStack(spacing: 8) {
                 Text(Receipt.format(total))
-                    .font(.system(size: 46, weight: .heavy, design: .rounded))
+                    .font(AppFont.scaled(46, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
                     .minimumScaleFactor(0.6)
@@ -124,7 +124,7 @@ struct ExpenseDashboardView: View {
 
                 HStack(spacing: 10) {
                     Text("\(count) \(String(localized: "expense_receipts"))")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.8))
 
                     if prevTotal > 0 {
@@ -132,7 +132,7 @@ struct ExpenseDashboardView: View {
                         let pct = abs(delta / prevTotal * 100)
                         HStack(spacing: 3) {
                             Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(AppFont.scaled(10, weight: .bold))
                             Text(String(format: "%.0f%%", pct))
                                 .font(AppFont.captionStrong)
                         }
@@ -144,7 +144,7 @@ struct ExpenseDashboardView: View {
 
                 if count == 0 {
                     Text(String(localized: "expense_no_receipts_month"))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .padding(.top, 2)
@@ -178,7 +178,7 @@ struct ExpenseDashboardView: View {
     private func monthNavButton(_ icon: String, enabled: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(.white.opacity(enabled ? 0.95 : 0.35))
                 .frame(width: 32, height: 32)
                 .background(.white.opacity(enabled ? 0.16 : 0.06), in: Circle())
@@ -218,7 +218,7 @@ struct ExpenseDashboardView: View {
                             if let date = val.as(Date.self) {
                                 AxisValueLabel {
                                     Text(date, format: .dateTime.day())
-                                        .font(.system(size: 10))
+                                        .font(AppFont.scaled(10))
                                 }
                             }
                         }
@@ -228,7 +228,7 @@ struct ExpenseDashboardView: View {
                             if let v = val.as(Double.self) {
                                 AxisValueLabel {
                                     Text(Receipt.format(v))
-                                        .font(.system(size: 9))
+                                        .font(AppFont.scaled(9))
                                 }
                             }
                             AxisGridLine().foregroundStyle(Color.primary.opacity(0.04))
@@ -299,7 +299,7 @@ struct ExpenseDashboardView: View {
                                 HStack(spacing: 8) {
                                     Circle().fill(cat.color).frame(width: 8, height: 8)
                                     Text(cat.label)
-                                        .font(.system(size: 12))
+                                        .font(AppFont.scaled(12))
                                         .foregroundStyle(.primary)
                                         .lineLimit(1)
                                     Spacer()
@@ -311,7 +311,7 @@ struct ExpenseDashboardView: View {
                             }
                             if cats.count > 5 {
                                 Text(String(localized: "expense_more_categories"))
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(Color.primary.opacity(0.4))
                             }
                         }
@@ -339,7 +339,7 @@ struct ExpenseDashboardView: View {
                     Spacer()
                     Button { showBudgets = true } label: {
                         Text(String(localized: "expense_edit_budgets"))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -356,7 +356,7 @@ struct ExpenseDashboardView: View {
                                 .font(AppFont.label)
                                 .foregroundStyle(ReceiptCategory.color(for: budget.category))
                             Text(ReceiptCategory.label(for: budget.category))
-                                .font(.system(size: 13, weight: .medium))
+                                .font(AppFont.scaled(13, weight: .medium))
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit))")
@@ -411,7 +411,7 @@ struct ExpenseDashboardView: View {
                 if recent.count > 10 {
                     Button { showReports = true } label: {
                         Text(String(format: String(localized: "expense_see_all"), recent.count))
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -440,7 +440,7 @@ struct ExpenseDashboardView: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(receipt.formattedDate)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
 
@@ -484,7 +484,7 @@ struct ExpenseDashboardView: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(item.name).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
                                     Text(String(format: String(localized: "expense_recurring_times"), item.count))
-                                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                                        .font(AppFont.scaled(11)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text("~\(Receipt.format(item.avgPrice))")

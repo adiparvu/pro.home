@@ -13,6 +13,7 @@ struct AIInsightsView: View {
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     @State private var orbPulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTimeline = false
 
     private var insights: [AIInsight] { computeInsights() }
@@ -29,12 +30,12 @@ struct AIInsightsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(String(localized: "ai_insights_recommendations"))
-                            .font(.system(size: 16, weight: .bold))
+                            .font(AppFont.scaled(16, weight: .bold))
                             .foregroundStyle(.primary)
                         Spacer()
                         if !insights.isEmpty {
                             Text("\(insights.count)")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.scaled(11, weight: .bold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 7).padding(.vertical, 3)
                                 .background(Color.accentColor, in: Capsule())
@@ -109,7 +110,10 @@ struct AIInsightsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(String(localized: "ai_insights_title"))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { orbPulse = true } }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { orbPulse = true }
+        }
     }
 
     // MARK: - Orb hero
@@ -159,16 +163,16 @@ struct AIInsightsView: View {
                     .shadow(color: Color(red: 0.35, green: 0.45, blue: 1.0).opacity(0.8), radius: 20, y: 4)
 
                 Image(systemName: "sparkles")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(AppFont.scaled(22, weight: .semibold))
                     .foregroundStyle(.white)
             }
 
             VStack(spacing: 4) {
                 Text(assistantName)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(String(localized: "ai_insights_property_intelligence"))
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
@@ -179,14 +183,14 @@ struct AIInsightsView: View {
     private var emptyInsights: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 36, weight: .light))
+                .font(AppFont.scaled(36, weight: .light))
                 .foregroundStyle(Color.brandSuccess.opacity(0.6))
                 .padding(.top, AppSpacing.xl)
             Text(String(localized: "ai_insights_all_good"))
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text(String(localized: "ai_insights_healthy"))
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
         }

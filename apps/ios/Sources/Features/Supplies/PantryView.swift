@@ -96,7 +96,7 @@ struct PantryView: View {
         VStack(spacing: AppSpacing.base) {
             EmptyStateView(icon: "basket", title: "pantry_empty_title")
             Text("pantry_empty_body")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.xxl)
@@ -129,7 +129,7 @@ struct PantryView: View {
         HStack(spacing: 12) {
             Group {
                 if let emoji = item.emoji, !emoji.isEmpty {
-                    Text(emoji).font(.system(size: 18))
+                    Text(emoji).font(AppFont.scaled(18))
                 } else {
                     Image(systemName: item.categoryIcon)
                         .font(AppFont.footnoteEmphasis)
@@ -146,7 +146,7 @@ struct PantryView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(verbatim: item.quantityDisplay)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(item.isLow ? Color.red : Color.secondary)
                     .contentTransition(.numericText())
@@ -216,7 +216,7 @@ private struct PantryItemSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     field(label: "pantry_field_name") {
                         TextField(String(localized: "pantry_name_placeholder"), text: $name)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .padding(AppSpacing.base)
                             .background(Color.primary.opacity(AppOpacity.subtleFill),
                                         in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
@@ -233,7 +233,7 @@ private struct PantryItemSheet: View {
                     field(label: "pantry_field_quantity") {
                         HStack {
                             Text(verbatim: quantityText)
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .font(AppFont.scaled(24, weight: .bold, design: .rounded))
                                 .monospacedDigit()
                                 .contentTransition(.numericText())
                             Spacer()
@@ -269,7 +269,7 @@ private struct PantryItemSheet: View {
                                         .foregroundStyle(.secondary)
                                     Spacer()
                                     Text(verbatim: minText)
-                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                        .font(AppFont.scaled(16, weight: .semibold, design: .rounded))
                                         .monospacedDigit()
                                     Stepper("", value: $minQuantity, in: 0...999, step: step)
                                         .labelsHidden()
@@ -296,7 +296,7 @@ private struct PantryItemSheet: View {
                             }
                         } label: {
                             Text("pantry_delete")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.red)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.md)
@@ -363,9 +363,9 @@ private struct PantryItemSheet: View {
         } label: {
             HStack(spacing: 5) {
                 if selected {
-                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                    Image(systemName: "checkmark").font(AppFont.scaled(11, weight: .bold))
                 }
-                Text(label).font(.system(size: 13, weight: selected ? .semibold : .regular))
+                Text(label).font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
             }
             .foregroundStyle(.primary)
             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
@@ -386,9 +386,9 @@ private struct PantryItemSheet: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: selected ? "checkmark" : cat.icon)
-                    .font(.system(size: 11, weight: selected ? .bold : .regular))
+                    .font(AppFont.scaled(11, weight: selected ? .bold : .regular))
                 Text(verbatim: cat.label)
-                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                    .font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
             }
             .foregroundStyle(.primary)
             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)

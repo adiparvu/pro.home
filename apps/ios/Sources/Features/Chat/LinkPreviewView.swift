@@ -73,7 +73,7 @@ struct LinkPreviewView: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     Text(url.host ?? url.absoluteString)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -90,7 +90,7 @@ struct LinkPreviewView: View {
             // Video links advertise themselves with a play badge, WhatsApp-style.
             if VideoEmbed.isVideoLink(url), image != nil {
                 Image(systemName: "play.circle.fill")
-                    .font(.system(size: 40))
+                    .font(AppFont.scaled(40))
                     .foregroundStyle(.white, .black.opacity(0.45))
                     .allowsHitTesting(false)
                     .offset(y: -14)

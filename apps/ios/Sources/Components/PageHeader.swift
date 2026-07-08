@@ -63,11 +63,11 @@ struct PageHeader<Leading: View, Trailing: View>: View {
                 }
                 if let titleKey = _titleKey {
                     Text(titleKey)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                 } else {
                     Text(title)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                 }
             }

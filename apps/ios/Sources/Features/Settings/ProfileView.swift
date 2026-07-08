@@ -125,10 +125,10 @@ struct ProfileView: View {
             }
 
             Text(preferredName)
-                .font(.system(size: 20, weight: .bold))
+                .font(AppFont.scaled(20, weight: .bold))
                 .foregroundStyle(.primary)
             Text(auth.session?.user.email ?? "")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
 
             ringColorPicker
@@ -202,7 +202,7 @@ struct ProfileView: View {
         ZStack {
             Circle().fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(preferredInitial)
-                .font(.system(size: 38, weight: .bold))
+                .font(AppFont.scaled(38, weight: .bold))
                 .foregroundStyle(.primary)
         }
     }
@@ -247,7 +247,7 @@ struct ProfileView: View {
         } label: {
             HStack {
                 Text("Account ID")
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 Spacer()
                 Text(copiedAccountId ? String(localized: "account_id_copied") : shortId)
@@ -256,7 +256,7 @@ struct ProfileView: View {
                     .contentTransition(.opacity)
                     .lineLimit(1)
                 Image(systemName: copiedAccountId ? "checkmark.circle.fill" : "doc.on.doc")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(copiedAccountId ? Color.brandSuccess : Color.primary.opacity(0.35))
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -271,7 +271,7 @@ struct ProfileView: View {
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
         }
@@ -351,7 +351,7 @@ struct ProfileView: View {
 
     private func toastView(_ message: String, isError: Bool) -> some View {
         Text(LocalizedStringKey(message))
-            .font(.system(size: 13, weight: .medium))
+            .font(AppFont.scaled(13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)

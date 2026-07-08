@@ -168,9 +168,9 @@ struct SuppliesView: View {
                     VStack(spacing: 5) {
                         HStack(spacing: 5) {
                             Image(systemName: icon)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(AppFont.scaled(10, weight: .semibold))
                             Text(label)
-                                .font(.system(size: 12, weight: activeTab == tab ? .semibold : .regular))
+                                .font(AppFont.scaled(12, weight: activeTab == tab ? .semibold : .regular))
                         }
                         .foregroundStyle(activeTab == tab ? Color.accentColor : Color.primary.opacity(0.4))
                         Rectangle()
@@ -231,7 +231,7 @@ struct SuppliesView: View {
             GlassCard(padding: 14) {
                 HStack(spacing: 12) {
                     Image(systemName: "basket.fill")
-                        .font(.system(size: 17, weight: .medium))
+                        .font(AppFont.scaled(17, weight: .medium))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.primary)
                         .frame(width: 40, height: 40)
@@ -242,7 +242,7 @@ struct SuppliesView: View {
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text("pantry_card_subtitle")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -314,7 +314,7 @@ struct SuppliesView: View {
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.name).font(AppFont.footnote).foregroundStyle(.primary)
-                    Text(listName).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(listName).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(item.priorityColor).frame(width: 3, height: 22)
@@ -333,9 +333,9 @@ struct SuppliesView: View {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "cart.badge.checkmark")
-                        .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
+                        .font(AppFont.scaled(52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_all_done"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -375,9 +375,9 @@ struct SuppliesView: View {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "tray")
-                        .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
+                        .font(AppFont.scaled(52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_empty_title"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -415,9 +415,9 @@ struct SuppliesView: View {
     private var emptyListsState: some View {
         VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "cart.badge.plus").font(.system(size: 56)).foregroundStyle(Color.primary.opacity(0.12))
+            Image(systemName: "cart.badge.plus").font(AppFont.scaled(56)).foregroundStyle(Color.primary.opacity(0.12))
             Text(String(localized: "supply_empty_title")).font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
-            Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center)
+            Text(String(localized: "supply_empty_body")).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center)
             Button { showAddList = true } label: {
                 Label(String(localized: "supply_add_first"), systemImage: "plus")
                     .font(AppFont.subheadline).foregroundStyle(.primary)
@@ -437,7 +437,7 @@ struct SuppliesView: View {
     private var noPropertyState: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "house.slash").font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
+            Image(systemName: "house.slash").font(AppFont.scaled(48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No property added").font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
         }
@@ -460,13 +460,13 @@ struct SupplyListCard: View {
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ).frame(height: 72)
                     Image(systemName: list.icon)
-                        .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(AppSpacing.base)
+                        .font(AppFont.scaled(28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(AppSpacing.base)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(list.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                     let pending = supplyService.pendingCount(for: list.id)
                     Text(pending == 0 ? String(localized: "supply_all_done") : "\(pending) \(String(localized: "supply_to_buy_short"))")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(pending == 0 ? Color.brandSuccess : Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
@@ -489,7 +489,7 @@ struct SupplyItemRow: View {
             HStack(spacing: 12) {
                 Button(action: onToggle) {
                     Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22))
+                        .font(AppFont.scaled(22))
                         .foregroundStyle(item.isCompleted
                             ? Color.brandSuccess
                             : Color.primary.opacity(0.28))
@@ -500,7 +500,7 @@ struct SupplyItemRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.name)
-                            .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
                             Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
@@ -508,7 +508,7 @@ struct SupplyItemRow: View {
                         }
                     }
                     if let loc = item.location, !loc.isEmpty {
-                        Label(loc, systemImage: "mappin.circle").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        Label(loc, systemImage: "mappin.circle").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
                 Spacer()

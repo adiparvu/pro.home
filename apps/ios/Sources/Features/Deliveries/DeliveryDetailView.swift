@@ -60,7 +60,7 @@ struct DeliveryDetailView: View {
             ZStack {
                 Circle().fill(delivery.statusColor.opacity(0.15)).frame(width: 76, height: 76)
                 Image(systemName: delivery.statusIcon)
-                    .font(.system(size: 32, weight: .semibold))
+                    .font(AppFont.scaled(32, weight: .semibold))
                     .foregroundStyle(delivery.statusColor)
             }
             VStack(spacing: 4) {
@@ -81,8 +81,8 @@ struct DeliveryDetailView: View {
                     HapticFeedback.selection()
                 } label: {
                     HStack(spacing: 6) {
-                        Text(tn).font(.system(size: 13, weight: .medium, design: .monospaced))
-                        Image(systemName: "doc.on.doc").font(.system(size: 11))
+                        Text(tn).font(AppFont.scaled(13, weight: .medium, design: .monospaced))
+                        Image(systemName: "doc.on.doc").font(AppFont.scaled(11))
                     }
                     .foregroundStyle(Color.secondaryTextColor)
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
@@ -273,13 +273,13 @@ private struct TimelineRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(checkpoint.message?.isEmpty == false ? checkpoint.message! : (checkpoint.status ?? ""))
-                    .font(.system(size: 14, weight: isFirst ? .semibold : .regular))
+                    .font(AppFont.scaled(14, weight: isFirst ? .semibold : .regular))
                     .foregroundStyle(isFirst ? .primary : Color.secondaryTextColor)
                 if let loc = checkpoint.location, !loc.isEmpty {
-                    Text(loc).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    Text(loc).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 if let t = timeText {
-                    Text(t).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    Text(t).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
             .padding(.bottom, isLast ? 0 : AppSpacing.base)

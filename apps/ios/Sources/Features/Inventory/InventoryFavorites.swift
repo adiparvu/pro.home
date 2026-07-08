@@ -57,7 +57,7 @@ struct InventoryItemPreview: View {
                                             item.categoryColor.opacity(0.1)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
                     Image(systemName: item.categoryIcon)
-                        .font(.system(size: 56, weight: .medium))
+                        .font(AppFont.scaled(56, weight: .medium))
                         .foregroundStyle(item.categoryColor)
                 }
                 .frame(width: 320, height: 160)
@@ -78,7 +78,7 @@ struct InventoryItemPreview: View {
                         Text("·")
                         Text(LocalizedStringKey(item.location.capitalized))
                     }
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.secondaryTextColor)
                 }
 
@@ -109,7 +109,7 @@ struct InventoryItemPreview: View {
 
                 if !item.notes.isEmpty {
                     Text(item.notes)
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(3)
                 }
@@ -123,7 +123,7 @@ struct InventoryItemPreview: View {
     private func previewChip(_ icon: String, _ label: Text, _ color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(AppFont.scaled(10, weight: .semibold))
             label
                 .font(AppFont.label)
         }

@@ -107,11 +107,11 @@ struct AddPlantSheet: View {
             Button { showSpeciesCatalog = true } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "leaf.fill")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                     Text("plant_catalog_row")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(Color.accentColor)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -182,7 +182,7 @@ struct AddPlantSheet: View {
                             HapticFeedback.selection()
                         } label: {
                             Text(emoji)
-                                .font(.system(size: 30))
+                                .font(AppFont.scaled(30))
                                 .frame(width: 52, height: 52)
                                 .background(
                                     selectedEmoji == emoji
@@ -225,10 +225,10 @@ struct AddPlantSheet: View {
                             .overlay(
                                 VStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
-                                        .font(.system(size: 24))
+                                        .font(AppFont.scaled(24))
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
@@ -241,7 +241,7 @@ struct AddPlantSheet: View {
                                     selectedImageData = nil
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(AppFont.scaled(22))
                                         .foregroundStyle(.white)
                                         .shadow(radius: 2)
                                 }
@@ -278,7 +278,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NAME *")
             TextField("Plant name", text: $name)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -293,7 +293,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("SPECIES (OPTIONAL)")
             TextField("e.g. Monstera deliciosa", text: $species)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -308,7 +308,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Living room, Balcony, Kitchen", text: $location)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -323,7 +323,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Notes about this plant…", text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...5)
@@ -353,7 +353,7 @@ struct AddPlantSheet: View {
                                     .symbolRenderingMode(.hierarchical)
                             }
                             Text(LocalizedStringKey(opt.label))
-                                .font(.system(size: 13, weight: healthStatus == opt.id ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: healthStatus == opt.id ? .semibold : .regular))
                         }
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
@@ -380,10 +380,10 @@ struct AddPlantSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(wateringIntervalDays == 1 ? "Every \(wateringIntervalDays) day" : "Every \(wateringIntervalDays) days")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Text("You'll be notified when it's time to water")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()

@@ -55,7 +55,7 @@ struct TwinInsightsSheet: View {
     private var header: some View {
         HStack(spacing: 12) {
             Image(systemName: "sparkles")
-                .font(.system(size: 22, weight: .semibold))
+                .font(AppFont.scaled(22, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(
@@ -65,9 +65,9 @@ struct TwinInsightsSheet: View {
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Property status")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFont.scaled(18, weight: .bold))
                 Text(propertyService.primary?.name ?? "My property")
-                    .font(.system(size: 13)).foregroundStyle(.secondary)
+                    .font(AppFont.scaled(13)).foregroundStyle(.secondary)
             }
             Spacer()
         }
@@ -89,8 +89,8 @@ struct TwinInsightsSheet: View {
     private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon).font(AppFont.headline).foregroundStyle(color)
-            Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
-            Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
+            Text(value).font(AppFont.scaled(20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
+            Text(label).font(AppFont.scaled(12)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.base)
@@ -106,11 +106,11 @@ struct TwinInsightsSheet: View {
                 ForEach(critical.prefix(5)) { obj in
                     HStack(spacing: 10) {
                         Image(systemName: obj.elementType.icon)
-                            .font(.system(size: 13)).foregroundStyle(obj.healthColor).frame(width: 22)
-                        Text(obj.name).font(.system(size: 14)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(13)).foregroundStyle(obj.healthColor).frame(width: 22)
+                        Text(obj.name).font(AppFont.scaled(14)).foregroundStyle(.primary)
                         Spacer()
                         Text("\(obj.healthScore)")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(13, weight: .bold, design: .rounded))
                             .foregroundStyle(obj.healthColor)
                     }
                 }
@@ -127,18 +127,18 @@ struct TwinInsightsSheet: View {
 
                 if let aiReply {
                     Text(LocalizedStringKey(aiReply))
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if isThinking {
                     HStack(spacing: 8) {
                         ProgressView()
                         Text("\(assistantName) is analyzing your property…")
-                            .font(.system(size: 14)).foregroundStyle(.secondary)
+                            .font(AppFont.scaled(14)).foregroundStyle(.secondary)
                     }
                 } else {
                     Text("Request an AI analysis based on zones, objects and their condition.")
-                        .font(.system(size: 14)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(14)).foregroundStyle(.secondary)
                 }
 
                 Button {

@@ -108,7 +108,7 @@ struct CommunitiesView: View {
         Button { showCreate = true } label: {
             HStack(spacing: 14) {
                 Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(AppFont.scaled(22, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 52, height: 52)
                     .glassRoundedRect(AppRadius.lg)
@@ -302,7 +302,7 @@ private struct GroupChatView: View {
                 }
             }
             TextField("Mesaj", text: $text, axis: .vertical)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                 .liquidGlass(cornerRadius: AppRadius.xl)
             Button {
@@ -313,7 +313,7 @@ private struct GroupChatView: View {
                 Task { try? await svc.send(propertyId: pid, senderName: myName, body: body) }
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30))
+                    .font(AppFont.scaled(30))
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
@@ -339,7 +339,7 @@ private struct CommunityRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: group.kindIcon)
-                .font(.system(size: 20, weight: .semibold))
+                .font(AppFont.scaled(20, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(group.kindTint)
                 .frame(width: 48, height: 48)
@@ -350,7 +350,7 @@ private struct CommunityRow: View {
                     .font(AppFont.headline).foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(preview?.text.isEmpty == false ? preview!.text : fallbackLine)
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
             }
@@ -372,7 +372,7 @@ private struct CommunityRow: View {
                         }
                         if avatarMembers.count > 3 {
                             Text(verbatim: "+\(avatarMembers.count - 3)")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(AppFont.scaled(9, weight: .bold))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .frame(width: 20, height: 20)
                                 .background(Circle().fill(Color.primary.opacity(0.08)))
@@ -469,7 +469,7 @@ private struct GroupSettingsSheet: View {
 
                 if !currentExternals.isEmpty {
                     Text("comm_externals_note")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
             }
@@ -488,7 +488,7 @@ private struct GroupSettingsSheet: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(m.memberName).font(AppFont.body)
                 if let category = model?.category, !category.isEmpty {
-                    Text(category).font(.system(size: 12))
+                    Text(category).font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.45))
                 }
             }
@@ -529,7 +529,7 @@ private struct GroupSettingsSheet: View {
                     if isAdmin {
                         HStack(spacing: 10) {
                             TextField("Nume grup", text: $name)
-                                .font(.system(size: 16))
+                                .font(AppFont.scaled(16))
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                                 .liquidGlass(cornerRadius: 14)
                             Button("Salvează") {
@@ -666,7 +666,7 @@ private struct AddGroupMembersSheet: View {
                                 Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20))
+                                    .font(AppFont.scaled(20))
                                     .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
@@ -705,7 +705,7 @@ private struct AddContractorsSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("comm_externals_note")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.45))
                         .padding(.bottom, AppSpacing.xs)
                     ForEach(contractors) { c in
@@ -723,13 +723,13 @@ private struct AddContractorsSheet: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(c.name).font(AppFont.body).foregroundStyle(.primary)
                                     if !c.category.isEmpty {
-                                        Text(c.category).font(.system(size: 12))
+                                        Text(c.category).font(AppFont.scaled(12))
                                             .foregroundStyle(Color.primary.opacity(0.45))
                                     }
                                 }
                                 Spacer()
                                 Image(systemName: selectedIds.contains(c.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20))
+                                    .font(AppFont.scaled(20))
                                     .foregroundStyle(selectedIds.contains(c.id) ? Color.accentColor : Color.primary.opacity(0.25))
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
@@ -826,7 +826,7 @@ private struct CreateGroupSheet: View {
                     }
 
                     TextField("Nume grup", text: $name)
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .liquidGlass(cornerRadius: 14)
 
@@ -834,8 +834,8 @@ private struct CreateGroupSheet: View {
                         ForEach(kinds, id: \.0) { k in
                             Button { kind = k.0 } label: {
                                 VStack(spacing: 6) {
-                                    Image(systemName: k.2).font(.system(size: 20))
-                                    Text(k.1).font(.system(size: 13, weight: .medium))
+                                    Image(systemName: k.2).font(AppFont.scaled(20))
+                                    Text(k.1).font(AppFont.scaled(13, weight: .medium))
                                 }
                                 .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                                 .background(kind == k.0 ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.04),
@@ -858,7 +858,7 @@ private struct CreateGroupSheet: View {
                                     Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 20))
+                                        .font(AppFont.scaled(20))
                                         .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
                                 }
                                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)

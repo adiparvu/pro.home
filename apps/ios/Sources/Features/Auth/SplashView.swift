@@ -27,7 +27,7 @@ struct SplashView: View {
 
                 VStack(spacing: 4) {
                     Text("PRVIO")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text("Property management")
                         .font(AppFont.footnote)

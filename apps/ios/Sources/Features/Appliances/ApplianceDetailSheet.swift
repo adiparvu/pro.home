@@ -82,10 +82,10 @@ struct ApplianceDetailSheet: View {
                 ColoredIconBadge(icon: appliance.categoryIcon, color: appliance.categoryColor, size: 56)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(appliance.name)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(appliance.category.displayName)
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     Text(appliance.warrantyStatus)
                         .font(AppFont.captionStrong)
@@ -151,7 +151,7 @@ struct ApplianceDetailSheet: View {
             sectionHeader("Notes")
             GlassCard {
                 Text(text)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -184,11 +184,11 @@ struct ApplianceDetailSheet: View {
     private func infoRow(icon: String, label: LocalizedStringKey, value: String, valueColor: Color = .primary) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 24)
             Text(label)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)

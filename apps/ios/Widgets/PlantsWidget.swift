@@ -31,18 +31,18 @@ struct PlantsSmallView: View {
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
                     Text("\(entry.snapshot.plantsNeedingWater)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(Color(red: 1.0, green: 0.62, blue: 0.1))
                 } else {
                     Image(systemName: "drop.fill")
-                        .font(.system(size: 24))
+                        .font(AppFont.scaled(24))
                         .foregroundStyle(.blue)
                 }
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
                 Text("PLANTS")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.plantsNeedingWater > 0
                      ? LocalizedStringKey("Needs water")
@@ -77,7 +77,7 @@ struct PlantsMediumView: View {
             HStack {
                 Label {
                     Text("PLANTS")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "leaf.fill")
@@ -99,7 +99,7 @@ struct PlantsMediumView: View {
                 HStack(spacing: 8) {
                     Text("🌿")
                     Text("All plants are watered!")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxHeight: .infinity)
@@ -108,15 +108,15 @@ struct PlantsMediumView: View {
                     ForEach(needsWater, id: \.id) { plant in
                         HStack(spacing: 8) {
                             Text(plant.emoji)
-                                .font(.system(size: 16))
+                                .font(AppFont.scaled(16))
                             Text(plant.name)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
                             Button(intent: makeWaterIntent(id: plant.id, name: plant.name, emoji: plant.emoji)) {
                                 Image(systemName: "drop.fill")
-                                    .font(.system(size: 14))
+                                    .font(AppFont.scaled(14))
                                     .foregroundStyle(.blue)
                             }
                             .buttonStyle(.plain)

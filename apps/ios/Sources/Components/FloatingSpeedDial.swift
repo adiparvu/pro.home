@@ -75,10 +75,10 @@ struct FloatingSpeedDial: View {
                         .frame(width: 30, height: 30)
                 } else if isMenu {
                     Image(systemName: "xmark")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                 } else {
                     Image(systemName: actions.first?.icon ?? "plus")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                 }
             }
             .foregroundStyle(.primary)

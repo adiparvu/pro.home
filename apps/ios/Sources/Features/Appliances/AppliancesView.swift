@@ -50,7 +50,7 @@ struct AppliancesView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add appliance")
@@ -138,7 +138,7 @@ struct AppliancesView: View {
     private func chip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(verbatim: label)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 7)
@@ -212,7 +212,7 @@ private struct ApplianceRow: View {
                     HStack(spacing: 5) {
                         if let brand = appliance.brand, !brand.isEmpty {
                             Text(brand)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let model = appliance.modelNumber, !model.isEmpty {
@@ -220,7 +220,7 @@ private struct ApplianceRow: View {
                                 Text("·").foregroundStyle(Color.primary.opacity(0.2))
                             }
                             Text(model)
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         }
                     }
@@ -235,7 +235,7 @@ private struct ApplianceRow: View {
 
                         if let location = appliance.location, !location.isEmpty {
                             Text(location)
-                                .font(.system(size: 11))
+                                .font(AppFont.scaled(11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
                                 .padding(.horizontal, AppSpacing.sm)
                                 .padding(.vertical, 3)

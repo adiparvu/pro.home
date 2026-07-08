@@ -35,7 +35,7 @@ struct WatchShowcaseView: View {
                 .padding(.vertical, AppSpacing.base)
 
             Text("ws_footer")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.xxl)
@@ -93,10 +93,10 @@ private struct WSPage: View {
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text(title)
-                        .font(.system(size: 26, weight: .bold))
+                        .font(AppFont.scaled(26, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(body_)
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -166,14 +166,14 @@ private struct WSDashboardMock: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Gauge(value: 85, in: 0...100) { EmptyView() } currentValueLabel: {
-                    Text(verbatim: "85").font(.system(size: 11, weight: .bold, design: .rounded))
+                    Text(verbatim: "85").font(AppFont.scaled(11, weight: .bold, design: .rounded))
                 }
                 .gaugeStyle(.accessoryCircular)
                 .tint(Gradient(colors: [.green.opacity(0.55), .green]))
                 .scaleEffect(0.62)
                 .frame(width: 34, height: 34)
                 Text(verbatim: "PRV Villa")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                 Spacer(minLength: 0)
             }
@@ -197,10 +197,10 @@ private struct WSDashboardMock: View {
     private func cell(icon: String, tint: Color, value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Image(systemName: icon)
-                .font(.system(size: 8, weight: .semibold))
+                .font(AppFont.scaled(8, weight: .semibold))
                 .foregroundStyle(tint)
             Text(verbatim: value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -220,7 +220,7 @@ private struct WSComplicationsMock: View {
             HStack(spacing: 10) {
                 miniGauge(icon: "house.fill", value: "85", tint: .green)
                 Text(verbatim: "10:09")
-                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                    .font(AppFont.scaled(26, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                 miniGauge(icon: "checklist", value: "3", tint: .blue)
             }
@@ -228,16 +228,16 @@ private struct WSComplicationsMock: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 3) {
                     Image(systemName: "checklist")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(AppFont.scaled(8, weight: .semibold))
                     Text("watch_tasks")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                 }
                 .foregroundStyle(.white)
                 Text(verbatim: "3")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 Text("ws_mock_task")
-                    .font(.system(size: 8))
+                    .font(AppFont.scaled(8))
                     .foregroundStyle(.white.opacity(0.6))
                     .lineLimit(1)
             }
@@ -258,9 +258,9 @@ private struct WSComplicationsMock: View {
 
     private func miniGauge(icon: String, value: String, tint: Color) -> some View {
         Gauge(value: 0.7) {
-            Image(systemName: icon).font(.system(size: 7))
+            Image(systemName: icon).font(AppFont.scaled(7))
         } currentValueLabel: {
-            Text(verbatim: value).font(.system(size: 10, weight: .bold, design: .rounded))
+            Text(verbatim: value).font(AppFont.scaled(10, weight: .bold, design: .rounded))
         }
         .gaugeStyle(.accessoryCircular)
         .tint(tint)
@@ -274,12 +274,12 @@ private struct WSActionsMock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("watch_tasks")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             row(icon: "checkmark.circle.fill", tint: .blue, text: "ws_mock_task", done: true)
             row(icon: "circle", tint: .white, text: "ws_mock_task2", done: false)
             Text("watch_plants")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
                 .padding(.top, 3)
             row(icon: "drop.fill", tint: .cyan, text: "ws_mock_plant", done: true)
@@ -292,10 +292,10 @@ private struct WSActionsMock: View {
     private func row(icon: String, tint: Color, text: LocalizedStringKey, done: Bool) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: done ? .semibold : .light))
+                .font(AppFont.scaled(11, weight: done ? .semibold : .light))
                 .foregroundStyle(done ? tint : .white.opacity(0.5))
             Text(text)
-                .font(.system(size: 10, design: .rounded))
+                .font(AppFont.scaled(10, design: .rounded))
                 .foregroundStyle(.white.opacity(done ? 0.55 : 1))
                 .strikethrough(done, color: .white.opacity(0.4))
                 .lineLimit(1)
@@ -315,26 +315,26 @@ private struct WSListsMock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("watch_shopping")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             item("ws_mock_item1", done: true)
             item("ws_mock_item2", done: false)
             Text("watch_deliveries")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
                 .padding(.top, 3)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Image(systemName: "bicycle")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(AppFont.scaled(9, weight: .semibold))
                         .foregroundStyle(.orange)
                     Text("ws_mock_parcel")
-                        .font(.system(size: 10, design: .rounded))
+                        .font(AppFont.scaled(10, design: .rounded))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                 }
                 Text("Out for delivery")
-                    .font(.system(size: 8))
+                    .font(AppFont.scaled(8))
                     .foregroundStyle(.white.opacity(0.6))
             }
             .padding(7)
@@ -353,10 +353,10 @@ private struct WSListsMock: View {
     private func item(_ text: LocalizedStringKey, done: Bool) -> some View {
         HStack(spacing: 5) {
             Image(systemName: done ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 11, weight: done ? .semibold : .light))
+                .font(AppFont.scaled(11, weight: done ? .semibold : .light))
                 .foregroundStyle(done ? .orange : .white.opacity(0.5))
             Text(text)
-                .font(.system(size: 10, design: .rounded))
+                .font(AppFont.scaled(10, design: .rounded))
                 .foregroundStyle(.white.opacity(done ? 0.55 : 1))
                 .strikethrough(done, color: .white.opacity(0.4))
             Spacer(minLength: 0)
@@ -375,14 +375,14 @@ private struct WSSyncMock: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "iphone.gen3.radiowaves.left.and.right")
-                .font(.system(size: 34))
+                .font(AppFont.scaled(34))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(Color.brandSkyBlue)
             Image(systemName: "arrow.down")
                 .font(AppFont.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
             Image(systemName: "applewatch.radiowaves.left.and.right")
-                .font(.system(size: 30))
+                .font(AppFont.scaled(30))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.white)
         }

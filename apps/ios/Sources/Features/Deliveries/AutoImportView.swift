@@ -53,7 +53,7 @@ struct AutoImportView: View {
             ZStack {
                 Circle().fill(Color.brandPrimaryBlue.opacity(0.15)).frame(width: 76, height: 76)
                 Image(systemName: "envelope.badge.fill")
-                    .font(.system(size: 30, weight: .semibold))
+                    .font(AppFont.scaled(30, weight: .semibold))
                     .foregroundStyle(Color.brandPrimaryBlue)
             }
             Text("Import deliveries from email")
@@ -77,7 +77,7 @@ struct AutoImportView: View {
                     ProgressView().frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                 } else if let address {
                     Text(address)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                        .font(AppFont.scaled(16, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.primary)
                         .lineLimit(1).minimumScaleFactor(0.6)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -120,7 +120,7 @@ struct AutoImportView: View {
     private func step(_ n: Int, _ text: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             Text("\(n)")
-                .font(.system(size: 13, weight: .bold))
+                .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 22, height: 22)
                 .background(Circle().fill(Color.brandPrimaryBlue))
@@ -135,7 +135,7 @@ struct AutoImportView: View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: "lock.shield.fill").font(AppFont.footnote).foregroundStyle(Color.brandSuccess)
             Text("We only ever see the emails you choose to forward — never your inbox.")
-                .font(.system(size: 12)).foregroundStyle(Color.secondaryTextColor)
+                .font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppSpacing.xs)

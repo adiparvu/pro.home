@@ -190,7 +190,7 @@ private struct FabDialPreview: View {
                 // The main button — a plus for a menu, the action's own icon
                 // when the page has a single action (like the real dial).
                 Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
-                    .font(.system(size: 15, weight: .bold))
+                    .font(AppFont.scaled(15, weight: .bold))
                     .foregroundStyle(.primary)
                     .frame(width: 42, height: 42)
                     .glassCircle()

@@ -90,16 +90,16 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "apps.iphone", color: .indigo)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Authenticator app")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("TOTP codes (Google Authenticator, 1Password…)")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     if totpFactorId != nil {
                         Text("Enabled").font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.brandSuccess)
                     } else {
-                        Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                        Text("Disabled").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -116,9 +116,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "key.horizontal.fill", color: .teal)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Backup codes")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("Emergency access codes for account recovery")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -140,9 +140,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "macbook.and.iphone", color: .blue)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Active sessions")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(UIDevice.current.model)
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -158,7 +158,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "person.badge.shield.checkmark.fill", color: .green)
                     Text("Trusted persons")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -173,7 +173,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "list.clipboard.fill", color: .indigo)
                     Text("Activity log")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -195,9 +195,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "key.fill", color: .orange)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Advanced account security")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("Change password or email")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     if passwordResetSent {
@@ -217,9 +217,9 @@ struct SecurityView: View {
                 ColoredIconBadge(icon: "lock.shield.fill", color: .purple)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lockdown mode")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Text("Requires more secure sign-in methods")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 Toggle("", isOn: $lockModeEnabled)
@@ -241,9 +241,9 @@ struct SecurityView: View {
                     )
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LocalizedStringKey(biometricType == .faceID ? "Require Face ID" : "Require Touch ID"))
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("Face ID or passcode to access PRVIO")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Toggle("", isOn: $biometricsEnabled)
@@ -262,13 +262,13 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "timer", color: .cyan)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-lock")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(LocalizedStringKey(autoLockDescription))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Text(autoLockLabel)
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
@@ -291,7 +291,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: section.icon, color: section.color)
                     Text(section.titleKey)
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Toggle("", isOn: Binding(
                         get: { sectionLock.isProtected(section) },
@@ -314,7 +314,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "square.and.arrow.up.fill", color: .cyan)
                     Text("Export my data")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     if isExporting {
                         ProgressView().scaleEffect(0.8)
@@ -333,7 +333,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "trash.fill", color: .red)
                     Text("Delete account")
-                        .font(.system(size: 15)).foregroundStyle(.red)
+                        .font(AppFont.scaled(15)).foregroundStyle(.red)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -359,7 +359,7 @@ struct SecurityView: View {
 
             if let footer {
                 Text(footer)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .padding(.horizontal, AppSpacing.sm)
                     .padding(.top, 2)
@@ -371,10 +371,10 @@ struct SecurityView: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(title)
-                .font(.system(size: 15)).foregroundStyle(.primary)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
             Text(status)
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.38))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
     }

@@ -72,7 +72,7 @@ struct EditFamilyMemberSheet: View {
             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
             Text(fullName.isEmpty ? "?" : String(fullName.prefix(2)).uppercased())
-                .font(.system(size: 28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
+                .font(AppFont.scaled(28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
         }
         .frame(width: 80, height: 80).padding(.top, AppSpacing.sm)
     }
@@ -107,13 +107,13 @@ struct EditFamilyMemberSheet: View {
         VStack(spacing: 0) {
             Button { withAnimation { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
+                    Image(systemName: "gift.fill").font(AppFont.scaled(14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
@@ -135,7 +135,7 @@ struct EditFamilyMemberSheet: View {
                         .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -161,12 +161,12 @@ struct EditFamilyMemberSheet: View {
                             get: { socialLinks[idx].handle },
                             set: { socialLinks[idx].handle = $0 }
                         ))
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.6))
                         .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                     Spacer()
                     Button { socialLinks.remove(at: idx) } label: {
-                        Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
+                        Image(systemName: "minus.circle.fill").font(AppFont.scaled(18)).foregroundStyle(.red.opacity(0.8))
                     }
                 }
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
@@ -179,8 +179,8 @@ struct EditFamilyMemberSheet: View {
                 showAddSocial = true
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
-                    Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                    Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
+                    Text("Add social network").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
                     Spacer()
                 }
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -202,9 +202,9 @@ struct EditFamilyMemberSheet: View {
     private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>,
                           keyboard: UIKeyboardType = .default, autocap: TextInputAutocapitalization = .words) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(color).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)

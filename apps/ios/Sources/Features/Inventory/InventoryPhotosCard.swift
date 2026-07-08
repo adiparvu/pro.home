@@ -99,7 +99,7 @@ struct InventoryPhotosCard: View {
                 .overlay(
                     VStack(spacing: 4) {
                         Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(AppFont.scaled(20, weight: .medium))
                         Text("Add")
                             .font(AppFont.caption2)
                     }

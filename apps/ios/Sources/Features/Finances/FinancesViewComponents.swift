@@ -70,11 +70,11 @@ extension FinancesView {
 
             VStack(spacing: 4) {
                 Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Text(fmtSigned(net))
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(44, weight: .bold, design: .rounded))
                     .foregroundStyle(net >= 0 ? Color.primary : .red)
                     .contentTransition(.numericText(countsDown: net < 0))
                     .animation(.spring(response: 0.4), value: net)
@@ -107,16 +107,16 @@ extension FinancesView {
         VStack(spacing: 5) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(16, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.4), value: value)
             }
             Text(label)
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
@@ -157,7 +157,7 @@ extension FinancesView {
                 .foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -266,7 +266,7 @@ struct FinancialRecordRow: View {
                     .fill(style.color.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: style.icon)
-                    .font(.system(size: 17))
+                    .font(AppFont.scaled(17))
                     .foregroundStyle(style.color)
             }
 
@@ -275,7 +275,7 @@ struct FinancialRecordRow: View {
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(record.category.capitalized))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
 
@@ -286,7 +286,7 @@ struct FinancialRecordRow: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(record.isIncome ? Color.brandSuccess : .primary)
                 Text(record.dateFormatted)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
         }

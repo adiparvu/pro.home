@@ -67,7 +67,7 @@ struct PropertyHealthDashboardView: View {
                         .rotationEffect(.degrees(-90))
                     VStack(spacing: 2) {
                         Text("\(elementService.overallHealthScore)")
-                            .font(.system(size: 26, weight: .black))
+                            .font(AppFont.scaled(26, weight: .black))
                             .foregroundStyle(scoreColor(elementService.overallHealthScore))
                         Text("/100")
                             .font(.caption2)
@@ -173,7 +173,7 @@ struct PropertyHealthDashboardView: View {
                 }
                 Spacer()
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(AppFont.scaled(22, weight: .semibold))
                     .foregroundStyle(Color.brandSuccess.opacity(0.5))
             }
         }

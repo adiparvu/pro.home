@@ -103,7 +103,7 @@ struct NFCWalletView: View {
                 } else {
                     Button { scanForNewTag() } label: {
                         Label("Scan Tag", systemImage: "wave.3.right.circle.fill")
-                            .font(.system(size: 19, weight: .medium))
+                            .font(AppFont.scaled(19, weight: .medium))
                             .foregroundStyle(.primary)
                     }
                 }
@@ -147,7 +147,7 @@ struct NFCWalletView: View {
                         HStack(spacing: 8) {
                             ProgressView().tint(.primary)
                             Text("Adding…")
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(height: 44)
@@ -226,7 +226,7 @@ struct NFCWalletView: View {
             HStack {
                 Spacer()
                 Image(systemName: "wave.3.right")
-                    .font(.system(size: 90, weight: .ultraLight))
+                    .font(AppFont.scaled(90, weight: .ultraLight))
                     .foregroundStyle(.white.opacity(0.08))
                     .offset(x: 20, y: 0)
             }
@@ -236,12 +236,12 @@ struct NFCWalletView: View {
                 // Top row
                 HStack(alignment: .top) {
                     Text("PRVIO")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(11, weight: .bold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.65))
                         .tracking(3)
                     Spacer()
                     Image(systemName: tag.icon)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(AppFont.scaled(24, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
 
@@ -249,7 +249,7 @@ struct NFCWalletView: View {
 
                 // Tag name
                 Text(tag.name)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(AppFont.scaled(24, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
@@ -259,7 +259,7 @@ struct NFCWalletView: View {
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(tag.typeLabel.uppercased())
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(AppFont.scaled(9, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.55))
                             .tracking(1.5)
                         Text(tag.linkedName.isEmpty ? "Standalone" : tag.linkedName)
@@ -269,7 +269,7 @@ struct NFCWalletView: View {
                     }
                     Spacer()
                     Text(tag.uid.prefix(12).uppercased())
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(AppFont.scaled(10, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
                 }
             }
@@ -444,11 +444,11 @@ struct NFCTagNameSheet: View {
                         GlassCard(padding: 14) {
                             HStack(spacing: 10) {
                                 Image(systemName: "wave.3.right")
-                                    .font(.system(size: 14))
+                                    .font(AppFont.scaled(14))
                                     .foregroundStyle(.blue)
                                     .frame(width: 26)
                                 Text("Tag ID: \(uid.prefix(16))…")
-                                    .font(.system(size: 13, design: .monospaced))
+                                    .font(AppFont.scaled(13, design: .monospaced))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
@@ -462,7 +462,7 @@ struct NFCTagNameSheet: View {
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Front Door, Garage, Boiler Room", text: $name)
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
                                     .tint(.accentColor)
                             }
@@ -488,7 +488,7 @@ struct NFCTagNameSheet: View {
                                     TextField(linkedType == "zone" ? "nfc_linked_name_zone"
                                               : linkedType == "appliance" ? "nfc_linked_name_appliance"
                                               : "nfc_linked_name_element", text: $linkedName)
-                                        .font(.system(size: 15))
+                                        .font(AppFont.scaled(15))
                                         .foregroundStyle(.primary)
                                         .tint(.accentColor)
                                         .padding(.top, AppSpacing.xxs)
@@ -511,7 +511,7 @@ struct NFCTagNameSheet: View {
                                             HapticFeedback.selection()
                                         } label: {
                                             Image(systemName: icon)
-                                                .font(.system(size: 18, weight: .medium))
+                                                .font(AppFont.scaled(18, weight: .medium))
                                                 .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(AppOpacity.mediumText))
                                                 .frame(width: 44, height: 44)
                                                 .background(

@@ -88,7 +88,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("DESCRIPTION *")
             TextField("e.g. Laptop, Shoes, Book…", text: $description)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -103,7 +103,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("TRACKING CODE")
             TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()
@@ -120,7 +120,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(2...4)
@@ -145,7 +145,7 @@ struct DeliveryFormSheet: View {
                             HapticFeedback.selection()
                         } label: {
                             Text(c)
-                                .font(.system(size: 13, weight: carrier == c ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: carrier == c ? .semibold : .regular))
                                 .foregroundStyle(carrier == c ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, AppSpacing.base)
                                 .padding(.vertical, AppSpacing.sm)
@@ -181,7 +181,7 @@ struct DeliveryFormSheet: View {
                                 .frame(width: 32, height: 32)
                                 .glassCircle()
                             Text(LocalizedStringKey(opt.label))
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
                             Spacer()
                             if status == opt.id {
@@ -230,10 +230,10 @@ struct DeliveryFormSheet: View {
                     Toggle(isOn: $hasExpectedDate) {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
-                                .font(.system(size: 14))
+                                .font(AppFont.scaled(14))
                                 .foregroundStyle(Color.accentColor)
                             Text("Set estimated date")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
                         }
                     }

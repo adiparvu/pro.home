@@ -127,11 +127,11 @@ struct DirectMessageView: View {
         switch presenceService.status(for: member.name) {
         case .online:
             Text("online")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.brandSuccess)
         case .lastSeen(let date):
             Text("last seen \(date, format: .relative(presentation: .named))")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
         case .hidden:
             EmptyView()
@@ -185,7 +185,7 @@ struct DirectMessageView: View {
                                     .fill(member.swiftColor.opacity(0.15))
                                     .frame(width: 30, height: 30)
                                 Text(member.initials)
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(AppFont.scaled(12, weight: .bold))
                                     .foregroundStyle(member.swiftColor)
                             }
                             VStack(alignment: .leading, spacing: 0) {
@@ -196,7 +196,7 @@ struct DirectMessageView: View {
                                 // (online / last seen) when the partner shares it.
                                 if directMessageService.typingNames.contains(member.name) {
                                     Text("typing…")
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.accentColor)
                                 } else {
                                     presenceSubtitle
@@ -513,7 +513,7 @@ struct DirectMessageView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "pin.fill")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(pinnedMessages.count > 1
@@ -522,7 +522,7 @@ struct DirectMessageView: View {
                             .font(AppFont.label)
                             .foregroundStyle(Color.accentColor)
                         Text(dmSnippet(pinned))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.6))
                             .lineLimit(1)
                     }
@@ -531,7 +531,7 @@ struct DirectMessageView: View {
                         Task { await directMessageService.togglePin(pinned) }
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(Color.primary.opacity(0.4))
                             .frame(width: 26, height: 26)
                     }
@@ -582,7 +582,7 @@ struct DirectMessageView: View {
                                         ProgressView().controlSize(.small)
                                     } else {
                                         Text("Load older messages")
-                                            .font(.system(size: 13, weight: .medium))
+                                            .font(AppFont.scaled(13, weight: .medium))
                                             .foregroundStyle(Color.accentColor)
                                     }
                                 } 
@@ -656,10 +656,10 @@ struct DirectMessageView: View {
                                         Spacer(minLength: 72)
                                         HStack(spacing: 6) {
                                             Text(pm.body ?? "")
-                                                .font(.system(size: 15))
+                                                .font(AppFont.scaled(15))
                                                 .foregroundStyle(pendingFill.readableText)
                                             Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
-                                                .font(.system(size: 10))
+                                                .font(AppFont.scaled(10))
                                                 .foregroundStyle(pendingFill.readableText.opacity(0.75))
                                         }
                                         .padding(.horizontal, 13).padding(.vertical, 9)
@@ -678,7 +678,7 @@ struct DirectMessageView: View {
                                     }
                                     if !outbox.isOnline {
                                         Text("Not delivered · tap to retry")
-                                            .font(.system(size: 10))
+                                            .font(AppFont.scaled(10))
                                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                             .padding(.trailing, AppSpacing.xxs)
                                     }
@@ -793,13 +793,13 @@ struct DirectMessageView: View {
                     .fill(member.swiftColor.opacity(0.12))
                     .frame(width: 80, height: 80)
                 Text(member.initials)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFont.scaled(28, weight: .bold))
                     .foregroundStyle(member.swiftColor)
             }
             Text(member.name)
-                .font(.system(size: 18, weight: .bold))
+                .font(AppFont.scaled(18, weight: .bold))
             Text("Start the private conversation")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Spacer()
         }
@@ -824,9 +824,9 @@ struct DirectMessageView: View {
 
     private var blockedBanner: some View {
         HStack(spacing: 8) {
-            Image(systemName: "hand.raised.fill").font(.system(size: 13))
+            Image(systemName: "hand.raised.fill").font(AppFont.scaled(13))
             Text("You blocked this contact.")
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
             Button("Unblock") {
                 ChatBlockStore.setBlocked(member.id.uuidString, false)
                 blockRefresh.toggle()
@@ -880,7 +880,7 @@ struct DirectMessageView: View {
 
                     HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                         TextField("Message…", text: $input, axis: .vertical)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .foregroundStyle(.primary)
                             .tint(.accentColor)
                             .lineLimit(1...6)
@@ -955,7 +955,7 @@ struct DirectMessageView: View {
             showAttachmentSheet = true
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 17, weight: .medium))
+                .font(AppFont.scaled(17, weight: .medium))
                 .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
                 // Clear Liquid Glass on iOS 26; legible material fallback
@@ -972,7 +972,7 @@ struct DirectMessageView: View {
             Task { await sendMessage() }
         } label: {
             Image(systemName: "arrow.up.circle.fill")
-                .font(.system(size: 28))
+                .font(AppFont.scaled(28))
                 .foregroundStyle(.white, Color.accentColor)
         }
         .buttonStyle(.plain)
@@ -989,7 +989,7 @@ struct DirectMessageView: View {
             HapticFeedback.impact(.medium)
         } label: {
             Image(systemName: "mic.fill")
-                .font(.system(size: 17, weight: .medium))
+                .font(AppFont.scaled(17, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(width: 28, height: 28)
         }

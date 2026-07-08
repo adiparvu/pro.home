@@ -131,11 +131,11 @@ private struct AutomationPickerRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(accentColor)
                     .frame(width: 28)
                 Text(label)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
                 if isSelected {
@@ -205,7 +205,7 @@ private struct AddAutomationSheet: View {
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Warranty Alert", text: $name)
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
                                     .tint(Color.accentColor)
                             }
@@ -382,7 +382,7 @@ struct AutomationBuilderView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                        .font(AppFont.scaled(20))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add automation")
@@ -527,8 +527,8 @@ struct AutomationBuilderView: View {
     private func flowNode(headerLabel: String, bodyText: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
-                Image(systemName: icon).font(.system(size: 9, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
-                Text(LocalizedStringKey(headerLabel)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                Image(systemName: icon).font(AppFont.scaled(9, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
+                Text(LocalizedStringKey(headerLabel)).font(AppFont.scaled(10, weight: .bold)).foregroundStyle(.white.opacity(0.9))
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 5)
@@ -623,7 +623,7 @@ struct AutomationBuilderView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("All Automations")
-                    .font(.system(size: 16, weight: .bold)).foregroundStyle(.primary)
+                    .font(AppFont.scaled(16, weight: .bold)).foregroundStyle(.primary)
                 Spacer()
                 Text("\(automations.count)")
                     .font(AppFont.captionStrong).foregroundStyle(.secondary)
@@ -662,7 +662,7 @@ struct AutomationBuilderView: View {
                 Text(rule.name)
                     .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                 Text("\(rule.triggerLabel.replacingOccurrences(of: "\n", with: " ")) → \(rule.actionLabel.replacingOccurrences(of: "\n", with: " "))")
-                    .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                    .font(AppFont.scaled(11)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             Toggle("", isOn: $automations[index].isActive)

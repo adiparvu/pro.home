@@ -42,7 +42,7 @@ struct AddDocumentSheet: View {
                             HStack(spacing: 0) {
                                 FormRow(icon: "doc.text.fill") {
                                     TextField("e.g. Home Insurance 2025", text: $name)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                                         .autocorrectionDisabled()
                                 }
                                 Menu {
@@ -131,7 +131,7 @@ struct AddDocumentSheet: View {
                                     iconLabel("paperclip", color: .blue, text: pickedFileName.isEmpty ? LocalizedStringKey("Attach file") : LocalizedStringKey(pickedFileName))
                                     Spacer()
                                     Image(systemName: pickedFileData != nil ? "checkmark.circle.fill" : "chevron.right")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.scaled(14))
                                         .foregroundStyle(pickedFileData != nil ? Color.brandSuccess : Color.primary.opacity(0.3))
                                 }
                                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -275,9 +275,9 @@ struct AddDocumentSheet: View {
 
     private func iconLabel(_ icon: String, color: Color, text: LocalizedStringKey? = nil) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 22)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(color).frame(width: 22)
             if let text {
-                Text(text).font(.system(size: 15)).foregroundStyle(.primary).lineLimit(1)
+                Text(text).font(AppFont.scaled(15)).foregroundStyle(.primary).lineLimit(1)
             }
         }
     }

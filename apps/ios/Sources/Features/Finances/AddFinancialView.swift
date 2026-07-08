@@ -53,7 +53,7 @@ struct AddFinancialView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: t == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                                .font(.system(size: 14))
+                                .font(AppFont.scaled(14))
                             Text(LocalizedStringKey(t.capitalized))
                                 .font(AppFont.footnoteEmphasis)
                         }
@@ -84,10 +84,10 @@ struct AddFinancialView: View {
 
                 HStack(alignment: .center, spacing: 8) {
                     Text(currencyService.symbol(for: appSettings.preferredCurrency))
-                        .font(.system(size: 32, weight: .light))
+                        .font(AppFont.scaled(32, weight: .light))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     TextField("0", text: $amount)
-                        .font(.system(size: 40, weight: .light))
+                        .font(AppFont.scaled(40, weight: .light))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .keyboardType(.decimalPad)
@@ -105,7 +105,7 @@ struct AddFinancialView: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "tag.fill", color: .blue)
                 TextField("Title", text: $title)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
@@ -118,7 +118,7 @@ struct AddFinancialView: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "folder.fill", color: .purple)
                 Text("Category")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
                 Picker("", selection: $category) {
@@ -137,7 +137,7 @@ struct AddFinancialView: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "calendar", color: .orange)
                 DatePicker("Date", selection: $date, displayedComponents: .date)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
@@ -153,7 +153,7 @@ struct AddFinancialView: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "note.text", color: .cyan)
                 TextField("Notes (optional)", text: $notes)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }

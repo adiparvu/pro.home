@@ -48,14 +48,14 @@ struct BackupCodesView: View {
     private var warningCard: some View {
         HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 20))
+                .font(AppFont.scaled(20))
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Păstrează-le în siguranță")
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                 Text("Stochează aceste coduri undeva sigur. Fiecare cod poate fi folosit o singură dată.")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.55))
             }
         }
@@ -81,11 +81,11 @@ struct BackupCodesView: View {
                 ForEach(Array(codes.enumerated()), id: \.offset) { idx, code in
                     HStack {
                         Text("\(idx + 1).")
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .font(AppFont.scaled(12, weight: .medium, design: .monospaced))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(width: 20, alignment: .trailing)
                         Text(code)
-                            .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                            .font(AppFont.scaled(15, weight: .semibold, design: .monospaced))
                             .foregroundStyle(.primary)
                             .tracking(1)
                     }
@@ -146,7 +146,7 @@ struct BackupCodesView: View {
         Button { showRegenerateConfirm = true } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                 Text("Generează coduri noi")
                     .font(AppFont.footnote)
             }
