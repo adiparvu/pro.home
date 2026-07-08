@@ -183,6 +183,7 @@ struct ChatView: View {
             actions: messageActions(m),
             onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
             imageStored: m.isImageMessage ? m.attachmentUrl : nil,
+            audioStored: m.isAudioMessage ? m.attachmentUrl : nil,
             reactionsDisabled: m.deletedForAll == true
         )
         .transition(.opacity)
@@ -1034,6 +1035,10 @@ struct ChatView: View {
                 .padding(.bottom, AppSpacing.xs)
             }
         }
+        // A proper bar material so the compose row stays legible over any
+        // wallpaper (a bare glass pill on its own read as near-transparent).
+        // `.bar` turns opaque automatically under Reduce Transparency.
+        .background(.bar)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
         .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
     }

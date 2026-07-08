@@ -572,7 +572,11 @@ struct MessageBubble: View {
                 .foregroundStyle(isOwn ? ownTextColor : .primary)
                 .tint(isOwn ? ownTextColor : Color.accentColor)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                .background(isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
+                // Incoming bubbles use an OPAQUE system fill (like iMessage) so
+                // they stay legible over any wallpaper; a translucent tint
+                // vanished against photo backgrounds. Opaque by construction, it
+                // also satisfies Reduce Transparency.
+                .background(isOwn ? ownBubbleColor : Color(.secondarySystemBackground),
                             in: bubbleShape)
         }
     }

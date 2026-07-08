@@ -140,10 +140,13 @@ struct DirectMessageView: View {
     }
 
     var body: some View {
-        ZStack {
-            chatTheme.background
-            messageList
-        }
+        // The wallpaper is applied as a BACKGROUND of the message list rather
+        // than as a ZStack sibling: `.background` is sized to the list and can
+        // never enlarge it, whereas a `scaledToFill` wallpaper inside a ZStack
+        // reports a layout size wider than the screen for landscape photos,
+        // which stretched the list and pushed sent bubbles off the right edge.
+        // This matches the group chat (`ChatView`), which frames correctly.
+        messageList
         // The compose bar lives in the safe-area inset — the canonical
         // iMessage structure. It can never be pushed off-screen by the
         // list's internal geometry (the empty-state GeometryReader used to
@@ -156,6 +159,10 @@ struct DirectMessageView: View {
                 inputBar
             }
         }
+        // Full-bleed behind both the list and the compose inset; `.background`
+        // ignores the safe area by default, so the wallpaper still reaches
+        // every edge without dictating the list's width.
+        .background(chatTheme.background)
         // iMessage-style header: no bar, the conversation slides under a
         // progressive blur and only glass controls float on top.
         .overlay(alignment: .top) { ChatTopBlur() }
@@ -466,6 +473,7 @@ struct DirectMessageView: View {
     private func dmActionOverlay(_ m: DirectMessage) -> some View {
         let own = m.isMine(myUserId: directMessageService.myUserId, myName: myName)
         let isImage = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .image
+        let isAudio = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .audio
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
             isOwn: own,
@@ -475,6 +483,7 @@ struct DirectMessageView: View {
             actions: dmMessageActions(m, own: own),
             onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
             imageStored: isImage ? m.body : nil,
+            audioStored: isAudio ? m.body : nil,
             reactionsDisabled: m.deletedForAll == true
         )
         .transition(.opacity)
@@ -699,6 +708,20 @@ struct DirectMessageView: View {
                     }
                     .defaultScrollAnchor(.bottom)
                     .scrollDismissesKeyboard(.immediately)
+                    .onAppear {
+                        // The empty state replaces this ScrollView, so it mounts
+                        // only once messages already exist and its count-based
+                        // onChange never sees the 0→N load. Without an explicit
+                        // assert, a non-sender opened mid-thread instead of on the
+                        // newest message. Snap to the bottom on first mount (the
+                        // grace flag keeps later re-appears from yanking a reader
+                        // who has scrolled up). Deferred so the lazy rows lay out
+                        // first. Mirrors the group chat's `!chatDidLoad` snap.
+                        guard !chatDidLoad else { return }
+                        DispatchQueue.main.async {
+                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                        }
+                    }
                     .onChange(of: conversationMessages.count) { old, new in
                         guard new > 0 else { return }
                         // Decide the animation for THIS change — onChange runs
@@ -921,6 +944,10 @@ struct DirectMessageView: View {
                 // sized area spills the whole image across the screen).
             }
         }
+        // A proper bar material so the compose row stays legible over any
+        // wallpaper (a bare glass pill on its own read as near-transparent).
+        // `.bar` turns opaque automatically under Reduce Transparency.
+        .background(.bar)
         .animation(.spring(duration: 0.3), value: showAttachmentTray)
         .animation(.spring(duration: 0.3), value: replyingTo?.id)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)

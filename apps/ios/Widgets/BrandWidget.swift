@@ -33,7 +33,9 @@ private struct BrandWidgetView: View {
             wordmark
         }
         .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Center the badge both axes in every family; an explicit alignment so
+        // the wordmark never settles to a corner regardless of family sizing.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .containerBackground(for: .widget) {
             // Near-black with a faint crown of light so the panel reads as a
             // material, not a hole in the wallpaper.

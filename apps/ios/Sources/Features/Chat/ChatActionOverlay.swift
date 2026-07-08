@@ -25,6 +25,10 @@ struct ChatActionOverlay: View {
     /// When the pressed message is a photo, its stored attachment value so the
     /// overlay elevates the real image instead of a "📷 Photo" text preview.
     var imageStored: String? = nil
+    /// When the pressed message is a voice note, its stored audio value so the
+    /// overlay elevates the real waveform player instead of a "🎤 Voice message"
+    /// text preview — mirrors `imageStored` for photos.
+    var audioStored: String? = nil
     /// Deleted-for-all messages take no reactions — only the actions passed in
     /// (typically just Delete), matching WhatsApp.
     var reactionsDisabled: Bool = false
@@ -102,7 +106,12 @@ struct ChatActionOverlay: View {
 
     @ViewBuilder
     private var bubble: some View {
-        if imageStored != nil {
+        if let audioStored {
+            // The real voice-bar the bubble renders — same component, so the
+            // waveform, play glyph and duration match the message exactly.
+            AudioBubble(audioValue: audioStored, isOwn: isOwn, bubbleColor: bubbleColor)
+                .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+        } else if imageStored != nil {
             StorageImage(url: imageURL) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()

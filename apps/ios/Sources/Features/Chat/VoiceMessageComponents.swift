@@ -407,8 +407,11 @@ struct AudioBubble: View {
             }
         }
         .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
+        // Incoming voice bars use an OPAQUE system fill (like iMessage) so the
+        // waveform stays legible over any wallpaper; a translucent tint vanished
+        // against photo backgrounds. Opaque, it also satisfies Reduce Transparency.
         .background(
-            isOwn ? bubbleColor : Color.primary.opacity(0.08),
+            isOwn ? bubbleColor : Color(.secondarySystemBackground),
             in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
         )
         .frame(minWidth: 230, maxWidth: 290)

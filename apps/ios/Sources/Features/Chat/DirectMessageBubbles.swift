@@ -360,8 +360,12 @@ struct DMBubble: View {
             .tint(isOwn ? fill.readableText : Color.accentColor)
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
+            // Incoming bubbles use an OPAQUE system fill (like iMessage) so they
+            // stay legible over any wallpaper; a translucent tint vanished
+            // against photo backgrounds. Opaque, it also satisfies Reduce
+            // Transparency.
             .background(
-                isOwn ? fill : Color.primary.opacity(0.09),
+                isOwn ? fill : Color(.secondarySystemBackground),
                 in: bubbleShape
             )
             .clipShape(bubbleShape)
