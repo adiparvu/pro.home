@@ -511,13 +511,15 @@ struct SensorDetailSheet: View {
                 }
 
                 if isEnergyType {
-                    Section("Energy") {
+                    Section {
                         Toggle(String(localized: "iot_production_toggle"), isOn: $isProduction)
                             .onChange(of: isProduction) { _, on in
                                 var updated = sensor
                                 updated.isProduction = on
                                 service.updateSensor(updated)
                             }
+                    } header: {
+                        Text("Energy")
                     } footer: {
                         Text("iot_production_footer")
                     }
@@ -613,6 +615,12 @@ struct AddIoTAutomationSheet: View {
                             .textInputAutocapitalization(.never)
                     case .createTask:
                         TextField("Task title (optional)", text: $payload)
+                    case .phoneAlert:
+                        // No payload: the sensor event itself is the message,
+                        // POSTed to the account's iot-event webhook.
+                        Text("iot_webhook_subtitle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
