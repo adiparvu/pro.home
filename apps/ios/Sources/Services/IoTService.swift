@@ -61,6 +61,22 @@ final class IoTService {
         sensors.filter { $0.deviceId == device.id }
     }
 
+    // MARK: - Plant care bindings (Plant OS P3)
+
+    /// Resolves a `PlantSensorBinding.sensorRef` back to a live sensor known to
+    /// this installation, or nil when it is not present (e.g. bound on another
+    /// household device). Callers that get nil show requirements only, never a
+    /// fabricated reading.
+    func sensor(forRef ref: String) -> IoTSensor? {
+        sensors.first { $0.stableRef == ref }
+    }
+
+    /// The real sensors that can be bound to a plant-care metric
+    /// (light / temperature / humidity), for the "bind a sensor" affordance.
+    func sensors(for metric: PlantCareMetric) -> [IoTSensor] {
+        sensors.filter { metric.matches($0.type) }
+    }
+
     // MARK: - Sensors CRUD
 
     func addSensor(_ sensor: IoTSensor) { sensors.append(sensor); persist() }

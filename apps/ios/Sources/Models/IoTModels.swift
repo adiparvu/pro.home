@@ -198,6 +198,14 @@ struct IoTSensor: Identifiable, Codable {
 
     /// Eligible for the energy dashboard (instantaneous draw in watts).
     var isPowerReading: Bool { type == .power }
+
+    /// A durable, installation-local identity for binding this sensor to a
+    /// plant (Plant OS P3). Sensors are persisted client-side (UserDefaults
+    /// JSON), not in a synced table, and the poller matches a sensor by
+    /// (deviceId, remoteId) — updating it in place — so that tuple, not the
+    /// random `id` (which is regenerated if a sensor is deleted and later
+    /// rediscovered), is the stable key. Format: "{deviceId-uuid}:{remoteId}".
+    var stableRef: String { "\(deviceId.uuidString):\(remoteId)" }
 }
 
 // MARK: - Actuator

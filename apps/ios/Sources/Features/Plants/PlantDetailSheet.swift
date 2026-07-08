@@ -25,6 +25,10 @@ struct PlantDetailSheet: View {
     @State var speciesService = PlantSpeciesService()
     @State var showSpeciesPicker = false
 
+    // Care requirements + live sensor comparison (P3). Bindings loaded lazily
+    // and locally, like the other plant-page services.
+    @State var plantSensorService = PlantSensorService()
+
     init(plant: Plant) {
         self.plant = plant
         _editedPlant = State(initialValue: plant)
@@ -46,6 +50,7 @@ struct PlantDetailSheet: View {
                             viewFields
                             generalInfoCard
                             botanicalProfileCard
+                            careCard
                             photoAlbumCard
                             waterButton
                         }
@@ -60,6 +65,7 @@ struct PlantDetailSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await photoService.load(plantId: plant.id) }
             .task { await speciesService.loadAll() }
+            .task { await plantSensorService.load(plantId: plant.id) }
             .sheet(isPresented: $showSpeciesPicker) {
                 PlantSpeciesPickerView(service: speciesService) { picked in
                     Task { await plantService.linkSpecies(picked.id, for: plant) }
