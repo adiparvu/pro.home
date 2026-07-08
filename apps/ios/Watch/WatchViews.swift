@@ -110,38 +110,56 @@ struct WatchRootView: View {
         return (payload.pageOrder ?? defaultOrder).filter { seen.insert($0).inserted }
     }
 
+    /// Advertising an NSUserActivity whose type isn't declared in the
+    /// built Info.plist throws NSInternalInconsistencyException at first
+    /// render on a real watch ("opens and instantly exits"). The plist now
+    /// declares it, and this runtime check makes the crash impossible even
+    /// if a build configuration ever drops the key again.
+    private static let handoffDeclared: Bool =
+        (Bundle.main.object(forInfoDictionaryKey: "NSUserActivityTypes") as? [String])?
+            .contains("com.prvio.page") == true
+
     var body: some View {
         if let payload = store.payload {
-            TabView(selection: $selection) {
-                TodayGlance(payload: payload, selection: $selection)
-                    .tag(WatchPage.today)
-                // The owner's pages, in the owner's order (chosen on the
-                // iPhone). Data-gating stays: an enabled page with nothing
-                // to show still steps aside.
-                ForEach(Self.orderedPages(payload), id: \.self) { key in
-                    page(for: key, payload: payload)
+            pages(payload)
+                .tabViewStyle(.verticalPage)
+                .onOpenURL { url in
+                    // Complication taps: prvio://tasks, prvio://plants, …
+                    switch url.host {
+                    case "tasks":                  selection = .tasks
+                    case "plants":                 selection = .plants
+                    case "shopping", "supplies":   selection = .shopping
+                    case "pantry":                 selection = .pantry
+                    case "deliveries", "packages": selection = .deliveries
+                    default:                       selection = .today
+                    }
                 }
+        } else {
+            waiting
+        }
+    }
+
+    @ViewBuilder
+    private func pages(_ payload: WatchPayload) -> some View {
+        let tabs = TabView(selection: $selection) {
+            TodayGlance(payload: payload, selection: $selection)
+                .tag(WatchPage.today)
+            // The owner's pages, in the owner's order (chosen on the
+            // iPhone). Data-gating stays: an enabled page with nothing
+            // to show still steps aside.
+            ForEach(Self.orderedPages(payload), id: \.self) { key in
+                page(for: key, payload: payload)
             }
-            .tabViewStyle(.verticalPage)
+        }
+        if Self.handoffDeclared {
             // Handoff: raise the iPhone and land on the page you were
             // reading here — the phone router already speaks this activity.
-            .userActivity("com.prvio.page") { activity in
+            tabs.userActivity("com.prvio.page") { activity in
                 activity.isEligibleForHandoff = true
                 activity.userInfo = ["tab": Self.handoffKey(for: selection)]
             }
-            .onOpenURL { url in
-                // Complication taps: prvio://tasks, prvio://plants, …
-                switch url.host {
-                case "tasks":                  selection = .tasks
-                case "plants":                 selection = .plants
-                case "shopping", "supplies":   selection = .shopping
-                case "pantry":                 selection = .pantry
-                case "deliveries", "packages": selection = .deliveries
-                default:                       selection = .today
-                }
-            }
         } else {
-            waiting
+            tabs
         }
     }
 

@@ -121,7 +121,7 @@ struct DocumentsView: View {
         .navigationTitle("Documents")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $search,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search documents..."))
         .floatingSpeedDial(.documents)
         .toolbar {

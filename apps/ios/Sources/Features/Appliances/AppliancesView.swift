@@ -41,7 +41,7 @@ struct AppliancesView: View {
         .navigationTitle("Appliances")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $search,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search appliances…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

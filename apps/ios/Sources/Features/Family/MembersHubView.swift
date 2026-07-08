@@ -40,7 +40,10 @@ struct MembersHubView: View {
         }
     }
 
-    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child", "tenant"]
+    // Tenants are NOT family — they belong to the Tenants page and to the
+    // "others" section here (tenants, workers, friends), never to the
+    // family list.
+    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child"]
 
     private var familyMembers: [FamilyMember] {
         familyService.members.filter { Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }

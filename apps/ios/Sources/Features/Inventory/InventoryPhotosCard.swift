@@ -18,7 +18,6 @@ struct InventoryPhotosCard: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var refresh = 0
     @State private var fullscreen: GalleryPhoto? = nil
-    @Namespace private var zoomNamespace
 
     var body: some View {
         let _ = refresh
@@ -53,8 +52,7 @@ struct InventoryPhotosCard: View {
             galleryViewer(photo)
                 // Photos-style hero: the image grows out of its thumbnail
                 // (iOS 18); older systems keep the plain cover.
-                .zoomTransition(sourceID: photo.id, in: zoomNamespace)
-        }
+                        }
         .onChange(of: pickerItems) { _, newItems in
             guard !newItems.isEmpty else { return }
             Task {
@@ -77,8 +75,7 @@ struct InventoryPhotosCard: View {
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFill()
-                    .zoomTransitionSource(id: photo.id, in: zoomNamespace)
-                    .frame(width: 84, height: 84)
+                                        .frame(width: 84, height: 84)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(.plain)
