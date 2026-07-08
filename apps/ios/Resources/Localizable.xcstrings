@@ -55981,6 +55981,1485 @@
           }
         }
       }
+    },
+    "guide_examples" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For example"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De exemplu"
+          }
+        }
+      }
+    },
+    "guide_info_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How does this work?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum funcționează?"
+          }
+        }
+      }
+    },
+    "iot_tab_controllers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controllers"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlere"
+          }
+        }
+      }
+    },
+    "iot_tab_sensors" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensors"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzori"
+          }
+        }
+      }
+    },
+    "iot_tab_automations" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automations"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatizări"
+          }
+        }
+      }
+    },
+    "No sensors yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sensors yet"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niciun senzor încă"
+          }
+        }
+      }
+    },
+    "Sensors are auto-discovered when a controller polls. You can also add them manually." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensors are auto-discovered when a controller polls. You can also add them manually."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzorii sunt descoperiți automat când un controler este interogat. Îi poți adăuga și manual."
+          }
+        }
+      }
+    },
+    "Create IF/THEN rules: when a sensor exceeds a threshold, send a notification, create a task or call a webhook." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create IF/THEN rules: when a sensor exceeds a threshold, send a notification, create a task or call a webhook."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creează reguli DACĂ/ATUNCI: când un senzor depășește un prag, trimite o notificare, creează o sarcină sau apelează un webhook."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controllers"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlere"
+          }
+        }
+      }
+    },
+    "iotg_ctrl_intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controllers are the smart little boxes in your home. PRVIO talks to them directly over your home network, so you can watch and command everything from one place."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlerele sunt cutiuțele inteligente din casa ta. PRVIO vorbește cu ele direct prin rețeaua casei, ca să vezi și să comanzi totul dintr-un singur loc."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_what_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is a controller?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce este un controler?"
+          }
+        }
+      }
+    },
+    "iotg_ctrl_what_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A controller is a small device connected to your home network that measures something (temperature, power) or commands something (a plug, a gate). PRVIO asks it from time to time: “what are your values?” — and can tell it: “turn on!” or “turn off!”."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un controler este un aparat mic conectat la rețeaua casei, care măsoară ceva (temperatură, curent) sau comandă ceva (o priză, o poartă). PRVIO îl întreabă din când în când: „ce valori ai?\" — și îi poate spune: „pornește!\" sau „oprește!\"."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_what_e1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Wi‑Fi relay (e.g. Shelly) that switches a plug or a light on and off."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un releu Wi‑Fi (de ex. Shelly) care pornește și oprește o priză sau o lumină."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_what_e2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your solar inverter or an energy meter, read over Modbus."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invertorul panourilor solare sau un contor de energie, citit prin Modbus."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_what_e3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The gate or garage motor, reporting whether it is open or closed."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motorul porții sau al garajului, care raportează dacă e deschis sau închis."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to add a controller"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum adaugi un controler"
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect the device to your home network (Wi‑Fi or cable), following its own instructions."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectează aparatul la rețeaua casei (Wi‑Fi sau cablu), după instrucțiunile lui."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find its IP address — in your router’s app or the manufacturer’s app. It looks like 192.168.1.50."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Află adresa lui IP — o găsești în aplicația routerului sau în aplicația producătorului. Arată ca 192.168.1.50."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In PRVIO tap +, pick the right type (HTTP for most devices, Modbus for meters and inverters) and type the IP address and port."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "În PRVIO apasă +, alege tipul potrivit (HTTP pentru majoritatea, Modbus pentru contoare și invertoare) și scrie adresa IP și portul."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_s4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap “Poll” — PRVIO reads the device’s sensors by itself and adds them to your list."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă „Interoghează\" — PRVIO citește singur senzorii aparatului și îi adaugă în lista ta."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_add_n" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your phone and the controller must be on the SAME network — you cannot read it directly from the street or from work."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefonul și controlerul trebuie să fie în ACEEAȘI rețea — de pe stradă sau de la serviciu nu îl poți citi direct."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_poll_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How values are read"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum se citesc valorile"
+          }
+        }
+      }
+    },
+    "iotg_ctrl_poll_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While this page is open, PRVIO asks your controllers every few seconds and refreshes the values. You can request an instant reading any time with the refresh button at the top."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cât timp ții pagina deschisă, PRVIO întreabă controlerele la câteva secunde și împrospătează valorile. Poți cere oricând o citire imediată cu butonul de reîmprospătare de sus."
+          }
+        }
+      }
+    },
+    "iotg_ctrl_sec_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safety"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguranța"
+          }
+        }
+      }
+    },
+    "iotg_ctrl_sec_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controller passwords stay ONLY on this phone, in Apple’s secure Keychain. They never travel to the server and never appear in chat."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parolele controlerelor rămân DOAR pe acest telefon, în Keychain-ul securizat Apple. Nu pleacă niciodată spre server și nu se văd în chat."
+          }
+        }
+      }
+    },
+    "iotg_sens_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensors"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzori"
+          }
+        }
+      }
+    },
+    "iotg_sens_intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensors are your home’s “senses”: each sensor is one measured value you can watch live and build automations on."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzorii sunt „simțurile\" casei: fiecare senzor e o singură valoare măsurată, pe care o vezi live și pe care poți construi automatizări."
+          }
+        }
+      }
+    },
+    "iotg_sens_what_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is a sensor?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce este un senzor?"
+          }
+        }
+      }
+    },
+    "iotg_sens_what_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sensor means one measured thing: a temperature, a humidity, a power draw, an open/closed state. One controller can have many sensors."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un senzor înseamnă un singur lucru măsurat: o temperatură, o umiditate, un consum de curent, o stare deschis/închis. Un singur controler poate avea mai mulți senzori."
+          }
+        }
+      }
+    },
+    "iotg_sens_what_e1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Greenhouse temperature: 24°C”"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Temperatura din seră: 24°C\""
+          }
+        }
+      }
+    },
+    "iotg_sens_what_e2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Boiler plug power: 1,200 W”"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Consumul prizei de la boiler: 1.200 W\""
+          }
+        }
+      }
+    },
+    "iotg_sens_what_e3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Gate: closed”"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Poarta: închisă\""
+          }
+        }
+      }
+    },
+    "iotg_sens_auto_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic discovery"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descoperire automată"
+          }
+        }
+      }
+    },
+    "iotg_sens_auto_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the controller first (see the Controllers tab)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adaugă întâi controlerul (vezi fila Controlere)."
+          }
+        }
+      }
+    },
+    "iotg_sens_auto_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the refresh button — PRVIO polls the device."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă butonul de reîmprospătare — PRVIO interoghează aparatul."
+          }
+        }
+      }
+    },
+    "iotg_sens_auto_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sensors it finds appear in the list by themselves, with their live values."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzorii găsiți apar singuri în listă, cu valorile lor live."
+          }
+        }
+      }
+    },
+    "iotg_sens_man_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding one manually"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adăugare manuală"
+          }
+        }
+      }
+    },
+    "iotg_sens_man_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap + on the Sensors tab."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă + în fila Senzori."
+          }
+        }
+      }
+    },
+    "iotg_sens_man_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the controller it belongs to and give it a clear name (e.g. “Greenhouse temperature”)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alege controlerul de care aparține și dă-i un nume clar (de ex. „Temperatură seră\")."
+          }
+        }
+      }
+    },
+    "iotg_sens_man_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell PRVIO where the value lives in the device’s reply and what unit it is measured in."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spune-i lui PRVIO unde găsește valoarea în răspunsul aparatului și în ce unitate se măsoară."
+          }
+        }
+      }
+    },
+    "iotg_sens_energy_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home energy (solar)"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Energia casei (solar)"
+          }
+        }
+      }
+    },
+    "iotg_sens_energy_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark the power sensors that PRODUCE energy (your solar panels) as “production”. PRVIO adds up production and consumption separately and shows you the live balance — including on the energy island in the Dynamic Island."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marchează senzorii de putere care PRODUC energie (panourile solare) ca „producție\". PRVIO adună separat producția și consumul și îți arată bilanțul live — inclusiv pe insula de energie din Dynamic Island."
+          }
+        }
+      }
+    },
+    "iotg_sens_energy_n" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without a sensor marked as production, the energy card only shows consumption."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fără un senzor marcat ca producție, cardul de energie arată doar consumul."
+          }
+        }
+      }
+    },
+    "iotg_auto_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automations"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatizări"
+          }
+        }
+      }
+    },
+    "iotg_auto_intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An automation is a simple rule: “IF something happens, THEN do something”. You write it once and your home follows it forever."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O automatizare e o regulă simplă: „DACĂ se întâmplă ceva, ATUNCI fă ceva\". O scrii o singură dată, iar casa o respectă mereu."
+          }
+        }
+      }
+    },
+    "iotg_auto_what_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is an automation?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce este o automatizare?"
+          }
+        }
+      }
+    },
+    "iotg_auto_what_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every automation has two parts: the condition (a sensor goes above or below a threshold you choose) and the action (what PRVIO should do at that moment)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fiecare automatizare are două părți: condiția (un senzor trece peste sau sub un prag ales de tine) și acțiunea (ce vrei să facă PRVIO în acel moment)."
+          }
+        }
+      }
+    },
+    "iotg_auto_what_e1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IF the greenhouse goes over 30°C → you get an alert on your phone."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DACĂ temperatura din seră trece de 30°C → primești o alertă pe telefon."
+          }
+        }
+      }
+    },
+    "iotg_auto_what_e2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IF soil humidity drops under 20% → PRVIO creates the task “Water the plants”."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DACĂ umiditatea solului scade sub 20% → PRVIO creează sarcina „Udă plantele\"."
+          }
+        }
+      }
+    },
+    "iotg_auto_what_e3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IF the gate stays open → the alarm rings on your Lock Screen."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DACĂ poarta rămâne deschisă → sună alarma pe ecranul blocat."
+          }
+        }
+      }
+    },
+    "iotg_auto_make_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to create one"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum creezi o automatizare"
+          }
+        }
+      }
+    },
+    "iotg_auto_make_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You need at least one sensor (see the Sensors tab)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ai nevoie de cel puțin un senzor (vezi fila Senzori)."
+          }
+        }
+      }
+    },
+    "iotg_auto_make_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap + on the Automations tab."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă + în fila Automatizări."
+          }
+        }
+      }
+    },
+    "iotg_auto_make_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the sensor and the threshold: “above” or “below” a value."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alege senzorul și pragul: „peste\" sau „sub\" o valoare."
+          }
+        }
+      }
+    },
+    "iotg_auto_make_s4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the action: notification, task, webhook or phone alert."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alege acțiunea: notificare, sarcină, webhook sau alertă pe telefon."
+          }
+        }
+      }
+    },
+    "iotg_auto_make_s5" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save it. The rule runs on every sensor reading; you can pause it any time from the list."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salveaz-o. Regula rulează la fiecare citire a senzorului; o poți opri oricând din listă."
+          }
+        }
+      }
+    },
+    "iotg_auto_act_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The actions you can pick"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce acțiuni există"
+          }
+        }
+      }
+    },
+    "iotg_auto_act_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four kinds of “THEN”, from the gentlest to the loudest:"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Patru feluri de „ATUNCI\", de la cel mai blând la cel mai zgomotos:"
+          }
+        }
+      }
+    },
+    "iotg_auto_act_e1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification — a message in your home’s notification center."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificare — un mesaj în centrul de notificări al casei."
+          }
+        }
+      }
+    },
+    "iotg_auto_act_e2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task — appears automatically in the task list, with your title."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sarcină — apare automat în lista de sarcini, cu titlul tău."
+          }
+        }
+      }
+    },
+    "iotg_auto_act_e3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webhook — PRVIO calls a web address you choose (for other systems)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webhook — PRVIO apelează o adresă web aleasă de tine (pentru alte sisteme)."
+          }
+        }
+      }
+    },
+    "iotg_auto_act_e4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone alert — an urgent alarm on the Dynamic Island and the Lock Screen."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertă pe telefon — alarmă urgentă pe Dynamic Island și pe ecranul blocat."
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerts with the phone locked"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerte cu telefonul blocat"
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your controller can send alarms straight to your phone, even with PRVIO closed. To do that, the controller sends a message to your home’s personal web address."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlerul poate trimite alarme direct pe telefon, chiar dacă PRVIO e închis. Pentru asta, controlerul trimite un mesaj către o adresă web personală a casei tale."
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap “Copy webhook URL” on the card at the top."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă „Copiază URL-ul webhook\" de pe cardul de sus."
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste the address into your controller’s or system’s settings (under “webhook on alarm”)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lipește adresa în setările controlerului sau ale sistemului tău (la „webhook la alarmă\")."
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On an alarm, the phone shows it on the Dynamic Island and the Lock Screen."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La alarmă, telefonul o arată pe Dynamic Island și pe ecranul blocat."
+          }
+        }
+      }
+    },
+    "iotg_auto_phone_n" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For alerts to arrive with the app closed, the server account needs its notification keys (APNs) configured — a one-time setup."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ca alertele să sosească și cu aplicația închisă, contul de server trebuie să aibă cheile de notificări (APNs) configurate — o setare unică, făcută o singură dată."
+          }
+        }
+      }
+    },
+    "iotg_intg_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom integrations"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrări personalizate"
+          }
+        }
+      }
+    },
+    "iotg_intg_intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anything outside your home — a script, an alarm panel, Home Assistant, a bot — can post messages straight into your house chat, each with its own key."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orice serviciu din afara casei — un script, o alarmă, Home Assistant, un robot — poate trimite mesaje direct în chatul casei tale, fiecare cu cheia lui proprie."
+          }
+        }
+      }
+    },
+    "iotg_intg_what_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is an integration?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce este o integrare?"
+          }
+        }
+      }
+    },
+    "iotg_intg_what_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An integration is like a guest with a badge: you give it a name and a secret key of its own. When it wants to say something, it sends the message to your home’s web address together with the key — and the message shows up in chat."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O integrare este ca un musafir cu ecuson: îi dai un nume și o cheie secretă doar a lui. Când vrea să spună ceva, trimite mesajul la adresa web a casei împreună cu cheia — și mesajul apare în chat."
+          }
+        }
+      }
+    },
+    "iotg_intg_what_e1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The house alarm writes in chat: “Motion detected in the yard”."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarma casei scrie în chat: „Mișcare detectată în curte\"."
+          }
+        }
+      }
+    },
+    "iotg_intg_what_e2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Raspberry Pi script announces: “Backup finished successfully”."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un script de pe Raspberry Pi anunță: „Backup terminat cu succes\"."
+          }
+        }
+      }
+    },
+    "iotg_intg_what_e3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Assistant sends: “The washing machine is done”."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Assistant trimite: „Mașina de spălat a terminat\"."
+          }
+        }
+      }
+    },
+    "iotg_intg_add_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to add one"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum adaugi o integrare"
+          }
+        }
+      }
+    },
+    "iotg_intg_add_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap “Add integration” and give it a clear name (e.g. “Yard alarm”)."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apasă „Adaugă integrare\" și dă-i un nume clar (de ex. „Alarmă curte\")."
+          }
+        }
+      }
+    },
+    "iotg_intg_add_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick an icon and a colour so you recognise it in chat."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alege o iconiță și o culoare, ca să o recunoști în chat."
+          }
+        }
+      }
+    },
+    "iotg_intg_add_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the secret key it shows you — it is shown in full only once."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiază cheia secretă afișată — se vede întreagă o singură dată."
+          }
+        }
+      }
+    },
+    "iotg_intg_add_s4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put the key and the web address into your external service, following the example on the integration’s page."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pune cheia și adresa web în serviciul tău extern, după exemplul afișat pe pagina integrării."
+          }
+        }
+      }
+    },
+    "iotg_intg_send_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How it sends messages"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cum trimite mesaje"
+          }
+        }
+      }
+    },
+    "iotg_intg_send_b" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your service makes a simple web request (HTTP POST) to the shown address, with its key and the message text. PRVIO checks the key and drops the message into the house chat under the integration’s name."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serviciul tău face o simplă cerere web (HTTP POST) către adresa afișată, cu cheia lui și textul mesajului. PRVIO verifică cheia și pune mesajul în chatul casei, sub numele integrării."
+          }
+        }
+      }
+    },
+    "iotg_intg_send_n" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the key secret! Anyone who has it can write in your house chat. If someone saw it, regenerate it immediately."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Păstrează cheia secretă! Oricine o are poate scrie în chatul casei tale. Dacă a văzut-o cineva, regenereaz-o imediat."
+          }
+        }
+      }
+    },
+    "iotg_intg_sec_t" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full control"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control total"
+          }
+        }
+      }
+    },
+    "iotg_intg_sec_s1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause the integration with its switch — the key stays, but messages stop coming in."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oprește temporar integrarea cu comutatorul — cheia rămâne, dar mesajele nu mai intră."
+          }
+        }
+      }
+    },
+    "iotg_intg_sec_s2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerate the key if you suspect someone saw it — the old one dies instantly."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerează cheia dacă bănuiești că a văzut-o cineva — cea veche moare pe loc."
+          }
+        }
+      }
+    },
+    "iotg_intg_sec_s3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke it for good when you no longer use it."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoc-o definitiv când nu o mai folosești."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

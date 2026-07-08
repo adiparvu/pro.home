@@ -52,6 +52,11 @@ struct CustomIntegrationsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                GuideInfoButton(topic: IoTGuides.integrations)
+            }
+        }
         .task {
             if let pid = propertyId { await service.load(propertyId: pid) }
         }

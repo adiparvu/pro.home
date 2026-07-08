@@ -14,15 +14,28 @@ struct IoTHubView: View {
     @State private var energyPinned = false
     @State private var webhookCopied = false
 
-    enum HubTab: String, CaseIterable {
-        case controllers = "Controllers"
-        case sensors     = "Sensors"
-        case automations = "Automations"
+    enum HubTab: CaseIterable {
+        case controllers, sensors, automations
+        var label: LocalizedStringKey {
+            switch self {
+            case .controllers: return "iot_tab_controllers"
+            case .sensors:     return "iot_tab_sensors"
+            case .automations: return "iot_tab_automations"
+            }
+        }
         var icon: String {
             switch self {
             case .controllers: return "cpu.fill"
             case .sensors:     return "sensor.tag.radiowaves.forward.fill"
             case .automations: return "bolt.badge.automatic.fill"
+            }
+        }
+        /// The deeply detailed "how does this work?" walkthrough per tab.
+        var guide: GuideTopic {
+            switch self {
+            case .controllers: return IoTGuides.controllers
+            case .sensors:     return IoTGuides.sensors
+            case .automations: return IoTGuides.automations
             }
         }
     }
@@ -50,6 +63,7 @@ struct IoTHubView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 14) {
+                    GuideInfoButton(topic: tab.guide)
                     if service.isPolling {
                         ProgressView().tint(Color.accentColor).scaleEffect(0.85)
                     } else {
@@ -103,7 +117,7 @@ struct IoTHubView: View {
                     VStack(spacing: 4) {
                         Image(systemName: t.icon)
                             .font(AppFont.scaled(14, weight: tab == t ? .semibold : .regular))
-                        Text(t.rawValue)
+                        Text(t.label)
                             .font(AppFont.scaled(11, weight: tab == t ? .semibold : .regular))
                     }
                     .foregroundStyle(tab == t ? Color.accentColor : Color.primary.opacity(0.4))
