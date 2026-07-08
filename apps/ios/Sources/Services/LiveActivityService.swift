@@ -270,7 +270,7 @@ final class LiveActivityService {
 
     private func removeActivityToken(activityId: String) async {
         try? await supabase.from("live_activity_tokens")
-            .delete().eq("activity_id", activityId).execute()
+            .delete().eq("activity_id", value: activityId).execute()
     }
 
     // MARK: - Plant care (driven by PlantService.markWatered)
