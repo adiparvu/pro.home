@@ -139,6 +139,9 @@ enum AppDate {
     static let monthDayYear = displayFormatter(template: "yMMMd")
     /// "Jul" / "iul." — chart axis month labels.
     static let monthLabel = displayFormatter(template: "MMM")
+    /// "July 2026" / "iulie 2026" — full month + year, for timeline section
+    /// headers grouped by month.
+    static let monthYear = displayFormatter(template: "yMMMM")
 
     /// Medium date, no time ("Jul 6, 2026") — the standard document/lease style.
     static let medium: DateFormatter = {

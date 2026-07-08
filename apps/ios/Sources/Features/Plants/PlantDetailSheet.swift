@@ -29,6 +29,10 @@ struct PlantDetailSheet: View {
     // and locally, like the other plant-page services.
     @State var plantSensorService = PlantSensorService()
 
+    // Care history timeline (P5). Loaded lazily and locally, like the other
+    // plant-page services; feeds the History surface's quick actions + timeline.
+    @State var eventService = PlantEventService()
+
     init(plant: Plant) {
         self.plant = plant
         _editedPlant = State(initialValue: plant)
@@ -52,6 +56,12 @@ struct PlantDetailSheet: View {
                             botanicalProfileCard
                             careCard
                             photoAlbumCard
+                            PlantHistorySection(
+                                plant: plant,
+                                plantService: plantService,
+                                eventService: eventService,
+                                photoService: photoService
+                            )
                             waterButton
                         }
 
@@ -66,6 +76,7 @@ struct PlantDetailSheet: View {
             .task { await photoService.load(plantId: plant.id) }
             .task { await speciesService.loadAll() }
             .task { await plantSensorService.load(plantId: plant.id) }
+            .task { await eventService.load(plantId: plant.id) }
             .sheet(isPresented: $showSpeciesPicker) {
                 PlantSpeciesPickerView(service: speciesService) { picked in
                     Task { await plantService.linkSpecies(picked.id, for: plant) }
