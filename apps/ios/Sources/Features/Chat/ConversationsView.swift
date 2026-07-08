@@ -766,21 +766,38 @@ struct ConversationsView: View {
     private var filterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                // Selected chip stays a solid pill (the reference's white
+                // "All" — maximum contrast); the resting chips are Liquid
+                // Glass like every other floating control on this screen.
                 ForEach(ConvFilter.allCases, id: \.self) { f in
-                    Button {
-                        HapticFeedback.selection()
-                        withAnimation(.snappy(duration: 0.25)) { filter = f }
-                    } label: {
-                        Text(f.label)
-                            .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(filter == f ? Color(.systemBackground) : Color.primary.opacity(0.65))
-                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
-                            .background(filter == f ? Color.primary : Color.primary.opacity(0.06),
-                                        in: Capsule())
+                    if filter == f {
+                        Button {
+                            HapticFeedback.selection()
+                            withAnimation(.snappy(duration: 0.25)) { filter = f }
+                        } label: {
+                            Text(f.label)
+                                .font(AppFont.footnoteEmphasis)
+                                .foregroundStyle(Color(.systemBackground))
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
+                                .background(Color.primary, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            HapticFeedback.selection()
+                            withAnimation(.snappy(duration: 0.25)) { filter = f }
+                        } label: {
+                            Text(f.label)
+                                .font(AppFont.footnoteEmphasis)
+                                .foregroundStyle(Color.primary.opacity(0.65))
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
+                        }
+                        .buttonStyle(.plain)
+                        .glassCapsule()
                     }
-                    .buttonStyle(.plain)
                 }
-                // Action chip, not a filter: jumps straight to ARIA.
+                // Action chip, not a filter: jumps straight to ARIA — glass
+                // with an indigo wash so it reads as the AI entry point.
                 Button {
                     HapticFeedback.impact(.light)
                     router.navigate(to: .aria)
@@ -789,9 +806,10 @@ struct ConversationsView: View {
                         .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color.brandIndigo)
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
-                        .background(Color.brandIndigo.opacity(0.12), in: Capsule())
+                        .background(Color.brandIndigo.opacity(AppOpacity.tintedFill), in: Capsule())
                 }
                 .buttonStyle(.plain)
+                .glassCapsule()
                 .accessibilityLabel("AI Assistant")
             }
             .padding(.horizontal, AppSpacing.lg)
