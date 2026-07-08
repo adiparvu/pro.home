@@ -139,6 +139,10 @@ final class DocumentService {
             .value
 
         documents.insert(newDoc, at: 0)
+
+        // History (D5): the document was created. Best-effort — never blocks add.
+        await DocumentEventsService.log(documentId: newDoc.id, kind: .created,
+                                        details: ["name": newDoc.name])
     }
 
     func documents(forElement elementId: UUID) -> [DocumentModel] {
@@ -218,6 +222,9 @@ final class DocumentService {
             if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
                 documents[idx] = doc
             }
+            // History (D5): metadata was edited. Best-effort.
+            await DocumentEventsService.log(documentId: doc.id, kind: .edited,
+                                            details: ["name": doc.name])
         } catch {
             self.error = error.localizedDescription
         }

@@ -93,6 +93,7 @@ struct DocumentDetailView: View {
                     fileCard
                     DocumentFilesSection(documentId: doc.id)
                     DocumentRelationsSection(documentId: doc.id)
+                    DocumentHistorySection(documentId: doc.id)
                     richDetailsCard
                     detailsCard
                     Spacer(minLength: 40)
@@ -375,6 +376,8 @@ struct DocumentDetailView: View {
 
     private func open() {
         guard let url = URL(string: live.fileUrl) else { return }
+        // History (D5): opening the primary file is the honest "viewed" moment.
+        Task { await DocumentEventsService.log(documentId: live.id, kind: .viewed) }
         if live.mimeType == "application/pdf" || live.mimeType?.hasPrefix("image/") == true {
             Task {
                 if let data = try? Data(contentsOf: url) {

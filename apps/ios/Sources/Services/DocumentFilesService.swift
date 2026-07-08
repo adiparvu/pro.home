@@ -52,6 +52,9 @@ final class DocumentFilesService {
                                 page_count: pageCount))
                 .select().single().execute().value
             files.insert(row, at: 0)
+            // History (D5): a file was attached. Best-effort.
+            await DocumentEventsService.log(documentId: documentId, kind: .fileAdded,
+                                            details: ["name": safeName])
             return true
         } catch {
             return false
@@ -64,6 +67,9 @@ final class DocumentFilesService {
             try await supabase.from("document_files").delete()
                 .eq("id", value: file.id.uuidString).execute()
             files.removeAll { $0.id == file.id }
+            // History (D5): a file was removed. Best-effort.
+            await DocumentEventsService.log(documentId: file.documentId, kind: .fileRemoved,
+                                            details: ["name": file.name])
         } catch { /* best-effort */ }
     }
 
