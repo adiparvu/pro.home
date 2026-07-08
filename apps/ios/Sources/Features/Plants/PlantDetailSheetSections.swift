@@ -376,6 +376,90 @@ extension PlantDetailSheet {
         }
     }
 
+    // MARK: Botanical profile (P2, view mode)
+    //
+    // Links a plant to its encyclopedia entry. The linked id is read back from
+    // `plantService` (not the immutable `plant` snapshot) so linking/unlinking
+    // updates the card live; the catalog itself comes from the locally loaded
+    // `speciesService`.
+
+    @ViewBuilder
+    var botanicalProfileCard: some View {
+        let currentId = plantService.plants.first(where: { $0.id == plant.id })?.speciesId ?? plant.speciesId
+        let entry = speciesService.species(id: currentId)
+
+        GlassCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("plant_bot_title", systemImage: "book.closed")
+                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    Spacer()
+                    if currentId != nil {
+                        Menu {
+                            Button { showSpeciesPicker = true } label: {
+                                Label("plant_bot_change", systemImage: "arrow.triangle.2.circlepath")
+                            }
+                            Button(role: .destructive) {
+                                Task { await plantService.linkSpecies(nil, for: plant) }
+                            } label: {
+                                Label("plant_bot_unlink", systemImage: "link.badge.minus")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(AppFont.scaled(18)).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if let entry {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(entry.displayName)
+                            .font(AppFont.scaled(16, weight: .semibold)).foregroundStyle(.primary)
+                        if let latin = entry.latinName, !latin.isEmpty, latin != entry.displayName {
+                            Text(latin).font(AppFont.caption).italic().foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    NavigationLink {
+                        PlantEncyclopediaView(entry: entry)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "book.pages")
+                            Text("plant_bot_view_enc")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
+                        }
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(Color.accentColor)
+                        .contentShape(Rectangle())
+                    }
+                } else if currentId != nil {
+                    HStack(spacing: 8) {
+                        ProgressView().scaleEffect(0.8)
+                        Text("plant_bot_loading").font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text("plant_bot_none")
+                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button { showSpeciesPicker = true } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("plant_bot_link")
+                        }
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     // MARK: Photo album (P1, view mode)
 
     var photoAlbumCard: some View {

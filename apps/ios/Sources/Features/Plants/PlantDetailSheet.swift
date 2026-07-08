@@ -20,6 +20,11 @@ struct PlantDetailSheet: View {
     @State var showAlbumCamera = false
     @State var isUploadingPhoto = false
 
+    // Botanical profile / encyclopedia (P2). Loaded lazily and locally so the
+    // card is self-contained — no app-wide wiring, matching photoService.
+    @State var speciesService = PlantSpeciesService()
+    @State var showSpeciesPicker = false
+
     init(plant: Plant) {
         self.plant = plant
         _editedPlant = State(initialValue: plant)
@@ -40,6 +45,7 @@ struct PlantDetailSheet: View {
                         } else {
                             viewFields
                             generalInfoCard
+                            botanicalProfileCard
                             photoAlbumCard
                             waterButton
                         }
@@ -53,6 +59,12 @@ struct PlantDetailSheet: View {
             .navigationTitle(plant.name)
             .navigationBarTitleDisplayMode(.inline)
             .task { await photoService.load(plantId: plant.id) }
+            .task { await speciesService.loadAll() }
+            .sheet(isPresented: $showSpeciesPicker) {
+                PlantSpeciesPickerView(service: speciesService) { picked in
+                    Task { await plantService.linkSpecies(picked.id, for: plant) }
+                }
+            }
             .fullScreenCover(isPresented: $showAlbumCamera) {
                 CameraCapture { image in Task { await addAlbumPhoto(image) } }
                     .ignoresSafeArea()

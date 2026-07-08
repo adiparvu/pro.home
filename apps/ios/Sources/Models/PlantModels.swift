@@ -31,6 +31,12 @@ struct Plant: Identifiable, Codable, Hashable {
     var toxicKids: Bool = false
     var placement: String?   // indoor / outdoor / both
 
+    // ── Encyclopedia link (migration 124, Plant OS P2) ───────────────────────
+    /// The `plant_species` row this plant links to, if any (its botanical
+    /// profile). Set via `PlantService.linkSpecies`, never through the edit
+    /// form, so a normal update can't accidentally clear it.
+    var speciesId: UUID?
+
     enum CodingKeys: String, CodingKey {
         case id
         case propertyId = "property_id"
@@ -50,6 +56,7 @@ struct Plant: Identifiable, Codable, Hashable {
         case toxicCats        = "toxic_cats"
         case toxicDogs        = "toxic_dogs"
         case toxicKids        = "toxic_kids"
+        case speciesId        = "species_id"
     }
 
     /// The three toxicity flags as an at-a-glance summary.
@@ -298,5 +305,28 @@ struct PlantWateringUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case lastWateredAt = "last_watered_at"
         case updatedAt     = "updated_at"
+    }
+}
+
+/// Links (or unlinks, when nil) a plant to its `plant_species` encyclopedia
+/// entry. Kept separate from `PlantUpdate` so the edit form never touches it
+/// (mirrors `PlantWateringUpdate`).
+struct PlantSpeciesLink: Encodable {
+    let speciesId: UUID?
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case speciesId = "species_id"
+        case updatedAt = "updated_at"
+    }
+
+    /// Explicit encoding so a nil id is written as JSON `null` (clearing the
+    /// column). The synthesized encoder would use `encodeIfPresent` and omit
+    /// the key, which PostgREST reads as "leave unchanged" — the wrong result
+    /// for an unlink.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(speciesId, forKey: .speciesId)
+        try c.encode(updatedAt, forKey: .updatedAt)
     }
 }

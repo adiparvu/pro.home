@@ -62,6 +62,23 @@ final class PlantService {
         } catch { self.error = error.localizedDescription }
     }
 
+    /// Links a plant to (or, with nil, unlinks it from) its `plant_species`
+    /// encyclopedia entry. Mirrors `markWatered`: a focused single-column
+    /// update that leaves every other field untouched.
+    func linkSpecies(_ speciesId: UUID?, for plant: Plant) async {
+        let now = ISO8601DateFormatter().string(from: Date())
+        let upd = PlantSpeciesLink(speciesId: speciesId, updatedAt: now)
+        if let i = plants.firstIndex(where: { $0.id == plant.id }) {
+            plants[i].speciesId = speciesId
+            plants[i].updatedAt = now
+        }
+        do {
+            try await supabase
+                .from("plants").update(upd)
+                .eq("id", value: plant.id.uuidString).execute()
+        } catch { self.error = error.localizedDescription }
+    }
+
     func markWatered(_ plant: Plant) async {
         let neededWater = plant.needsWatering
         let now = ISO8601DateFormatter().string(from: Date())
