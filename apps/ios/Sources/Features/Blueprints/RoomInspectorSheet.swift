@@ -169,14 +169,17 @@ struct RoomInspectorSheet: View {
 
     private func listCard<Content: View>(titleKey: String, count: Int,
                                          @ViewBuilder content: () -> Content) -> some View {
-        GlassCard(padding: 14) {
+        // GlassCard stores its content closure (escaping) — evaluate the
+        // non-escaping builder eagerly and capture the resulting view.
+        let inner = content()
+        return GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(String(format: String(localized: String.LocalizationValue(titleKey)), count))
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.4))
                     .textCase(.uppercase)
                     .kerning(0.5)
-                content()
+                inner
             }
         }
     }
