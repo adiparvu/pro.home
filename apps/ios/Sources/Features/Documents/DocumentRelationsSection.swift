@@ -16,6 +16,9 @@ import Supabase
 
 struct DocumentRelationsSection: View {
     let documentId: UUID
+    /// When the parent document is read-only (D6), linking / unlinking and
+    /// adding / removing related documents are genuinely disabled.
+    var readOnly: Bool = false
 
     @State private var service = DocumentLinksService()
     @Environment(DocumentService.self) private var documentService
@@ -84,7 +87,7 @@ struct DocumentRelationsSection: View {
                     Text("\(service.links.count)")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
-                linkMenu
+                if !readOnly { linkMenu }
             }
             .padding(.leading, AppSpacing.sm)
 
@@ -140,10 +143,14 @@ struct DocumentRelationsSection: View {
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
         .contentShape(Rectangle())
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { pendingLinkDelete = link } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button(role: .destructive) { pendingLinkDelete = link } label: { Label("Delete", systemImage: "trash") }
+            }
         }
         .contextMenu {
-            Button(role: .destructive) { pendingLinkDelete = link } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button(role: .destructive) { pendingLinkDelete = link } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 
@@ -159,8 +166,10 @@ struct DocumentRelationsSection: View {
                     Text("\(relatedRows.count)")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
-                Button { showAddRelated = true } label: { addCapsule("doc_rel_add_related") }
-                    .buttonStyle(.plain)
+                if !readOnly {
+                    Button { showAddRelated = true } label: { addCapsule("doc_rel_add_related") }
+                        .buttonStyle(.plain)
+                }
             }
             .padding(.leading, AppSpacing.sm)
 
@@ -206,10 +215,14 @@ struct DocumentRelationsSection: View {
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { pendingRelatedDelete = row.edge } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button(role: .destructive) { pendingRelatedDelete = row.edge } label: { Label("Delete", systemImage: "trash") }
+            }
         }
         .contextMenu {
-            Button(role: .destructive) { pendingRelatedDelete = row.edge } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button(role: .destructive) { pendingRelatedDelete = row.edge } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 

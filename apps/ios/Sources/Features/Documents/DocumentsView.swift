@@ -18,6 +18,7 @@ struct DocumentsView: View {
     @State private var editDoc: DocumentModel?
     // Bumped when a favorite toggles so the (UserDefaults-backed) filter/badges refresh.
     @State private var favRefresh = 0
+    @State private var showReview = false
 
     private let categories = ["All", "Favorite", "warranty", "contract", "legal", "insurance",
                                "certificate", "manual", "invoice", "permit", "tax", "utility",
@@ -42,10 +43,9 @@ struct DocumentsView: View {
             break
         }
         if !search.isEmpty {
-            docs = docs.filter {
-                $0.name.localizedCaseInsensitiveContains(search) ||
-                $0.category.localizedCaseInsensitiveContains(search)
-            }
+            // Honest search ladder (D6): full-field keyword incl. OCR text +
+            // tags, then synonym-aware RO/EN matching. See DocumentSearch.
+            docs = docs.filter { DocumentSearch.matches($0, query: search) }
         }
         switch sortOrder {
         case .recent:
@@ -72,6 +72,12 @@ struct DocumentsView: View {
         let favs = DocumentFavoritesStore.ids()
         let docs = filtered(favs: favs)
         let expiringCount = documentService.expiringDocs.count
+        // The sweep only feeds the top-of-list banner, so skip its work entirely
+        // while the user is searching or filtering a category.
+        let reviewCount = (selectedCategory == nil && search.isEmpty)
+            ? DocumentValidation.sweep(documentService.documents)
+                .filter { !DocReviewDismissStore.isDismissed($0.id) }.count
+            : 0
 
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
@@ -87,6 +93,9 @@ struct DocumentsView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 12) {
+                            if reviewCount > 0 && selectedCategory == nil && search.isEmpty {
+                                reviewBanner(count: reviewCount)
+                            }
                             if expiringCount > 0 && selectedCategory == nil && search.isEmpty {
                                 expiringBanner
                             }
@@ -96,7 +105,7 @@ struct DocumentsView: View {
                                     doc: doc,
                                     isFavorite: favs.contains(doc.id.uuidString),
                                     isLocked: locked,
-                                    onOpen: { withLockCheck(doc) { selectedDoc = doc } },
+                                    onOpen: { selectedDoc = doc },
                                     onPreview: { withLockCheck(doc) { openDocument(doc) } },
                                     onShare: { withLockCheck(doc) { shareDocument(doc) } },
                                     onDelete: { docToDelete = doc; showDeleteConfirm = true },
@@ -160,6 +169,10 @@ struct DocumentsView: View {
         }
         .sheet(item: $editDoc) { doc in
             EditDocumentSheet(doc: doc) { updated in Task { await documentService.update(updated) } }
+        }
+        .sheet(isPresented: $showReview) {
+            DocumentReviewInboxView(onEdit: { doc in editDoc = doc })
+                .environment(documentService)
         }
         .confirmationDialog("Delete \"\(docToDelete?.name ?? String(localized: "document"))\"?",
                             isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -380,6 +393,39 @@ struct DocumentsView: View {
         case "photo":       return ro ? "Fotografie" : "Photo"
         default:            return ro ? "Altele" : "Other"
         }
+    }
+
+    // MARK: - Review inbox banner (D6)
+
+    private func reviewBanner(count: Int) -> some View {
+        Button {
+            HapticFeedback.selection()
+            showReview = true
+        } label: {
+            GlassCard {
+                HStack(spacing: 12) {
+                    Image(systemName: "checklist")
+                        .foregroundStyle(.blue).font(AppFont.scaled(18))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(count == 1 ? "doc_val_banner_one" : "doc_val_banner_many")
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                        Text("doc_val_banner_sub")
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    }
+                    Spacer()
+                    Text("\(count)")
+                        .font(AppFont.captionEmphasis).monospacedDigit()
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
+                        .background(Color.blue.opacity(0.14), in: Capsule())
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, AppSpacing.xl)
+        .accessibilityLabel(Text("doc_val_banner_many"))
     }
 
     // MARK: - Expiring banner

@@ -12,6 +12,9 @@ import UniformTypeIdentifiers
 
 struct DocumentFilesSection: View {
     let documentId: UUID
+    /// When the parent document is read-only (D6), every add/replace/delete
+    /// affordance in this section is genuinely disabled.
+    var readOnly: Bool = false
 
     @State private var service = DocumentFilesService()
     @State private var previewURL: URL?
@@ -39,7 +42,7 @@ struct DocumentFilesSection: View {
                     Text("\(service.files.count)")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
-                addMenu
+                if !readOnly { addMenu }
             }
             .padding(.leading, AppSpacing.sm)
 
@@ -189,15 +192,21 @@ struct DocumentFilesSection: View {
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .leading) {
-            Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
-                .tint(.blue)
+            if !readOnly {
+                Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
+                    .tint(.blue)
+            }
         }
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
+            }
         }
         .contextMenu {
-            Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
-            Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
+            if !readOnly {
+                Button { beginReplace(file) } label: { Label("doc_ver_replace", systemImage: "arrow.2.squarepath") }
+                Button(role: .destructive) { pendingDelete = file } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 

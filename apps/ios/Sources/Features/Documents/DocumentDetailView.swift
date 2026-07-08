@@ -79,6 +79,14 @@ struct DocumentDetailView: View {
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
     @State private var isFavorite = false
+    // Security (D6): a locked document reveals nothing until Face ID / passcode
+    // succeeds (ChatLock pattern, applied at the screen so every entry path —
+    // list, search, relations — is gated, not just the list tap).
+    @State private var unlocked = false
+    @State private var isUpdatingSecurity = false
+    // Bumped when the (UserDefaults-backed) Face ID lock toggles, so the
+    // Security section re-renders its state.
+    @State private var securityRefresh = 0
     // Calendar (D5): the outcome of the last "Add to Calendar" attempt, surfaced
     // honestly — success only when EventKit actually saved the event.
     @State private var calendarOutcome: CalendarOutcome?
@@ -88,24 +96,40 @@ struct DocumentDetailView: View {
     private var live: DocumentModel { documentService.documents.first { $0.id == doc.id } ?? doc }
     private var tint: Color { documentCategoryColor(live.category) }
 
+    private var isLocked: Bool {
+        let _ = securityRefresh
+        return ItemLockStore.isLocked(doc.id.uuidString, in: .documents)
+    }
+    /// Only the creator may hide a document from the family (owner-only, RLS).
+    private var isOwner: Bool {
+        guard let uid = documentService.currentUserId, let owner = live.uploadedBy else { return false }
+        return uid == owner
+    }
+
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    header
-                    fileCard
-                    DocumentFilesSection(documentId: doc.id)
-                    DocumentRelationsSection(documentId: doc.id)
-                    DocumentHistorySection(documentId: doc.id)
-                    richDetailsCard
-                    detailsCard
-                    Spacer(minLength: 40)
+            if isLocked && !unlocked {
+                lockCover
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        header
+                        fileCard
+                        DocumentFilesSection(documentId: doc.id, readOnly: live.isReadOnly)
+                        DocumentRelationsSection(documentId: doc.id, readOnly: live.isReadOnly)
+                        DocumentHistorySection(documentId: doc.id)
+                        richDetailsCard
+                        securityCard
+                        detailsCard
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
-                .padding(.horizontal, AppSpacing.xl)
-                .padding(.top, AppSpacing.sm)
             }
         }
+        .task(id: doc.id) { await gateIfNeeded() }
         .navigationTitle("").navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -169,6 +193,148 @@ struct DocumentDetailView: View {
         }
     }
 
+    // MARK: Lock gate (D6 — ChatLock pattern at the screen)
+
+    private var lockCover: some View {
+        VStack(spacing: AppSpacing.lg) {
+            ZStack {
+                Circle().fill(Color.teal.opacity(0.15)).frame(width: 92, height: 92)
+                Image(systemName: "lock.fill")
+                    .font(AppFont.scaled(36, weight: .semibold)).foregroundStyle(.teal)
+            }
+            Text(live.name)
+                .font(AppFont.title3).foregroundStyle(.primary)
+                .multilineTextAlignment(.center).lineLimit(2)
+            Text("doc_lock_required")
+                .font(AppFont.footnote).foregroundStyle(Color.secondaryTextColor)
+                .multilineTextAlignment(.center)
+            Button {
+                HapticFeedback.selection()
+                Task { await authenticate() }
+            } label: {
+                Label("doc_lock_unlock", systemImage: "faceid")
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(.white)
+                    .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
+                    .background(Color.teal, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, AppSpacing.sm)
+        }
+        .padding(AppSpacing.xxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func gateIfNeeded() async {
+        guard isLocked, !unlocked else { return }
+        await authenticate()
+    }
+
+    private func authenticate() async {
+        let ok = await PrivacyAuth.authenticate(
+            reason: String(localized: "Unlock \"\(live.name)\""))
+        if ok { await MainActor.run { withAnimation(.smooth) { unlocked = true } } }
+    }
+
+    // MARK: Security (D6)
+
+    private var securityCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.shield.fill")
+                    .font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.teal)
+                Text("doc_sec_security").font(AppFont.captionStrong)
+                    .textCase(.uppercase).foregroundStyle(.secondary)
+            }
+            .padding(.leading, AppSpacing.sm)
+            GlassCard {
+                VStack(spacing: 0) {
+                    securityToggle(icon: isLocked ? "lock.fill" : "lock", tint: .teal,
+                                   title: "doc_sec_lock", subtitle: "doc_sec_lock_hint",
+                                   isOn: faceIDBinding)
+                    div
+                    securityToggle(icon: "pencil.slash", tint: .orange,
+                                   title: "doc_sec_readonly", subtitle: "doc_sec_readonly_hint",
+                                   isOn: readOnlyBinding, disabled: isUpdatingSecurity)
+                    if isOwner {
+                        div
+                        securityToggle(icon: "eye.slash.fill", tint: .indigo,
+                                       title: "doc_sec_hide", subtitle: "doc_sec_hide_hint",
+                                       isOn: hiddenBinding, disabled: isUpdatingSecurity)
+                    }
+                }
+            }
+        }
+    }
+
+    private func securityToggle(icon: String, tint: Color,
+                                title: LocalizedStringKey, subtitle: LocalizedStringKey,
+                                isOn: Binding<Bool>, disabled: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(AppFont.scaled(15)).foregroundStyle(tint).frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(AppFont.scaled(14, weight: .medium)).foregroundStyle(.primary)
+                Text(subtitle).font(AppFont.scaled(11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            Spacer()
+            Toggle("", isOn: isOn).labelsHidden().tint(tint).disabled(disabled)
+        }
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Face ID lock: turning it on is free; turning it off requires auth.
+    private var faceIDBinding: Binding<Bool> {
+        Binding(
+            get: { isLocked },
+            set: { newValue in
+                let id = doc.id.uuidString
+                if newValue {
+                    ItemLockStore.setLocked(id, in: .documents, true)
+                    HapticFeedback.success()
+                    securityRefresh += 1
+                } else {
+                    let name = doc.name
+                    Task {
+                        if await PrivacyAuth.authenticate(
+                            reason: String(localized: "Remove lock from \"\(name)\"")) {
+                            await MainActor.run {
+                                ItemLockStore.setLocked(id, in: .documents, false)
+                                HapticFeedback.success()
+                                securityRefresh += 1
+                            }
+                        }
+                    }
+                }
+            })
+    }
+
+    private var readOnlyBinding: Binding<Bool> {
+        Binding(
+            get: { live.isReadOnly },
+            set: { newValue in
+                let target = doc
+                Task {
+                    await MainActor.run { isUpdatingSecurity = true }
+                    await documentService.setReadOnly(newValue, for: target)
+                    await MainActor.run { isUpdatingSecurity = false; HapticFeedback.success() }
+                }
+            })
+    }
+
+    private var hiddenBinding: Binding<Bool> {
+        Binding(
+            get: { live.isHiddenFromFamily },
+            set: { newValue in
+                let target = doc
+                Task {
+                    await MainActor.run { isUpdatingSecurity = true }
+                    await documentService.setHiddenFromFamily(newValue, for: target)
+                    await MainActor.run { isUpdatingSecurity = false; HapticFeedback.success() }
+                }
+            })
+    }
+
     // MARK: Header
 
     private var header: some View {
@@ -198,6 +364,8 @@ struct DocumentDetailView: View {
                     .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
                     .background(.red.opacity(0.5), in: Capsule())
                 }
+                if live.isReadOnly { headerBadge("pencil.slash", "doc_badge_readonly") }
+                if live.isHiddenFromFamily { headerBadge("eye.slash.fill", "doc_badge_hidden") }
             }
         }
         .frame(maxWidth: .infinity)
@@ -212,6 +380,16 @@ struct DocumentDetailView: View {
                     .strokeBorder(.white.opacity(0.10), lineWidth: 0.5))
         )
         .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
+    }
+
+    private func headerBadge(_ icon: String, _ title: LocalizedStringKey) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(AppFont.scaled(10))
+            Text(title).font(AppFont.caption)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
+        .background(.white.opacity(0.18), in: Capsule())
     }
 
     // MARK: File card + primary actions
@@ -432,18 +610,21 @@ struct DocumentDetailView: View {
                         Text("Delete document").font(AppFont.scaled(14))
                         Spacer()
                     }
-                    .foregroundStyle(.red)
+                    .foregroundStyle(live.isReadOnly ? Color.red.opacity(AppOpacity.disabled) : .red)
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                 }
                 .buttonStyle(.plain)
+                .disabled(live.isReadOnly)
             }
         }
         .overlay(alignment: .topTrailing) {
             Button { showEdit = true } label: {
-                Text("Edit").font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
+                Text("Edit").font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(live.isReadOnly ? Color.accentColor.opacity(AppOpacity.disabled) : Color.accentColor)
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, 6)
             }
             .padding(6)
+            .disabled(live.isReadOnly)
         }
     }
 

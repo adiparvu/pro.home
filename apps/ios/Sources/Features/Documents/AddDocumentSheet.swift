@@ -31,6 +31,9 @@ struct AddDocumentSheet: View {
     /// user checks the extraction before saving (nothing is trusted silently).
     @State private var prefillLabels: [String] = []
     @State private var categoryTouched = false
+    /// Recognized text accumulated across scans/photos, persisted with the
+    /// document so keyword search (D6) can honestly include OCR content.
+    @State private var ocrText = ""
     /// The category we last set from OCR, so the picker's onChange can tell a
     /// user's pick from our own programmatic one and stop auto-switching.
     @State private var autoCategory = "contract"
@@ -176,6 +179,10 @@ struct AddDocumentSheet: View {
     /// picked one themselves.
     private func applyPrefill(from lines: [String]) {
         guard !lines.isEmpty else { return }
+        // Keep the raw recognized text for search — nothing here is shown to the
+        // user or trusted silently; the review banner still governs the form.
+        let joined = lines.joined(separator: "\n")
+        ocrText = ocrText.isEmpty ? joined : ocrText + "\n" + joined
         let prefill = DocumentOCR.extract(from: lines)
         if !categoryTouched, let cat = prefill.suggestedCategory,
            categories.contains(cat), cat != category {
@@ -328,6 +335,7 @@ struct AddDocumentSheet: View {
                 expiresAt: fields.dateString(.expiresAt),
                 isCritical: DocPriority.isCritical(fields.priority),
                 sharedMemberIds: sharedMemberIds,
+                ocrText: ocrText.isEmpty ? nil : ocrText,
                 extra: extra
             )
             HapticFeedback.success()

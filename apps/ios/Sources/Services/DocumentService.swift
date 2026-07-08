@@ -40,6 +40,7 @@ final class DocumentService {
         expiresAt: String?,
         isCritical: Bool,
         sharedMemberIds: [String] = [],
+        ocrText: String? = nil,
         extra: DocumentExtra = DocumentExtra()
     ) async throws {
         guard let userId = supabase.auth.currentSession?.user.id else {
@@ -92,6 +93,9 @@ final class DocumentService {
             let currency: String?
             let vat: Double?
             let recurrence: String?
+            // D6: creator (for hide-from-family ownership) + OCR text (search).
+            let uploaded_by: String
+            let ocr_text: String?
         }
 
         let payload = DocInsert(
@@ -127,7 +131,9 @@ final class DocumentService {
             value: extra.value,
             currency: extra.currency,
             vat: extra.vat,
-            recurrence: extra.recurrence
+            recurrence: extra.recurrence,
+            uploaded_by: userId.uuidString,
+            ocr_text: ocrText
         )
 
         let newDoc: DocumentModel = try await supabase
@@ -225,6 +231,52 @@ final class DocumentService {
             // History (D5): metadata was edited. Best-effort.
             await DocumentEventsService.log(documentId: doc.id, kind: .edited,
                                             details: ["name": doc.name])
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    // MARK: - Per-document security (D6)
+
+    /// The signed-in user's id string — used to decide who owns a document
+    /// (only the owner may hide it from the family).
+    var currentUserId: String? { supabase.auth.currentSession?.user.id.uuidString }
+
+    /// Toggle the read-only lock. Sends ONLY `read_only`, so the DB guard
+    /// trigger (migration 132) always permits it even while the row is locked.
+    func setReadOnly(_ value: Bool, for doc: DocumentModel) async {
+        struct Upd: Encodable { let read_only: Bool }
+        do {
+            try await supabase
+                .from("documents")
+                .update(Upd(read_only: value))
+                .eq("id", value: doc.id.uuidString)
+                .execute()
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx].readOnly = value
+            }
+            await DocumentEventsService.log(documentId: doc.id, kind: .edited,
+                                            details: ["read_only": value ? "on" : "off"])
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Toggle owner-only visibility. Enforced by RLS at the database — a hidden
+    /// document simply stops appearing for everyone but its creator.
+    func setHiddenFromFamily(_ value: Bool, for doc: DocumentModel) async {
+        struct Upd: Encodable { let hidden_from_family: Bool }
+        do {
+            try await supabase
+                .from("documents")
+                .update(Upd(hidden_from_family: value))
+                .eq("id", value: doc.id.uuidString)
+                .execute()
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx].hiddenFromFamily = value
+            }
+            await DocumentEventsService.log(documentId: doc.id, kind: .edited,
+                                            details: ["hidden_from_family": value ? "on" : "off"])
         } catch {
             self.error = error.localizedDescription
         }

@@ -147,6 +147,23 @@ enum DocumentCategorySchema {
         }
     }
 
+    /// The fields a category is expected to carry for a record to count as
+    /// "complete" — drives the D6 validation sweep's incomplete check. Kept
+    /// deliberately conservative: only fields a user would clearly expect on
+    /// that document type, so the review inbox never nags about optional data.
+    static func requiredFields(for category: String) -> [DocField] {
+        switch category {
+        case "contract":    return [.issuerCompany, .expiresAt]
+        case "invoice":     return [.issuerCompany, .value, .issuedAt]
+        case "warranty":    return [.issuerCompany, .expiresAt]
+        case "insurance":   return [.policyNumber, .issuerCompany, .expiresAt]
+        case "utility":     return [.issuerCompany, .value]
+        case "tax":         return [.docNumber, .expiresAt]
+        case "legal", "permit", "certificate": return [.docNumber, .expiresAt]
+        default:            return []   // manual, photo, other — nothing required
+        }
+    }
+
     private static func dates(_ f: [DocField]) -> DocSection {
         DocSection(titleKey: "doc_sec_dates", icon: "calendar", color: .orange, fields: f)
     }

@@ -89,6 +89,13 @@ struct DocumentModel: Identifiable, Codable, Hashable {
     var vat: Double?
     var recurrence: String?              // one-off/monthly/quarterly/yearly
 
+    // ── Security + search (migration 132, phase D6) ──────────────────────────
+    // All optional so pre-132 rows and older cached JSON decode unchanged.
+    var readOnly: Bool?                  // read-only lock (client + DB guard)
+    var hiddenFromFamily: Bool?          // owner-only visibility (RLS)
+    var uploadedBy: String?              // profiles.id of the creator (= auth uid)
+    var ocrText: String?                 // recognized text, for keyword search
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, category, tags, series, barcode, value, vat, priority, recurrence, currency
         case propertyId  = "property_id"
@@ -116,7 +123,15 @@ struct DocumentModel: Identifiable, Codable, Hashable {
         case clientCode    = "client_code"
         case fiscalCode    = "fiscal_code"
         case policyNumber  = "policy_number"
+        case readOnly          = "read_only"
+        case hiddenFromFamily  = "hidden_from_family"
+        case uploadedBy        = "uploaded_by"
+        case ocrText           = "ocr_text"
     }
+
+    /// Non-optional views over the D6 security flags.
+    var isReadOnly: Bool { readOnly ?? false }
+    var isHiddenFromFamily: Bool { hiddenFromFamily ?? false }
 
     var categoryIcon: String {
         switch category {
