@@ -4,6 +4,7 @@ import Foundation
 /// service's `add`/`update` stay readable instead of taking 25 arguments.
 struct DocumentExtra: Encodable, Equatable {
     var subcategory: String?
+    var description: String?
     var priority: String = "normal"
     var issuedAt: String?
     var renewAt: String?
@@ -28,7 +29,7 @@ struct DocumentExtra: Encodable, Equatable {
     var tags: [String] = []
 
     enum CodingKeys: String, CodingKey {
-        case subcategory, priority, series, barcode, value, vat, recurrence, currency, tags
+        case subcategory, description, priority, series, barcode, value, vat, recurrence, currency, tags
         case issuedAt      = "issued_at"
         case renewAt       = "renew_at"
         case notifyAt      = "notify_at"

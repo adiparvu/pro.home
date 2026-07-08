@@ -38,6 +38,27 @@ struct AddDocumentSheet: View {
     /// user's pick from our own programmatic one and stop auto-switching.
     @State private var autoCategory = "contract"
 
+    // MARK: AI Smart Scan (D3, gated)
+    //
+    // The OCR text can be sent to ARIA for structured extraction + a
+    // long-contract summary. It rides the SAME review prefill as D2 — every
+    // AI-suggested value lands in the editable form, clearly marked, never saved
+    // silently. If the model can't read it, we keep the deterministic prefill
+    // and say so; the AI never fabricates a value.
+    private enum SmartScanPhase: Equatable { case idle, running, done, lowConfidence, unavailable }
+    @State private var smartScan: SmartScanPhase = .idle
+    @State private var aiExtraction: DocumentAIExtraction?
+    @State private var aiFilledLabels: [String] = []
+    @State private var aiSummaryExpanded = false
+
+    // The app language, so ARIA answers (document_type + summary) in the user's
+    // tongue — mirrors the ARIA chat's own resolution.
+    @AppStorage("prvio.locale")           private var localePref = "en"
+    @AppStorage("prvio.followSystemLang") private var followSystemLanguage = true
+    private var aiLanguage: String {
+        followSystemLanguage ? Language.devicePreferred.rawValue : localePref
+    }
+
     private let categories = ["contract", "legal", "warranty", "insurance", "certificate",
                                "manual", "invoice", "permit", "tax", "utility", "photo", "other"]
 
@@ -110,6 +131,8 @@ struct AddDocumentSheet: View {
                         }
 
                         if !prefillLabels.isEmpty { prefillBanner }
+
+                        if !ocrText.isEmpty { smartScanCard }
 
                         // The category decides which sections appear — a
                         // Contract asks for issuer + identifiers + value, a
@@ -226,6 +249,201 @@ struct AddDocumentSheet: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
+    // MARK: - AI Smart Scan (D3)
+    //
+    // The visible half of the gated feature. It only ever appears once there is
+    // OCR text to reason about, always sends that text to a verified-available
+    // model, and presents every result as an editable, clearly-labelled AI
+    // suggestion — or an honest "couldn't read it" that keeps the on-device
+    // extraction. No state here writes a value the user can't see and change.
+    @ViewBuilder
+    private var smartScanCard: some View {
+        switch smartScan {
+        case .idle:          smartScanTrigger
+        case .running:       smartScanRunning
+        case .done:          smartScanResult
+        case .lowConfidence: smartScanNotice(title: "doc_ai_lowconf_title", body: "doc_ai_lowconf_body")
+        case .unavailable:   smartScanNotice(title: "doc_ai_unavailable_title", body: "doc_ai_unavailable_body")
+        }
+    }
+
+    private var smartScanTrigger: some View {
+        Button { runSmartScan() } label: {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "sparkles")
+                    .font(AppFont.scaled(15)).foregroundStyle(Color.brandIndigo)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("doc_ai_smartscan").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                    Text("doc_ai_smartscan_sub").font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            }
+            .aiScanCard()
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("doc_ai_smartscan_sub"))
+    }
+
+    private var smartScanRunning: some View {
+        HStack(spacing: AppSpacing.md) {
+            ProgressView().tint(Color.brandIndigo)
+            Text("doc_ai_analyzing").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+            Spacer(minLength: 0)
+        }
+        .aiScanCard()
+        .accessibilityLabel(Text("doc_ai_analyzing"))
+    }
+
+    @ViewBuilder
+    private var smartScanResult: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "sparkles")
+                    .font(AppFont.scaled(15)).foregroundStyle(Color.brandIndigo)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("doc_ai_prefill_title")
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                    if let ex = aiExtraction, !smartScanHeadline(ex).isEmpty {
+                        Text(smartScanHeadline(ex))
+                            .font(AppFont.caption).foregroundStyle(.primary)
+                    }
+                }
+                Spacer(minLength: 0)
+                Button {
+                    withAnimation(.snappy) { smartScan = .idle }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Dismiss"))
+            }
+
+            if !aiFilledLabels.isEmpty {
+                Text("\(String(localized: "doc_ai_prefill_body")) \(aiFilledLabels.joined(separator: ", "))")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+
+            // Long-contract summary rides the same call — shown here, and folded
+            // into the editable Description field so it is confirmed + persisted.
+            if let summary = aiExtraction?.summary, !summary.isEmpty {
+                Button {
+                    withAnimation(.snappy) { aiSummaryExpanded.toggle() }
+                } label: {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "doc.text.magnifyingglass").font(AppFont.scaled(12))
+                        Text("doc_ai_summary_title").font(AppFont.captionEmphasis)
+                        Image(systemName: aiSummaryExpanded ? "chevron.up" : "chevron.down")
+                            .font(AppFont.scaled(10))
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundStyle(Color.brandIndigo)
+                }
+                .buttonStyle(.plain)
+                if aiSummaryExpanded {
+                    Text(summary)
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            // Honesty: everything above is a suggestion to confirm, never saved
+            // silently.
+            Text("doc_ai_review_hint")
+                .font(AppFont.caption2)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+        }
+        .aiScanCard()
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private func smartScanNotice(title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: "sparkles")
+                .font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                Text(body).font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            Spacer(minLength: 0)
+            Button { runSmartScan() } label: {
+                Text("doc_ai_retry").font(AppFont.captionEmphasis).foregroundStyle(Color.brandIndigo)
+            }
+            .buttonStyle(.plain)
+        }
+        .aiScanCard()
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    /// "Am identificat: Contract Orange · expiră 18.06.2028 · client XXXXX" —
+    /// built strictly from values the model returned, never fabricated.
+    private func smartScanHeadline(_ ex: DocumentAIExtraction) -> String {
+        var parts: [String] = []
+        if let type = ex.documentType ?? ex.mappedCategory?.capitalized {
+            parts.append(ex.issuer.map { "\(type) \($0)" } ?? type)
+        } else if let issuer = ex.issuer {
+            parts.append(issuer)
+        }
+        if let exp = AppDate.day(from: ex.expiresAt ?? "") {
+            parts.append(String(format: String(localized: "doc_ai_headline_expires"),
+                                AppDate.dayString(from: exp)))
+        }
+        if let holder = ex.holder {
+            parts.append(String(format: String(localized: "doc_ai_headline_client"), holder))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: - Smart Scan logic
+
+    /// Sends the accumulated OCR text to ARIA off the main actor, then folds any
+    /// usable result into the same review prefill D2 uses.
+    private func runSmartScan() {
+        guard !ocrText.isEmpty else { return }
+        withAnimation(.snappy) { smartScan = .running }
+        let text = ocrText
+        let hint = categoryTouched ? category : nil
+        let lang = aiLanguage
+        Task {
+            let outcome = await DocumentAIExtractor.extract(ocrText: text, categoryHint: hint, language: lang)
+            await MainActor.run { applySmartScan(outcome) }
+        }
+    }
+
+    private func applySmartScan(_ outcome: DocumentAIExtractor.Outcome) {
+        switch outcome {
+        case .extracted(let ex):
+            aiExtraction = ex
+            // Only steer the category while the user hasn't chosen one.
+            if !categoryTouched, let cat = ex.mappedCategory,
+               categories.contains(cat), cat != category {
+                autoCategory = cat
+                category = cat
+            }
+            // Fills ONLY untouched fields — an AI guess never clobbers a value
+            // the user (or the deterministic pass) already set.
+            aiFilledLabels = fields.applyPrefill(ex.toPrefill())
+            // Summary → editable Description (only when empty), so it is both
+            // reviewable and persisted with the document.
+            if let summary = ex.summary, !summary.isEmpty,
+               (fields.text[.description] ?? "").isEmpty {
+                fields.text[.description] = summary
+            }
+            withAnimation(.snappy) { smartScan = .done }
+            HapticFeedback.success()
+        case .lowConfidence:
+            withAnimation(.snappy) { smartScan = .lowConfidence }
+        case .unavailable:
+            withAnimation(.snappy) { smartScan = .unavailable }
+        }
+    }
+
     // MARK: - Share with
 
     // Documents are visible to the whole family by default. Sharing a specific
@@ -302,6 +520,7 @@ struct AddDocumentSheet: View {
 
             let extra = DocumentExtra(
                 subcategory:   fields.trimmed(.subcategory),
+                description:   fields.trimmed(.description),
                 priority:      fields.priority,
                 issuedAt:      fields.dateString(.issuedAt),
                 renewAt:       fields.dateString(.renewAt),
@@ -355,6 +574,20 @@ struct AddDocumentSheet: View {
                 Text(text).font(AppFont.scaled(15)).foregroundStyle(.primary).lineLimit(1)
             }
         }
+    }
+}
+
+private extension View {
+    /// The shared indigo-tinted container for every Smart Scan state, so the
+    /// trigger, spinner, result and notices read as one AI surface — distinct
+    /// from the accent-tinted deterministic OCR banner above it.
+    func aiScanCard() -> some View {
+        self
+            .padding(AppSpacing.lg)
+            .background(Color.brandIndigo.opacity(AppOpacity.subtleFill),
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.brandIndigo.opacity(AppOpacity.tintedFill), lineWidth: 0.5))
     }
 }
 

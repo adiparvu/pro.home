@@ -72,6 +72,7 @@ final class DocumentService {
             let tags: [String]
             let shared_member_ids: [String]
             let subcategory: String?
+            let description: String?
             let priority: String
             let issued_at: String?
             let renew_at: String?
@@ -111,6 +112,7 @@ final class DocumentService {
             tags: extra.tags,
             shared_member_ids: sharedMemberIds,
             subcategory: extra.subcategory,
+            description: extra.description,
             priority: extra.priority,
             issued_at: extra.issuedAt,
             renew_at: extra.renewAt,

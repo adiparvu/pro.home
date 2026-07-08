@@ -64249,6 +64249,230 @@
           }
         }
       }
+    },
+    "doc_ai_smartscan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Smart Scan"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanare inteligentă cu AI"
+          }
+        }
+      }
+    },
+    "doc_ai_smartscan_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyse the text with ARIA to fill the form"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizează textul cu ARIA pentru a completa formularul"
+          }
+        }
+      }
+    },
+    "doc_ai_analyzing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA is reading the document…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA analizează documentul…"
+          }
+        }
+      }
+    },
+    "doc_ai_prefill_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identified:"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Am identificat:"
+          }
+        }
+      }
+    },
+    "doc_ai_prefill_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filled by AI:"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completat de AI:"
+          }
+        }
+      }
+    },
+    "doc_ai_summary_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract summary (AI)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezumat contract (AI)"
+          }
+        }
+      }
+    },
+    "doc_ai_review_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI suggestions — check and confirm each value before saving."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugestii AI — verifică și confirmă fiecare valoare înainte de salvare."
+          }
+        }
+      }
+    },
+    "doc_ai_lowconf_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI couldn't read it reliably"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI nu a putut citi sigur"
+          }
+        }
+      }
+    },
+    "doc_ai_lowconf_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using the fields detected on-device. Check them below."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosim câmpurile detectate pe dispozitiv. Verifică-le mai jos."
+          }
+        }
+      }
+    },
+    "doc_ai_unavailable_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Smart Scan unavailable"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanare AI indisponibilă"
+          }
+        }
+      }
+    },
+    "doc_ai_unavailable_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't reach ARIA. Kept the on-device extraction."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu am putut contacta ARIA. Am păstrat extragerea de pe dispozitiv."
+          }
+        }
+      }
+    },
+    "doc_ai_retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reîncearcă"
+          }
+        }
+      }
+    },
+    "doc_ai_headline_expires": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "expires %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "expiră %@"
+          }
+        }
+      }
+    },
+    "doc_ai_headline_client": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "client %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "client %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

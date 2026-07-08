@@ -130,6 +130,87 @@ serve(async (req) => {
     const language: string | undefined = body.language
     const tone: string | undefined = body.tone
     const assistantName: string = (body.assistant_name ?? "ARIA").toString().slice(0, 40) || "ARIA"
+
+    // ── D3 Document Smart Scan: structured extraction mode ──────────────────
+    // The Document Vault sends OCR text here for strict-JSON extraction plus a
+    // long-contract summary. It reuses this already-verified function + model
+    // (Claude Haiku 4.5, text) but deliberately skips conversation history,
+    // tools and message persistence — a clean, self-contained call that returns
+    // machine-readable data instead of chat. The model is instructed to emit
+    // null (never invent) so the iOS client can present every value as an
+    // editable, confirm-before-save suggestion.
+    if ((body.mode as string | undefined) === "extract") {
+      const apiKey = Deno.env.get("ANTHROPIC_API_KEY")
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }),
+          { status: 500, headers: { ...cors, "Content-Type": "application/json" } })
+      }
+      const ocr = ((body.ocr_text ?? body.message) as string | undefined)?.toString().slice(0, 8000) ?? ""
+      if (!ocr.trim()) {
+        return new Response(JSON.stringify({ error: "Empty OCR text" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } })
+      }
+      const lang = (body.language as string | undefined) ?? "ro"
+      const catHint = (body.category_hint as string | undefined) ?? null
+
+      const extractSystem = `You are a precise document data-extraction engine for a Romanian/EU home-management app.
+Given raw OCR text from a scanned document (contract, invoice, insurance policy, warranty, utility bill, certificate…), extract structured fields and — for long contracts — a short plain-language summary.
+Respond with ONLY one JSON object. No prose, no markdown code fences.
+Schema (use null for anything not clearly present; NEVER invent a value):
+{
+  "document_type": string|null,
+  "category": one of ["contract","legal","warranty","insurance","certificate","manual","invoice","permit","tax","utility","photo","other"]|null,
+  "issuer": string|null,
+  "holder": string|null,
+  "contract_code": string|null, "series": string|null, "policy_number": string|null,
+  "client_code": string|null, "client_number": string|null, "doc_number": string|null, "fiscal_code": string|null,
+  "issued_at": "YYYY-MM-DD"|null, "expires_at": "YYYY-MM-DD"|null, "renew_at": "YYYY-MM-DD"|null,
+  "value": number|null, "currency": "RON"|"EUR"|"USD"|"GBP"|null, "vat": number|null,
+  "summary": string|null,
+  "confidence": number
+}
+"summary": 2-4 sentences covering duration, obligations, costs and key clauses — null when the document is short/simple.
+Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Write "document_type" and "summary" in language: ${lang}.`
+
+      const userMsg = `${catHint ? `The user tentatively categorised this as "${catHint}".\n` : ""}OCR TEXT:\n${ocr}`
+
+      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1500,
+          system: extractSystem,
+          messages: [{ role: "user", content: userMsg }],
+        }),
+      })
+      if (!claudeRes.ok) {
+        const errText = await claudeRes.text()
+        return new Response(JSON.stringify({ error: `Claude API ${claudeRes.status}: ${errText}` }),
+          { status: 502, headers: { ...cors, "Content-Type": "application/json" } })
+      }
+      const claudeData = await claudeRes.json()
+      const rawText: string =
+        (claudeData.content ?? []).find((b: { type: string }) => b.type === "text")?.text ?? ""
+
+      // Locate the JSON object in the reply and parse it server-side.
+      let extraction: Record<string, unknown> | null = null
+      const jsonStart = rawText.indexOf("{")
+      const jsonEnd = rawText.lastIndexOf("}")
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        try { extraction = JSON.parse(rawText.slice(jsonStart, jsonEnd + 1)) } catch { extraction = null }
+      }
+      if (!extraction) {
+        // Hand the raw text back so the client can attempt its own tolerant parse.
+        return new Response(JSON.stringify({ raw: rawText }),
+          { headers: { ...cors, "Content-Type": "application/json" } })
+      }
+      return new Response(
+        JSON.stringify({ extraction, summary: extraction.summary ?? null, raw: rawText }),
+        { headers: { ...cors, "Content-Type": "application/json" } }
+      )
+    }
+
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: "Empty message" }), { status: 400, headers: cors })
     }

@@ -14,8 +14,10 @@ import UIKit
 struct DocumentPrefill {
     var issuedAt: Date?
     var expiresAt: Date?
+    var renewAt: Date?
     var value: Double?
     var currency: String?
+    var vat: Double?
     var issuerCompany: String?
     var docNumber: String?
     var contractCode: String?
@@ -301,10 +303,15 @@ extension DocumentFieldState {
         setText(.issuerWebsite, p.website, "doc_f_website")
         setDate(.issuedAt, p.issuedAt, "doc_f_issued")
         setDate(.expiresAt, p.expiresAt, "doc_f_expires")
+        setDate(.renewAt, p.renewAt, "doc_f_renew")
         if let v = p.value, (text[.value] ?? "").isEmpty {
             text[.value] = trimmedNumber(v)
             if let c = p.currency { currency = c }
             written.append(String(localized: "doc_f_value"))
+        }
+        if let v = p.vat, (text[.vat] ?? "").isEmpty {
+            text[.vat] = trimmedNumber(v)
+            written.append(String(localized: "doc_f_vat"))
         }
         return written
     }
