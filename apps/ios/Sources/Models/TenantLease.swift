@@ -40,4 +40,23 @@ struct TenantLease: Codable, Identifiable, Hashable {
         guard let d = AppDate.day(from: end) else { return end }
         return AppDate.medium.string(from: d)
     }
+
+    /// Days until the lease ends (negative = already ended); nil for
+    /// open-ended leases or unparseable dates.
+    var daysUntilEnd: Int? {
+        guard let end = leaseEnd, let d = AppDate.day(from: end) else { return nil }
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: d).day
+    }
+
+    /// Ending within the renewal window (60 days) but not yet over.
+    var isEndingSoon: Bool {
+        guard let days = daysUntilEnd else { return false }
+        return days >= 0 && days <= 60
+    }
+
+    var hasEnded: Bool {
+        guard let days = daysUntilEnd else { return false }
+        return days < 0
+    }
 }

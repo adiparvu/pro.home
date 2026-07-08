@@ -28,6 +28,7 @@ struct TenantManagementView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 12) {
                             statsStrip
+                            leaseAlerts
                             ForEach(tenants) { tenant in
                                 tenantCard(tenant)
                                     .onTapGesture { selectedTenant = tenant }
@@ -87,6 +88,9 @@ struct TenantManagementView: View {
         let phoneCount = tenants.filter { !($0.phone ?? "").isEmpty }.count
         return HStack(spacing: 12) {
             statCell(value: "\(tenants.count)", label: tenants.count == 1 ? "Tenant" : "Tenants", icon: "person.fill", color: .purple)
+            if let rent = monthlyRentTotal {
+                statCell(value: rent, label: "tenant_stat_rent", icon: "banknote.fill", color: Color.brandSuccess)
+            }
             if waCount > 0 {
                 statCell(value: "\(waCount)", label: "WhatsApp", icon: "message.fill", color: Color(red: 0.16, green: 0.72, blue: 0.37))
             }
@@ -96,7 +100,19 @@ struct TenantManagementView: View {
         }
     }
 
-    private func statCell(value: String, label: String, icon: String, color: Color) -> some View {
+    /// Total monthly rent across the leases — shown only when every lease
+    /// uses the same currency (sums never mix currencies).
+    private var monthlyRentTotal: String? {
+        let leases = tenants.compactMap { familyService.leases[$0.id] }
+            .filter { $0.monthlyRent != nil }
+        guard !leases.isEmpty,
+              let currency = leases.first?.currency,
+              leases.allSatisfy({ $0.currency == currency }) else { return nil }
+        let total = leases.reduce(0.0) { $0 + ($1.monthlyRent ?? 0) }
+        return CurrencyService.money(total, code: currency, whole: true)
+    }
+
+    private func statCell(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
         GlassCard(padding: 12) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
@@ -111,6 +127,48 @@ struct TenantManagementView: View {
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Lease alerts (renewal window: 60 days)
+
+    @ViewBuilder
+    private var leaseAlerts: some View {
+        let flagged = tenants.compactMap { tenant -> (FamilyMember, TenantLease)? in
+            guard let lease = familyService.leases[tenant.id],
+                  lease.isEndingSoon || lease.hasEnded else { return nil }
+            return (tenant, lease)
+        }
+        if !flagged.isEmpty {
+            GlassCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(flagged, id: \.0.id) { tenant, lease in
+                        Button {
+                            selectedTenant = tenant
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: lease.hasEnded
+                                      ? "exclamationmark.octagon.fill"
+                                      : "exclamationmark.triangle.fill")
+                                    .font(AppFont.footnoteEmphasis)
+                                    .foregroundStyle(lease.hasEnded ? Color.brandDanger : .orange)
+                                Text(String(format: String(localized: lease.hasEnded
+                                                           ? "tenant_lease_ended %@"
+                                                           : "tenant_lease_ending %@"),
+                                            tenant.name))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(Color.primary.opacity(0.25))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         }
     }
 
@@ -157,9 +215,21 @@ struct TenantManagementView: View {
                                         .foregroundStyle(Color.brandSuccess)
                                 }
                                 if let end = lease.endDisplay {
+                                    // The urgency is visible at a glance:
+                                    // orange inside the renewal window, red
+                                    // once the lease is over.
                                     Label(String(format: String(localized: "until %@"), end), systemImage: "calendar.badge.exclamationmark")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                        .font(.system(size: 11, weight: lease.isEndingSoon || lease.hasEnded ? .semibold : .regular))
+                                        .foregroundStyle(lease.hasEnded ? Color.brandDanger
+                                                         : lease.isEndingSoon ? .orange
+                                                         : Color.primary.opacity(AppOpacity.mediumText))
+                                }
+                                if lease.isEndingSoon, let days = lease.daysUntilEnd {
+                                    Text(String(format: String(localized: "tenant_lease_days_left %lld"), days))
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(.orange)
+                                        .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.12), in: Capsule())
                                 }
                             }
                         }
@@ -235,12 +305,22 @@ struct TenantManagementView: View {
         )
     }
 
+    // Static formatters — three were being built per card per render.
+    private static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let isoPlain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
     private func memberSinceLabel(_ tenant: FamilyMember) -> String {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        let d = f.date(from: tenant.createdAt) ?? f2.date(from: tenant.createdAt) ?? Date()
-        let out = DateFormatter(); out.dateStyle = .medium; out.timeStyle = .none
-        return "Since \(out.string(from: d))"
+        let d = Self.isoFractional.date(from: tenant.createdAt)
+            ?? Self.isoPlain.date(from: tenant.createdAt) ?? Date()
+        return String(format: String(localized: "tenant_since %@"), AppDate.medium.string(from: d))
     }
 
     // MARK: - Empty state
