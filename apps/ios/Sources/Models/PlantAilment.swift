@@ -149,6 +149,11 @@ struct PlantSymptomTag: Identifiable, Hashable {
     let group: PlantSymptomGroup
 
     var id: String { tag }
+
+    // `LocalizedStringKey` isn't Hashable, so synthesis can't apply. Identity
+    // is fully carried by `tag`, so hash and compare on that alone.
+    static func == (lhs: PlantSymptomTag, rhs: PlantSymptomTag) -> Bool { lhs.tag == rhs.tag }
+    func hash(into hasher: inout Hasher) { hasher.combine(tag) }
 }
 
 enum PlantSymptomCatalog {
