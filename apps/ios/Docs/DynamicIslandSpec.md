@@ -15,13 +15,20 @@ orchestrator (`LiveActivityService`), Dynamic Island + Lock Screen views
 specification **redesigns and extends that system to first-party Apple
 quality** — it is not a greenfield build.
 
-**What this system will NOT do:** PRVIO does not control garages, alarms,
-solar inverters, EV chargers, cameras, leak sensors or robot vacuums today.
-No Live Activity may claim such state — a surface that shows "Garage
-opening…" without a garage integration violates the app's honesty law. The
-architecture below is deliberately extensible (§6) so that when a real
-integration lands, its activity plugs in; until then those catalog entries
-stay out of the product.
+**Smart home is IN scope — on real rails.** PRVIO ships a working IoT layer
+(`IoTService` + `IoTModels`): ESP32 / Raspberry Pi / RS485-Modbus devices,
+16 sensor types (temperature, humidity, motion, door/window, CO₂, pressure,
+light, noise, current, voltage, power, energy, water, smoke, gas, custom),
+alert thresholds and automations. Smart-home Live Activities are therefore
+built **on top of the user's actually-configured devices**: a Water-Leak
+island exists because the user's leak sensor reported water, a Solar island
+because their inverter's power/energy registers are being read. The honesty
+law is enforced structurally — an activity kind can only start from a real
+sensor event or a real device command; nothing is ever simulated. Two real
+gaps are closed as implementation phases: **actuator commands** (garage /
+gate / relays — today the IoT layer is read-only) and a **server push path**
+so islands update while the phone is locked (today sensor polling runs only
+while the app is alive).
 
 **What it WILL cover** (every one backed by a real, live data flow):
 
@@ -34,6 +41,9 @@ stay out of the product.
 | Plant-watering session | `PlantService.markWatered` | minutes |
 | Emergency Mode (new) | existing Emergency Mode feature | until deactivated |
 | ARIA long jobs (new, gated) | monthly recap / report generation | seconds–minutes; only if the job outlives foreground |
+| IoT alert (new) | `IoTSensor.isAlerting` / event webhooks: water, smoke, gas, motion, door/window, threshold breach | until cleared/acknowledged |
+| Energy (new) | power/energy/current/voltage sensors (consumption + solar production) | user-started session or peak alert |
+| Cover control (new) | garage / gate actuator commands (Phase E adds actuators to `IoTService`) | seconds–minutes per operation |
 
 Receipt scanning stays **in-app**: OCR completes in seconds while the sheet
 is open, so an island state would be dishonest theater. If a future batch
@@ -143,6 +153,44 @@ genuinely continue after backgrounding)
 - Expanded: job name ("Recap lunar"), stage line, **Anulează**. Done state:
   checkmark + **Vezi raportul** deep link, auto-dismiss 8 s.
 
+**IoT alert** (new; archetype: *attention*; one activity per alerting sensor,
+capped at the 2 most severe)
+- Severity ladder from sensor type: *critical* (smoke, gas, water) →
+  `brandDanger`, ActivityKit alert, never auto-dismisses until the sensor
+  clears or the user acknowledges; *warning* (threshold breach on
+  temperature/power/CO₂/…, door/window open past a configured window,
+  motion while Emergency Mode armed) → `brandWarning`.
+- Compact: sensor-type symbol (from `IoTSensor.SensorType.icon`) + terse
+  state ("Apă!", "23,5°", "Deschis"). Expanded: sensor name + linked zone
+  ("Bucătărie"), live value, since-when, actions **Vezi** (deep link
+  `prvio://iot`) and **Am înțeles** (acknowledge intent — silences this
+  alert instance, never the sensor).
+- Ends automatically when `isAlerting` clears (value back in range,
+  door closed, smoke clear) — success flip (§8), dismiss 5 s.
+
+**Energy** (new; archetype: *live gauge*; user-started from the IoT hub or
+auto on a peak alert)
+- Compact trailing: current draw "2,8 kW" (numericText). If both power
+  (consumption) and a solar-tagged energy sensor exist: net value with
+  directional arrow (▼ importing / ▲ exporting).
+- Expanded: consumption vs production twin bars, today's kWh, peak chip
+  when above threshold. Action: **Deschide** (IoT hub deep link).
+- Updates only from real polls/webhooks; staleDate +15 min so the system
+  dims stale readings instead of showing false "live" data.
+
+**Cover control — garage / gate** (new; archetype: *operation*; requires
+Phase E actuators)
+- Started by the user's own command (in-app, Control Center control, or
+  App Intent — never spontaneously). States: `sent → moving →
+  (open/closed | obstructed | timeout)`; `moving` runs a determinate bar
+  only if the device reports position, otherwise an indeterminate shimmer —
+  no fake percentages.
+- Compact: garage symbol + state word. Expanded: device name, state,
+  actions **Oprește** / **Inversează** (only if the actuator protocol
+  supports them — capability-gated buttons, §5.5).
+- `obstructed`/`timeout` use warning treatment + alert. Terminal states
+  auto-dismiss after 4 s.
+
 ### 2.3 Multiple simultaneous activities
 
 The system shows the two most-recent activities in the island (one compact,
@@ -229,14 +277,41 @@ All five existing activities are re-skinned onto these components —
 ### 5.2 SwiftUI / model architecture
 
 - `LiveActivityKind` moves to `Sources/LiveActivities/LiveActivityKind.swift`
-  (compiled into app + widgets), gains `workSession`, `emergency`, `aria`
-  cases and carries: `symbol`, `tint` (token), `deepLink`, `titleKey`,
-  auto-start capability flag (work session, emergency and aria are
-  user/system-initiated — never auto-start, excluded from those toggles but
-  present in per-kind appearance).
+  (compiled into app + widgets), gains `workSession`, `emergency`, `aria`,
+  `iotAlert`, `energy`, `cover` cases and carries: `symbol`, `tint` (token),
+  `deepLink`, `titleKey`, auto-start capability flag (work session,
+  emergency, aria and cover are user/system-initiated — never auto-start,
+  excluded from those toggles but present in per-kind appearance).
 - `LiveActivityService` stays the single orchestrator; gains
   `syncEmergency(active:)`, `startARIAJob/updateARIAJob/endARIAJob`,
-  the 3-delivery cap, staleDate policy, and alert-configured updates.
+  `syncIoTAlerts(_:)` (fed by `IoTService.checkAutomations`/`isAlerting`
+  transitions), `startEnergySession/updateEnergy/endEnergySession`,
+  `startCoverOperation/updateCover/endCoverOperation`, the 3-delivery cap,
+  the 2-alert severity cap, staleDate policy, and alert-configured updates.
+
+### 5.5 Smart-home rails (extends the existing IoT layer)
+
+- **Actuators (Phase E).** `IoTDevice` gains an `actuators: [IoTActuator]`
+  counterpart to sensors: `kind` (relay, cover, dimmer), `commands`
+  (capability set: open/close/stop/toggle/set-level), transport = the
+  device's existing protocol (HTTP POST `/command` for ESP32/RPi, Modbus
+  write FC 05/06 for RS485). `IoTService.send(_ command:to:)` executes,
+  confirms via read-back where the protocol allows, and reports
+  `CoverState`. Capability-gated UI: a button renders only if the actuator
+  declares that command — no dead controls.
+- **Event ingestion & locked-phone updates (Phase F).** New edge function
+  `iot-event`: devices (or the existing automation "Call Webhook" action)
+  POST sensor events with a per-property secret; the function persists the
+  event, evaluates severity, then (a) sends an APNs alert push through the
+  existing p8 machinery and (b) sends `apns-push-type: liveactivity`
+  updates to any registered IoT activity token (same
+  `live_activity_tokens` table as deliveries). Local polling remains the
+  in-app path; the webhook path is what makes alerts real when the phone
+  is in a pocket.
+- **Energy semantics.** Solar production = energy/power sensors the user
+  tags as *production* (new `role` field: consumption | production |
+  storage) — the Energy island's net arithmetic uses tags the user set,
+  not guesses.
 
 ### 5.3 ActivityKit architecture
 
@@ -366,6 +441,18 @@ All respect the existing `prvio.hapticOn` gate automatically.
 - **Phase D — Platform polish.** `supplementalActivityFamilies` watch small
   presentation, StandBy/iPad verification pass, settings live-preview
   refresh to mirror the new visuals exactly.
+- **Phase E — Smart-home control + alert islands.** `IoTActuator` model +
+  `IoTService.send(command:)` (HTTP + Modbus write), cover/relay controls
+  in the IoT hub, Cover Live Activity, IoT-alert Live Activity driven by
+  local polling (`isAlerting` transitions), Energy island (sensor `role`
+  tags + net gauge). Everything works with the app alive; honest about
+  that limitation in UI copy. *Risk: medium (device protocols).*
+- **Phase F — Locked-phone smart home.** `iot-event` edge function
+  (secret-authenticated webhook), event persistence, APNs alert +
+  liveactivity pushes for IoT kinds, automation "Call Webhook" preset that
+  targets it, registration UI. Completes the promise: a leak at 3 AM
+  lights up the island with the phone locked. *Risk: medium–high (server,
+  security).*
 
 Acceptance (every phase): CI green; no `.font(.system(size:))` or hardcoded
 non-token colors in `Widgets/LiveActivityViews.swift`/`IslandKit.swift`;
