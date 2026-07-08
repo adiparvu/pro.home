@@ -410,6 +410,34 @@ platform :ios do
     UI.message("Watch widgets profile UUID: #{watch_widgets_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
+    # ── Watch profiles MUST carry the app group ─────────────────────────────
+    # The ASC API cannot ASSOCIATE an app group with a bundle id (the PATCH
+    # above 409s: APP_GROUPS_IDENTIFIER is not a valid settings key; only the
+    # developer-portal UI performs the association). The watch bundle ids were
+    # created via the API, so they never got it — and a watch binary that
+    # claims group.com.prvio.app under a profile that doesn't grant it is
+    # KILLED AT LAUNCH on real devices: the app opens for a second and exits,
+    # forever, on every watch. Verify here and scream with the exact fix.
+    {
+      "PRVIOWatch_AppStore"        => "com.prvio.app.watchkitapp",
+      "PRVIOWatchWidgets_AppStore" => "com.prvio.app.watchkitapp.widgets",
+    }.each do |profile_name, bundle_id|
+      groups = sh("security cms -D -i /tmp/#{profile_name}.mobileprovision 2>/dev/null | grep -A6 'application-groups' || true", log: false).to_s
+      if groups.include?("group.com.prvio.app")
+        UI.success("#{profile_name}: application-groups includes group.com.prvio.app ✓")
+      else
+        UI.important("=" * 76)
+        UI.important("#{profile_name} has NO group.com.prvio.app — the WATCH APP WILL")
+        UI.important("CRASH AT LAUNCH on real devices (opens ~1s, exits, every time).")
+        UI.important("One-time manual fix (the API cannot do this):")
+        UI.important("  developer.apple.com → Certificates, Identifiers & Profiles →")
+        UI.important("  Identifiers → #{bundle_id} → App Groups → Configure →")
+        UI.important("  tick group.com.prvio.app → Save. Then rerun the deploy —")
+        UI.important("  sigh(force: true) regenerates the profile with the group.")
+        UI.important("=" * 76)
+      end
+    end
+
     # Manual signing: bake cert + profile UUID into the project file per-target
     # so xcodebuild flags don't bleed into SPM package targets.
     update_code_signing_settings(
