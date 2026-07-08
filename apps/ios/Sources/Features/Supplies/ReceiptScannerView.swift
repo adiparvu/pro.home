@@ -67,9 +67,9 @@ struct ReceiptScannerView: View {
             .navigationTitle(String(localized: "scanner_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel")) { dismiss() }
-                }
+                // Review: rescan on the LEFT, cancel on the RIGHT, so the
+                // inline title sits centered between them (IMG_8088). The
+                // entry phase keeps the single conventional cancel.
                 if phase == .review {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(String(localized: "scanner_rescan")) {
@@ -79,6 +79,13 @@ struct ReceiptScannerView: View {
                                 phase = .entry
                             }
                         }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(String(localized: "Cancel")) { dismiss() }
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "Cancel")) { dismiss() }
                     }
                 }
             }
@@ -239,14 +246,19 @@ struct ReceiptScannerView: View {
         // household's latest numbers).
         if let pantryService {
             await pantryService.load(propertyId: propId)
-            let additions = parsed.items.map { item in
-                let display = item.normalizedName.isEmpty ? item.name : item.normalizedName
-                return PantryMerge.Addition(name: display,
-                                            normalizedName: display,
-                                            quantity: max(item.quantity, 1),
-                                            unit: item.unit)
+            // Stock per ITEM category — the detergent from a grocery run
+            // belongs on the cleaning shelf, not between the vegetables.
+            let byCategory = Dictionary(grouping: parsed.items, by: \.category)
+            for (category, group) in byCategory {
+                let additions = group.map { item in
+                    let display = item.normalizedName.isEmpty ? item.name : item.normalizedName
+                    return PantryMerge.Addition(name: display,
+                                                normalizedName: display,
+                                                quantity: max(item.quantity, 1),
+                                                unit: item.unit)
+                }
+                await pantryService.stock(additions, propertyId: propId, category: category)
             }
-            await pantryService.stock(additions, propertyId: propId, category: parsed.category)
         }
 
         // 2. Persist the receipt and its items. The VAT figure rides the
@@ -278,7 +290,7 @@ struct ReceiptScannerView: View {
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 totalPrice: item.totalPrice,
-                category: parsed.category,
+                category: item.category,
                 createdAt: now
             )
         }

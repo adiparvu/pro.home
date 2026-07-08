@@ -242,4 +242,106 @@ final class ReceiptIntelligenceTests: XCTestCase {
         XCTAssertEqual(ReceiptListSync.formatQuantity(2.0, unit: "buc"), "2")
         XCTAssertEqual(ReceiptListSync.formatQuantity(1.5, unit: "l"), "1.5 l")
     }
+
+    // MARK: - Parser: the real Ninove (Colruyt-style, Dutch) receipt
+    //
+    // Regression for IMG_8085-8087: "Te betalen 50,92" and "Betaalkaart
+    // 50,92" parsed as PRODUCTS, tripling the total to 152,76 and inflating
+    // the item count; the inline "2,99 x 2" quantity (OCR'd as "Ł") stayed
+    // glued to the product name.
+    func testParsesBelgianNinoveReceipt() {
+        let lines: [OCRLine] = [
+            row("Ninove", y: 0.02),
+            row("Omschrijving    €", y: 0.04),
+            row("ZOETE PUNTPAPRIKA    2,85 B", y: 0.06),
+            row("LICHT MEERGR. BROOD    1,95 B", y: 0.08),
+            row("SNACKTOMATEN XXL    5,99 B", y: 0.10),
+            row("FRIETAARDAPPELEN    8,99 B", y: 0.12),
+            row("AVOCADO RTE    2,99 B", y: 0.14),
+            row("GROTE UIEN    3,79 B", y: 0.16),
+            row("FAIRTRADEROZEN  2,99 x  2    5,98 B", y: 0.18),   // inline qty
+            row("MINI MOZZARELLA    0,97 B", y: 0.20),
+            row("VOLKORENBROOD    2,19 B", y: 0.22),
+            row("MINI MOZZARELLA    0,97 B", y: 0.24),
+            row("BLAUWE BESSEN 500GR    6,29 B", y: 0.26),
+            row("SCHARRELEIEREN    2,59 B", y: 0.28),
+            row("MELK VOL LACTOSEVRIJ    1,39 B", y: 0.30),
+            row("BIO BANAAN FT    2,03 B", y: 0.32),
+            row("0,862 kg x 2,35  €/kg", y: 0.34),                 // weight after item
+            row("GRIEKSE YOGHURT 10%    1,95 B", y: 0.36),
+            row("Aantal    16 art.", y: 0.40),
+            row("Te betalen    50,92", y: 0.42),
+            row("Betaalkaart    50,92", y: 0.44),
+            row("1171  081863/01  03.07.26  13:10", y: 0.46),
+            row("BE 0451.881.923 RPR/RPM Gent", y: 0.48),
+            row("Kopie Kaarthouder", y: 0.52),
+            row("Terminal  87101546  Merchant  600230900", y: 0.54),
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+
+        // "Te betalen" IS the total; footer rows are not products.
+        XCTAssertEqual(parsed.total, 50.92, accuracy: 0.001)
+        XCTAssertEqual(parsed.items.count, 15)
+        XCTAssertFalse(parsed.items.contains { $0.name.lowercased().contains("betalen") })
+        XCTAssertFalse(parsed.items.contains { $0.name.lowercased().contains("betaalkaart") })
+        XCTAssertFalse(parsed.items.contains { $0.name.lowercased().contains("aantal") })
+
+        // Items sum matches the printed total exactly → high confidence.
+        let sum = parsed.items.reduce(0) { $0 + $1.totalPrice }
+        XCTAssertEqual(sum, 50.92, accuracy: 0.001)
+        XCTAssertGreaterThan(parsed.overallConfidence, 0.5)
+
+        // The inline "2,99 x 2" row: clean name, qty 2, unit price 2,99.
+        let roses = parsed.items.first { $0.name.lowercased().contains("fairtraderozen") }
+        XCTAssertEqual(roses?.quantity ?? 0, 2, accuracy: 0.001)
+        XCTAssertEqual(roses?.unitPrice ?? 0, 2.99, accuracy: 0.001)
+        XCTAssertFalse(roses?.name.contains("2,99") ?? true)
+
+        // The weight row annotates the banana above it.
+        let banana = parsed.items.first { $0.name.lowercased().contains("banaan") }
+        XCTAssertEqual(banana?.quantity ?? 0, 0.862, accuracy: 0.001)
+        XCTAssertEqual(banana?.unit, "kg")
+
+        XCTAssertEqual(parsed.dateString, "2026-07-03")
+        XCTAssertEqual(parsed.currency, "EUR")
+        XCTAssertEqual(parsed.category, "food")
+    }
+
+    // The OCR often reads the multiplication sign as "Ł" on thin receipt
+    // fonts — both quantity shapes must survive it.
+    func testInlineQuantityTolleratesOCRMisreadX() {
+        let lines: [OCRLine] = [
+            row("Winkel", y: 0.02),
+            row("FAIRTRADEROZEN  2,99 Ł  2    5,98 B", y: 0.10),
+            row("KAAS JONG    4,50 B", y: 0.12),
+            row("2 Ł 2,25", y: 0.14),
+            row("Totaal    10,48", y: 0.20),
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+        XCTAssertEqual(parsed.items.count, 2)
+        XCTAssertEqual(parsed.items.first?.quantity ?? 0, 2, accuracy: 0.001)
+        XCTAssertEqual(parsed.items.last?.quantity ?? 0, 2, accuracy: 0.001)
+        XCTAssertEqual(parsed.total, 10.48, accuracy: 0.001)
+    }
+
+    // Per-item categories: the detergent on a grocery receipt files under
+    // cleaning; a basket that is mostly cleaning flips the receipt category.
+    func testPerItemCategories() {
+        XCTAssertEqual(ReceiptProductLexicon.category(for: "LAPTE ZUZU 1.5%"), "food")
+        XCTAssertEqual(ReceiptProductLexicon.category(for: "DETERGENT ARIEL 2L"), "cleaning")
+        XCTAssertEqual(ReceiptProductLexicon.category(for: "Wasmiddel Persil"), "cleaning")
+        XCTAssertEqual(ReceiptProductLexicon.category(for: "TOILETPAPIER 12 ROL"), "bathroom")
+        XCTAssertEqual(ReceiptProductLexicon.category(for: "Potgrond 20L"), "garden")
+
+        let lines: [OCRLine] = [
+            row("Magazin", y: 0.02),
+            row("DETERGENT ARIEL    25,99 A", y: 0.10),
+            row("WASMIDDEL PERSIL    19,99 A", y: 0.12),
+            row("LAPTE    7,49 A", y: 0.14),
+            row("TOTAL    53,47", y: 0.20),
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+        XCTAssertEqual(parsed.category, "cleaning")
+        XCTAssertEqual(parsed.items.filter { $0.category == "cleaning" }.count, 2)
+    }
 }

@@ -249,6 +249,40 @@ enum ReceiptProductLexicon {
         return result
     }
 
+    // MARK: - Per-product category (ReceiptCategory ids)
+
+    /// Substring keywords per non-food category, folded, in the languages
+    /// receipts actually arrive in around here (RO, NL, EN, FR). Anything
+    /// unmatched is food — groceries dominate scanned receipts.
+    private static let categoryKeywords: [(category: String, keywords: [String])] = [
+        ("cleaning", ["detergent", "wasmiddel", "vaatwas", "afwasmiddel",
+                      "allesreinig", "glasreinig", "schoonmaak", "ontkalk",
+                      "sapun", "zeep", "savon", "bleek", "javel", "clor",
+                      "spons", "burete", "lavet", "doekje", "ariel", "persil",
+                      "domestos", "dero", "vuilniszak", "sac menajer"]),
+        ("bathroom", ["toiletpapier", "hartie igienica", "sampon", "shampo",
+                      "gel de dus", "douchegel", "deodorant", "tandpasta",
+                      "pasta de dinti", "dentifrice", "scutece", "luier",
+                      "absorbante", "maandverband", "servetele umede",
+                      "aftershave", "crema de maini"]),
+        ("garden",   ["potgrond", "pamant de flori", "seminte", "zaden",
+                      "graine", "planten", "bloemen", "rasad", "ingrasamant",
+                      "meststof", "gazon", "tuin", "ghiveci", "bloempot"]),
+        ("health",   ["paracetamol", "ibuprofen", "nurofen", "vitamin",
+                      "vitamine", "plasturi", "pleister", "aspirin",
+                      "supliment", "magneziu", "probiotic"]),
+    ]
+
+    /// Classifies one product name into a ReceiptCategory id.
+    static func category(for name: String) -> String {
+        let folded = fold(name)
+        for (category, keywords) in categoryKeywords
+        where keywords.contains(where: { folded.contains($0) }) {
+            return category
+        }
+        return "food"
+    }
+
     // MARK: - Normalization
 
     /// Cleans a receipt line into a human-friendly product name:

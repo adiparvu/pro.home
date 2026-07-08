@@ -55,11 +55,15 @@ struct ParsedItem: Identifiable, Equatable {
     var totalPrice: Double
     var confidence: Double
     var uncertain: Bool
+    /// ReceiptCategory id per product — detergents file under cleaning even
+    /// on a grocery receipt, so budgets see where the money actually went.
+    var category: String
 
     init(id: UUID = UUID(), name: String, normalizedName: String? = nil,
          quantity: Double = 1, unit: String = "buc",
          unitPrice: Double = 0, totalPrice: Double = 0,
-         confidence: Double = 1, uncertain: Bool = false) {
+         confidence: Double = 1, uncertain: Bool = false,
+         category: String? = nil) {
         self.id = id
         self.name = name
         self.normalizedName = normalizedName ?? ReceiptProductLexicon.normalize(name)
@@ -69,6 +73,7 @@ struct ParsedItem: Identifiable, Equatable {
         self.totalPrice = totalPrice
         self.confidence = confidence
         self.uncertain = uncertain
+        self.category = category ?? ReceiptProductLexicon.category(for: name)
     }
 }
 
@@ -211,7 +216,12 @@ enum ReceiptIntelligence {
             }
 
             // TOTAL — strongest signal; "TOTAL TVA"/"SUBTOTAL" are not it.
-            if folded.contains("total") || folded.contains("totaal") {
+            // Belgian receipts print "Te betalen", French ones "à payer",
+            // Romanian ones sometimes "de plată" — all mean THE total.
+            let isTotalRow = folded.contains("total") || folded.contains("totaal")
+                || folded.contains("te betalen") || folded.contains("a payer")
+                || folded.contains("de plata")
+            if isTotalRow {
                 if !folded.contains("subtotal") && !folded.contains("sub-total")
                     && !folded.contains("tva") && !folded.contains("btw") {
                     if let best = allAmounts(in: raw).max(), best > declaredTotal {
@@ -278,7 +288,12 @@ enum ReceiptIntelligence {
                     .trimmingCharacters(in: CharacterSet(charactersIn: " \t-*·."))
                 guard isPlausibleName(name) else { pendingName = nil; continue }
 
-                if let pq = pendingQuantity,
+                if let inline = inlineQuantity(in: name) {
+                    // Belgian single-row style: "FAIRTRADEROZEN 2,99 x 2 5,98".
+                    items.append(makeItem(name: inline.name, quantity: inline.qty, unit: "buc",
+                                          unitPrice: inline.unitPrice, total: t.value,
+                                          visionConfidence: row.confidence))
+                } else if let pq = pendingQuantity,
                    abs(pq.qty * pq.unitPrice - t.value) <= max(0.05, t.value * 0.02) {
                     items.append(makeItem(name: name, quantity: pq.qty, unit: pq.unit,
                                           unitPrice: pq.unitPrice, total: t.value,
@@ -306,6 +321,18 @@ enum ReceiptIntelligence {
         // A VAT figure larger than the total is a misread, not a fact.
         if vatTotal > 0, vatTotal < receipt.total { receipt.vatAmount = vatTotal }
         receipt.category = guessCategory(storeName: receipt.storeName, items: items)
+        // The items know better than the storefront: a basket that is mostly
+        // cleaning products IS a cleaning run, whatever the store's sign says.
+        if receipt.category == "food" || receipt.category == "other", !items.isEmpty {
+            var counts: [String: Int] = [:]
+            for item in items { counts[item.category, default: 0] += 1 }
+            if let (winner, hits) = counts.max(by: { $0.value < $1.value }),
+               winner != "food", hits * 2 > items.count {
+                receipt.category = winner
+            } else if receipt.category == "other", (counts["food"] ?? 0) * 2 > items.count {
+                receipt.category = "food"
+            }
+        }
 
         var overall = items.isEmpty ? 0 : items.reduce(0) { $0 + $1.confidence } / Double(items.count)
         // Sanity: if the printed total and the item sum disagree badly,
@@ -331,6 +358,11 @@ enum ReceiptIntelligence {
         "judetul", "sector", "nr", "cod", "cip", "aid", "rrn", "auth",
         "multumim", "bedankt", "merci", "ticket", "factura", "garantie",
         "sgr",
+        // Belgian/Dutch payment & footer rows (the Ninove receipt taught us:
+        // "Betaalkaart 50,92" parsed as a 50,92 product and doubled the total).
+        "betalen", "betaalkaart", "bancontact", "payconiq", "aantal",
+        "omschrijving", "kaarthouder", "kopie", "merchant", "wisselgeld",
+        "eft", "girocard",
     ]
 
     private static let skipPhrases: [String] = [
@@ -367,9 +399,18 @@ enum ReceiptIntelligence {
     // currency suffixes ("28,45 LEI") and negative markers ("0,85-").
     private static let trailingAmountRegex =
         #/(-?)(\d{1,6}[.,]\d{2})\s*(-?)\s*(?:lei|ron|eur|€|[A-Za-z]{1,2})?\s*$/#.ignoresCase()
-    // Quantity lines: qty [unit] x unitPrice.
+    // Quantity lines: qty [unit] x unitPrice. OCR reads the "x" as "Ł"
+    // often enough (thin receipt fonts) that it belongs in the class.
     private static let quantityRegex =
-        #/^\s*(\d{1,4}(?:[.,]\d{1,3})?)\s*(buc|bucati|kg|gr|g|l|ml|st|stuks|pcs)?\.?\s*[x×*]\s*(\d{1,6}(?:[.,]\d{1,2})?)/#.ignoresCase()
+        #/^\s*(\d{1,4}(?:[.,]\d{1,3})?)\s*(buc|bucati|kg|gr|g|l|ml|st|stuks|pcs)?\.?\s*[x×*Łł]\s*(\d{1,6}(?:[.,]\d{1,2})?)/#.ignoresCase()
+
+    // Inline quantity at the END of a product row's name part, Belgian style:
+    // "FAIRTRADEROZEN  2,99 x  2  5,98" → name + unitPrice×qty + line total.
+    // Two shapes: price-first (price has the 2 decimals) and qty-first.
+    private static let inlinePriceQtyRegex =
+        #/^(.+?)\s+(\d{1,6}[.,]\d{2})\s*[x×*Łł]\s*(\d{1,4}(?:[.,]\d{1,3})?)\s*$/#.ignoresCase()
+    private static let inlineQtyPriceRegex =
+        #/^(.+?)\s+(\d{1,4})\s*[x×*Łł]\s*(\d{1,6}[.,]\d{2})\s*$/#.ignoresCase()
 
     static func number(from s: some StringProtocol) -> Double? {
         Double(s.replacingOccurrences(of: ",", with: "."))
@@ -407,6 +448,29 @@ enum ReceiptIntelligence {
         var qty: Double
         var unit: String
         var unitPrice: Double
+    }
+
+    struct InlineQuantity {
+        var name: String
+        var qty: Double
+        var unitPrice: Double
+    }
+
+    /// Extracts a trailing "unitPrice × qty" (or "qty × unitPrice") from a
+    /// product row's NAME part — the part left of the line total. The side
+    /// with two decimals is the price.
+    static func inlineQuantity(in nameTail: String) -> InlineQuantity? {
+        if let m = nameTail.firstMatch(of: inlinePriceQtyRegex),
+           let price = number(from: m.2), let qty = number(from: m.3),
+           qty > 0, price > 0, isPlausibleName(String(m.1)) {
+            return InlineQuantity(name: String(m.1), qty: qty, unitPrice: price)
+        }
+        if let m = nameTail.firstMatch(of: inlineQtyPriceRegex),
+           let qty = number(from: m.2), let price = number(from: m.3),
+           qty > 0, price > 0, isPlausibleName(String(m.1)) {
+            return InlineQuantity(name: String(m.1), qty: qty, unitPrice: price)
+        }
+        return nil
     }
 
     static func quantityMatch(in text: String) -> QuantityMatch? {
