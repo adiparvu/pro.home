@@ -14,9 +14,7 @@ struct AddDocumentSheet: View {
 
     @State private var name = ""
     @State private var category = "contract"
-    @State private var expiryDate: Date = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    @State private var hasExpiry = false
-    @State private var isCritical = false
+    @State private var fields = DocumentFieldState()
     @State private var showFilePicker = false
     @State private var pickedFileData: Data?
     @State private var pickedFileName = ""
@@ -98,31 +96,11 @@ struct AddDocumentSheet: View {
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
-                        FormGroup {
-                            VStack(spacing: 0) {
-                                HStack(spacing: 12) {
-                                    iconLabel("calendar", color: .orange, text: "Has expiry date")
-                                    Spacer()
-                                    Toggle("", isOn: $hasExpiry).labelsHidden().tint(.accentColor)
-                                }
-                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
-
-                                if hasExpiry {
-                                    div
-                                    DatePicker("", selection: $expiryDate, in: Date()..., displayedComponents: .date)
-                                        .datePickerStyle(.compact)
-                                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
-                                }
-                            }
-                        }
-
-                        FormGroup {
-                            HStack(spacing: 12) {
-                                iconLabel("exclamationmark.circle.fill", color: .red, text: "Critical document")
-                                Spacer()
-                                Toggle("", isOn: $isCritical).labelsHidden().tint(.red)
-                            }
-                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+                        // The category decides which sections appear — a
+                        // Contract asks for issuer + identifiers + value, a
+                        // Photo asks for almost nothing.
+                        ForEach(DocumentCategorySchema.sections(for: category)) { section in
+                            DocSectionView(section: section, state: fields)
                         }
 
                         FormGroup {
@@ -177,8 +155,8 @@ struct AddDocumentSheet: View {
         pickedMimeType = "application/pdf"
         if name.isEmpty, let suggested = result.suggestedName { name = suggested }
         if let expiry = result.suggestedExpiry, expiry > Date() {
-            hasExpiry = true
-            expiryDate = expiry
+            fields.dateEnabled[.expiresAt] = true
+            fields.dates[.expiresAt] = expiry
         }
         HapticFeedback.success()
     }
@@ -251,7 +229,36 @@ struct AddDocumentSheet: View {
         isSaving = true
         error = nil
         do {
-            let expiryStr: String? = hasExpiry ? ISO8601DateFormatter.yearMonthDay.string(from: expiryDate) : nil
+            // Fold any tag still being typed into the list, then build the
+            // rich record straight from the dynamic field state.
+            let typedTag = fields.string(.tags).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !typedTag.isEmpty, !fields.tags.contains(typedTag) { fields.tags.append(typedTag) }
+
+            let extra = DocumentExtra(
+                subcategory:   fields.trimmed(.subcategory),
+                priority:      fields.priority,
+                issuedAt:      fields.dateString(.issuedAt),
+                renewAt:       fields.dateString(.renewAt),
+                notifyAt:      fields.dateString(.notifyAt),
+                issuerCompany: fields.trimmed(.issuerCompany),
+                issuerContact: fields.trimmed(.issuerContact),
+                issuerPhone:   fields.trimmed(.issuerPhone),
+                issuerEmail:   fields.trimmed(.issuerEmail),
+                issuerWebsite: fields.trimmed(.issuerWebsite),
+                clientNumber:  fields.trimmed(.clientNumber),
+                docNumber:     fields.trimmed(.docNumber),
+                series:        fields.trimmed(.series),
+                contractCode:  fields.trimmed(.contractCode),
+                clientCode:    fields.trimmed(.clientCode),
+                fiscalCode:    fields.trimmed(.fiscalCode),
+                policyNumber:  fields.trimmed(.policyNumber),
+                barcode:       fields.trimmed(.barcode),
+                value:         fields.money(.value),
+                currency:      fields.money(.value) != nil ? fields.currency : nil,
+                vat:           fields.money(.vat),
+                recurrence:    fields.recurrence == "one-off" ? nil : fields.recurrence,
+                tags:          fields.tags
+            )
             try await documentService.add(
                 propertyId: propertyId,
                 name: name.trimmingCharacters(in: .whitespaces),
@@ -259,9 +266,10 @@ struct AddDocumentSheet: View {
                 fileData: fileData,
                 fileName: pickedFileName,
                 mimeType: pickedMimeType,
-                expiresAt: expiryStr,
-                isCritical: isCritical,
-                sharedMemberIds: sharedMemberIds
+                expiresAt: fields.dateString(.expiresAt),
+                isCritical: DocPriority.isCritical(fields.priority),
+                sharedMemberIds: sharedMemberIds,
+                extra: extra
             )
             HapticFeedback.success()
             dismiss()
@@ -280,10 +288,6 @@ struct AddDocumentSheet: View {
                 Text(text).font(AppFont.scaled(15)).foregroundStyle(.primary).lineLimit(1)
             }
         }
-    }
-
-    private var div: some View {
-        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
     }
 }
 

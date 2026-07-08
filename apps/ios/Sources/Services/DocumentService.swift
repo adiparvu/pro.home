@@ -39,7 +39,8 @@ final class DocumentService {
         mimeType: String,
         expiresAt: String?,
         isCritical: Bool,
-        sharedMemberIds: [String] = []
+        sharedMemberIds: [String] = [],
+        extra: DocumentExtra = DocumentExtra()
     ) async throws {
         guard let userId = supabase.auth.currentSession?.user.id else {
             throw DocumentError.notAuthenticated
@@ -55,6 +56,8 @@ final class DocumentService {
 
         let publicURL = try supabase.storage.from("documents").getPublicURL(path: filePath)
 
+        // The full rich record (migration 121). All D1 fields are optional, so
+        // a document with none set inserts exactly like the old shape.
         struct DocInsert: Encodable {
             let property_id: String
             let name: String
@@ -67,6 +70,28 @@ final class DocumentService {
             let is_critical: Bool
             let tags: [String]
             let shared_member_ids: [String]
+            let subcategory: String?
+            let priority: String
+            let issued_at: String?
+            let renew_at: String?
+            let notify_at: String?
+            let issuer_company: String?
+            let issuer_contact: String?
+            let issuer_phone: String?
+            let issuer_email: String?
+            let issuer_website: String?
+            let client_number: String?
+            let doc_number: String?
+            let series: String?
+            let contract_code: String?
+            let client_code: String?
+            let fiscal_code: String?
+            let policy_number: String?
+            let barcode: String?
+            let value: Double?
+            let currency: String?
+            let vat: Double?
+            let recurrence: String?
         }
 
         let payload = DocInsert(
@@ -79,8 +104,30 @@ final class DocumentService {
             mime_type: mimeType,
             expires_at: expiresAt,
             is_critical: isCritical,
-            tags: [],
-            shared_member_ids: sharedMemberIds
+            tags: extra.tags,
+            shared_member_ids: sharedMemberIds,
+            subcategory: extra.subcategory,
+            priority: extra.priority,
+            issued_at: extra.issuedAt,
+            renew_at: extra.renewAt,
+            notify_at: extra.notifyAt,
+            issuer_company: extra.issuerCompany,
+            issuer_contact: extra.issuerContact,
+            issuer_phone: extra.issuerPhone,
+            issuer_email: extra.issuerEmail,
+            issuer_website: extra.issuerWebsite,
+            client_number: extra.clientNumber,
+            doc_number: extra.docNumber,
+            series: extra.series,
+            contract_code: extra.contractCode,
+            client_code: extra.clientCode,
+            fiscal_code: extra.fiscalCode,
+            policy_number: extra.policyNumber,
+            barcode: extra.barcode,
+            value: extra.value,
+            currency: extra.currency,
+            vat: extra.vat,
+            recurrence: extra.recurrence
         )
 
         let newDoc: DocumentModel = try await supabase
@@ -126,13 +173,46 @@ final class DocumentService {
             let is_critical: Bool
             let expires_at: String?
             let description: String?
+            let tags: [String]
+            let subcategory: String?
+            let priority: String?
+            let issued_at: String?
+            let renew_at: String?
+            let notify_at: String?
+            let issuer_company: String?
+            let issuer_contact: String?
+            let issuer_phone: String?
+            let issuer_email: String?
+            let issuer_website: String?
+            let client_number: String?
+            let doc_number: String?
+            let series: String?
+            let contract_code: String?
+            let client_code: String?
+            let fiscal_code: String?
+            let policy_number: String?
+            let barcode: String?
+            let value: Double?
+            let currency: String?
+            let vat: Double?
+            let recurrence: String?
         }
         do {
             try await supabase
                 .from("documents")
                 .update(Upd(name: doc.name, category: doc.category,
                             is_critical: doc.isCritical, expires_at: doc.expiresAt,
-                            description: doc.description))
+                            description: doc.description, tags: doc.tags,
+                            subcategory: doc.subcategory, priority: doc.priority,
+                            issued_at: doc.issuedAt, renew_at: doc.renewAt, notify_at: doc.notifyAt,
+                            issuer_company: doc.issuerCompany, issuer_contact: doc.issuerContact,
+                            issuer_phone: doc.issuerPhone, issuer_email: doc.issuerEmail,
+                            issuer_website: doc.issuerWebsite, client_number: doc.clientNumber,
+                            doc_number: doc.docNumber, series: doc.series,
+                            contract_code: doc.contractCode, client_code: doc.clientCode,
+                            fiscal_code: doc.fiscalCode, policy_number: doc.policyNumber,
+                            barcode: doc.barcode, value: doc.value, currency: doc.currency,
+                            vat: doc.vat, recurrence: doc.recurrence))
                 .eq("id", value: doc.id.uuidString)
                 .execute()
             if let idx = documents.firstIndex(where: { $0.id == doc.id }) {

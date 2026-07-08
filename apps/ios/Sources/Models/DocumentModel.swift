@@ -1,5 +1,51 @@
 import Foundation
 
+/// The rich-record fields the D1 dynamic form collects, bundled so the
+/// service's `add`/`update` stay readable instead of taking 25 arguments.
+struct DocumentExtra: Encodable, Equatable {
+    var subcategory: String?
+    var priority: String = "normal"
+    var issuedAt: String?
+    var renewAt: String?
+    var notifyAt: String?
+    var issuerCompany: String?
+    var issuerContact: String?
+    var issuerPhone: String?
+    var issuerEmail: String?
+    var issuerWebsite: String?
+    var clientNumber: String?
+    var docNumber: String?
+    var series: String?
+    var contractCode: String?
+    var clientCode: String?
+    var fiscalCode: String?
+    var policyNumber: String?
+    var barcode: String?
+    var value: Double?
+    var currency: String?
+    var vat: Double?
+    var recurrence: String?
+    var tags: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case subcategory, priority, series, barcode, value, vat, recurrence, currency, tags
+        case issuedAt      = "issued_at"
+        case renewAt       = "renew_at"
+        case notifyAt      = "notify_at"
+        case issuerCompany = "issuer_company"
+        case issuerContact = "issuer_contact"
+        case issuerPhone   = "issuer_phone"
+        case issuerEmail   = "issuer_email"
+        case issuerWebsite = "issuer_website"
+        case clientNumber  = "client_number"
+        case docNumber     = "doc_number"
+        case contractCode  = "contract_code"
+        case clientCode    = "client_code"
+        case fiscalCode    = "fiscal_code"
+        case policyNumber  = "policy_number"
+    }
+}
+
 struct DocumentModel: Identifiable, Codable, Hashable {
     let id: UUID
     let propertyId: UUID
@@ -17,8 +63,34 @@ struct DocumentModel: Identifiable, Codable, Hashable {
     let createdAt: String
     var sharedMemberIds: [String] = []   // family_members.id shared this doc with (see migration 094)
 
+    // ── Document Intelligence (migration 121, phase D1) ──────────────────────
+    // The rich record the dynamic per-category form fills. All optional so
+    // pre-121 rows and older clients decode unchanged.
+    var subcategory: String?
+    var priority: String?                // normal/important/critical/urgent
+    var issuedAt: String?
+    var renewAt: String?
+    var notifyAt: String?
+    var issuerCompany: String?
+    var issuerContact: String?
+    var issuerPhone: String?
+    var issuerEmail: String?
+    var issuerWebsite: String?
+    var clientNumber: String?
+    var docNumber: String?
+    var series: String?
+    var contractCode: String?
+    var clientCode: String?
+    var fiscalCode: String?
+    var policyNumber: String?
+    var barcode: String?
+    var value: Double?
+    var currency: String?
+    var vat: Double?
+    var recurrence: String?              // one-off/monthly/quarterly/yearly
+
     enum CodingKeys: String, CodingKey {
-        case id, name, description, category, tags
+        case id, name, description, category, tags, series, barcode, value, vat, priority, recurrence, currency
         case propertyId  = "property_id"
         case fileUrl     = "file_url"
         case fileName    = "file_name"
@@ -29,6 +101,21 @@ struct DocumentModel: Identifiable, Codable, Hashable {
         case elementId   = "element_id"
         case createdAt   = "created_at"
         case sharedMemberIds = "shared_member_ids"
+        case subcategory
+        case issuedAt      = "issued_at"
+        case renewAt       = "renew_at"
+        case notifyAt      = "notify_at"
+        case issuerCompany = "issuer_company"
+        case issuerContact = "issuer_contact"
+        case issuerPhone   = "issuer_phone"
+        case issuerEmail   = "issuer_email"
+        case issuerWebsite = "issuer_website"
+        case clientNumber  = "client_number"
+        case docNumber     = "doc_number"
+        case contractCode  = "contract_code"
+        case clientCode    = "client_code"
+        case fiscalCode    = "fiscal_code"
+        case policyNumber  = "policy_number"
     }
 
     var categoryIcon: String {

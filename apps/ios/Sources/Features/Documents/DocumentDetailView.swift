@@ -91,6 +91,7 @@ struct DocumentDetailView: View {
                 VStack(spacing: 16) {
                     header
                     fileCard
+                    richDetailsCard
                     detailsCard
                     Spacer(minLength: 40)
                 }
@@ -192,6 +193,93 @@ struct DocumentDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: Rich record (D1) — only the populated fields render
+
+    private var richDetailsCard: some View {
+        // Build each group's non-empty rows, then only show groups that have any.
+        let dateRows: [(String, LocalizedStringKey, String)] = [
+            ("calendar.badge.plus", "doc_f_issued", live.issuedAt.flatMap(displayDate) ?? ""),
+            ("arrow.triangle.2.circlepath", "doc_f_renew", live.renewAt.flatMap(displayDate) ?? ""),
+            ("bell", "doc_f_notify", live.notifyAt.flatMap(displayDate) ?? ""),
+        ].filter { !$0.2.isEmpty }
+
+        let issuerRows: [(String, LocalizedStringKey, String)] = [
+            ("building.2", "doc_f_company", live.issuerCompany ?? ""),
+            ("person", "doc_f_contact", live.issuerContact ?? ""),
+            ("phone", "doc_f_phone", live.issuerPhone ?? ""),
+            ("envelope", "doc_f_email", live.issuerEmail ?? ""),
+            ("globe", "doc_f_website", live.issuerWebsite ?? ""),
+            ("person.text.rectangle", "doc_f_client_number", live.clientNumber ?? ""),
+        ].filter { !$0.2.isEmpty }
+
+        let idRows: [(String, LocalizedStringKey, String)] = [
+            ("number", "doc_f_number", live.docNumber ?? ""),
+            ("number", "doc_f_series", live.series ?? ""),
+            ("doc.text", "doc_f_contract_code", live.contractCode ?? ""),
+            ("person.text.rectangle", "doc_f_client_code", live.clientCode ?? ""),
+            ("building.columns", "doc_f_fiscal_code", live.fiscalCode ?? ""),
+            ("shield", "doc_f_policy", live.policyNumber ?? ""),
+            ("barcode", "doc_f_barcode", live.barcode ?? ""),
+        ].filter { !$0.2.isEmpty }
+
+        return VStack(spacing: 16) {
+            if let sub = live.subcategory, !sub.isEmpty {
+                infoGroup("doc_sec_classification", "tag.fill", .purple, [
+                    ("square.grid.2x2", "doc_f_subcategory", sub),
+                ])
+            }
+            if !dateRows.isEmpty { infoGroup("doc_sec_dates", "calendar", .orange, dateRows) }
+            if !issuerRows.isEmpty { infoGroup("doc_sec_issuer", "building.2.fill", .blue, issuerRows) }
+            if !idRows.isEmpty { infoGroup("doc_sec_identifiers", "number", .teal, idRows) }
+            financialGroup
+        }
+    }
+
+    @ViewBuilder
+    private var financialGroup: some View {
+        let rows = financialRows
+        if !rows.isEmpty { infoGroup("doc_sec_financial", "creditcard.fill", .green, rows) }
+    }
+
+    private var financialRows: [(String, LocalizedStringKey, String)] {
+        guard let value = live.value else { return [] }
+        var rows: [(String, LocalizedStringKey, String)] = [
+            ("banknote", "doc_f_value", CurrencyService.money(value, code: live.currency ?? "RON", whole: false)),
+        ]
+        if let vat = live.vat {
+            let n = vat.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(vat)) : String(format: "%.1f", vat)
+            rows.append(("percent", "doc_f_vat", "\(n)%"))
+        }
+        if let rec = live.recurrence, rec != "one-off" {
+            rows.append(("arrow.triangle.2.circlepath", "doc_f_recurrence", DocRecurrence.text(rec)))
+        }
+        return rows
+    }
+
+    private func infoGroup(_ title: LocalizedStringKey, _ icon: String, _ color: Color,
+                           _ rows: [(String, LocalizedStringKey, String)]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: icon).font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(color)
+                Text(title).font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+            }
+            .padding(.leading, AppSpacing.sm)
+            GlassCard {
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { idx, r in
+                        if idx > 0 { div }
+                        row(r.0, r.1, r.2)
+                    }
+                }
+            }
+        }
+    }
+
+    private func displayDate(_ iso: String) -> String? {
+        guard let d = AppDate.day(from: iso) else { return iso }
+        return AppDate.monthDayYear.string(from: d)
     }
 
     private var detailsCard: some View {
@@ -324,9 +412,7 @@ struct EditDocumentSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
     @State private var category: String
-    @State private var isCritical: Bool
-    @State private var hasExpiry: Bool
-    @State private var expiryDate: Date
+    @State private var fields: DocumentFieldState
     private let original: DocumentModel
     let onSave: (DocumentModel) -> Void
 
@@ -338,49 +424,45 @@ struct EditDocumentSheet: View {
         self.onSave = onSave
         _name = State(initialValue: doc.name)
         _category = State(initialValue: doc.category)
-        _isCritical = State(initialValue: doc.isCritical)
-        let parsed = doc.expiresAt.flatMap { ISO8601DateFormatter().date(from: $0) }
-        _hasExpiry = State(initialValue: parsed != nil)
-        _expiryDate = State(initialValue: parsed ?? Date())
+        _fields = State(initialValue: DocumentFieldState(seed: doc))
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
+        FormScaffold(title: "Edit document",
+                     canSave: !name.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: false, error: .constant(nil),
+                     onSave: { save() }) {
+            FormGroup {
+                FormRow(icon: "doc.text.fill") {
                     TextField("Name", text: $name)
-                    Picker("Category", selection: $category) {
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                        .autocorrectionDisabled()
+                }
+            }
+            FormGroup {
+                HStack(spacing: 12) {
+                    Image(systemName: "tag.fill").font(AppFont.scaled(14)).foregroundStyle(.purple).frame(width: 22)
+                    Text("Category").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Spacer()
+                    Picker("", selection: $category) {
                         ForEach(categories, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
                     }
+                    .tint(Color.primary.opacity(AppOpacity.emphasis))
                 }
-                Section {
-                    Toggle("Critical document", isOn: $isCritical)
-                    Toggle("Has expiry date", isOn: $hasExpiry.animation())
-                    if hasExpiry {
-                        DatePicker("Expires", selection: $expiryDate, displayedComponents: .date)
-                    }
-                }
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
-            .scrollContentBackground(.hidden)
-            .navigationTitle("Edit document")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
+            ForEach(DocumentCategorySchema.sections(for: category)) { section in
+                DocSectionView(section: section, state: fields)
             }
         }
-        .presentationBackground(.thinMaterial)
     }
 
     private func save() {
-        var updated = original
+        let typedTag = fields.string(.tags).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !typedTag.isEmpty, !fields.tags.contains(typedTag) { fields.tags.append(typedTag) }
+        var updated = fields.apply(to: original)
         updated.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.category = category
-        updated.isCritical = isCritical
-        updated.expiresAt = hasExpiry ? ISO8601DateFormatter().string(from: expiryDate) : nil
         onSave(updated)
         HapticFeedback.success()
         dismiss()
