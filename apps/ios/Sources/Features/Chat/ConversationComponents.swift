@@ -70,6 +70,23 @@ struct ConversationEntry: Identifiable {
             return f.string(from: date)
         }
     }
+
+    /// "now / 3 hr. ago / yesterday / last week" — the row's relative
+    /// timestamp. Falls back to the short date past a month, where relative
+    /// phrasing stops being helpful.
+    var relativeTime: String {
+        guard let date else { return "" }
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return String(localized: "convo_time_now") }
+        if interval > 30 * 24 * 3600 {
+            let f = DateFormatter(); f.dateFormat = "dd.MM.yy"
+            return f.string(from: date)
+        }
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .short
+        f.dateTimeStyle = .named
+        return f.localizedString(for: date, relativeTo: Date())
+    }
 }
 
 // MARK: - Conversation Row
@@ -85,15 +102,17 @@ struct ConversationRowView: View {
 
     private var isUnread: Bool { entry.unread > 0 || forceUnread }
 
+    // Reference layout: name + preview on the left; a right-aligned column
+    // with the relative time on top and the indigo unread dot underneath.
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 14) {
             avatar
-                .frame(width: 52, height: 52)
+                .frame(width: 54, height: 54)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(entry.name)
-                        .font(AppFont.scaled(16, weight: isUnread ? .bold : .semibold))
+                        .font(AppFont.scaled(16, weight: .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if muted {
@@ -101,40 +120,38 @@ struct ConversationRowView: View {
                             .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
-                    Spacer()
                     if pinned {
                         Image(systemName: "pin.fill")
                             .font(AppFont.scaled(10))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
-                    Text(entry.formattedTime)
-                        .font(AppFont.scaled(12))
-                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(AppOpacity.disabled))
                 }
-                HStack {
-                    Text(entry.preview)
-                        .font(AppFont.scaled(14))
-                        .foregroundStyle(isUnread ? Color.primary.opacity(0.65) : Color.primary.opacity(0.4))
-                        .lineLimit(1)
-                    Spacer()
-                    if entry.unread > 0 {
-                        Text("\(entry.unread)")
-                            .font(AppFont.scaled(12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, AppSpacing.xs)
-                            .padding(.vertical, 2)
-                            .background(muted ? Color.primary.opacity(AppOpacity.disabled) : Color.accentColor, in: Capsule())
-                            .fixedSize()
-                    } else if forceUnread {
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 9, height: 9)
-                    }
+                Text(entry.preview)
+                    .font(AppFont.scaled(14))
+                    .foregroundStyle(isUnread ? Color.primary.opacity(0.65) : Color.primary.opacity(0.4))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: AppSpacing.sm)
+
+            VStack(alignment: .trailing, spacing: 8) {
+                Text(entry.relativeTime)
+                    .font(AppFont.scaled(13))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .lineLimit(1)
+                if isUnread {
+                    Circle()
+                        .fill(muted ? Color.primary.opacity(AppOpacity.disabled) : Color.brandIndigo)
+                        .frame(width: 10, height: 10)
+                        .accessibilityLabel(entry.unread > 0
+                                            ? Text("convo_unread_count \(entry.unread)")
+                                            : Text("convo_unread"))
                 }
             }
+            .padding(.top, 2)
         }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.xxs)
+        .padding(.vertical, AppSpacing.md)
         .contentShape(Rectangle())
     }
 
@@ -143,7 +160,7 @@ struct ConversationRowView: View {
         if entry.isGroup {
             GroupChatAvatar(members: members, photoUrl: propertyPhotoUrl)
         } else if let member = entry.member {
-            MemberCircleAvatar(member: member, size: 52)
+            MemberCircleAvatar(member: member, size: 54)
         }
     }
 }

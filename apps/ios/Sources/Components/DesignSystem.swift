@@ -153,6 +153,10 @@ extension Color {
     /// Electric gold — energy readings (codifies the hue the IoT current
     /// sensor tiles already use).
     static let brandGold = Color(red: 0.95, green: 0.75, blue: 0.15)
+
+    /// Soft indigo — the conversations list's accent (unread dots, active
+    /// times, the ARIA card gradient).
+    static let brandIndigo = Color(red: 0.42, green: 0.47, blue: 0.98)
 }
 
 // MARK: - Spacing

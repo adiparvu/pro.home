@@ -360,13 +360,19 @@ struct ConversationsView: View {
             }))
     }
 
-    // MARK: - Custom header (independent round buttons + title + search)
+    // MARK: - Custom header (identity block + round actions + search)
+    //
+    // The reference layout: my avatar + inbox title on the left, two round
+    // actions on the right. Everything the old ellipsis menu offered lives
+    // in the avatar's menu, so no feature was lost to the redesign.
 
     private var headerBar: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
                 Menu {
+                    Button { router.navigate(to: .profile) } label: { Label("Profile", systemImage: "person.crop.circle") }
                     Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
+                    Button { statusComposer = .camera } label: { Label("Share a moment", systemImage: "camera") }
                     Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
                     Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
@@ -374,42 +380,78 @@ struct ConversationsView: View {
                         Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .font(AppFont.headline)
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .frame(width: 40, height: 40)
-                        .glassCircle()
+                    myAvatar
                 }
-                .accessibilityLabel("More options")
+                .accessibilityLabel("Profile and options")
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("convo_inbox_title")
+                        .font(AppFont.scaled(24, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(myName)
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
                 Spacer()
-                Button { statusComposer = .camera } label: {
-                    Image(systemName: "camera.fill")
-                        .font(AppFont.headline)
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .frame(width: 40, height: 40)
-                        .glassCircle()
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Share a moment")
+
                 Button { showNewConversation = true } label: {
-                    ZStack {
-                        Circle().fill(Color.accentColor).frame(width: 40, height: 40)
-                        Image(systemName: "plus")
-                            .font(AppFont.scaled(17, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(18, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("New conversation")
-            }
 
-            Text("Chat")
-                .font(AppFont.scaled(32, weight: .bold))
+                Button { router.navigate(to: .notifications) } label: {
+                    Image(systemName: "bell")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Notifications")
+            }
 
             searchField
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.top, AppSpacing.xs)
+    }
+
+    /// My avatar: the profile photo when one is set, initials otherwise.
+    private var myAvatar: some View {
+        ZStack {
+            if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
+                StorageImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFill()
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                    default:
+                        myInitialsAvatar
+                    }
+                }
+            } else {
+                myInitialsAvatar
+            }
+        }
+        .frame(width: 48, height: 48)
+    }
+
+    private var myInitialsAvatar: some View {
+        ZStack {
+            Circle().fill(Color.brandIndigo.opacity(0.18))
+            Text(String(myName.prefix(1)).uppercased())
+                .font(AppFont.scaled(20, weight: .bold))
+                .foregroundStyle(Color.brandIndigo)
+        }
     }
 
     // MARK: - Conversation list
@@ -428,8 +470,8 @@ struct ConversationsView: View {
                     if !showArchived && searchText.isEmpty && filter == .all {
                         Button { HapticFeedback.impact(.light); router.navigate(to: .aria) } label: { ariaRow }
                             .buttonStyle(.plain)
-                            .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+                            .padding(.bottom, AppSpacing.xs)
                     }
 
                     if hasLockedChats && !showArchived && searchText.isEmpty {
@@ -594,41 +636,58 @@ struct ConversationsView: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(AppFont.scaled(14))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(Color.primary.opacity(0.4))
-            TextField("Caută grupuri, persoane…", text: $searchText)
-                .font(AppFont.scaled(15))
+            TextField(String(localized: "convo_search_ph"), text: $searchText)
+                .font(AppFont.scaled(16))
                 .autocorrectionDisabled()
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(AppFont.scaled(15))
+                        .font(AppFont.scaled(16))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 14)
+        .background(Color.primary.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
     }
 
     private var filterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ConvFilter.allCases, id: \.self) { f in
-                    Button { filter = f } label: {
+                    Button {
+                        HapticFeedback.selection()
+                        withAnimation(.snappy(duration: 0.25)) { filter = f }
+                    } label: {
                         Text(f.label)
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
-                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline),
+                            .foregroundStyle(filter == f ? Color(.systemBackground) : Color.primary.opacity(0.65))
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
+                            .background(filter == f ? Color.primary : Color.primary.opacity(0.06),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
+                // Action chip, not a filter: jumps straight to ARIA.
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.navigate(to: .aria)
+                } label: {
+                    Text(verbatim: "AI")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(Color.brandIndigo)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
+                        .background(Color.brandIndigo.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("AI Assistant")
             }
             .padding(.horizontal, AppSpacing.lg)
         }
@@ -672,18 +731,32 @@ struct ConversationsView: View {
         .contentShape(Rectangle())
     }
 
+    // The assistant card under the chips (reference layout): gradient wand
+    // tile + an honest promise — ARIA answers questions about your home.
     private var ariaRow: some View {
         HStack(spacing: 12) {
-            ARIAAvatar(size: 52)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .fill(LinearGradient(colors: [Color.brandIndigo, Color.brandPurple],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "wand.and.stars")
+                    .font(AppFont.scaled(19, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
             VStack(alignment: .leading, spacing: 3) {
-                Text(UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA")
+                Text(String(format: String(localized: "convo_aria_title"),
+                            UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA"))
                     .font(AppFont.headline)
-                Text("AI Assistant").font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.4))
+                    .foregroundStyle(.primary)
+                Text("convo_aria_subtitle")
+                    .font(AppFont.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         .contentShape(Rectangle())
     }
 
