@@ -61561,6 +61561,1078 @@
           }
         }
       }
+    },
+    "plant_health_kind_pest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pest"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dăunător"
+          }
+        }
+      }
+    },
+    "plant_health_kind_disease": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disease"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boală"
+          }
+        }
+      }
+    },
+    "plant_health_kind_disorder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disorder"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tulburare"
+          }
+        }
+      }
+    },
+    "plant_health_sev_serious": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serious"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravă"
+          }
+        }
+      }
+    },
+    "plant_health_sev_moderate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderate"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderată"
+          }
+        }
+      }
+    },
+    "plant_health_sev_low": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scăzută"
+          }
+        }
+      }
+    },
+    "plant_health_sev_unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necunoscută"
+          }
+        }
+      }
+    },
+    "plant_health_grp_leaf_appearance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaf appearance"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aspectul frunzelor"
+          }
+        }
+      }
+    },
+    "plant_health_grp_leaf_surface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaf surface & texture"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suprafața frunzelor"
+          }
+        }
+      }
+    },
+    "plant_health_grp_pests": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visible pests"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dăunători vizibili"
+          }
+        }
+      }
+    },
+    "plant_health_grp_roots": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roots, stem & soil"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rădăcini, tulpină și sol"
+          }
+        }
+      }
+    },
+    "plant_sym_yellow_leaves": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yellowing leaves"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frunze îngălbenite"
+          }
+        }
+      }
+    },
+    "plant_sym_brown_tips": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brown leaf tips"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vârfuri maro"
+          }
+        }
+      }
+    },
+    "plant_sym_brown_patches": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brown patches"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pete maro"
+          }
+        }
+      }
+    },
+    "plant_sym_black_spots": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black or dark spots"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pete negre sau închise"
+          }
+        }
+      }
+    },
+    "plant_sym_white_spots": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pale speckling / stippling"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puncte palide pe frunze"
+          }
+        }
+      }
+    },
+    "plant_sym_white_powder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White powdery coating"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depunere albă, prăfoasă"
+          }
+        }
+      }
+    },
+    "plant_sym_pale_new_growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pale new growth"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creștere nouă palidă"
+          }
+        }
+      }
+    },
+    "plant_sym_bleached_leaves": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bleached / faded leaves"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frunze decolorate"
+          }
+        }
+      }
+    },
+    "plant_sym_wilting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wilting or drooping"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofilire sau lăsare"
+          }
+        }
+      }
+    },
+    "plant_sym_curling_distorted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curling, distorted growth"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creștere răsucită, deformată"
+          }
+        }
+      }
+    },
+    "plant_sym_crispy_dry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crispy, dry leaves"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frunze uscate, sfărâmicioase"
+          }
+        }
+      }
+    },
+    "plant_sym_sticky_residue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sticky residue (honeydew)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reziduu lipicios"
+          }
+        }
+      }
+    },
+    "plant_sym_black_coating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black sooty coating"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depunere neagră, funinginoasă"
+          }
+        }
+      }
+    },
+    "plant_sym_silvery_streaks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silvery streaks"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dungi argintii"
+          }
+        }
+      }
+    },
+    "plant_sym_blisters_underside": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blisters on leaf underside"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bășici pe dosul frunzei"
+          }
+        }
+      }
+    },
+    "plant_sym_webbing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine webbing"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pânze fine"
+          }
+        }
+      }
+    },
+    "plant_sym_white_cottony": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White cottony tufts"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smocuri albe, vătoase"
+          }
+        }
+      }
+    },
+    "plant_sym_bumps_on_stems": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bumps on stems/leaves"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umflături pe tulpini/frunze"
+          }
+        }
+      }
+    },
+    "plant_sym_clustered_insects": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clustered insects on shoots"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insecte grupate pe lăstari"
+          }
+        }
+      }
+    },
+    "plant_sym_flying_insects": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small flying insects"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insecte zburătoare mici"
+          }
+        }
+      }
+    },
+    "plant_sym_gnats_from_soil": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gnats rising from soil"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musculițe din sol"
+          }
+        }
+      }
+    },
+    "plant_sym_soft_black_roots": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soft, black roots"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rădăcini moi, negre"
+          }
+        }
+      }
+    },
+    "plant_sym_mushy_stem_base": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mushy stem base"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bază moale a tulpinii"
+          }
+        }
+      }
+    },
+    "plant_sym_soil_stays_wet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soil stays wet for days"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solul rămâne ud zile întregi"
+          }
+        }
+      }
+    },
+    "plant_sym_stunted_growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stunted growth"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creștere pitică"
+          }
+        }
+      }
+    },
+    "plant_health_strength_strong": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strong match"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrivire puternică"
+          }
+        }
+      }
+    },
+    "plant_health_strength_partial": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial match"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrivire parțială"
+          }
+        }
+      }
+    },
+    "plant_health_strength_weak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weak match"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrivire slabă"
+          }
+        }
+      }
+    },
+    "plant_health_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Health"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sănătate"
+          }
+        }
+      }
+    },
+    "plant_health_mode_diagnose": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnosis"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostic"
+          }
+        }
+      }
+    },
+    "plant_health_mode_reference": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reference"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Referință"
+          }
+        }
+      }
+    },
+    "plant_health_known_risks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known risks for this plant"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riscuri cunoscute pentru această plantă"
+          }
+        }
+      }
+    },
+    "plant_health_known_risks_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Problems this species is especially prone to."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probleme la care această specie este predispusă."
+          }
+        }
+      }
+    },
+    "plant_health_symptoms": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What are you seeing?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce observi?"
+          }
+        }
+      }
+    },
+    "plant_health_symptoms_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tick every symptom that matches. The more you select, the sharper the results."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bifează fiecare simptom observat. Cu cât selectezi mai multe, cu atât rezultatele sunt mai precise."
+          }
+        }
+      }
+    },
+    "plant_health_clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear selection"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge selecția"
+          }
+        }
+      }
+    },
+    "plant_health_diag_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select symptoms to start"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selectează simptome pentru a începe"
+          }
+        }
+      }
+    },
+    "plant_health_diag_empty_msg": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick the symptoms your plant is showing and possible causes will appear here."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alege simptomele plantei tale și cauzele posibile vor apărea aici."
+          }
+        }
+      }
+    },
+    "plant_health_diag_none_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matches"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio potrivire"
+          }
+        }
+      }
+    },
+    "plant_health_diag_none_msg": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No catalogued ailment matches that combination. Try adjusting the symptoms."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio afecțiune din catalog nu corespunde acelei combinații. Încearcă să ajustezi simptomele."
+          }
+        }
+      }
+    },
+    "plant_health_diag_results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Possible matches"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potriviri posibile"
+          }
+        }
+      }
+    },
+    "plant_health_diag_disclaimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These are possible matches based on the symptoms you selected — not a definitive diagnosis. When in doubt, consult a specialist."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acestea sunt potriviri posibile pe baza simptomelor selectate — nu un diagnostic definitiv. La nevoie, consultă un specialist."
+          }
+        }
+      }
+    },
+    "plant_health_ai_deferred_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo diagnosis coming later"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostic din fotografie în curând"
+          }
+        }
+      }
+    },
+    "plant_health_ai_deferred_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI photo diagnosis isn't available yet — it will arrive once a vision model is verified. For now, the guided checklist above is the way to diagnose."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnosticul AI din fotografie nu este încă disponibil — va apărea după validarea unui model de viziune. Deocamdată, lista ghidată de mai sus este metoda de diagnostic."
+          }
+        }
+      }
+    },
+    "plant_health_match_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "matches %1$d of %2$d symptoms"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "corespunde la %1$d din %2$d simptome"
+          }
+        }
+      }
+    },
+    "plant_health_susceptible": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This species is susceptible"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Această specie este predispusă"
+          }
+        }
+      }
+    },
+    "plant_health_susceptible_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This plant's species is known to be prone to this."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Specia acestei plante este cunoscută ca predispusă la aceasta."
+          }
+        }
+      }
+    },
+    "plant_health_sec_symptoms": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symptoms"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simptome"
+          }
+        }
+      }
+    },
+    "plant_health_sec_causes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Causes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cauze"
+          }
+        }
+      }
+    },
+    "plant_health_sec_treatment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treatment"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tratament"
+          }
+        }
+      }
+    },
+    "plant_health_sec_prevention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevention"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prevenire"
+          }
+        }
+      }
+    },
+    "plant_health_sec_sources": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surse"
+          }
+        }
+      }
+    },
+    "plant_health_search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search ailments & pests"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caută afecțiuni și dăunători"
+          }
+        }
+      }
+    },
+    "plant_health_card_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnose a problem from symptoms, or browse common ailments and pests."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostichează o problemă după simptome sau răsfoiește afecțiuni și dăunători frecvenți."
+          }
+        }
+      }
+    },
+    "plant_health_card_risks_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d known risk(s) for this species"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d risc(uri) cunoscute pentru această specie"
+          }
+        }
+      }
+    },
+    "plant_health_card_open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnose & browse ailments"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostic și afecțiuni"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -460,6 +460,58 @@ extension PlantDetailSheet {
         }
     }
 
+    // MARK: Health — ailments & guided diagnosis (P4, view mode)
+    //
+    // A gateway card into the health surface: guided symptom diagnosis over the
+    // offline ailments knowledge base plus a browsable reference. Passes the
+    // plant's linked species (read live from plantService, like the botanical
+    // card) so diagnosis can weight the species' known susceptibilities.
+
+    @ViewBuilder
+    var healthCard: some View {
+        let currentId = plantService.plants.first(where: { $0.id == plant.id })?.speciesId ?? plant.speciesId
+        let riskCount = ailmentService.susceptibilities(forSpecies: currentId).count
+
+        GlassCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("plant_health_title", systemImage: "cross.case")
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+
+                Text("plant_health_card_sub")
+                    .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if riskCount > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.shield")
+                            .font(AppFont.scaled(11)).foregroundStyle(.orange)
+                        Text(String(format: String(localized: "plant_health_card_risks_fmt"), riskCount))
+                            .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.75))
+                    }
+                }
+
+                NavigationLink {
+                    PlantHealthView(service: ailmentService,
+                                    speciesId: currentId,
+                                    speciesName: plant.name)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "stethoscope")
+                        Text("plant_health_card_open")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
+                    }
+                    .font(AppFont.scaled(15))
+                    .foregroundStyle(Color.accentColor)
+                    .contentShape(Rectangle())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     // MARK: Photo album (P1, view mode)
 
     var photoAlbumCard: some View {
