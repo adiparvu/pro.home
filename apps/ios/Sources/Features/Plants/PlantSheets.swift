@@ -26,6 +26,19 @@ struct AddPlantSheet: View {
     @State private var showSpeciesCatalog = false
     @State private var pickedSpecies: PlantSpecies?
 
+    // Plant OS P1 — general information (all optional, collapsed by default).
+    @State private var nickname = ""
+    @State private var latinName = ""
+    @State private var family = ""
+    @State private var genus = ""
+    @State private var cultivar = ""
+    @State private var origin = ""
+    @State private var climateZone = ""
+    @State private var placement = ""      // "" / indoor / outdoor / both
+    @State private var toxicCats = false
+    @State private var toxicDogs = false
+    @State private var toxicKids = false
+
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
     }
@@ -44,6 +57,7 @@ struct AddPlantSheet: View {
                         locationField
                         healthPickerSection
                         wateringIntervalSection
+                        generalInfoSection
                         notesField
                         if let error {
                             Text(error)
@@ -398,6 +412,64 @@ struct AddPlantSheet: View {
         }
     }
 
+    // MARK: General information (P1) — collapsed, optional botanical identity
+
+    private var generalInfoSection: some View {
+        DisclosureGroup {
+            VStack(spacing: 12) {
+                infoField("plant_gi_nickname", text: $nickname)
+                infoField("plant_gi_latin", text: $latinName)
+                infoField("plant_gi_family", text: $family)
+                infoField("plant_gi_genus", text: $genus)
+                infoField("plant_gi_cultivar", text: $cultivar)
+                infoField("plant_gi_origin", text: $origin)
+                infoField("plant_gi_climate", text: $climateZone)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    fieldLabel("plant_gi_placement")
+                    Picker("", selection: $placement) {
+                        Text("plant_place_unset").tag("")
+                        Text("plant_place_indoor").tag("indoor")
+                        Text("plant_place_outdoor").tag("outdoor")
+                        Text("plant_place_both").tag("both")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    fieldLabel("plant_gi_toxicity")
+                    Toggle("plant_tox_cats", isOn: $toxicCats).font(AppFont.scaled(14))
+                    Toggle("plant_tox_dogs", isOn: $toxicDogs).font(AppFont.scaled(14))
+                    Toggle("plant_tox_kids", isOn: $toxicKids).font(AppFont.scaled(14))
+                }
+                .tint(.accentColor)
+            }
+            .padding(.top, AppSpacing.sm)
+        } label: {
+            Text("plant_gi_title").font(AppFont.scaled(15, weight: .semibold)).foregroundStyle(.primary)
+        }
+        .tint(.accentColor)
+        .padding(AppSpacing.base)
+        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                   in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    }
+
+    private func infoField(_ label: LocalizedStringKey, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            fieldLabel(label)
+            TextField("", text: text)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                .autocorrectionDisabled()
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                           in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        }
+    }
+
+    private func gi(_ s: String) -> String? {
+        let t = s.trimmingCharacters(in: .whitespaces); return t.isEmpty ? nil : t
+    }
+
     // MARK: Save button
 
     private var saveButton: some View {
@@ -435,7 +507,16 @@ struct AddPlantSheet: View {
             notes: notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces),
             emoji: selectedEmoji,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            info: {
+                var i = PlantGeneralInfo()
+                i.nickname = gi(nickname); i.latinName = gi(latinName)
+                i.botanicalFamily = gi(family); i.genus = gi(genus)
+                i.cultivar = gi(cultivar); i.origin = gi(origin)
+                i.climateZone = gi(climateZone); i.placement = gi(placement)
+                i.toxicCats = toxicCats; i.toxicDogs = toxicDogs; i.toxicKids = toxicKids
+                return i
+            }()
         )
         Task {
             do {

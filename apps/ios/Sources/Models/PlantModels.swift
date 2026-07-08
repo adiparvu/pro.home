@@ -18,6 +18,19 @@ struct Plant: Identifiable, Codable, Hashable {
     var createdAt: String
     var updatedAt: String
 
+    // ── General information (migration 122, Plant OS P1) ─────────────────────
+    var nickname: String?
+    var latinName: String?
+    var botanicalFamily: String?
+    var genus: String?
+    var cultivar: String?
+    var origin: String?
+    var climateZone: String?
+    var toxicCats: Bool = false
+    var toxicDogs: Bool = false
+    var toxicKids: Bool = false
+    var placement: String?   // indoor / outdoor / both
+
     enum CodingKeys: String, CodingKey {
         case id
         case propertyId = "property_id"
@@ -30,6 +43,31 @@ struct Plant: Identifiable, Codable, Hashable {
         case photoUrl  = "photo_url"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case nickname, genus, cultivar, origin, placement
+        case latinName        = "latin_name"
+        case botanicalFamily  = "botanical_family"
+        case climateZone      = "climate_zone"
+        case toxicCats        = "toxic_cats"
+        case toxicDogs        = "toxic_dogs"
+        case toxicKids        = "toxic_kids"
+    }
+
+    /// The three toxicity flags as an at-a-glance summary.
+    var toxicitySummary: [String] {
+        var out: [String] = []
+        if toxicCats { out.append(String(localized: "plant_tox_cats")) }
+        if toxicDogs { out.append(String(localized: "plant_tox_dogs")) }
+        if toxicKids { out.append(String(localized: "plant_tox_kids")) }
+        return out
+    }
+
+    var placementLabel: String? {
+        switch placement {
+        case "indoor":  return String(localized: "plant_place_indoor")
+        case "outdoor": return String(localized: "plant_place_outdoor")
+        case "both":    return String(localized: "plant_place_both")
+        default:        return nil
+        }
     }
 
     // MARK: Computed
@@ -118,6 +156,40 @@ struct Plant: Identifiable, Codable, Hashable {
 
 // MARK: - Payloads
 
+/// The Plant OS P1 general-information fields, bundled so the payloads stay
+/// readable. All optional; a plant with none set writes exactly like before.
+struct PlantGeneralInfo: Encodable, Equatable {
+    var nickname: String?
+    var latinName: String?
+    var botanicalFamily: String?
+    var genus: String?
+    var cultivar: String?
+    var origin: String?
+    var climateZone: String?
+    var toxicCats = false
+    var toxicDogs = false
+    var toxicKids = false
+    var placement: String?
+
+    enum CodingKeys: String, CodingKey {
+        case nickname, genus, cultivar, origin, placement
+        case latinName       = "latin_name"
+        case botanicalFamily = "botanical_family"
+        case climateZone     = "climate_zone"
+        case toxicCats       = "toxic_cats"
+        case toxicDogs       = "toxic_dogs"
+        case toxicKids       = "toxic_kids"
+    }
+
+    init() {}
+    init(from p: Plant) {
+        nickname = p.nickname; latinName = p.latinName; botanicalFamily = p.botanicalFamily
+        genus = p.genus; cultivar = p.cultivar; origin = p.origin; climateZone = p.climateZone
+        toxicCats = p.toxicCats; toxicDogs = p.toxicDogs; toxicKids = p.toxicKids
+        placement = p.placement
+    }
+}
+
 struct NewPlantPayload: Encodable {
     let propertyId: UUID
     let ownerId: UUID
@@ -130,6 +202,7 @@ struct NewPlantPayload: Encodable {
     let emoji: String
     let createdAt: String
     let updatedAt: String
+    var info = PlantGeneralInfo()
 
     enum CodingKeys: String, CodingKey {
         case propertyId = "property_id"
@@ -140,6 +213,22 @@ struct NewPlantPayload: Encodable {
         case notes, emoji
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(propertyId, forKey: .propertyId)
+        try c.encode(ownerId, forKey: .ownerId)
+        try c.encode(name, forKey: .name)
+        try c.encode(species, forKey: .species)
+        try c.encode(location, forKey: .location)
+        try c.encode(wateringIntervalDays, forKey: .wateringIntervalDays)
+        try c.encode(healthStatus, forKey: .healthStatus)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(emoji, forKey: .emoji)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try info.encode(to: encoder)   // flattens the general-info keys alongside
     }
 }
 
@@ -152,6 +241,7 @@ struct PlantUpdate: Encodable {
     let notes: String?
     let emoji: String
     let updatedAt: String
+    var info = PlantGeneralInfo()
 
     enum CodingKeys: String, CodingKey {
         case name, species, location
@@ -159,6 +249,45 @@ struct PlantUpdate: Encodable {
         case healthStatus         = "health_status"
         case notes, emoji
         case updatedAt = "updated_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(name, forKey: .name)
+        try c.encode(species, forKey: .species)
+        try c.encode(location, forKey: .location)
+        try c.encode(wateringIntervalDays, forKey: .wateringIntervalDays)
+        try c.encode(healthStatus, forKey: .healthStatus)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(emoji, forKey: .emoji)
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try info.encode(to: encoder)
+    }
+}
+
+// MARK: - Plant photo album (P1)
+
+struct PlantPhoto: Identifiable, Codable, Hashable {
+    let id: UUID
+    let plantId: UUID
+    let propertyId: UUID
+    var url: String
+    var note: String?
+    var takenAt: String
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, url, note
+        case plantId    = "plant_id"
+        case propertyId = "property_id"
+        case takenAt    = "taken_at"
+        case createdAt  = "created_at"
+    }
+
+    var takenDisplay: String {
+        guard let d = ISODate.date(from: takenAt) else { return "" }
+        let fmt = DateFormatter(); fmt.dateFormat = "d MMM yyyy"
+        return fmt.string(from: d)
     }
 }
 

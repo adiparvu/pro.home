@@ -79,7 +79,9 @@ enum DocField: String, CaseIterable, Hashable {
 }
 
 struct DocSection: Identifiable {
-    var id: String { titleKey }
+    // Icons are unique per section within a category, so they double as a
+    // stable id (titleKey is a LocalizedStringKey and can't be a String id).
+    var id: String { icon }
     let titleKey: LocalizedStringKey
     let icon: String
     let color: Color
@@ -424,7 +426,7 @@ struct DocFieldRow: View {
                     }
                 } label: {
                     Text(DocRecurrence.label(state.recurrence))
-                        .font(AppFont.scaled(14, weight: .medium)).foregroundStyle(.accentColor)
+                        .font(AppFont.scaled(14, weight: .medium)).foregroundStyle(Color.accentColor)
                 }
             }
         case .tags:

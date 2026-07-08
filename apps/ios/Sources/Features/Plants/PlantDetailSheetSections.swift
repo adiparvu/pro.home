@@ -321,4 +321,175 @@ extension PlantDetailSheet {
             withAnimation { isEditing = false }
         }
     }
+
+    // MARK: General information card (P1, view mode)
+
+    @ViewBuilder
+    var generalInfoCard: some View {
+        let rows: [(LocalizedStringKey, String)] = [
+            ("plant_gi_nickname", plant.nickname ?? ""),
+            ("plant_gi_latin", plant.latinName ?? ""),
+            ("plant_gi_family", plant.botanicalFamily ?? ""),
+            ("plant_gi_genus", plant.genus ?? ""),
+            ("plant_gi_cultivar", plant.cultivar ?? ""),
+            ("plant_gi_origin", plant.origin ?? ""),
+            ("plant_gi_climate", plant.climateZone ?? ""),
+        ].filter { !$0.1.isEmpty }
+        let toxicity = plant.toxicitySummary
+        let hasAny = !rows.isEmpty || plant.placementLabel != nil || !toxicity.isEmpty
+
+        if hasAny {
+            GlassCard(padding: 16) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("plant_gi_title", systemImage: "leaf.arrow.triangle.circlepath")
+                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                        HStack {
+                            Text(r.0).font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(r.1).font(AppFont.scaled(14)).foregroundStyle(.primary)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    if let place = plant.placementLabel {
+                        HStack {
+                            Text("plant_gi_placement").font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(place).font(AppFont.scaled(14)).foregroundStyle(.primary)
+                        }
+                    }
+                    if !toxicity.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(AppFont.scaled(11)).foregroundStyle(.orange)
+                            Text(String(format: String(localized: "plant_tox_fmt"),
+                                        toxicity.joined(separator: ", ")))
+                                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.75))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.top, 2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    // MARK: Photo album (P1, view mode)
+
+    var photoAlbumCard: some View {
+        GlassCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("plant_album_title", systemImage: "photo.stack")
+                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    Spacer()
+                    if isUploadingPhoto { ProgressView().scaleEffect(0.7) }
+                    Menu {
+                        Button { showAlbumCamera = true } label: { Label("Camera", systemImage: "camera.fill") }
+                        PhotosPicker(selection: $albumPickerItem, matching: .images) {
+                            Label("Photo Library", systemImage: "photo.on.rectangle")
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
+                    }
+                }
+                if photoService.photos.isEmpty {
+                    Text("plant_album_empty")
+                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(photoService.photos) { photo in
+                                PlantAlbumThumb(photo: photo) {
+                                    Task { await photoService.delete(photo) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    // MARK: General information edit fields (P1)
+
+    var generalInfoEditFields: some View {
+        VStack(spacing: 16) {
+            giEditField("plant_gi_nickname", get: { editedPlant.nickname }, set: { editedPlant.nickname = $0 })
+            giEditField("plant_gi_latin", get: { editedPlant.latinName }, set: { editedPlant.latinName = $0 })
+            giEditField("plant_gi_family", get: { editedPlant.botanicalFamily }, set: { editedPlant.botanicalFamily = $0 })
+            giEditField("plant_gi_genus", get: { editedPlant.genus }, set: { editedPlant.genus = $0 })
+            giEditField("plant_gi_cultivar", get: { editedPlant.cultivar }, set: { editedPlant.cultivar = $0 })
+            giEditField("plant_gi_origin", get: { editedPlant.origin }, set: { editedPlant.origin = $0 })
+            giEditField("plant_gi_climate", get: { editedPlant.climateZone }, set: { editedPlant.climateZone = $0 })
+
+            VStack(alignment: .leading, spacing: 8) {
+                fieldLabel("plant_gi_placement")
+                Picker("", selection: Binding(get: { editedPlant.placement ?? "" },
+                                              set: { editedPlant.placement = $0.isEmpty ? nil : $0 })) {
+                    Text("plant_place_unset").tag("")
+                    Text("plant_place_indoor").tag("indoor")
+                    Text("plant_place_outdoor").tag("outdoor")
+                    Text("plant_place_both").tag("both")
+                }
+                .pickerStyle(.segmented)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                fieldLabel("plant_gi_toxicity")
+                Toggle("plant_tox_cats", isOn: $editedPlant.toxicCats).font(AppFont.scaled(14))
+                Toggle("plant_tox_dogs", isOn: $editedPlant.toxicDogs).font(AppFont.scaled(14))
+                Toggle("plant_tox_kids", isOn: $editedPlant.toxicKids).font(AppFont.scaled(14))
+            }
+            .tint(.accentColor)
+        }
+    }
+
+    private func giEditField(_ label: LocalizedStringKey,
+                             get: @escaping () -> String?, set: @escaping (String?) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            fieldLabel(label)
+            TextField("", text: Binding(get: { get() ?? "" }, set: { set($0.isEmpty ? nil : $0) }))
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                .autocorrectionDisabled()
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                           in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        }
+    }
+}
+
+// MARK: - Album thumbnail (signed-URL resolved)
+
+private struct PlantAlbumThumb: View {
+    let photo: PlantPhoto
+    let onDelete: () -> Void
+    @State private var url: URL?
+
+    var body: some View {
+        VStack(spacing: 4) {
+            StorageImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFill()
+                default:
+                    Rectangle().fill(Color.primary.opacity(0.06)).overlay(ProgressView().scaleEffect(0.6))
+                }
+            }
+            .frame(width: 96, height: 96)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                Button(action: onDelete) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(16)).foregroundStyle(.white, .black.opacity(0.4))
+                }
+                .padding(4)
+            }
+            Text(photo.takenDisplay).font(AppFont.scaled(10)).foregroundStyle(.secondary)
+        }
+        .task(id: photo.url) { url = await PlantPhotoService.resolve(photo.url) }
+    }
 }

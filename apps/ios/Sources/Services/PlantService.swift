@@ -50,7 +50,8 @@ final class PlantService {
             name: plant.name, species: plant.species, location: plant.location,
             wateringIntervalDays: plant.wateringIntervalDays,
             healthStatus: plant.healthStatus, notes: plant.notes,
-            emoji: plant.emoji, updatedAt: now
+            emoji: plant.emoji, updatedAt: now,
+            info: PlantGeneralInfo(from: plant)
         )
         do {
             let updated: Plant = try await supabase
