@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UIKit
 import Supabase
+import UniformTypeIdentifiers
 
 // MARK: - Direct Message View (1-on-1 private chat)
 
@@ -453,19 +454,18 @@ struct DirectMessageView: View {
 
     private func dmSnippet(_ m: DirectMessage) -> String {
         if m.isContactShare { return "👤 Contact" }
-        let lower = m.body.lowercased()
-        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
-        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
-        return m.body
+        switch ChatMedia.dmBodyKind(m.body) {
+        case .audio: return String(localized: "dm_prev_audio")
+        case .image: return String(localized: "dm_prev_photo")
+        case .video: return String(localized: "dm_prev_video")
+        case .text:  return m.body
+        }
     }
 
     @ViewBuilder
     private func dmActionOverlay(_ m: DirectMessage) -> some View {
         let own = m.senderName == myName
-        let lower = m.body.lowercased()
-        let isImage = m.deletedForAll != true &&
-            (lower.contains("/dm-images/") || lower.hasSuffix(".jpg") ||
-             lower.hasSuffix(".jpeg") || lower.hasSuffix(".png") || lower.hasSuffix(".webp"))
+        let isImage = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .image
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
             isOwn: own,
@@ -485,9 +485,7 @@ struct DirectMessageView: View {
         if m.deletedForAll == true {
             return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
         }
-        let lower = m.body.lowercased()
-        let isMedia = lower.contains("/dm-images/") || lower.contains("/dm-audio/")
-            || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".m4a")
+        let isMedia = ChatMedia.dmBodyKind(m.body) != .text
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
@@ -809,9 +807,7 @@ struct DirectMessageView: View {
 
     private var sharedMediaURLs: [URL] {
         conversationMessages.compactMap { m in
-            let b = m.body.lowercased()
-            guard b.contains("/dm-images/") || b.hasSuffix(".jpg") || b.hasSuffix(".jpeg") || b.hasSuffix(".png")
-            else { return nil }
+            guard ChatMedia.dmBodyKind(m.body) == .image else { return nil }
             return URL(string: m.body)
         }
     }
@@ -930,7 +926,7 @@ struct DirectMessageView: View {
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
         .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
-                      maxSelectionCount: 10, matching: .images)
+                      maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
     }
 
@@ -941,13 +937,7 @@ struct DirectMessageView: View {
         }
     }
 
-    private func replyPreviewText(_ msg: DirectMessage) -> String {
-        if msg.isContactShare { return "👤 Contact" }
-        let lower = msg.body.lowercased()
-        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
-        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
-        return msg.body
-    }
+    private func replyPreviewText(_ msg: DirectMessage) -> String { dmSnippet(msg) }
 
     private var plusButton: some View {
         Button {
@@ -1119,20 +1109,23 @@ struct DirectMessageView: View {
     @MainActor
     private func forward(_ message: DirectMessage, to dest: ForwardDestination) async {
         guard let propId = propertyService.primary?.id else { return }
-        let lower = message.body.lowercased()
-        let isImage = lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg")
-        let isAudio = lower.contains("/dm-audio/") || lower.hasSuffix(".m4a")
 
         do {
             switch dest {
             case .group:
-                if isImage {
+                // The group table stores media in attachment columns; map the
+                // DM body kind onto the matching attachment type.
+                switch ChatMedia.dmBodyKind(message.body) {
+                case .image:
                     try await messageService.send(propertyId: propId, senderName: myName, body: nil,
                                                   attachmentUrl: message.body, attachmentType: "image")
-                } else if isAudio {
+                case .audio:
                     try await messageService.send(propertyId: propId, senderName: myName, body: nil,
                                                   attachmentUrl: message.body, attachmentType: "audio")
-                } else {
+                case .video:
+                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
+                                                  attachmentUrl: message.body, attachmentType: "video")
+                case .text:
                     try await messageService.send(propertyId: propId, senderName: myName, body: message.body)
                 }
             case .member(let m):
@@ -1196,37 +1189,47 @@ struct DirectMessageView: View {
     private func sendPhoto(_ items: [PhotosPickerItem]) async {
         guard !items.isEmpty else { return }
         photoPickerItems = []
-        // Send each selected image as its own message (preserves order).
+        // Send each selected item as its own message (preserves order). The
+        // picker offers images and videos; branch on the item's content type.
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            await uploadAndSendImage(data: data)
+            if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
+                await uploadAndSendMedia(data: data, subdir: "dm-video",
+                                         ext: isQuickTime ? "mov" : "mp4",
+                                         contentType: isQuickTime ? "video/quicktime" : "video/mp4")
+            } else {
+                await uploadAndSendMedia(data: data, subdir: "dm",
+                                         ext: "jpg", contentType: "image/jpeg")
+            }
         }
     }
 
     @MainActor
     private func sendCameraImage(_ image: UIImage) async {
         guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2048) else { return }
-        await uploadAndSendImage(data: data)
+        await uploadAndSendMedia(data: data, subdir: "dm", ext: "jpg", contentType: "image/jpeg")
     }
 
     @MainActor
-    private func uploadAndSendImage(data: Data) async {
+    private func uploadAndSendMedia(data: Data, subdir: String, ext: String, contentType: String) async {
         guard let propId = propertyService.primary?.id else { return }
         MessageSounds.sent()
 
         do {
-            // Private bucket + signed URL at display (via ChatMedia / DMImageBubble).
-            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm",
-                                                    ext: "jpg", contentType: "image/jpeg") else { return }
+            // Private bucket + signed URL at display (via ChatMedia; the subdir
+            // in the stored path is what dmBodyKind classifies bubbles by).
+            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: subdir,
+                                                    ext: ext, contentType: contentType) else { return }
 
-            struct PhotoPayload: Encodable {
+            struct MediaPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
                 let sender_id, recipient_member_id, expires_at: String?
             }
 
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
-                .insert(PhotoPayload(sender_name: myName, recipient_name: member.name,
+                .insert(MediaPayload(sender_name: myName, recipient_name: member.name,
                                      body: path, property_id: propId.uuidString,
                                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
                                      recipient_member_id: member.id.uuidString,
@@ -1239,7 +1242,7 @@ struct DirectMessageView: View {
             HapticFeedback.impact(.light)
         } catch {
 #if DEBUG
-            debugLog("[DM] image error: \(error)")
+            debugLog("[DM] media error: \(error)")
 #endif
         }
     }

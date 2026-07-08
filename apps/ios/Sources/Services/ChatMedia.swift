@@ -9,8 +9,32 @@ import Supabase
 // values that are already full public URLs pass through unchanged, so existing
 // media keeps working while new media is no longer permanently public.
 
+/// What a DM `body` actually carries. DMs have no attachment columns — media
+/// is a bare storage path (`{property}/dm…/{uuid}.ext`, private bucket) or, in
+/// legacy rows, a full public URL.
+enum DMBodyKind { case text, image, audio, video }
+
 enum ChatMedia {
     static let bucket = "chat-media"
+
+    /// Single source of truth for classifying a DM body. The old checks were
+    /// copy-pasted across six views and required "supabase" in the value, so a
+    /// private-bucket PATH (which contains no host at all) fell through and
+    /// rendered as raw text.
+    static func dmBodyKind(_ body: String) -> DMBodyKind {
+        let lower = body.lowercased()
+        // Prose contains whitespace; a path or URL never does. This also stops
+        // a sentence that merely ends in ".jpg" from rendering as media.
+        guard !lower.contains(" "), !lower.contains("\n") else { return .text }
+        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return .audio }
+        if lower.contains("/dm-video/") || lower.hasSuffix(".mp4") || lower.hasSuffix(".mov") { return .video }
+        if lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg")
+            || lower.hasSuffix(".png") || lower.hasSuffix(".webp") {
+            // Storage path (new), legacy dm-images path, or legacy public URL.
+            if lower.contains("/dm/") || lower.contains("/dm-images/") || lower.hasPrefix("http") { return .image }
+        }
+        return .text
+    }
 
     /// Uploads data to the private bucket under `{propertyId}/{subdir}/{uuid}.{ext}`
     /// and returns the stored path (nil on failure). Persist this in attachment_url.

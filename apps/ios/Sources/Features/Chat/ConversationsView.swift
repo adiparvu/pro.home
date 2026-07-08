@@ -881,12 +881,12 @@ struct ConversationsView: View {
                 if last.deletedForAll == true { return String(localized: "convo_prev_deleted") }
                 let prefix = last.senderName == myName ? String(localized: "convo_prev_you") : ""
                 if last.isContactShare { return prefix + String(localized: "convo_prev_contact") }
-                let lower = last.body.lowercased()
-                if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return prefix + String(localized: "convo_prev_audio") }
-                if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") {
-                    return prefix + String(localized: "convo_prev_image")
+                switch ChatMedia.dmBodyKind(last.body) {
+                case .audio: return prefix + String(localized: "convo_prev_audio")
+                case .image: return prefix + String(localized: "convo_prev_image")
+                case .video: return prefix + String(localized: "convo_prev_video")
+                case .text:  return prefix + last.body
                 }
-                return prefix + last.body
             }()
             items.append(ConversationEntry(
                 id: member.id.uuidString,

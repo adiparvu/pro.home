@@ -34,6 +34,7 @@ struct DMBubble: View {
     @State private var swipeOffset: CGFloat = 0
     @State private var showDetails = false
     @State private var viewerItem: ImageViewerItem? = nil
+    @State private var videoItem: ImageViewerItem? = nil
 
     private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
@@ -65,18 +66,17 @@ struct DMBubble: View {
         .accessibilityLabel("Forward")
     }
 
-    private enum DMMessageType { case text, image, audio, contacts, deleted }
+    private enum DMMessageType { case text, image, audio, video, contacts, deleted }
 
     private var messageType: DMMessageType {
         if message.deletedForAll == true { return .deleted }
         if message.isContactShare { return .contacts }
-        let lower = message.body.lowercased()
-        if lower.hasSuffix(".m4a") || lower.contains("/dm-audio/") { return .audio }
-        if lower.contains("supabase") &&
-           (lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") ||
-            lower.hasSuffix(".png") || lower.hasSuffix(".webp") ||
-            lower.contains("/dm-images/")) { return .image }
-        return .text
+        switch ChatMedia.dmBodyKind(message.body) {
+        case .audio: return .audio
+        case .image: return .image
+        case .video: return .video
+        case .text:  return .text
+        }
     }
 
     var body: some View {
@@ -113,6 +113,7 @@ struct DMBubble: View {
                             hasTail: hasTail
                         )
                     case .image: imageBubble
+                    case .video: videoBubble
                     case .contacts:
                         ContactCardBubble(payloads: SharedContactPayload.decode(message.body),
                                           isOwn: isOwn,
@@ -173,6 +174,9 @@ struct DMBubble: View {
         }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)
+        }
+        .fullScreenCover(item: $videoItem) { item in
+            VideoPlayerSheet(url: item.url)
         }
     }
 
@@ -305,11 +309,13 @@ struct DMBubble: View {
     @ViewBuilder
     private func quotedReply(_ replied: DirectMessage) -> some View {
         let preview: String = {
-            let lower = replied.body.lowercased()
             if replied.deletedForAll == true { return "This message was deleted" }
-            if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
-            if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
-            return replied.body
+            switch ChatMedia.dmBodyKind(replied.body) {
+            case .audio: return String(localized: "dm_prev_audio")
+            case .image: return String(localized: "dm_prev_photo")
+            case .video: return String(localized: "dm_prev_video")
+            case .text:  return replied.body
+            }
         }()
         let accent = outgoingColor ?? Color.accentColor
         HStack(spacing: 6) {
@@ -363,6 +369,12 @@ struct DMBubble: View {
 
     private var imageBubble: some View {
         DMImageBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail) { u in viewerItem = ImageViewerItem(url: u) }
+    }
+
+    private var videoBubble: some View {
+        // Same bubble the group chat uses — resolves the signed URL and plays
+        // full-screen through VideoPlayerSheet.
+        ChatVideoBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail) { u in videoItem = ImageViewerItem(url: u) }
     }
 }
 

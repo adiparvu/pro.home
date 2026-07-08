@@ -164,10 +164,12 @@ struct DMMessageDetailsView: View {
         message.deliveredAt.map(detailDateTime)
     }
     private var summary: String {
-        let lower = message.body.lowercased()
-        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
-        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
-        return message.body
+        switch ChatMedia.dmBodyKind(message.body) {
+        case .audio: return String(localized: "dm_prev_audio")
+        case .image: return String(localized: "dm_prev_photo")
+        case .video: return String(localized: "dm_prev_video")
+        case .text:  return message.body
+        }
     }
 
     var body: some View {

@@ -78,10 +78,12 @@ struct DMStarredView: View {
     @Environment(\.dismiss) private var dismiss
 
     private func snippet(_ m: DirectMessage) -> String {
-        let lower = m.body.lowercased()
-        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
-        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
-        return m.body
+        switch ChatMedia.dmBodyKind(m.body) {
+        case .audio: return String(localized: "dm_prev_audio")
+        case .image: return String(localized: "dm_prev_photo")
+        case .video: return String(localized: "dm_prev_video")
+        case .text:  return m.body
+        }
     }
 
     var body: some View {
