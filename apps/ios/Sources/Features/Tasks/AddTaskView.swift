@@ -405,6 +405,7 @@ struct AddTaskView: View {
 
         Task {
             do {
+                let savedTaskId: UUID
                 if let existing = editing {
                     try await taskService.updateTask(
                         existing,
@@ -416,6 +417,7 @@ struct AddTaskView: View {
                         assigneeIds: assigneeIds,
                         assigneeNames: assigneeNames
                     )
+                    savedTaskId = existing.id
                 } else {
                     guard let propId = propertyService.primary?.id else {
                         errorMsg = String(localized: "No property found. Please set up your property first.")
@@ -432,7 +434,8 @@ struct AddTaskView: View {
                         assigneeIds: assigneeIds,
                         assigneeNames: assigneeNames
                     )
-                    try await taskService.addTask(payload)
+                    let created = try await taskService.addTask(payload)
+                    savedTaskId = created.id
                     scheduleAssigneeNotifications()
                 }
                 if hasDueDate {
@@ -442,8 +445,14 @@ struct AddTaskView: View {
                                                   calendarId: selectedCalendarId)
                     }
                     if addToReminders {
-                        TaskCalendarSync.addReminder(title: trimmedTitle, notes: trimmedDesc,
-                                                     date: combinedDueDate, hasTime: hasDueTime)
+                        // The link is what makes completion travel both ways:
+                        // checking the reminder off in the Reminders app
+                        // completes this task on next foreground, and vice versa.
+                        if let reminderId = TaskCalendarSync.addReminder(
+                            title: trimmedTitle, notes: trimmedDesc,
+                            date: combinedDueDate, hasTime: hasDueTime) {
+                            TaskReminderLinks.link(taskId: savedTaskId, reminderId: reminderId)
+                        }
                     }
                 }
                 dismiss()

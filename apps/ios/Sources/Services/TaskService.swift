@@ -90,7 +90,8 @@ final class TaskService {
         }
     }
 
-    func addTask(_ payload: NewTaskPayload) async throws {
+    @discardableResult
+    func addTask(_ payload: NewTaskPayload) async throws -> MaintenanceTask {
         let new: MaintenanceTask = try await supabase
             .from("maintenance_tasks")
             .insert(payload)
@@ -99,6 +100,7 @@ final class TaskService {
             .execute()
             .value
         tasks.insert(new, at: 0)
+        return new
     }
 
     func tasks(forElement elementId: UUID) -> [MaintenanceTask] {
@@ -146,8 +148,21 @@ final class TaskService {
             if newStatus == "completed" {
                 LiveActivityService.shared.completeMaintenance(taskTitle: task.title)
             }
+            // Keep the linked Apple Reminder in step (both directions:
+            // completing here checks it off, reopening here unchecks it).
+            TaskCalendarSync.setReminderCompleted(taskId: task.id, newStatus == "completed")
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// Reconciles tasks with Apple Reminders: anything the user checked off
+    /// in the Reminders app completes here too. Runs on foreground; silent
+    /// no-op without full Reminders access or when nothing is linked.
+    func syncFromReminders() async {
+        for id in TaskCalendarSync.completedLinkedTaskIds() {
+            guard let task = tasks.first(where: { $0.id == id }), !task.isCompleted else { continue }
+            await toggleComplete(task)
         }
     }
 
@@ -205,6 +220,8 @@ final class TaskService {
                 .eq("id", value: task.id.uuidString)
                 .execute()
             tasks.removeAll { $0.id == task.id }
+            // A deleted task must stop steering its Apple Reminder.
+            TaskReminderLinks.unlink(taskId: task.id)
         } catch {
             self.error = error.localizedDescription
         }

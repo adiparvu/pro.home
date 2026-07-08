@@ -139,6 +139,9 @@ struct MainTabView: View {
         .task {
             WatchSyncService.shared.activate()
             await reloadWorld(reason: .coldStart)
+            // Reminders checked off while the app was closed complete their
+            // linked tasks now that the task list is loaded.
+            await taskService.syncFromReminders()
         }
         .task {
             // Presence heartbeat: advertise ourselves and refresh members' status
@@ -151,7 +154,12 @@ struct MainTabView: View {
         .onChange(of: scenePhase) { _, phase in
             // Beat immediately on foreground so we don't read as offline after a
             // background gap; drop the live channel while backgrounded.
-            if phase == .active { Task { await pulsePresence() } }
+            if phase == .active {
+                Task { await pulsePresence() }
+                // A reminder ticked in the Reminders app while we were in the
+                // background completes its linked task on return.
+                Task { await taskService.syncFromReminders() }
+            }
             else if phase == .background {
                 Task { await presenceService.unsubscribe() }
                 // Widgets must always show the state you left the app in —

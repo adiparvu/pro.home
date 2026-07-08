@@ -88,10 +88,12 @@ enum TaskCalendarSync {
     // MARK: Reminders
 
     /// Creates a reminder in the default Reminders list, due on the task's
-    /// date (with an absolute-time alarm when a time is set).
+    /// date (with an absolute-time alarm when a time is set). Returns the
+    /// reminder's identifier so the task can be LINKED to it — that link is
+    /// what lets checking it off in the Reminders app complete the task here.
     @discardableResult
-    static func addReminder(title: String, notes: String?, date: Date, hasTime: Bool) -> Bool {
-        guard let list = store.defaultCalendarForNewReminders() else { return false }
+    static func addReminder(title: String, notes: String?, date: Date, hasTime: Bool) -> String? {
+        guard let list = store.defaultCalendarForNewReminders() else { return nil }
         let reminder = EKReminder(eventStore: store)
         reminder.title = title
         reminder.notes = notes
@@ -106,9 +108,71 @@ enum TaskCalendarSync {
         reminder.dueDateComponents = comps
         do {
             try store.save(reminder, commit: true)
-            return true
+            return reminder.calendarItemIdentifier
         } catch {
-            return false
+            return nil
         }
+    }
+
+    // MARK: Completion sync (Reminders ⇄ tasks)
+
+    /// True only when the user already granted full Reminders access — the
+    /// sync paths must never surface a permission prompt on their own.
+    private static var hasReminderReadAccess: Bool {
+        EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
+    }
+
+    /// Task ids whose linked Apple Reminder has been checked off in the
+    /// Reminders app. Links whose reminder no longer exists (deleted from
+    /// Reminders) are pruned so the map can't grow stale entries.
+    static func completedLinkedTaskIds() -> [UUID] {
+        guard hasReminderReadAccess else { return [] }
+        var done: [UUID] = []
+        for (taskIdStr, reminderId) in TaskReminderLinks.all() {
+            guard let taskId = UUID(uuidString: taskIdStr) else { continue }
+            guard let reminder = store.calendarItem(withIdentifier: reminderId) as? EKReminder else {
+                TaskReminderLinks.unlink(taskId: taskId)
+                continue
+            }
+            if reminder.isCompleted { done.append(taskId) }
+        }
+        return done
+    }
+
+    /// Mirrors in-app completion (or reopening) onto the linked reminder,
+    /// so the two never disagree regardless of where the tap happened.
+    static func setReminderCompleted(taskId: UUID, _ completed: Bool) {
+        guard hasReminderReadAccess,
+              let reminderId = TaskReminderLinks.all()[taskId.uuidString],
+              let reminder = store.calendarItem(withIdentifier: reminderId) as? EKReminder,
+              reminder.isCompleted != completed else { return }
+        reminder.isCompleted = completed
+        try? store.save(reminder, commit: true)
+    }
+}
+
+// MARK: - Task → reminder identifier map
+//
+// Local by design: the EKReminder lives in this device's Reminders database
+// (iCloud syncs it between the user's own devices, where the app relinks on
+// creation), and a public repo means nothing device-private goes to the DB.
+
+enum TaskReminderLinks {
+    private static let key = "task.reminderLinks"
+
+    static func all() -> [String: String] {
+        UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:]
+    }
+
+    static func link(taskId: UUID, reminderId: String) {
+        var map = all()
+        map[taskId.uuidString] = reminderId
+        UserDefaults.standard.set(map, forKey: key)
+    }
+
+    static func unlink(taskId: UUID) {
+        var map = all()
+        guard map.removeValue(forKey: taskId.uuidString) != nil else { return }
+        UserDefaults.standard.set(map, forKey: key)
     }
 }
