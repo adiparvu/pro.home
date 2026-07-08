@@ -282,6 +282,13 @@ struct MainTabView: View {
             AddTaskView()
         case .addExpense:
             AddFinancialView { await financialService.load() }
+        case .receiptScan:
+            // Camera OCR receipt scanner (its own NavigationStack). Receipt +
+            // property services are required; supply/pantry are read optionally
+            // for shopping-list sync and resolve from the ambient environment.
+            ReceiptScannerView()
+                .environment(receiptService)
+                .environment(propertyService)
         case .inventoryScan:
             NavigationStack { InventoryView(autoScan: true) }
         case .inventoryAdd:

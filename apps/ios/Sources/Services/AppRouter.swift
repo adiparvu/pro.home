@@ -20,6 +20,7 @@ final class AppRouter {
         case aria           // fullScreenCover
         case newTask
         case addExpense
+        case receiptScan
         case inventoryScan
         case inventoryAdd
         case inventory
@@ -228,7 +229,10 @@ final class AppRouter {
         case .scan:
             activeDestination = .inventoryScan
         case .receipts:
-            activeDestination = .addExpense
+            // "Scan Receipt" (Control Center / prvio://receipts) opens the
+            // camera OCR receipt scanner — NOT the manual add-transaction form
+            // (that is .addExpense, reachable from the Finances FAB action).
+            activeDestination = .receiptScan
         case .notifications:
             selectedTab = .home
             activeDestination = .notifications
