@@ -54169,6 +54169,70 @@
           }
         }
       }
+    },
+    "util_avg %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avg %@/mo"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medie %@/lună"
+          }
+        }
+      }
+    },
+    "util_total_consumption %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@ total"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@ în total"
+          }
+        }
+      }
+    },
+    "util_mom_up %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld%% vs last month"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld%% față de luna trecută"
+          }
+        }
+      }
+    },
+    "util_mom_down %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "−%lld%% vs last month"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "−%lld%% față de luna trecută"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -141,8 +141,13 @@ final class UtilityService {
 struct UtilityView: View {
     @State private var service = UtilityService()
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppSettings.self) private var appSettings
     @State private var showAdd = false
     @State private var selectedType = "electricity"
+
+    /// Bills display in the household's preferred currency — the "€" that
+    /// used to be hardcoded showed euros over RON amounts.
+    private var currencyCode: String { appSettings.preferredCurrency }
 
     let types: [(id: String, icon: String, color: Color, label: String, unit: String)] = [
         ("electricity", "bolt.fill",      .yellow,                                  String(localized: "Electricity"), "kWh"),
@@ -161,7 +166,8 @@ struct UtilityView: View {
                             UtilitySummaryCard(
                                 type: t,
                                 currentEntry: service.currentMonthEntry(t.id),
-                                isSelected: selectedType == t.id
+                                isSelected: selectedType == t.id,
+                                code: currencyCode
                             )
                             .onTapGesture {
                                 HapticFeedback.selection()
@@ -175,7 +181,10 @@ struct UtilityView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        let typeData = service.lastSixMonths(selectedType)
+                        // One filter+sort per render — entriesFor() used to
+                        // run three times per body evaluation.
+                        let allEntries = service.entriesFor(selectedType)
+                        let typeData = Array(allEntries.suffix(6))
                         let current = types.first { $0.id == selectedType }
 
                         if typeData.count >= 2 {
@@ -183,14 +192,14 @@ struct UtilityView: View {
                         }
 
                         if !typeData.isEmpty {
-                            totalsCard(data: service.entriesFor(selectedType), color: current?.color ?? .white)
+                            totalsCard(data: allEntries, color: current?.color ?? .white)
                         }
 
                         if typeData.isEmpty {
                             emptyState(type: current)
                         } else {
-                            ForEach(service.entriesFor(selectedType).reversed()) { entry in
-                                UtilityEntryRow(entry: entry, color: current?.color ?? .white)
+                            ForEach(allEntries.reversed()) { entry in
+                                UtilityEntryRow(entry: entry, color: current?.color ?? .white, code: currencyCode)
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
@@ -240,18 +249,22 @@ struct UtilityView: View {
     private func chartCard(data: [UtilityEntry], color: Color, unit: String) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Last \(data.count) months")
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(Color.primary.opacity(0.6))
+                HStack {
+                    Text("Last \(data.count) months")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(0.6))
+                    Spacer()
+                    monthOverMonth(data)
+                }
                 Chart(data, id: \.id) { e in
                     BarMark(
                         x: .value("Month", String(e.month.suffix(2))),
-                        y: .value("€", e.amount)
+                        y: .value("Amount", e.amount)
                     )
                     .foregroundStyle(color.opacity(0.75))
                     .cornerRadius(6)
                     .annotation(position: .top) {
-                        Text("€\(String(format: "%.0f", e.amount))")
+                        Text(verbatim: CurrencyService.money(e.amount, code: currencyCode, whole: true))
                             .font(.system(size: 9))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
@@ -265,13 +278,40 @@ struct UtilityView: View {
                 HStack {
                     let avg = data.map(\.amount).reduce(0, +) / Double(data.count)
                     let totalConsumption = data.map(\.consumption).reduce(0, +)
-                    Label("Avg €\(String(format: "%.0f", avg))/mo", systemImage: "chart.line.uptrend.xyaxis")
+                    Label(String(format: String(localized: "util_avg %@"),
+                                 CurrencyService.money(avg, code: currencyCode, whole: true)),
+                          systemImage: "chart.line.uptrend.xyaxis")
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     if totalConsumption > 0 {
-                        Label("\(String(format: "%.0f", totalConsumption)) \(unit) total", systemImage: "sum")
+                        Label(String(format: String(localized: "util_total_consumption %@ %@"),
+                                     String(format: "%.0f", totalConsumption), unit),
+                              systemImage: "sum")
                             .font(.caption).foregroundStyle(.secondary)
                     }
+                }
+            }
+        }
+    }
+
+    /// Latest bill vs. the one before — the number that says whether this
+    /// utility is getting more expensive. Only shown for real changes (≥1%).
+    @ViewBuilder
+    private func monthOverMonth(_ data: [UtilityEntry]) -> some View {
+        if data.count >= 2 {
+            let last = data[data.count - 1].amount
+            let previous = data[data.count - 2].amount
+            if previous > 0 {
+                let pct = Int(((last - previous) / previous * 100).rounded())
+                if pct != 0 {
+                    let rising = pct > 0
+                    Label(String(format: String(localized: rising ? "util_mom_up %lld" : "util_mom_down %lld"),
+                                 abs(pct)),
+                          systemImage: rising ? "arrow.up.right" : "arrow.down.right")
+                        .font(AppFont.label)
+                        .foregroundStyle(rising ? Color.orange : Color.brandSuccess)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
+                        .background((rising ? Color.orange : Color.brandSuccess).opacity(0.12), in: Capsule())
                 }
             }
         }
@@ -280,9 +320,16 @@ struct UtilityView: View {
     private func totalsCard(data: [UtilityEntry], color: Color) -> some View {
         GlassCard {
             HStack(spacing: 0) {
-                statCell(title: "This Year", value: "€\(String(format: "%.0f", data.filter { $0.month.hasPrefix(currentYear) }.map(\.amount).reduce(0, +)))", color: color)
+                statCell(title: "This Year",
+                         value: CurrencyService.money(
+                            data.filter { $0.month.hasPrefix(currentYear) }.map(\.amount).reduce(0, +),
+                            code: currencyCode, whole: true),
+                         color: color)
                 Divider().background(Color.primary.opacity(0.08)).frame(height: 36)
-                statCell(title: "All Time", value: "€\(String(format: "%.0f", data.map(\.amount).reduce(0, +)))", color: color)
+                statCell(title: "All Time",
+                         value: CurrencyService.money(data.map(\.amount).reduce(0, +),
+                                                      code: currencyCode, whole: true),
+                         color: color)
                 Divider().background(Color.primary.opacity(0.08)).frame(height: 36)
                 statCell(title: "Bills", value: "\(data.count)", color: color)
             }
@@ -320,6 +367,7 @@ private struct UtilitySummaryCard: View {
     let type: (id: String, icon: String, color: Color, label: String, unit: String)
     let currentEntry: UtilityEntry?
     let isSelected: Bool
+    let code: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -329,10 +377,11 @@ private struct UtilitySummaryCard: View {
                     .foregroundStyle(isSelected ? .black : type.color)
                 Text(type.label)
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(isSelected ? .black : .white)
+                    // .white was hardcoded — invisible on the light theme.
+                    .foregroundStyle(isSelected ? Color.black : Color.primary)
             }
             if let entry = currentEntry {
-                Text("€\(String(format: "%.2f", entry.amount))")
+                Text(verbatim: CurrencyService.money(entry.amount, code: code, whole: false))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(isSelected ? .black : type.color)
                 if entry.consumption > 0 {
@@ -361,10 +410,21 @@ private struct UtilitySummaryCard: View {
 private struct UtilityEntryRow: View {
     let entry: UtilityEntry
     let color: Color
+    let code: String
+
+    // Built once — a fresh DateFormatter per row per render is real cost
+    // on a long bill history.
+    private static let monthDisplay: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     var displayMonth: String {
         guard let d = AppDate.monthKey.date(from: entry.month) else { return entry.month }
-        let out = DateFormatter(); out.dateFormat = "MMMM yyyy"; return out.string(from: d)
+        return Self.monthDisplay.string(from: d)
     }
+
     var body: some View {
         GlassCard {
             HStack {
@@ -377,7 +437,7 @@ private struct UtilityEntryRow: View {
                     }
                 }
                 Spacer()
-                Text("€\(String(format: "%.2f", entry.amount))")
+                Text(verbatim: CurrencyService.money(entry.amount, code: code, whole: false))
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(color)
             }
         }
