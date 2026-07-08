@@ -100,6 +100,24 @@ final class PlantService {
         } catch { self.error = error.localizedDescription }
     }
 
+    /// Persists a freshly computed Plant Health Score (P6). Focused single-column
+    /// write (mirrors `markWatered`) so no other field is touched; updates the
+    /// local array so the widget/watch catalog picks it up on the next snapshot.
+    /// A no-op when the score is unchanged, to avoid needless writes on re-open.
+    func saveHealthScore(_ score: Int, for plant: Plant) async {
+        guard plant.healthScore != score else { return }
+        let now = ISO8601DateFormatter().string(from: Date())
+        if let i = plants.firstIndex(where: { $0.id == plant.id }) {
+            plants[i].healthScore = score
+            plants[i].healthScoreAt = now
+        }
+        do {
+            try await supabase
+                .from("plants").update(PlantHealthScoreUpdate(healthScore: score, healthScoreAt: now))
+                .eq("id", value: plant.id.uuidString).execute()
+        } catch { self.error = error.localizedDescription }
+    }
+
     func delete(_ plant: Plant) async {
         plants.removeAll { $0.id == plant.id }
         do {

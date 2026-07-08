@@ -483,7 +483,7 @@ struct MainTabView: View {
                                                      isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) }
         )
         SharedDataStore.writePlantCatalog(
-            plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
+            plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering, healthScore: $0.healthScore) }
         )
         SharedDataStore.writeSupplyCatalog(
             supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }

@@ -559,26 +559,27 @@ final class IoTService {
             case .below:  fired = value < auto.triggerValue
             case .equals: fired = abs(value - auto.triggerValue) < 0.1
             }
-            if fired { fireAction(auto, sensor: sensor) }
+            if fired { deliver(action: auto.action, name: auto.name, payload: auto.actionPayload, sensor: sensor) }
         }
+        checkPlantRules()
     }
 
-    private func fireAction(_ auto: IoTAutomation, sensor: IoTSensor) {
-        switch auto.action {
+    private func deliver(action: IoTAutomation.AutomationAction, name: String, payload: String, sensor: IoTSensor) {
+        switch action {
         case .sendNotification:
             let c = UNMutableNotificationContent()
-            c.title = "PRVIO — \(auto.name)"
-            c.body = auto.actionPayload.isEmpty
+            c.title = "PRVIO — \(name)"
+            c.body = payload.isEmpty
                 ? "\(sensor.name): \(sensor.displayValue)"
-                : auto.actionPayload
+                : payload
             c.sound = .default
             let req = UNNotificationRequest(
-                identifier: "\(auto.id)-\(Int(Date().timeIntervalSince1970))",
+                identifier: "\(name)-\(Int(Date().timeIntervalSince1970))",
                 content: c, trigger: nil)
             UNUserNotificationCenter.current().add(req)
 
         case .callWebhook:
-            if let url = URL(string: auto.actionPayload) {
+            if let url = URL(string: payload) {
                 Task { try? await URLSession.shared.data(from: url) }
             }
 
@@ -590,11 +591,80 @@ final class IoTService {
                 name: .init("com.prvio.iot.createTask"),
                 object: nil,
                 userInfo: [
-                    "automationName": auto.name,
+                    "automationName": name,
                     "sensorValue": sensor.displayValue,
                     "sensorName": sensor.name
                 ]
             )
         }
     }
+
+    // MARK: - Per-plant automations (Plant OS P6)
+    //
+    // Resolved, device-local plant rules keyed by plant id. Fed by
+    // PlantAutomationService after it loads the server rows and resolves each
+    // rule's bound sensor to a live sensor here. IoTService evaluates them with
+    // the SAME firing path as native automations — one engine, not two.
+
+    private(set) var plantRules: [String: [IoTPlantRule]] = [:]
+
+    /// Rules currently in their fired state, so a rule fires once per crossing
+    /// instead of on every 30 s poll while the threshold stays crossed.
+    private var latchedPlantRules: Set<UUID> = []
+
+    /// Replaces the resolved rule set for one plant (the only writer per plant),
+    /// dropping stale latches for rules that no longer exist.
+    func setPlantRules(_ rules: [IoTPlantRule], forPlant plantId: UUID) {
+        plantRules[plantId.uuidString] = rules
+        let liveIds = Set(plantRules.values.flatMap { $0 }.map(\.id))
+        latchedPlantRules.formIntersection(liveIds)
+    }
+
+    private func checkPlantRules() {
+        for rule in plantRules.values.flatMap({ $0 }) {
+            guard let sensor = sensors.first(where: { $0.id == rule.triggerSensorId }),
+                  let value = sensor.value else { continue }
+            let crossed: Bool
+            switch rule.condition {
+            case .above:  crossed = value > rule.threshold
+            case .below:  crossed = value < rule.threshold
+            case .equals: crossed = abs(value - rule.threshold) < 0.1
+            }
+            if crossed {
+                guard !latchedPlantRules.contains(rule.id) else { continue }
+                latchedPlantRules.insert(rule.id)
+                fire(rule, sensor: sensor)
+            } else {
+                latchedPlantRules.remove(rule.id)
+            }
+        }
+    }
+
+    private func fire(_ rule: IoTPlantRule, sensor: IoTSensor) {
+        deliver(action: rule.action, name: rule.name, payload: rule.payload, sensor: sensor)
+        // The .device action also drives a real relay through the actuator
+        // layer when one was resolved — honest actuation, never a HomeKit claim.
+        if let actuatorId = rule.actuatorId,
+           let actuator = actuators.first(where: { $0.id == actuatorId }),
+           actuator.kind == .relay {
+            perform(.turnOn, on: actuator)
+        }
+    }
+
+    /// Resolves a per-plant rule's stored sensor identity to a live sensor here.
+    /// nil when the sensor is not present on this device — the caller then does
+    /// NOT evaluate the rule locally (and the UI says so). Mirrors `sensor(forRef:)`.
+    func plantRuleSensorId(forRef ref: String) -> UUID? {
+        sensors.first { $0.stableRef == ref }?.id
+    }
+
+    /// Resolves a relay actuator by its installation-local identity
+    /// ("{deviceId}:{remoteId}"), or nil when it is not present here.
+    func actuator(forRef ref: String) -> IoTActuator? {
+        actuators.first { "\($0.deviceId.uuidString):\($0.remoteId)" == ref }
+    }
+
+    /// The real relay actuators available to drive from a plant rule's
+    /// `.device` action, for the builder's picker.
+    var relayActuators: [IoTActuator] { actuators.filter { $0.kind == .relay } }
 }

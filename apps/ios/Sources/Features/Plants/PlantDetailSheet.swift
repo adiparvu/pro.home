@@ -37,6 +37,10 @@ struct PlantDetailSheet: View {
     // locally, like the other plant-page services; powers the Health surface.
     @State var ailmentService = PlantAilmentService()
 
+    // Per-plant automations (P6). Loaded lazily and locally; reconciled into
+    // the existing IoT automation engine (IoTService) so real sensors drive it.
+    @State var automationService = PlantAutomationService()
+
     init(plant: Plant) {
         self.plant = plant
         _editedPlant = State(initialValue: plant)
@@ -59,6 +63,7 @@ struct PlantDetailSheet: View {
                             generalInfoCard
                             botanicalProfileCard
                             careCard
+                            healthScoreCard
                             healthCard
                             photoAlbumCard
                             PlantHistorySection(
@@ -67,6 +72,7 @@ struct PlantDetailSheet: View {
                                 eventService: eventService,
                                 photoService: photoService
                             )
+                            automationsCard
                             waterButton
                         }
 
@@ -83,6 +89,8 @@ struct PlantDetailSheet: View {
             .task { await plantSensorService.load(plantId: plant.id) }
             .task { await eventService.load(plantId: plant.id) }
             .task { await ailmentService.loadAll() }
+            .task { await automationService.load(plantId: plant.id) }
+            .onChange(of: healthSignature) { _, _ in persistHealthScore() }
             .sheet(isPresented: $showSpeciesPicker) {
                 PlantSpeciesPickerView(service: speciesService) { picked in
                     Task { await plantService.linkSpecies(picked.id, for: plant) }

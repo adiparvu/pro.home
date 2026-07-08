@@ -321,3 +321,27 @@ struct IoTAutomation: Identifiable, Codable {
         "\(triggerSensorName) \(condition.rawValue) \(String(format: "%.1f", triggerValue))"
     }
 }
+
+// MARK: - Plant automation bridge (Plant OS P6)
+//
+// The transient, engine-side shape of a per-plant automation rule. Per-plant
+// rules are persisted server-side (`plant_automations`) as the household-synced
+// source of truth; `PlantAutomationService` resolves each active rule's bound
+// sensor to a live sensor on THIS device and hands the resolved rules to
+// `IoTService`, which evaluates them on every sensor poll using the SAME firing
+// path as native IoT automations. A rule whose sensor is not present locally is
+// simply never resolved into one of these — so it is never fired here, and the
+// UI can say so honestly (no fabricated reading).
+struct IoTPlantRule: Identifiable {
+    let id: UUID              // the plant_automations row id (stable across polls)
+    let plantId: UUID
+    let name: String
+    let triggerSensorId: UUID // resolved live sensor on this device
+    let condition: IoTAutomation.TriggerCondition
+    let threshold: Double
+    let action: IoTAutomation.AutomationAction
+    let payload: String
+    /// Resolved real relay actuator to drive when the rule fires, if any. Only
+    /// ever set when a matching actuator actually exists on this device.
+    let actuatorId: UUID?
+}

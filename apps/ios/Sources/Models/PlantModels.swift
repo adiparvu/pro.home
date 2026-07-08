@@ -37,6 +37,14 @@ struct Plant: Identifiable, Codable, Hashable {
     /// form, so a normal update can't accidentally clear it.
     var speciesId: UUID?
 
+    // ── Plant Health Score (migration 133, Plant OS P6) ──────────────────────
+    /// Last computed explainable Health Score (0–100) and when it was computed.
+    /// nil = not computed yet (never a fabricated default). Written only by
+    /// `PlantService.saveHealthScore` after the plant page computes it from real
+    /// inputs, so widgets / the watch glance can read it without recomputing.
+    var healthScore: Int?
+    var healthScoreAt: String?
+
     enum CodingKeys: String, CodingKey {
         case id
         case propertyId = "property_id"
@@ -57,6 +65,8 @@ struct Plant: Identifiable, Codable, Hashable {
         case toxicDogs        = "toxic_dogs"
         case toxicKids        = "toxic_kids"
         case speciesId        = "species_id"
+        case healthScore      = "health_score"
+        case healthScoreAt    = "health_score_at"
     }
 
     /// The three toxicity flags as an at-a-glance summary.
@@ -90,6 +100,10 @@ struct Plant: Identifiable, Codable, Hashable {
         guard let str else { return nil }
         return Plant.isoFull.date(from: str) ?? Plant.isoShort.date(from: str)
     }
+
+    /// Public parsed last-watered instant (used by the Health Score's watering
+    /// discipline factor). nil when the plant has never been watered.
+    var lastWateredAtDate: Date? { parseDate(lastWateredAt) }
 
     var needsWatering: Bool {
         guard let last = parseDate(lastWateredAt) else { return true }
@@ -305,6 +319,19 @@ struct PlantWateringUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case lastWateredAt = "last_watered_at"
         case updatedAt     = "updated_at"
+    }
+}
+
+/// Persists the computed Plant Health Score (P6). Focused single-purpose
+/// update, like `PlantWateringUpdate`, so the edit form never touches it and a
+/// normal save can't overwrite the score.
+struct PlantHealthScoreUpdate: Encodable {
+    let healthScore: Int
+    let healthScoreAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case healthScore   = "health_score"
+        case healthScoreAt = "health_score_at"
     }
 }
 

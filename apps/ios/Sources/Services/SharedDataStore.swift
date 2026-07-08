@@ -104,6 +104,10 @@ struct PlantCatalogEntry: Codable {
     var name: String
     var emoji: String
     var needsWatering: Bool
+    /// Last computed Plant Health Score (0–100), or nil when not computed yet.
+    /// Optional so catalogs written before P6 still decode, and so a plant the
+    /// user hasn't scored yet honestly shows no number on the widget/watch.
+    var healthScore: Int? = nil
 }
 
 struct SupplyCatalogEntry: Codable {
