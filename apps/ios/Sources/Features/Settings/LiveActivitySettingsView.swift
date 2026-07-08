@@ -23,6 +23,7 @@ extension LiveActivityKind {
         case .maintenance: return "Fix kitchen tap"
         case .plantCare:   return "Plant watering"
         case .workSession: return "Fix kitchen tap"
+        case .emergency:   return "la_emergency_active"
         }
     }
     var previewStatus: LocalizedStringKey {
@@ -32,6 +33,7 @@ extension LiveActivityKind {
         case .maintenance: return "Step 3 of 5"
         case .plantCare:   return "3 of 5 watered"
         case .workSession: return "12:34"
+        case .emergency:   return "02:41"
         }
     }
     var previewProgress: Double {
@@ -41,6 +43,7 @@ extension LiveActivityKind {
         case .maintenance: return 0.6
         case .plantCare:   return 0.6
         case .workSession: return 0.5
+        case .emergency:   return 0
         }
     }
     var showsETA: Bool { self == .delivery }

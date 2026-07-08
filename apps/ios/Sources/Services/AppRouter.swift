@@ -37,6 +37,7 @@ final class AppRouter {
         case photoJournal
         case profile
         case notifications
+        case emergency
 
         var id: String { rawValue }
     }
@@ -83,7 +84,7 @@ final class AppRouter {
              pantry, cameras, deliveries, chat, familyChat, scan, receipts,
              notifications, aria, twin, settings, documents, finances,
              inventory, family, profile, contractors, paintColors,
-             photoJournal, addSupply, communities(groupId: UUID?)
+             photoJournal, addSupply, communities(groupId: UUID?), emergency
     }
 
     /// Bumped when an external entry point asks for the Communities sheet;
@@ -205,6 +206,11 @@ final class AppRouter {
             push(.paintColors)
         case .photoJournal:
             push(.photoJournal)
+        case .emergency:
+            // The burst-pipe page: reachable from its Live Activity with one
+            // tap, wherever it was pinned from.
+            selectedTab = .settings
+            push(.emergency)
 
         // Self-contained tasks — sheets / covers.
         case .newTask:
@@ -291,6 +297,8 @@ final class AppRouter {
             navigate(to: .twin)
         case "settings":
             navigate(to: .settings)
+        case "emergency":
+            navigate(to: .emergency)
         case "documents":
             navigate(to: .documents)
         case "finances":

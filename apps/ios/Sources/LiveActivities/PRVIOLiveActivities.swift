@@ -170,6 +170,38 @@ struct WorkSessionActivityAttributes: ActivityAttributes {
     var propertyName: String?
 }
 
+// MARK: - Emergency incident Live Activity
+//
+// Pinned by the user from the Emergency page during a real incident (burst
+// pipe, power cut): keeps the numbers/valves page one tap away in the
+// Dynamic Island, with the elapsed time counted by the system from the fixed
+// start date. Never started automatically and never marked stale — it runs
+// until the person says the incident is over.
+
+struct EmergencyActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var isActive: Bool
+    }
+    let startedAt: Date
+    var propertyName: String?
+}
+
+struct EndEmergencyIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "End Emergency"
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        HapticFeedback.impact(.medium)
+        for activity in Activity<EmergencyActivityAttributes>.activities {
+            await activity.end(
+                ActivityContent(state: .init(isActive: false), staleDate: nil),
+                dismissalPolicy: .immediate)
+        }
+        return .result()
+    }
+}
+
 // MARK: - Work session buttons (run in the app's process)
 //
 // These live in this shared file because the widget extension must SEE the

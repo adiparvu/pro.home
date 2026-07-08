@@ -13,6 +13,16 @@ import SwiftUI
 
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        // watchOS 11+ mirrors iPhone Live Activities into the Smart Stack when
+        // a small supplemental family is declared; older systems ignore it.
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             ShoppingLockView(context: context)
                 .widgetURL(LiveActivityKind.shopping.deepLink)
@@ -111,6 +121,14 @@ private struct ShoppingLockView: View {
 
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
             MaintenanceLockView(context: context)
                 .widgetURL(LiveActivityKind.maintenance.deepLink)
@@ -197,6 +215,14 @@ private struct MaintenanceLockView: View {
 
 struct WorkSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: WorkSessionActivityAttributes.self) { context in
             WorkSessionLockView(context: context)
                 .widgetURL(LiveActivityKind.workSession.deepLink)
@@ -355,6 +381,14 @@ private enum DeliveryFace {
 
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
             DeliveryLockView(context: context)
                 .widgetURL(LiveActivityKind.delivery.deepLink)
@@ -468,6 +502,14 @@ private struct DeliveryLockView: View {
 
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
             PlantCareLockView(context: context)
                 .widgetURL(LiveActivityKind.plantCare.deepLink)
@@ -555,6 +597,120 @@ private struct PlantCareLockView: View {
             }
         } else {
             MinimalLockRow(kind: .plantCare, title: Text("Plant watering"), isComplete: isComplete)
+        }
+    }
+}
+
+// MARK: - Emergency incident
+//
+// User-pinned from the Emergency page during a real incident: the beacon
+// pulses in the island, the elapsed time is system-counted from the fixed
+// start date, and the only actions are the honest ones — open the page,
+// or declare the incident over. The only activity allowed to wear red.
+
+struct EmergencyLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: some WidgetConfiguration {
+        ActivityConfiguration(for: EmergencyActivityAttributes.self) { context in
+            EmergencyLockView(context: context)
+                .widgetURL(LiveActivityKind.emergency.deepLink)
+        } dynamicIsland: { context in
+            let timer = Text(context.attributes.startedAt, style: .timer)
+
+            return DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    IslandHeader(kind: .emergency, title: Text("la_emergency_active"))
+                        .widgetURL(LiveActivityKind.emergency.deepLink)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if LA.expandedData(.emergency) {
+                        IslandMetric(timer, tint: LiveActivityKind.emergency.color, size: .expanded)
+                            .frame(maxWidth: 60)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    if LA.expandedDetail(.emergency) {
+                        HStack(spacing: AppSpacing.sm + 2) {
+                            if LA.property(.emergency),
+                               let property = context.attributes.propertyName, !property.isEmpty {
+                                Text(property)
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Button(intent: EndEmergencyIntent()) {
+                                Text("la_emergency_end")
+                                    .font(AppFont.captionStrong)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(LiveActivityKind.emergency.color)
+                        }
+                    }
+                }
+            } compactLeading: {
+                IslandStateIcon(kind: .emergency, pulses: true)
+                    .font(AppFont.captionStrong)
+                    .accessibilityLabel(Text(LiveActivityKind.emergency.title))
+            } compactTrailing: {
+                if LA.island(.emergency) {
+                    IslandMetric(timer, tint: LiveActivityKind.emergency.color)
+                        .frame(maxWidth: 44)
+                }
+            } minimal: {
+                IslandStateIcon(kind: .emergency, pulses: true)
+                    .accessibilityLabel(Text(LiveActivityKind.emergency.title))
+            }
+        }
+    }
+}
+
+private struct EmergencyLockView: View {
+    let context: ActivityViewContext<EmergencyActivityAttributes>
+
+    var body: some View {
+        if LA.lockDetails(.emergency) {
+            VStack(spacing: AppSpacing.sm + 2) {
+                HStack(spacing: AppSpacing.base) {
+                    IslandIconDisc(kind: .emergency)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("la_emergency_active")
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                        if LA.property(.emergency),
+                           let property = context.attributes.propertyName, !property.isEmpty {
+                            Text(property)
+                                .font(AppFont.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    IslandMetric(Text(context.attributes.startedAt, style: .timer),
+                                 tint: LiveActivityKind.emergency.color, size: .hero)
+                        .frame(maxWidth: 90)
+                        .multilineTextAlignment(.trailing)
+                }
+                Button(intent: EndEmergencyIntent()) {
+                    Text("la_emergency_end")
+                        .font(AppFont.captionEmphasis)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(LiveActivityKind.emergency.color)
+            }
+            .padding(AppSpacing.lg)
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
+        } else {
+            MinimalLockRow(kind: .emergency, title: Text("la_emergency_active"))
         }
     }
 }

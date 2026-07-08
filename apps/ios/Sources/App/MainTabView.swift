@@ -240,6 +240,8 @@ struct MainTabView: View {
             PlantsView()
         case .profile:
             ProfileView()
+        case .emergency:
+            EmergencyModeView()
         default:
             EmptyView()
         }

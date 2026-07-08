@@ -42,6 +42,8 @@ struct IslandStateIcon: View {
     let kind: LiveActivityKind
     var isComplete = false
     var isProblem = false
+    /// Ongoing-attention pulse without the warning symbol swap (emergency).
+    var pulses = false
 
     private var symbol: String {
         if isComplete { return "checkmark.circle.fill" }
@@ -62,9 +64,9 @@ struct IslandStateIcon: View {
             // keeps the token false so the bounce never triggers.
             .symbolEffect(.bounce, options: .nonRepeating,
                           value: isComplete && !reduceMotion)
-            // Ongoing attention while a problem state persists.
+            // Ongoing attention while a problem/attention state persists.
             .symbolEffect(.pulse, options: .repeating,
-                          isActive: isProblem && !isComplete && !reduceMotion)
+                          isActive: (isProblem || pulses) && !isComplete && !reduceMotion)
     }
 }
 

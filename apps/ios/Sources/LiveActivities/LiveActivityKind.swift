@@ -11,7 +11,7 @@ import SwiftUI
 // enum didn't know it existed).
 
 enum LiveActivityKind: String, CaseIterable, Identifiable {
-    case shopping, delivery, maintenance, plantCare, workSession
+    case shopping, delivery, maintenance, plantCare, workSession, emergency
 
     var id: String { rawValue }
 
@@ -22,6 +22,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .maintenance: return "Maintenance tasks"
         case .plantCare:   return "Plant care"
         case .workSession: return "Work session"
+        case .emergency:   return "Emergency"
         }
     }
 
@@ -32,6 +33,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .maintenance: return "Watch progress on an active task"
         case .plantCare:   return "Watering progress for your plants"
         case .workSession: return "Time a task from start to done"
+        case .emergency:   return "Keep the emergency page one tap away"
         }
     }
 
@@ -42,12 +44,13 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .maintenance: return "wrench.and.screwdriver.fill"
         case .plantCare:   return "leaf.fill"
         case .workSession: return "timer"
+        case .emergency:   return "light.beacon.max.fill"
         }
     }
 
     /// Brand tint — one hue per activity family so the island reads at a
     /// glance (the old views hand-picked `.blue`/`.orange`/`.teal` and three
-    /// activities ended up the same blue).
+    /// activities ended up the same blue). Red belongs to emergency alone.
     var color: Color {
         switch self {
         case .shopping:    return .brandSkyBlue
@@ -55,6 +58,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .maintenance: return .brandWarning
         case .plantCare:   return .brandSuccess
         case .workSession: return .brandTeal
+        case .emergency:   return .brandDanger
         }
     }
 
@@ -66,13 +70,19 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .maintenance: return URL(string: "prvio://tasks")
         case .plantCare:   return URL(string: "prvio://plants")
         case .workSession: return URL(string: "prvio://tasks")
+        case .emergency:   return URL(string: "prvio://emergency")
         }
     }
 
     /// Whether the app may start this activity by itself. The work session
-    /// is always an explicit human action (task row or watch), so it has no
-    /// auto-start toggle — only appearance customization.
-    var supportsAutoStart: Bool { self != .workSession }
+    /// and the emergency pin are always explicit human actions, so they have
+    /// no auto-start toggle — only appearance customization.
+    var supportsAutoStart: Bool {
+        switch self {
+        case .workSession, .emergency: return false
+        default:                       return true
+        }
+    }
 
     var storageKey: String {
         switch self {
@@ -80,14 +90,16 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .delivery:    return LiveActivityPrefs.autoDeliveryKey
         case .maintenance: return LiveActivityPrefs.autoMaintKey
         case .plantCare:   return LiveActivityPrefs.autoPlantKey
-        case .workSession: return "prvio.la.auto.workSession" // unused: no auto-start
+        // Unused (no auto-start), but @AppStorage still needs a stable key.
+        case .workSession: return "prvio.la.auto.workSession"
+        case .emergency:   return "prvio.la.auto.emergency"
         }
     }
 
     var defaultAuto: Bool {
         switch self {
-        case .shopping, .delivery:                  return true
-        case .maintenance, .plantCare, .workSession: return false
+        case .shopping, .delivery: return true
+        default:                   return false
         }
     }
 }

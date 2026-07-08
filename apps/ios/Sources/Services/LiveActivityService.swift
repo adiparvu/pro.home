@@ -303,6 +303,34 @@ final class LiveActivityService {
         }
     }
 
+    // MARK: - Emergency incident (user-pinned from the Emergency page)
+    //
+    // Gated only by the master switch: pinning an incident is always an
+    // explicit human action. No stale date — an emergency never becomes
+    // yesterday's news on its own; it ends when the person ends it.
+
+    private var emergencyActivity: Activity<EmergencyActivityAttributes>?
+
+    func startEmergency() {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+        guard Activity<EmergencyActivityAttributes>.activities.isEmpty else { return }
+        let attrs = EmergencyActivityAttributes(startedAt: Date(), propertyName: propertyName)
+        emergencyActivity = try? Activity.request(
+            attributes: attrs,
+            content: .init(state: .init(isActive: true), staleDate: nil),
+            pushType: nil)
+    }
+
+    func endEmergency() {
+        emergencyActivity = nil
+        Task {
+            for a in Activity<EmergencyActivityAttributes>.activities {
+                await a.end(.init(state: .init(isActive: false), staleDate: nil),
+                            dismissalPolicy: .immediate)
+            }
+        }
+    }
+
     // MARK: - Auto-start (Start When App Opens / Start on a Schedule)
 
     /// Called when the app becomes active with fresh data. Honors the
@@ -337,6 +365,7 @@ final class LiveActivityService {
         case .maintenance: return !Activity<MaintenanceActivityAttributes>.activities.isEmpty
         case .plantCare:   return !Activity<PlantCareActivityAttributes>.activities.isEmpty
         case .workSession: return !Activity<WorkSessionActivityAttributes>.activities.isEmpty
+        case .emergency:   return !Activity<EmergencyActivityAttributes>.activities.isEmpty
         }
     }
 
@@ -363,6 +392,9 @@ final class LiveActivityService {
             case .workSession:
                 for a in Activity<WorkSessionActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 workSessionActivity = nil
+            case .emergency:
+                for a in Activity<EmergencyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                emergencyActivity = nil
             }
         }
     }
@@ -392,6 +424,9 @@ final class LiveActivityService {
             }
             for a in Activity<WorkSessionActivityAttributes>.activities {
                 await a.update(.init(state: a.content.state, staleDate: stale(hours: 12)))
+            }
+            for a in Activity<EmergencyActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: nil))
             }
         }
     }

@@ -54953,6 +54953,134 @@
           }
         }
       }
+    },
+    "Emergency" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emergency"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urgență"
+          }
+        }
+      }
+    },
+    "Keep the emergency page one tap away" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the emergency page one tap away"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ține pagina de urgență la un singur tap distanță"
+          }
+        }
+      }
+    },
+    "la_emergency_active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active incident"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incident activ"
+          }
+        }
+      }
+    },
+    "la_emergency_end" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End incident"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Încheie incidentul"
+          }
+        }
+      }
+    },
+    "End Emergency" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End Emergency"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Încheie urgența"
+          }
+        }
+      }
+    },
+    "emergency_pin_on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned to the Dynamic Island"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixat în Dynamic Island"
+          }
+        }
+      }
+    },
+    "emergency_pin_off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin to the Dynamic Island"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixează în Dynamic Island"
+          }
+        }
+      }
+    },
+    "emergency_pin_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps this page one tap away while you handle the incident"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ține pagina la un tap distanță cât rezolvi incidentul"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

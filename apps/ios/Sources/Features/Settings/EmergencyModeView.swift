@@ -20,6 +20,7 @@ struct EmergencyModeView: View {
     @State private var showAddNote = false
     @State private var showAddContact = false
     @State private var torchOn = false
+    @State private var incidentPinned = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -27,6 +28,7 @@ struct EmergencyModeView: View {
                 PageHeader(titleKey: "emergency_title", subtitleKey: "emergency_subtitle")
                 callSection
                 torchCard
+                islandPinCard
                 placesSection
                 insuranceSection
                 Spacer(minLength: 100)
@@ -183,6 +185,51 @@ struct EmergencyModeView: View {
         AVCaptureDevice.default(for: .video)?.hasTorch ?? false
     }
 
+    // MARK: Dynamic Island pin
+    //
+    // During a real incident you leave this page constantly — calling people,
+    // photographing damage. Pinning starts the emergency Live Activity: the
+    // elapsed time lives in the island and one tap brings this page back.
+
+    private var islandPinCard: some View {
+        Button {
+            if incidentPinned {
+                LiveActivityService.shared.endEmergency()
+                incidentPinned = false
+                HapticFeedback.impact(.light)
+            } else {
+                LiveActivityService.shared.startEmergency()
+                // Reflect reality: the start is a no-op when Live Activities
+                // are off in iOS or in the app's settings.
+                incidentPinned = LiveActivityService.shared.isActive(.emergency)
+                if incidentPinned { HapticFeedback.warning() }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: "light.beacon.max.fill",
+                                 color: incidentPinned ? Color.brandDanger : .gray)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(incidentPinned ? "emergency_pin_on" : "emergency_pin_off")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                    Text("emergency_pin_subtitle")
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: incidentPinned ? "circle.fill" : "circle")
+                    .font(AppFont.caption)
+                    .foregroundStyle(incidentPinned ? Color.brandDanger : Color.primary.opacity(0.28))
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: AppRadius.lg)
+        .accessibilityLabel(Text(incidentPinned ? "emergency_pin_on" : "emergency_pin_off"))
+    }
+
     private func setTorch(_ on: Bool) {
         guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
         do {
@@ -305,6 +352,7 @@ struct EmergencyModeView: View {
     // MARK: Storage (device-local, works with zero connectivity)
 
     private func load() {
+        incidentPinned = LiveActivityService.shared.isActive(.emergency)
         if let d = UserDefaults.standard.data(forKey: "prvio.emergency"),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: d) {
             contacts = decoded
