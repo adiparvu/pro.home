@@ -51,6 +51,11 @@ struct FloorPlansView: View {
                 }
                 Spacer(minLength: 110)
             }
+            // Full width even when the only content is the loading spinner —
+            // otherwise the push transition sizes the incoming page to its
+            // narrow ideal width (the vertical band in IMG_8060, with the
+            // title clipped to match).
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.sm)
         }
