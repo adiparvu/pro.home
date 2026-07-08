@@ -406,6 +406,65 @@ final class IoTService {
         }
     }
 
+    // MARK: - Locked-phone webhook (iot-event edge function)
+    //
+    // A per-account secret URL the controller firmware (or the "Phone Alert"
+    // automation) POSTs sensor events to. The edge function turns them into
+    // APNs alerts and Live Activity updates — the island moves with the app
+    // closed, which local polling can never do.
+
+    static let eventEndpoint = URL(string: "https://kwcanenheihuylaymwsl.supabase.co/functions/v1/iot-event")!
+
+    var webhookURL: URL?
+
+    func ensureWebhook() async {
+        guard webhookURL == nil else { return }
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        struct SecretRow: Codable { let secret: String }
+        let rows: [SecretRow] = (try? await supabase.from("iot_webhooks")
+            .select("secret")
+            .eq("user_id", value: uid.uuidString)
+            .execute().value) ?? []
+        let secret: String
+        if let existing = rows.first?.secret {
+            secret = existing
+        } else {
+            secret = (UUID().uuidString + UUID().uuidString)
+                .replacingOccurrences(of: "-", with: "").lowercased()
+            struct NewRow: Encodable { let user_id: String; let secret: String }
+            do {
+                try await supabase.from("iot_webhooks")
+                    .insert(NewRow(user_id: uid.uuidString, secret: secret))
+                    .execute()
+            } catch { return }
+        }
+        var components = URLComponents(url: Self.eventEndpoint, resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "token", value: secret)]
+        webhookURL = components?.url
+    }
+
+    /// POSTs one sensor event to iot-event — the same call a controller
+    /// makes directly; this in-app path covers the "Phone Alert" automation.
+    func postIoTEvent(sensor: IoTSensor, event: String) async {
+        await ensureWebhook()
+        guard let url = webhookURL else { return }
+        var request = URLRequest(url: url, timeoutInterval: 8)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: Any] = [
+            "sensorId": sensor.id.uuidString,
+            "name": sensor.name,
+            "type": sensor.type.rawValue,
+            "event": event,
+            "display": sensor.displayValue,
+        ]
+        if let value = sensor.value { body["value"] = value }
+        if !sensor.unit.isEmpty { body["unit"] = sensor.unit }
+        if !sensor.linkedZoneName.isEmpty { body["zone"] = sensor.linkedZoneName }
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        _ = try? await URLSession.shared.data(for: request)
+    }
+
     // MARK: - Live surfaces (alert + energy Live Activities)
 
     /// Current draw across power sensors the user did NOT tag as production.
@@ -506,6 +565,9 @@ final class IoTService {
             if let url = URL(string: auto.actionPayload) {
                 Task { try? await URLSession.shared.data(from: url) }
             }
+
+        case .phoneAlert:
+            Task { await postIoTEvent(sensor: sensor, event: "alert") }
 
         case .createTask:
             NotificationCenter.default.post(

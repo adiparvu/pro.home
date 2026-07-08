@@ -13,11 +13,11 @@ import SwiftUI
 
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        // watchOS 11+ mirrors iPhone Live Activities into the Smart Stack when
-        // a small supplemental family is declared; older systems ignore it.
-        // (The modifier back-deploys below iOS 18, and Widget.body is not a
-        // result builder, so an #available branch cannot type-check anyway.)
-        configuration.supplementalActivityFamilies([.small])
+        // watchOS 11+ mirrors iPhone Live Activities into the Smart Stack by
+        // default, using the compact presentations. A custom small layout
+        // (supplementalActivityFamilies) is iOS 18-only and Widget.body can't
+        // branch on availability - it lands when the deployment target does.
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -119,7 +119,7 @@ private struct ShoppingLockView: View {
 
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -209,7 +209,7 @@ private struct MaintenanceLockView: View {
 
 struct WorkSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -371,7 +371,7 @@ private enum DeliveryFace {
 
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -488,7 +488,7 @@ private struct DeliveryLockView: View {
 
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -592,7 +592,7 @@ private struct PlantCareLockView: View {
 
 struct EmergencyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -714,7 +714,7 @@ private struct AlertSymbol: View {
 
 struct IoTAlertLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -853,7 +853,7 @@ private enum EnergyFace {
 
 struct EnergyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {
@@ -992,7 +992,7 @@ private enum CoverFace {
 
 struct CoverLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration.supplementalActivityFamilies([.small])
+        configuration
     }
 
     private var configuration: some WidgetConfiguration {

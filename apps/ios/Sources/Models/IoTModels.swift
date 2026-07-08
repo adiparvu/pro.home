@@ -296,11 +296,15 @@ struct IoTAutomation: Identifiable, Codable {
         case sendNotification = "Send Notification"
         case createTask       = "Create Task"
         case callWebhook      = "Call Webhook"
+        /// POSTs the sensor event to the account's iot-event webhook — the
+        /// same endpoint a controller can call directly with the app closed.
+        case phoneAlert       = "Phone Alert"
         var icon: String {
             switch self {
             case .sendNotification: return "bell.fill"
             case .createTask:       return "checklist"
             case .callWebhook:      return "arrow.up.circle.fill"
+            case .phoneAlert:       return "iphone.radiowaves.left.and.right"
             }
         }
     }

@@ -246,12 +246,25 @@ final class LiveActivityService {
         Task {
             for await token in activity.pushTokenUpdates {
                 let hex = token.map { String(format: "%02x", $0) }.joined()
-                await uploadActivityToken(hex, activityId: activity.id, trackerId: trackerId)
+                await uploadActivityToken(hex, activityId: activity.id,
+                                          kind: "delivery", trackerId: trackerId)
             }
         }
     }
 
-    private func uploadActivityToken(_ hex: String, activityId: String, trackerId: String) async {
+    private func observeIoTAlertPushToken(_ activity: Activity<IoTAlertActivityAttributes>,
+                                          sensorId: UUID) {
+        Task {
+            for await token in activity.pushTokenUpdates {
+                let hex = token.map { String(format: "%02x", $0) }.joined()
+                await uploadActivityToken(hex, activityId: activity.id,
+                                          kind: "iot_alert", trackerId: sensorId.uuidString)
+            }
+        }
+    }
+
+    private func uploadActivityToken(_ hex: String, activityId: String,
+                                     kind: String, trackerId: String) async {
         guard let uid = supabase.auth.currentSession?.user.id else { return }
         struct Row: Encodable {
             let user_id: String
@@ -262,7 +275,7 @@ final class LiveActivityService {
             let environment: String
         }
         let row = Row(user_id: uid.uuidString, activity_id: activityId,
-                      activity_kind: "delivery", tracker_id: trackerId,
+                      activity_kind: kind, tracker_id: trackerId,
                       token: hex, environment: PushTokenService.environment)
         try? await supabase.from("live_activity_tokens")
             .upsert(row, onConflict: "activity_id").execute()
@@ -365,9 +378,13 @@ final class LiveActivityService {
         for (id, activity) in iotAlertActivities
         where !alertingIds.contains(id.uuidString) || acked.contains(id.uuidString) {
             let display = activity.content.state.valueDisplay
-            Task { await activity.end(
-                .init(state: .init(valueDisplay: display, isActive: false), staleDate: nil),
-                dismissalPolicy: .after(.now + 4)) }
+            let activityId = activity.id
+            Task {
+                await activity.end(
+                    .init(state: .init(valueDisplay: display, isActive: false), staleDate: nil),
+                    dismissalPolicy: .after(.now + 4))
+                await removeActivityToken(activityId: activityId)
+            }
             iotAlertActivities.removeValue(forKey: id)
         }
 
@@ -387,11 +404,17 @@ final class LiveActivityService {
                     icon: sensor.type.icon, isCritical: sensor.isCriticalAlert,
                     zone: sensor.linkedZoneName.isEmpty ? nil : sensor.linkedZoneName,
                     startedAt: Date(), propertyName: propertyName)
-                iotAlertActivities[sensor.id] = try? Activity.request(
+                // Push-capable: the iot-event webhook keeps this island live
+                // while the phone is locked and the app closed.
+                let activity = try? Activity.request(
                     attributes: attrs,
                     content: .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
                                    staleDate: stale(hours: 1)),
-                    pushType: nil)
+                    pushType: .token)
+                iotAlertActivities[sensor.id] = activity
+                if let activity {
+                    observeIoTAlertPushToken(activity, sensorId: sensor.id)
+                }
             }
         }
     }
@@ -532,7 +555,10 @@ final class LiveActivityService {
                 for a in Activity<EmergencyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
                 emergencyActivity = nil
             case .iotAlert:
-                for a in Activity<IoTAlertActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<IoTAlertActivityAttributes>.activities {
+                    await a.end(nil, dismissalPolicy: .immediate)
+                    await removeActivityToken(activityId: a.id)
+                }
                 iotAlertActivities.removeAll()
             case .energy:
                 for a in Activity<EnergyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }

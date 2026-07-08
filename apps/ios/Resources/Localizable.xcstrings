@@ -55689,6 +55689,86 @@
           }
         }
       }
+    },
+    "iot_webhook_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locked-phone alerts"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerte cu telefonul blocat"
+          }
+        }
+      }
+    },
+    "iot_webhook_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your controller can POST alarms straight to the Dynamic Island, even with PRVIO closed."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlerul poate trimite alarme direct în Dynamic Island, chiar cu PRVIO închis."
+          }
+        }
+      }
+    },
+    "iot_webhook_copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy webhook URL"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiază URL-ul webhook"
+          }
+        }
+      }
+    },
+    "iot_webhook_copied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiat"
+          }
+        }
+      }
+    },
+    "Phone Alert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone Alert"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertă pe telefon"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

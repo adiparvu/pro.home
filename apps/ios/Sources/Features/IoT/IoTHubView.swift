@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - IoT Hub (Controllers / Sensors / Automations)
 
@@ -11,6 +12,7 @@ struct IoTHubView: View {
     @State private var selectedDevice: IoTDevice?
     @State private var selectedSensor: IoTSensor?
     @State private var energyPinned = false
+    @State private var webhookCopied = false
 
     enum HubTab: String, CaseIterable {
         case controllers = "Controllers"
@@ -359,26 +361,79 @@ struct IoTHubView: View {
     // MARK: - Automations tab
 
     private var automationsTab: some View {
-        Group {
+        ScrollView(showsIndicators: false) {
+            webhookCard
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.xxs)
+                .padding(.bottom, AppSpacing.md)
             if service.automations.isEmpty {
-                iotEmptyState(
+                EmptyStateView(
                     icon: "bolt.badge.automatic.fill",
                     title: "No automations yet",
-                    body: "Create IF/THEN rules: when a sensor exceeds a threshold, send a notification, create a task or call a webhook."
+                    message: "Create IF/THEN rules: when a sensor exceeds a threshold, send a notification, create a task or call a webhook.",
+                    actionLabel: "Add",
+                    action: { addAction() }
                 )
+                .padding(.top, AppSpacing.xxl)
             } else {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 10) {
-                        ForEach(service.automations) { auto in
-                            automationRow(auto)
-                        }
+                VStack(spacing: 10) {
+                    ForEach(service.automations) { auto in
+                        automationRow(auto)
                     }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.xxs)
-                    Spacer(minLength: 100)
                 }
+                .padding(.horizontal, AppSpacing.xl)
+            }
+            Spacer(minLength: 100)
+        }
+    }
+
+    // MARK: - Locked-phone webhook card
+    //
+    // The controller (or a "Phone Alert" automation) POSTs alarms to this
+    // per-account URL; the iot-event edge function pushes them onto the
+    // Dynamic Island and Lock Screen even with PRVIO closed.
+
+    private var webhookCard: some View {
+        GlassCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "iphone.radiowaves.left.and.right",
+                                     color: Color.brandPurple)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("iot_webhook_title")
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                        Text("iot_webhook_subtitle")
+                            .font(AppFont.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                Button {
+                    guard let url = service.webhookURL else { return }
+                    UIPasteboard.general.string = url.absoluteString
+                    webhookCopied = true
+                    HapticFeedback.success()
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        webhookCopied = false
+                    }
+                } label: {
+                    Label(webhookCopied ? "iot_webhook_copied" : "iot_webhook_copy",
+                          systemImage: webhookCopied ? "checkmark" : "doc.on.doc")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(service.webhookURL == nil)
+                .opacity(service.webhookURL == nil ? 0.5 : 1)
             }
         }
+        .task { await service.ensureWebhook() }
     }
 
     private func automationRow(_ auto: IoTAutomation) -> some View {
