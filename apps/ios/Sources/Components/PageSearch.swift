@@ -8,11 +8,13 @@ import SwiftUI
 //   @State private var searchText = ""
 //
 //   .searchable(text: $searchText,
-//               placement: .navigationBarDrawer(displayMode: .always))
+//               placement: .navigationBarDrawer(displayMode: .automatic))
 //
-// The drawer sits pinned under the page title with its space reserved from
-// the first frame — .automatic made it flash over the large title during
-// the push transition. A separate magnifier button would duplicate it.
+// Large-title pages use .automatic: the title arrives LARGE on entry and a
+// pull-down reveals the field — the system pattern (Mail, Notes). A pinned
+// .always drawer keeps the bar collapsed on entry (IMG_8070), so it's right
+// only for inline-title picker sheets that are search-first. The earlier
+// title flash blamed on .automatic came from the removed zoom transitions.
 // Filter the displayed collection with `matchesSearch`. `SearchIconButton`
 // and the inline `PageSearchField` remain only for surfaces outside a
 // navigation bar (the Digital Twin's floating map-search overlay).
