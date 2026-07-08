@@ -115,13 +115,13 @@ extension DocumentAIExtraction: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         func str(_ k: CodingKeys) -> String? {
-            guard let v = try? c.decodeIfPresent(String.self, forKey: k), let v else { return nil }
+            guard let v = try? c.decodeIfPresent(String.self, forKey: k) else { return nil }
             return v.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
         }
         // The model is asked for numbers, but tolerate a stringified number too.
         func dbl(_ k: CodingKeys) -> Double? {
             if let d = try? c.decodeIfPresent(Double.self, forKey: k) { return d }
-            guard let s = try? c.decodeIfPresent(String.self, forKey: k), let s else { return nil }
+            guard let s = try? c.decodeIfPresent(String.self, forKey: k) else { return nil }
             let cleaned = s.replacingOccurrences(of: ",", with: ".")
                 .filter { $0.isNumber || $0 == "." || $0 == "-" }
             return Double(cleaned)
