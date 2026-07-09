@@ -74,28 +74,3 @@ struct OpenPRVIODestination: OpenIntent {
         return .result()
     }
 }
-
-// MARK: - Siri: open the garage
-//
-// "Hey Siri, open the garage" — resolves the first cover actuator in the
-// user's own smart home and issues the real open command through the same
-// IoTService.perform that the app and the watch use. No cover configured →
-// an honest spoken "nothing to open", never a fake success.
-
-struct OpenGarageIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open the garage"
-    static let description = IntentDescription(
-        "Opens the first garage or gate in your PRVIO smart home.")
-    // The device write is a network call — it doesn't need the app on screen.
-    static var openAppWhenRun: Bool { false }
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let covers = IoTService.shared.actuators.filter { $0.kind == .cover }
-        guard let cover = covers.first else {
-            return .result(dialog: "There's no garage or gate set up in PRVIO.")
-        }
-        IoTService.shared.perform(.open, on: cover)
-        return .result(dialog: "Opening \(cover.name).")
-    }
-}
