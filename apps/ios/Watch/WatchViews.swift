@@ -7,6 +7,8 @@ import MapKit
 // tasks, plants, shopping, pantry, deliveries, map), smart control (relays +
 // covers), a live sensor glance, and an Emergency SOS page — all gated on the
 // data actually existing so no page ever promises something the home can't do.
+// Every control maps to a real device write or a real tel: call; nothing on
+// the watch is a decorative stub.
 
 enum WatchPage: Hashable {
     case today, tasks, plants, shopping, pantry, deliveries, map
