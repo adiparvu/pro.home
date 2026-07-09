@@ -41,16 +41,20 @@ enum PushTokenService {
     static func ensureRegistered() {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
+            logDebug("ensure", detail: "status=\(statusName(settings.authorizationStatus))")
             switch settings.authorizationStatus {
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                    logDebug("request", detail: "granted=\(granted)")
                     guard granted else { return }
                     DispatchQueue.main.async {
+                        logDebug("register", detail: "from=request")
                         UIApplication.shared.registerForRemoteNotifications()
                     }
                 }
             case .authorized, .provisional:
                 DispatchQueue.main.async {
+                    logDebug("register", detail: "from=authorized")
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             default:
@@ -60,6 +64,36 @@ enum PushTokenService {
         // A token that landed before login is still sitting in UserDefaults —
         // upload it now that there's a session to attach it to.
         Task { await uploadPendingIfNeeded() }
+    }
+
+    private static func statusName(_ s: UNAuthorizationStatus) -> String {
+        switch s {
+        case .notDetermined: return "notDetermined"
+        case .denied: return "denied"
+        case .authorized: return "authorized"
+        case .provisional: return "provisional"
+        case .ephemeral: return "ephemeral"
+        @unknown default: return "unknown"
+        }
+    }
+
+    /// Fire-and-forget diagnostics row so we can see, from the server, why APNs
+    /// registration succeeds or fails on TestFlight (the device-side error is
+    /// otherwise silent in Release). Temporary — remove once push is confirmed.
+    static func logDebug(_ event: String, detail: String? = nil) {
+        struct DebugRow: Encodable {
+            let user_id: String?
+            let event: String
+            let detail: String?
+            let app_version: String?
+        }
+        let row = DebugRow(
+            user_id: supabase.auth.currentSession?.user.id.uuidString,
+            event: event,
+            detail: detail,
+            app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        )
+        Task { try? await supabase.from("push_debug").insert(row).execute() }
     }
 
     /// Called from AppDelegate once APNs hands us a token.
@@ -100,7 +134,9 @@ enum PushTokenService {
                 .upsert(row, onConflict: "token")
                 .execute()
             UserDefaults.standard.removeObject(forKey: pendingKey)
+            logDebug("upload", detail: "ok env=\(environment)")
         } catch {
+            logDebug("upload", detail: "err=\(error.localizedDescription)")
 #if DEBUG
             debugLog("[Push] token upload failed: \(error)")
 #endif

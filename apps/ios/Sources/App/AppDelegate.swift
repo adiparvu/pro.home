@@ -29,6 +29,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        Task { @MainActor in PushTokenService.logDebug("didRegister", detail: "len=\(deviceToken.count) prefix=\(hex.prefix(8))") }
         Task { await PushTokenService.handle(deviceToken: deviceToken) }
     }
 
@@ -36,6 +38,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
+        let ns = error as NSError
+        Task { @MainActor in
+            PushTokenService.logDebug("didFail", detail: "\(ns.domain)#\(ns.code): \(ns.localizedDescription)")
+        }
 #if DEBUG
         debugLog("[Push] APNs registration failed: \(error)")
 #endif
