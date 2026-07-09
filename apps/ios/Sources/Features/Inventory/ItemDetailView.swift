@@ -295,25 +295,46 @@ struct ItemDetailView: View {
                     Text("Scan to identify").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
-                Button { shareQR() } label: {
-                    Label("Share / Print", systemImage: "square.and.arrow.up")
-                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10))
-                }.buttonStyle(.plain)
+                // Two icon-only Liquid Glass actions — Share on the left,
+                // Print on the right. Prominence comes from the native glass
+                // material, not a tinted fill; the glyph carries the meaning.
+                HStack(spacing: AppSpacing.md) {
+                    qrActionButton("square.and.arrow.up",
+                                   label: Locale.appIsRomanian ? "Partajează" : "Share") {
+                        if let img = renderQR() { SystemActions.share([img]) }
+                    }
+                    qrActionButton("printer",
+                                   label: Locale.appIsRomanian ? "Printează" : "Print") {
+                        if let img = renderQR() {
+                            SystemActions.print(image: img,
+                                                jobName: live.name.isEmpty ? "PRVIO" : live.name)
+                        }
+                    }
+                }
             }
         }
     }
 
-    private func shareQR() {
+    private func qrActionButton(_ icon: String, label: String,
+                                _ action: @escaping () -> Void) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            Image(systemName: icon)
+                .font(AppFont.scaled(17, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity).frame(height: 44)
+                .glassCapsule()
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+
+    private func renderQR() -> UIImage? {
         let renderer = ImageRenderer(content: QRCodeImage(content: live.qrContent, size: 300))
         renderer.scale = 3.0
-        guard let img = renderer.uiImage else { return }
-        let vc = UIActivityViewController(activityItems: [img], applicationActivities: nil)
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let root = scene.windows.first?.rootViewController {
-            root.present(vc, animated: true)
-        }
+        return renderer.uiImage
     }
 
     private var locationTrackerCard: some View {

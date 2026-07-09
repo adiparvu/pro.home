@@ -70,6 +70,13 @@ struct FamilyView: View {
             }
         }
         .task { await familyService.load() }
+        // Pull the live profile photos so account holders show their current
+        // avatar (not the family_members snapshot), and refresh on every
+        // appearance so a member's new photo is already here.
+        .task {
+            await MemberDirectory.shared.loadIfNeeded()
+            MemberDirectory.shared.refreshSoon()
+        }
         .sheet(isPresented: $showAdd) {
             AddFamilyMemberSheet(
                 propertyId: propertyService.primary?.id,
@@ -170,9 +177,18 @@ struct MemberAvatar: View {
     let member: FamilyMember
     var size: CGFloat = 38
 
+    // Always prefer the LIVE profile photo for account holders over the
+    // `family_members` snapshot — reading the @Observable directory here
+    // subscribes this view, so a new avatar (this member's or anyone's,
+    // on any device) repaints instantly. Falls back to the row snapshot,
+    // then to coloured initials.
+    private var effectiveAvatar: String? {
+        MemberDirectory.shared.avatarString(userId: member.userId, fallback: member.avatarUrl)
+    }
+
     var body: some View {
-        if let urlStr = member.avatarUrl, let url = URL(string: urlStr) {
-            StorageImage(url: url) { phase in
+        if let urlStr = effectiveAvatar, !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                 else { initials }
             }

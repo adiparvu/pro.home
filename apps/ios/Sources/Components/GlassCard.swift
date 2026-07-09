@@ -187,6 +187,60 @@ struct GlassWideButton: View {
     }
 }
 
+// MARK: - GlassFilterChip
+//
+// The ONE sanctioned segmented filter/category chip — the "Toate / HVAC /
+// Bucătărie…" rows that appear across the app. Both states are native Liquid
+// Glass: the selected chip carries an accent-tinted glass + bold accent label,
+// the rest are plain glass with a primary label. Never a solid tinted pill
+// again; selection reads through the material and the label weight/colour.
+struct GlassFilterChip: View {
+    let label: String
+    let isSelected: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            Text(verbatim: label)
+                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.emphasis))
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, 7)
+                .glassFilterCapsule(selected: isSelected)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+extension View {
+    /// Capsule glass for a filter chip. Selected → accent-tinted interactive
+    /// glass (iOS 26) / accent-ringed material (fallback); unselected → plain
+    /// glass / hairline material. Keeps the accent label legible on both.
+    @ViewBuilder
+    func glassFilterCapsule(selected: Bool) -> some View {
+        if #available(iOS 26, *) {
+            if selected {
+                self.glassEffect(Glass.regular.tint(Color.accentColor.opacity(0.22)).interactive(),
+                                 in: Capsule())
+                    .contentShape(Capsule())
+            } else {
+                self.glassEffect(.regular.interactive(), in: Capsule())
+                    .contentShape(Capsule())
+            }
+        } else {
+            self.background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(
+                    selected ? Color.accentColor.opacity(0.9) : Color.primary.opacity(0.1),
+                    lineWidth: selected ? 1.5 : 0.5))
+                .contentShape(Capsule())
+        }
+    }
+}
+
 // MARK: - GlassCard
 
 struct GlassCard<Content: View>: View {

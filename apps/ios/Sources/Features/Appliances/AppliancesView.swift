@@ -120,14 +120,12 @@ struct AppliancesView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(label: String(localized: "All"), isSelected: selectedCategory == nil) {
+                GlassFilterChip(label: String(localized: "All"), isSelected: selectedCategory == nil) {
                     selectedCategory = nil
-                    HapticFeedback.impact(.light)
                 }
                 ForEach(ApplianceCategory.allCases, id: \.self) { cat in
-                    chip(label: cat.displayName, isSelected: selectedCategory == cat) {
+                    GlassFilterChip(label: cat.displayName, isSelected: selectedCategory == cat) {
                         selectedCategory = selectedCategory == cat ? nil : cat
-                        HapticFeedback.impact(.light)
                     }
                 }
             }
@@ -135,20 +133,6 @@ struct AppliancesView: View {
         }
     }
 
-    private func chip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(verbatim: label)
-                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 7)
-                .background(
-                    isSelected ? Color.accentColor : Color.primary.opacity(0.08),
-                    in: Capsule()
-                )
-        }
-        .buttonStyle(.plain)
-    }
 
     private var appliances: some View {
         LazyVStack(spacing: 10) {

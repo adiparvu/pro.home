@@ -213,9 +213,9 @@ struct DocumentDetailView: View {
                 Task { await authenticate() }
             } label: {
                 Label("doc_lock_unlock", systemImage: "faceid")
-                    .font(AppFont.footnoteEmphasis).foregroundStyle(.white)
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(.teal)
                     .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
-                    .background(Color.teal, in: Capsule())
+                    .glassCapsule()
             }
             .buttonStyle(.plain)
             .padding(.top, AppSpacing.sm)
@@ -647,7 +647,7 @@ struct DocumentDetailView: View {
             Label(title, systemImage: icon)
                 .font(AppFont.footnoteEmphasis).foregroundStyle(tint)
                 .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .glassRoundedRect(12)
         }
         .buttonStyle(.plain)
     }

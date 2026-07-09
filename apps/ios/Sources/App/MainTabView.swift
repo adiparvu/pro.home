@@ -160,6 +160,9 @@ struct MainTabView: View {
                 // A reminder ticked in the Reminders app while we were in the
                 // background completes its linked task on return.
                 Task { await taskService.syncFromReminders() }
+                // Any household member who changed their photo while we were
+                // away shows their new avatar the moment we return.
+                MemberDirectory.shared.refreshSoon()
             }
             else if phase == .background {
                 Task { await presenceService.unsubscribe() }

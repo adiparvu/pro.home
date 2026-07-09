@@ -126,8 +126,8 @@ struct DocumentFilesSection: View {
                 Text("doc_add_file").font(.caption.weight(.semibold))
             }
             .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(Color.accentColor.opacity(0.12), in: Capsule())
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .glassCapsule()
         }
         .disabled(service.isUploading)
     }

@@ -102,6 +102,8 @@ struct NotificationCenterView: View {
                 await service.subscribeRealtime(userId: uid)
             }
         }
+        // So a chat notification can show its sender's real avatar.
+        .task { await MemberDirectory.shared.loadIfNeeded() }
     }
 
     // MARK: - Content
@@ -236,14 +238,42 @@ private struct NotificationRow: View {
         NotificationCategory.forModule(notification.module)
     }
 
+    // For a chat notification we know the sender only by the title; when it
+    // resolves to exactly one real household member, show their live avatar
+    // instead of the generic chat glyph. No match → the category icon, so a
+    // wrong face is never shown.
+    private var senderAvatar: MemberDirectory.Entry? {
+        guard category.module == "chat" else { return nil }
+        return MemberDirectory.shared.entry(matchingName: notification.title)
+    }
+
+    @ViewBuilder
+    private var leadingIcon: some View {
+        if let sender = senderAvatar, let urlStr = sender.avatarUrl, !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else { categoryGlyph }
+            }
+            .clipShape(Circle())
+        } else {
+            categoryGlyph
+        }
+    }
+
+    private var categoryGlyph: some View {
+        Image(systemName: category.icon)
+            .font(AppFont.subheadline)
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(category.color)
+            .frame(width: 40, height: 40)
+            .glassCircle()
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: category.icon)
-                .font(AppFont.subheadline)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(category.color)
+            leadingIcon
                 .frame(width: 40, height: 40)
-                .glassCircle()
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {

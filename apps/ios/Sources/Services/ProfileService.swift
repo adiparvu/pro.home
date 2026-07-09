@@ -98,6 +98,15 @@ final class ProfileService {
             .execute()
         profile?.avatarUrl = urlString
 
+        // The directory is the one authority every avatar reads from, so a
+        // synchronous write here repaints the new photo on the Family page,
+        // notifications, chat and everywhere else the instant the upload
+        // returns — no screen keeps showing yesterday's picture. The signed
+        // cache is cleared so the fresh path is signed immediately rather than
+        // serving a still-valid URL for the previous file.
+        MemberDirectory.shared.setAvatar(userId: userId, urlString: urlString)
+        SignedStorage.clearCache()
+
         if let oldPath, oldPath != path {
             _ = try? await supabase.storage.from("documents").remove(paths: [oldPath])
         }
