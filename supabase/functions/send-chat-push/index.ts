@@ -72,7 +72,18 @@ serve(async (req) => {
   const cronSecret = Deno.env.get('CRON_SECRET')
 
   if (!keyId || !teamId || !p8 || !bundleId) {
-    return new Response(JSON.stringify({ error: 'APNs not configured' }), {
+    // Report WHICH secret names are visible (booleans only, never values) so a
+    // missing/misnamed one is obvious from the response instead of a generic
+    // "not configured".
+    return new Response(JSON.stringify({
+      error: 'APNs not configured',
+      present: {
+        APNS_KEY_ID: !!keyId,
+        APNS_TEAM_ID: !!teamId,
+        APNS_PRIVATE_KEY: !!p8,
+        APNS_BUNDLE_ID: !!bundleId,
+      },
+    }), {
       status: 503,
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
