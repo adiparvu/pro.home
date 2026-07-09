@@ -197,11 +197,11 @@ struct DocumentDetailView: View {
 
     private var lockCover: some View {
         VStack(spacing: AppSpacing.lg) {
-            ZStack {
-                Circle().fill(Color.teal.opacity(0.15)).frame(width: 92, height: 92)
-                Image(systemName: "lock.fill")
-                    .font(AppFont.scaled(36, weight: .semibold)).foregroundStyle(.teal)
-            }
+            Image(systemName: "lock.fill")
+                .font(AppFont.scaled(36, weight: .semibold))
+                .foregroundStyle(.teal)
+                .frame(width: 92, height: 92)
+                .glassCircle()
             Text(live.name)
                 .font(AppFont.title3).foregroundStyle(.primary)
                 .multilineTextAlignment(.center).lineLimit(2)

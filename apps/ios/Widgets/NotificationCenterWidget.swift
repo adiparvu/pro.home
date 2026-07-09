@@ -157,18 +157,12 @@ struct NotificationCenterRectangularView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 4) {
-                Group {
-                    if alertCount > 0 {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(AppFont.scaled(10, weight: .semibold))
-                    } else {
-                        // The PRVIO brand mark for the all-clear state, not a
-                        // generic house.
-                        Image("BrandMark").renderingMode(.template)
-                            .resizable().scaledToFit().frame(width: 12, height: 12)
-                    }
-                }
-                .widgetAccentable()
+                // Widgets render raster assets fine on the Home Screen but the
+                // brand mark can't be tinted like an SF Symbol in the accented
+                // lock-screen rendering — keep a system glyph here.
+                Image(systemName: alertCount > 0 ? "exclamationmark.triangle.fill" : "house.fill")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .widgetAccentable()
                 Text("PRVIO")
                     .font(AppFont.scaled(11, weight: .bold))
                 Spacer()

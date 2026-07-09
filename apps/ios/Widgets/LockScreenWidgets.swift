@@ -329,8 +329,10 @@ struct LockScreenDashboardView: View {
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 4) {
-                    Image("BrandMark").renderingMode(.template)
-                        .resizable().scaledToFit().frame(width: 12, height: 12)
+                    // Lock-screen accessory widgets can't tint a raster brand
+                    // mark like an SF Symbol — keep a system glyph here.
+                    Image(systemName: "house.fill")
+                        .font(AppFont.scaled(10, weight: .semibold))
                         .widgetAccentable()
                     Text(entry.snapshot.propertyName ?? "PRVIO")
                         .font(AppFont.label)

@@ -53,13 +53,11 @@ struct SessionBanner: View {
 
     private func banner(_ s: WorkSessionStore.Active, now: Date) -> some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle().fill((s.isPaused ? Color.brandWarning : Color.brandSuccess).opacity(0.18))
-                    .frame(width: 38, height: 38)
-                Image(systemName: s.isPaused ? "pause.fill" : "timer")
-                    .font(AppFont.scaled(15, weight: .bold))
-                    .foregroundStyle(s.isPaused ? Color.brandWarning : Color.brandSuccess)
-            }
+            Image(systemName: s.isPaused ? "pause.fill" : "timer")
+                .font(AppFont.scaled(15, weight: .bold))
+                .foregroundStyle(s.isPaused ? Color.brandWarning : Color.brandSuccess)
+                .frame(width: 38, height: 38)
+                .glassCircle()
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: s.title)

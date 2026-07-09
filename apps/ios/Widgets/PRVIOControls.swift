@@ -9,14 +9,11 @@ struct OpenAppControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.open") {
             ControlWidgetButton(action: OpenPRVIODestination(.home)) {
-                // The PRVIO brand mark ("P with roof") instead of a generic
-                // house — the app's own identity in Control Center. Template
-                // rendering lets the system tint it like any control glyph.
-                Label {
-                    Text("PRVIO")
-                } icon: {
-                    Image("BrandMark").renderingMode(.template)
-                }
+                // Control Center controls only render SF Symbols — a raster
+                // asset shows the system's broken-image placeholder ("?"). To
+                // carry the PRVIO brand mark here it must become a custom SF
+                // Symbol (.symbolset from the logo's SVG); until then, a glyph.
+                Label("PRVIO", systemImage: "house.fill")
             }
         }
         .displayName("PRVIO")
