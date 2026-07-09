@@ -99,6 +99,20 @@ serve(async (req) => {
     })
   }
 
+  // Build the APNs JWT BEFORE claiming any rows. If the key is bad/rotated
+  // this throws here — and because nothing has been stamped yet, the batch
+  // stays unpushed and a later sweep retries it (instead of the old behaviour,
+  // which claimed the rows first and then lost the whole batch on a JWT error).
+  let jwt: string
+  try {
+    jwt = await makeApnsJwt(p8, keyId, teamId)
+  } catch (e) {
+    return new Response(JSON.stringify({ error: `APNs JWT: ${e instanceof Error ? e.message : e}` }), {
+      status: 500,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
+  }
+
   // Claim unpushed chat notifications atomically: the insert trigger can
   // fire this function several times in a burst, and stamping pushed_at
   // up-front means each row is sent by exactly one invocation.
@@ -121,9 +135,25 @@ serve(async (req) => {
     })
   }
 
-  const jwt = await makeApnsJwt(p8, keyId, teamId)
+  // Per-recipient unread chat count for the springboard badge, cached so a
+  // burst to the same user is one query.
+  const badgeCache = new Map<string, number>()
+  async function unreadBadge(userId: string): Promise<number> {
+    if (badgeCache.has(userId)) return badgeCache.get(userId)!
+    const { count } = await admin
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('module', 'chat')
+      .eq('status', 'unread')
+    const c = count ?? 0
+    badgeCache.set(userId, c)
+    return c
+  }
+
   let sent = 0
-  const pushedIds: string[] = []
+  const deadTokens: string[] = []
+  const retryIds: string[] = []
 
   for (const n of notes) {
     const { data: tokens } = await admin
@@ -132,11 +162,18 @@ serve(async (req) => {
       .eq('user_id', n.user_id)
       .eq('platform', 'ios')
 
-    for (const t of tokens ?? []) {
+    if (!tokens || tokens.length === 0) continue // nothing to deliver, nothing to retry
+
+    const badge = await unreadBadge(n.user_id)
+    let anySuccess = false
+    let anyTransient = false
+
+    for (const t of tokens) {
       const payload = {
         aps: {
           alert: { title: n.title ?? 'New message', body: n.body ?? '' },
           sound: 'default',
+          badge,
           'thread-id': 'chat',
         },
       }
@@ -150,15 +187,41 @@ serve(async (req) => {
           },
           body: JSON.stringify(payload),
         })
-        if (res.ok) sent++
+        if (res.ok) {
+          sent++
+          anySuccess = true
+        } else {
+          // 410 Unregistered / 400 BadDeviceToken are permanent — reap the
+          // dead token so it stops wasting every future send. Everything else
+          // (429/500/503, network) is transient → eligible for a retry.
+          let reason = ''
+          try { reason = ((await res.json())?.reason ?? '') as string } catch { /* no body */ }
+          if (res.status === 410 || (res.status === 400 && reason === 'BadDeviceToken') || reason === 'Unregistered') {
+            deadTokens.push(t.token)
+          } else {
+            anyTransient = true
+          }
+        }
       } catch (_e) {
-        // best-effort: the row is already claimed; the message stays in-app
+        anyTransient = true
       }
     }
-    pushedIds.push(n.id)
+
+    // Had tokens, nothing landed, and the failures were transient → un-claim
+    // so the next sweep tries again (bounded by the message eventually being
+    // read, which stops mattering).
+    if (!anySuccess && anyTransient) retryIds.push(n.id)
   }
 
-  return new Response(JSON.stringify({ sent, processed: pushedIds.length }), {
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
+  if (deadTokens.length > 0) {
+    await admin.from('device_tokens').delete().in('token', deadTokens)
+  }
+  if (retryIds.length > 0) {
+    await admin.from('notifications').update({ pushed_at: null }).in('id', retryIds)
+  }
+
+  return new Response(
+    JSON.stringify({ sent, processed: notes.length, reaped: deadTokens.length, retry: retryIds.length }),
+    { headers: { ...CORS, 'Content-Type': 'application/json' } },
+  )
 })
