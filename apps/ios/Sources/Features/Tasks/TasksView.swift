@@ -10,6 +10,7 @@ struct TasksView: View {
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
+    @State private var searchText = ""
     /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
     @State private var deepLinkedTask: MaintenanceTask?
 
@@ -75,15 +76,23 @@ struct TasksView: View {
     }
 
     private var filtered: [MaintenanceTask] {
+        let base: [MaintenanceTask]
         switch filter {
         case .all:
-            return taskService.tasks
+            base = taskService.tasks
         case .open:
-            return taskService.tasks.filter { !$0.isCompleted && $0.status != "cancelled" }
+            base = taskService.tasks.filter { !$0.isCompleted && $0.status != "cancelled" }
         case .overdue:
-            return taskService.tasks.filter { $0.isOverdue || $0.status == "overdue" }
+            base = taskService.tasks.filter { $0.isOverdue || $0.status == "overdue" }
         case .done:
-            return historyPeriod.apply(to: taskService.tasks.filter { $0.isCompleted })
+            base = historyPeriod.apply(to: taskService.tasks.filter { $0.isCompleted })
+        }
+        guard !searchText.isEmpty else { return base }
+        return base.filter {
+            $0.title.matchesSearch(searchText)
+                || ($0.description ?? "").matchesSearch(searchText)
+                || $0.category.matchesSearch(searchText)
+                || $0.assigneeNames.contains { $0.matchesSearch(searchText) }
         }
     }
 
@@ -104,6 +113,9 @@ struct TasksView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Tasks")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .floatingSpeedDial(.tasks)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

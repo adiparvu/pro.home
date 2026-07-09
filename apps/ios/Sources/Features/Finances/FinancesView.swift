@@ -15,6 +15,7 @@ struct FinancesView: View {
     @State private var showAddSheet    = false
     @State private var selectedType: String? = nil
     @State var displayedMonth: Date   = Calendar.current.startOfMonth(Date())
+    @State private var searchText = ""
 
     var preferred: String { appSettings.preferredCurrency }
 
@@ -114,7 +115,12 @@ struct FinancesView: View {
         let month = monthRecords
         let income = total("income", in: month)
         let expenses = total("expense", in: month)
-        let filtered = selectedType.map { t in month.filter { $0.type == t } } ?? month
+        let typed = selectedType.map { t in month.filter { $0.type == t } } ?? month
+        let filtered = searchText.isEmpty ? typed : typed.filter {
+            $0.title.matchesSearch(searchText)
+                || $0.category.matchesSearch(searchText)
+                || ($0.description ?? "").matchesSearch(searchText)
+        }
 
         Group {
         if financialService.isLoading && financialService.records.isEmpty {
@@ -177,6 +183,9 @@ struct FinancesView: View {
         }
         .navigationTitle("Finances")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search transactions…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
             ToolbarItem(placement: .topBarTrailing) {

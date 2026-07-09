@@ -14,6 +14,7 @@ struct ZonesListView: View {
     @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ZoneFilter = .all
+    @State private var searchText = ""
 
     enum ZoneFilter: String, CaseIterable {
         case all       = "All"
@@ -32,8 +33,10 @@ struct ZonesListView: View {
     }
 
     private var filteredZones: [PropertyZone] {
-        guard let layer = filter.layer else { return zoneService.zones }
-        return zoneService.zones.filter { $0.layer == layer }
+        var zones = zoneService.zones
+        if let layer = filter.layer { zones = zones.filter { $0.layer == layer } }
+        guard !searchText.isEmpty else { return zones }
+        return zones.filter { $0.name.matchesSearch(searchText) }
     }
 
     private func elementCount(in zone: PropertyZone) -> Int {
@@ -86,6 +89,9 @@ struct ZonesListView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Zones")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {

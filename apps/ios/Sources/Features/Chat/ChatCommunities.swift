@@ -20,6 +20,14 @@ struct CommunitiesView: View {
     /// Value-based path so a deep link (prvio://communities/<id>) can open a
     /// specific group programmatically, not just by tap.
     @State private var path: [ChatGroup] = []
+    @State private var searchText = ""
+
+    private var filteredGroups: [ChatGroup] {
+        guard !searchText.isEmpty else { return service.groups }
+        return service.groups.filter {
+            $0.name.matchesSearch(searchText) || $0.kindLabel.matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -31,7 +39,7 @@ struct CommunitiesView: View {
                         emptyState
                     } else {
                         VStack(spacing: 10) {
-                            ForEach(service.groups) { group in
+                            ForEach(filteredGroups) { group in
                                 NavigationLink(value: group) {
                                     CommunityRow(group: group,
                                                  memberCount: service.members(for: group).count,
@@ -57,6 +65,9 @@ struct CommunitiesView: View {
             }
             .navigationTitle("Communities")
             .navigationBarTitleDisplayMode(.large)
+            .searchable(text: $searchText,
+                        placement: .navigationBarDrawer(displayMode: .automatic),
+                        prompt: Text("Search…"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showCreate) {
                 CreateGroupSheet(members: members) { name, kind, selected in

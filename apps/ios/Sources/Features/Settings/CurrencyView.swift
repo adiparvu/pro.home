@@ -15,6 +15,14 @@ struct CurrencyView: View {
 
     @State private var amountText = "100"
     @State private var reversed = false
+    @State private var searchText = ""
+
+    private var filteredCurrencies: [(code: String, name: String, symbol: String)] {
+        guard !searchText.isEmpty else { return CurrencyService.supported }
+        return CurrencyService.supported.filter {
+            $0.code.matchesSearch(searchText) || $0.name.matchesSearch(searchText)
+        }
+    }
     @FocusState private var amountFocused: Bool
 
     private var code: String { appSettings.preferredCurrency }
@@ -49,6 +57,9 @@ struct CurrencyView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("currency_row_label")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .scrollDismissesKeyboard(.interactively)
         .task { await currencyService.refresh() }
     }
@@ -132,9 +143,9 @@ struct CurrencyView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionLabel("Currency")
             VStack(spacing: 0) {
-                ForEach(CurrencyService.supported, id: \.code) { cur in
+                ForEach(filteredCurrencies, id: \.code) { cur in
                     currencyRow(cur)
-                    if cur.code != CurrencyService.supported.last?.code {
+                    if cur.code != filteredCurrencies.last?.code {
                         Rectangle().fill(Color.primary.opacity(0.05))
                             .frame(height: 0.5).padding(.leading, 68)
                     }

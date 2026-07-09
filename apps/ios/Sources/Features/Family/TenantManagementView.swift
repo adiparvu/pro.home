@@ -9,9 +9,16 @@ struct TenantManagementView: View {
 
     @State private var showAdd        = false
     @State private var selectedTenant: FamilyMember?
+    @State private var searchText = ""
 
     private var tenants: [FamilyMember] {
-        familyService.members.filter { $0.role == "tenant" }
+        let base = familyService.members.filter { $0.role == "tenant" }
+        guard !searchText.isEmpty else { return base }
+        return base.filter {
+            $0.name.matchesSearch(searchText)
+                || ($0.email ?? "").matchesSearch(searchText)
+                || ($0.phone ?? "").matchesSearch(searchText)
+        }
     }
 
     var body: some View {
@@ -47,6 +54,9 @@ struct TenantManagementView: View {
         }
         .navigationTitle("Tenants")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

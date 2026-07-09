@@ -15,6 +15,7 @@ struct NotificationCenterView: View {
     let service: NotificationService
 
     @State private var filter: String?   // nil = All, "unread", or a module
+    @State private var searchText = ""
 
     /// `initialFilter` pre-selects a module chip — the conversations bell
     /// opens the panel scoped to chat activity; All stays one tap away.
@@ -36,13 +37,18 @@ struct NotificationCenterView: View {
     }
 
     private var filtered: [AppNotification] {
+        let base: [AppNotification]
         switch filter {
-        case nil:      return service.notifications
-        case "unread": return service.notifications.filter(\.isUnread)
+        case nil:      base = service.notifications
+        case "unread": base = service.notifications.filter(\.isUnread)
         case .some(let module):
-            return service.notifications.filter {
+            base = service.notifications.filter {
                 NotificationCategory.forModule($0.module).module == module
             }
+        }
+        guard !searchText.isEmpty else { return base }
+        return base.filter {
+            $0.title.matchesSearch(searchText) || ($0.body ?? "").matchesSearch(searchText)
         }
     }
 
@@ -59,6 +65,9 @@ struct NotificationCenterView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             if !service.notifications.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {

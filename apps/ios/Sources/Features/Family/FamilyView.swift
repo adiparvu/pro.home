@@ -7,6 +7,16 @@ struct FamilyView: View {
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedMember: FamilyMember?
+    @State private var searchText = ""
+
+    private var filteredMembers: [FamilyMember] {
+        guard !searchText.isEmpty else { return familyService.members }
+        return familyService.members.filter {
+            $0.name.matchesSearch(searchText)
+                || $0.role.matchesSearch(searchText)
+                || ($0.email ?? "").matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -19,7 +29,7 @@ struct FamilyView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 10) {
-                            ForEach(familyService.members) { member in
+                            ForEach(filteredMembers) { member in
                                 FamilyMemberRow(member: member)
                                     .onTapGesture { selectedMember = member }
                                     .swipeActions(edge: .trailing) {
@@ -45,6 +55,9 @@ struct FamilyView: View {
         }
         .navigationTitle("Family")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .floatingSpeedDial(.family)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
