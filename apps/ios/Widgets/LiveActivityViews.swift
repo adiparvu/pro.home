@@ -149,10 +149,19 @@ struct MaintenanceLiveActivity: Widget {
                                 IslandProgressBar(value: context.state.progress,
                                                   tint: LiveActivityKind.maintenance.color)
                             }
-                            Text(context.state.stepDescription)
-                                .font(AppFont.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            HStack(spacing: AppSpacing.xs) {
+                                Text(context.state.stepDescription)
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                if !context.attributes.category.isEmpty {
+                                    Spacer(minLength: AppSpacing.xs)
+                                    Text(context.attributes.category)
+                                        .font(AppFont.caption2)
+                                        .foregroundStyle(LiveActivityKind.maintenance.color)
+                                        .lineLimit(1)
+                                }
+                            }
                         }
                     }
                 }
@@ -604,7 +613,7 @@ struct EmergencyLiveActivity: Widget {
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandHeader(kind: .emergency, title: Text("la_emergency_active"))
+                    IslandHeader(kind: .emergency, title: Text("la_emergency_active"), pulses: true)
                         .widgetURL(LiveActivityKind.emergency.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -756,6 +765,14 @@ struct IoTAlertLiveActivity: Widget {
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
+                            Label {
+                                Text(context.attributes.startedAt, style: .relative)
+                            } icon: {
+                                Image(systemName: "clock")
+                            }
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                             Spacer()
                             if active {
                                 Button(intent: AcknowledgeIoTAlertIntent(sensorId: context.attributes.sensorId)) {
@@ -814,6 +831,14 @@ private struct IoTAlertLockView: View {
                         IslandContextLine(kind: .iotAlert,
                                           text: Text(context.attributes.zone ?? ""),
                                           propertyName: context.attributes.propertyName)
+                        Label {
+                            Text(context.attributes.startedAt, style: .relative)
+                        } icon: {
+                            Image(systemName: "clock")
+                        }
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     }
                     Spacer()
                     IslandMetric(Text(verbatim: context.state.valueDisplay),
@@ -880,7 +905,10 @@ struct EnergyLiveActivity: Widget {
                         HStack(spacing: AppSpacing.base) {
                             if let consumption = EnergyFace.watts(context.state.consumptionW) {
                                 Label {
-                                    Text(verbatim: consumption).font(AppFont.captionStrong)
+                                    Text(verbatim: consumption)
+                                        .font(AppFont.captionStrong)
+                                        .monospacedDigit()
+                                        .contentTransition(.numericText())
                                 } icon: {
                                     Image(systemName: "arrow.down.circle.fill")
                                         .foregroundStyle(LiveActivityKind.energy.color)
@@ -890,7 +918,10 @@ struct EnergyLiveActivity: Widget {
                             }
                             if let production = EnergyFace.watts(context.state.productionW) {
                                 Label {
-                                    Text(verbatim: production).font(AppFont.captionStrong)
+                                    Text(verbatim: production)
+                                        .font(AppFont.captionStrong)
+                                        .monospacedDigit()
+                                        .contentTransition(.numericText())
                                 } icon: {
                                     Image(systemName: "sun.max.fill")
                                         .foregroundStyle(Color.brandSuccess)
@@ -990,6 +1021,24 @@ private enum CoverFace {
     }
 }
 
+/// The cover's door glyph: crossfades when the stage swaps (open ↔ closed) and
+/// pulses while the command is in flight — a real motion cue, since an
+/// indeterminate `ProgressView()` does not animate inside a Live Activity.
+/// Reduce Motion stops the pulse.
+private struct CoverSymbol: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let stage: String
+    let tint: Color
+
+    var body: some View {
+        Image(systemName: CoverFace.icon(stage))
+            .foregroundStyle(tint)
+            .contentTransition(.symbolEffect(.replace))
+            .symbolEffect(.pulse, options: .repeating,
+                          isActive: CoverFace.isBusy(stage) && !reduceMotion)
+    }
+}
+
 struct CoverLiveActivity: Widget {
     var body: some WidgetConfiguration {
         configuration
@@ -1006,10 +1055,8 @@ struct CoverLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: CoverFace.icon(stage))
+                        CoverSymbol(stage: stage, tint: tint)
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(tint)
-                            .contentTransition(.symbolEffect(.replace))
                         if LA.expandedData(.cover) {
                             Text(context.attributes.deviceName)
                                 .font(AppFont.captionStrong)
@@ -1031,8 +1078,8 @@ struct CoverLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     if LA.expandedDetail(.cover), CoverFace.isBusy(stage) {
                         HStack(spacing: AppSpacing.sm) {
-                            ProgressView()
-                                .tint(LiveActivityKind.cover.color)
+                            CoverSymbol(stage: stage, tint: LiveActivityKind.cover.color)
+                                .font(AppFont.caption)
                             Text(CoverFace.label(stage))
                                 .font(AppFont.caption)
                                 .foregroundStyle(.secondary)
@@ -1041,9 +1088,8 @@ struct CoverLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: CoverFace.icon(stage))
+                CoverSymbol(stage: stage, tint: tint)
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(tint)
                     .accessibilityLabel(Text(context.attributes.deviceName))
             } compactTrailing: {
                 if LA.island(.cover) {
@@ -1054,8 +1100,7 @@ struct CoverLiveActivity: Widget {
                         .contentTransition(.opacity)
                 }
             } minimal: {
-                Image(systemName: CoverFace.icon(stage))
-                    .foregroundStyle(tint)
+                CoverSymbol(stage: stage, tint: tint)
                     .accessibilityLabel(Text(context.attributes.deviceName))
             }
         }
@@ -1073,10 +1118,8 @@ private struct CoverLockView: View {
                     Circle()
                         .fill(CoverFace.tint(stage).opacity(AppOpacity.tintedFill))
                         .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
-                    Image(systemName: CoverFace.icon(stage))
+                    CoverSymbol(stage: stage, tint: CoverFace.tint(stage))
                         .font(AppFont.title3)
-                        .foregroundStyle(CoverFace.tint(stage))
-                        .contentTransition(.symbolEffect(.replace))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.attributes.deviceName)
@@ -1088,10 +1131,6 @@ private struct CoverLockView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if CoverFace.isBusy(stage) {
-                    ProgressView()
-                        .tint(LiveActivityKind.cover.color)
-                }
             }
             .padding(AppSpacing.lg)
             .activityBackgroundTint(Color.clear)

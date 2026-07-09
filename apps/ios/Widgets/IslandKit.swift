@@ -130,10 +130,13 @@ struct IslandHeader: View {
     let kind: LiveActivityKind
     let title: Text
     var isComplete = false
+    /// Ongoing-attention pulse on the leading glyph (emergency), matching the
+    /// compact/minimal presentations so the beacon reads "live" everywhere.
+    var pulses = false
 
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
-            IslandStateIcon(kind: kind, isComplete: isComplete)
+            IslandStateIcon(kind: kind, isComplete: isComplete, pulses: pulses)
                 .font(AppFont.captionStrong)
             if LA.expandedData(kind) {
                 title
