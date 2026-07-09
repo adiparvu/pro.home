@@ -20,17 +20,12 @@ struct SendLaterSheet: View {
 
     @State private var messageBody = ""
     @State private var sendAt: Date
-    @State private var repeatRule = "once"
-    @State private var indefinitely = true
-    @State private var repeatUntil: Date
     @State private var isSaving = false
     @State private var errorMessage: String?
 
     init(context: SendLaterContext) {
         self.context = context
-        let first = Self.defaultFirstSend()
-        _sendAt = State(initialValue: first)
-        _repeatUntil = State(initialValue: Calendar.current.date(byAdding: .month, value: 1, to: first) ?? first)
+        _sendAt = State(initialValue: Self.defaultFirstSend())
     }
 
     /// Now + 1 hour, rounded up to the next 5-minute mark — a tidy default
@@ -145,41 +140,6 @@ struct SendLaterSheet: View {
                     .font(AppFont.subheadline).foregroundStyle(.primary)
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-            divider
-            HStack {
-                Label("Repeat", systemImage: "repeat")
-                    .font(AppFont.subheadline).foregroundStyle(.primary)
-                Spacer()
-                Picker("", selection: $repeatRule.animation(.snappy)) {
-                    Text("Once").tag("once")
-                    Text("Daily").tag("daily")
-                    Text("Weekly").tag("weekly")
-                    Text("Monthly").tag("monthly")
-                }
-                .labelsHidden().pickerStyle(.menu).tint(.secondary)
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
-            if repeatRule != "once" {
-                divider
-                Toggle(isOn: $indefinitely.animation(.snappy)) {
-                    Label {
-                        Text("Indefinitely")
-                            .font(AppFont.subheadline).foregroundStyle(.primary)
-                    } icon: {
-                        Image(systemName: "infinity")
-                    }
-                }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                if !indefinitely {
-                    divider
-                    DatePicker(selection: $repeatUntil, in: sendAt...,
-                               displayedComponents: .date) {
-                        Label("Until", systemImage: "calendar.badge.checkmark")
-                            .font(AppFont.subheadline).foregroundStyle(.primary)
-                    }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                }
-            }
         }
     }
 
@@ -296,11 +256,6 @@ struct SendLaterSheet: View {
             .liquidGlass(cornerRadius: AppRadius.lg)
     }
 
-    private var divider: some View {
-        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
-            .frame(height: 0.5).padding(.leading, 52)
-    }
-
     // MARK: - Save
 
     private func save() async {
@@ -308,6 +263,9 @@ struct SendLaterSheet: View {
         isSaving = true
         defer { isSaving = false }
         do {
+            // Recurring scheduling was removed — everything schedules as a
+            // one-shot ("once"); the badge below still renders legacy
+            // recurring rows honestly until they lapse or are deleted.
             try await service.schedule(
                 propertyId: pid,
                 authorId: authorId,
@@ -316,9 +274,8 @@ struct SendLaterSheet: View {
                 dmRecipient: dmRecipient,
                 body: trimmedBody,
                 firstSendAt: max(sendAt, Date()),
-                repeatRule: repeatRule,
-                repeatUntil: (repeatRule != "once" && !indefinitely)
-                    ? max(repeatUntil, sendAt) : nil
+                repeatRule: "once",
+                repeatUntil: nil
             )
             HapticFeedback.success()
             dismiss()

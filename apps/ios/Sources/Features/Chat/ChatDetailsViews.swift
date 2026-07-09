@@ -34,7 +34,6 @@ struct ContactDetailsView: View {
     var onVideo: () -> Void
     var onSearch: () -> Void
     var onStarred: () -> Void
-    var onTheme: () -> Void
     var mediaURLs: [URL] = []
     var exportText: String = ""
     var propertyId: UUID? = nil
@@ -46,10 +45,8 @@ struct ContactDetailsView: View {
     @State private var blocked = false
     @State private var showReport = false
     @State private var reported = false
-    @State private var showEditLabel = false
     @State private var showEditContact = false
     @State private var showClearConfirm = false
-    @State private var memberLabel = ""
 
     private var convId: String { member.id.uuidString }
     private var myDisplayName: String {
@@ -109,9 +106,6 @@ struct ContactDetailsView: View {
                                          value: ChatPrivacyStore.label(convId))
                         }
                         .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        // Theme scope matches DirectMessageView.themeScope (member id).
-                        ThemeInfoRow(scope: member.id.uuidString) { dismiss(); onTheme() }
                     }
 
                     InfoSection(title: "Securitate") {
@@ -173,56 +167,33 @@ struct ContactDetailsView: View {
             }
             .onAppear {
                 muted = ChatMuteStore.isMuted(convId)
-                memberLabel = MemberLabelStore.label(convId)
-                if let pid = propertyId {
-                    Task { await MemberLabelStore.loadRemote(pid); memberLabel = MemberLabelStore.label(convId) }
-                }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
             .sheet(isPresented: $showEditContact) {
                 EditFamilyMemberSheet(member: member)
                     .environment(familyService)
             }
-            .sheet(isPresented: $showEditLabel) {
-                EditTextSheet(title: "Member label", text: memberLabel) { newText in
-                    memberLabel = newText
-                    MemberLabelStore.set(convId, newText, propertyId: propertyId)
-                }
-            }
     }
 
-    // MARK: - Hero (photo, name, role + presence, label affordance)
+    // MARK: - Hero (photo, name, role + presence)
 
     private var hero: some View {
         VStack(spacing: 10) {
-            VStack(spacing: 10) {
-                MemberPhotoAvatar(color: member.swiftColor,
-                                  initials: member.initials,
-                                  avatarURL: memberAvatarURL(member),
-                                  size: 96)
-                Text(member.name)
-                    .font(AppFont.scaled(26, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                heroSubtitle
-                if let phone = member.phone, !phone.isEmpty {
-                    Text(phone)
-                        .font(AppFont.scaled(14))
-                        .foregroundStyle(Color.primary.opacity(0.38))
-                }
+            MemberPhotoAvatar(color: member.swiftColor,
+                              initials: member.initials,
+                              avatarURL: memberAvatarURL(member),
+                              size: 96)
+            Text(member.name)
+                .font(AppFont.scaled(26, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+            heroSubtitle
+            if let phone = member.phone, !phone.isEmpty {
+                Text(phone)
+                    .font(AppFont.scaled(14))
+                    .foregroundStyle(Color.primary.opacity(0.38))
             }
-            .accessibilityElement(children: .combine)
-
-            Button { showEditLabel = true } label: {
-                if memberLabel.isEmpty {
-                    Label("Add a member label", systemImage: "tag")
-                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
-                } else {
-                    Label(memberLabel, systemImage: "tag.fill")
-                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
-                }
-            }
-            .buttonStyle(.plain)
         }
+        .accessibilityElement(children: .combine)
         .padding(.horizontal, AppSpacing.xl)
         .frame(maxWidth: .infinity)
     }
@@ -254,9 +225,6 @@ struct ContactDetailsView: View {
             Menu {
                 Button { showEditContact = true } label: {
                     Label("Editează contactul", systemImage: "person.crop.circle")
-                }
-                Button { showEditLabel = true } label: {
-                    Label("Editează eticheta", systemImage: "tag")
                 }
                 if !exportText.isEmpty {
                     ShareLink(item: exportText) {
@@ -294,7 +262,6 @@ struct GroupDetailsView: View {
     var onAddMember: () -> Void
     var onSearch: () -> Void
     var onStarred: () -> Void
-    var onTheme: () -> Void
     var mediaURLs: [URL] = []
     var inviteLink: String = ""
     var propertyId: UUID? = nil
@@ -307,8 +274,12 @@ struct GroupDetailsView: View {
     @State private var showEditDescription = false
     @State private var showDescriptionView = false
     @State private var showEditDetails = false
-    @State private var editingLabelId: String?
-    @State private var labelRefresh = false
+    /// Active disappearing-messages TTL for the family chat. Setting NEW
+    /// timers here was removed (DMs and groups keep theirs); an active one
+    /// stays visible with an explicit off switch so nobody is stuck with a
+    /// timer they can no longer reach.
+    @State private var disappearTTL: TimeInterval = 0
+    @State private var showDisappearOffConfirm = false
 
     var body: some View {
             ScrollView(showsIndicators: false) {
@@ -375,14 +346,18 @@ struct GroupDetailsView: View {
                                          value: muted ? String(localized: "Off") : nil)
                         }
                         .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        NavigationLink {
-                            DisappearingMessagesView(convId: "group", serverKey: "group")
-                        } label: {
-                            InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: disappearingDurationLabel("group"), adminBadge: true)
+                        // New disappearing-message timers can't be set on the
+                        // family chat anymore (DMs and groups keep theirs). An
+                        // already-active timer stays visible — with an explicit
+                        // off switch — until it's turned off.
+                        if disappearTTL > 0 {
+                            Divider().padding(.leading, 52)
+                            InfoRow(icon: "timer", label: "Disappearing messages",
+                                    value: disappearingDurationLabel("group"),
+                                    showChevron: false, adminBadge: true) {
+                                showDisappearOffConfirm = true
+                            }
                         }
-                        .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         NavigationLink {
                             AdvancedPrivacyView(convId: "group")
@@ -391,9 +366,6 @@ struct GroupDetailsView: View {
                                          value: ChatPrivacyStore.label("group"), adminBadge: true)
                         }
                         .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        // Theme scope matches ChatView.themeScope ("group").
-                        ThemeInfoRow(scope: "group") { dismiss(); onTheme() }
                     }
 
                     InfoSection(title: "Securitate") {
@@ -452,16 +424,27 @@ struct GroupDetailsView: View {
             .onAppear {
                 muted = ChatMuteStore.isMuted("group")
                 description = GroupDescriptionStore.text()
+                disappearTTL = ChatDisappearStore.ttl("group")
                 if let pid = propertyId {
                     Task {
                         await GroupDescriptionStore.loadRemote(pid)
-                        await MemberLabelStore.loadRemote(pid)
                         description = GroupDescriptionStore.text()
-                        labelRefresh.toggle()
                     }
                 }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted("group", m) }
+            .confirmationDialog("Turn off disappearing messages?",
+                                isPresented: $showDisappearOffConfirm, titleVisibility: .visible) {
+                Button("Turn off", role: .destructive) {
+                    ChatDisappearStore.pushToServer(serverKey: "group", seconds: 0)
+                    ChatDisappearStore.setTTL("group", 0)
+                    disappearTTL = 0
+                    HapticFeedback.success()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("New timers can only be set in direct and group conversations.")
+            }
             .onChange(of: photoItem) { _, item in
                 guard let item, let pid = propertyId else { return }
                 Task {
@@ -523,46 +506,26 @@ struct GroupDetailsView: View {
 
     @ViewBuilder
     private func memberRow(name: String, member: FamilyMember?, admin: Bool) -> some View {
-        let labelId = member?.id.uuidString ?? "you"
-        let label = MemberLabelStore.label(labelId)
-        Button { editingLabelId = labelId } label: {
-            HStack(spacing: 12) {
-                if let m = member {
-                    MemberPhotoAvatar(color: m.swiftColor,
-                                      initials: m.initials,
-                                      avatarURL: memberAvatarURL(m),
-                                      size: 44)
-                } else if let myURL = MemberDirectory.shared.avatarURL(for: supabase.auth.currentSession?.user.id) {
-                    MemberPhotoAvatar(color: .accentColor, initials: "", avatarURL: myURL, size: 44)
-                } else {
-                    ZStack {
-                        Circle().fill(Color.accentColor.opacity(0.18))
-                        Image(systemName: "person.fill").foregroundStyle(Color.accentColor)
-                    }
-                    .frame(width: 44, height: 44)
+        HStack(spacing: 12) {
+            if let m = member {
+                MemberPhotoAvatar(color: m.swiftColor,
+                                  initials: m.initials,
+                                  avatarURL: memberAvatarURL(m),
+                                  size: 44)
+            } else if let myURL = MemberDirectory.shared.avatarURL(for: supabase.auth.currentSession?.user.id) {
+                MemberPhotoAvatar(color: .accentColor, initials: "", avatarURL: myURL, size: 44)
+            } else {
+                ZStack {
+                    Circle().fill(Color.accentColor.opacity(0.18))
+                    Image(systemName: "person.fill").foregroundStyle(Color.accentColor)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(name).font(AppFont.scaled(16, weight: .medium)).foregroundStyle(.primary)
-                    if label.isEmpty {
-                        Text("Add a member label")
-                            .font(AppFont.scaled(12)).foregroundStyle(Color.accentColor)
-                    } else {
-                        Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                    }
-                }
-                Spacer()
-                if admin { AdminBadge() }
+                .frame(width: 44, height: 44)
             }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-            .contentShape(Rectangle())
+            Text(name).font(AppFont.scaled(16, weight: .medium)).foregroundStyle(.primary)
+            Spacer()
+            if admin { AdminBadge() }
         }
-        .buttonStyle(.plain)
-        .id(labelRefresh)
-        .sheet(isPresented: Binding(get: { editingLabelId == labelId }, set: { if !$0 { editingLabelId = nil } })) {
-            EditTextSheet(title: "Member label", text: label) { newText in
-                MemberLabelStore.set(labelId, newText, propertyId: propertyId); labelRefresh.toggle()
-            }
-        }
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
     }
 }
 

@@ -6,7 +6,7 @@ import LocalAuthentication
 import AudioToolbox
 import AVFoundation
 
-// MARK: - Group description + member labels (local cache + Supabase sync)
+// MARK: - Group description (local cache + Supabase sync)
 
 enum GroupDescriptionStore {
     static func text() -> String { UserDefaults.standard.string(forKey: "group.description") ?? "" }
@@ -32,32 +32,6 @@ enum GroupDescriptionStore {
     }
 }
 
-enum MemberLabelStore {
-    static func label(_ memberId: String) -> String { UserDefaults.standard.string(forKey: "member.label.\(memberId)") ?? "" }
-    static func set(_ memberId: String, _ t: String, propertyId: UUID? = nil) {
-        UserDefaults.standard.set(t, forKey: "member.label.\(memberId)")
-        guard let pid = propertyId else { return }
-        Task {
-            struct R: Encodable { let property_id: String; let member_id: String; let label: String }
-            _ = try? await supabase.from("chat_member_labels")
-                .upsert(R(property_id: pid.uuidString, member_id: memberId, label: t),
-                        onConflict: "property_id,member_id")
-                .execute()
-        }
-    }
-    /// Pull all shared member labels for the property into the local cache.
-    static func loadRemote(_ propertyId: UUID) async {
-        struct Row: Decodable { let member_id: String; let label: String? }
-        guard let rows: [Row] = try? await supabase.from("chat_member_labels")
-            .select("member_id,label").eq("property_id", value: propertyId.uuidString)
-            .execute().value else { return }
-        for r in rows {
-            UserDefaults.standard.set(r.label ?? "", forKey: "member.label.\(r.member_id)")
-        }
-    }
-}
-
-/// Reusable editor sheet for short text (group description, member label, …).
 // MARK: - Group permissions
 
 enum GroupPermissionStore {

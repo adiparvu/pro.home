@@ -15,7 +15,6 @@ struct ChatView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(TabBarVisibility.self) private var tabBarVis
-    @Environment(StickerService.self) private var stickerService
     @Environment(PresenceService.self) private var presenceService
     @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
@@ -44,7 +43,6 @@ struct ChatView: View {
     @State private var showCameraSheet = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
-    @State private var showStickerPicker = false
     @State private var showAttachmentSheet = false
     @State private var showContactPicker = false
     @State private var showPollComposer = false
@@ -62,7 +60,6 @@ struct ChatView: View {
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
-    @State private var showThemePicker = false
     @State private var themeRefresh = 0
     /// False until entry settles. Messages arrive in two batches — the page
     /// already in memory from ConversationsView, then the network refresh that
@@ -468,24 +465,11 @@ struct ChatView: View {
         .sheet(isPresented: $showVideoSheet) {
             CallPickerSheet(members: familyService.members, isVideo: true)
         }
-        .sheet(isPresented: $showStickerPicker) {
-            StickerPicker(onSelect: { sticker in
-                Task { await sendSticker(sticker) }
-            }, onMemoji: { image in
-                Task { await sendCameraPhoto(image) }
-            })
-            .environment(stickerService)
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.hidden)
-        }
         .sheet(isPresented: $showStarred) {
             StarredMessagesView(messages: markedMessages, members: familyService.members) { id in
                 showStarred = false
                 scrollTarget = id
             }
-        }
-        .sheet(isPresented: $showThemePicker, onDismiss: { themeRefresh += 1 }) {
-            ChatThemePicker(scope: themeScope)
         }
         .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
@@ -497,7 +481,6 @@ struct ChatView: View {
                 onAddMember: { showAddMember = true },
                 onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
                 inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
                 propertyId: propertyId,
@@ -520,8 +503,7 @@ struct ChatView: View {
                 onContact: { showContactPicker = true },
                 onPoll: { showPollComposer = true },
                 onEvent: { showEventComposer = true },
-                onSendLater: { showSendLater = true },
-                onStickers: { showStickerPicker = true }
+                onSendLater: { showSendLater = true }
             )
                 .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
             }
@@ -999,7 +981,7 @@ struct ChatView: View {
                 // iMessage-style compose row: a round + button on the left and a
                 // slim pill field with the trailing control INSIDE it — the
                 // dictation-style mic when empty, the filled send arrow while
-                // typing (stickers moved into the + sheet).
+                // typing.
                 HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                     Button {
                         focused = false

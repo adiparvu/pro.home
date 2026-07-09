@@ -39,6 +39,11 @@
 "Save" = "Speichern";
 "Delete" = "Löschen";
 "Edit" = "Bearbeiten";
+"chat_groups_title" = "Gruppen";
+"Turn off disappearing messages?" = "Verschwindende Nachrichten deaktivieren?";
+"Turn off" = "Deaktivieren";
+"New timers can only be set in direct and group conversations." = "Neue Timer können nur in Direkt- und Gruppenunterhaltungen gesetzt werden.";
+"Includes the group name, icon and description, and the options to pin and keep or unkeep messages." = "Umfasst Gruppenname, Bild und Beschreibung sowie die Optionen zum Anheften und Behalten von Nachrichten.";
 "la_hub_title" = "Live-Aktivitäten";
 "la_hub_active_count %lld" = "%lld jetzt aktiv";
 "la_hub_metric_running" = "In Bearbeitung";

@@ -15,7 +15,6 @@ struct DirectMessageView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
     @Environment(PresenceService.self) private var presenceService
-    @Environment(StickerService.self) private var stickerService
     @Environment(NotificationService.self) private var notificationService
 
     @State private var replyingTo: DirectMessage? = nil
@@ -23,7 +22,6 @@ struct DirectMessageView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var showStarred = false
-    @State private var showThemePicker = false
     @State private var scrollTarget: UUID? = nil
     // Global defaults from Chat Settings.
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
@@ -75,7 +73,6 @@ struct DirectMessageView: View {
     @State private var showSendLater = false
     @State private var showLocationSheet = false
     @State private var showFileImporter = false
-    @State private var showStickerPicker = false
     @State private var showEventComposer = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
@@ -235,7 +232,6 @@ struct DirectMessageView: View {
                 onVideo: { showVideoSheet = true },
                 onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
                 exportText: exportTranscript,
                 propertyId: propertyService.primary?.id
@@ -259,9 +255,6 @@ struct DirectMessageView: View {
                 scrollTarget = id
             }
         }
-        .sheet(isPresented: $showThemePicker, onDismiss: { themeRefresh += 1 }) {
-            ChatThemePicker(scope: themeScope)
-        }
         .overlay(alignment: .bottomLeading) {
             if showAttachmentSheet {
                 ChatAttachmentSheet(
@@ -272,8 +265,7 @@ struct DirectMessageView: View {
                 onDocument: { showFileImporter = true },
                 onContact: { showContactPicker = true },
                 onEvent: { showEventComposer = true },
-                onSendLater: { showSendLater = true },
-                onStickers: { showStickerPicker = true }
+                onSendLater: { showSendLater = true }
             )
                 .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
             }
@@ -298,16 +290,6 @@ struct DirectMessageView: View {
             LocationShareSheet(propertyId: propertyService.primary?.id, myName: myName) { lat, lon in
                 Task { await sendDMLocation(lat: lat, lon: lon) }
             }
-        }
-        .sheet(isPresented: $showStickerPicker) {
-            StickerPicker(onSelect: { sticker in
-                Task { await sendDMSticker(sticker) }
-            }, onMemoji: { image in
-                Task { await sendCameraImage(image) }
-            })
-            .environment(stickerService)
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showEventComposer) {
             EventComposerView { title, details, date, location in
@@ -1216,14 +1198,6 @@ struct DirectMessageView: View {
     private func sendDMLocation(lat: Double, lon: Double) async {
         MessageSounds.sent()
         if await performDMSend(body: DMRich.encodeLocation(lat: lat, lon: lon), kind: .location) {
-            HapticFeedback.success()
-        }
-    }
-
-    @MainActor
-    private func sendDMSticker(_ sticker: Sticker) async {
-        MessageSounds.sent()
-        if await performDMSend(body: DMRich.encodeSticker(id: sticker.id), kind: .sticker) {
             HapticFeedback.success()
         }
     }

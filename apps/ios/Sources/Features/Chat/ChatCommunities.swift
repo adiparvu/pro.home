@@ -1,11 +1,13 @@
 import SwiftUI
 import Combine
 
-// MARK: - Communities (UI shell)
+// MARK: - Groups (UI shell)
 //
-// Communities — multiple named chat groups per property (workers, family, …),
+// Groups — multiple named chat groups per property (workers, family, …),
 // backed by chat_groups / chat_group_members (migration 078). This screen lists
-// and creates groups and manages their members.
+// and creates groups and manages their members. (The type keeps its historical
+// "Communities" name because ChatSettingsView also presents it; only the
+// user-facing wording changed.)
 
 struct CommunitiesView: View {
     @Environment(\.dismiss) private var dismiss
@@ -63,18 +65,20 @@ struct CommunitiesView: View {
                               members: members,
                               service: service)
             }
-            .navigationTitle("Communities")
+            .navigationTitle("chat_groups_title")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $searchText,
                         placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: Text("Search…"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showCreate) {
-                CreateGroupSheet(members: members) { name, kind, selected in
+                CreateGroupSheet(members: members) { name, selected in
                     showCreate = false
                     guard let pid = propertyId else { return }
                     Task {
-                        if let created = await service.create(propertyId: pid, name: name, kind: kind,
+                        // Kinds are no longer chosen at creation — every new
+                        // group is a plain one; legacy kinds keep their icons.
+                        if let created = await service.create(propertyId: pid, name: name, kind: "custom",
                                                               selected: selected, myName: myName) {
                             // Land straight in the new conversation.
                             path = [created]
@@ -631,94 +635,19 @@ private struct AddContractorsSheet: View {
 private struct CreateGroupSheet: View {
     @Environment(\.dismiss) private var dismiss
     let members: [FamilyMember]
-    let onCreate: (String, String, [FamilyMember]) -> Void
+    let onCreate: (String, [FamilyMember]) -> Void
 
     @State private var name = ""
-    @State private var kind = "custom"
     @State private var selectedIds: Set<UUID> = []
-
-    private let kinds: [(String, String, String)] = [
-        ("family", "Familie", "house.fill"),
-        ("work",   "Muncă",   "hammer.fill"),
-        ("custom", "Custom",  "person.3.fill")
-    ]
-
-    /// One-tap starting points: each pre-fills the name and kind and
-    /// preselects the household members whose role fits the team.
-    private struct GroupTemplate: Identifiable {
-        let id: String
-        let nameKey: String
-        let kind: String
-        let icon: String
-        let tint: Color
-        let roles: [String]
-    }
-    private static let templates: [GroupTemplate] = [
-        GroupTemplate(id: "familie", nameKey: "Familie", kind: "family",
-                      icon: "house.fill", tint: Color.brandSuccess,
-                      roles: ["owner", "partner", "child"]),
-        GroupTemplate(id: "chiriasi", nameKey: "comm_tpl_tenants", kind: "custom",
-                      icon: "key.fill", tint: Color.brandSkyBlue,
-                      roles: ["tenant"]),
-        GroupTemplate(id: "renovare", nameKey: "comm_tpl_renovation", kind: "work",
-                      icon: "hammer.fill", tint: .orange,
-                      roles: ["guest"]),
-    ]
-
-    private func applyTemplate(_ template: GroupTemplate) {
-        HapticFeedback.selection()
-        name = String(localized: String.LocalizationValue(template.nameKey))
-        kind = template.kind
-        selectedIds = Set(members.filter { template.roles.contains($0.role) }.map(\.id))
-    }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("comm_templates_label").font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    HStack(spacing: 10) {
-                        ForEach(Self.templates) { template in
-                            Button { applyTemplate(template) } label: {
-                                VStack(spacing: 6) {
-                                    Image(systemName: template.icon)
-                                        .font(AppFont.title3)
-                                        .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(template.tint)
-                                    Text(LocalizedStringKey(template.nameKey))
-                                        .font(AppFont.caption)
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(1).minimumScaleFactor(0.8)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, AppSpacing.md)
-                                .glassRoundedRect(14)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
                     TextField("Nume grup", text: $name)
                         .font(AppFont.scaled(16))
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .liquidGlass(cornerRadius: 14)
-
-                    HStack(spacing: 10) {
-                        ForEach(kinds, id: \.0) { k in
-                            Button { kind = k.0 } label: {
-                                VStack(spacing: 6) {
-                                    Image(systemName: k.2).font(AppFont.scaled(20))
-                                    Text(k.1).font(AppFont.scaled(13, weight: .medium))
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                                .background(kind == k.0 ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.04),
-                                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                .foregroundStyle(kind == k.0 ? Color.accentColor : Color.primary.opacity(0.6))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
 
                     Text("Membri").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     VStack(spacing: 8) {
@@ -752,7 +681,7 @@ private struct CreateGroupSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Creează") {
                         let selected = members.filter { selectedIds.contains($0.id) }
-                        onCreate(name.trimmingCharacters(in: .whitespaces), kind, selected)
+                        onCreate(name.trimmingCharacters(in: .whitespaces), selected)
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }

@@ -39,6 +39,11 @@
 "Save" = "Salvează";
 "Delete" = "Șterge";
 "Edit" = "Editează";
+"chat_groups_title" = "Grupuri";
+"Turn off disappearing messages?" = "Dezactivezi mesajele care dispar?";
+"Turn off" = "Dezactivează";
+"New timers can only be set in direct and group conversations." = "Temporizatoare noi pot fi setate doar în conversațiile directe și de grup.";
+"Includes the group name, icon and description, and the options to pin and keep or unkeep messages." = "Include numele, imaginea și descrierea grupului, plus opțiunile de fixare și păstrare a mesajelor.";
 "la_hub_title" = "Activități Live";
 "la_hub_active_count %lld" = "%lld active acum";
 "la_hub_metric_running" = "În desfășurare";

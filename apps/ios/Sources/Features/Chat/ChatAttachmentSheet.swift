@@ -17,7 +17,6 @@ struct ChatAttachmentSheet: View {
     var onPoll: (() -> Void)? = nil
     var onEvent: (() -> Void)? = nil
     var onSendLater: (() -> Void)? = nil
-    var onStickers: (() -> Void)? = nil
 
     private func pick(_ action: @escaping () -> Void) {
         withAnimation(.snappy(duration: 0.22)) { isPresented = false }
@@ -38,9 +37,6 @@ struct ChatAttachmentSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 row("Camera", "camera.fill", [Color(white: 0.35), Color(white: 0.15)]) { pick(onCamera) }
                 row("Photos", "photo.on.rectangle.angled", [.pink, .orange]) { pick(onPhotos) }
-                if let onStickers {
-                    row("Stickers", "face.smiling", [.purple, .indigo]) { pick(onStickers) }
-                }
                 if let onPoll {
                     row("Poll", "chart.bar.fill", [.yellow, .orange]) { pick(onPoll) }
                 }

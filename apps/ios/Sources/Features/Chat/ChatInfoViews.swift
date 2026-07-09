@@ -55,7 +55,7 @@ struct GroupPermissionsView: View {
 
                 VStack(spacing: 0) {
                     toggleRow("pencil", "Edit group settings",
-                              "Includes the group name, icon and description, the disappearing-messages timer, and the options to pin and keep or unkeep messages.",
+                              "Includes the group name, icon and description, and the options to pin and keep or unkeep messages.",
                               $editInfo)
                     Divider().padding(.leading, 56)
                     toggleRow("megaphone.fill", "Send messages", nil, $sendMessages)

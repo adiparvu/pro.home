@@ -18,7 +18,6 @@ struct ChatSettingsView: View {
     @AppStorage("presence.shareStatus") private var shareStatus = true
     @State private var showTheme = false
     @State private var showStarred = false
-    @State private var showStatus = false
     @State private var showCommunities = false
     @State private var themeRefresh = 0
 
@@ -36,16 +35,6 @@ struct ChatSettingsView: View {
         return .effective(scope: nil)
     }
 
-    /// Human label for the group conversation's disappearing-message timer.
-    private var disappearingLabel: String {
-        let ttl = ChatDisappearStore.ttl("group")
-        guard ttl > 0 else { return String(localized: "Off") }
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = ttl >= 86_400 ? [.day] : (ttl >= 3_600 ? [.hour] : [.minute])
-        formatter.unitsStyle = .short
-        return formatter.string(from: ttl) ?? String(localized: "Off")
-    }
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
@@ -55,10 +44,6 @@ struct ChatSettingsView: View {
                 SettingsGroup(title: "Conversații") {
                     valueTapRow(icon: "star.fill", label: "Mesaje marcate",
                                 value: marked.isEmpty ? nil : "\(marked.count)") { showStarred = true }
-                    NavSettingsRow(icon: "timer", color: .teal, label: "Mesaje care dispar",
-                                   value: disappearingLabel) {
-                        DisappearingMessagesView(convId: "group", serverKey: "group")
-                    }
                 }
 
                 SettingsGroup(title: "Confidențialitate") {
@@ -81,8 +66,7 @@ struct ChatSettingsView: View {
                 }
 
                 SettingsGroup(title: "Funcții") {
-                    TapSettingsRow(icon: "circle.dashed", color: .blue, label: "Status") { showStatus = true }
-                    TapSettingsRow(icon: "person.3.fill", color: .purple, label: "Communities") { showCommunities = true }
+                    TapSettingsRow(icon: "person.3.fill", color: .purple, label: "chat_groups_title") { showCommunities = true }
                     NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: Color(red: 0.2, green: 0.75, blue: 0.45), label: "Cross-app messaging") {
                         InterAppChatView()
                     }
@@ -99,12 +83,6 @@ struct ChatSettingsView: View {
         .sheet(isPresented: $showTheme, onDismiss: { themeRefresh += 1 }) { ChatThemePicker() }
         .sheet(isPresented: $showStarred) {
             StarredMessagesView(messages: marked, members: familyService.members) { _ in showStarred = false }
-        }
-        .sheet(isPresented: $showStatus) {
-            StatusView(propertyId: propertyService.primary?.id,
-                       myName: myName,
-                       members: familyService.members,
-                       onAddStatus: { showStatus = false })
         }
         .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
             CommunitiesView(propertyId: propertyService.primary?.id,

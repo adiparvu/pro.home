@@ -39,6 +39,11 @@
 "Save" = "Enregistrer";
 "Delete" = "Supprimer";
 "Edit" = "Modifier";
+"chat_groups_title" = "Groupes";
+"Turn off disappearing messages?" = "Désactiver les messages éphémères ?";
+"Turn off" = "Désactiver";
+"New timers can only be set in direct and group conversations." = "Les nouveaux minuteurs ne peuvent être définis que dans les conversations directes et de groupe.";
+"Includes the group name, icon and description, and the options to pin and keep or unkeep messages." = "Comprend le nom, l'image et la description du groupe, ainsi que les options d'épinglage et de conservation des messages.";
 "la_hub_title" = "Activités en direct";
 "la_hub_active_count %lld" = "%lld actives maintenant";
 "la_hub_metric_running" = "En cours";

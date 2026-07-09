@@ -140,63 +140,6 @@ struct MemberPhotoAvatar: View {
     }
 }
 
-/// Effective theme for a conversation scope — the per-conversation override
-/// wins, otherwise the global default (mirrors ChatView/DirectMessageView).
-private func conversationTheme(scope: String) -> ChatTheme {
-    .effective(scope: scope)
-}
-
-/// 22×22 preview of a conversation theme: the wallpaper gradient when the
-/// theme has one, otherwise the outgoing-bubble colour.
-private struct ThemeSwatch: View {
-    let theme: ChatTheme
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 7, style: .continuous) }
-
-    var body: some View {
-        shape
-            .fill(fillStyle)
-            .frame(width: 22, height: 22)
-            .overlay(shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-            .accessibilityHidden(true)
-    }
-
-    private var fillStyle: AnyShapeStyle {
-        if let cols = theme.backgroundColors {
-            AnyShapeStyle(LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom))
-        } else {
-            AnyShapeStyle(theme.outgoingBubble)
-        }
-    }
-}
-
-/// "Conversation theme" value row — label left, live theme swatch right.
-struct ThemeInfoRow: View {
-    let scope: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: "paintpalette")
-                    .font(AppFont.scaled(17))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                    .frame(width: 26)
-                Text("Conversation theme")
-                    .foregroundStyle(.primary)
-                Spacer()
-                ThemeSwatch(theme: conversationTheme(scope: scope))
-                Image(systemName: "chevron.right")
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(Color.primary.opacity(0.25))
-            }
-            .font(AppFont.scaled(16))
-            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 /// Small pill shown on settings rows that only group admins can change.
 struct AdminBadge: View {
     var body: some View {
@@ -271,11 +214,6 @@ struct InfoRowLabel: View {
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
         .contentShape(Rectangle())
     }
-}
-
-private func infoCardBackground<V: View>(_ content: V) -> some View {
-    content.liquidGlass(cornerRadius: 14)
-        .padding(.horizontal, AppSpacing.lg)
 }
 
 /// Toggle row that locks + hides a conversation on this device (WhatsApp-style).

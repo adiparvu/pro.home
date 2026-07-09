@@ -118,12 +118,6 @@ extension ChatView {
         }
     }
 
-    func sendSticker(_ sticker: Sticker) async {
-        HapticFeedback.success()
-        MessageSounds.sent()
-        await performGroupSend(body: sticker.id, attachmentType: "sticker", kind: .sticker)
-    }
-
     func sendContacts(_ payloads: [SharedContactPayload]) async {
         guard !payloads.isEmpty,
               let body = SharedContactPayload.encodeGroup(payloads) else { return }

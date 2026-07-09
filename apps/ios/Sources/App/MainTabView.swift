@@ -21,7 +21,6 @@ struct MainTabView: View {
     @State private var supplyService = SupplyService()
     @State private var pantryService = PantryService()
     @State private var receiptService = ReceiptService()
-    @State private var stickerService = StickerService()
     @State private var plantService = PlantService()
     @State private var deliveryService = DeliveryService()
     @State private var applianceService = ApplianceService()
@@ -81,7 +80,6 @@ struct MainTabView: View {
                         .environment(familyService)
                         .environment(propertyService)
                         .environment(profileService)
-                        .environment(stickerService)
                         .environment(tabBarVis)
                         .environment(router)
                 }
@@ -136,7 +134,6 @@ struct MainTabView: View {
         .environment(supplyService)
         .environment(pantryService)
         .environment(receiptService)
-        .environment(stickerService)
         .environment(plantService)
         .environment(deliveryService)
         .environment(applianceService)

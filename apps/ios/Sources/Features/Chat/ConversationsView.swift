@@ -1,6 +1,5 @@
 import SwiftUI
 import Supabase
-import PhotosUI
 
 // MARK: - Conversations list (WhatsApp-style main chat screen)
 
@@ -10,9 +9,7 @@ struct ConversationsView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
-    @Environment(StickerService.self) private var stickerService
     @Environment(PresenceService.self) private var presenceService
-    @Environment(AppSettings.self) private var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,17 +24,7 @@ struct ConversationsView: View {
     @State private var showNewConversation = false
     @State private var showAddContact = false
     @State private var showContactsPicker = false
-    @State private var showStatus = false
     @State private var showCommunities = false
-    // One presentation slot for the status composer covers (camera + text) —
-    // two separate `.fullScreenCover(isPresented:)` on one view conflict.
-    @State private var statusComposer: StatusComposerKind?
-    @State private var showStatusOptions = false
-    @State private var showStoryLibrary = false
-    @State private var storyPickerItem: PhotosPickerItem?
-    @State private var storyError: String?
-
-    private enum StatusComposerKind: Int, Identifiable { case camera, text; var id: Int { rawValue } }
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
@@ -73,19 +60,6 @@ struct ConversationsView: View {
 
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
-    }
-
-    /// The assistant bar's luminous edge: neutral white light by default,
-    /// the user's accent colour once they've turned one on — the bar wears
-    /// the identity they chose for the app.
-    private var ariaEdgeTint: Color {
-        appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .white
-    }
-
-    /// The bloom behind the bar follows the same rule (reference indigo by
-    /// default) so the edge and its glow never clash.
-    private var ariaBloomTint: Color {
-        appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .brandIndigo
     }
 
     private var nonArchived: [ConversationEntry] { sortedConversations.filter { !archivedIds.contains($0.id) } }
@@ -267,15 +241,6 @@ struct ConversationsView: View {
         HapticFeedback.success()
     }
 
-    @MainActor
-    private func sendStory(_ image: UIImage) async {
-        guard let pid = propertyService.primary?.id else { return }
-        if let err = await StatusService.shared.post(propertyId: pid, authorName: myName, image: image, caption: nil) {
-            storyError = err
-            HapticFeedback.warning()
-        }
-    }
-
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
@@ -329,13 +294,6 @@ struct ConversationsView: View {
         // silent until you popped back. The channel is property-scoped and
         // lightweight, so it stays live for the chat session (re-subscribing is
         // idempotent); it's cleaned up when the service is torn down.
-        .alert("Story not posted", isPresented: Binding(
-            get: { storyError != nil }, set: { if !$0 { storyError = nil } }
-        )) {
-            Button("OK", role: .cancel) { storyError = nil }
-        } message: {
-            Text(storyError ?? "")
-        }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
                                  propertyName: propertyService.primary?.name)
@@ -360,34 +318,6 @@ struct ConversationsView: View {
                 .environment(familyService)
                 .environment(propertyService)
         }
-        .sheet(isPresented: $showStatus) {
-            StatusView(propertyId: propertyService.primary?.id,
-                       myName: myName,
-                       members: familyService.members,
-                       // Dismiss the sheet first, then present the composer — presenting
-                       // a cover while the sheet is still dismissing swallows it.
-                       onAddStatus: {
-                           showStatus = false
-                           DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showStatusOptions = true }
-                       })
-        }
-        .confirmationDialog("Add to status", isPresented: $showStatusOptions, titleVisibility: .visible) {
-            Button("Camera") { statusComposer = .camera }
-            Button("Photo Library") { showStoryLibrary = true }
-            Button("Write text") { statusComposer = .text }
-            Button("Cancel", role: .cancel) {}
-        }
-        .photosPicker(isPresented: $showStoryLibrary, selection: $storyPickerItem, matching: .images)
-        .onChange(of: storyPickerItem) { _, item in
-            guard let item else { return }
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self),
-                   let img = UIImage(data: data) {
-                    await sendStory(img)
-                }
-                storyPickerItem = nil
-            }
-        }
         .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
             CommunitiesView(propertyId: propertyService.primary?.id,
                             members: familyService.members,
@@ -407,16 +337,6 @@ struct ConversationsView: View {
             } onAddMember: {
                 showNewConversation = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showContactsPicker = true }
-            }
-        }
-        .fullScreenCover(item: $statusComposer) { kind in
-            switch kind {
-            case .camera:
-                CameraPickerView { img in Task { await sendStory(img) } }
-                    .ignoresSafeArea()
-                    .background(Color.black.ignoresSafeArea())
-            case .text:
-                TextStatusComposer { image in Task { await sendStory(image) } }
             }
         }
         .modifier(ConversationDestructiveDialogs(
@@ -443,13 +363,7 @@ struct ConversationsView: View {
             HStack(spacing: 12) {
                 Menu {
                     Button { router.navigate(to: .profile) } label: { Label("Profile", systemImage: "person.crop.circle") }
-                    // Stories/status are a family surface — RLS returns nothing
-                    // for outsiders, so the entry points disappear with the data.
-                    if propertyService.isFamilyMember {
-                        Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
-                        Button { statusComposer = .camera } label: { Label("Share a moment", systemImage: "camera") }
-                    }
-                    Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
+                    Button { showCommunities = true } label: { Label("chat_groups_title", systemImage: "person.3") }
                     Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
@@ -551,42 +465,6 @@ struct ConversationsView: View {
 
                 let entries = showArchived ? archivedList : searchedConversations
                 LazyVStack(spacing: 8) {
-                    if !showArchived && searchText.isEmpty && filter == .all {
-                        Button { HapticFeedback.impact(.light); router.navigate(to: .aria) } label: { ariaRow }
-                            .buttonStyle(.plain)
-                            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
-                            // Reference (IMG_8066): the assistant bar carries a
-                            // luminous top edge — a hairline that is bright at
-                            // the top and dissolves down the sides — plus a
-                            // soft bloom radiating from behind it. Both inherit
-                            // the user's accent colour when one is active;
-                            // otherwise the edge stays neutral white light over
-                            // the reference's indigo bloom.
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                                    .strokeBorder(
-                                        LinearGradient(stops: [
-                                            .init(color: ariaEdgeTint.opacity(0.65), location: 0),
-                                            .init(color: ariaEdgeTint.opacity(0.12), location: 0.4),
-                                            .init(color: .clear, location: 1),
-                                        ], startPoint: .top, endPoint: .bottom),
-                                        lineWidth: 1
-                                    )
-                                    .allowsHitTesting(false)
-                            )
-                            .background(
-                                // The bloom: a blurred slab tucked behind the
-                                // bar's top edge, so the glow reads as light
-                                // spilling out from above it.
-                                RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                                    .fill(ariaBloomTint.opacity(0.45))
-                                    .blur(radius: 18)
-                                    .padding(.horizontal, AppSpacing.lg)
-                                    .offset(y: -6)
-                            )
-                            .padding(.bottom, AppSpacing.xs)
-                    }
-
                     if hasLockedChats && !showArchived && searchText.isEmpty {
                         Button {
                             if lockedRevealed {
@@ -867,38 +745,6 @@ struct ConversationsView: View {
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
-        .contentShape(Rectangle())
-    }
-
-    // The assistant card under the chips (reference layout): gradient wand
-    // tile + an honest promise — ARIA answers questions about your home.
-    private var ariaRow: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(LinearGradient(colors: [Color.brandIndigo, Color.brandPurple],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 44, height: 44)
-                    // The wand tile glows in the reference — a tight purple
-                    // halo, not a drop shadow.
-                    .shadow(color: Color.brandPurple.opacity(0.55), radius: 8)
-                Image(systemName: "wand.and.stars")
-                    .font(AppFont.scaled(19, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(String(format: String(localized: "convo_aria_title"),
-                            UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA"))
-                    .font(AppFont.headline)
-                    .foregroundStyle(.primary)
-                Text("convo_aria_subtitle")
-                    .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         .contentShape(Rectangle())
     }
 

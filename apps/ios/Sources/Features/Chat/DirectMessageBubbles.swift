@@ -31,7 +31,8 @@ enum DMRich {
     static func encodeLocation(lat: Double, lon: Double) -> String {
         "\(locationMarker)\(lat),\(lon)"
     }
-    static func encodeSticker(id: String) -> String { stickerMarker + id }
+    // NB: stickers have no encoder — the catalog picker is gone; the case
+    // remains decode-only so already-sent sticker messages keep rendering.
     static func encodeEvent(_ event: ChatEvent) -> String? {
         event.encoded().map { eventMarker + $0 }
     }
