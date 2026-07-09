@@ -700,19 +700,22 @@ struct ChatView: View {
                         .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
                         .id(msg.id)
                     }
-                    // Pending (offline) messages — shown optimistically with a clock.
+                    // Pending (offline / in-flight / failed) messages — shown
+                    // optimistically with a clock while queued, or a red badge +
+                    // "tap to retry" once a send attempt has failed.
                     ForEach(pendingOutbox) { pm in
                         let pendingFill = chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble
+                        let failed = pm.state == .failed || !outbox.isOnline
                         VStack(alignment: .trailing, spacing: 2) {
                             HStack {
                                 Spacer(minLength: 60)
                                 HStack(spacing: 6) {
-                                    Text(pm.body ?? "")
+                                    Text(pm.previewText)
                                         .font(AppFont.scaled(15))
                                         .foregroundStyle(pendingFill.readableText)
-                                    Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
+                                    Image(systemName: failed ? "exclamationmark.circle" : "clock")
                                         .font(AppFont.scaled(10))
-                                        .foregroundStyle(pendingFill.readableText.opacity(0.75))
+                                        .foregroundStyle(failed ? Color.brandDanger : pendingFill.readableText.opacity(0.75))
                                 }
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                                 .background(pendingFill,
@@ -728,7 +731,7 @@ struct ChatView: View {
                                     }
                                 }
                             }
-                            if !outbox.isOnline {
+                            if failed {
                                 Text("Not delivered · tap to retry")
                                     .font(AppFont.scaled(10))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))

@@ -8,36 +8,64 @@ import UniformTypeIdentifiers
 
 extension ChatView {
 
+    /// The single persistent send path for EVERY group message type. It attempts
+    /// the insert (MessageService.send handles the optimistic bubble + a bounded,
+    /// timed insert); on ANY failure — offline, RLS, or a hung/timed-out call —
+    /// it enqueues to the offline outbox so the message survives and retries
+    /// automatically when connectivity returns, instead of silently vanishing.
+    /// Media callers upload first and pass the resulting storage path.
+    @discardableResult
+    func performGroupSend(
+        body: String?,
+        attachmentUrl: String? = nil,
+        attachmentType: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        kind: PendingKind = .text,
+        mentionedIds: [String] = [],
+        replyTo: UUID? = nil
+    ) async -> Bool {
+        guard let pid = propertyId else { return false }
+        do {
+            try await messageService.send(
+                propertyId: pid, senderName: senderName, body: body,
+                attachmentUrl: attachmentUrl, attachmentType: attachmentType,
+                latitude: latitude, longitude: longitude,
+                mentionedIds: mentionedIds, replyTo: replyTo
+            )
+            return true
+        } catch {
+            outbox.enqueue(PendingMessage(
+                propertyId: pid, senderName: senderName, body: body,
+                attachmentUrl: attachmentUrl, attachmentType: attachmentType,
+                latitude: latitude, longitude: longitude, kind: kind,
+                mentionedIds: mentionedIds, replyTo: replyTo
+            ))
+            HapticFeedback.warning()
+            return false
+        }
+    }
+
     func sendText() async {
-        guard let pid = propertyId else { return }
+        guard propertyId != nil else { return }
         let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty else { return }
         text = ""
         HapticFeedback.impact(.light)
         MessageSounds.sent()
         isSending = true
         defer { isSending = false }
+        let ids = mentionedIds
+        let names = mentionedNames
         let replyId = replyingTo?.id
-        do {
-            try await messageService.send(
-                propertyId: pid, senderName: senderName,
-                body: body, mentionedIds: mentionedIds, replyTo: replyId
-            )
-            scheduleLocalMentionNotifications(body: body)
-            mentionedIds = []; mentionedNames = []
-            replyingTo = nil
-        } catch {
-            // Offline / send failed → queue it; it sends automatically when back online.
-            outbox.enqueue(PendingMessage(
-                propertyId: pid, senderName: senderName, body: body,
-                mentionedIds: mentionedIds, replyTo: replyId
-            ))
-            mentionedIds = []; mentionedNames = []
-            replyingTo = nil
-            HapticFeedback.warning()
-        }
+        mentionedIds = []; mentionedNames = []
+        replyingTo = nil
+        let ok = await performGroupSend(body: body, kind: .text, mentionedIds: ids, replyTo: replyId)
+        // Only fire local mention notifications for a message that actually left.
+        if ok { scheduleLocalMentionNotifications(names: names, body: body) }
     }
 
-    /// Retries every queued message for this property.
+    /// Retries every queued message for this property, attachments included.
     func flushOutbox() async {
         guard let pid = propertyId else { return }
         await outbox.flush { pm in
@@ -47,6 +75,7 @@ extension ChatView {
                     propertyId: pm.propertyId, senderName: pm.senderName,
                     body: pm.body, attachmentUrl: pm.attachmentUrl,
                     attachmentType: pm.attachmentType,
+                    latitude: pm.latitude, longitude: pm.longitude,
                     mentionedIds: pm.mentionedIds, replyTo: pm.replyTo
                 )
                 return true
@@ -90,55 +119,40 @@ extension ChatView {
     }
 
     func sendSticker(_ sticker: Sticker) async {
-        guard let pid = propertyId else { return }
         HapticFeedback.success()
         MessageSounds.sent()
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName,
-            body: sticker.id, attachmentType: "sticker"
-        )
+        await performGroupSend(body: sticker.id, attachmentType: "sticker", kind: .sticker)
     }
 
     func sendContacts(_ payloads: [SharedContactPayload]) async {
-        guard let pid = propertyId, !payloads.isEmpty,
+        guard !payloads.isEmpty,
               let body = SharedContactPayload.encodeGroup(payloads) else { return }
         MessageSounds.sent()
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: body, attachmentType: "contact"
-        )
+        await performGroupSend(body: body, attachmentType: "contact", kind: .contact)
         HapticFeedback.success()
     }
 
     func sendContact(_ formatted: String) async {
-        guard let pid = propertyId else { return }
         MessageSounds.sent()
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: "👤 \(formatted)"
-        )
+        await performGroupSend(body: "👤 \(formatted)", kind: .contact)
         HapticFeedback.success()
     }
 
     func sendPoll(question: String, options: [String], multipleChoice: Bool) async {
-        guard let pid = propertyId else { return }
         let poll = ChatPoll(q: question, opts: options, multi: multipleChoice)
         guard let body = poll.encoded() else { return }
         MessageSounds.sent()
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: body, attachmentType: "poll"
-        )
+        await performGroupSend(body: body, attachmentType: "poll", kind: .poll)
         HapticFeedback.success()
     }
 
     func sendEvent(title: String, details: String, date: Date, location: String) async {
-        guard let pid = propertyId else { return }
         let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
         let ev = ChatEvent(t: title, d: details.isEmpty ? nil : details,
                            date: f.string(from: date), loc: location.isEmpty ? nil : location)
         guard let body = ev.encoded() else { return }
         MessageSounds.sent()
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: body, attachmentType: "event"
-        )
+        await performGroupSend(body: body, attachmentType: "event", kind: .event)
         HapticFeedback.success()
     }
 
@@ -152,6 +166,7 @@ extension ChatView {
         text = ""
         // Send each selected item as its own message (preserves order). Images
         // and videos are both supported by the picker.
+        let ids = mentionedIds
         for (index, item) in items.enumerated() {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
             let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
@@ -159,13 +174,16 @@ extension ChatView {
             let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
             let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
             // Images and videos → private chat-media bucket (signed URL at display).
-            let attachmentValue = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
-                                                         ext: ext, contentType: contentType)
-            try? await messageService.send(
-                propertyId: pid, senderName: senderName,
+            guard let path = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                                    ext: ext, contentType: contentType) else {
+                sendError = String(localized: "chat_upload_failed")
+                HapticFeedback.warning()
+                continue
+            }
+            await performGroupSend(
                 body: (index == 0 && !caption.isEmpty) ? caption : nil,
-                attachmentUrl: attachmentValue, attachmentType: isVideo ? "video" : "image",
-                mentionedIds: mentionedIds
+                attachmentUrl: path, attachmentType: isVideo ? "video" : "image",
+                kind: isVideo ? .video : .image, mentionedIds: ids
             )
         }
         HapticFeedback.success()
@@ -179,28 +197,29 @@ extension ChatView {
         MessageSounds.sent()
         isSending = true
         defer { isSending = false }
+        let ids = mentionedIds
         // Private bucket + signed URL (resolved at display via ChatMedia).
-        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
-                                          ext: "jpg", contentType: "image/jpeg")
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: path, attachmentType: "image",
-            mentionedIds: mentionedIds
+        guard let path = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                                ext: "jpg", contentType: "image/jpeg") else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
+        }
+        await performGroupSend(
+            body: nil, attachmentUrl: path, attachmentType: "image",
+            kind: .image, mentionedIds: ids
         )
         HapticFeedback.success()
         mentionedIds = []; mentionedNames = []
     }
 
     func sendLocation(lat: Double, lon: Double) async {
-        guard let pid = propertyId else { return }
         MessageSounds.sent()
         isSending = true
         defer { isSending = false }
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName,
+        let ids = mentionedIds
+        await performGroupSend(
             body: String(localized: "📍 Shared a location"),
             attachmentType: "location", latitude: lat, longitude: lon,
-            mentionedIds: mentionedIds
+            kind: .location, mentionedIds: ids
         )
         HapticFeedback.success()
         mentionedIds = []; mentionedNames = []
@@ -213,12 +232,12 @@ extension ChatView {
         isSending = true
         defer { isSending = false; try? FileManager.default.removeItem(at: url) }
         // Private bucket + signed URL (resolved at playback via ChatMedia).
-        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "audio",
-                                          ext: "m4a", contentType: "audio/mp4")
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: path, attachmentType: "audio",
-            mentionedIds: []
+        guard let path = await ChatMedia.upload(data, propertyId: pid, subdir: "audio",
+                                                ext: "m4a", contentType: "audio/mp4") else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
+        }
+        await performGroupSend(
+            body: nil, attachmentUrl: path, attachmentType: "audio", kind: .audio
         )
         HapticFeedback.success()
     }
@@ -233,23 +252,23 @@ extension ChatView {
         defer { isSending = false }
         let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
         let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
+        let filename = url.lastPathComponent
         // Private bucket + signed URL (resolved at preview via ChatMedia).
-        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "files",
-                                          ext: ext, contentType: mime)
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName,
-            body: url.lastPathComponent,
-            attachmentUrl: path, attachmentType: "file",
-            mentionedIds: []
+        guard let path = await ChatMedia.upload(data, propertyId: pid, subdir: "files",
+                                                ext: ext, contentType: mime) else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
+        }
+        await performGroupSend(
+            body: filename, attachmentUrl: path, attachmentType: "file", kind: .file
         )
         HapticFeedback.success()
     }
 
-    func scheduleLocalMentionNotifications(body: String) {
-        guard !mentionedNames.isEmpty else { return }
+    func scheduleLocalMentionNotifications(names: [String], body: String) {
+        guard !names.isEmpty else { return }
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.mentions) else { return }
         let center = UNUserNotificationCenter.current()
-        for name in mentionedNames {
+        for name in names {
             let content = UNMutableNotificationContent()
             content.title = String(format: String(localized: "%@ mentioned %@"), senderName, name)
             content.body = body

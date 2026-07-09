@@ -64601,6 +64601,22 @@
           }
         }
       }
+    },
+    "chat_upload_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload failed. Please try again."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încărcarea a eșuat. Încearcă din nou."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

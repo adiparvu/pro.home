@@ -658,16 +658,17 @@ struct DirectMessageView: View {
                             }
                             ForEach(pendingOutbox) { pm in
                                 let pendingFill = chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
+                                let failed = pm.state == .failed || !outbox.isOnline
                                 VStack(alignment: .trailing, spacing: 2) {
                                     HStack {
                                         Spacer(minLength: 72)
                                         HStack(spacing: 6) {
-                                            Text(pm.body ?? "")
+                                            Text(pm.previewText)
                                                 .font(AppFont.scaled(15))
                                                 .foregroundStyle(pendingFill.readableText)
-                                            Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
+                                            Image(systemName: failed ? "exclamationmark.circle" : "clock")
                                                 .font(AppFont.scaled(10))
-                                                .foregroundStyle(pendingFill.readableText.opacity(0.75))
+                                                .foregroundStyle(failed ? Color.brandDanger : pendingFill.readableText.opacity(0.75))
                                         }
                                         .padding(.horizontal, 13).padding(.vertical, 9)
                                         .background(pendingFill,
@@ -683,7 +684,7 @@ struct DirectMessageView: View {
                                             }
                                         }
                                     }
-                                    if !outbox.isOnline {
+                                    if failed {
                                         Text("Not delivered · tap to retry")
                                             .font(AppFont.scaled(10))
                                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
@@ -1033,6 +1034,30 @@ struct DirectMessageView: View {
 
     // MARK: - Send
 
+    /// The single persistent send path for EVERY DM kind. It routes through
+    /// `DirectMessageService.send` (optimistic bubble + bounded, timed insert);
+    /// on ANY failure — offline, RLS or a hung/timed-out call — it enqueues to
+    /// the offline outbox so the message survives and retries automatically,
+    /// instead of silently vanishing. Media callers upload first and pass the
+    /// resulting storage path as `body` (the bubble classifies it by prefix).
+    @discardableResult
+    private func performDMSend(body: String, kind: PendingKind, replyTo: UUID? = nil) async -> Bool {
+        do {
+            try await directMessageService.send(
+                propertyId: propertyService.primary?.id, senderName: myName,
+                recipient: member, body: body, replyTo: replyTo, expiresAt: dmExpiresAt)
+            return true
+        } catch {
+            if let pid = propertyService.primary?.id {
+                outbox.enqueue(PendingMessage(
+                    propertyId: pid, senderName: myName, recipientName: member.name,
+                    recipientMemberId: member.id, body: body, kind: kind, replyTo: replyTo))
+            }
+            HapticFeedback.warning()
+            return false
+        }
+    }
+
     @MainActor
     private func sendMessage() async {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1040,68 +1065,11 @@ struct DirectMessageView: View {
         input = ""
         isSending = true
         defer { isSending = false }
-
-        struct Payload: Encodable {
-            let id: String
-            let sender_name: String
-            let recipient_name: String
-            let body: String
-            let property_id: String?
-            let reply_to: String?
-            let sender_id: String?
-            let recipient_member_id: String?
-            let expires_at: String?
-        }
-
         let replyUUID = replyingTo?.id
-        let replyId = replyUUID?.uuidString
-        // Optimistic append: the bubble shows the instant you hit send; the
-        // client-generated id lets the server row replace it cleanly on ack
-        // (the realtime reload dedups on the same id).
-        let clientId = UUID()
-        let optimistic = DirectMessage(
-            id: clientId, senderName: myName, recipientName: member.name,
-            body: text, createdAt: ISO8601DateFormatter().string(from: Date()),
-            replyTo: replyUUID,
-            senderId: supabase.auth.currentSession?.user.id,
-            recipientMemberId: member.id,
-            expiresAt: dmExpiresAt
-        )
-        directMessageService.dms.append(optimistic)
         withAnimation { replyingTo = nil }
         HapticFeedback.impact(.light)
         MessageSounds.sent()
-        do {
-            let sent: DirectMessage = try await supabase
-                .from("direct_messages")
-                .insert(Payload(id: clientId.uuidString,
-                                sender_name: myName, recipient_name: member.name,
-                                body: text, property_id: propertyService.primary?.id.uuidString,
-                                reply_to: replyId,
-                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                recipient_member_id: member.id.uuidString,
-                                expires_at: dmExpiresAt))
-                .select()
-                .single()
-                .execute()
-                .value
-            if let i = directMessageService.dms.firstIndex(where: { $0.id == sent.id }) {
-                directMessageService.dms[i] = sent
-            } else {
-                directMessageService.dms.append(sent)
-            }
-        } catch {
-            directMessageService.dms.removeAll { $0.id == clientId }
-            // Offline / send failed → queue it; sends automatically when back online.
-            if let pid = propertyService.primary?.id {
-                outbox.enqueue(PendingMessage(
-                    propertyId: pid, senderName: myName, recipientName: member.name,
-                    recipientMemberId: member.id,
-                    body: text, replyTo: replyUUID
-                ))
-            }
-            HapticFeedback.warning()
-        }
+        await performDMSend(body: text, kind: .text, replyTo: replyUUID)
     }
 
     private func flushOutbox() async {
@@ -1115,16 +1083,19 @@ struct DirectMessageView: View {
             }
             let obTtl = ChatDisappearStore.ttl(recipient)
             let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
+            let payload = P(sender_name: pm.senderName, recipient_name: recipient,
+                            body: pm.body ?? "", property_id: pid.uuidString,
+                            reply_to: pm.replyTo?.uuidString,
+                            sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                            recipient_member_id: pm.recipientMemberId?.uuidString,
+                            expires_at: obExpires)
             do {
-                let sent: DirectMessage = try await supabase
-                    .from("direct_messages")
-                    .insert(P(sender_name: pm.senderName, recipient_name: recipient,
-                              body: pm.body ?? "", property_id: pid.uuidString,
-                              reply_to: pm.replyTo?.uuidString,
-                              sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                              recipient_member_id: pm.recipientMemberId?.uuidString,
-                              expires_at: obExpires))
-                    .select().single().execute().value
+                let sent: DirectMessage = try await withChatTimeout {
+                    try await supabase
+                        .from("direct_messages")
+                        .insert(payload)
+                        .select().single().execute().value
+                }
                 directMessageService.dms.append(sent)
                 return true
             } catch {
@@ -1156,21 +1127,11 @@ struct DirectMessageView: View {
                     try await messageService.send(propertyId: propId, senderName: myName, body: message.body)
                 }
             case .member(let m):
-                struct Payload: Encodable {
-                    let sender_name, recipient_name, body, property_id: String
-                    let sender_id, recipient_member_id, expires_at: String?
-                }
                 let fwdTtl = ChatDisappearStore.ttl(m.name)
                 let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
-                let sent: DirectMessage = try await supabase
-                    .from("direct_messages")
-                    .insert(Payload(sender_name: myName, recipient_name: m.name,
-                                    body: message.body, property_id: propId.uuidString,
-                                    sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                    recipient_member_id: m.id.uuidString,
-                                    expires_at: fwdExpires))
-                    .select().single().execute().value
-                directMessageService.dms.append(sent)
+                try await directMessageService.send(
+                    propertyId: propId, senderName: myName, recipient: m,
+                    body: message.body, expiresAt: fwdExpires)
             }
             HapticFeedback.success()
         } catch {
@@ -1187,29 +1148,9 @@ struct DirectMessageView: View {
     }
 
     private func sendDMContact(_ formatted: String) async {
-        guard let pid = propertyService.primary?.id else { return }
         MessageSounds.sent()
-        struct Payload: Encodable {
-            let sender_name, recipient_name, body, property_id: String
-            let sender_id, recipient_member_id, expires_at: String?
-        }
-        do {
-            let sent: DirectMessage = try await supabase
-                .from("direct_messages")
-                .insert(Payload(sender_name: myName, recipient_name: member.name,
-                                body: formatted.hasPrefix(SharedContactPayload.dmMarker)
-                                    ? formatted : "👤 \(formatted)",
-                                property_id: pid.uuidString,
-                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                recipient_member_id: member.id.uuidString,
-                                expires_at: dmExpiresAt))
-                .select().single().execute().value
-            directMessageService.dms.append(sent)
-            HapticFeedback.success()
-        } catch {
-            sendError = error.localizedDescription
-            HapticFeedback.warning()
-        }
+        let body = formatted.hasPrefix(SharedContactPayload.dmMarker) ? formatted : "👤 \(formatted)"
+        if await performDMSend(body: body, kind: .contact) { HapticFeedback.success() }
     }
 
     @MainActor
@@ -1224,10 +1165,11 @@ struct DirectMessageView: View {
                 let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
                 await uploadAndSendMedia(data: data, subdir: "dm-video",
                                          ext: isQuickTime ? "mov" : "mp4",
-                                         contentType: isQuickTime ? "video/quicktime" : "video/mp4")
+                                         contentType: isQuickTime ? "video/quicktime" : "video/mp4",
+                                         kind: .video)
             } else {
                 await uploadAndSendMedia(data: data, subdir: "dm",
-                                         ext: "jpg", contentType: "image/jpeg")
+                                         ext: "jpg", contentType: "image/jpeg", kind: .image)
             }
         }
     }
@@ -1235,43 +1177,22 @@ struct DirectMessageView: View {
     @MainActor
     private func sendCameraImage(_ image: UIImage) async {
         guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2048) else { return }
-        await uploadAndSendMedia(data: data, subdir: "dm", ext: "jpg", contentType: "image/jpeg")
+        await uploadAndSendMedia(data: data, subdir: "dm", ext: "jpg", contentType: "image/jpeg", kind: .image)
     }
 
     @MainActor
-    private func uploadAndSendMedia(data: Data, subdir: String, ext: String, contentType: String) async {
+    private func uploadAndSendMedia(data: Data, subdir: String, ext: String, contentType: String, kind: PendingKind) async {
         guard let propId = propertyService.primary?.id else { return }
         MessageSounds.sent()
-
-        do {
-            // Private bucket + signed URL at display (via ChatMedia; the subdir
-            // in the stored path is what dmBodyKind classifies bubbles by).
-            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: subdir,
-                                                    ext: ext, contentType: contentType) else { return }
-
-            struct MediaPayload: Encodable {
-                let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id, expires_at: String?
-            }
-
-            let sent: DirectMessage = try await supabase
-                .from("direct_messages")
-                .insert(MediaPayload(sender_name: myName, recipient_name: member.name,
-                                     body: path, property_id: propId.uuidString,
-                                     sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                     recipient_member_id: member.id.uuidString,
-                                     expires_at: dmExpiresAt))
-                .select()
-                .single()
-                .execute()
-                .value
-            directMessageService.dms.append(sent)
-            HapticFeedback.impact(.light)
-        } catch {
-#if DEBUG
-            debugLog("[DM] media error: \(error)")
-#endif
+        // Private bucket + signed URL at display (via ChatMedia; the subdir in
+        // the stored path is what dmBodyKind classifies bubbles by). Once the
+        // media lives in the bucket, the insert goes through the unified send so
+        // a failed insert queues the (already-uploaded) path instead of orphaning it.
+        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: subdir,
+                                                ext: ext, contentType: contentType) else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
         }
+        if await performDMSend(body: path, kind: kind) { HapticFeedback.impact(.light) }
     }
 
     @MainActor
@@ -1279,35 +1200,12 @@ struct DirectMessageView: View {
         guard let data = try? Data(contentsOf: fileURL),
               let propId = propertyService.primary?.id else { return }
         MessageSounds.sent()
-
-        do {
-            // Private bucket + signed URL at playback (via ChatMedia / AudioBubble).
-            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-audio",
-                                                    ext: "m4a", contentType: "audio/mp4") else { return }
-
-            struct AudioPayload: Encodable {
-                let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id, expires_at: String?
-            }
-
-            let sent: DirectMessage = try await supabase
-                .from("direct_messages")
-                .insert(AudioPayload(sender_name: myName, recipient_name: member.name,
-                                     body: path, property_id: propId.uuidString,
-                                     sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                     recipient_member_id: member.id.uuidString,
-                                     expires_at: dmExpiresAt))
-                .select()
-                .single()
-                .execute()
-                .value
-            directMessageService.dms.append(sent)
-            HapticFeedback.impact(.light)
-        } catch {
-#if DEBUG
-            debugLog("[DM] audio error: \(error)")
-#endif
+        // Private bucket + signed URL at playback (via ChatMedia / AudioBubble).
+        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-audio",
+                                                ext: "m4a", contentType: "audio/mp4") else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
         }
+        if await performDMSend(body: path, kind: .audio) { HapticFeedback.impact(.light) }
     }
 
     // MARK: - Helpers

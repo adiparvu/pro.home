@@ -145,6 +145,64 @@ final class DirectMessageService {
         }
     }
 
+    // MARK: - Unified send
+    //
+    // One persistent path for EVERY DM kind (text, photo, video, audio,
+    // contact, forward). Media is uploaded first and its storage path is passed
+    // as `body` — the bubble classifies it from the path prefix — so a single
+    // insert covers them all. Optimistic append shows the bubble instantly; a
+    // bounded insert means a hung network call fails fast; on any failure the
+    // optimistic row rolls back and the error rethrows so the caller enqueues it
+    // to the offline outbox instead of silently dropping the message.
+    @discardableResult
+    func send(propertyId: UUID?, senderName: String, recipient: FamilyMember,
+              body: String, replyTo: UUID? = nil, expiresAt: String? = nil) async throws -> DirectMessage {
+        let senderId = supabase.auth.currentSession?.user.id
+        let clientId = UUID()
+        let optimistic = DirectMessage(
+            id: clientId, senderName: senderName, recipientName: recipient.name,
+            body: body, createdAt: ISO8601DateFormatter().string(from: Date()),
+            replyTo: replyTo,
+            senderId: senderId,
+            recipientMemberId: recipient.id,
+            expiresAt: expiresAt)
+        dms.append(optimistic)
+
+        struct Payload: Encodable {
+            let id: String
+            let sender_name: String
+            let recipient_name: String
+            let body: String
+            let property_id: String?
+            let reply_to: String?
+            let sender_id: String?
+            let recipient_member_id: String?
+            let expires_at: String?
+        }
+        let payload = Payload(
+            id: clientId.uuidString, sender_name: senderName, recipient_name: recipient.name,
+            body: body, property_id: propertyId?.uuidString,
+            reply_to: replyTo?.uuidString, sender_id: senderId?.uuidString,
+            recipient_member_id: recipient.id.uuidString, expires_at: expiresAt)
+        do {
+            let sent: DirectMessage = try await withChatTimeout {
+                try await supabase
+                    .from("direct_messages")
+                    .insert(payload)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+            }
+            if let i = dms.firstIndex(where: { $0.id == sent.id }) { dms[i] = sent }
+            else { dms.append(sent) }
+            return sent
+        } catch {
+            dms.removeAll { $0.id == clientId }
+            throw error
+        }
+    }
+
     // MARK: - Queries
 
     func messages(with member: FamilyMember, myName: String) -> [DirectMessage] {
@@ -231,13 +289,28 @@ final class DirectMessageService {
         }
     }
 
+    /// Builds a PostgREST `or()` equality clause, quoting the value only when it
+    /// contains reserved characters (`, . : ( )` or a double quote) or has edge
+    /// whitespace. Quoting only when needed keeps the common path byte-identical
+    /// to the previously shipped query (zero regression risk for plain names)
+    /// while a name with punctuation — which used to corrupt the filter string —
+    /// is now passed safely.
+    nonisolated private static func orEq(_ column: String, _ value: String) -> String {
+        let reserved = CharacterSet(charactersIn: ",.:()\"")
+        let needsQuote = value.rangeOfCharacter(from: reserved) != nil
+            || value != value.trimmingCharacters(in: .whitespaces)
+        guard needsQuote else { return "\(column).eq.\(value)" }
+        let escaped = value.replacingOccurrences(of: "\"", with: "\\\"")
+        return "\(column).eq.\"\(escaped)\""
+    }
+
     /// Network + JSON decode off the main actor. The sender_id clause makes
     /// my outbound rows rename-proof; the name clauses cover legacy rows and
     /// inbound mail (my own account may have no family_members row, so the
     /// recipient side can't be an id filter yet — phase C revisits).
     nonisolated private static func fetchRecent(propertyId: UUID, myName: String,
                                                 myUserId: UUID?) async throws -> [DirectMessage] {
-        var clauses = ["sender_name.eq.\(myName)", "recipient_name.eq.\(myName)"]
+        var clauses = [orEq("sender_name", myName), orEq("recipient_name", myName)]
         if let uid = myUserId { clauses.insert("sender_id.eq.\(uid.uuidString)", at: 0) }
         return try await supabase
             .from("direct_messages")
@@ -254,9 +327,9 @@ final class DirectMessageService {
                                                member: FamilyMember, before: String) async throws -> [DirectMessage] {
         let mid = member.id.uuidString
         var clauses = [
-            "and(sender_name.eq.\(myName),recipient_name.eq.\(member.name))",
-            "and(sender_name.eq.\(member.name),recipient_name.eq.\(myName))",
-            "and(sender_member_id.eq.\(mid),recipient_name.eq.\(myName))",
+            "and(\(orEq("sender_name", myName)),\(orEq("recipient_name", member.name)))",
+            "and(\(orEq("sender_name", member.name)),\(orEq("recipient_name", myName)))",
+            "and(sender_member_id.eq.\(mid),\(orEq("recipient_name", myName)))",
         ]
         if let uid = myUserId {
             clauses.insert("and(sender_id.eq.\(uid.uuidString),recipient_member_id.eq.\(mid))", at: 0)
@@ -336,24 +409,56 @@ final class DirectMessageService {
         if channel != nil, subscribedPropertyId == propertyId { return }
         if channel != nil { await unsubscribe() }
         let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
-        // Inserts and updates (reactions, read receipts, pin/mark, edit,
-        // delete-for-all) both just reload the conversation. Callbacks must be
-        // registered before subscribing.
+        // Incremental reconciliation: append/patch/remove the single changed row
+        // per event instead of refetching up to 1000 rows on every insert,
+        // reaction, tick or edit (which also chained load → markDelivered → a
+        // fresh event → another reload). A full reload survives only as the
+        // decode-failure fallback. Callbacks must be registered before subscribing.
         postgresSubs.append(ch.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor in self?.scheduleReload(propertyId: propertyId, myName: myName) }
+        ) { [weak self] action in
+            Task { @MainActor in
+                guard let self else { return }
+                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
+                    self.applyRealtimeInsert(row, myName: myName)
+                } else {
+                    self.scheduleReload(propertyId: propertyId, myName: myName)
+                }
+            }
         })
         postgresSubs.append(ch.onPostgresChange(
             UpdateAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor in self?.scheduleReload(propertyId: propertyId, myName: myName) }
+        ) { [weak self] action in
+            Task { @MainActor in
+                guard let self else { return }
+                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
+                    self.applyRealtimeUpdate(row)
+                } else {
+                    self.scheduleReload(propertyId: propertyId, myName: myName)
+                }
+            }
+        })
+        // DELETE: drop by id. No property filter — a delete's old-record carries
+        // only the primary key under the default replica identity, so filtering
+        // on property_id would discard every delete. Removing by id is naturally
+        // scoped to what's already loaded.
+        postgresSubs.append(ch.onPostgresChange(
+            DeleteAction.self,
+            schema: "public",
+            table: "direct_messages"
+        ) { [weak self] action in
+            Task { @MainActor in
+                guard let self,
+                      let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
+                else { return }
+                self.dms.removeAll { $0.id == row.id }
+            }
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
@@ -363,6 +468,30 @@ final class DirectMessageService {
         try? await ch.subscribeWithError()
         channel = ch
         subscribedPropertyId = propertyId
+    }
+
+    /// Applies a realtime INSERT incrementally. Our own echo (or the optimistic
+    /// row we appended on send) is swapped for the authoritative server row;
+    /// everything else is appended (realtime inserts are the newest rows). A
+    /// freshly received inbound message is stamped delivered — the resulting
+    /// UPDATE echoes back and is patched in place, so no reload storm.
+    private func applyRealtimeInsert(_ row: DirectMessage, myName: String) {
+        if let i = dms.firstIndex(where: { $0.id == row.id }) {
+            dms[i] = row
+            return
+        }
+        dms.append(row)
+        if !row.isMine(myUserId: myUserId, myName: myName) {
+            Task { await markDelivered(myName: myName) }
+        }
+    }
+
+    /// Applies a realtime UPDATE incrementally: reactions, read/delivered ticks,
+    /// pin/mark, edits and delete-for-all tombstones all just swap the changed
+    /// row in place. Rows outside the loaded set are ignored.
+    private func applyRealtimeUpdate(_ row: DirectMessage) {
+        guard let i = dms.firstIndex(where: { $0.id == row.id }) else { return }
+        dms[i] = row
     }
 
     func unsubscribe() async {
@@ -577,7 +706,7 @@ extension DirectMessageService {
         let rows: [Row] = (try? await supabase.from("direct_messages")
             .select("sender_name, recipient_name")
             .eq("property_id", value: propertyId.uuidString)
-            .or("sender_name.eq.\(myName),recipient_name.eq.\(myName)")
+            .or("\(Self.orEq("sender_name", myName)),\(Self.orEq("recipient_name", myName))")
             .ilike("body", pattern: MessageService.likePattern(query))
             .limit(200)
             .execute().value) ?? []

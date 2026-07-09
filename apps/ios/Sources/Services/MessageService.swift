@@ -68,6 +68,13 @@ final class MessageService {
     /// its group_id without threading it through every call site.
     private(set) var currentGroupId: UUID?
 
+    /// created_at of the newest row we've actually seen from the SERVER. The
+    /// `loadNewer` cursor rides this instead of `messages.last?.createdAt`, whose
+    /// last entry can be an optimistic row stamped with a (possibly skewed)
+    /// client clock — a future client stamp would make `gt(created_at)` skip
+    /// real rows. Server timestamps are authoritative and monotonic.
+    @ObservationIgnored private var lastSyncedCreatedAt: String?
+
     func load(propertyId: UUID, groupId: UUID? = nil) async {
         // Unsubscribe from any previous property's channels before loading new data.
         await unsubscribeAll()
@@ -93,6 +100,8 @@ final class MessageService {
             let hidden = hiddenIds()
             messages = rows.reversed().filter { !hidden.contains($0.id) }
             hasMoreOlder = rows.count == Self.pageSize
+            // rows are newest-first, so rows.first is the newest server row.
+            if let newest = rows.first?.createdAt { lastSyncedCreatedAt = newest }
         } catch {
             self.error = error.localizedDescription
         }
@@ -142,8 +151,11 @@ final class MessageService {
                 .eq("property_id", value: propertyId.uuidString)
             if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
             else { query = query.or("group_id.is.null") }
-            if let newest = messages.last?.createdAt {
-                query = query.gt("created_at", value: newest)
+            // Cursor on the last SERVER-acked row, not the last in-memory row
+            // (which may be an optimistic message stamped with a skewed client
+            // clock). Falls back to the newest loaded row before the first sync.
+            if let cursor = lastSyncedCreatedAt ?? messages.last?.createdAt {
+                query = query.gt("created_at", value: cursor)
             }
             let rows: [Message] = try await query
                 .order("created_at", ascending: true)
@@ -154,6 +166,8 @@ final class MessageService {
             let existing = Set(messages.map { $0.id })
             let fresh = rows.filter { !hidden.contains($0.id) && !existing.contains($0.id) }
             messages.append(contentsOf: fresh)
+            // rows are ascending, so the last is the newest server row this page saw.
+            if let newest = rows.last?.createdAt { lastSyncedCreatedAt = newest }
             return fresh.count
         } catch {
             return 0
@@ -194,6 +208,39 @@ final class MessageService {
                 }
             }
         })
+        // UPDATE: reconcile the changed row in place by id so edits, pin/mark,
+        // "delete for everyone" tombstones (body arrives null) and the
+        // disappearing sweep's blanking propagate live to every open client.
+        postgresSubs.append(channel.onPostgresChange(
+            UpdateAction.self,
+            schema: "public",
+            table: "messages",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        ) { [weak self] action in
+            Task { @MainActor in
+                guard let self,
+                      let updated = try? action.decodeRecord(decoder: JSONDecoder()) as Message
+                else { return }
+                self.applyRealtimeUpdate(updated)
+            }
+        })
+        // DELETE: drop the row by id. Registered WITHOUT a property filter: a
+        // delete's replicated old-record only carries the primary key under the
+        // default replica identity, so a `property_id` filter would discard every
+        // delete event. Removing by id is naturally scoped — only ids already in
+        // this (property-scoped) list can match.
+        postgresSubs.append(channel.onPostgresChange(
+            DeleteAction.self,
+            schema: "public",
+            table: "messages"
+        ) { [weak self] action in
+            Task { @MainActor in
+                guard let self,
+                      let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
+                else { return }
+                self.messages.removeAll { $0.id == row.id }
+            }
+        })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
                 Task { @MainActor in self?.handleTyping(name) }
@@ -210,6 +257,16 @@ final class MessageService {
             await supabase.realtimeV2.removeChannel(ch)
             realtimeChannel = nil
         }
+    }
+
+    /// Reconciles a realtime UPDATE against the loaded window: the server row is
+    /// authoritative, so we swap it in wholesale (handles edits, pin/mark,
+    /// deleted_for_all tombstones whose body is now null, and disappearing
+    /// blanking). Rows outside the window — or hidden via "delete for me" — are
+    /// simply absent and correctly ignored.
+    private func applyRealtimeUpdate(_ updated: Message) {
+        guard let idx = messages.firstIndex(where: { $0.id == updated.id }) else { return }
+        messages[idx] = updated
     }
 
     /// Unread group messages from others since this device last had the chat
@@ -336,18 +393,26 @@ final class MessageService {
         messages.append(optimistic)
 
         do {
-            let sent: Message = try await supabase
-                .from("messages")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value
+            // Bounded insert: a hung network call resolves to a timeout the
+            // caller routes to the outbox, instead of leaving a permanent
+            // fake-"sent" optimistic bubble that was never persisted.
+            let sent: Message = try await withChatTimeout {
+                try await supabase
+                    .from("messages")
+                    .insert(payload)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+            }
             if let idx = messages.firstIndex(where: { $0.id == sent.id }) {
                 messages[idx] = sent
             } else {
                 messages.append(sent)
             }
+            // Advance the sync cursor to the server-stamped time of what we just
+            // inserted, so loadNewer never rides an optimistic client stamp.
+            lastSyncedCreatedAt = sent.createdAt
         } catch {
             messages.removeAll { $0.id == optimistic.id }
             throw error
