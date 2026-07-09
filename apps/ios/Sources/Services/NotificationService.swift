@@ -2,6 +2,7 @@ import SwiftUI
 import Observation
 import Supabase
 import UIKit
+import UserNotifications
 
 // MARK: - Model
 
@@ -263,7 +264,9 @@ final class NotificationService {
         } else {
             remaining = unreadCount
         }
-        try? await UIApplication.shared.setBadgeCount(remaining)
+        // Springboard badge lives on the notification center in iOS 17+
+        // (UIApplication.setBadgeCount doesn't exist).
+        try? await UNUserNotificationCenter.current().setBadgeCount(remaining)
     }
 
     func dismiss(_ notification: AppNotification) async {
