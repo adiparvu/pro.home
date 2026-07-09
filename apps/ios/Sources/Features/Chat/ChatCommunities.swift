@@ -143,10 +143,14 @@ struct CommunitiesView: View {
     }
 }
 
-// Lean, self-contained group chat thread. Owns its own MessageService instance
-// scoped to the group's group_id (so it never collides with the main chat) and
-// takes everything as plain params — no @EnvironmentObject, so it can't crash on
-// a missing ancestor when pushed from the Communities sheet.
+// Community group thread. A thin wrapper that reuses the full, polished
+// iMessage-style `ChatView` — scoped to this group via its OWN group-scoped
+// `MessageService` injected through the environment — so a group conversation
+// has full feature/visual parity with the main property chat (attachments,
+// voice, reactions, reply, long-press menu, outbox, jump-to-latest, themes)
+// without duplicating any of it. Everything arrives as plain params — no
+// @EnvironmentObject — so it can't crash on a missing ancestor when pushed
+// from the Communities sheet.
 private struct GroupChatView: View {
     let group: ChatGroup
     let propertyId: UUID?
@@ -154,181 +158,43 @@ private struct GroupChatView: View {
     let members: [FamilyMember]
     /// Passed by reference from CommunitiesView (not @EnvironmentObject) so this
     /// view stays crash-safe while still sharing live group/member state.
-    /// @ObservedObject so a rename in the settings sheet updates the title live.
+    /// A rename in the settings sheet updates the title live.
     var service: ChatGroupService
 
     @Environment(\.dismiss) private var dismiss
+    /// Group-scoped message service — loaded with this group's id so it never
+    /// collides with the main chat. Injected into ChatView via `.environment`.
     @State private var svc = MessageService()
-    @State private var text = ""
     @State private var showSettings = false
-    @State private var showTaskPicker = false
 
-    private var myId: UUID? { supabase.auth.currentSession?.user.id }
     private var currentGroup: ChatGroup { service.groups.first(where: { $0.id == group.id }) ?? group }
 
-    /// Shown when the user has scrolled away from the latest message (WhatsApp-
-    /// style jump-to-bottom button), mirroring ChatView/DirectMessageView.
-    @State private var showJumpToLatest = false
-
     var body: some View {
-        VStack(spacing: 0) {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(svc.messages) { m in
-                                MessageBubble(message: m,
-                                              isOwn: m.senderId == myId,
-                                              members: members)
-                                    .id(m.id)
-                            }
-                            // Jump-button sentinel — visibility follows the marker
-                            // entering/leaving the lazy render window (a Geometry-
-                            // Reader preference reset to 0 once the marker was
-                            // culled, hiding the button on deep scroll-back).
-                            Color.clear.frame(height: 1).id("GROUP_CHAT_BOTTOM")
-                                .onAppear {
-                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
-                                }
-                                .onDisappear {
-                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
-                                }
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, 10)
-                    }
-                    .onChange(of: svc.messages.count) { _, _ in
-                        withAnimation { proxy.scrollTo("GROUP_CHAT_BOTTOM", anchor: .bottom) }
-                    }
-                    .overlay(alignment: .bottom) {
-                        if showJumpToLatest {
-                            Button {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    proxy.scrollTo("GROUP_CHAT_BOTTOM", anchor: .bottom)
-                                }
-                                HapticFeedback.impact(.light)
-                            } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(AppFont.headline)
-                                    .foregroundStyle(.primary)
-                                    .frame(width: 40, height: 40)
-                            }
-                            .buttonStyle(.plain)
-                            .glassCircle()
-                            .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                            .padding(.bottom, AppSpacing.sm)
-                            .transition(.scale.combined(with: .opacity))
-                            .accessibilityLabel("Jump to latest message")
-                        }
-                    }
-                }
-            composer
-        }
-        .background(appBackground.ignoresSafeArea())
-        // iMessage-style header: no bar, the conversation slides under a
-        // progressive blur and only glass controls float on top.
-        .overlay(alignment: .top) { ChatTopBlur() }
-        .navigationTitle(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                ChatHeaderPill {
-                    HStack(spacing: 8) {
-                        Image(systemName: currentGroup.kindIcon)
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 30, height: 30)
-                            .glassCircle()
-                        Text(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(.primary)
-                    }
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showSettings = true } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 40, height: 34)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
-                .accessibilityLabel("Group settings")
-            }
-        }
+        ChatView(
+            groupId: group.id,
+            groupTitle: currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name,
+            groupSettingsAction: { showSettings = true }
+        )
+        .environment(svc)                    // ChatView now uses the GROUP-scoped MessageService
+        .task { svc.myName = myName }        // keep sender name in sync for typing indicator
         .sheet(isPresented: $showSettings) {
-            GroupSettingsSheet(group: currentGroup, service: service, availableMembers: members) {
-                dismiss()
-            }
-        }
-        .task {
-            guard let pid = propertyId else { return }
-            svc.myName = myName
-            await svc.load(propertyId: pid, groupId: group.id)
-            // Live thread: messages from other members land without a reload.
-            await svc.subscribeRealtime(propertyId: pid)
+            GroupSettingsSheet(group: currentGroup, service: service, availableMembers: members) { dismiss() }
         }
         .onDisappear {
             let messageSvc = svc
             let groupSvc = service
             let pid = propertyId
             Task {
+                // ChatView.onDisappear deliberately leaves the main messages
+                // channel alive (ConversationsView owns it for the main chat).
+                // Here the channel belongs to THIS group's throwaway service, so
+                // tear it down explicitly to avoid leaking a realtime subscription.
                 await messageSvc.unsubscribeAll()
-                // The list behind us shows each group's newest message —
-                // refresh it so the row reflects this conversation.
+                // The list behind us shows each group's newest message — refresh
+                // it so the row reflects this conversation.
                 if let pid { await groupSvc.loadPreviews(propertyId: pid) }
             }
         }
-    }
-
-    private var composer: some View {
-        HStack(spacing: 10) {
-            // Share a real task into the thread — it lands as a live card.
-            Button { showTaskPicker = true } label: {
-                Image(systemName: "checklist")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.primary)
-                    .frame(width: 34, height: 34)
-                    .glassCircle()
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("comm_share_task"))
-            .sheet(isPresented: $showTaskPicker) {
-                TaskSharePicker { task in
-                    guard let pid = propertyId,
-                          let body = SharedTaskPayload.encode(SharedTaskPayload(
-                              id: task.id, title: task.title,
-                              due: task.dueDateDisplay, priority: task.priority)) else { return }
-                    MessageSounds.sent()
-                    Task {
-                        try? await svc.send(propertyId: pid, senderName: myName,
-                                            body: body, attachmentType: "task")
-                    }
-                }
-            }
-            TextField("Mesaj", text: $text, axis: .vertical)
-                .font(AppFont.scaled(16))
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                .liquidGlass(cornerRadius: AppRadius.xl)
-            Button {
-                let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !body.isEmpty, let pid = propertyId else { return }
-                text = ""
-                MessageSounds.sent()
-                Task { try? await svc.send(propertyId: pid, senderName: myName, body: body) }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(AppFont.scaled(30))
-                    .foregroundStyle(Color.accentColor)
-            }
-            .buttonStyle(.plain)
-            .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
-            .accessibilityLabel("Send")
-        }
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
     }
 }
 

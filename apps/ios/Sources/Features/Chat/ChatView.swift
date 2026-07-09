@@ -83,8 +83,18 @@ struct ChatView: View {
     @State private var audioRecorder = ChatAudioRecorder()
     @State var outbox = OfflineOutbox()
 
-    // The group conversation's theme scope; overrides live under prvio.chatTheme.<scope>.
-    private var themeScope: String { "group" }
+    // Optional community group scope. When nil, this is the main property chat
+    // and every behaviour below is byte-for-byte identical to before; when set,
+    // the same rich chat is scoped to a single community group (loading, drafts,
+    // theme, title and the settings gear all key off `groupId`).
+    var groupId: UUID? = nil
+    var groupTitle: String? = nil
+    var groupSettingsAction: (() -> Void)? = nil
+
+    // The conversation's theme scope; overrides live under prvio.chatTheme.<scope>.
+    // Each community group gets its own scope so its theme never collides with
+    // the main chat's "group" scope.
+    private var themeScope: String { groupId.map { "group.\($0.uuidString)" } ?? "group" }
 
     // Per-conversation override wins; otherwise the global default is used.
     private var chatTheme: ChatTheme {
@@ -101,7 +111,7 @@ struct ChatView: View {
 
     var propertyId: UUID? { propertyService.primary?.id }
 
-    private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none")" }
+    private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none").\(groupId?.uuidString ?? "main")" }
 
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
         let dA = a.date ?? Date()
@@ -269,22 +279,14 @@ struct ChatView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 ChatHeaderPill {
-                    HStack(spacing: 8) {
-                        GroupHeaderAvatar(
-                            members: familyService.members,
-                            photoUrl: propertyService.primary?.photoUrl,
-                            ownerAvatarUrl: profileService.profile?.avatarUrl,
-                            ownerInitial: ownerInitial,
-                            ringColor: avatarRingColor(for: avatarRingColorName)
-                        ) {
-                            showGroupInfo = true
-                        }
+                    if groupId != nil {
+                        // Community group: its own title (no property avatar or
+                        // property group-info tap). Typing/online subtitle stays
+                        // for parity — typing is genuinely group-scoped via svc.
                         VStack(alignment: .leading, spacing: 0) {
-                            // The group chat has its own name (chat_group_settings),
-                            // independent of the property name.
-                            Text(propertyService.groupChatDisplayName)
+                            Text(groupTitle ?? "")
                                 .font(AppFont.subheadline)
-                            // Transient typing status wins; otherwise show who's online.
+                                .foregroundStyle(.primary)
                             if let t = typingText {
                                 Text(t)
                                     .font(AppFont.scaled(11))
@@ -295,16 +297,61 @@ struct ChatView: View {
                                     .foregroundStyle(Color.brandSuccess)
                             }
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture { showGroupInfo = true }
+                    } else {
+                        HStack(spacing: 8) {
+                            GroupHeaderAvatar(
+                                members: familyService.members,
+                                photoUrl: propertyService.primary?.photoUrl,
+                                ownerAvatarUrl: profileService.profile?.avatarUrl,
+                                ownerInitial: ownerInitial,
+                                ringColor: avatarRingColor(for: avatarRingColorName)
+                            ) {
+                                showGroupInfo = true
+                            }
+                            VStack(alignment: .leading, spacing: 0) {
+                                // The group chat has its own name (chat_group_settings),
+                                // independent of the property name.
+                                Text(propertyService.groupChatDisplayName)
+                                    .font(AppFont.subheadline)
+                                // Transient typing status wins; otherwise show who's online.
+                                if let t = typingText {
+                                    Text(t)
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.accentColor)
+                                } else if let o = onlineText {
+                                    Text(o)
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.brandSuccess)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture { showGroupInfo = true }
+                        }
                     }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                ChatHeaderActions(
-                    onVideo: { showVideoSheet = true },
-                    onCall: { showCallSheet = true }
-                )
+                if groupId != nil {
+                    // A community group manages everything (rename, members,
+                    // notifications, delete) through its settings sheet, so the
+                    // trailing control is a single gear instead of call/video.
+                    Button { groupSettingsAction?() } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 40, height: 34)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+                    .accessibilityLabel("Group settings")
+                } else {
+                    ChatHeaderActions(
+                        onVideo: { showVideoSheet = true },
+                        onCall: { showCallSheet = true }
+                    )
+                }
             }
         }
         .task {
@@ -312,8 +359,10 @@ struct ChatView: View {
             // Freeze where the reader left off BEFORE marking anything read, so
             // the "unread messages" divider lands at the first new message.
             let seen = messageService.lastSeen(propertyId: pid)
-            await propertyService.loadGroupChatName()
-            await messageService.load(propertyId: pid)
+            // The property group-chat name only applies to the main chat; a
+            // community group carries its own title via `groupTitle`.
+            if groupId == nil { await propertyService.loadGroupChatName() }
+            await messageService.load(propertyId: pid, groupId: groupId)
             unreadDividerId = messageService.firstUnreadId(
                 since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
