@@ -64745,6 +64745,22 @@
           }
         }
       }
+    },
+    "la_iot_alert_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical sensor alert"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertă critică de senzor"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

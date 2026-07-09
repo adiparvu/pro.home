@@ -422,6 +422,24 @@ final class LiveActivityService {
                 iotAlertActivities[sensor.id] = activity
                 if let activity {
                     observeIoTAlertPushToken(activity, sensorId: sensor.id)
+                    // A critical hazard (smoke / gas / water leak) must light up
+                    // the Lock Screen with sound the moment its island is raised,
+                    // not appear silently. This fires exactly once per incident —
+                    // the island then persists (updates take the branch above
+                    // with no alert) until the sensor clears or is acknowledged,
+                    // so a critical sensor can't buzz on every poll. Non-critical
+                    // threshold crossings stay quiet.
+                    if sensor.isCriticalAlert {
+                        Task {
+                            await activity.update(
+                                .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
+                                      staleDate: stale(hours: 1)),
+                                alertConfiguration: AlertConfiguration(
+                                    title: "la_iot_alert_title",
+                                    body: "\(sensor.name) · \(sensor.displayValue)",
+                                    sound: .default))
+                        }
+                    }
                 }
             }
         }
