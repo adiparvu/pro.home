@@ -9,12 +9,11 @@ struct ElementRecordRow: View {
     var body: some View {
         GlassCard(padding: 12) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(record.recordType.color.opacity(0.15)).frame(width: 36, height: 36)
-                    Image(systemName: record.recordType.icon)
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(record.recordType.color)
-                }
+                Image(systemName: record.recordType.icon)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(record.recordType.color)
+                    .frame(width: 36, height: 36)
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 3) {
                     Text(record.title)
                         .font(.subheadline.weight(.medium))

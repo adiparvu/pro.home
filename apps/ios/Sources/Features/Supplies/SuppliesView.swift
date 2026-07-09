@@ -304,11 +304,9 @@ struct SuppliesView: View {
         let listName = supplyService.lists.first { $0.id == item.listId }?.name ?? ""
         return VStack(spacing: 0) {
             HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(item.categoryColor.opacity(0.14)).frame(width: 30, height: 30)
-                    Image(systemName: item.categoryIcon).font(AppFont.captionEmphasis).foregroundStyle(item.categoryColor)
-                }
+                Image(systemName: item.categoryIcon).font(AppFont.captionEmphasis).foregroundStyle(item.categoryColor)
+                    .frame(width: 30, height: 30)
+                    .glassRoundedRect(7)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.name).font(AppFont.footnote).foregroundStyle(.primary)
                     Text(listName).font(AppFont.scaled(11)).foregroundStyle(.secondary)

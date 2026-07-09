@@ -44,14 +44,11 @@ struct NotificationsSettingsView: View {
         GlassCard {
             VStack(spacing: 16) {
                 HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .fill(statusColor.opacity(0.18))
-                            .frame(width: 48, height: 48)
-                        Image(systemName: statusIcon)
-                            .font(AppFont.scaled(20, weight: .semibold))
-                            .foregroundStyle(statusColor)
-                    }
+                    Image(systemName: statusIcon)
+                        .font(AppFont.scaled(20, weight: .semibold))
+                        .foregroundStyle(statusColor)
+                        .frame(width: 48, height: 48)
+                        .glassRoundedRect(AppRadius.md)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(statusTitle)
                             .font(AppFont.subheadline)

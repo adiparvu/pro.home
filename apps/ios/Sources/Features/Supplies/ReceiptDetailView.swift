@@ -48,14 +48,11 @@ struct ReceiptDetailView: View {
     private var heroCard: some View {
         GlassCard(padding: 20) {
             HStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(receipt.categoryColor.opacity(0.15))
-                        .frame(width: 60, height: 60)
-                    Image(systemName: receipt.categoryIcon)
-                        .font(AppFont.scaled(26, weight: .semibold))
-                        .foregroundStyle(receipt.categoryColor)
-                }
+                Image(systemName: receipt.categoryIcon)
+                    .font(AppFont.scaled(26, weight: .semibold))
+                    .foregroundStyle(receipt.categoryColor)
+                    .frame(width: 60, height: 60)
+                    .glassRoundedRect(AppRadius.lg)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)

@@ -12,14 +12,11 @@ struct BuriedUtilityRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(utility.swiftColor.opacity(0.2))
-                        .overlay(Circle().strokeBorder(utility.swiftColor.opacity(0.5), lineWidth: 1.5))
-                    Image(systemName: utility.icon)
-                        .font(AppFont.headline)
-                        .foregroundStyle(utility.swiftColor)
-                }
-                .frame(width: 42, height: 42)
+                Image(systemName: utility.icon)
+                    .font(AppFont.headline)
+                    .foregroundStyle(utility.swiftColor)
+                    .frame(width: 42, height: 42)
+                    .glassCircle()
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(utility.name)

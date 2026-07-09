@@ -83,14 +83,11 @@ struct MemberSupervisionDetailView: View {
                     ForEach(Array(SupervisionSettings.Section.allCases.enumerated()), id: \.element) { idx, section in
                         VStack(spacing: 0) {
                             HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                                        .fill(section.color.opacity(0.14))
-                                        .frame(width: 32, height: 32)
-                                    Image(systemName: section.icon)
-                                        .font(AppFont.footnoteEmphasis)
-                                        .foregroundStyle(section.color)
-                                }
+                                Image(systemName: section.icon)
+                                    .font(AppFont.footnoteEmphasis)
+                                    .foregroundStyle(section.color)
+                                    .frame(width: 32, height: 32)
+                                    .glassRoundedRect(AppRadius.sm)
                                 Text(LocalizedStringKey(section.label))
                                     .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
@@ -130,14 +127,11 @@ struct MemberSupervisionDetailView: View {
 
             GlassCard(padding: 0) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                            .fill(Color.blue.opacity(0.14))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "bell.badge.fill")
-                            .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(.blue)
-                    }
+                    Image(systemName: "bell.badge.fill")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.blue)
+                        .frame(width: 32, height: 32)
+                        .glassRoundedRect(AppRadius.sm)
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Task notifications")
                             .font(AppFont.scaled(15))

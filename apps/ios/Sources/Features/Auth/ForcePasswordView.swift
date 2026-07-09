@@ -38,14 +38,12 @@ struct ForcePasswordView: View {
             appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
-                    ZStack {
-                        Circle().fill(Color.accentColor.opacity(0.14))
-                            .frame(width: 84, height: 84)
-                        Image(systemName: "lock.shield.fill")
-                            .font(AppFont.scaled(38))
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .padding(.top, 48)
+                    Image(systemName: "lock.shield.fill")
+                        .font(AppFont.scaled(38))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 84, height: 84)
+                        .glassCircle()
+                        .padding(.top, 48)
 
                     VStack(spacing: 8) {
                         Text("Secure your account")

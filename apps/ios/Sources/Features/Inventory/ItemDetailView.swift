@@ -92,16 +92,11 @@ struct ItemDetailView: View {
                     }
                     .offset(x: 4, y: 4)
                 } else {
-                    Circle()
-                        .fill(tint.opacity(0.18))
+                    Image(systemName: live.categoryIcon)
+                        .font(AppFont.scaled(38, weight: .semibold))
+                        .foregroundStyle(tint)
                         .frame(width: 96, height: 96)
-                        .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
-                        .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
-                        .overlay(
-                            Image(systemName: live.categoryIcon)
-                                .font(AppFont.scaled(38, weight: .semibold))
-                                .foregroundStyle(tint)
-                        )
+                        .glassCircle()
                 }
             }
 

@@ -9,11 +9,11 @@ struct OpenAppControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.open") {
             ControlWidgetButton(action: OpenPRVIODestination(.home)) {
-                // Control Center controls only render SF Symbols — a raster
-                // asset shows the system's broken-image placeholder ("?"). To
-                // carry the PRVIO brand mark here it must become a custom SF
-                // Symbol (.symbolset from the logo's SVG); until then, a glyph.
-                Label("PRVIO", systemImage: "house.fill")
+                // Control Center controls only render SF Symbols, not the raster
+                // brand mark (which showed the system's broken-image "?"). Per
+                // the owner's call: text only, no generic-house glyph. A branded
+                // glyph here would need a custom SF Symbol (.symbolset from SVG).
+                Text("PRVIO")
             }
         }
         .displayName("PRVIO")

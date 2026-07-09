@@ -157,10 +157,11 @@ struct ContractorDetailSheet: View {
     private func contactRow(icon: String, label: LocalizedStringKey, value: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: { HapticFeedback.impact(.light); action() }) {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: icon).font(AppFont.scaled(16)).foregroundStyle(color)
-                }
+                Image(systemName: icon)
+                    .font(AppFont.scaled(16))
+                    .foregroundStyle(color)
+                    .frame(width: 40, height: 40)
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                     Text(value).font(AppFont.scaled(15)).foregroundStyle(.primary).lineLimit(1)
@@ -236,10 +237,11 @@ struct ContractorDetailSheet: View {
     private func actionButton(icon: String, label: LocalizedStringKey, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: { HapticFeedback.impact(.medium); action() }) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: icon).font(AppFont.scaled(16)).foregroundStyle(color)
-                }
+                Image(systemName: icon)
+                    .font(AppFont.scaled(16))
+                    .foregroundStyle(color)
+                    .frame(width: 40, height: 40)
+                    .glassCircle()
                 Text(label)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)

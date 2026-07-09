@@ -50,12 +50,11 @@ struct AutoImportView: View {
 
     private var hero: some View {
         VStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle().fill(Color.brandPrimaryBlue.opacity(0.15)).frame(width: 76, height: 76)
-                Image(systemName: "envelope.badge.fill")
-                    .font(AppFont.scaled(30, weight: .semibold))
-                    .foregroundStyle(Color.brandPrimaryBlue)
-            }
+            Image(systemName: "envelope.badge.fill")
+                .font(AppFont.scaled(30, weight: .semibold))
+                .foregroundStyle(Color.brandPrimaryBlue)
+                .frame(width: 76, height: 76)
+                .glassCircle()
             Text("Import deliveries from email")
                 .font(AppFont.title2).foregroundStyle(.primary)
                 .multilineTextAlignment(.center)

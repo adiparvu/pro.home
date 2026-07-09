@@ -425,14 +425,11 @@ struct ExpenseDashboardView: View {
     private func receiptRow(_ receipt: Receipt, isLast: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(receipt.categoryColor.opacity(0.15))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: receipt.categoryIcon)
-                        .font(AppFont.headline)
-                        .foregroundStyle(receipt.categoryColor)
-                }
+                Image(systemName: receipt.categoryIcon)
+                    .font(AppFont.headline)
+                    .foregroundStyle(receipt.categoryColor)
+                    .frame(width: 40, height: 40)
+                    .glassRoundedRect(10)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
@@ -475,12 +472,10 @@ struct ExpenseDashboardView: View {
                     ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                         VStack(spacing: 0) {
                             HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                                        .fill(Color.accentColor.opacity(0.12)).frame(width: 36, height: 36)
-                                    Image(systemName: "arrow.triangle.2.circlepath")
-                                        .font(AppFont.captionEmphasis).foregroundStyle(Color.accentColor)
-                                }
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(AppFont.captionEmphasis).foregroundStyle(Color.accentColor)
+                                    .frame(width: 36, height: 36)
+                                    .glassRoundedRect(AppRadius.sm)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(item.name).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
                                     Text(String(format: String(localized: "expense_recurring_times"), item.count))

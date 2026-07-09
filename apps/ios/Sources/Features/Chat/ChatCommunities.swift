@@ -234,14 +234,11 @@ private struct GroupChatView: View {
             ToolbarItem(placement: .principal) {
                 ChatHeaderPill {
                     HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.accentColor.opacity(0.15))
-                                .frame(width: 30, height: 30)
-                            Image(systemName: currentGroup.kindIcon)
-                                .font(AppFont.captionEmphasis)
-                                .foregroundStyle(Color.accentColor)
-                        }
+                        Image(systemName: currentGroup.kindIcon)
+                            .font(AppFont.captionEmphasis)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 30, height: 30)
+                            .glassCircle()
                         Text(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)

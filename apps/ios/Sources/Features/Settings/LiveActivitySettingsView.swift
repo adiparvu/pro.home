@@ -573,12 +573,10 @@ struct KindLockScreenMock: View {
         if full {
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .fill(kind.color.opacity(0.2)).frame(width: 44, height: 44)
-                        Image(systemName: kind.icon)
-                            .font(AppFont.scaled(20)).foregroundStyle(kind.color)
-                    }
+                    Image(systemName: kind.icon)
+                        .font(AppFont.scaled(20)).foregroundStyle(kind.color)
+                        .frame(width: 44, height: 44)
+                        .glassRoundedRect(AppRadius.md)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(kind.previewHeadline)
                             .font(AppFont.subheadline).foregroundStyle(.primary)

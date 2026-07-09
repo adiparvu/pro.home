@@ -57,12 +57,11 @@ struct DeliveryDetailView: View {
 
     private var hero: some View {
         VStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle().fill(delivery.statusColor.opacity(0.15)).frame(width: 76, height: 76)
-                Image(systemName: delivery.statusIcon)
-                    .font(AppFont.scaled(32, weight: .semibold))
-                    .foregroundStyle(delivery.statusColor)
-            }
+            Image(systemName: delivery.statusIcon)
+                .font(AppFont.scaled(32, weight: .semibold))
+                .foregroundStyle(delivery.statusColor)
+                .frame(width: 76, height: 76)
+                .glassCircle()
             VStack(spacing: 4) {
                 Text(delivery.description)
                     .font(AppFont.title2)

@@ -198,14 +198,13 @@ private struct IntegrationIdentityEditor: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            ZStack {
-                Circle().fill(tint.opacity(0.18)).frame(width: 76, height: 76)
-                Image(systemName: icon)
-                    .font(AppFont.scaled(32, weight: .medium))
-                    .foregroundStyle(tint)
-            }
-            .animation(.smooth(duration: 0.25), value: icon)
-            .animation(.smooth(duration: 0.25), value: color)
+            Image(systemName: icon)
+                .font(AppFont.scaled(32, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 76, height: 76)
+                .glassCircle()
+                .animation(.smooth(duration: 0.25), value: icon)
+                .animation(.smooth(duration: 0.25), value: color)
 
             TextField("Integration name", text: $name, prompt: Text("e.g. Home Assistant"))
                 .font(AppFont.scaled(17, weight: .semibold))

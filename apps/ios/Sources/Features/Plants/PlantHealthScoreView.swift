@@ -83,14 +83,11 @@ struct PlantHealthScoreCard: View {
         let tint = factorTint(factor.subScore ?? 0)
         return VStack(alignment: .leading, spacing: AppSpacing.xs) {
             HStack(spacing: AppSpacing.md) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(tint.opacity(AppOpacity.tintedFill))
-                        .frame(width: 30, height: 30)
-                    Image(systemName: factor.kind.icon)
-                        .font(AppFont.scaled(13, weight: .medium))
-                        .foregroundStyle(tint)
-                }
+                Image(systemName: factor.kind.icon)
+                    .font(AppFont.scaled(13, weight: .medium))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .glassRoundedRect(AppRadius.sm)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(factor.kind.title)
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)

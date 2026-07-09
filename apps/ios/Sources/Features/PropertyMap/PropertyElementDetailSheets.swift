@@ -43,12 +43,11 @@ struct LinkedDocumentRow: View {
     var body: some View {
         GlassCard(padding: 12) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 36, height: 36)
-                    Image(systemName: doc.categoryIcon)
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color.accentColor)
-                }
+                Image(systemName: doc.categoryIcon)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 36, height: 36)
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 2) {
                     Text(doc.name).font(.subheadline.weight(.medium)).lineLimit(1)
                     Text(LocalizedStringKey(doc.category.capitalized)).font(.caption).foregroundStyle(.secondary)

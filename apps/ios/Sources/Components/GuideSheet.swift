@@ -66,14 +66,11 @@ struct GuideSheet: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                    .fill(topic.accent.opacity(AppOpacity.tintedFill))
-                    .frame(width: 56, height: 56)
-                Image(systemName: topic.icon)
-                    .font(AppFont.scaled(26, weight: .semibold))
-                    .foregroundStyle(topic.accent)
-            }
+            Image(systemName: topic.icon)
+                .font(AppFont.scaled(26, weight: .semibold))
+                .foregroundStyle(topic.accent)
+                .frame(width: 56, height: 56)
+                .glassRoundedRect(AppRadius.lg)
             Text(topic.title)
                 .font(AppFont.scaled(26, weight: .bold))
                 .foregroundStyle(.primary)

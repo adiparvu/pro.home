@@ -151,14 +151,11 @@ extension PropertyDetailView {
 
     private func row(_ icon: String, _ label: LocalizedStringKey, _ value: String, _ color: Color) -> some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(color.opacity(0.14))
-                    .frame(width: 30, height: 30)
-                Image(systemName: icon)
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(color)
-            }
+            Image(systemName: icon)
+                .font(AppFont.captionEmphasis)
+                .foregroundStyle(color)
+                .frame(width: 30, height: 30)
+                .glassRoundedRect(AppRadius.sm)
             Text(label)
                 .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -291,14 +288,11 @@ extension PropertyDetailView {
             BlueprintsView()
         } label: {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.orange.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "doc.richtext.fill")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.orange)
-                }
+                Image(systemName: "doc.richtext.fill")
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.orange)
+                    .frame(width: 36, height: 36)
+                    .glassRoundedRect(10)
                 Text("Property plans")
                     .font(AppFont.body)
                     .foregroundStyle(.primary)

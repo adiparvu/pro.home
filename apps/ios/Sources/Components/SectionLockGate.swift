@@ -31,14 +31,11 @@ struct SectionLockGate<Content: View>: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: AppSpacing.xl) {
-                ZStack {
-                    Circle()
-                        .fill(section.color.opacity(0.16))
-                        .frame(width: 108, height: 108)
-                    Image(systemName: "lock.fill")
-                        .font(AppFont.scaled(40, weight: .semibold))
-                        .foregroundStyle(section.color)
-                }
+                Image(systemName: "lock.fill")
+                    .font(AppFont.scaled(40, weight: .semibold))
+                    .foregroundStyle(section.color)
+                    .frame(width: 108, height: 108)
+                    .glassCircle()
 
                 VStack(spacing: AppSpacing.xs) {
                     Text(section.titleKey)

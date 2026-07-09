@@ -194,14 +194,11 @@ struct ObjectListRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(element.layer.color.opacity(0.18))
-                    .frame(width: 46, height: 46)
-                Image(systemName: element.elementType.icon)
-                    .font(AppFont.scaled(19, weight: .semibold))
-                    .foregroundStyle(element.layer.color)
-            }
+            Image(systemName: element.elementType.icon)
+                .font(AppFont.scaled(19, weight: .semibold))
+                .foregroundStyle(element.layer.color)
+                .frame(width: 46, height: 46)
+                .glassRoundedRect(AppRadius.md)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(element.name)

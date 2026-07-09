@@ -81,13 +81,11 @@ struct PlantAutomationsCard: View {
         let action = a.actionEnum
         let unit = a.metricEnum.map { PlantAutomationUnits.unit(for: $0) } ?? ""
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle().fill(Color.accentColor.opacity(a.isActive ? AppOpacity.tintedFill : AppOpacity.subtleFill))
-                    .frame(width: 34, height: 34)
-                Image(systemName: action.icon)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(a.isActive ? Color.accentColor : .secondary)
-            }
+            Image(systemName: action.icon)
+                .font(AppFont.footnoteEmphasis)
+                .foregroundStyle(a.isActive ? Color.accentColor : .secondary)
+                .frame(width: 34, height: 34)
+                .glassCircle()
             VStack(alignment: .leading, spacing: 1) {
                 Text(a.name)
                     .font(AppFont.footnoteEmphasis)

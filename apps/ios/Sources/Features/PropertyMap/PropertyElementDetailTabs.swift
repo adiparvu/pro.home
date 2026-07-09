@@ -158,12 +158,11 @@ extension PropertyElementDetailView {
     var locationSection: some View {
         GlassCard(padding: 14) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
-                        .font(AppFont.scaled(17))
-                        .foregroundStyle(Color.accentColor)
-                }
+                Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
+                    .font(AppFont.scaled(17))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 40, height: 40)
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Map location").font(.subheadline.weight(.medium))
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Not placed" : "Placed on map"))

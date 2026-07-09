@@ -170,14 +170,11 @@ struct IoTHubView: View {
     private func deviceCard(_ device: IoTDevice) -> some View {
         GlassCard(padding: 16) {
             HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                        .fill(device.type.color.opacity(0.15))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: device.type.icon)
-                        .font(AppFont.scaled(20, weight: .semibold))
-                        .foregroundStyle(device.type.color)
-                }
+                Image(systemName: device.type.icon)
+                    .font(AppFont.scaled(20, weight: .semibold))
+                    .foregroundStyle(device.type.color)
+                    .frame(width: 48, height: 48)
+                    .glassRoundedRect(AppRadius.md)
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -452,14 +449,11 @@ struct IoTHubView: View {
     private func automationRow(_ auto: IoTAutomation) -> some View {
         GlassCard(padding: 14) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.12))
-                        .frame(width: 42, height: 42)
-                    Image(systemName: auto.action.icon)
-                        .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
+                Image(systemName: auto.action.icon)
+                    .font(AppFont.scaled(17, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 42, height: 42)
+                    .glassRoundedRect(10)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(auto.name)

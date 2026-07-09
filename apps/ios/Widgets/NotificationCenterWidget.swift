@@ -157,12 +157,14 @@ struct NotificationCenterRectangularView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 4) {
-                // Widgets render raster assets fine on the Home Screen but the
-                // brand mark can't be tinted like an SF Symbol in the accented
-                // lock-screen rendering — keep a system glyph here.
-                Image(systemName: alertCount > 0 ? "exclamationmark.triangle.fill" : "house.fill")
-                    .font(AppFont.scaled(10, weight: .semibold))
-                    .widgetAccentable()
+                // Only the meaningful alert glyph shows; the all-clear state is
+                // text-only (no generic-house icon), per the owner's call. The
+                // brand mark can't render here (accent-tinted SF-Symbol only).
+                if alertCount > 0 {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(AppFont.scaled(10, weight: .semibold))
+                        .widgetAccentable()
+                }
                 Text("PRVIO")
                     .font(AppFont.scaled(11, weight: .bold))
                 Spacer()

@@ -231,20 +231,7 @@ struct ElementInspectorSheet: View {
                     .font(AppFont.title3)
                     .foregroundStyle(color)
                     .frame(width: 52, height: 52)
-                    .background {
-                        ZStack {
-                            Circle().fill(.ultraThinMaterial)
-                            Circle().fill(color.opacity(0.10))
-                        }
-                    }
-                    .overlay(
-                        Circle().strokeBorder(
-                            LinearGradient(colors: [.white.opacity(0.28), color.opacity(0.15)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 0.8
-                        )
-                    )
-                    .shadow(color: color.opacity(0.18), radius: 8, y: 4)
+                    .glassCircle()
                 Text(label)
                     .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))

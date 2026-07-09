@@ -43,14 +43,11 @@ struct CategoryBreakdownSection: View {
     private func row(_ item: Item) -> some View {
         let style = catStyle(item.category)
         return HStack(spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(style.color.opacity(0.15))
-                    .frame(width: 32, height: 32)
-                Image(systemName: style.icon)
-                    .font(AppFont.caption)
-                    .foregroundStyle(style.color)
-            }
+            Image(systemName: style.icon)
+                .font(AppFont.caption)
+                .foregroundStyle(style.color)
+                .frame(width: 32, height: 32)
+                .glassRoundedRect(AppRadius.sm)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack {

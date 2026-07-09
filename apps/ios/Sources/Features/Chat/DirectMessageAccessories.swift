@@ -52,14 +52,11 @@ struct DMAttachmentOption: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(color.opacity(0.15))
-                        .frame(width: 58, height: 58)
-                    Image(systemName: icon)
-                        .font(AppFont.scaled(24, weight: .semibold))
-                        .foregroundStyle(color)
-                }
+                Image(systemName: icon)
+                    .font(AppFont.scaled(24, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 58, height: 58)
+                    .glassRoundedRect(14)
                 Text(label)
                     .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))

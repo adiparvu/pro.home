@@ -144,14 +144,11 @@ extension FinancesView {
 
     private func actionTile(icon: String, label: LocalizedStringKey, color: Color) -> some View {
         HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(color.opacity(0.18))
-                    .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(color)
-            }
+            Image(systemName: icon)
+                .font(AppFont.footnoteEmphasis)
+                .foregroundStyle(color)
+                .frame(width: 36, height: 36)
+                .glassRoundedRect(10)
             Text(label)
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
@@ -261,14 +258,11 @@ struct FinancialRecordRow: View {
     var body: some View {
         let style = catStyle(record.category)
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(style.color.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: style.icon)
-                    .font(AppFont.scaled(17))
-                    .foregroundStyle(style.color)
-            }
+            Image(systemName: style.icon)
+                .font(AppFont.scaled(17))
+                .foregroundStyle(style.color)
+                .frame(width: 44, height: 44)
+                .glassRoundedRect(AppRadius.md)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.title)

@@ -47,10 +47,11 @@ struct DocumentRowPreview: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle().fill(tint.opacity(0.16)).frame(width: 76, height: 76)
-                Image(systemName: doc.categoryIcon).font(AppFont.scaled(30, weight: .semibold)).foregroundStyle(tint)
-            }
+            Image(systemName: doc.categoryIcon)
+                .font(AppFont.scaled(30, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 76, height: 76)
+                .glassCircle()
             VStack(spacing: 4) {
                 Text(doc.name).font(AppFont.scaled(17, weight: .semibold))
                     .foregroundStyle(.primary).multilineTextAlignment(.center).lineLimit(2)
@@ -339,14 +340,11 @@ struct DocumentDetailView: View {
 
     private var header: some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle().fill(tint.opacity(0.18)).frame(width: 92, height: 92)
-                    .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
-                    .shadow(color: tint.opacity(0.45), radius: 16, y: 8)
-                Image(systemName: live.categoryIcon)
-                    .font(AppFont.scaled(36, weight: .semibold))
-                    .foregroundStyle(tint)
-            }
+            Image(systemName: live.categoryIcon)
+                .font(AppFont.scaled(36, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 92, height: 92)
+                .glassCircle()
             Text(live.name)
                 .font(AppFont.scaled(23, weight: .bold)).foregroundStyle(.white)
                 .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.7)

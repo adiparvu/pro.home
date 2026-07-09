@@ -106,14 +106,11 @@ extension PlantDetailSheet {
 
     private func detailRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 30, height: 30)
-                Image(systemName: icon)
-                    .font(AppFont.scaled(13, weight: .medium))
-                    .foregroundStyle(iconColor)
-            }
+            Image(systemName: icon)
+                .font(AppFont.scaled(13, weight: .medium))
+                .foregroundStyle(iconColor)
+                .frame(width: 30, height: 30)
+                .glassRoundedRect(AppRadius.sm)
             Text(label)
                 .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)

@@ -364,14 +364,11 @@ private struct QuickActionToggleRow: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(action.color.opacity(0.18))
-                        .frame(width: 32, height: 32)
-                    Image(systemName: action.icon)
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(action.color)
-                }
+                Image(systemName: action.icon)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(action.color)
+                    .frame(width: 32, height: 32)
+                    .glassRoundedRect(9)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(action.title)
                         .font(AppFont.body)

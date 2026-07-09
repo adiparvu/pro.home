@@ -89,14 +89,11 @@ struct RoomInspectorSheet: View {
 
     private var header: some View {
         VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(RoomKind.color(room.roomType).opacity(0.15))
-                    .frame(width: 64, height: 64)
-                Image(systemName: room.kindIcon)
-                    .font(AppFont.title3)
-                    .foregroundStyle(RoomKind.color(room.roomType))
-            }
+            Image(systemName: room.kindIcon)
+                .font(AppFont.title3)
+                .foregroundStyle(RoomKind.color(room.roomType))
+                .frame(width: 64, height: 64)
+                .glassCircle()
             Text(room.name)
                 .font(AppFont.title3)
                 .foregroundStyle(.primary)
@@ -186,14 +183,11 @@ struct RoomInspectorSheet: View {
 
     private func inspectorRow(icon: String, tint: Color, title: String, subtitle: String?) -> some View {
         HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(tint.opacity(0.15))
-                    .frame(width: 30, height: 30)
-                Image(systemName: icon)
-                    .font(AppFont.caption)
-                    .foregroundStyle(tint)
-            }
+            Image(systemName: icon)
+                .font(AppFont.caption)
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .glassRoundedRect(AppRadius.sm)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(AppFont.footnote)

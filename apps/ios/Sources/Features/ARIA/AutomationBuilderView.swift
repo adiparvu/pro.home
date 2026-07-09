@@ -652,12 +652,11 @@ struct AutomationBuilderView: View {
     private func savedRow(_ index: Int) -> some View {
         let rule = automations[index]
         return HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(rule.color.opacity(0.15)).frame(width: 40, height: 40)
-                Image(systemName: rule.triggerIcon)
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(rule.color)
-            }
+            Image(systemName: rule.triggerIcon)
+                .font(AppFont.subheadline)
+                .foregroundStyle(rule.color)
+                .frame(width: 40, height: 40)
+                .glassCircle()
             VStack(alignment: .leading, spacing: 3) {
                 Text(rule.name)
                     .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)

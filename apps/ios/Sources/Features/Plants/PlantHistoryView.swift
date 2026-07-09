@@ -76,12 +76,11 @@ struct PlantHistorySection: View {
             }
         } label: {
             VStack(spacing: 6) {
-                ZStack {
-                    Circle().fill(kind.tint.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: kind.icon)
-                        .font(AppFont.scaled(16, weight: .semibold))
-                        .foregroundStyle(kind.tint)
-                }
+                Image(systemName: kind.icon)
+                    .font(AppFont.scaled(16, weight: .semibold))
+                    .foregroundStyle(kind.tint)
+                    .frame(width: 40, height: 40)
+                    .glassCircle()
                 Text(kind.labelKey)
                     .font(AppFont.scaled(11, weight: .medium))
                     .foregroundStyle(.primary)
@@ -190,11 +189,10 @@ struct PlantHistorySection: View {
     }
 
     private func iconTile(system: String, tint: Color) -> some View {
-        ZStack {
-            Circle().fill(tint.opacity(0.15)).frame(width: 34, height: 34)
-            Image(systemName: system)
-                .font(AppFont.scaled(14, weight: .semibold)).foregroundStyle(tint)
-        }
+        Image(systemName: system)
+            .font(AppFont.scaled(14, weight: .semibold)).foregroundStyle(tint)
+            .frame(width: 34, height: 34)
+            .glassCircle()
     }
 
     private var rowDivider: some View {
