@@ -86,6 +86,10 @@ struct WatchPayload: Codable {
     /// The owner's chosen watch pages, in their chosen order (page keys).
     /// nil means the default set — Today is always first and never listed.
     var pageOrder: [String]? = nil
+    /// Live smart-home state for the wrist (empty until the user adds IoT
+    /// devices). Optional-by-default so older cached payloads still decode.
+    var sensors: [SensorCatalogEntry] = []
+    var actuators: [ActuatorCatalogEntry] = []
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -130,6 +134,32 @@ struct DeliveryCatalogEntry: Codable {
     /// Raw status ("expected", "out_for_delivery", …) — the watch localizes it.
     var status: String
     var eta: String?
+}
+
+// MARK: - Smart-home catalogs (sensors + actuators for the wrist)
+
+/// A sensor reading, flattened for the wrist. Everything is pre-formatted on
+/// the phone (which owns the units/thresholds) so the watch just renders.
+struct SensorCatalogEntry: Codable {
+    var id: UUID
+    var name: String
+    var icon: String          // SF Symbol for the sensor type
+    var displayValue: String  // "21.4 °C" — already formatted
+    var zone: String?
+    var isAlerting: Bool
+    var isCritical: Bool
+}
+
+/// A controllable actuator (relay or cover). `commands` is the raw
+/// ActuatorCommand vocabulary the phone will execute; the watch never invents
+/// a command the actuator doesn't declare, so a wrist tap always maps to a
+/// real device write.
+struct ActuatorCatalogEntry: Codable {
+    var id: UUID
+    var name: String
+    var kind: String          // "relay" | "cover"
+    var isOn: Bool?
+    var commands: [String]    // ["on","off"] | ["open","close","stop"]
 }
 
 // MARK: - Watch action relay (widget extension → watch app → phone)
@@ -369,6 +399,63 @@ enum SharedDataStore {
         return (try? JSONDecoder().decode([DeliveryCatalogEntry].self, from: data)) ?? []
     }
 
+    // MARK: Smart-home catalogs + wrist commands
+
+    private static let sensorCatalogKey   = "prvio.catalog.sensors"
+    private static let actuatorCatalogKey = "prvio.catalog.actuators"
+    private static let pendingIoTKey      = "prvio.watch.pendingIoT"
+
+    static func writeSensorCatalog(_ items: [SensorCatalogEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: sensorCatalogKey)
+    }
+    static func readSensorCatalog() -> [SensorCatalogEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: sensorCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([SensorCatalogEntry].self, from: data)) ?? []
+    }
+    static func writeActuatorCatalog(_ items: [ActuatorCatalogEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: actuatorCatalogKey)
+    }
+    static func readActuatorCatalog() -> [ActuatorCatalogEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: actuatorCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([ActuatorCatalogEntry].self, from: data)) ?? []
+    }
+
+    /// A wrist-issued actuator command, parked for the app to execute on its
+    /// next active beat. `transferUserInfo` already guaranteed delivery to the
+    /// phone; this survives the phone being backgrounded when it arrives, so
+    /// nothing is lost if the garage command lands while the app is closed.
+    static func appendPendingIoTCommand(actuatorId: UUID, command: String) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        var q = ud.stringArray(forKey: pendingIoTKey) ?? []
+        q.append("\(actuatorId.uuidString)|\(command)")
+        ud.set(q, forKey: pendingIoTKey)
+    }
+    static func drainPendingIoTCommands() -> [(actuatorId: UUID, command: String)] {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
+        let q = ud.stringArray(forKey: pendingIoTKey) ?? []
+        ud.removeObject(forKey: pendingIoTKey)
+        return q.compactMap { entry in
+            let parts = entry.split(separator: "|", maxSplits: 1).map(String.init)
+            guard parts.count == 2, let id = UUID(uuidString: parts[0]) else { return nil }
+            return (id, parts[1])
+        }
+    }
+
+    /// Optimistic relay echo so a wrist toggle feels instant before the phone
+    /// confirms the real device write — mirrors applyLocalTaskCompletion.
+    static func applyLocalActuatorState(id: UUID, isOn: Bool?) {
+        var cat = readActuatorCatalog()
+        guard let i = cat.firstIndex(where: { $0.id == id }) else { return }
+        cat[i].isOn = isOn
+        writeActuatorCatalog(cat)
+    }
+
     /// Deliveries marked received from the Live Activity island — drained into
     /// DeliveryService.markDelivered on the app's next foreground beat.
     /// Idempotent: a second tap on the same delivery must not re-mark it.
@@ -440,7 +527,9 @@ enum SharedDataStore {
                             budgetSpent: extras.budgetSpent,
                             budgetLimit: extras.budgetLimit,
                             budgetCurrency: extras.budgetCurrency,
-                            pageOrder: visibleWatchPages())
+                            pageOrder: visibleWatchPages(),
+                            sensors: readSensorCatalog(),
+                            actuators: readActuatorCatalog())
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

@@ -152,6 +152,23 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
+        // A smart-home command from the wrist (toggle a relay, open the
+        // garage). Parked for the app to execute against the real device on
+        // its next active beat; a relay also gets an optimistic echo so the
+        // watch face reflects the tap immediately, reconciled when the phone
+        // reports the true state back.
+        if action == "iotCommand", let idString = userInfo["actuatorId"] as? String,
+           let id = UUID(uuidString: idString), let cmd = userInfo["command"] as? String {
+            DispatchQueue.main.async { [weak self] in
+                SharedDataStore.appendPendingIoTCommand(actuatorId: id, command: cmd)
+                if cmd == "on" || cmd == "off" {
+                    SharedDataStore.applyLocalActuatorState(id: id, isOn: cmd == "on")
+                }
+                if let payload = SharedDataStore.currentWatchPayload() { self?.push(payload) }
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
         guard let idString = userInfo["id"] as? String,
               let id = UUID(uuidString: idString) else { return }
         DispatchQueue.main.async { [weak self] in

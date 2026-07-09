@@ -5,6 +5,7 @@ import MapKit
 
 enum WatchPage: Hashable {
     case today, tasks, plants, shopping, pantry, deliveries, map
+    case controls, sensors
 }
 
 // MARK: - Double tap
@@ -150,6 +151,16 @@ struct WatchRootView: View {
             ForEach(Self.orderedPages(payload), id: \.self) { key in
                 page(for: key, payload: payload)
             }
+            // Smart-home surfaces ride after the owner's pages, gated on real
+            // devices existing — the wrist never shows an empty control panel.
+            if !payload.actuators.isEmpty {
+                ControlsPage(actuators: payload.actuators)
+                    .tag(WatchPage.controls)
+            }
+            if !payload.sensors.isEmpty {
+                SensorsPage(sensors: payload.sensors)
+                    .tag(WatchPage.sensors)
+            }
         }
         if Self.handoffDeclared {
             // Handoff: raise the iPhone and land on the page you were
@@ -207,6 +218,9 @@ struct WatchRootView: View {
         case .pantry:     return "pantry"
         case .deliveries: return "deliveries"
         case .map:        return "map"
+        // No dedicated phone tab for these yet — Handoff lands on Home, which
+        // always exists, rather than an activity type the router can't honour.
+        case .controls, .sensors: return "home"
         }
     }
 
@@ -263,6 +277,12 @@ private struct WatchModuleGrid: View {
         }
         if payload.latitude != nil, payload.longitude != nil {
             m.append(.init(page: .map, label: "watch_menu_map", icon: "map.fill", tint: .teal))
+        }
+        if !payload.actuators.isEmpty {
+            m.append(.init(page: .controls, label: "watch_menu_controls", icon: "switch.2", tint: .purple))
+        }
+        if !payload.sensors.isEmpty {
+            m.append(.init(page: .sensors, label: "watch_menu_sensors", icon: "sensor.fill", tint: .mint))
         }
         return m
     }
@@ -1283,5 +1303,148 @@ private struct AllClearView: View {
                 .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+// MARK: - Controls (smart-home actuators)
+//
+// Relays get an On/Off pair; covers get up/close/stop. Every button maps to a
+// command the actuator declared on the phone, so a wrist tap always resolves
+// to a real device write — the phone performs it and reports the true state
+// back. A relay echoes its new state instantly for a responsive wrist.
+
+private struct ControlsPage: View {
+    @Environment(WatchStore.self) private var store
+    let actuators: [ActuatorCatalogEntry]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(actuators, id: \.id) { actuator in
+                        card(actuator)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
+            }
+            .navigationTitle(Text("watch_menu_controls"))
+            .containerBackground(Color.purple.gradient.opacity(0.25), for: .navigation)
+        }
+    }
+
+    private func card(_ a: ActuatorCatalogEntry) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: a.kind == "cover" ? "door.garage.closed" : "power")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.purple)
+                Text(verbatim: a.name)
+                    .font(.system(.footnote, design: .rounded).weight(.semibold))
+                    .lineLimit(1)
+                Spacer()
+                if a.kind == "relay" {
+                    Circle()
+                        .fill(a.isOn == true ? Color.green : Color.gray.opacity(0.5))
+                        .frame(width: 8, height: 8)
+                }
+            }
+            if a.kind == "relay" {
+                HStack(spacing: 6) {
+                    relayButton(a, command: "on", title: "watch_cmd_on",
+                                tint: .green, active: a.isOn == true)
+                    relayButton(a, command: "off", title: "watch_cmd_off",
+                                tint: .orange, active: a.isOn == false)
+                }
+            } else {
+                HStack(spacing: 6) {
+                    coverButton(a, command: "open",  icon: "arrow.up",   tint: .blue)
+                    coverButton(a, command: "close", icon: "arrow.down", tint: .indigo)
+                    coverButton(a, command: "stop",  icon: "stop.fill",  tint: .orange)
+                }
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func relayButton(_ a: ActuatorCatalogEntry, command: String,
+                             title: LocalizedStringKey, tint: Color, active: Bool) -> some View {
+        Button {
+            store.sendCommand(actuatorId: a.id, command: command)
+        } label: {
+            Text(title)
+                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 34)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(active ? tint : Color.gray.opacity(0.4))
+    }
+
+    private func coverButton(_ a: ActuatorCatalogEntry, command: String,
+                             icon: String, tint: Color) -> some View {
+        Button {
+            store.sendCommand(actuatorId: a.id, command: command)
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .bold))
+                .frame(maxWidth: .infinity, minHeight: 34)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(tint)
+    }
+}
+
+// MARK: - Sensors (live readings)
+//
+// Read-only glance over the property's own sensors. An alerting sensor tints
+// warm; a critical hazard (smoke / gas / water) tints red — the same honesty
+// the phone and the Live Activities use.
+
+private struct SensorsPage: View {
+    let sensors: [SensorCatalogEntry]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 6) {
+                    ForEach(sensors, id: \.id) { s in
+                        row(s)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
+            }
+            .navigationTitle(Text("watch_menu_sensors"))
+            .containerBackground(Color.mint.gradient.opacity(0.25), for: .navigation)
+        }
+    }
+
+    private func row(_ s: SensorCatalogEntry) -> some View {
+        let accent: Color = s.isCritical ? .red : (s.isAlerting ? .orange : .mint)
+        return HStack(spacing: 8) {
+            Image(systemName: s.icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: s.name)
+                    .font(.system(.footnote, design: .rounded).weight(.medium))
+                    .lineLimit(1)
+                if let zone = s.zone {
+                    Text(verbatim: zone)
+                        .font(.system(.caption2))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            Text(verbatim: s.displayValue)
+                .font(.system(.footnote, design: .rounded).weight(.semibold).monospacedDigit())
+                .foregroundStyle(s.isCritical ? .red : (s.isAlerting ? .orange : .primary))
+        }
+        .padding(8)
+        .background(s.isAlerting ? accent.opacity(0.15) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 10))
     }
 }

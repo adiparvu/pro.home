@@ -171,6 +171,24 @@ final class WatchStore: NSObject, WCSessionDelegate {
         queue(action: "consumePantry", id: id, haptic: .click)
     }
 
+    /// A smart-home command from the wrist. A relay's on/off echoes instantly
+    /// on the face; the phone performs the real device write on its next active
+    /// beat and reports the true state back. `command` is always one the
+    /// actuator declared, so this never issues an action the device can't do.
+    func sendCommand(actuatorId: UUID, command: String) {
+        if command == "on" || command == "off" {
+            mutate { payload in
+                guard let i = payload.actuators.firstIndex(where: { $0.id == actuatorId }) else { return }
+                payload.actuators[i].isOn = (command == "on")
+            }
+        }
+        WKInterfaceDevice.current().play(.click)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "iotCommand",
+                                            "actuatorId": actuatorId.uuidString,
+                                            "command": command])
+    }
+
     // MARK: Work session (a maintenance timer on the wrist)
     //
     // Honest scope: the elapsed time is computed from the persisted start

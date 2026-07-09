@@ -40,6 +40,38 @@ final class IoTService {
         if let d = try? JSONEncoder().encode(sensors)     { UserDefaults.standard.set(d, forKey: sensorsKey) }
         if let d = try? JSONEncoder().encode(automations) { UserDefaults.standard.set(d, forKey: automationsKey) }
         if let d = try? JSONEncoder().encode(actuators)   { UserDefaults.standard.set(d, forKey: actuatorsKey) }
+        syncWatchCatalog()
+    }
+
+    // MARK: - Watch mirror
+    //
+    // Flattens live sensors + controllable actuators into the App-Group
+    // catalogs the watch app reads. Written on every persist (CRUD + each
+    // poll) so the wrist reflects the real installation, and empty until the
+    // user actually adds IoT devices — the wrist never invents a control.
+
+    func syncWatchCatalog() {
+        SharedDataStore.writeSensorCatalog(sensors.map { s in
+            SensorCatalogEntry(id: s.id, name: s.name, icon: s.type.icon,
+                               displayValue: s.displayValue,
+                               zone: s.linkedZoneName.isEmpty ? nil : s.linkedZoneName,
+                               isAlerting: s.isLiveAlerting, isCritical: s.isCriticalAlert)
+        })
+        SharedDataStore.writeActuatorCatalog(actuators.map { a in
+            ActuatorCatalogEntry(id: a.id, name: a.name, kind: a.kind.rawValue,
+                                 isOn: a.isOn, commands: a.kind.commands.map(\.rawValue))
+        })
+    }
+
+    /// Executes actuator commands the watch queued while the app was away.
+    /// Each is a REAL device write through `perform`; the wrist's optimistic
+    /// echo is reconciled by the fresh catalog that perform→persist produces.
+    func drainPendingWatchCommands() {
+        for (actuatorId, raw) in SharedDataStore.drainPendingIoTCommands() {
+            guard let actuator = actuators.first(where: { $0.id == actuatorId }),
+                  let command = ActuatorCommand(rawValue: raw) else { continue }
+            perform(command, on: actuator)
+        }
     }
 
     // MARK: - Devices CRUD

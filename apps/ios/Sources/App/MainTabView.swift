@@ -556,6 +556,9 @@ struct MainTabView: View {
     }
 
     private func processPendingIntentActions() {
+        // Smart-home commands the watch queued (toggle relay / open garage) —
+        // executed against the real device by IoTService.perform.
+        IoTService.shared.drainPendingWatchCommands()
         let waterIds = SharedDataStore.popPendingWaterings()
         for id in waterIds {
             if let plant = plantService.plants.first(where: { $0.id == id }) {
