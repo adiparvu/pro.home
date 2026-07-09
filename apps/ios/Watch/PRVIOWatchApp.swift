@@ -25,6 +25,18 @@ struct PRVIOWatchApp: App {
     }
 }
 
+extension TimeInterval {
+    /// "1:20:05" past an hour, else "20:05" — the wrist stopwatch readout.
+    /// (The phone has its own copy in WorkSessionStore, which isn't compiled
+    /// into the watch target.)
+    var watchSessionClock: String {
+        let total = Int(max(0, self))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s)
+                     : String(format: "%d:%02d", m, s)
+    }
+}
+
 // MARK: - Store (session delegate + cache)
 
 @Observable
@@ -209,6 +221,22 @@ final class WatchStore: NSObject, WCSessionDelegate {
         var taskId: UUID
         var title: String
         var startedAt: Date
+        /// Seconds banked from segments that already ran before each pause.
+        var accumulated: TimeInterval = 0
+        /// Start of the current running segment; nil while paused. Defaulted
+        /// from `startedAt` so a session persisted by an older build resumes
+        /// running rather than appearing paused.
+        var segmentStart: Date? = nil
+
+        var isPaused: Bool { segmentStart == nil && accumulated > 0 }
+
+        /// Live elapsed, pauses excluded. Falls back to `startedAt` for
+        /// sessions saved before pause support existed.
+        func elapsed(at now: Date) -> TimeInterval {
+            if let seg = segmentStart { return accumulated + max(0, now.timeIntervalSince(seg)) }
+            if accumulated > 0 { return accumulated }
+            return max(0, now.timeIntervalSince(startedAt))
+        }
     }
 
     private static let sessionKey = "prvio.watch.session"
@@ -220,11 +248,11 @@ final class WatchStore: NSObject, WCSessionDelegate {
     }()
 
     func startSession(taskId: UUID, title: String) {
-        let session = WorkSession(taskId: taskId, title: title, startedAt: Date())
+        let now = Date()
+        let session = WorkSession(taskId: taskId, title: title, startedAt: now,
+                                  accumulated: 0, segmentStart: now)
         activeSession = session
-        if let data = try? JSONEncoder().encode(session) {
-            Self.defaults.set(data, forKey: Self.sessionKey)
-        }
+        persistSession()
         WKInterfaceDevice.current().play(.start)
         // Mirror on the iPhone as a Live Activity. The phone can only start
         // one while foregrounded, so this queues honestly via userInfo — the
@@ -238,6 +266,39 @@ final class WatchStore: NSObject, WCSessionDelegate {
             "startedAt": String(session.startedAt.timeIntervalSince1970),
         ])
     }
+
+    private func persistSession() {
+        if let s = activeSession, let data = try? JSONEncoder().encode(s) {
+            Self.defaults.set(data, forKey: Self.sessionKey)
+        } else {
+            Self.defaults.removeObject(forKey: Self.sessionKey)
+        }
+    }
+
+    /// Freezes the clock on the wrist and tells the phone to pause the same
+    /// session, so the banked time stays identical on both.
+    func pauseSession() {
+        guard var s = activeSession, let seg = s.segmentStart else { return }
+        s.accumulated += max(0, Date().timeIntervalSince(seg))
+        s.segmentStart = nil
+        activeSession = s
+        persistSession()
+        WKInterfaceDevice.current().play(.click)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "sessionPause"])
+    }
+
+    func resumeSession() {
+        guard var s = activeSession, s.segmentStart == nil else { return }
+        s.segmentStart = Date()
+        activeSession = s
+        persistSession()
+        WKInterfaceDevice.current().play(.start)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "sessionResume"])
+    }
+
+    func toggleSessionPause() { activeSession?.isPaused == true ? resumeSession() : pauseSession() }
 
     /// Ends the session; optionally completes the task it timed.
     func endSession(completingTask: Bool) {

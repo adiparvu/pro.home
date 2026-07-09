@@ -152,6 +152,16 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
+        // Pause / resume taken on the wrist freeze the same phone session, so
+        // its banner/row and the Dynamic Island match the watch exactly.
+        if action == "sessionPause" {
+            DispatchQueue.main.async { WorkSessionStore.shared.pause() }
+            return
+        }
+        if action == "sessionResume" {
+            DispatchQueue.main.async { WorkSessionStore.shared.resume() }
+            return
+        }
         // A smart-home command from the wrist (toggle a relay, open the
         // garage). Parked for the app to execute against the real device on
         // its next active beat; a relay also gets an optimistic echo so the

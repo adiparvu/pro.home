@@ -891,9 +891,28 @@ private struct WorkSessionView: View {
                         .font(.system(.footnote, design: .rounded).weight(.semibold))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
-                    Text(session.startedAt, style: .timer)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                        .monospacedDigit()
+                    // Computed elapsed (not Text(style:.timer)) so a pause
+                    // truly freezes it; excludes paused time.
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(verbatim: session.elapsed(at: context.date).watchSessionClock)
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(session.isPaused ? .orange : .primary)
+                    }
+
+                    // Pause / Resume
+                    Button {
+                        store.toggleSessionPause()
+                    } label: {
+                        Label {
+                            Text(session.isPaused ? "watch_session_resume" : "watch_session_pause")
+                        } icon: {
+                            Image(systemName: session.isPaused ? "play.fill" : "pause.fill")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(session.isPaused ? .green : .orange)
 
                     Button {
                         store.endSession(completingTask: true)
