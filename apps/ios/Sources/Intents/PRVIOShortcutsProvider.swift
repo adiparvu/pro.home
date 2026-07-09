@@ -80,15 +80,19 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             shortTitle: "Chat",
             systemImageName: "message.fill"
         )
+        // Note: Apple caps a provider at 10 App Shortcuts. The garage control
+        // takes the slot the redundant "Open PRVIO dashboard" phrase held —
+        // tapping the app icon already opens the dashboard, and OpenDashboard-
+        // Intent remains usable from the Shortcuts app.
         AppShortcut(
-            intent: OpenDashboardIntent(),
+            intent: OpenGarageIntent(),
             phrases: [
-                "Open \(.applicationName)",
-                "Open \(.applicationName) home",
-                "Show \(.applicationName) dashboard"
+                "Open the garage in \(.applicationName)",
+                "\(.applicationName) open the garage",
+                "Open the gate in \(.applicationName)"
             ],
-            shortTitle: "Open PRVIO",
-            systemImageName: "house.fill"
+            shortTitle: "Open Garage",
+            systemImageName: "door.garage.open"
         )
         AppShortcut(
             intent: AskARIAIntent(),

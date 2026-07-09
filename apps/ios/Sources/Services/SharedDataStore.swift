@@ -90,6 +90,10 @@ struct WatchPayload: Codable {
     /// devices). Optional-by-default so older cached payloads still decode.
     var sensors: [SensorCatalogEntry] = []
     var actuators: [ActuatorCatalogEntry] = []
+    /// The property's emergency plan — shutoff steps + contacts — mirrored to
+    /// the wrist for a real incident. Empty until the user fills it in.
+    var emergencyContacts: [EmergencyContactEntry] = []
+    var emergencySteps: [EmergencyStepEntry] = []
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -160,6 +164,25 @@ struct ActuatorCatalogEntry: Codable {
     var kind: String          // "relay" | "cover"
     var isOn: Bool?
     var commands: [String]    // ["on","off"] | ["open","close","stop"]
+}
+
+// MARK: - Emergency (SOS on the wrist)
+//
+// Decoded from the phone's own emergency store, so the wrist shows the SAME
+// contacts and shutoff notes the user configured — nothing fabricated. `phone`
+// drives a real tel: call straight from the watch.
+
+struct EmergencyContactEntry: Codable {
+    var id: UUID
+    var name: String
+    var role: String
+    var phone: String
+}
+
+struct EmergencyStepEntry: Codable {
+    var id: UUID
+    var title: String
+    var detail: String
 }
 
 // MARK: - Watch action relay (widget extension → watch app → phone)
@@ -456,6 +479,32 @@ enum SharedDataStore {
         writeActuatorCatalog(cat)
     }
 
+    // MARK: Emergency plan (read from the phone's own store, called on-phone
+    // when the payload is built — the watch just receives the result).
+
+    static func readEmergencyContacts() -> [EmergencyContactEntry] {
+        guard let d = UserDefaults.standard.data(forKey: "prvio.emergency") else { return [] }
+        return (try? JSONDecoder().decode([EmergencyContactEntry].self, from: d)) ?? []
+    }
+    static func readEmergencySteps() -> [EmergencyStepEntry] {
+        guard let d = UserDefaults.standard.data(forKey: "prvio.emergency.notes") else { return [] }
+        return (try? JSONDecoder().decode([EmergencyStepEntry].self, from: d)) ?? []
+    }
+
+    /// A wrist-triggered "start emergency mode" — parked because ActivityKit
+    /// only lets the app START a Live Activity in the foreground. Drained by
+    /// MainTabView on the next active beat.
+    private static let pendingEmergencyKey = "prvio.watch.pendingEmergency"
+    static func setPendingEmergencyStart() {
+        UserDefaults(suiteName: suiteName)?.set(true, forKey: pendingEmergencyKey)
+    }
+    static func consumePendingEmergencyStart() -> Bool {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              ud.bool(forKey: pendingEmergencyKey) else { return false }
+        ud.removeObject(forKey: pendingEmergencyKey)
+        return true
+    }
+
     /// Deliveries marked received from the Live Activity island — drained into
     /// DeliveryService.markDelivered on the app's next foreground beat.
     /// Idempotent: a second tap on the same delivery must not re-mark it.
@@ -529,7 +578,9 @@ enum SharedDataStore {
                             budgetCurrency: extras.budgetCurrency,
                             pageOrder: visibleWatchPages(),
                             sensors: readSensorCatalog(),
-                            actuators: readActuatorCatalog())
+                            actuators: readActuatorCatalog(),
+                            emergencyContacts: readEmergencyContacts(),
+                            emergencySteps: readEmergencySteps())
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

@@ -5,7 +5,7 @@ import MapKit
 
 enum WatchPage: Hashable {
     case today, tasks, plants, shopping, pantry, deliveries, map
-    case controls, sensors
+    case controls, sensors, emergency
 }
 
 // MARK: - Double tap
@@ -161,6 +161,11 @@ struct WatchRootView: View {
                 SensorsPage(sensors: payload.sensors)
                     .tag(WatchPage.sensors)
             }
+            if !payload.emergencyContacts.isEmpty || !payload.emergencySteps.isEmpty {
+                EmergencyPage(contacts: payload.emergencyContacts,
+                              steps: payload.emergencySteps)
+                    .tag(WatchPage.emergency)
+            }
         }
         if Self.handoffDeclared {
             // Handoff: raise the iPhone and land on the page you were
@@ -220,7 +225,7 @@ struct WatchRootView: View {
         case .map:        return "map"
         // No dedicated phone tab for these yet — Handoff lands on Home, which
         // always exists, rather than an activity type the router can't honour.
-        case .controls, .sensors: return "home"
+        case .controls, .sensors, .emergency: return "home"
         }
     }
 
@@ -283,6 +288,10 @@ private struct WatchModuleGrid: View {
         }
         if !payload.sensors.isEmpty {
             m.append(.init(page: .sensors, label: "watch_menu_sensors", icon: "sensor.fill", tint: .mint))
+        }
+        if !payload.emergencyContacts.isEmpty || !payload.emergencySteps.isEmpty {
+            m.append(.init(page: .emergency, label: "watch_menu_emergency",
+                           icon: "cross.case.fill", tint: .red))
         }
         return m
     }
@@ -1446,5 +1455,115 @@ private struct SensorsPage: View {
         .padding(8)
         .background(s.isAlerting ? accent.opacity(0.15) : Color.clear,
                     in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+// MARK: - Emergency (SOS)
+//
+// The property's own plan on the wrist: pin the Emergency Live Activity, walk
+// the shutoff steps, and tap a contact to call it — a real tel: call straight
+// from the watch. Everything here comes from what the user configured on the
+// phone; nothing is invented.
+
+private struct EmergencyPage: View {
+    @Environment(WatchStore.self) private var store
+    let contacts: [EmergencyContactEntry]
+    let steps: [EmergencyStepEntry]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 8) {
+                    Button {
+                        store.startEmergency()
+                    } label: {
+                        Label("watch_emergency_start", systemImage: "light.beacon.max.fill")
+                            .font(.system(.footnote, design: .rounded).weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+
+                    if !steps.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            sectionLabel("watch_emergency_steps")
+                            ForEach(Array(steps.enumerated()), id: \.element.id) { idx, step in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text(verbatim: "\(idx + 1)")
+                                        .font(.system(.caption2, design: .rounded).weight(.bold))
+                                        .foregroundStyle(.orange)
+                                        .frame(width: 14)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(verbatim: step.title)
+                                            .font(.system(.footnote, design: .rounded).weight(.medium))
+                                            .lineLimit(2)
+                                        if !step.detail.isEmpty {
+                                            Text(verbatim: step.detail)
+                                                .font(.system(.caption2))
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(3)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    if !contacts.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            sectionLabel("watch_emergency_contacts")
+                            ForEach(contacts, id: \.id) { contact in
+                                contactRow(contact)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
+            }
+            .navigationTitle(Text("watch_menu_emergency"))
+            .containerBackground(Color.red.gradient.opacity(0.28), for: .navigation)
+        }
+    }
+
+    private func sectionLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(.system(.caption2, design: .rounded).weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func contactRow(_ contact: EmergencyContactEntry) -> some View {
+        let digits = contact.phone.filter { !$0.isWhitespace }
+        if let url = URL(string: "tel://\(digits)") {
+            Link(destination: url) {
+                HStack(spacing: 8) {
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: contact.name)
+                            .font(.system(.footnote, design: .rounded).weight(.medium))
+                            .lineLimit(1)
+                        if !contact.role.isEmpty {
+                            Text(verbatim: contact.role)
+                                .font(.system(.caption2))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity)
+                .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+        }
     }
 }

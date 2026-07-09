@@ -189,6 +189,15 @@ final class WatchStore: NSObject, WCSessionDelegate {
                                             "command": command])
     }
 
+    /// Pins the property's Emergency Live Activity from the wrist. The phone
+    /// raises the real activity on its next foreground beat (ActivityKit only
+    /// starts one in the foreground); the strong haptic confirms the request.
+    func startEmergency() {
+        WKInterfaceDevice.current().play(.notification)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "startEmergency"])
+    }
+
     // MARK: Work session (a maintenance timer on the wrist)
     //
     // Honest scope: the elapsed time is computed from the persisted start

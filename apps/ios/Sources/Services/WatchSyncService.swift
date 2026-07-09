@@ -169,6 +169,15 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
+        // "Start emergency mode" from the wrist — parked, then the foreground
+        // app raises the real Emergency Live Activity on its next active beat.
+        if action == "startEmergency" {
+            DispatchQueue.main.async {
+                SharedDataStore.setPendingEmergencyStart()
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
         guard let idString = userInfo["id"] as? String,
               let id = UUID(uuidString: idString) else { return }
         DispatchQueue.main.async { [weak self] in

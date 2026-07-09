@@ -559,6 +559,11 @@ struct MainTabView: View {
         // Smart-home commands the watch queued (toggle relay / open garage) —
         // executed against the real device by IoTService.perform.
         IoTService.shared.drainPendingWatchCommands()
+        // "Start emergency mode" pinned from the wrist — raise the real
+        // Emergency Live Activity now that the app is foreground.
+        if SharedDataStore.consumePendingEmergencyStart() {
+            LiveActivityService.shared.startEmergency()
+        }
         let waterIds = SharedDataStore.popPendingWaterings()
         for id in waterIds {
             if let plant = plantService.plants.first(where: { $0.id == id }) {

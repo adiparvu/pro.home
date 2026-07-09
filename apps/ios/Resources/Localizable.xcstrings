@@ -64953,6 +64953,70 @@
           }
         }
       }
+    },
+    "watch_menu_emergency": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urgență"
+          }
+        }
+      }
+    },
+    "watch_emergency_start": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start emergency mode"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pornește modul urgență"
+          }
+        }
+      }
+    },
+    "watch_emergency_steps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shutoff steps"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pași de închidere"
+          }
+        }
+      }
+    },
+    "watch_emergency_contacts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency contacts"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contacte de urgență"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
