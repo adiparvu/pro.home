@@ -329,8 +329,8 @@ struct LockScreenDashboardView: View {
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 4) {
-                    Image(systemName: "house.fill")
-                        .font(AppFont.scaled(10, weight: .semibold))
+                    Image("BrandMark").renderingMode(.template)
+                        .resizable().scaledToFit().frame(width: 12, height: 12)
                         .widgetAccentable()
                     Text(entry.snapshot.propertyName ?? "PRVIO")
                         .font(AppFont.label)

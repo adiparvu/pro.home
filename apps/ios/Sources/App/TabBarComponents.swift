@@ -279,6 +279,15 @@ struct AnimatedTabBar: View {
                 }
             }
             .frame(width: 26, height: 26)
+        } else if tab == .home {
+            // The Home tab wears the PRVIO brand mark ("P with roof"), not a
+            // generic house — template-rendered so the bar tints it selected/
+            // unselected like every other tab glyph.
+            Image("BrandMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 25, height: 25)
         } else {
             Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
         }
