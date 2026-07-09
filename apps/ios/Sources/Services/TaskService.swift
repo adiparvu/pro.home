@@ -212,6 +212,20 @@ final class TaskService {
         }
     }
 
+    /// Best-effort server mirror of a task's total worked seconds (from the
+    /// work-session timer). Silent no-op until the `worked_seconds` column
+    /// exists — the App Group total in WorkSessionStore is the authority, so
+    /// this never surfaces an error and self-heals once the migration ships.
+    nonisolated static func persistWorkedSeconds(taskId: UUID, total: TimeInterval) {
+        struct WorkedUpdate: Encodable { let worked_seconds: Int }
+        Task {
+            _ = try? await supabase.from("maintenance_tasks")
+                .update(WorkedUpdate(worked_seconds: Int(total.rounded())))
+                .eq("id", value: taskId.uuidString)
+                .execute()
+        }
+    }
+
     func delete(_ task: MaintenanceTask) async {
         do {
             try await supabase
@@ -220,6 +234,9 @@ final class TaskService {
                 .eq("id", value: task.id.uuidString)
                 .execute()
             tasks.removeAll { $0.id == task.id }
+            // A running session can't outlive its task — drop it without
+            // banking time or marking a now-deleted task done.
+            if WorkSessionStore.shared.isTiming(task.id) { WorkSessionStore.shared.cancel() }
             // A deleted task must stop steering its Apple Reminder.
             TaskReminderLinks.unlink(taskId: task.id)
         } catch {

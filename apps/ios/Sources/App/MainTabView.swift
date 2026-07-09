@@ -639,10 +639,18 @@ struct MainTabView: View {
         // time truthful however late the mirror appears.
         if let event = SharedDataStore.consumePendingSessionEvent() {
             if let start = event.start {
-                LiveActivityService.shared.startWorkSession(
+                // Adopt the wrist-started session into the one authority so the
+                // phone's banner/row timer light up with the true elapsed time;
+                // start() also raises the Dynamic Island mirror.
+                WorkSessionStore.shared.start(
                     taskId: start.taskId, title: start.title, startedAt: start.startedAt)
             } else if event.isEnd {
-                LiveActivityService.shared.endWorkSession(completed: false)
+                // Finish from the wrist banks the time and completes the task.
+                if let done = WorkSessionStore.shared.finish(),
+                   let task = taskService.tasks.first(where: { $0.id == done.taskId }),
+                   !task.isCompleted {
+                    Task { await taskService.toggleComplete(task) }
+                }
             }
         }
         if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty

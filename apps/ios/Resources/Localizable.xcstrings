@@ -65017,6 +65017,70 @@
           }
         }
       }
+    },
+    "session_pause": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause session"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauză sesiune"
+          }
+        }
+      }
+    },
+    "session_resume": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume session"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reia sesiunea"
+          }
+        }
+      }
+    },
+    "session_finish": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish session"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termină sesiunea"
+          }
+        }
+      }
+    },
+    "session_worked_total": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time worked"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timp lucrat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

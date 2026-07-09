@@ -44,6 +44,7 @@ struct AddTaskView: View {
             dueDatePicker
             assigneesSection
             calendarToggle
+            workedTimeRow
         }
         .sheet(isPresented: $showAssigneePicker) {
             AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
@@ -71,6 +72,34 @@ struct AddTaskView: View {
     }
 
     // MARK: - Fields
+
+    /// The total time logged against this task by the work-session timer —
+    /// shown only when editing an existing task that has recorded time.
+    @ViewBuilder
+    private var workedTimeRow: some View {
+        if let t = editing {
+            let worked = WorkSessionStore.shared.workedSeconds(for: t.id)
+            if worked > 0 {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "timer")
+                        .font(AppFont.scaled(15, weight: .semibold))
+                        .foregroundStyle(Color.brandSuccess)
+                        .frame(width: 34, height: 34)
+                        .glassCircle()
+                    Text("session_worked_total")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.secondaryTextColor)
+                    Spacer()
+                    Text(verbatim: worked.workedTotalDisplay)
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                }
+                .padding(AppSpacing.base)
+                .liquidGlass(cornerRadius: AppRadius.md)
+            }
+        }
+    }
 
     private var titleField: some View {
         VStack(alignment: .leading, spacing: 8) {

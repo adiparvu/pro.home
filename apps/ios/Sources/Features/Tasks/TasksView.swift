@@ -111,6 +111,10 @@ struct TasksView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
+        // The running work session stays pinned above the list, always visible
+        // however far you scroll — with its live clock, Pause and Finish.
+        .safeAreaInset(edge: .top, spacing: 0) { SessionBanner() }
+        .animation(.snappy, value: WorkSessionStore.shared.active)
         .navigationTitle("Tasks")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
@@ -386,6 +390,12 @@ struct TaskRowView: View {
 
             Spacer()
 
+            // The live session clock, exactly where the timer was requested —
+            // running (green) or paused (amber), with a one-tap pause/resume.
+            if WorkSessionStore.shared.isTiming(task.id) {
+                SessionRowTimer()
+            }
+
             VStack(alignment: .trailing, spacing: 4) {
                 Circle()
                     .fill(task.priorityColor)
@@ -429,11 +439,11 @@ struct TaskRowView: View {
                       systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark.circle")
             }
             if !task.isCompleted {
-                // The phone half of the watch's work session: the timer
-                // lives in the Dynamic Island until it's completed or ended.
+                // Start the real work-session engine — a live timer on the row
+                // and in the pinned banner, mirrored to the Dynamic Island and
+                // the Apple Watch, with Pause/Finish everywhere.
                 Button {
-                    HapticFeedback.impact(.medium)
-                    LiveActivityService.shared.startWorkSession(taskId: task.id, title: task.title)
+                    WorkSessionStore.shared.start(taskId: task.id, title: task.title)
                 } label: {
                     Label("session_start", systemImage: "timer")
                 }
