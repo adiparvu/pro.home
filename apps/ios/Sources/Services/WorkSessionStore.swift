@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 
+// The work-session authority — shared by the phone, the Apple Watch and the
+// Dynamic Island so one clock is timed everywhere.
+
 // MARK: - WorkSessionStore
 //
 // The single authority for a task work session — Start ▸ / Pause ⏸ / Finish ⏹.
