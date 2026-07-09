@@ -39,6 +39,11 @@
 "Save" = "Salvează";
 "Delete" = "Șterge";
 "Edit" = "Editează";
+"doc_edit" = "Editează";
+"doc_delete_document" = "Șterge documentul";
+"doc_added" = "Adăugat";
+"doc_expires" = "Expiră";
+"doc_shared_with" = "Partajat cu";
 "Add" = "Adaugă";
 "Done" = "Gata";
 "Close" = "Închide";

@@ -12,8 +12,7 @@ struct DocumentsView: View {
     @State private var showDeleteConfirm = false
     @State private var previewURL: URL?
     @State private var errorToast: String?
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet = false
+    @State private var sharePayload: SharePayload?
     @State private var selectedDoc: DocumentModel?
     @State private var editDoc: DocumentModel?
     // Bumped when a favorite toggles so the (UserDefaults-backed) filter/badges refresh.
@@ -186,9 +185,7 @@ struct DocumentsView: View {
             Text("This will permanently remove the file and cannot be undone.")
         }
         .quickLookPreview($previewURL)
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: shareItems)
-        }
+        .sheet(item: $sharePayload) { ShareSheet(activityItems: $0.items) }
         .onChange(of: documentService.error) { _, err in
             if let err { errorToast = err }
         }
@@ -255,18 +252,14 @@ struct DocumentsView: View {
     private func shareDocument(_ doc: DocumentModel) {
         guard let url = URL(string: doc.fileUrl) else { return }
         Task {
-            if let data = try? Data(contentsOf: url) {
+            // Item-based presentation: present only once the payload exists, so
+            // the first tap is never a blank share sheet (see SharePayload).
+            if let data = try? Data(contentsOf: url), !data.isEmpty {
                 let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(doc.fileName)
                 try? data.write(to: tmp)
-                await MainActor.run {
-                    shareItems = [tmp]
-                    showShareSheet = true
-                }
+                await MainActor.run { sharePayload = SharePayload([tmp]) }
             } else {
-                await MainActor.run {
-                    shareItems = [url]
-                    showShareSheet = true
-                }
+                await MainActor.run { sharePayload = SharePayload([url]) }
             }
         }
     }

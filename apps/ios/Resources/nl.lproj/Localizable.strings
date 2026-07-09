@@ -39,6 +39,11 @@
 "Save" = "Opslaan";
 "Delete" = "Verwijderen";
 "Edit" = "Bewerken";
+"doc_edit" = "Bewerken";
+"doc_delete_document" = "Document verwijderen";
+"doc_added" = "Toegevoegd";
+"doc_expires" = "Verloopt";
+"doc_shared_with" = "Gedeeld met";
 "Add" = "Toevoegen";
 "Done" = "Gereed";
 "Close" = "Sluiten";

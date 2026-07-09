@@ -75,8 +75,7 @@ struct DocumentDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var previewURL: URL?
-    @State private var shareItems: [Any] = []
-    @State private var showShare = false
+    @State private var sharePayload: SharePayload?
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
     @State private var isFavorite = false
@@ -146,7 +145,7 @@ struct DocumentDetailView: View {
         }
         .onAppear { isFavorite = DocumentFavoritesStore.isFavorite(doc.id) }
         .quickLookPreview($previewURL)
-        .sheet(isPresented: $showShare) { ShareSheet(activityItems: shareItems) }
+        .sheet(item: $sharePayload) { ShareSheet(activityItems: $0.items) }
         .sheet(isPresented: $showEdit) {
             EditDocumentSheet(doc: live) { updated in Task { await documentService.update(updated) } }
         }
@@ -576,15 +575,15 @@ struct DocumentDetailView: View {
         GlassCard {
             VStack(spacing: 0) {
                 if let expiry = live.expiresDisplay {
-                    row("calendar", "Expires", expiry, color: live.isExpiringSoon ? .orange : Color.primary.opacity(0.55)); div
+                    row("calendar", "doc_expires", expiry, color: live.isExpiringSoon ? .orange : Color.primary.opacity(0.55)); div
                 }
                 if !live.sharedMemberIds.isEmpty {
-                    row("person.2.fill", "Shared with", "\(live.sharedMemberIds.count)"); div
+                    row("person.2.fill", "doc_shared_with", "\(live.sharedMemberIds.count)"); div
                 }
                 if let desc = live.description, !desc.isEmpty {
                     row("text.alignleft", "Notes", desc); div
                 }
-                row("clock", "Added", formattedCreated)
+                row("clock", "doc_added", formattedCreated)
                 if !live.tags.isEmpty {
                     div
                     HStack {
@@ -602,10 +601,24 @@ struct DocumentDetailView: View {
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                 }
                 div
+                // Edit sits between the metadata and the destructive action so
+                // it no longer overlaps the "Added" date in the top-right corner.
+                Button { HapticFeedback.selection(); showEdit = true } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "pencil").font(AppFont.scaled(13)).frame(width: 28)
+                        Text("doc_edit").font(AppFont.scaled(14))
+                        Spacer()
+                    }
+                    .foregroundStyle(live.isReadOnly ? Color.accentColor.opacity(AppOpacity.disabled) : Color.accentColor)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.plain)
+                .disabled(live.isReadOnly)
+                div
                 Button(role: .destructive) { HapticFeedback.warning(); showDeleteConfirm = true } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "trash").font(AppFont.scaled(13)).frame(width: 28)
-                        Text("Delete document").font(AppFont.scaled(14))
+                        Text("doc_delete_document").font(AppFont.scaled(14))
                         Spacer()
                     }
                     .foregroundStyle(live.isReadOnly ? Color.red.opacity(AppOpacity.disabled) : .red)
@@ -614,15 +627,6 @@ struct DocumentDetailView: View {
                 .buttonStyle(.plain)
                 .disabled(live.isReadOnly)
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            Button { showEdit = true } label: {
-                Text("Edit").font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(live.isReadOnly ? Color.accentColor.opacity(AppOpacity.disabled) : Color.accentColor)
-                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 6)
-            }
-            .padding(6)
-            .disabled(live.isReadOnly)
         }
     }
 
@@ -682,12 +686,15 @@ struct DocumentDetailView: View {
     private func share() {
         guard let url = URL(string: live.fileUrl) else { return }
         Task {
-            if let data = try? Data(contentsOf: url) {
+            // Materialize a real local file so the share sheet previews the
+            // document itself; only present once the payload exists (item-based
+            // sheet), so the very first tap is never a blank sheet.
+            if let data = try? Data(contentsOf: url), !data.isEmpty {
                 let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(live.fileName)
                 try? data.write(to: tmp)
-                await MainActor.run { shareItems = [tmp]; showShare = true }
+                await MainActor.run { sharePayload = SharePayload([tmp]) }
             } else {
-                await MainActor.run { shareItems = [url]; showShare = true }
+                await MainActor.run { sharePayload = SharePayload([url]) }
             }
         }
     }

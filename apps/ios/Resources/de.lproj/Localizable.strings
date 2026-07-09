@@ -39,6 +39,11 @@
 "Save" = "Speichern";
 "Delete" = "Löschen";
 "Edit" = "Bearbeiten";
+"doc_edit" = "Bearbeiten";
+"doc_delete_document" = "Dokument löschen";
+"doc_added" = "Hinzugefügt";
+"doc_expires" = "Läuft ab";
+"doc_shared_with" = "Geteilt mit";
 "Add" = "Hinzufügen";
 "Done" = "Fertig";
 "Close" = "Schließen";
