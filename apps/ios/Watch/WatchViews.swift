@@ -227,11 +227,88 @@ struct WatchRootView: View {
     }
 }
 
+// MARK: - Module grid (jump menu)
+//
+// A honeycomb-style launcher: every surface with something to show, as a
+// round tile. Tapping sets the pager's selection and closes — because only
+// live surfaces are listed, a tap can never strand the user on an empty page.
+
+private struct WatchModuleGrid: View {
+    let payload: WatchPayload
+    @Binding var selection: WatchPage
+    @Environment(\.dismiss) private var dismiss
+
+    private struct Module: Identifiable {
+        let page: WatchPage
+        let label: LocalizedStringKey
+        let icon: String
+        let tint: Color
+        var id: WatchPage { page }
+    }
+
+    private var modules: [Module] {
+        var m: [Module] = [
+            .init(page: .today,  label: "watch_menu_today",  icon: "house.fill",     tint: .blue),
+            .init(page: .tasks,  label: "watch_menu_tasks",  icon: "checklist",      tint: .blue),
+            .init(page: .plants, label: "watch_menu_plants", icon: "leaf.fill",      tint: .green),
+        ]
+        if payload.supplies.contains(where: { !$0.isCompleted }) {
+            m.append(.init(page: .shopping, label: "watch_menu_shopping", icon: "cart.fill", tint: .orange))
+        }
+        if !payload.pantry.isEmpty {
+            m.append(.init(page: .pantry, label: "watch_menu_pantry", icon: "cabinet.fill", tint: .brown))
+        }
+        if !payload.deliveries.isEmpty {
+            m.append(.init(page: .deliveries, label: "watch_menu_deliveries", icon: "shippingbox.fill", tint: .indigo))
+        }
+        if payload.latitude != nil, payload.longitude != nil {
+            m.append(.init(page: .map, label: "watch_menu_map", icon: "map.fill", tint: .teal))
+        }
+        return m
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                                    GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(modules) { module in
+                        Button {
+                            selection = module.page
+                            dismiss()
+                        } label: {
+                            VStack(spacing: 5) {
+                                Image(systemName: module.icon)
+                                    .font(.system(size: 19, weight: .semibold))
+                                    .foregroundStyle(module.tint)
+                                    .frame(width: 46, height: 46)
+                                    .background(module.tint.opacity(0.18), in: Circle())
+                                Text(module.label)
+                                    .font(.system(.caption2, design: .rounded))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            .navigationTitle(Text("watch_menu_title"))
+            .containerBackground(Color.blue.gradient.opacity(0.25), for: .navigation)
+        }
+    }
+}
+
 // MARK: - Page 1: Today (the dashboard)
 
 private struct TodayGlance: View {
     let payload: WatchPayload
     @Binding var selection: WatchPage
+    @State private var showMenu = false
 
     private var snapshot: PRVIOWidgetSnapshot { payload.snapshot }
 
@@ -307,6 +384,15 @@ private struct TodayGlance: View {
                     .accessibilityLabel(Text("watch_refresh"))
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // The module grid — jump straight to any surface instead of
+                    // paging the wheel. Only surfaces with something to show are
+                    // listed, so a tap always lands somewhere real.
+                    Button { showMenu = true } label: {
+                        Image(systemName: "square.grid.2x2.fill")
+                            .accessibilityLabel(Text("watch_menu_title"))
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     // Dictate a message for the house chat — the phone sends
                     // the real one through the same queue notification
                     // replies use.
@@ -317,6 +403,9 @@ private struct TodayGlance: View {
                         store.sendChatMessage(value)
                     }
                 }
+            }
+            .sheet(isPresented: $showMenu) {
+                WatchModuleGrid(payload: payload, selection: $selection)
             }
         }
     }
