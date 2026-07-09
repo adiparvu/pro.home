@@ -31,6 +31,37 @@ enum PushTokenService {
         }
     }
 
+    /// Ensures the device is registered for push once the user is signed in.
+    /// If permission was never asked (the common case — it used to live only
+    /// behind a Settings toggle, so most people never granted it and no APNs
+    /// token ever existed, which is why chat pushes never arrived), request it
+    /// now that the user is inside the app and the value is obvious. Then
+    /// register with APNs and flush any token captured before sign-in. Idempotent
+    /// and safe to call on every foreground/login.
+    static func ensureRegistered() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                    guard granted else { return }
+                    DispatchQueue.main.async {
+                        UIApplication.shared.registerForRemoteNotifications()
+                    }
+                }
+            case .authorized, .provisional:
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            default:
+                break // explicitly denied — respect it; the Settings page can re-prompt to system settings
+            }
+        }
+        // A token that landed before login is still sitting in UserDefaults —
+        // upload it now that there's a session to attach it to.
+        Task { await uploadPendingIfNeeded() }
+    }
+
     /// Called from AppDelegate once APNs hands us a token.
     static func handle(deviceToken: Data) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()

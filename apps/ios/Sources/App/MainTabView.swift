@@ -139,6 +139,10 @@ struct MainTabView: View {
         .environment(proactiveEngine)
         .task {
             WatchSyncService.shared.activate()
+            // Now that the user is signed in, make sure the device is registered
+            // for push (requests permission the first time) — without a device
+            // token the backend has nowhere to deliver chat notifications.
+            PushTokenService.ensureRegistered()
             await reloadWorld(reason: .coldStart)
             // Reminders checked off while the app was closed complete their
             // linked tasks now that the task list is loaded.
