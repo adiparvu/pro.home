@@ -13,13 +13,27 @@ struct AccountSwitcherSheet: View {
             List {
                 Section {
                     ForEach(store.accounts) { account in
+                        let isCurrent = account.userId == auth.session?.user.id.uuidString
                         AccountRow(
                             account: account,
-                            isCurrent: account.userId == auth.session?.user.id.uuidString,
+                            isCurrent: isCurrent,
                             isSwitching: isSwitching
                         ) {
-                            guard account.userId != auth.session?.user.id.uuidString else { return }
+                            guard !isCurrent else { return }
                             Task { await switchTo(account) }
+                        }
+                        // Any saved account except the one you're signed into can
+                        // be removed from the device here — a stale account (e.g.
+                        // one you logged out of on another build) shouldn't linger.
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            if !isCurrent {
+                                Button(role: .destructive) {
+                                    HapticFeedback.impact(.medium)
+                                    store.remove(userId: account.userId)
+                                } label: {
+                                    Label("Remove", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }

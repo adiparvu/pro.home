@@ -104,8 +104,14 @@ final class AuthService {
 
     func signOut() async throws {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
+        let signedOutUserId = session?.user.id.uuidString
         try await supabase.auth.signOut()
         session = nil
+        // Signing out of an account removes it from the quick-switch list — a
+        // logged-out account must not linger in the Accounts sheet. (Switching
+        // accounts goes through switchTo/setSession, not signOut, so this only
+        // fires on an explicit logout.)
+        if let signedOutUserId { AccountsStore.shared.remove(userId: signedOutUserId) }
         // The next account must never see this household's cached data.
         ServiceCache.clear()
         SignedStorage.clearCache()
