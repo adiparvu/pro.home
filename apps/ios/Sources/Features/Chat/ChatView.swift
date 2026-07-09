@@ -17,6 +17,7 @@ struct ChatView: View {
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(StickerService.self) private var stickerService
     @Environment(PresenceService.self) private var presenceService
+    @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
@@ -322,6 +323,11 @@ struct ChatView: View {
             await messageService.loadReactions(propertyId: pid)
             await messageService.markDelivered(propertyId: pid, delivererName: senderName)
             await messageService.markRead(propertyId: pid, readerName: senderName)
+            // Opening the group thread clears the chat notification rows + the
+            // springboard badge so the bell can't keep claiming read messages.
+            if let uid = supabase.auth.currentSession?.user.id {
+                await notificationService.markModuleRead("chat", userId: uid)
+            }
         }
         .task {
             guard let pid = propertyId else { return }

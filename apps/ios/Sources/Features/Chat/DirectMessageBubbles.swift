@@ -4,6 +4,79 @@ import PhotosUI
 import UIKit
 import Supabase
 
+// MARK: - DM rich attachments (encoded in the body — DMs have no attachment columns)
+//
+// Like contact shares (see ChatContactSharing), a 1:1 thread carries structured
+// attachments as a marker-prefixed body so the direct_messages table needs no
+// new columns. Each marker is a sentinel no ordinary message begins with,
+// followed by the payload; the bubble decodes and renders the rich variant, and
+// the offline outbox re-sends the body verbatim so a queued rich message is
+// never lost or corrupted. Poll is intentionally absent: voting lives in the
+// group-only `message_poll_votes` table, so a DM poll would be a dead control.
+enum DMRich {
+    case location(lat: Double, lon: Double)
+    case sticker(id: String)
+    case event(ChatEvent)
+    case file(name: String, path: String)
+
+    // A trailing "#" (or a leading glyph for the JSON kinds) keeps these from
+    // colliding with anything a person would actually type.
+    static let locationMarker = "📍#"
+    static let stickerMarker  = "🎟️"
+    static let eventMarker    = "🗓️"
+    static let fileMarker     = "📄#"
+
+    private struct FilePayload: Codable { let n: String; let p: String }
+
+    static func encodeLocation(lat: Double, lon: Double) -> String {
+        "\(locationMarker)\(lat),\(lon)"
+    }
+    static func encodeSticker(id: String) -> String { stickerMarker + id }
+    static func encodeEvent(_ event: ChatEvent) -> String? {
+        event.encoded().map { eventMarker + $0 }
+    }
+    static func encodeFile(name: String, path: String) -> String? {
+        (try? JSONEncoder().encode(FilePayload(n: name, p: path)))
+            .flatMap { String(data: $0, encoding: .utf8) }
+            .map { fileMarker + $0 }
+    }
+
+    static func decode(_ body: String) -> DMRich? {
+        if body.hasPrefix(locationMarker) {
+            let parts = body.dropFirst(locationMarker.count).split(separator: ",")
+            guard parts.count == 2,
+                  let lat = Double(parts[0]), let lon = Double(parts[1]) else { return nil }
+            return .location(lat: lat, lon: lon)
+        }
+        if body.hasPrefix(stickerMarker) {
+            let id = String(body.dropFirst(stickerMarker.count))
+            return id.isEmpty ? nil : .sticker(id: id)
+        }
+        if body.hasPrefix(eventMarker) {
+            guard let event = ChatEvent.decode(String(body.dropFirst(eventMarker.count))) else { return nil }
+            return .event(event)
+        }
+        if body.hasPrefix(fileMarker) {
+            guard let data = String(body.dropFirst(fileMarker.count)).data(using: .utf8),
+                  let payload = try? JSONDecoder().decode(FilePayload.self, from: data) else { return nil }
+            return .file(name: payload.n, path: payload.p)
+        }
+        return nil
+    }
+
+    /// A faithful one-line preview for lists, pins and reply banners — never the
+    /// raw marker/JSON. Returns nil when the body isn't a rich attachment.
+    static func snippet(for body: String) -> String? {
+        switch decode(body) {
+        case .location: return String(localized: "convo_prev_location")
+        case .sticker:  return String(localized: "convo_prev_sticker")
+        case .event:    return String(localized: "convo_prev_event")
+        case .file:     return String(localized: "convo_prev_file")
+        case .none:     return nil
+        }
+    }
+}
+
 // MARK: - DM Bubble
 
 struct DMBubble: View {
@@ -35,6 +108,7 @@ struct DMBubble: View {
     @State private var showDetails = false
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
+    @State private var fileItem: FilePreviewItem? = nil
 
     private var reactionCounts: [String: Int] {
         var out: [String: Int] = [:]
@@ -64,10 +138,21 @@ struct DMBubble: View {
         .accessibilityLabel("Forward")
     }
 
-    private enum DMMessageType { case text, image, audio, video, contacts, deleted }
+    private enum DMMessageType { case text, image, audio, video, contacts, location, sticker, event, file, deleted }
 
     private var messageType: DMMessageType {
         if message.deletedForAll == true { return .deleted }
+        // Rich attachments (marker-encoded in the body) win over media/text
+        // classification so a shared location/sticker/event/file renders as
+        // itself rather than as raw text.
+        if let rich = DMRich.decode(message.body) {
+            switch rich {
+            case .location: return .location
+            case .sticker:  return .sticker
+            case .event:    return .event
+            case .file:     return .file
+            }
+        }
         if message.isContactShare { return .contacts }
         switch ChatMedia.dmBodyKind(message.body) {
         case .audio: return .audio
@@ -117,6 +202,29 @@ struct DMBubble: View {
                                           isOwn: isOwn,
                                           bubbleColor: outgoingColor ?? Color.accentColor,
                                           hasTail: hasTail, members: members)
+                    case .location:
+                        if case .location(let lat, let lon) = DMRich.decode(message.body) {
+                            LocationBubble(lat: lat, lon: lon, isOwn: isOwn,
+                                           label: message.senderName, hasTail: hasTail,
+                                           senderId: message.senderId, sentAt: message.createdAt)
+                        }
+                    case .sticker:
+                        if case .sticker(let id) = DMRich.decode(message.body) {
+                            StickerBubble(stickerId: id)
+                        }
+                    case .event:
+                        if case .event(let event) = DMRich.decode(message.body) {
+                            EventBubble(event: event, isOwn: isOwn,
+                                        bubbleColor: outgoingColor ?? Color.accentColor)
+                        }
+                    case .file:
+                        if case .file(let name, let path) = DMRich.decode(message.body) {
+                            ChatFileBubble(stored: path, name: name, isOwn: isOwn,
+                                           ownBubbleColor: outgoingColor ?? Color.accentColor,
+                                           hasTail: hasTail) { url, filename in
+                                fileItem = FilePreviewItem(url: url, name: filename)
+                            }
+                        }
                     case .text:  textBubble
                     }
                 }
@@ -175,6 +283,9 @@ struct DMBubble: View {
         }
         .fullScreenCover(item: $videoItem) { item in
             VideoPlayerSheet(url: item.url)
+        }
+        .sheet(item: $fileItem) { item in
+            FilePreviewSheet(url: item.url, filename: item.name)
         }
     }
 
@@ -260,6 +371,8 @@ struct DMBubble: View {
     private func quotedReply(_ replied: DirectMessage) -> some View {
         let preview: String = {
             if replied.deletedForAll == true { return "This message was deleted" }
+            if let rich = DMRich.snippet(for: replied.body) { return rich }
+            if replied.isContactShare { return String(localized: "convo_prev_contact") }
             switch ChatMedia.dmBodyKind(replied.body) {
             case .audio: return String(localized: "dm_prev_audio")
             case .image: return String(localized: "dm_prev_photo")

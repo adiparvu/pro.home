@@ -555,7 +555,15 @@ struct LocationShareSheet: View {
                 pendingLiveDuration = nil
             }
         } message: {
-            Text("People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time.")
+            // Honesty: only promise background sharing when the OS has actually
+            // granted Always authorization; otherwise state it shares while the
+            // app is open. (A ternary of string literals resolves to `String`,
+            // which picks Text's non-localized initializer — bind the key to
+            // `LocalizedStringKey` first so it stays localizable.)
+            let consentKey: LocalizedStringKey = live.canShareInBackground
+                ? "live_share_consent_always"
+                : "live_share_consent_foreground"
+            Text(consentKey)
         }
     }
 

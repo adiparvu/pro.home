@@ -58,6 +58,12 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
 
     private var uid: UUID? { supabase.auth.currentSession?.user.id }
 
+    /// Whether the OS currently permits location delivery with the app closed.
+    /// Only `authorizedAlways` allows background updates (see
+    /// `configureBackgroundUpdates`), so consent copy must gate any
+    /// "even when closed" promise on this — never over-claim.
+    var canShareInBackground: Bool { mgr.authorizationStatus == .authorizedAlways }
+
     override init() {
         super.init()
         mgr.delegate = self

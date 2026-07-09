@@ -15,6 +15,8 @@ struct DirectMessageView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
     @Environment(PresenceService.self) private var presenceService
+    @Environment(StickerService.self) private var stickerService
+    @Environment(NotificationService.self) private var notificationService
 
     @State private var replyingTo: DirectMessage? = nil
     @State private var forwarding: DirectMessage? = nil
@@ -71,6 +73,10 @@ struct DirectMessageView: View {
     @State private var showAttachmentSheet = false
     @State private var showContactPicker = false
     @State private var showSendLater = false
+    @State private var showLocationSheet = false
+    @State private var showFileImporter = false
+    @State private var showStickerPicker = false
+    @State private var showEventComposer = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
     @State private var showProfile = false
@@ -262,8 +268,12 @@ struct DirectMessageView: View {
                     isPresented: $showAttachmentSheet,
                 onPhotos: { showPhotoPicker = true },
                 onCamera: { showCameraPicker = true },
+                onLocation: { showLocationSheet = true },
+                onDocument: { showFileImporter = true },
                 onContact: { showContactPicker = true },
-                onSendLater: { showSendLater = true }
+                onEvent: { showEventComposer = true },
+                onSendLater: { showSendLater = true },
+                onStickers: { showStickerPicker = true }
             )
                 .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
             }
@@ -284,6 +294,35 @@ struct DirectMessageView: View {
                 Task { await sendDMContacts(payloads) }
             }
         }
+        .sheet(isPresented: $showLocationSheet) {
+            LocationShareSheet(propertyId: propertyService.primary?.id, myName: myName) { lat, lon in
+                Task { await sendDMLocation(lat: lat, lon: lon) }
+            }
+        }
+        .sheet(isPresented: $showStickerPicker) {
+            StickerPicker(onSelect: { sticker in
+                Task { await sendDMSticker(sticker) }
+            }, onMemoji: { image in
+                Task { await sendCameraImage(image) }
+            })
+            .environment(stickerService)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showEventComposer) {
+            EventComposerView { title, details, date, location in
+                Task { await sendDMEvent(title: title, details: details, date: date, location: location) }
+            }
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.pdf, .image, .data],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                Task { await sendDMFile(url: url) }
+            }
+        }
         .fullScreenCover(isPresented: $showCameraPicker) {
             DMCameraPickerView(isPresented: $showCameraPicker) { img in
                 Task { @MainActor in await sendCameraImage(img) }
@@ -295,6 +334,15 @@ struct DirectMessageView: View {
         // conversation list's teardown must never leave an open thread silent.
         // subscribeRealtime is idempotent, so this is a no-op when already live.
         .task { await MemberDirectory.shared.loadIfNeeded() }
+        .task {
+            // Keep any live-location bubble in this thread following the sharer
+            // while it's open — mirrors the group chat's refresh loop.
+            guard let pid = propertyService.primary?.id else { return }
+            while !Task.isCancelled {
+                await LiveLocationService.shared.load(propertyId: pid)
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+            }
+        }
         .task {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
@@ -311,6 +359,11 @@ struct DirectMessageView: View {
             resolveUnreadDivider()
             directMessageService.markRead(member: member)
             Task { await directMessageService.markReadRemote(member: member, myName: myName) }
+            // Opening the thread clears the chat notification rows + the icon
+            // badge so the bell can't keep claiming messages now read.
+            if let uid = supabase.auth.currentSession?.user.id {
+                Task { await notificationService.markModuleRead("chat", userId: uid) }
+            }
             Task { await flushOutbox() }
             if let pid = propertyService.primary?.id {
                 Task { await presenceService.load(propertyId: pid) }
@@ -460,6 +513,7 @@ struct DirectMessageView: View {
     }
 
     private func dmSnippet(_ m: DirectMessage) -> String {
+        if let rich = DMRich.snippet(for: m.body) { return rich }
         if m.isContactShare { return "👤 Contact" }
         switch ChatMedia.dmBodyKind(m.body) {
         case .audio: return String(localized: "dm_prev_audio")
@@ -494,7 +548,10 @@ struct DirectMessageView: View {
         if m.deletedForAll == true {
             return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
         }
-        let isMedia = ChatMedia.dmBodyKind(m.body) != .text
+        // Structured bodies (media, contact card, or a marker-encoded
+        // location/sticker/event/file) must not be editable as raw text.
+        let isStructured = ChatMedia.dmBodyKind(m.body) != .text
+            || m.isContactShare || DMRich.decode(m.body) != nil
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
@@ -502,7 +559,7 @@ struct DirectMessageView: View {
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } }
         ]
-        if own, m.deletedForAll != true, !isMedia {
+        if own, m.deletedForAll != true, !isStructured {
             items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body })
         }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
@@ -1151,6 +1208,54 @@ struct DirectMessageView: View {
         MessageSounds.sent()
         let body = formatted.hasPrefix(SharedContactPayload.dmMarker) ? formatted : "👤 \(formatted)"
         if await performDMSend(body: body, kind: .contact) { HapticFeedback.success() }
+    }
+
+    // MARK: Rich attachments (marker-encoded in the body — parity with group chat)
+
+    @MainActor
+    private func sendDMLocation(lat: Double, lon: Double) async {
+        MessageSounds.sent()
+        if await performDMSend(body: DMRich.encodeLocation(lat: lat, lon: lon), kind: .location) {
+            HapticFeedback.success()
+        }
+    }
+
+    @MainActor
+    private func sendDMSticker(_ sticker: Sticker) async {
+        MessageSounds.sent()
+        if await performDMSend(body: DMRich.encodeSticker(id: sticker.id), kind: .sticker) {
+            HapticFeedback.success()
+        }
+    }
+
+    @MainActor
+    private func sendDMEvent(title: String, details: String, date: Date, location: String) async {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        let event = ChatEvent(t: title, d: details.isEmpty ? nil : details,
+                              date: f.string(from: date), loc: location.isEmpty ? nil : location)
+        guard let body = DMRich.encodeEvent(event) else { return }
+        MessageSounds.sent()
+        if await performDMSend(body: body, kind: .event) { HapticFeedback.success() }
+    }
+
+    @MainActor
+    private func sendDMFile(url: URL) async {
+        guard let propId = propertyService.primary?.id else { return }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else { return }
+        MessageSounds.sent()
+        let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
+        let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
+        let filename = url.lastPathComponent
+        // Private bucket + signed URL at preview (via ChatMedia), mirroring the
+        // group file path; the stored path rides inside the marker-encoded body.
+        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-files",
+                                                ext: ext, contentType: mime) else {
+            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
+        }
+        guard let body = DMRich.encodeFile(name: filename, path: path) else { return }
+        if await performDMSend(body: body, kind: .file) { HapticFeedback.impact(.light) }
     }
 
     @MainActor

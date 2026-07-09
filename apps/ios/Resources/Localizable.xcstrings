@@ -64617,6 +64617,54 @@
           }
         }
       }
+    },
+    "live_share_consent_always": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persoanele din această conversație îți vor vedea locația în timp real pe perioada selectată, chiar și când nu folosești aplicația. Poți opri distribuirea oricând."
+          }
+        }
+      }
+    },
+    "live_share_consent_foreground": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People in this conversation will see your live location for the selected period while the app is open. You can stop sharing at any time."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persoanele din această conversație îți vor vedea locația în timp real pe perioada selectată cât timp aplicația este deschisă. Poți opri distribuirea oricând."
+          }
+        }
+      }
+    },
+    "chat_offline_waiting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for network…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectare…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

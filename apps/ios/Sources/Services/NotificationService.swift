@@ -1,6 +1,7 @@
 import SwiftUI
 import Observation
 import Supabase
+import UIKit
 
 // MARK: - Model
 
@@ -216,6 +217,53 @@ final class NotificationService {
             notifications = snapshot
             self.error = error.localizedDescription
         }
+    }
+
+    /// Marks every unread notification for one module read — called when the
+    /// user opens that module's surface (e.g. a chat thread), so the in-app bell
+    /// and the springboard badge stop claiming items the user is now looking at.
+    /// Any rows already loaded flip optimistically; the server is always updated;
+    /// then the icon badge is reconciled to the TRUE remaining unread count.
+    func markModuleRead(_ module: String, userId: UUID) async {
+        for i in notifications.indices
+        where notifications[i].module == module && notifications[i].isUnread {
+            notifications[i].status = "read"
+        }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .eq("user_id", value: userId.uuidString)
+                .eq("module", value: module)
+                .eq("status", value: "unread")
+                .execute()
+        } catch {
+            // Leave the optimistic flip; a later load() reconciles. (Matches the
+            // rest of this type: local stays authoritative, the server catches up.)
+            self.error = error.localizedDescription
+        }
+        await reconcileBadge(userId: userId)
+    }
+
+    /// Sets the springboard icon badge to the real number of unread
+    /// notifications on the server — never a blind 0. If the count can't be
+    /// confirmed (offline), it falls back to the best local truth rather than
+    /// fabricating a value.
+    func reconcileBadge(userId: UUID) async {
+        struct IDRow: Decodable { let id: UUID }
+        let remaining: Int
+        if let rows: [IDRow] = try? await supabase
+            .from("notifications")
+            .select("id")
+            .eq("user_id", value: userId.uuidString)
+            .eq("status", value: "unread")
+            .execute()
+            .value {
+            remaining = rows.count
+        } else {
+            remaining = unreadCount
+        }
+        try? await UIApplication.shared.setBadgeCount(remaining)
     }
 
     func dismiss(_ notification: AppNotification) async {

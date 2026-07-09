@@ -15,6 +15,13 @@ struct ConversationsView: View {
     @Environment(AppSettings.self) private var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Reachability only — drives the "waiting for network" banner. The chat
+    /// surfaces own the actual send/retry queues; this instance is observed
+    /// solely for `isOnline` (its own filename keeps it from loading either
+    /// send queue).
+    @State private var outbox = OfflineOutbox(filename: "chat_reachability.json")
 
     @State private var showAddMember = false
     @State private var showNewConversation = false
@@ -274,12 +281,17 @@ struct ConversationsView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 16) {
                 headerBar
+                if !outbox.isOnline {
+                    offlineBanner
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 if sortedConversations.isEmpty {
                     emptyState
                 } else {
                     conversationList
                 }
             }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: outbox.isOnline)
         }
         .toolbar(.hidden, for: .navigationBar)
         .task { await MemberDirectory.shared.loadIfNeeded() }
@@ -892,6 +904,30 @@ struct ConversationsView: View {
         ChatView()
     }
 
+    // MARK: - Offline banner
+    //
+    // Unobtrusive, glassy, and honest: it reflects the OS reachability state
+    // (OfflineOutbox.isOnline) and simply informs — the send/retry queues on the
+    // chat surfaces do the actual recovery. Reduce Motion removes its animation.
+    private var offlineBanner: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "wifi.slash")
+                .font(AppFont.caption)
+            Text("chat_offline_waiting")
+                .font(AppFont.footnote)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
+        .padding(.horizontal, AppSpacing.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("chat_offline_waiting"))
+    }
+
     // MARK: - Empty state
 
     private var emptyState: some View {
@@ -960,6 +996,7 @@ struct ConversationsView: View {
             let preview: String = {
                 if last.deletedForAll == true { return String(localized: "convo_prev_deleted") }
                 let prefix = last.isMine(myUserId: directMessageService.myUserId, myName: myName) ? String(localized: "convo_prev_you") : ""
+                if let rich = DMRich.snippet(for: last.body) { return prefix + rich }
                 if last.isContactShare { return prefix + String(localized: "convo_prev_contact") }
                 switch ChatMedia.dmBodyKind(last.body) {
                 case .audio: return prefix + String(localized: "convo_prev_audio")

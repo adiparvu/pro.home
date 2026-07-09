@@ -115,6 +115,7 @@ struct MainTabView: View {
         .environment(financialService)
         .environment(documentService)
         .environment(notificationScheduler)
+        .environment(notificationService)
         .environment(budgetService)
         .environment(familyService)
         .environment(messageService)
@@ -572,8 +573,17 @@ struct MainTabView: View {
             if let propId = propertyService.primary?.id {
                 let name = profileService.profile?.preferredName
                     ?? profileService.profile?.fullName ?? ""
-                Task { try? await messageService.send(propertyId: propId,
-                                                      senderName: name, body: reply) }
+                Task {
+                    do {
+                        try await messageService.send(propertyId: propId,
+                                                      senderName: name, body: reply)
+                    } catch {
+                        // Never lose a notification quick-reply to a silent drop:
+                        // requeue it so the next foreground beat retries, instead
+                        // of the `try?` swallow the send pipeline removed elsewhere.
+                        SharedDataStore.appendPendingChatReply(reply)
+                    }
+                }
             }
         }
         let watchTaskTitles = SharedDataStore.popPendingWatchTasks()
