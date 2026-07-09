@@ -3,6 +3,16 @@ import SwiftUI
 struct AuditLogView: View {
     @State private var events: [AuditLogService.AuditEvent] = []
     @State private var showClearConfirm = false
+    @State private var searchText = ""
+
+    private var filteredEvents: [AuditLogService.AuditEvent] {
+        guard !searchText.isEmpty else { return events }
+        return events.filter {
+            $0.description.matchesSearch(searchText)
+                || $0.type.matchesSearch(searchText)
+                || $0.deviceName.matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -22,6 +32,9 @@ struct AuditLogView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Jurnal activitate")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !events.isEmpty {
@@ -53,7 +66,7 @@ struct AuditLogView: View {
         formatter.timeStyle = .none
         var dict: [(String, [AuditLogService.AuditEvent])] = []
         var seen: [String: Int] = [:]
-        for event in events {
+        for event in filteredEvents {
             let key = formatter.string(from: event.timestamp)
             if let idx = seen[key] {
                 dict[idx].1.append(event)

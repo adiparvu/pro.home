@@ -24,15 +24,22 @@ struct PRVIOTimelineView: View {
     }
 
     @State private var filter: TimeFilter = .today
+    @State private var searchText = ""
 
     private var filteredEvents: [TimelineEvent] {
         let all = buildEvents()
-        guard let interval = filter.interval else {
+        let timed: [TimelineEvent]
+        if let interval = filter.interval {
+            let cutoff = Date().addingTimeInterval(-interval)
+            timed = all.filter { $0.date >= cutoff }
+        } else {
             // "Today" → events from today only
-            return all.filter { Calendar.current.isDateInToday($0.date) || $0.date > Date() }
+            timed = all.filter { Calendar.current.isDateInToday($0.date) || $0.date > Date() }
         }
-        let cutoff = Date().addingTimeInterval(-interval)
-        return all.filter { $0.date >= cutoff }
+        guard !searchText.isEmpty else { return timed }
+        return timed.filter {
+            $0.title.matchesSearch(searchText) || $0.subtitle.matchesSearch(searchText)
+        }
     }
 
     private var groupedEvents: [(String, [TimelineEvent])] {
@@ -97,6 +104,9 @@ struct PRVIOTimelineView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredEvents.count)")

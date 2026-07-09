@@ -7,8 +7,18 @@ struct BuriedUtilitiesView: View {
     var service: BlueprintService
     @State private var showAdd = false
     @State private var detailItem: BuriedUtility?
+    @State private var searchText = ""
 
     private var mapped: [BuriedUtility] { service.utilities.filter { $0.hasLocation } }
+
+    private var filteredUtilities: [BuriedUtility] {
+        guard !searchText.isEmpty else { return service.utilities }
+        return service.utilities.filter {
+            $0.name.matchesSearch(searchText)
+                || $0.typeLabel.matchesSearch(searchText)
+                || $0.notes.matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -23,7 +33,7 @@ struct BuriedUtilitiesView: View {
                             emptyState
                         } else {
                             legend
-                            ForEach(service.utilities) { u in
+                            ForEach(filteredUtilities) { u in
                                 BuriedUtilityRow(utility: u, photo: service.utilityPhoto(u))
                                     .onTapGesture { detailItem = u }
                                     .swipeActions(edge: .trailing) {
@@ -42,6 +52,9 @@ struct BuriedUtilitiesView: View {
         }
         .navigationTitle("Underground")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
