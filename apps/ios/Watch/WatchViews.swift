@@ -2,6 +2,11 @@ import SwiftUI
 import MapKit
 
 // MARK: - Pages
+//
+// Watch V12 complete: the wrist now spans glance + list catalogs (today,
+// tasks, plants, shopping, pantry, deliveries, map), smart control (relays +
+// covers), a live sensor glance, and an Emergency SOS page — all gated on the
+// data actually existing so no page ever promises something the home can't do.
 
 enum WatchPage: Hashable {
     case today, tasks, plants, shopping, pantry, deliveries, map
