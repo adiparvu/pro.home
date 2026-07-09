@@ -250,7 +250,13 @@ private struct PantryItemSheet: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(PantryCategory.all, id: \.id) { cat in
-                                    categoryChip(cat)
+                                    let selected = category == cat.id
+                                    GlassFilterChip(label: cat.label,
+                                                    systemImage: selected ? "checkmark" : cat.icon,
+                                                    isSelected: selected) {
+                                        HapticFeedback.selection()
+                                        withAnimation(.snappy(duration: 0.2)) { category = cat.id }
+                                    }
                                 }
                             }
                         }
@@ -366,29 +372,6 @@ private struct PantryItemSheet: View {
                     Image(systemName: "checkmark").font(AppFont.scaled(11, weight: .bold))
                 }
                 Text(label).font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
-            .background(
-                Capsule().strokeBorder(
-                    selected ? Color.primary.opacity(0.35) : Color.primary.opacity(AppOpacity.subtleFill),
-                    lineWidth: selected ? 1.2 : 0.7)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func categoryChip(_ cat: (id: String, label: String, icon: String)) -> some View {
-        let selected = category == cat.id
-        return Button {
-            HapticFeedback.selection()
-            withAnimation(.snappy(duration: 0.2)) { category = cat.id }
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: selected ? "checkmark" : cat.icon)
-                    .font(AppFont.scaled(11, weight: selected ? .bold : .regular))
-                Text(verbatim: cat.label)
-                    .font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
             }
             .foregroundStyle(.primary)
             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)

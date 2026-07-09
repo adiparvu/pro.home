@@ -290,54 +290,47 @@ struct DocumentsView: View {
         let favCount = documentService.documents.filter { favs.contains($0.id.uuidString) }.count
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
-                chip(nil, label: docCategoryName("All"), icon: "square.grid.2x2.fill",
-                     count: documentService.documents.count)
+                GlassFilterChip(label: docCategoryName("All"),
+                                systemImage: "square.grid.2x2.fill",
+                                count: documentService.documents.count,
+                                isSelected: selectedCategory == nil) {
+                    HapticFeedback.selection()
+                    withAnimation(.snappy(duration: 0.25)) { selectedCategory = nil }
+                }
                 if expiringCount > 0 {
-                    chip("Expiring", label: String(localized: "doc_filter_expiring"),
-                         icon: "exclamationmark.triangle.fill", count: expiringCount)
+                    GlassFilterChip(label: String(localized: "doc_filter_expiring"),
+                                    systemImage: "exclamationmark.triangle.fill",
+                                    count: expiringCount,
+                                    isSelected: selectedCategory == "Expiring") {
+                        HapticFeedback.selection()
+                        withAnimation(.snappy(duration: 0.25)) { selectedCategory = "Expiring" }
+                    }
                 }
                 if favCount > 0 {
-                    chip("Favorite", label: docCategoryName("Favorite"),
-                         icon: "star.fill", count: favCount)
+                    GlassFilterChip(label: docCategoryName("Favorite"),
+                                    systemImage: "star.fill",
+                                    count: favCount,
+                                    isSelected: selectedCategory == "Favorite") {
+                        HapticFeedback.selection()
+                        withAnimation(.snappy(duration: 0.25)) { selectedCategory = "Favorite" }
+                    }
                 }
                 // Only categories that actually contain documents.
                 ForEach(categories.dropFirst(2), id: \.self) { cat in
                     if let count = counts[cat], count > 0 {
-                        chip(cat, label: docCategoryName(cat),
-                             icon: categoryIcon(for: cat), count: count)
+                        GlassFilterChip(label: docCategoryName(cat),
+                                        systemImage: categoryIcon(for: cat),
+                                        count: count,
+                                        isSelected: selectedCategory == cat) {
+                            HapticFeedback.selection()
+                            withAnimation(.snappy(duration: 0.25)) { selectedCategory = cat }
+                        }
                     }
                 }
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.vertical, AppSpacing.sm)
         }
-    }
-
-    private func chip(_ value: String?, label: String, icon: String, count: Int) -> some View {
-        let isOn = selectedCategory == value
-        return Button {
-            HapticFeedback.selection()
-            withAnimation(.snappy(duration: 0.25)) { selectedCategory = value }
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(AppFont.caption)
-                Text(label)
-                    .font(AppFont.captionEmphasis)
-                Text("\(count)")
-                    .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(isOn ? 0.6 : 0.35))
-                    .monospacedDigit()
-            }
-            .foregroundStyle(isOn ? Color.primary : Color.secondary)
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, 7)
-            .background(isOn ? Color.accentColor.opacity(0.18) : Color.subtleFill, in: Capsule())
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: label))
-        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Sort menu

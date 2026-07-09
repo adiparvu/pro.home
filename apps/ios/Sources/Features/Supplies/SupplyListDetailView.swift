@@ -75,40 +75,25 @@ struct SupplyListDetailView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Spacer(minLength: 20)
-                chip(label: "All", id: nil)
+                GlassFilterChip(label: String(localized: "All"),
+                                isSelected: selectedCategory == nil) {
+                    withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = nil }
+                    HapticFeedback.selection()
+                }
                 ForEach(supplyCategories, id: \.id) { cat in
                     let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
                     if count > 0 || selectedCategory == cat.id {
-                        chip(label: cat.label, id: cat.id, count: count)
+                        GlassFilterChip(label: String(localized: String.LocalizationValue(cat.label)),
+                                        count: count,
+                                        isSelected: selectedCategory == cat.id) {
+                            withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = cat.id }
+                            HapticFeedback.selection()
+                        }
                     }
                 }
                 Spacer(minLength: 20)
             }
         }
-    }
-
-    private func chip(label: String, id: String?, count: Int = 0) -> some View {
-        let isSelected = selectedCategory == id
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = id }
-            HapticFeedback.selection()
-        } label: {
-            HStack(spacing: 5) {
-                Text(LocalizedStringKey(label))
-                    .font(AppFont.scaled(12, weight: isSelected ? .semibold : .regular))
-                if count > 0 && !isSelected {
-                    Text("\(count)")
-                        .font(AppFont.scaled(10, weight: .semibold))
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(Color.primary.opacity(0.12), in: Capsule())
-                }
-            }
-            .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
-            .background(isSelected ? list.swiftColor : Color.primary.opacity(0.08), in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 
     // MARK: Items scroll
