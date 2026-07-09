@@ -616,7 +616,7 @@ struct SettingsView: View {
                 }
                 if allowedApp(.liveActivities) {
                     NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
-                        LiveActivitySettingsView()
+                        LiveActivitiesHubView()
                     }
                 }
                 if allowedApp(.floatingButtons) {

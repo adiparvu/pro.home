@@ -1,5 +1,6 @@
 import SwiftUI
 import ActivityKit
+import UserNotifications
 
 // MARK: - Live Activity preferences
 //
@@ -296,6 +297,8 @@ struct LiveActivityKindDetailView: View {
     @AppStorage private var showETA: Bool
     @AppStorage private var showProperty: Bool
     @AppStorage private var islandStyle: String
+    @AppStorage private var priority: String
+    @AppStorage private var notifyEnd: Bool
 
     @State private var isActive = false
     @State private var showEndConfirm = false
@@ -312,6 +315,8 @@ struct LiveActivityKindDetailView: View {
         _showETA       = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.showETAKey, k), store: store)
         _showProperty  = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.showPropertyKey, k), store: store)
         _islandStyle   = AppStorage(wrappedValue: DynamicIslandStyle.detailed.rawValue, LiveActivityPrefs.scopedKey(LiveActivityPrefs.islandStyleKey, k), store: store)
+        _priority      = AppStorage(wrappedValue: "normal", LiveActivityPrefs.priorityKey(k), store: store)
+        _notifyEnd     = AppStorage(wrappedValue: false, LiveActivityPrefs.notifyEndKey(k), store: store)
     }
 
     private var islandStyleValue: DynamicIslandStyle {
@@ -413,6 +418,43 @@ struct LiveActivityKindDetailView: View {
                     }
                 }
 
+                // Hub priority — orders this kind within the hub and decides
+                // whether its optional end notification carries a sound. It
+                // deliberately claims nothing about how iOS itself presents
+                // the activity.
+                Text("la_hub_priority")
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Picker("", selection: $priority) {
+                        Text("la_hub_priority_critical").tag("critical")
+                        Text("la_hub_priority_high").tag("high")
+                        Text("la_hub_priority_normal").tag("normal")
+                        Text("la_hub_priority_silent").tag("silent")
+                    }
+                    .pickerStyle(.segmented)
+                    Text("la_hub_priority_caption")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(AppSpacing.lg)
+                .liquidGlass(cornerRadius: AppRadius.lg)
+
+                // Rules — real behaviour: the hub store posts a local
+                // notification when this kind's activity ends or completes.
+                Text("la_hub_rules")
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
+                group {
+                    LAToggleRow(icon: "bell.badge.fill", color: kind.color,
+                                title: "la_hub_rule_notify_end",
+                                subtitle: "la_hub_rule_notify_end_caption",
+                                isOn: $notifyEnd)
+                }
+
                 Spacer(minLength: 80)
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -429,6 +471,17 @@ struct LiveActivityKindDetailView: View {
         }
         .onChange(of: appearanceToken) { _, _ in
             LiveActivityService.shared.refreshAppearance()
+        }
+        .onChange(of: priority) { _, _ in
+            HapticFeedback.selection()
+        }
+        .onChange(of: notifyEnd) { _, on in
+            HapticFeedback.selection()
+            // Make the rule real: without permission the end notification
+            // could never appear, so ask the moment it's switched on.
+            guard on else { return }
+            UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound]) { _, _ in }
         }
         .confirmationDialog("End this Live Activity?", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("End now", role: .destructive) {
@@ -495,8 +548,11 @@ struct LiveActivityKindDetailView: View {
 }
 
 // MARK: - Toggle row
+//
+// Internal (not private): the Live Activities Hub reuses this exact row for
+// its preserved master toggles and per-kind rules.
 
-private struct LAToggleRow: View {
+struct LAToggleRow: View {
     let icon: String
     let color: Color
     let title: LocalizedStringKey

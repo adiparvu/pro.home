@@ -91,6 +91,18 @@ enum LiveActivityPrefs {
             ?? UserDefaults.standard.string(forKey: scopedKey(islandStyleKey, k))
         return DynamicIslandStyle(rawValue: raw ?? "") ?? islandStyle
     }
+
+    // MARK: - Hub: per-kind priority + rules
+    //
+    // Read by the Live Activities Hub (ordering, end-notification rule) and
+    // written from the kind detail screen. Priority never claims to change
+    // how iOS presents the activity — it orders the hub and decides whether
+    // the optional end notification carries a sound.
+
+    /// Values: critical | high | normal | silent (default normal).
+    static func priorityKey(_ kind: String) -> String { "prvio.la.priority.\(kind)" }
+    /// Rule: post a local notification when this kind's activity ends.
+    static func notifyEndKey(_ kind: String) -> String { "prvio.la.rule.notifyEnd.\(kind)" }
 }
 
 enum DynamicIslandStyle: String, CaseIterable, Identifiable {

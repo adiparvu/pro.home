@@ -56,10 +56,12 @@ final class LiveActivityService {
             if bought >= total {
                 Task { await activity.end(.init(state: state, staleDate: nil),
                                           dismissalPolicy: .after(Date().addingTimeInterval(5))) }
+                LiveActivityHubStore.record(kind: .shopping, phase: "completed", title: listName)
                 shoppingActivity = nil
             } else if activity.attributes.listName != listName {
                 // Switched lists — restart for the new one.
                 Task { await activity.end(nil, dismissalPolicy: .immediate) }
+                LiveActivityHubStore.record(kind: .shopping, phase: "ended", title: activity.attributes.listName)
                 shoppingActivity = nil
                 startShopping(listName: listName, state: state)
             } else {
@@ -75,6 +77,7 @@ final class LiveActivityService {
         let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
         shoppingActivity = try? Activity.request(
             attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
+        if shoppingActivity != nil { LiveActivityHubStore.record(kind: .shopping, phase: "started", title: listName) }
     }
 
     // MARK: - Work session (user-initiated, from a task row or the watch)
@@ -94,9 +97,11 @@ final class LiveActivityService {
             attributes: attrs,
             content: .init(state: .init(isComplete: false), staleDate: stale(hours: 12)),
             pushType: nil)
+        if workSessionActivity != nil { LiveActivityHubStore.record(kind: .workSession, phase: "started", title: title) }
     }
 
     func endWorkSession(completed: Bool) {
+        if let t = (workSessionActivity ?? Activity<WorkSessionActivityAttributes>.activities.first)?.attributes.taskTitle { LiveActivityHubStore.record(kind: .workSession, phase: completed ? "completed" : "ended", title: t) }
         workSessionActivity = nil
         Task {
             for activity in Activity<WorkSessionActivityAttributes>.activities {
@@ -122,6 +127,7 @@ final class LiveActivityService {
             progress: 0, stepDescription: step ?? String(localized: "In progress"), isComplete: false)
         maintenanceActivity = try? Activity.request(
             attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
+        if maintenanceActivity != nil { LiveActivityHubStore.record(kind: .maintenance, phase: "started", title: taskTitle) }
     }
 
     func updateMaintenance(progress: Double, step: String) {
@@ -136,6 +142,7 @@ final class LiveActivityService {
             maintenanceActivity = Activity<MaintenanceActivityAttributes>.activities.first
         }
         guard let activity = maintenanceActivity, activity.attributes.taskTitle == taskTitle else { return }
+        LiveActivityHubStore.record(kind: .maintenance, phase: "completed", title: taskTitle)
         let state = MaintenanceActivityAttributes.ContentState(
             progress: 1.0, stepDescription: String(localized: "Done!"), isComplete: true)
         Task { await activity.end(.init(state: state, staleDate: nil),
@@ -192,6 +199,7 @@ final class LiveActivityService {
             } else {
                 Task { await activity.end(.init(state: state, staleDate: nil),
                                           dismissalPolicy: .after(Date().addingTimeInterval(6))) }
+                LiveActivityHubStore.record(kind: .delivery, phase: milestone.index == 3 ? "completed" : "ended", title: delivery.description)
                 cleanupDelivery(id: delivery.id, activityId: activity.id)
             }
         } else if delivery.isActive, allowed(.delivery) {
@@ -211,6 +219,7 @@ final class LiveActivityService {
                 pushType: delivery.isLiveTracked ? .token : nil)
             deliveryActivities[delivery.id] = activity
             deliveryStartedAt[delivery.id] = Date()
+            if activity != nil { LiveActivityHubStore.record(kind: .delivery, phase: "started", title: delivery.description) }
             if let activity, let trackerId = delivery.trackerId {
                 observeActivityPushToken(activity, trackerId: trackerId)
             }
@@ -220,6 +229,7 @@ final class LiveActivityService {
     func endDelivery(id: UUID) {
         guard let activity = deliveryActivities[id] else { return }
         Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: activity.attributes.description)
         cleanupDelivery(id: id, activityId: activity.id)
     }
 
@@ -232,6 +242,7 @@ final class LiveActivityService {
                 .min(by: { $0.value < $1.value })?.key,
                 let activity = deliveryActivities[oldest] else { return }
             Task { await activity.end(nil, dismissalPolicy: .immediate) }
+            LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: activity.attributes.description)
             cleanupDelivery(id: oldest, activityId: activity.id)
         }
     }
@@ -307,6 +318,7 @@ final class LiveActivityService {
             if plantSessionTotal > 1 {
                 plantCareActivity = try? Activity.request(
                     attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
+                if plantCareActivity != nil { LiveActivityHubStore.record(kind: .plantCare, phase: "started", title: String(localized: "Plant watering")) }
             }
             return
         }
@@ -317,6 +329,7 @@ final class LiveActivityService {
         if remainingAfter <= 0 {
             Task { await activity.end(.init(state: state, staleDate: nil),
                                       dismissalPolicy: .after(Date().addingTimeInterval(4))) }
+            LiveActivityHubStore.record(kind: .plantCare, phase: "completed", title: String(localized: "Plant watering"))
             plantCareActivity = nil
             plantSessionTotal = 0
         } else {
@@ -340,9 +353,11 @@ final class LiveActivityService {
             attributes: attrs,
             content: .init(state: .init(isActive: true), staleDate: nil),
             pushType: nil)
+        if emergencyActivity != nil { LiveActivityHubStore.record(kind: .emergency, phase: "started", title: String(localized: "la_emergency_active")) }
     }
 
     func endEmergency() {
+        if !Activity<EmergencyActivityAttributes>.activities.isEmpty { LiveActivityHubStore.record(kind: .emergency, phase: "ended", title: String(localized: "la_emergency_active")) }
         emergencyActivity = nil
         Task {
             for a in Activity<EmergencyActivityAttributes>.activities {
@@ -385,6 +400,7 @@ final class LiveActivityService {
         // End islands whose sensor cleared or was acknowledged.
         for (id, activity) in iotAlertActivities
         where !alertingIds.contains(id.uuidString) || acked.contains(id.uuidString) {
+            LiveActivityHubStore.record(kind: .iotAlert, phase: "ended", title: activity.attributes.sensorName)
             let display = activity.content.state.valueDisplay
             let activityId = activity.id
             Task {
@@ -420,6 +436,7 @@ final class LiveActivityService {
                                    staleDate: stale(hours: 1)),
                     pushType: .token)
                 iotAlertActivities[sensor.id] = activity
+                if activity != nil { LiveActivityHubStore.record(kind: .iotAlert, phase: "started", title: sensor.name) }
                 if let activity {
                     observeIoTAlertPushToken(activity, sensorId: sensor.id)
                     // A critical hazard (smoke / gas / water leak) must light up
@@ -458,6 +475,7 @@ final class LiveActivityService {
             content: .init(state: .init(consumptionW: consumptionW, productionW: productionW),
                            staleDate: stale(hours: 0.25)),
             pushType: nil)
+        if energyActivity != nil { LiveActivityHubStore.record(kind: .energy, phase: "started", title: String(localized: "Energy")) }
     }
 
     /// Fed by every real sensor poll; a no-op while no session runs.
@@ -472,6 +490,7 @@ final class LiveActivityService {
     }
 
     func endEnergySession() {
+        if !Activity<EnergyActivityAttributes>.activities.isEmpty { LiveActivityHubStore.record(kind: .energy, phase: "ended", title: String(localized: "Energy")) }
         energyActivity = nil
         Task {
             for a in Activity<EnergyActivityAttributes>.activities {
@@ -498,6 +517,7 @@ final class LiveActivityService {
             attributes: attrs,
             content: .init(state: .init(stage: "sent"), staleDate: stale(hours: 0.25)),
             pushType: nil)
+        if coverActivity != nil { LiveActivityHubStore.record(kind: .cover, phase: "started", title: deviceName) }
     }
 
     func updateCover(stage: String) {
@@ -508,6 +528,7 @@ final class LiveActivityService {
 
     func endCoverOperation(stage: String) {
         guard let activity = coverActivity else { return }
+        LiveActivityHubStore.record(kind: .cover, phase: ["timeout", "failed"].contains(stage) ? "ended" : "completed", title: activity.attributes.deviceName)
         coverActivity = nil
         Task { await activity.end(.init(state: .init(stage: stage), staleDate: nil),
                                   dismissalPolicy: .after(.now + 4)) }
@@ -559,38 +580,61 @@ final class LiveActivityService {
         Task {
             switch kind {
             case .shopping:
-                for a in Activity<ShoppingActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<ShoppingActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .shopping, phase: "ended", title: a.attributes.listName)
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 shoppingActivity = nil
             case .delivery:
                 for a in Activity<DeliveryActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: a.attributes.description)
                     await a.end(nil, dismissalPolicy: .immediate)
                     await removeActivityToken(activityId: a.id)
                 }
                 deliveryActivities.removeAll()
                 deliveryStartedAt.removeAll()
             case .maintenance:
-                for a in Activity<MaintenanceActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<MaintenanceActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .maintenance, phase: "ended", title: a.attributes.taskTitle)
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 maintenanceActivity = nil
             case .plantCare:
-                for a in Activity<PlantCareActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<PlantCareActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .plantCare, phase: "ended", title: String(localized: "Plant watering"))
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 plantCareActivity = nil
             case .workSession:
-                for a in Activity<WorkSessionActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<WorkSessionActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .workSession, phase: "ended", title: a.attributes.taskTitle)
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 workSessionActivity = nil
             case .emergency:
-                for a in Activity<EmergencyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<EmergencyActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .emergency, phase: "ended", title: String(localized: "la_emergency_active"))
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 emergencyActivity = nil
             case .iotAlert:
                 for a in Activity<IoTAlertActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .iotAlert, phase: "ended", title: a.attributes.sensorName)
                     await a.end(nil, dismissalPolicy: .immediate)
                     await removeActivityToken(activityId: a.id)
                 }
                 iotAlertActivities.removeAll()
             case .energy:
-                for a in Activity<EnergyActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<EnergyActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .energy, phase: "ended", title: String(localized: "Energy"))
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 energyActivity = nil
             case .cover:
-                for a in Activity<CoverActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                for a in Activity<CoverActivityAttributes>.activities {
+                    LiveActivityHubStore.record(kind: .cover, phase: "ended", title: a.attributes.deviceName)
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
                 coverActivity = nil
             }
         }
