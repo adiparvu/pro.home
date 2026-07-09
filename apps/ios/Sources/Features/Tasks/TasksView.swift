@@ -270,21 +270,11 @@ struct TasksView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(HistoryPeriod.allCases, id: \.self) { period in
-                    Button {
+                    GlassFilterChip(label: String(localized: String.LocalizationValue(period.rawValue)),
+                                    isSelected: historyPeriod == period) {
                         withAnimation(.spring(response: 0.28)) { historyPeriod = period }
                         HapticFeedback.selection()
-                    } label: {
-                        Text(LocalizedStringKey(period.rawValue))
-                            .font(AppFont.scaled(12, weight: historyPeriod == period ? .semibold : .regular))
-                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                            .padding(.horizontal, AppSpacing.md)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(
-                                historyPeriod == period ? Color.white : Color.primary.opacity(AppOpacity.subtleFill),
-                                in: Capsule()
-                            )
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, AppSpacing.xl)

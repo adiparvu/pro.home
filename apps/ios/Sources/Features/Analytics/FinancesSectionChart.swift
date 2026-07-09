@@ -75,22 +75,14 @@ extension FinancesSection {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(ChartRange.allCases, id: \.self) { r in
-                    Button {
+                    GlassFilterChip(label: String(localized: String.LocalizationValue(r.rawValue)),
+                                    isSelected: chartRange == r) {
                         if r == .custom {
                             showCustomSheet = true
                         } else {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = r }
                         }
-                    } label: {
-                        Text(LocalizedStringKey(r.rawValue))
-                            .font(AppFont.scaled(12, weight: chartRange == r ? .semibold : .regular))
-                            .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 5)
-                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
-                                        in: Capsule())
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

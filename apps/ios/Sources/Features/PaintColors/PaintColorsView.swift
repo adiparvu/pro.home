@@ -131,35 +131,18 @@ struct PaintColorsView: View {
     private var roomFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                filterChip(label: "All", isSelected: selectedRoom == nil) {
+                GlassFilterChip(label: String(localized: "All"), isSelected: selectedRoom == nil) {
                     selectedRoom = nil
                 }
                 ForEach(paintColorService.roomNames, id: \.self) { room in
-                    filterChip(label: LocalizedStringKey(room), isSelected: selectedRoom == room) {
+                    GlassFilterChip(label: String(localized: String.LocalizationValue(room)),
+                                    isSelected: selectedRoom == room) {
                         selectedRoom = selectedRoom == room ? nil : room
                     }
                 }
             }
             .padding(.horizontal, 2)
         }
-    }
-
-    private func filterChip(label: LocalizedStringKey, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: {
-            action()
-            HapticFeedback.impact(.light)
-        }) {
-            Text(label)
-                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 7)
-                .background(
-                    isSelected ? Color.accentColor : Color.primary.opacity(0.08),
-                    in: Capsule()
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Rooms Content
