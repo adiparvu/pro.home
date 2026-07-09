@@ -19,6 +19,10 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     var assigneeIds: [String]
     var assigneeNames: [String]
     var elementId: UUID?
+    /// Total seconds banked by the work-session timer. Defaulted so it decodes
+    /// whether or not the `worked_seconds` column (migration 136) has shipped —
+    /// the local App Group total is the authority until then.
+    var workedSeconds: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, category, priority, status, notes, tags
@@ -31,6 +35,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         case assigneeIds   = "assignee_ids"
         case assigneeNames = "assignee_names"
         case elementId     = "element_id"
+        case workedSeconds = "worked_seconds"
     }
 
     init(from decoder: Decoder) throws {
@@ -52,6 +57,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         assigneeIds    = (try? c.decode([String].self, forKey: .assigneeIds))   ?? []
         assigneeNames  = (try? c.decode([String].self, forKey: .assigneeNames)) ?? []
         elementId      = try c.decodeIfPresent(UUID.self, forKey: .elementId)
+        workedSeconds  = (try? c.decode(Int.self, forKey: .workedSeconds)) ?? 0
     }
 
     var isCompleted: Bool { status == "completed" }

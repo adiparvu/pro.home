@@ -78,7 +78,11 @@ struct AddTaskView: View {
     @ViewBuilder
     private var workedTimeRow: some View {
         if let t = editing {
-            let worked = WorkSessionStore.shared.workedSeconds(for: t.id)
+            // The larger of the local App Group total and the server mirror —
+            // so the number is right whether this device banked the time or
+            // another one did (once migration 136's column ships).
+            let worked = max(WorkSessionStore.shared.workedSeconds(for: t.id),
+                             TimeInterval(t.workedSeconds))
             if worked > 0 {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "timer")

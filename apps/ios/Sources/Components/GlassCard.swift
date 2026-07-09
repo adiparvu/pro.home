@@ -196,22 +196,43 @@ struct GlassWideButton: View {
 // again; selection reads through the material and the label weight/colour.
 struct GlassFilterChip: View {
     let label: String
+    /// Optional leading SF Symbol (e.g. a category glyph).
+    var systemImage: String? = nil
+    /// Optional trailing count badge; hidden when nil or zero.
+    var count: Int? = nil
     let isSelected: Bool
     var action: () -> Void
+
+    private var tint: Color { isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.emphasis) }
 
     var body: some View {
         Button {
             HapticFeedback.impact(.light)
             action()
         } label: {
-            Text(verbatim: label)
-                .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.emphasis))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 7)
-                .glassFilterCapsule(selected: isSelected)
+            HStack(spacing: 5) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(AppFont.scaled(11, weight: isSelected ? .semibold : .medium))
+                }
+                Text(verbatim: label)
+                    .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
+                if let count, count > 0 {
+                    Text(verbatim: "\(count)")
+                        .font(AppFont.scaled(11, weight: .bold))
+                        .monospacedDigit()
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(tint.opacity(0.16), in: Capsule())
+                }
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, 7)
+            .glassFilterCapsule(selected: isSelected)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(verbatim: count.map { "\(label), \($0)" } ?? label))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
