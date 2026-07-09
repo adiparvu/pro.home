@@ -9,6 +9,75 @@ import SwiftUI
 // Appearance preferences are applied through the LA gates at render time; the
 // system re-renders on each content update.
 
+// MARK: - Interactive action buttons
+//
+// Every button runs a LiveActivityIntent in the app's process; the action is a
+// REAL mutation queued through the App Group (see LiveActivityActionIntents),
+// and the island updates the moment the intent ends/updates the activity. Sized
+// for a full-width tap target and legible in the island and on the Lock Screen;
+// they inherit the system's Reduce Motion handling.
+
+private struct ShoppingCheckButton: View {
+    let itemId: UUID
+    let name: String?
+
+    var body: some View {
+        Button(intent: CheckNextShoppingItemIntent(itemId: itemId)) {
+            Label {
+                if let name { Text(verbatim: name).lineLimit(1) }
+                else { Text("la_shopping_check") }
+            } icon: {
+                Image(systemName: "checkmark.circle.fill")
+            }
+            .font(AppFont.captionStrong)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(LiveActivityKind.shopping.color)
+        .accessibilityLabel(Text("la_shopping_check"))
+    }
+}
+
+private struct PlantWaterButton: View {
+    var body: some View {
+        Button(intent: WaterNextPlantIntent()) {
+            Label("la_plant_water", systemImage: "drop.fill")
+                .font(AppFont.captionStrong)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(LiveActivityKind.plantCare.color)
+    }
+}
+
+private struct DeliveryReceivedButton: View {
+    let deliveryId: UUID
+
+    var body: some View {
+        Button(intent: MarkDeliveryReceivedIntent(deliveryId: deliveryId)) {
+            Label("la_delivery_received", systemImage: "checkmark.circle.fill")
+                .font(AppFont.captionStrong)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(LiveActivityKind.delivery.color)
+    }
+}
+
+private struct MaintenanceDoneButton: View {
+    let taskId: UUID
+
+    var body: some View {
+        Button(intent: CompleteMaintenanceTaskIntent(taskId: taskId)) {
+            Label("la_maintenance_done", systemImage: "checkmark.circle.fill")
+                .font(AppFont.captionStrong)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(LiveActivityKind.maintenance.color)
+    }
+}
+
 // MARK: - Shopping
 
 struct ShoppingLiveActivity: Widget {
@@ -60,6 +129,9 @@ struct ShoppingLiveActivity: Widget {
                                         .foregroundStyle(Color.brandSuccess)
                                 }
                             }
+                            if !done, let nextId = context.state.nextItemId {
+                                ShoppingCheckButton(itemId: nextId, name: context.state.nextItemName)
+                            }
                         }
                     }
                 }
@@ -94,21 +166,30 @@ private struct ShoppingLockView: View {
 
     var body: some View {
         if LA.lockDetails(.shopping) {
-            IslandLockCard(kind: .shopping,
-                           title: Text(context.attributes.listName),
-                           isComplete: isComplete) {
-                if LA.progress(.shopping) {
-                    IslandProgressBar(value: progress, tint: LiveActivityKind.shopping.color)
+            VStack(spacing: 0) {
+                IslandLockCard(kind: .shopping,
+                               title: Text(context.attributes.listName),
+                               isComplete: isComplete) {
+                    if LA.progress(.shopping) {
+                        IslandProgressBar(value: progress, tint: LiveActivityKind.shopping.color)
+                    }
+                    IslandContextLine(kind: .shopping,
+                                      text: Text(String(format: String(localized: "%d of %d items"),
+                                                        context.state.itemsBought, context.state.totalItems)),
+                                      propertyName: context.attributes.propertyName)
+                } trailing: {
+                    IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
+                                 tint: isComplete ? .brandSuccess : LiveActivityKind.shopping.color,
+                                 size: .hero)
                 }
-                IslandContextLine(kind: .shopping,
-                                  text: Text(String(format: String(localized: "%d of %d items"),
-                                                    context.state.itemsBought, context.state.totalItems)),
-                                  propertyName: context.attributes.propertyName)
-            } trailing: {
-                IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
-                             tint: isComplete ? .brandSuccess : LiveActivityKind.shopping.color,
-                             size: .hero)
+                if !isComplete, let nextId = context.state.nextItemId {
+                    ShoppingCheckButton(itemId: nextId, name: context.state.nextItemName)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.lg)
+                }
             }
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .shopping, title: Text(context.attributes.listName), isComplete: isComplete)
         }
@@ -162,6 +243,9 @@ struct MaintenanceLiveActivity: Widget {
                                         .lineLimit(1)
                                 }
                             }
+                            if !done, let taskId = context.attributes.taskId {
+                                MaintenanceDoneButton(taskId: taskId)
+                            }
                         }
                     }
                 }
@@ -187,21 +271,30 @@ private struct MaintenanceLockView: View {
 
     var body: some View {
         if LA.lockDetails(.maintenance) {
-            IslandLockCard(kind: .maintenance,
-                           title: Text(context.attributes.taskTitle),
-                           isComplete: context.state.isComplete) {
-                if LA.progress(.maintenance) {
-                    IslandProgressBar(value: context.state.progress,
-                                      tint: LiveActivityKind.maintenance.color)
+            VStack(spacing: 0) {
+                IslandLockCard(kind: .maintenance,
+                               title: Text(context.attributes.taskTitle),
+                               isComplete: context.state.isComplete) {
+                    if LA.progress(.maintenance) {
+                        IslandProgressBar(value: context.state.progress,
+                                          tint: LiveActivityKind.maintenance.color)
+                    }
+                    IslandContextLine(kind: .maintenance,
+                                      text: Text(context.state.stepDescription),
+                                      propertyName: context.attributes.propertyName)
+                } trailing: {
+                    IslandMetric(Text(verbatim: "\(Int(context.state.progress * 100))%"),
+                                 tint: context.state.isComplete ? .brandSuccess : LiveActivityKind.maintenance.color,
+                                 size: .hero)
                 }
-                IslandContextLine(kind: .maintenance,
-                                  text: Text(context.state.stepDescription),
-                                  propertyName: context.attributes.propertyName)
-            } trailing: {
-                IslandMetric(Text(verbatim: "\(Int(context.state.progress * 100))%"),
-                             tint: context.state.isComplete ? .brandSuccess : LiveActivityKind.maintenance.color,
-                             size: .hero)
+                if !context.state.isComplete, let taskId = context.attributes.taskId {
+                    MaintenanceDoneButton(taskId: taskId)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.lg)
+                }
             }
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .maintenance,
                            title: Text(context.attributes.taskTitle),
@@ -428,6 +521,9 @@ struct DeliveryLiveActivity: Widget {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            if !delivered, let deliveryId = context.attributes.deliveryId {
+                                DeliveryReceivedButton(deliveryId: deliveryId)
+                            }
                         }
                     }
                 }
@@ -460,31 +556,40 @@ private struct DeliveryLockView: View {
         let label = DeliveryFace.label(state.status, fallback: state.statusLabel)
 
         if LA.lockDetails(.delivery) {
-            IslandLockCard(kind: .delivery,
-                           title: Text(context.attributes.description),
-                           isComplete: delivered) {
-                if LA.progress(.delivery) {
-                    IslandMilestoneBar(stage: DeliveryFace.milestone(state),
-                                       tint: delivered ? .brandSuccess : LiveActivityKind.delivery.color,
-                                       isProblem: state.isProblem == true)
+            VStack(spacing: 0) {
+                IslandLockCard(kind: .delivery,
+                               title: Text(context.attributes.description),
+                               isComplete: delivered) {
+                    if LA.progress(.delivery) {
+                        IslandMilestoneBar(stage: DeliveryFace.milestone(state),
+                                           tint: delivered ? .brandSuccess : LiveActivityKind.delivery.color,
+                                           isProblem: state.isProblem == true)
+                    }
+                    IslandContextLine(kind: .delivery,
+                                      text: Text(verbatim: "\(context.attributes.carrier) · \(label)"),
+                                      propertyName: context.attributes.propertyName)
+                    if let checkpoint = state.checkpoint {
+                        Text(checkpoint)
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    if LA.eta(.delivery), let eta = state.eta {
+                        Text(String(format: String(localized: "Estimated: %@"), eta))
+                            .font(AppFont.caption2)
+                            .foregroundStyle(DeliveryFace.tint(state))
+                    }
+                } trailing: {
+                    EmptyView()
                 }
-                IslandContextLine(kind: .delivery,
-                                  text: Text(verbatim: "\(context.attributes.carrier) · \(label)"),
-                                  propertyName: context.attributes.propertyName)
-                if let checkpoint = state.checkpoint {
-                    Text(checkpoint)
-                        .font(AppFont.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                if !delivered, let deliveryId = context.attributes.deliveryId {
+                    DeliveryReceivedButton(deliveryId: deliveryId)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.lg)
                 }
-                if LA.eta(.delivery), let eta = state.eta {
-                    Text(String(format: String(localized: "Estimated: %@"), eta))
-                        .font(AppFont.caption2)
-                        .foregroundStyle(DeliveryFace.tint(state))
-                }
-            } trailing: {
-                EmptyView()
             }
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .delivery,
                            title: Text(context.attributes.description),
@@ -537,6 +642,10 @@ struct PlantCareLiveActivity: Widget {
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
+                            if !done {
+                                PlantWaterButton()
+                                    .padding(.top, AppSpacing.xxs)
+                            }
                         }
                     }
                 }
@@ -571,21 +680,30 @@ private struct PlantCareLockView: View {
 
     var body: some View {
         if LA.lockDetails(.plantCare) {
-            IslandLockCard(kind: .plantCare,
-                           title: Text("Plant watering"),
-                           isComplete: isComplete) {
-                if LA.progress(.plantCare) {
-                    IslandProgressBar(value: progress, tint: LiveActivityKind.plantCare.color)
+            VStack(spacing: 0) {
+                IslandLockCard(kind: .plantCare,
+                               title: Text("Plant watering"),
+                               isComplete: isComplete) {
+                    if LA.progress(.plantCare) {
+                        IslandProgressBar(value: progress, tint: LiveActivityKind.plantCare.color)
+                    }
+                    IslandContextLine(kind: .plantCare,
+                                      text: Text(String(format: String(localized: "%d of %d plants watered"),
+                                                        context.state.wateredCount, context.state.totalCount)),
+                                      propertyName: context.attributes.propertyName)
+                } trailing: {
+                    IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
+                                 tint: isComplete ? .brandSuccess : LiveActivityKind.plantCare.color,
+                                 size: .hero)
                 }
-                IslandContextLine(kind: .plantCare,
-                                  text: Text(String(format: String(localized: "%d of %d plants watered"),
-                                                    context.state.wateredCount, context.state.totalCount)),
-                                  propertyName: context.attributes.propertyName)
-            } trailing: {
-                IslandMetric(Text(verbatim: "\(Int(progress * 100))%"),
-                             tint: isComplete ? .brandSuccess : LiveActivityKind.plantCare.color,
-                             size: .hero)
+                if !isComplete {
+                    PlantWaterButton()
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.lg)
+                }
             }
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .plantCare, title: Text("Plant watering"), isComplete: isComplete)
         }

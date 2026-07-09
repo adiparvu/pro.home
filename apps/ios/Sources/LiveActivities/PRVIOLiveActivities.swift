@@ -105,6 +105,13 @@ struct ShoppingActivityAttributes: ActivityAttributes {
         var itemsBought: Int
         var totalItems: Int
         var listName: String
+        // The next still-unbought item in THIS list, so the island's "check
+        // off" button acts on a real, list-scoped id (the shared supply
+        // catalog is global, not list-scoped). Optional — cleared after a tap
+        // and republished by the app on reconcile, and absent on payloads
+        // started before this field existed, so the button never fires blind.
+        var nextItemId: UUID?
+        var nextItemName: String?
     }
     let propertyName: String
     let listName: String
@@ -121,6 +128,9 @@ struct MaintenanceActivityAttributes: ActivityAttributes {
     let taskTitle: String
     let category: String
     var propertyName: String?
+    // Carried so the island's "Done" button can complete the real task.
+    // Optional so payloads started before this field existed still decode.
+    var taskId: UUID?
 }
 
 // MARK: - Delivery Live Activity
@@ -141,6 +151,9 @@ struct DeliveryActivityAttributes: ActivityAttributes {
     let description: String
     // Optional so old payloads (started before this field existed) still decode.
     var propertyName: String?
+    // Carried so the island's "Mark received" button can complete the real
+    // delivery. Optional for the same backward-compatible reason.
+    var deliveryId: UUID?
 }
 
 // MARK: - Plant Care Live Activity

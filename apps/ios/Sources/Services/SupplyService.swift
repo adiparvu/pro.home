@@ -124,10 +124,15 @@ final class SupplyService {
         // Keep the shopping Live Activity in sync with this list's progress.
         let listId = item.listId
         let listName = lists.first { $0.id == listId }?.name ?? String(localized: "Shopping list")
+        // Publish the next still-unbought item so the island's check-off button
+        // acts on a real, list-scoped id (the shared catalog isn't list-scoped).
+        let next = items(for: listId).first { !$0.isCompleted }
         LiveActivityService.shared.syncShopping(
             listName: listName,
             bought: completedCount(for: listId),
-            total: items(for: listId).count)
+            total: items(for: listId).count,
+            nextItemId: next?.id,
+            nextItemName: next?.name)
     }
 
     func deleteItem(_ item: SupplyItem) async {

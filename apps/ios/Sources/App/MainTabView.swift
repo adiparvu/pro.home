@@ -603,6 +603,14 @@ struct MainTabView: View {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
+        // Deliveries marked received from the Live Activity island.
+        let deliveredIds = SharedDataStore.popPendingDeliveryReceived()
+        for id in deliveredIds {
+            if let delivery = deliveryService.deliveries.first(where: { $0.id == id }),
+               delivery.status != "delivered" {
+                Task { await deliveryService.markDelivered(delivery) }
+            }
+        }
         // Wrist pantry consumption: every queued tap is one unit off the
         // stock. Taps on the same item collapse into ONE adjustment — two
         // separate adjust(-1) calls would both start from the same stale
@@ -627,7 +635,8 @@ struct MainTabView: View {
             }
         }
         if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty
-            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty {
+            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty
+            || !deliveredIds.isEmpty {
             writeWidgetSnapshot()
         }
     }

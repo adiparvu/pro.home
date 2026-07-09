@@ -369,6 +369,17 @@ enum SharedDataStore {
         return (try? JSONDecoder().decode([DeliveryCatalogEntry].self, from: data)) ?? []
     }
 
+    /// Deliveries marked received from the Live Activity island — drained into
+    /// DeliveryService.markDelivered on the app's next foreground beat.
+    /// Idempotent: a second tap on the same delivery must not re-mark it.
+    static func appendPendingDeliveryReceived(_ deliveryId: UUID) {
+        coordinatedAppendUnique("deliveryReceived", legacyKey: nil, deliveryId.uuidString)
+    }
+
+    static func popPendingDeliveryReceived() -> [UUID] {
+        coordinatedPop("deliveryReceived", legacyKey: nil).compactMap { UUID(uuidString: $0) }
+    }
+
     // MARK: Watch extras (coordinates + top insight, set by writeWidgetSnapshot)
 
     private static let watchExtrasKey = "prvio.watch.extras"

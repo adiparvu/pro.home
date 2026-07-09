@@ -37,7 +37,10 @@ final class LiveActivityService {
     // MARK: - Shopping (driven by SupplyService.toggleComplete)
 
     /// Starts on the first checked item, updates while shopping, ends when done.
-    func syncShopping(listName: String, bought: Int, total: Int) {
+    /// `nextItemId`/`nextItemName` are the next still-unbought item in this list,
+    /// so the island's "check off" button acts on a real, list-scoped id.
+    func syncShopping(listName: String, bought: Int, total: Int,
+                      nextItemId: UUID? = nil, nextItemName: String? = nil) {
         guard total > 0 else { return }
 
         // Adopt an activity that survived an app relaunch.
@@ -45,7 +48,9 @@ final class LiveActivityService {
             shoppingActivity = Activity<ShoppingActivityAttributes>.activities.first
         }
 
-        let state = ShoppingActivityAttributes.ContentState(itemsBought: bought, totalItems: total, listName: listName)
+        let state = ShoppingActivityAttributes.ContentState(
+            itemsBought: bought, totalItems: total, listName: listName,
+            nextItemId: nextItemId, nextItemName: nextItemName)
 
         if let activity = shoppingActivity {
             if bought >= total {
@@ -104,14 +109,15 @@ final class LiveActivityService {
 
     // MARK: - Maintenance (driven by TaskService)
 
-    func startMaintenance(taskTitle: String, category: String, step: String? = nil) {
+    func startMaintenance(taskTitle: String, category: String, step: String? = nil,
+                          taskId: UUID? = nil) {
         guard allowed(.maintenance) else { return }
         if maintenanceActivity == nil {
             maintenanceActivity = Activity<MaintenanceActivityAttributes>.activities.first
         }
         guard maintenanceActivity == nil else { return }
         let attrs = MaintenanceActivityAttributes(taskTitle: taskTitle, category: category,
-                                                  propertyName: propertyName)
+                                                  propertyName: propertyName, taskId: taskId)
         let state = MaintenanceActivityAttributes.ContentState(
             progress: 0, stepDescription: step ?? String(localized: "In progress"), isComplete: false)
         maintenanceActivity = try? Activity.request(
@@ -194,7 +200,8 @@ final class LiveActivityService {
                 trackingNumber: delivery.trackingNumber ?? "",
                 carrier: delivery.carrier ?? String(localized: "Courier"),
                 description: delivery.description,
-                propertyName: propertyName)
+                propertyName: propertyName,
+                deliveryId: delivery.id)
             // Live-tracked parcels update from the server while the phone is
             // locked; manually tracked ones only ever update from the app.
             let activity = try? Activity.request(
@@ -506,7 +513,7 @@ final class LiveActivityService {
             let today = AppDate.dayString(from: Date())
             if let due = tasks.first(where: { !$0.isCompleted && ($0.dueDate?.hasPrefix(today) ?? false) }) {
                 startMaintenance(taskTitle: due.title, category: due.category,
-                                 step: String(localized: "Scheduled for today"))
+                                 step: String(localized: "Scheduled for today"), taskId: due.id)
             }
         }
     }
