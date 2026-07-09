@@ -98,6 +98,9 @@ private struct DetailsCard<Header: View>: View {
 struct MessageDetailsView: View {
     let message: Message
     let readers: [MessageRead]
+    /// Real per-member delivery receipts (same data the SeenBySheet uses). The
+    /// Delivered row is derived from these — never fabricated from the send time.
+    var deliverers: [MessageDelivery] = []
     @AppStorage("prvio.chatTheme") private var themeID = "appDefault"
 
     private var theme: ChatTheme { .theme(for: themeID) }
@@ -108,6 +111,13 @@ struct MessageDetailsView: View {
         let times = readers.map { $0.readAt }
         guard let latest = times.max() else { return nil }
         return detailDateTime(latest)
+    }
+    /// The moment the message first reached anyone — the earliest genuine
+    /// delivery receipt. `nil` (renders "—") when no one has received it yet,
+    /// so an undelivered message never shows a fake "Delivered" timestamp.
+    private var deliveredTime: String? {
+        guard let earliest = deliverers.map(\.deliveredAt).min() else { return nil }
+        return detailDateTime(earliest)
     }
     private var summary: String {
         if let b = message.body, !b.isEmpty { return b }
@@ -123,7 +133,7 @@ struct MessageDetailsView: View {
 
     var body: some View {
         DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
-                    deliveredTime: detailDateTime(message.createdAt)) {
+                    deliveredTime: deliveredTime) {
             HStack {
                 Spacer(minLength: 50)
                 VStack(alignment: .trailing, spacing: 3) {

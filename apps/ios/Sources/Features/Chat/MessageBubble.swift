@@ -101,8 +101,6 @@ struct MessageBubble: View {
         onReact != nil ? persistedMyReaction : localMyReaction
     }
 
-    private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
-
     private var sender: FamilyMember? {
         // Messages carry the sender's display name, not a family-member id, so we
         // match by name. Compare case- and whitespace-insensitively so a member's
@@ -263,7 +261,7 @@ struct MessageBubble: View {
             VideoPlayerSheet(url: item.url)
         }
         .sheet(isPresented: $showDetails) {
-            MessageDetailsView(message: message, readers: readers)
+            MessageDetailsView(message: message, readers: readers, deliverers: deliverers)
         }
         .sheet(isPresented: $showReactionPicker) {
             ReactionPickerView(myReaction: displayMyReaction) { emoji in
@@ -274,60 +272,6 @@ struct MessageBubble: View {
                 }
             }
             .presentationDetents([.height(100)])
-        }
-    }
-
-    @ViewBuilder
-    private var menuContent: some View {
-        if !isDeleted {
-            ForEach(Self.reactionEmojis, id: \.self) { emoji in
-                Button {
-                    if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
-                } label: { Text(emoji) }
-            }
-            Divider()
-            if let onReply {
-                Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-            }
-            if let onForward {
-                Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-            }
-            if message.attachmentType == nil, let body = message.body, !body.isEmpty {
-                Button { UIPasteboard.general.string = body } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-            }
-            if isOwn, message.body?.isEmpty == false, message.attachmentType == nil, let onEdit {
-                Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
-            }
-            Button { showDetails = true } label: {
-                Label("Details", systemImage: "info.circle")
-            }
-            if let onMark {
-                Button { onMark() } label: {
-                    Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
-                }
-            }
-            if let onPin {
-                Button { onPin() } label: {
-                    Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
-                }
-            }
-            Divider()
-        }
-        if isOwn, let onDeleteForEveryone, !isDeleted {
-            Button(role: .destructive) { onDeleteForEveryone() } label: {
-                Label("Delete for everyone", systemImage: "trash")
-            }
-        }
-        if let onDeleteForMe {
-            Button(role: .destructive) { onDeleteForMe() } label: {
-                Label("Delete for me", systemImage: "trash.slash")
-            }
-        } else if isOwn, let onDelete, isDeleted == false, onDeleteForEveryone == nil {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
         }
     }
 

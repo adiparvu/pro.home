@@ -36,8 +36,6 @@ struct DMBubble: View {
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
 
-    private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
-
     private var reactionCounts: [String: Int] {
         var out: [String: Int] = [:]
         for (_, emoji) in message.reactions ?? [:] { out[emoji, default: 0] += 1 }
@@ -197,54 +195,6 @@ struct DMBubble: View {
                 else if horizontal, v.translation.width < -90 { showDetails = true; HapticFeedback.impact(.light) }
                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
             }
-    }
-
-    @ViewBuilder
-    private var menuContent: some View {
-        if messageType != .deleted {
-            if let onReact {
-                ForEach(Self.reactionEmojis, id: \.self) { emoji in
-                    Button { onReact(emoji) } label: { Text(emoji) }
-                }
-                Divider()
-            }
-            if let onReply {
-                Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-            }
-            if let onForward {
-                Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-            }
-            if messageType == .text {
-                Button { UIPasteboard.general.string = message.body } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-                if let onEdit {
-                    Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
-                }
-            }
-            Button { showDetails = true } label: { Label("Details", systemImage: "info.circle") }
-            if let onMark {
-                Button { onMark() } label: {
-                    Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
-                }
-            }
-            if let onPin {
-                Button { onPin() } label: {
-                    Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
-                }
-            }
-            Divider()
-        }
-        if isOwn, let onDeleteForEveryone, messageType != .deleted {
-            Button(role: .destructive) { onDeleteForEveryone() } label: {
-                Label("Delete for everyone", systemImage: "trash")
-            }
-        }
-        if let onDeleteForMe {
-            Button(role: .destructive) { onDeleteForMe() } label: {
-                Label("Delete for me", systemImage: "trash.slash")
-            }
-        }
     }
 
     /// Floating reaction cluster that straddles the bubble's bottom edge (see

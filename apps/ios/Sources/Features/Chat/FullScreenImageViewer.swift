@@ -44,6 +44,10 @@ struct FullScreenImageViewer: View {
     @GestureState private var gestureScale: CGFloat = 1
     @State private var offset: CGSize = .zero
     @GestureState private var gestureOffset: CGSize = .zero
+    /// The decoded image, captured once it loads so Share sends the actual
+    /// photo (SwiftUI.Image is Transferable) instead of a short-lived signed
+    /// URL that 403s after it expires.
+    @State private var loadedImage: Image?
 
     var body: some View {
         ZStack {
@@ -64,6 +68,7 @@ struct FullScreenImageViewer: View {
                                 if scale > 1 { scale = 1; offset = .zero } else { scale = 2.5 }
                             }
                         }
+                        .onAppear { loadedImage = img }
                 case .failure:
                     Image(systemName: "photo")
                         .font(AppFont.scaled(60))
@@ -88,14 +93,18 @@ struct FullScreenImageViewer: View {
                     .padding(.top, AppSpacing.sm)
                 }
                 Spacer()
-                ShareLink(item: url) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.white)
-                        .padding(AppSpacing.base)
-                        .background(.ultraThinMaterial, in: Circle())
+                if let loadedImage {
+                    ShareLink(item: loadedImage,
+                              preview: SharePreview(Text("Photo"), image: loadedImage)) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(AppFont.headline)
+                            .foregroundStyle(.white)
+                            .padding(AppSpacing.base)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Share")
+                    .padding(.bottom, 30)
                 }
-                .padding(.bottom, 30)
             }
         }
     }

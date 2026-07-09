@@ -392,6 +392,14 @@ struct AudioBubble: View {
     @State private var loadedDuration: TimeInterval = 0
     /// Signed URL resolved from `audioValue` (nil while resolving).
     @State private var url: URL?
+    /// Set once the resolve completes so we can tell "still resolving" from
+    /// "resolve failed" and offer retry instead of a permanently dead button.
+    @State private var didResolve = false
+    /// Bumping this re-runs the resolve `.task` — the retry affordance.
+    @State private var reloadToken = 0
+
+    /// Failed to resolve the signed URL: task finished with no URL.
+    private var didFail: Bool { didResolve && url == nil }
 
     /// Readable foreground over the themed bubble fill.
     private var onBubble: Color { bubbleColor.readableText }
@@ -415,9 +423,11 @@ struct AudioBubble: View {
             in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
         )
         .frame(minWidth: 230, maxWidth: 290)
-        .task(id: audioValue ?? "") {
-            guard let audioValue else { url = nil; return }
+        .task(id: "\(audioValue ?? "")#\(reloadToken)") {
+            guard let audioValue else { url = nil; didResolve = true; return }
+            didResolve = false
             url = await ChatMedia.resolve(audioValue)
+            didResolve = true
         }
         .task(id: url) {
             guard let url, loadedDuration == 0 else { return }
@@ -470,20 +480,33 @@ struct AudioBubble: View {
             )
     }
 
-    private var playButton: some View {
-        Button {
-            if player.isPlaying { player.pause() }
-            else if player.canResume { player.resume() }
-            else if let url { player.play(url: url) }
-        } label: {
-            Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                .font(AppFont.scaled(24, weight: .medium))
-                .foregroundStyle(isOwn ? onBubble : Color.accentColor)
-                .frame(width: 26)
+    @ViewBuilder private var playButton: some View {
+        if didFail {
+            // The signed URL couldn't be resolved (typically expired). Offer a
+            // retry glyph rather than a permanently disabled play button.
+            Button { reloadToken += 1 } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(AppFont.scaled(22, weight: .semibold))
+                    .foregroundStyle(isOwn ? onBubble : Color.accentColor)
+                    .frame(width: 26)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("voice_retry"))
+        } else {
+            Button {
+                if player.isPlaying { player.pause() }
+                else if player.canResume { player.resume() }
+                else if let url { player.play(url: url) }
+            } label: {
+                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                    .font(AppFont.scaled(24, weight: .medium))
+                    .foregroundStyle(isOwn ? onBubble : Color.accentColor)
+                    .frame(width: 26)
+            }
+            .buttonStyle(.plain)
+            .disabled(url == nil)
+            .accessibilityLabel(player.isPlaying ? "Pause" : "Play voice message")
         }
-        .buttonStyle(.plain)
-        .disabled(url == nil)
-        .accessibilityLabel(player.isPlaying ? "Pause" : "Play voice message")
     }
 
     // Waveform with a draggable scrubber dot.
