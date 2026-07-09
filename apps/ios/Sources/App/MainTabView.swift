@@ -43,9 +43,20 @@ struct MainTabView: View {
         let visibleTabs = AppTab.visible(for: propertyService.myRole)
         return TabView(selection: $router.selectedTab) {
             if visibleTabs.contains(.home) {
-                NavigationStack(path: path(for: .home)) { routedRoot { DashboardView() } }
-                    .tabItem { Image(systemName: "house.fill") }
-                    .tag(AppTab.home)
+                // Family sees the household dashboard; outsiders (tenant) get
+                // the personal space — the family surfaces are RLS-empty for
+                // them, so the dashboard would render broken.
+                NavigationStack(path: path(for: .home)) {
+                    routedRoot {
+                        if propertyService.isFamilyMember {
+                            DashboardView()
+                        } else {
+                            PersonalSpaceHome()
+                        }
+                    }
+                }
+                .tabItem { Image(systemName: "house.fill") }
+                .tag(AppTab.home)
             }
 
             if visibleTabs.contains(.digitalTwin) {

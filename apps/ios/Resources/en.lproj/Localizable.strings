@@ -39,6 +39,13 @@
 "Save" = "Save";
 "Delete" = "Delete";
 "Edit" = "Edit";
+"personal_home_title" = "My space";
+"personal_home_tasks" = "My tasks";
+"personal_home_no_tasks" = "No open tasks.";
+"personal_home_all_tasks" = "All tasks";
+"personal_home_messages" = "Messages";
+"personal_home_contact" = "Message the owner";
+"personal_home_documents" = "My documents";
 "doc_edit" = "Edit";
 "doc_delete_document" = "Delete document";
 "doc_added" = "Added";

@@ -39,6 +39,13 @@
 "Save" = "Enregistrer";
 "Delete" = "Supprimer";
 "Edit" = "Modifier";
+"personal_home_title" = "Mon espace";
+"personal_home_tasks" = "Mes tâches";
+"personal_home_no_tasks" = "Aucune tâche en cours.";
+"personal_home_all_tasks" = "Toutes les tâches";
+"personal_home_messages" = "Messages";
+"personal_home_contact" = "Écrire au propriétaire";
+"personal_home_documents" = "Mes documents";
 "doc_edit" = "Modifier";
 "doc_delete_document" = "Supprimer le document";
 "doc_added" = "Ajouté";

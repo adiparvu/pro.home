@@ -39,6 +39,13 @@
 "Save" = "Opslaan";
 "Delete" = "Verwijderen";
 "Edit" = "Bewerken";
+"personal_home_title" = "Mijn ruimte";
+"personal_home_tasks" = "Mijn taken";
+"personal_home_no_tasks" = "Geen openstaande taken.";
+"personal_home_all_tasks" = "Alle taken";
+"personal_home_messages" = "Berichten";
+"personal_home_contact" = "Bericht aan de eigenaar";
+"personal_home_documents" = "Mijn documenten";
 "doc_edit" = "Bewerken";
 "doc_delete_document" = "Document verwijderen";
 "doc_added" = "Toegevoegd";

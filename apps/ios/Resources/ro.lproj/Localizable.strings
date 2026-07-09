@@ -39,6 +39,13 @@
 "Save" = "Salvează";
 "Delete" = "Șterge";
 "Edit" = "Editează";
+"personal_home_title" = "Spațiul meu";
+"personal_home_tasks" = "Sarcinile mele";
+"personal_home_no_tasks" = "Nicio sarcină deschisă.";
+"personal_home_all_tasks" = "Toate sarcinile";
+"personal_home_messages" = "Mesaje";
+"personal_home_contact" = "Scrie proprietarului";
+"personal_home_documents" = "Documentele mele";
 "doc_edit" = "Editează";
 "doc_delete_document" = "Șterge documentul";
 "doc_added" = "Adăugat";

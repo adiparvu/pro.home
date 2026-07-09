@@ -43,9 +43,27 @@ enum PropertyRole: String, CaseIterable {
             return false
         }
     }
+
+    /// The family core shares the house's life; outsiders (tenant, guest,
+    /// service provider) keep strictly to their own things — DMs, groups they
+    /// were added to, tasks they're tagged in. Mirrors the server-side
+    /// has_family_access() gate so the UI never shows surfaces RLS will empty.
+    var isFamilyMember: Bool {
+        switch self {
+        case .owner, .partner, .familyAdult, .familyTeen, .familyChild, .familyElderly:
+            return true
+        case .tenant, .guest, .serviceProvider:
+            return false
+        }
+    }
 }
 
 extension PropertyService {
     /// The typed role for the primary property. nil while loading.
     var role: PropertyRole? { PropertyRole.resolve(myRole) }
+
+    /// Whether the current user belongs to the family core. nil role (still
+    /// loading) fails OPEN — consistent with the documented pattern above, so
+    /// the owner's screen never flashes trimmed UI at startup.
+    var isFamilyMember: Bool { role?.isFamilyMember ?? true }
 }

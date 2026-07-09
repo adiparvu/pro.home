@@ -443,8 +443,12 @@ struct ConversationsView: View {
             HStack(spacing: 12) {
                 Menu {
                     Button { router.navigate(to: .profile) } label: { Label("Profile", systemImage: "person.crop.circle") }
-                    Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
-                    Button { statusComposer = .camera } label: { Label("Share a moment", systemImage: "camera") }
+                    // Stories/status are a family surface — RLS returns nothing
+                    // for outsiders, so the entry points disappear with the data.
+                    if propertyService.isFamilyMember {
+                        Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
+                        Button { statusComposer = .camera } label: { Label("Share a moment", systemImage: "camera") }
+                    }
                     Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
                     Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
@@ -969,17 +973,21 @@ struct ConversationsView: View {
             }
         }()
 
-        items.append(ConversationEntry(
-            id: "group",
-            name: propertyService.groupChatDisplayName,
-            preview: groupPreview,
-            date: lastGroupMsg.flatMap { parseISODate($0.createdAt) },
-            unread: propertyService.primary.map {
-                messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
-            } ?? 0,
-            isGroup: true,
-            member: nil
-        ))
+        // The main family chat (group_id null) is family-only under RLS —
+        // outsiders never see the row, instead of seeing it permanently empty.
+        if propertyService.isFamilyMember {
+            items.append(ConversationEntry(
+                id: "group",
+                name: propertyService.groupChatDisplayName,
+                preview: groupPreview,
+                date: lastGroupMsg.flatMap { parseISODate($0.createdAt) },
+                unread: propertyService.primary.map {
+                    messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
+                } ?? 0,
+                isGroup: true,
+                member: nil
+            ))
+        }
 
         // DM entries — WhatsApp-style: a person appears in the list only once
         // the conversation has at least one message (either direction). Newly
