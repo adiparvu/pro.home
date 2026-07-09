@@ -351,6 +351,26 @@ platform :ios do
             })
             puts "  enable WEATHERKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
           end
+
+          # Chat push notifications go through APNs — the capability must be on
+          # the App ID or sigh's regenerated profile is stripped of the
+          # aps-environment entitlement, and every registerForRemoteNotifications
+          # fails on device with error 3000 ("no valid aps-environment
+          # entitlement"). This is what keeps DM and group messages from
+          # delivering a push.
+          push_cap = caps.find { |c| c.dig("attributes","capabilityType") == "PUSH_NOTIFICATIONS" }
+          if push_cap
+            puts "  PUSH_NOTIFICATIONS already enabled (id=#{push_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "PUSH_NOTIFICATIONS" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable PUSH_NOTIFICATIONS → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
         end
       end
       puts "\nsetup_app_groups done."
