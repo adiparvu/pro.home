@@ -9,7 +9,14 @@ struct OpenAppControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.open") {
             ControlWidgetButton(action: OpenPRVIODestination(.home)) {
-                Label("PRVIO", systemImage: "house.fill")
+                // The PRVIO brand mark ("P with roof") instead of a generic
+                // house — the app's own identity in Control Center. Template
+                // rendering lets the system tint it like any control glyph.
+                Label {
+                    Text("PRVIO")
+                } icon: {
+                    Image("BrandMark").renderingMode(.template)
+                }
             }
         }
         .displayName("PRVIO")
