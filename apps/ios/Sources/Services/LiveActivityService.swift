@@ -171,6 +171,7 @@ final class LiveActivityService {
             status: delivery.liveStatus ?? delivery.status,
             statusLabel: delivery.statusLabel,
             eta: delivery.expectedDisplay,
+            etaDate: delivery.expectedArrivalDate,
             milestoneIndex: milestone.index,
             checkpoint: delivery.latestCheckpointLine,
             isProblem: milestone.problem)
@@ -642,6 +643,18 @@ private extension Delivery {
             default:                 return (0, false)
             }
         }
+    }
+
+    /// The precise expected-arrival instant, but ONLY when the tracking
+    /// aggregator supplied a real timestamp (`estimatedDelivery` is a genuine
+    /// ISO8601 instant, parsed through the same door as every server date).
+    /// The day-level `expectedDate` is deliberately NOT used here: a ticking
+    /// countdown to a calendar day would invent a precision the carrier never
+    /// gave. Returns nil once the parcel is no longer active so the island
+    /// stops counting toward a moment that has passed.
+    var expectedArrivalDate: Date? {
+        guard isActive, let s = estimatedDelivery else { return nil }
+        return ISODate.date(from: s)
     }
 
     /// Latest human-readable tracking event: "Sorted at hub · Cluj".

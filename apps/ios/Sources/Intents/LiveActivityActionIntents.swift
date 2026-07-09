@@ -138,6 +138,7 @@ struct MarkDeliveryReceivedIntent: LiveActivityIntent {
                 status: "delivered",
                 statusLabel: String(localized: "Delivered"),
                 eta: previous.eta,
+                etaDate: nil,   // arrived — nothing left to count down to
                 milestoneIndex: 3,
                 checkpoint: previous.checkpoint,
                 isProblem: false)

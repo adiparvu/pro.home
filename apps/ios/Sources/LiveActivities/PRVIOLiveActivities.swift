@@ -140,6 +140,14 @@ struct DeliveryActivityAttributes: ActivityAttributes {
         var status: String
         var statusLabel: String
         var eta: String?
+        // The precise expected-arrival instant, ONLY when the tracking
+        // aggregator gave a real timestamp (`Delivery.estimatedDelivery`).
+        // Drives a self-animating countdown on the island; the `eta` string
+        // (day-level) stays the fallback when no instant exists. Optional and
+        // leniently decoded (synthesized `decodeIfPresent`) so activities and
+        // pushes started before this field still decode. Never fabricated —
+        // day-only expected dates are deliberately NOT promoted to a countdown.
+        var etaDate: Date?
         // Milestone journey (all optional so payloads started before these
         // fields existed — and pushes from older senders — still decode).
         var milestoneIndex: Int?   // 0 ordered · 1 in transit · 2 out for delivery · 3 delivered

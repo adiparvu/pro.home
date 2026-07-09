@@ -64729,6 +64729,22 @@
           }
         }
       }
+    },
+    "la_delivery_eta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ETA"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sosire"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -471,6 +471,46 @@ private enum DeliveryFace {
     }
 }
 
+/// The delivery ETA line. When the tracking aggregator gave a real arrival
+/// instant (`etaDate`) it renders a self-animating countdown — a ticking
+/// `Text(timerInterval:)` inside the final same-day stretch, a self-updating
+/// relative estimate ("in 2 days") further out — so the island counts down on
+/// its own with no content pushes. It falls back to the day-level `eta` string
+/// when no precise instant exists, and shows nothing at all otherwise. The
+/// countdown is never fabricated: a day-only expected date arrives here as
+/// `eta` (string) and stays a static estimate.
+private struct DeliveryETALine: View {
+    let state: DeliveryActivityAttributes.ContentState
+    var tint: Color = .secondary
+
+    /// Beyond this the second-by-second timer is noise, so a relative estimate
+    /// ("in 2 days") — which also self-updates — reads better.
+    private static let countdownWindow: TimeInterval = 12 * 3600
+
+    var body: some View {
+        if let date = state.etaDate, date > .now {
+            HStack(spacing: AppSpacing.xxs) {
+                Text("la_delivery_eta")
+                if date.timeIntervalSinceNow <= Self.countdownWindow {
+                    Text(timerInterval: Date.now...date, countsDown: true)
+                        .monospacedDigit()
+                        .frame(maxWidth: 58, alignment: .leading)
+                } else {
+                    Text(date, style: .relative)
+                }
+            }
+            .font(AppFont.caption2)
+            .foregroundStyle(tint)
+            .lineLimit(1)
+        } else if let eta = state.eta {
+            Text(String(format: String(localized: "ETA: %@"), eta))
+                .font(AppFont.caption2)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+        }
+    }
+}
+
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
         configuration
@@ -515,10 +555,8 @@ struct DeliveryLiveActivity: Widget {
                                     .foregroundStyle(.primary)
                                     .lineLimit(1)
                                 Spacer()
-                                if LA.eta(.delivery), let eta = state.eta {
-                                    Text("ETA: \(eta)")
-                                        .font(AppFont.caption2)
-                                        .foregroundStyle(.secondary)
+                                if LA.eta(.delivery) {
+                                    DeliveryETALine(state: state)
                                 }
                             }
                             if !delivered, let deliveryId = context.attributes.deliveryId {
@@ -574,10 +612,8 @@ private struct DeliveryLockView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
-                    if LA.eta(.delivery), let eta = state.eta {
-                        Text(String(format: String(localized: "Estimated: %@"), eta))
-                            .font(AppFont.caption2)
-                            .foregroundStyle(DeliveryFace.tint(state))
+                    if LA.eta(.delivery) {
+                        DeliveryETALine(state: state, tint: DeliveryFace.tint(state))
                     }
                 } trailing: {
                     EmptyView()
