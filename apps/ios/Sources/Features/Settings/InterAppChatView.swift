@@ -124,7 +124,6 @@ struct InterAppChatView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(titleKey: "Cross-app messaging")
 
                 // Master switch
                 VStack(alignment: .leading, spacing: 8) {
@@ -272,8 +271,8 @@ struct InterAppChatView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Cross-app messaging")
+        .navigationBarTitleDisplayMode(.large)
         .task {
             if let pid = propertyId { await service.load(propertyId: pid) }
         }

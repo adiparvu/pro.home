@@ -18,7 +18,6 @@ struct SiriShortcutsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Siri & Shortcuts", subtitleKey: "PRVIO")
 
                 headerCard
 
@@ -39,8 +38,8 @@ struct SiriShortcutsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Siri & Shortcuts")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: Header

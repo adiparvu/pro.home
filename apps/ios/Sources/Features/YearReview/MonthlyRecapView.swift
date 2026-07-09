@@ -20,7 +20,6 @@ struct MonthlyRecapView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(title: monthTitle, subtitleKey: "monthly_subtitle")
                 heroCard
                 statGrid
                 spendingCard
@@ -33,8 +32,8 @@ struct MonthlyRecapView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(monthTitle)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if let shareURL {

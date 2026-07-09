@@ -250,7 +250,6 @@ struct ActivityFeedView: View {
     var body: some View {
         let snapshot = feedSnapshot
         VStack(spacing: 0) {
-            PageHeader(titleKey: "Activity", subtitleKey: "PROPERTY")
 
             periodRow(count: snapshot.visibleCount)
                 .padding(.horizontal, AppSpacing.xl)
@@ -271,8 +270,8 @@ struct ActivityFeedView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Activity")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: Period chips

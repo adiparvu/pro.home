@@ -25,7 +25,6 @@ struct EmergencyModeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(titleKey: "emergency_title", subtitleKey: "emergency_subtitle")
                 callSection
                 torchCard
                 islandPinCard
@@ -37,8 +36,8 @@ struct EmergencyModeView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("emergency_title")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear(perform: load)
         .onDisappear { setTorch(false) }
         .sheet(isPresented: $showAddContact) {

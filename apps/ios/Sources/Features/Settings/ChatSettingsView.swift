@@ -49,7 +49,6 @@ struct ChatSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "Chat")
 
                 themeHero
 
@@ -95,8 +94,8 @@ struct ChatSettingsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Chat")
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showTheme, onDismiss: { themeRefresh += 1 }) { ChatThemePicker() }
         .sheet(isPresented: $showStarred) {
             StarredMessagesView(messages: marked, members: familyService.members) { _ in showStarred = false }

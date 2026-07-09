@@ -21,7 +21,6 @@ struct PropertyReportView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Raport", subtitleKey: "PROPERTY")
                 heroCard
                 sectionToggles
                 generateButton
@@ -31,8 +30,8 @@ struct PropertyReportView: View {
             .padding(.top, AppSpacing.xxs)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Raport")
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showShareSheet) {
             // Preview first, share from the preview — nobody sends a
             // document they haven't seen.

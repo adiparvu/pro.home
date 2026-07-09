@@ -81,7 +81,6 @@ struct LiveActivitySettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "Live Activities")
 
                 previewCard
 
@@ -141,8 +140,8 @@ struct LiveActivitySettingsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Live Activities")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear { systemEnabled = ActivityAuthorizationInfo().areActivitiesEnabled }
     }
 
@@ -322,7 +321,6 @@ struct LiveActivityKindDetailView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: kind.title)
 
                 statusCard
 
@@ -421,8 +419,8 @@ struct LiveActivityKindDetailView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(kind.title)
+        .navigationBarTitleDisplayMode(.large)
         .onAppear { isActive = LiveActivityService.shared.isActive(kind) }
         .onChange(of: custom) { _, on in
             if on { seedFromGlobal() }

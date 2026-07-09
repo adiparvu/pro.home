@@ -44,7 +44,6 @@ struct IoTHubView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(titleKey: "Local Controllers", subtitleKey: "IOT HUB")
 
                 // Tab bar
                 hubTabBar
@@ -58,8 +57,8 @@ struct IoTHubView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Local Controllers")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 14) {

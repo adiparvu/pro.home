@@ -35,8 +35,6 @@ struct WatchSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "watch_settings_title",
-                       subtitleKey: "watch_settings_subtitle")
 
             List {
                 previewSection
@@ -51,8 +49,8 @@ struct WatchSettingsView: View {
             .scrollContentBackground(.hidden)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("watch_settings_title")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear(perform: load)
         .onChange(of: items) { old, _ in
             // The initial load also lands here — only user edits persist.

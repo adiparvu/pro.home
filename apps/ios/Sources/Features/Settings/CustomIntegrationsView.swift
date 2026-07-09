@@ -20,7 +20,6 @@ struct CustomIntegrationsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(titleKey: "Custom integrations")
 
                 heroCard
 
@@ -50,8 +49,8 @@ struct CustomIntegrationsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Custom integrations")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 GuideInfoButton(topic: IoTGuides.integrations)

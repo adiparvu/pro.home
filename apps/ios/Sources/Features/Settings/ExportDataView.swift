@@ -27,7 +27,6 @@ struct ExportDataView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(titleKey: "export_title", subtitleKey: "export_subtitle")
 
                 VStack(alignment: .leading, spacing: 12) {
                     exportRow(icon: "checklist", text: "export_inc_tasks", count: taskService.tasks.count)
@@ -80,8 +79,8 @@ struct ExportDataView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("export_title")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private func exportRow(icon: String, text: LocalizedStringKey, count: Int) -> some View {

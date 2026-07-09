@@ -76,7 +76,6 @@ struct NFCWalletView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(titleKey: "NFC Keys", subtitleKey: "INTEGRATIONS")
 
                 if tags.isEmpty {
                     emptyState
@@ -94,8 +93,8 @@ struct NFCWalletView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("NFC Keys")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if nfc.isScanning {

@@ -86,7 +86,6 @@ struct SupervisionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "Supervision", subtitleKey: "FAMILY")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -99,8 +98,8 @@ struct SupervisionView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Supervision")
+        .navigationBarTitleDisplayMode(.large)
         .navigationDestination(item: $selectedMember) { member in
             MemberSupervisionDetailView(member: member, tick: $tick)
                 .environment(familyService)

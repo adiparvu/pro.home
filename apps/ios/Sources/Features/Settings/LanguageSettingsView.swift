@@ -18,8 +18,6 @@ struct LanguageSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: String(localized: "language_title"),
-                       subtitle: String(localized: "language_subtitle"))
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
@@ -33,8 +31,8 @@ struct LanguageSettingsView: View {
         }
         .id(refreshToken)
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("language_title")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Explicit picker

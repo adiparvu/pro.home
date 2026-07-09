@@ -24,7 +24,6 @@ struct MemberSupervisionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: member.name, subtitleKey: "SUPERVISION")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -39,8 +38,8 @@ struct MemberSupervisionDetailView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(member.name)
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: Enable card

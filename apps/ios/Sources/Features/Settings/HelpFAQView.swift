@@ -85,7 +85,6 @@ struct HelpFAQView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
-                PageHeader(titleKey: "Help & FAQ")
 
                 searchBar
 
@@ -109,8 +108,8 @@ struct HelpFAQView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Help & FAQ")
+        .navigationBarTitleDisplayMode(.large)
         .scrollDismissesKeyboard(.interactively)
         .animation(.smooth(duration: 0.25), value: search)
     }
