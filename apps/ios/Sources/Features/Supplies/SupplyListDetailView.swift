@@ -26,9 +26,8 @@ struct SupplyListDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: list.name, subtitleKey: "SUPPLIES")
-
             categoryChips
+                .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.sm)
 
             Divider().opacity(0.3)
@@ -42,8 +41,8 @@ struct SupplyListDetailView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(list.name)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search items…"))

@@ -18,8 +18,6 @@ struct TenantManagementView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(titleKey: "Tenants", subtitleKey: "PROPERTY")
-
                 if familyService.isLoading && tenants.isEmpty {
                     Spacer(); ProgressView().tint(.accentColor); Spacer()
                 } else if tenants.isEmpty {
@@ -47,8 +45,8 @@ struct TenantManagementView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Tenants")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

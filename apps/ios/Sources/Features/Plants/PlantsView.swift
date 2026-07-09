@@ -28,8 +28,6 @@ struct PlantsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "Plants", subtitleKey: "PROPERTY")
-
             if propertyService.primary == nil {
                 noPropertyState
             } else if plantService.isLoading && plantService.plants.isEmpty {
@@ -41,8 +39,8 @@ struct PlantsView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Plants")
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))

@@ -41,20 +41,17 @@ struct SuppliesView: View {
         supplyService.lists.filter { $0.name.matchesSearch(searchText) }
     }
 
+    private var pageTitle: String {
+        switch activeTab {
+        case .overview:   return String(localized: "expense_title")
+        case .lists:      return String(localized: "expense_lists_title")
+        case .toBuy:      return String(localized: "De cumpărat")
+        case .completed:  return String(localized: "Finalizate")
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(
-                title: {
-                    switch activeTab {
-                    case .overview:   return String(localized: "expense_title")
-                    case .lists:      return String(localized: "expense_lists_title")
-                    case .toBuy:      return String(localized: "De cumpărat")
-                    case .completed:  return String(localized: "Finalizate")
-                    }
-                }(),
-                subtitle: String(localized: "expense_subtitle")
-            )
-
             tabBar
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.bottom, AppSpacing.xxs)
@@ -82,8 +79,8 @@ struct SuppliesView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(pageTitle)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))

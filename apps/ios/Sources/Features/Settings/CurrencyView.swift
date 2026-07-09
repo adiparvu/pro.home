@@ -37,7 +37,6 @@ struct CurrencyView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "currency_row_label")
                 heroCard
                 converterCard
                 currencyList
@@ -48,8 +47,8 @@ struct CurrencyView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("currency_row_label")
+        .navigationBarTitleDisplayMode(.large)
         .scrollDismissesKeyboard(.interactively)
         .task { await currencyService.refresh() }
     }

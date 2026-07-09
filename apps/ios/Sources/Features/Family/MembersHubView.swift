@@ -76,7 +76,6 @@ struct MembersHubView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Members", subtitleKey: "HOUSEHOLD")
                 segmentPicker
 
                 switch segment {
@@ -100,8 +99,8 @@ struct MembersHubView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Members")
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))

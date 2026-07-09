@@ -28,8 +28,6 @@ struct DeliveriesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "Deliveries", subtitleKey: "PROPERTY")
-
             if deliveryService.deliveries.isEmpty {
                 emptyState
             } else {
@@ -37,8 +35,8 @@ struct DeliveriesView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Deliveries")
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))

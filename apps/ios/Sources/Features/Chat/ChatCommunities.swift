@@ -56,7 +56,7 @@ struct CommunitiesView: View {
                               service: service)
             }
             .navigationTitle("Communities")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showCreate) {
                 CreateGroupSheet(members: members) { name, kind, selected in
