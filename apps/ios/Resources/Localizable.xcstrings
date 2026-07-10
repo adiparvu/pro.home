@@ -55931,6 +55931,23 @@
         }
       }
     },
+    "dm_peer_unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membru"
+          }
+        }
+      }
+    },
     "dm_prev_audio": {
       "extractionState": "manual",
       "localizations": {

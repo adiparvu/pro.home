@@ -62,6 +62,10 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     /// family_members.id of the DM recipient. Required for the row to be
     /// visible to the recipient under id-based RLS; nil for group messages.
     let recipientMemberId: UUID?
+    /// auth.users id of the DM recipient (migration 141) — the durable thread
+    /// identity, stamped on the re-sent row; nil for group messages and for
+    /// recipients without an account.
+    let recipientUserId: UUID?
     let body: String?
     let attachmentUrl: String?
     let attachmentType: String?
@@ -79,7 +83,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     var state: ChatSendState
 
     init(id: UUID = UUID(), propertyId: UUID, senderName: String, recipientName: String? = nil,
-         recipientMemberId: UUID? = nil,
+         recipientMemberId: UUID? = nil, recipientUserId: UUID? = nil,
          body: String?, attachmentUrl: String? = nil, attachmentType: String? = nil,
          latitude: Double? = nil, longitude: Double? = nil,
          kind: PendingKind = .text,
@@ -88,6 +92,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
         self.id = id; self.propertyId = propertyId; self.senderName = senderName
         self.recipientName = recipientName
         self.recipientMemberId = recipientMemberId
+        self.recipientUserId = recipientUserId
         self.body = body; self.attachmentUrl = attachmentUrl; self.attachmentType = attachmentType
         self.latitude = latitude; self.longitude = longitude
         self.kind = kind
@@ -96,7 +101,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, propertyId, senderName, recipientName, recipientMemberId
+        case id, propertyId, senderName, recipientName, recipientMemberId, recipientUserId
         case body, attachmentUrl, attachmentType, latitude, longitude, kind
         case mentionedIds, replyTo, createdAt, state
     }
@@ -111,6 +116,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
         senderName = try c.decode(String.self, forKey: .senderName)
         recipientName = try c.decodeIfPresent(String.self, forKey: .recipientName)
         recipientMemberId = try c.decodeIfPresent(UUID.self, forKey: .recipientMemberId)
+        recipientUserId = try c.decodeIfPresent(UUID.self, forKey: .recipientUserId)
         body = try c.decodeIfPresent(String.self, forKey: .body)
         attachmentUrl = try c.decodeIfPresent(String.self, forKey: .attachmentUrl)
         attachmentType = try c.decodeIfPresent(String.self, forKey: .attachmentType)

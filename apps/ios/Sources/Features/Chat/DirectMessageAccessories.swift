@@ -70,7 +70,6 @@ struct DMAttachmentOption: View {
 
 struct DMStarredView: View {
     let messages: [DirectMessage]
-    let partner: FamilyMember
     let onSelect: (UUID) -> Void
     @Environment(\.dismiss) private var dismiss
 

@@ -107,8 +107,8 @@ struct ConversationsView: View {
                 return messageService.messages.contains {
                     ($0.body ?? "").localizedCaseInsensitiveContains(q)
                 }
-            } else if let member = entry.member {
-                return directMessageService.messages(with: member, myName: myName)
+            } else if let thread = entry.dmThread {
+                return directMessageService.messages(in: thread, myName: myName)
                     .contains { $0.body.localizedCaseInsensitiveContains(q) }
             }
             return false
@@ -133,9 +133,16 @@ struct ConversationsView: View {
                 propertyId: pid, myName: myName, query: q)
             var hits = Set<String>()
             if await groupHit { hits.insert("group") }
-            let names = await partners
-            for member in familyService.members where names.contains(member.name) {
-                hits.insert(member.id.uuidString)
+            let dmHits = await partners
+            for member in familyService.members {
+                let idHit = member.userId.map { dmHits.userIds.contains($0) } ?? false
+                let nameHit = dmHits.names.contains { DirectMessage.nameMatches($0, member.name) }
+                if idHit || nameHit { hits.insert(member.id.uuidString) }
+            }
+            // Identity-only peers (no roster row) key their entry by user id.
+            for uid in dmHits.userIds
+            where !familyService.members.contains(where: { $0.userId == uid }) {
+                hits.insert(uid.uuidString)
             }
             guard !Task.isCancelled else { return }
             serverHits = hits
@@ -235,8 +242,16 @@ struct ConversationsView: View {
         for id in wasUnread { syncPrefs(id) }
         messageService.resetUnread()
         for m in familyService.members { directMessageService.markRead(member: m) }
+        // Identity-only threads (peer without a roster row) too.
+        for entry in sortedConversations {
+            if let thread = entry.dmThread { directMessageService.markRead(thread: thread) }
+        }
         if let pid = propertyService.primary?.id {
-            Task { await messageService.markRead(propertyId: pid, readerName: myName) }
+            Task {
+                await messageService.markRead(propertyId: pid, readerName: myName)
+                // Unread badges are server truth now — stamp the receipts.
+                await directMessageService.markAllReadRemote(propertyId: pid, myName: myName)
+            }
         }
         HapticFeedback.success()
     }
@@ -287,6 +302,10 @@ struct ConversationsView: View {
                 groupChatDestination
             } else if let member = familyService.members.first(where: { $0.id.uuidString == id }) {
                 DirectMessageView(member: member)
+            } else if let uid = UUID(uuidString: id) {
+                // Identity-only peer — no roster row (e.g. the owner); the
+                // ChatPeer hydrates its display data from the profiles cache.
+                DirectMessageView(peer: ChatPeer(userId: uid))
             }
         }
         // NB: no unsubscribe here. Pushing a DM thread fires this view's
@@ -514,7 +533,8 @@ struct ConversationsView: View {
                                     muted: mutedIds.contains(entry.id),
                                     pinned: pinnedIds.contains(entry.id),
                                     forceUnread: manualUnreadIds.contains(entry.id),
-                                    online: entry.member.map { presenceService.status(for: $0.name) == .online } ?? false
+                                    online: (entry.member?.name ?? entry.peer?.displayName)
+                                        .map { presenceService.status(for: $0) == .online } ?? false
                                 )
                             }
                             .buttonStyle(.plain)
@@ -618,8 +638,10 @@ struct ConversationsView: View {
             if let pid = propertyService.primary?.id {
                 Task { await messageService.markRead(propertyId: pid, readerName: myName) }
             }
-        } else if let m = entry.member {
-            directMessageService.markRead(member: m)
+        } else if let thread = entry.dmThread {
+            directMessageService.markRead(thread: thread)
+            // The badge derives from server read receipts — stamp them too.
+            Task { await directMessageService.markReadRemote(thread: thread, myName: myName) }
         }
     }
 
@@ -831,27 +853,56 @@ struct ConversationsView: View {
                     messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
                 } ?? 0,
                 isGroup: true,
-                member: nil
+                member: nil,
+                peer: nil
             ))
         }
 
-        // DM entries — WhatsApp-style: a person appears in the list only once
-        // the conversation has at least one message (either direction). Newly
-        // added members stay reachable via the "+" new-conversation flow.
-        // One pass over the DM store builds every thread's preview state —
-        // the per-member lastMessage/unreadCount scans were O(members × dms)
-        // and ran several times per render.
-        let summaries = directMessageService.conversationSummaries(myName: myName,
-                                                                   members: familyService.members)
-        for member in familyService.members {
-            guard let last = summaries[member.id]?.last else {
-                continue
+        // DM entries — identity-based: one row per peer, derived on the server
+        // from the MESSAGES (dm_conversation_heads), never from the roster. A
+        // peer with no family_members row (the property owner on a non-owner
+        // device!) appears like anyone else; the roster row, when one exists,
+        // only enriches the entry and preserves its historic prefs key.
+        let myUserId = directMessageService.myUserId ?? supabase.auth.currentSession?.user.id
+        var seenDMIds = Set<String>()
+        for head in directMessageService.conversationHeads {
+            let member = familyService.members.first { m in
+                (head.peerUserId != nil && m.userId == head.peerUserId)
+                    || (head.peerMemberId != nil && m.id == head.peerMemberId)
             }
+            let peer = head.peerUserId.map {
+                ChatPeer(userId: $0, fallbackName: member?.name ?? head.peerName,
+                         fallbackAvatar: member?.avatarUrl)
+            }
+            // Navigable identity: the roster row id (preserves every
+            // per-conversation pref) or the peer's user id. Heads with
+            // neither are unroutable pre-identity leftovers — skip them
+            // rather than render a dead row.
+            guard let entryId = member?.id.uuidString ?? head.peerUserId?.uuidString,
+                  seenDMIds.insert(entryId).inserted else { continue }
+
+            // "Delete for me" is device-local — when it hides the head's last
+            // message, preview the newest locally visible row instead.
+            var last: (body: String, senderId: UUID?, createdAt: String, deleted: Bool)?
+                = (head.lastBody ?? "", head.lastSenderId, head.lastCreatedAt, head.lastDeletedForAll)
+            if directMessageService.isHidden(head.lastMessageId) {
+                if let thread = member.map({ DMThread(member: $0) }) ?? peer.map({ DMThread(peer: $0) }),
+                   let alt = directMessageService.latestVisibleMessage(in: thread, myName: myName) {
+                    last = (alt.body, alt.senderId, alt.createdAt, alt.deletedForAll == true)
+                } else {
+                    last = nil
+                }
+            }
+            guard let last else { continue }
+
             let preview: String = {
-                if last.deletedForAll == true { return String(localized: "convo_prev_deleted") }
-                let prefix = last.isMine(myUserId: directMessageService.myUserId, myName: myName) ? String(localized: "convo_prev_you") : ""
+                if last.deleted { return String(localized: "convo_prev_deleted") }
+                let mine = last.senderId != nil && last.senderId == myUserId
+                let prefix = mine ? String(localized: "convo_prev_you") : ""
                 if let rich = DMRich.snippet(for: last.body) { return prefix + rich }
-                if last.isContactShare { return prefix + String(localized: "convo_prev_contact") }
+                if last.body.hasPrefix(SharedContactPayload.dmMarker + "[") {
+                    return prefix + String(localized: "convo_prev_contact")
+                }
                 switch ChatMedia.dmBodyKind(last.body) {
                 case .audio: return prefix + String(localized: "convo_prev_audio")
                 case .image: return prefix + String(localized: "convo_prev_image")
@@ -860,13 +911,14 @@ struct ConversationsView: View {
                 }
             }()
             items.append(ConversationEntry(
-                id: member.id.uuidString,
-                name: member.name,
+                id: entryId,
+                name: peer?.displayName ?? member?.name ?? head.peerName,
                 preview: preview,
                 date: parseISODate(last.createdAt),
-                unread: summaries[member.id]?.unread ?? 0,
+                unread: head.unreadCount,
                 isGroup: false,
-                member: member
+                member: member,
+                peer: peer
             ))
         }
 

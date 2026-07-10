@@ -86,7 +86,14 @@ struct DMBubble: View {
     /// Draw the iMessage-style tail — true on the last bubble of a same-sender run.
     let hasTail: Bool
     var myName: String = ""
+    /// My auth user id — reactions key on it (names collide and drift).
+    var myUserId: UUID? = nil
     var partner: FamilyMember? = nil
+    /// Identity-based partner display data (ChatPeer) — wins over the roster
+    /// snapshot so avatars come from the live profile.
+    var partnerAvatarURL: URL? = nil
+    var partnerInitials: String? = nil
+    var partnerColor: Color? = nil
     var members: [FamilyMember] = []
     var myAvatarURL: URL? = nil
     var outgoingColor: Color? = nil
@@ -119,7 +126,7 @@ struct DMBubble: View {
 
     /// Speech-bubble background; tail only on the last bubble of a run.
     private var bubbleShape: ChatBubbleShape { ChatBubbleShape(isOwn: isOwn, hasTail: hasTail) }
-    private var myReaction: String? { message.reactions?[myName] }
+    private var myReaction: String? { message.myReaction(myUserId: myUserId, myName: myName) }
 
     private var showsQuickForward: Bool {
         guard onForward != nil, messageType == .text else { return false }
@@ -185,11 +192,14 @@ struct DMBubble: View {
                     case .audio:
                         AudioBubble(
                             audioValue: message.body, isOwn: isOwn,
-                            avatarURL: isOwn ? myAvatarURL : partner?.avatarUrl.flatMap { URL(string: $0) },
+                            avatarURL: isOwn ? myAvatarURL
+                                : (partnerAvatarURL ?? partner?.avatarUrl.flatMap { URL(string: $0) }),
                             initials: isOwn
                                 ? String(myName.prefix(2)).uppercased()
-                                : (partner?.initials ?? String(message.senderName.prefix(2)).uppercased()),
-                            avatarColor: isOwn ? Color.accentColor : (partner?.swiftColor ?? Color.gray),
+                                : (partnerInitials ?? partner?.initials
+                                   ?? String(message.senderName.prefix(2)).uppercased()),
+                            avatarColor: isOwn ? Color.accentColor
+                                : (partnerColor ?? partner?.swiftColor ?? Color.gray),
                             timeText: message.timeDisplay,
                             tick: isOwn ? (message.readAt != nil ? .read
                                            : (message.deliveredAt != nil ? .delivered : .sent)) : .none,

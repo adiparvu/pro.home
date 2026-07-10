@@ -7,7 +7,25 @@ import UniformTypeIdentifiers
 // MARK: - Direct Message View (1-on-1 private chat)
 
 struct DirectMessageView: View {
-    let member: FamilyMember
+    /// Roster row when the peer is on the family_members roster; nil for a
+    /// peer known only by identity (e.g. the property owner on a non-owner
+    /// device — the production case this phase fixes).
+    private let member: FamilyMember?
+    /// Peer identity handed in by the conversation list; nil when this view
+    /// was opened through the legacy member-based initializer (the identity
+    /// then resolves from member.user_id + the profiles directory).
+    private let initialPeer: ChatPeer?
+
+    /// Legacy adapter — existing call sites keep compiling.
+    init(member: FamilyMember) {
+        self.member = member
+        self.initialPeer = nil
+    }
+
+    init(peer: ChatPeer, member: FamilyMember? = nil) {
+        self.member = member
+        self.initialPeer = peer
+    }
 
     @Environment(DirectMessageService.self) private var directMessageService
     @Environment(ProfileService.self) private var profileService
@@ -89,20 +107,64 @@ struct DirectMessageView: View {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
 
+    // MARK: - Peer identity
+    //
+    // The thread is addressed by the peer's AUTH USER ID; display data
+    // re-hydrates from the profiles directory on every render so a rename or
+    // a new avatar lands immediately. Device-local stores keep their historic
+    // member-id keys for roster-backed threads.
+
+    private var peer: ChatPeer? {
+        if let initialPeer {
+            return ChatPeer(userId: initialPeer.id,
+                            fallbackName: initialPeer.displayName,
+                            fallbackAvatar: initialPeer.avatarUrl)
+        }
+        return member.flatMap { ChatPeer(member: $0) }
+    }
+
+    private var thread: DMThread {
+        if let member { return DMThread(member: member) }
+        if let peer { return DMThread(peer: peer) }
+        // Unreachable: both initializers guarantee a member or a peer.
+        return DMThread(peer: ChatPeer(id: UUID(), displayName: "?"))
+    }
+
+    /// Trimmed display name for the header/title/empty state.
+    private var peerName: String { thread.displayName }
+    private var peerInitials: String { peer?.initials ?? member?.initials ?? "?" }
+    private var peerColor: Color { member?.swiftColor ?? peer?.swiftColor ?? .blue }
+    private var peerAvatarURL: URL? {
+        (peer?.avatarUrl ?? member?.avatarUrl).flatMap(URL.init)
+    }
+    /// Device-local conversation scope (theme, clear, block, draft stores) —
+    /// the member id for roster threads (preserving existing keys), else the
+    /// peer's user id.
+    private var convId: String { thread.storeKey.uuidString }
+    /// Key the disappearing-message TTL store uses (historically the roster
+    /// name; the trimmed profile name for identity-only peers).
+    private var disappearKey: String { member?.name ?? peerName }
+    /// Name-keyed live signals (typing, presence) may carry either the roster
+    /// snapshot or the (possibly untrimmed) profile name — match both.
+    private func matchesPeer(_ name: String) -> Bool {
+        DirectMessage.nameMatches(name, peerName)
+            || (member.map { DirectMessage.nameMatches(name, $0.name) } ?? false)
+    }
+
     /// Disappearing-message expiry for this conversation (nil = off). Stamped on
     /// outgoing DMs so the server sweep deletes them; keyed by the partner name.
     private var dmExpiresAt: String? {
-        let ttl = ChatDisappearStore.ttl(member.name)
+        let ttl = ChatDisappearStore.ttl(disappearKey)
         return ttl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl)) : nil
     }
 
     private var conversationMessages: [DirectMessage] {
-        let all = directMessageService.messages(with: member, myName: myName)
-        let kept = ConversationClearStore.filter(all, convId: member.id.uuidString) { $0.date }
+        let all = directMessageService.messages(in: thread, myName: myName)
+        let kept = ConversationClearStore.filter(all, convId: convId) { $0.date }
         // Keyed by peer NAME — the same key the send path stamps with and the
         // server sync writes to (it used to be member.id, so the setting and
         // the stamp never met).
-        return ChatDisappearStore.filter(kept, convId: member.name) { $0.date }
+        return ChatDisappearStore.filter(kept, convId: disappearKey) { $0.date }
     }
 
     private var isTextEmpty: Bool {
@@ -110,7 +172,7 @@ struct DirectMessageView: View {
     }
 
     // This DM's theme scope; a per-conversation override wins over the global default.
-    private var themeScope: String { member.id.uuidString }
+    private var themeScope: String { convId }
     private var chatTheme: ChatTheme {
         _ = themeRefresh
         // The @AppStorage globals establish observation so a live global
@@ -118,17 +180,17 @@ struct DirectMessageView: View {
         _ = (chatThemeID, chatBubbleHex, chatBgID)
         return .effective(scope: themeScope)
     }
-    private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
+    private var draftKey: String { "draft.dm.\(convId)" }
     private var pendingOutbox: [PendingMessage] {
         outbox.pending
-            .filter { $0.recipientName == member.name && $0.propertyId == propertyService.primary?.id }
+            .filter { ($0.recipientName.map(matchesPeer) ?? false) && $0.propertyId == propertyService.primary?.id }
             .sorted { $0.createdAt < $1.createdAt }
     }
 
     /// "online" / "last seen {relative}" under the partner's name, shown only
     /// when they're sharing presence.
     @ViewBuilder private var presenceSubtitle: some View {
-        switch presenceService.status(for: member.name) {
+        switch presenceService.status(for: member?.name ?? peerName) {
         case .online:
             Text("online")
                 .font(AppFont.scaled(11))
@@ -156,7 +218,7 @@ struct DirectMessageView: View {
         // swallow it), and the scroll view gains the matching bottom inset
         // automatically.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if ChatBlockStore.isBlocked(member.id.uuidString) {
+            if ChatBlockStore.isBlocked(convId) {
                 blockedBanner
             } else {
                 inputBar
@@ -177,7 +239,7 @@ struct DirectMessageView: View {
         .overlay {
             if let m = menuMessage { dmActionOverlay(m) }
         }
-        .navigationTitle(member.name)
+        .navigationTitle(peerName)
         .navigationBarTitleDisplayMode(.inline)
         // The system search field replaces the old hand-built bar — instant,
         // with the native cancel flow.
@@ -188,24 +250,21 @@ struct DirectMessageView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Button { showProfile = true } label: {
+                // Contact details need a roster row — identity-only peers get
+                // a static header instead of a dead push.
+                Button { if member != nil { showProfile = true } } label: {
                     ChatHeaderPill {
                         HStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(member.swiftColor.opacity(0.15))
-                                    .frame(width: 30, height: 30)
-                                Text(member.initials)
-                                    .font(AppFont.scaled(12, weight: .bold))
-                                    .foregroundStyle(member.swiftColor)
-                            }
+                            PeerCircleAvatar(name: peerName, color: peerColor,
+                                             avatarUrl: peer?.avatarUrl ?? member?.avatarUrl,
+                                             size: 30)
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(member.name)
+                                Text(peerName)
                                     .font(AppFont.subheadline)
                                     .foregroundStyle(.primary)
                                 // Transient typing status wins; otherwise show presence
                                 // (online / last seen) when the partner shares it.
-                                if directMessageService.typingNames.contains(member.name) {
+                                if directMessageService.typingNames.contains(where: matchesPeer) {
                                     Text("typing…")
                                         .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.accentColor)
@@ -219,29 +278,37 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                ChatHeaderActions(
-                    onVideo: { showVideoSheet = true },
-                    onCall: { showCallSheet = true }
-                )
+                if member != nil {
+                    ChatHeaderActions(
+                        onVideo: { showVideoSheet = true },
+                        onCall: { showCallSheet = true }
+                    )
+                }
             }
         }
         .navigationDestination(isPresented: $showProfile) {
-            ContactDetailsView(
-                member: member,
-                onAudio: { showCallSheet = true },
-                onVideo: { showVideoSheet = true },
-                onSearch: { showSearch = true },
-                onStarred: { showStarred = true },
-                mediaURLs: sharedMediaURLs,
-                exportText: exportTranscript,
-                propertyId: propertyService.primary?.id
-            )
+            if let member {
+                ContactDetailsView(
+                    member: member,
+                    onAudio: { showCallSheet = true },
+                    onVideo: { showVideoSheet = true },
+                    onSearch: { showSearch = true },
+                    onStarred: { showStarred = true },
+                    mediaURLs: sharedMediaURLs,
+                    exportText: exportTranscript,
+                    propertyId: propertyService.primary?.id
+                )
+            }
         }
         .sheet(isPresented: $showCallSheet) {
-            CallPickerSheet(members: [member], isVideo: false)
+            if let member {
+                CallPickerSheet(members: [member], isVideo: false)
+            }
         }
         .sheet(isPresented: $showVideoSheet) {
-            CallPickerSheet(members: [member], isVideo: true)
+            if let member {
+                CallPickerSheet(members: [member], isVideo: true)
+            }
         }
         .sheet(item: $forwarding) { msg in
             ForwardPicker(members: familyService.members) { dest in
@@ -250,7 +317,7 @@ struct DirectMessageView: View {
             }
         }
         .sheet(isPresented: $showStarred) {
-            DMStarredView(messages: markedMessages, partner: member) { id in
+            DMStarredView(messages: markedMessages) { id in
                 showStarred = false
                 scrollTarget = id
             }
@@ -277,7 +344,7 @@ struct DirectMessageView: View {
                     propertyId: propertyService.primary?.id,
                     authorId: uid,
                     authorName: myName,
-                    recipientName: member.name
+                    recipientName: member?.name ?? peerName
                 ))
             }
         }
@@ -337,10 +404,10 @@ struct DirectMessageView: View {
             // Freeze the prior last-seen BEFORE markRead overwrites it, so the
             // divider marks where this session started — not messages that
             // arrive while we're reading.
-            unreadSince = directMessageService.lastSeen(for: member)
+            unreadSince = directMessageService.lastSeen(for: thread)
             resolveUnreadDivider()
-            directMessageService.markRead(member: member)
-            Task { await directMessageService.markReadRemote(member: member, myName: myName) }
+            directMessageService.markRead(thread: thread)
+            Task { await directMessageService.markReadRemote(thread: thread, myName: myName) }
             // Opening the thread clears the chat notification rows + the icon
             // badge so the bell can't keep claiming messages now read.
             if let uid = supabase.auth.currentSession?.user.id {
@@ -449,7 +516,7 @@ struct DirectMessageView: View {
     private func resolveUnreadDivider() {
         guard !unreadResolved, let since = unreadSince, !conversationMessages.isEmpty else { return }
         unreadDividerId = directMessageService.firstUnreadId(
-            from: member, myName: myName, since: since)
+            in: thread, myName: myName, since: since)
         unreadResolved = true
     }
 
@@ -484,7 +551,7 @@ struct DirectMessageView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && (conversationMessages.count > visibleCount
                 || (!conversationMessages.isEmpty
-                    && !directMessageService.exhaustedOlder.contains(member.id)))
+                    && !directMessageService.exhaustedOlder.contains(thread.storeKey)))
     }
 
     private var pinnedMessages: [DirectMessage] {
@@ -514,7 +581,7 @@ struct DirectMessageView: View {
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
             isOwn: own,
             bubbleColor: chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
-            myReaction: m.reactions?[myName],
+            myReaction: m.myReaction(myUserId: directMessageService.myUserId, myName: myName),
             onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
             actions: dmMessageActions(m, own: own),
             onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
@@ -611,7 +678,7 @@ struct DirectMessageView: View {
                                         // next older page from the server first.
                                         Task {
                                             await directMessageService.loadOlder(
-                                                propertyId: pid, myName: myName, member: member)
+                                                propertyId: pid, myName: myName, thread: thread)
                                             visibleCount = target
                                             if let anchor { proxy.scrollTo(anchor, anchor: .top) }
                                         }
@@ -667,7 +734,11 @@ struct DirectMessageView: View {
                                     isOwn: isOwn,
                                     hasTail: !nextSameSender,
                                     myName: myName,
+                                    myUserId: directMessageService.myUserId,
                                     partner: member,
+                                    partnerAvatarURL: peerAvatarURL,
+                                    partnerInitials: peerInitials,
+                                    partnerColor: peerColor,
                                     members: familyService.members,
                                     myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                                     outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
@@ -793,8 +864,8 @@ struct DirectMessageView: View {
                             // don't mark the (unseen) message read.
                             return
                         }
-                        directMessageService.markRead(member: member)
-                        Task { await directMessageService.markReadRemote(member: member, myName: myName) }
+                        directMessageService.markRead(thread: thread)
+                        Task { await directMessageService.markReadRemote(thread: thread, myName: myName) }
                     }
                     .onChange(of: scrollTarget) { _, target in
                         guard let t = target else { return }
@@ -851,13 +922,13 @@ struct DirectMessageView: View {
             Spacer()
             ZStack {
                 Circle()
-                    .fill(member.swiftColor.opacity(0.12))
+                    .fill(peerColor.opacity(0.12))
                     .frame(width: 80, height: 80)
-                Text(member.initials)
+                Text(peerInitials)
                     .font(AppFont.scaled(28, weight: .bold))
-                    .foregroundStyle(member.swiftColor)
+                    .foregroundStyle(peerColor)
             }
-            Text(member.name)
+            Text(peerName)
                 .font(AppFont.scaled(18, weight: .bold))
             Text("Start the private conversation")
                 .font(AppFont.scaled(14))
@@ -876,7 +947,7 @@ struct DirectMessageView: View {
     }
 
     private var exportTranscript: String {
-        ChatExport.transcript(title: member.name, lines: conversationMessages.map {
+        ChatExport.transcript(title: peerName, lines: conversationMessages.map {
             (sender: $0.senderName, time: $0.timeDisplay, body: $0.body)
         })
     }
@@ -887,7 +958,7 @@ struct DirectMessageView: View {
             Text("You blocked this contact.")
                 .font(AppFont.scaled(14))
             Button("Unblock") {
-                ChatBlockStore.setBlocked(member.id.uuidString, false)
+                ChatBlockStore.setBlocked(convId, false)
                 blockRefresh.toggle()
             }
             .font(AppFont.footnoteEmphasis)
@@ -1084,13 +1155,16 @@ struct DirectMessageView: View {
         do {
             try await directMessageService.send(
                 propertyId: propertyService.primary?.id, senderName: myName,
-                recipient: member, body: body, replyTo: replyTo, expiresAt: dmExpiresAt)
+                to: thread, body: body, replyTo: replyTo, expiresAt: dmExpiresAt)
             return true
         } catch {
             if let pid = propertyService.primary?.id {
                 outbox.enqueue(PendingMessage(
-                    propertyId: pid, senderName: myName, recipientName: member.name,
-                    recipientMemberId: member.id, body: body, kind: kind, replyTo: replyTo))
+                    propertyId: pid, senderName: myName,
+                    recipientName: member?.name ?? peerName,
+                    recipientMemberId: member?.id,
+                    recipientUserId: thread.peerUserId,
+                    body: body, kind: kind, replyTo: replyTo))
             }
             HapticFeedback.warning()
             return false
@@ -1118,7 +1192,7 @@ struct DirectMessageView: View {
             struct P: Encodable {
                 let sender_name, recipient_name, body, property_id: String
                 let reply_to: String?
-                let sender_id, recipient_member_id, expires_at: String?
+                let sender_id, recipient_id, recipient_member_id, expires_at: String?
             }
             let obTtl = ChatDisappearStore.ttl(recipient)
             let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
@@ -1126,6 +1200,7 @@ struct DirectMessageView: View {
                             body: pm.body ?? "", property_id: pid.uuidString,
                             reply_to: pm.replyTo?.uuidString,
                             sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                            recipient_id: pm.recipientUserId?.uuidString,
                             recipient_member_id: pm.recipientMemberId?.uuidString,
                             expires_at: obExpires)
             do {
@@ -1169,7 +1244,7 @@ struct DirectMessageView: View {
                 let fwdTtl = ChatDisappearStore.ttl(m.name)
                 let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
                 try await directMessageService.send(
-                    propertyId: propId, senderName: myName, recipient: m,
+                    propertyId: propId, senderName: myName, to: DMThread(member: m),
                     body: message.body, expiresAt: fwdExpires)
             }
             HapticFeedback.success()

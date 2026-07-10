@@ -24,6 +24,10 @@ struct DirectMessage: Identifiable, Codable {
     var senderMemberId: UUID?
     var recipientMemberId: UUID?
     var expiresAt: String?
+    /// The recipient's auth user id (migration 141) — the durable other half
+    /// of the thread's identity. Nil only on legacy rows and for recipients
+    /// without an account.
+    var recipientId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, body, pinned, reactions
@@ -33,6 +37,7 @@ struct DirectMessage: Identifiable, Codable {
         case senderMemberId     = "sender_member_id"
         case recipientMemberId  = "recipient_member_id"
         case expiresAt          = "expires_at"
+        case recipientId        = "recipient_id"
         case createdAt     = "created_at"
         case replyTo       = "reply_to"
         case deletedForAll = "deleted_for_all"
@@ -50,31 +55,97 @@ struct DirectMessage: Identifiable, Codable {
     var date: Date? { ISODate.date(from: createdAt) }
 }
 
-// MARK: - Stable identity (Planul 2, phase B)
+// MARK: - Stable identity (chat unification, phase 1)
 //
-// Threads, ownership and read state key on ids — names are display snapshots
-// that break on rename (the sole production DM's sender_name even carries a
-// trailing space its member row doesn't have). Legacy rows without ids fall
-// back to name matching until phase C retires it.
+// A DM thread's identity is the PEER'S AUTH USER ID (migration 141): threads,
+// ownership, read state and reactions key on ids — names are display
+// snapshots that break on rename (the production owner's display_name even
+// carries a trailing space). Member ids and name matching survive ONLY for
+// legacy rows whose id columns are null.
+
+/// Everything needed to address ONE 1:1 thread: the durable peer auth user id
+/// plus the legacy member/name keys that still cover pre-identity rows.
+struct DMThread: Hashable {
+    /// The peer's auth user id — the thread's identity. Nil only for
+    /// contacts that hold no account.
+    var peerUserId: UUID?
+    /// The peer's family_members row, when they're on the roster.
+    var memberId: UUID?
+    /// Roster display-name snapshot — legacy row matching only.
+    var memberName: String
+    /// Trimmed name for UI and the legacy name columns.
+    var displayName: String
+    /// Device-local store key (last-seen, exhausted-older, theme/clear/block
+    /// scopes): the member id for roster-backed threads — preserving every
+    /// existing UserDefaults key — else the peer's user id.
+    var storeKey: UUID
+
+    init(member: FamilyMember) {
+        peerUserId = member.userId
+        memberId = member.id
+        memberName = member.name
+        displayName = member.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        storeKey = member.id
+    }
+
+    init(peer: ChatPeer, member: FamilyMember? = nil) {
+        peerUserId = peer.id
+        memberId = member?.id
+        memberName = member?.name ?? ""
+        displayName = peer.displayName
+        storeKey = member?.id ?? peer.id
+    }
+
+    /// The name to stamp into the legacy recipient_name column.
+    var legacyName: String {
+        memberName.isEmpty ? displayName : memberName
+    }
+}
 
 extension DirectMessage {
+    /// Display names may carry stray whitespace ("Adi " in production) —
+    /// legacy name matching must never fail on an invisible character.
+    static func nameMatches(_ a: String, _ b: String) -> Bool {
+        let tb = b.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !tb.isEmpty else { return false }
+        return a.trimmingCharacters(in: .whitespacesAndNewlines) == tb
+    }
+
     /// Whether the signed-in user sent this message. sender_id is NOT NULL
     /// in practice (dm_insert requires it); the name check only covers rows
     /// from before migration 081.
     func isMine(myUserId: UUID?, myName: String) -> Bool {
         if let sid = senderId, let uid = myUserId { return sid == uid }
-        return senderName == myName
+        return Self.nameMatches(senderName, myName)
     }
 
-    /// Whether this message belongs to the 1-on-1 thread with `member`.
-    func inThread(with member: FamilyMember, myUserId: UUID?, myName: String) -> Bool {
-        if isMine(myUserId: myUserId, myName: myName) {
-            if let rid = recipientMemberId { return rid == member.id }
-            return recipientName == member.name
-        }
-        if let sid = senderMemberId { return sid == member.id }
-        return senderName == member.name
+    /// The caller's own reaction — reactions are keyed by the reactor's auth
+    /// user id (uuid string); the display-name key covers legacy rows only.
+    func myReaction(myUserId: UUID?, myName: String) -> String? {
+        if let uid = myUserId, let r = reactions?[uid.uuidString] { return r }
+        return reactions?[myName]
     }
+
+    /// Whether this message belongs to the 1-on-1 thread described by
+    /// `thread`. Identity first: when both endpoints carry auth ids the match
+    /// is exact and rename-proof; member/name matching covers legacy rows.
+    func inThread(_ thread: DMThread, myUserId: UUID?, myName: String) -> Bool {
+        if let peer = thread.peerUserId, let uid = myUserId {
+            if let sid = senderId, let rid = recipientId {
+                return (sid == uid && rid == peer) || (sid == peer && rid == uid)
+            }
+            // Inbound legacy row: the sender id alone identifies the peer.
+            if let sid = senderId, sid != uid, sid == peer { return true }
+        }
+        // Legacy fallback (rows predating the id columns).
+        if isMine(myUserId: myUserId, myName: myName) {
+            if let rid = recipientMemberId { return rid == thread.memberId }
+            return Self.nameMatches(recipientName, thread.legacyName)
+        }
+        if let sid = senderMemberId { return sid == thread.memberId }
+        return Self.nameMatches(senderName, thread.legacyName)
+    }
+
 }
 
 // MARK: - DirectMessageService
@@ -155,17 +226,22 @@ final class DirectMessageService {
     // optimistic row rolls back and the error rethrows so the caller enqueues it
     // to the offline outbox instead of silently dropping the message.
     @discardableResult
-    func send(propertyId: UUID?, senderName: String, recipient: FamilyMember,
+    func send(propertyId: UUID?, senderName: String, to thread: DMThread,
               body: String, replyTo: UUID? = nil, expiresAt: String? = nil) async throws -> DirectMessage {
         let senderId = supabase.auth.currentSession?.user.id
         let clientId = UUID()
+        // Ids carry the identity; names are display snapshots and are stored
+        // TRIMMED (the server-side stamp trims too — migration 141).
+        let trimmedSender = senderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let recipientName = thread.legacyName.trimmingCharacters(in: .whitespacesAndNewlines)
         let optimistic = DirectMessage(
-            id: clientId, senderName: senderName, recipientName: recipient.name,
+            id: clientId, senderName: trimmedSender, recipientName: recipientName,
             body: body, createdAt: ISO8601DateFormatter().string(from: Date()),
             replyTo: replyTo,
             senderId: senderId,
-            recipientMemberId: recipient.id,
-            expiresAt: expiresAt)
+            recipientMemberId: thread.memberId,
+            expiresAt: expiresAt,
+            recipientId: thread.peerUserId)
         dms.append(optimistic)
 
         struct Payload: Encodable {
@@ -176,14 +252,16 @@ final class DirectMessageService {
             let property_id: String?
             let reply_to: String?
             let sender_id: String?
+            let recipient_id: String?
             let recipient_member_id: String?
             let expires_at: String?
         }
         let payload = Payload(
-            id: clientId.uuidString, sender_name: senderName, recipient_name: recipient.name,
+            id: clientId.uuidString, sender_name: trimmedSender, recipient_name: recipientName,
             body: body, property_id: propertyId?.uuidString,
             reply_to: replyTo?.uuidString, sender_id: senderId?.uuidString,
-            recipient_member_id: recipient.id.uuidString, expires_at: expiresAt)
+            recipient_id: thread.peerUserId?.uuidString,
+            recipient_member_id: thread.memberId?.uuidString, expires_at: expiresAt)
         do {
             let sent: DirectMessage = try await withChatTimeout {
                 try await supabase
@@ -196,6 +274,7 @@ final class DirectMessageService {
             }
             if let i = dms.firstIndex(where: { $0.id == sent.id }) { dms[i] = sent }
             else { dms.append(sent) }
+            scheduleHeadsRefresh()
             return sent
         } catch {
             dms.removeAll { $0.id == clientId }
@@ -205,57 +284,91 @@ final class DirectMessageService {
 
     // MARK: - Queries
 
-    func messages(with member: FamilyMember, myName: String) -> [DirectMessage] {
+    func messages(in thread: DMThread, myName: String) -> [DirectMessage] {
         _ = localRevision  // observe local-state changes (hidden ids)
         let hidden = hiddenIds()
         return dms.filter {
-            $0.inThread(with: member, myUserId: myUserId, myName: myName)
+            $0.inThread(thread, myUserId: myUserId, myName: myName)
             && !hidden.contains($0.id)
         }
     }
 
-    // MARK: - Bulk conversation summaries (one pass, every partner)
+    // MARK: - Conversation heads (server-side, one row per peer)
 
-    struct ConversationSummary {
-        var last: DirectMessage?
-        var unread: Int = 0
+    /// One row per DM thread for the signed-in user, computed on Postgres by
+    /// dm_conversation_heads (migration 141) from the MESSAGES — never from
+    /// the roster, so a peer with no family_members row (the property owner!)
+    /// appears like anyone else. Unread is server truth: inbound rows
+    /// addressed to me (recipient_id) with no read receipt.
+    struct ConversationHead: Decodable, Identifiable {
+        let peerUserId: UUID?
+        let peerMemberId: UUID?
+        let peerName: String
+        let lastMessageId: UUID
+        let lastBody: String?
+        let lastSenderId: UUID?
+        let lastCreatedAt: String
+        let lastDeletedForAll: Bool
+        let unreadCount: Int
+
+        enum CodingKeys: String, CodingKey {
+            case peerUserId         = "peer_user_id"
+            case peerMemberId       = "peer_member_id"
+            case peerName           = "peer_name"
+            case lastMessageId      = "last_message_id"
+            case lastBody           = "last_body"
+            case lastSenderId       = "last_sender_id"
+            case lastCreatedAt      = "last_created_at"
+            case lastDeletedForAll  = "last_deleted_for_all"
+            case unreadCount        = "unread_count"
+        }
+
+        var id: String {
+            peerUserId?.uuidString ?? peerMemberId?.uuidString ?? peerName.lowercased()
+        }
+        var lastDate: Date? { ISODate.date(from: lastCreatedAt) }
     }
 
-    /// Everything the conversation list needs about every DM thread, built
-    /// in ONE pass over the store and keyed by the partner's stable member
-    /// id (ids survive renames; name matching only covers legacy rows).
-    /// Same semantics as ever: hidden messages excluded, unread counts only
-    /// inbound messages newer than the per-partner last-seen mark.
-    func conversationSummaries(myName: String, members: [FamilyMember]) -> [UUID: ConversationSummary] {
-        _ = localRevision  // observe hidden-ids / last-seen changes
-        let hidden = hiddenIds()
-        let byId = Dictionary(uniqueKeysWithValues: members.map { ($0.id, $0) })
-        let byName = Dictionary(members.map { ($0.name, $0) }, uniquingKeysWith: { a, _ in a })
-        var out: [UUID: ConversationSummary] = [:]
-        var seenDates: [UUID: Date] = [:]
-        for m in dms where !hidden.contains(m.id) {
-            let mine = m.isMine(myUserId: myUserId, myName: myName)
-            let partner: FamilyMember? = mine
-                ? (m.recipientMemberId.flatMap { byId[$0] } ?? byName[m.recipientName])
-                : (m.senderMemberId.flatMap { byId[$0] } ?? byName[m.senderName])
-            guard let partner else { continue }
-            var s = out[partner.id] ?? ConversationSummary()
-            if s.last.map({ m.createdAt > $0.createdAt }) ?? true { s.last = m }
-            if !mine {
-                let seen: Date
-                if let cached = seenDates[partner.id] { seen = cached }
-                else { seen = lastSeenDate(for: partner); seenDates[partner.id] = seen }
-                if (m.date ?? .distantPast) > seen { s.unread += 1 }
-            }
-            out[partner.id] = s
+    private(set) var conversationHeads: [ConversationHead] = []
+    @ObservationIgnored private var headsTask: Task<Void, Never>?
+
+    /// Refetches the conversation heads (one cheap aggregate row per peer).
+    func refreshHeads(propertyId: UUID) async {
+        let rows: [ConversationHead]? = try? await supabase
+            .rpc("dm_conversation_heads", params: ["p_property": propertyId.uuidString])
+            .execute()
+            .value
+        if let rows { conversationHeads = rows }
+    }
+
+    /// Debounced heads refresh piggybacking on sends and realtime events, so
+    /// the conversation list stays live without re-deriving it client-side.
+    private func scheduleHeadsRefresh() {
+        guard let pid = subscribedPropertyId else { return }
+        headsTask?.cancel()
+        headsTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await self?.refreshHeads(propertyId: pid)
         }
-        return out
+    }
+
+    /// Whether a message is hidden on this device ("delete for me").
+    func isHidden(_ id: UUID) -> Bool {
+        _ = localRevision  // observe hidden-ids changes from view bodies
+        return hiddenIds().contains(id)
+    }
+
+    /// Newest locally visible message of a thread — the preview fallback when
+    /// a server head's last message is hidden on this device.
+    func latestVisibleMessage(in thread: DMThread, myName: String) -> DirectMessage? {
+        messages(in: thread, myName: myName).max { $0.createdAt < $1.createdAt }
     }
 
     // MARK: - Older history (per conversation, server-paged)
 
     /// Conversations whose full server history is already in memory
-    /// (an older-page fetch came back empty). Keyed by the partner's member id.
+    /// (an older-page fetch came back empty). Keyed by the thread's store key.
     private(set) var exhaustedOlder: Set<UUID> = []
     var isLoadingOlder = false
 
@@ -263,20 +376,20 @@ final class DirectMessageService {
     /// Returns how many new rows arrived; 0 marks the thread exhausted so
     /// the UI can retire its load-older affordance.
     @discardableResult
-    func loadOlder(propertyId: UUID, myName: String, member: FamilyMember) async -> Int {
+    func loadOlder(propertyId: UUID, myName: String, thread: DMThread) async -> Int {
         guard !isLoadingOlder else { return 0 }
-        let thread = messages(with: member, myName: myName)
-        guard let oldest = thread.min(by: { $0.createdAt < $1.createdAt }) else { return 0 }
+        let loaded = messages(in: thread, myName: myName)
+        guard let oldest = loaded.min(by: { $0.createdAt < $1.createdAt }) else { return 0 }
         isLoadingOlder = true
         defer { isLoadingOlder = false }
         do {
             let rows = try await Self.fetchOlder(propertyId: propertyId, myName: myName,
-                                                 myUserId: myUserId, member: member,
+                                                 myUserId: myUserId, thread: thread,
                                                  before: oldest.createdAt)
             let known = Set(dms.map(\.id))
             let fresh = rows.filter { !known.contains($0.id) }
             guard !fresh.isEmpty else {
-                exhaustedOlder.insert(member.id)
+                exhaustedOlder.insert(thread.storeKey)
                 return 0
             }
             // The page is strictly older than everything in this thread, so
@@ -304,14 +417,17 @@ final class DirectMessageService {
         return "\(column).eq.\"\(escaped)\""
     }
 
-    /// Network + JSON decode off the main actor. The sender_id clause makes
-    /// my outbound rows rename-proof; the name clauses cover legacy rows and
-    /// inbound mail (my own account may have no family_members row, so the
-    /// recipient side can't be an id filter yet — phase C revisits).
+    /// Network + JSON decode off the main actor. The id clauses make BOTH
+    /// directions of my mail rename- and roster-proof (sender_id = me for
+    /// outbound, recipient_id = me for inbound — migration 141); the name
+    /// clauses survive only for legacy rows whose id columns are null.
     nonisolated private static func fetchRecent(propertyId: UUID, myName: String,
                                                 myUserId: UUID?) async throws -> [DirectMessage] {
         var clauses = [orEq("sender_name", myName), orEq("recipient_name", myName)]
-        if let uid = myUserId { clauses.insert("sender_id.eq.\(uid.uuidString)", at: 0) }
+        if let uid = myUserId {
+            clauses.insert(contentsOf: ["sender_id.eq.\(uid.uuidString)",
+                                        "recipient_id.eq.\(uid.uuidString)"], at: 0)
+        }
         return try await supabase
             .from("direct_messages")
             .select()
@@ -324,16 +440,26 @@ final class DirectMessageService {
     }
 
     nonisolated private static func fetchOlder(propertyId: UUID, myName: String, myUserId: UUID?,
-                                               member: FamilyMember, before: String) async throws -> [DirectMessage] {
-        let mid = member.id.uuidString
-        var clauses = [
-            "and(\(orEq("sender_name", myName)),\(orEq("recipient_name", member.name)))",
-            "and(\(orEq("sender_name", member.name)),\(orEq("recipient_name", myName)))",
-            "and(sender_member_id.eq.\(mid),\(orEq("recipient_name", myName)))",
-        ]
-        if let uid = myUserId {
-            clauses.insert("and(sender_id.eq.\(uid.uuidString),recipient_member_id.eq.\(mid))", at: 0)
+                                               thread: DMThread, before: String) async throws -> [DirectMessage] {
+        var clauses: [String] = []
+        // Identity clauses — exact and rename-proof.
+        if let uid = myUserId, let peer = thread.peerUserId {
+            clauses.append("and(sender_id.eq.\(uid.uuidString),recipient_id.eq.\(peer.uuidString))")
+            clauses.append("and(sender_id.eq.\(peer.uuidString),recipient_id.eq.\(uid.uuidString))")
         }
+        // Legacy clauses so rows predating the id columns still page in.
+        let legacyName = thread.legacyName
+        if !legacyName.isEmpty {
+            clauses.append("and(\(orEq("sender_name", myName)),\(orEq("recipient_name", legacyName)))")
+            clauses.append("and(\(orEq("sender_name", legacyName)),\(orEq("recipient_name", myName)))")
+        }
+        if let mid = thread.memberId?.uuidString {
+            clauses.append("and(sender_member_id.eq.\(mid),\(orEq("recipient_name", myName)))")
+            if let uid = myUserId {
+                clauses.append("and(sender_id.eq.\(uid.uuidString),recipient_member_id.eq.\(mid))")
+            }
+        }
+        guard !clauses.isEmpty else { return [] }
         return try await supabase
             .from("direct_messages")
             .select()
@@ -346,10 +472,12 @@ final class DirectMessageService {
             .value
     }
 
-    func markRead(member: FamilyMember) {
-        UserDefaults.standard.set(Date(), forKey: "dm.lastseen.id.\(member.id.uuidString)")
+    func markRead(thread: DMThread) {
+        UserDefaults.standard.set(Date(), forKey: "dm.lastseen.id.\(thread.storeKey.uuidString)")
         localRevision &+= 1
     }
+
+    func markRead(member: FamilyMember) { markRead(thread: DMThread(member: member)) }
 
     // MARK: - Persistence
 
@@ -368,6 +496,9 @@ final class DirectMessageService {
                                                   myUserId: myUserId)
             dms = rows.reversed()
             exhaustedOlder.removeAll()
+            // The conversation list derives from the server-side heads, not
+            // from the roster — refresh them alongside the message window.
+            await refreshHeads(propertyId: propertyId)
             // Anything addressed to us that this device just fetched counts as
             // delivered — stamp it so the sender's ticks advance to "delivered".
             await markDelivered(myName: myName)
@@ -458,6 +589,7 @@ final class DirectMessageService {
                       let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
                 else { return }
                 self.dms.removeAll { $0.id == row.id }
+                self.scheduleHeadsRefresh()
             }
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
@@ -476,6 +608,7 @@ final class DirectMessageService {
     /// freshly received inbound message is stamped delivered — the resulting
     /// UPDATE echoes back and is patched in place, so no reload storm.
     private func applyRealtimeInsert(_ row: DirectMessage, myName: String) {
+        defer { scheduleHeadsRefresh() }
         if let i = dms.firstIndex(where: { $0.id == row.id }) {
             dms[i] = row
             return
@@ -492,6 +625,7 @@ final class DirectMessageService {
     private func applyRealtimeUpdate(_ row: DirectMessage) {
         guard let i = dms.firstIndex(where: { $0.id == row.id }) else { return }
         dms[i] = row
+        scheduleHeadsRefresh()
     }
 
     func unsubscribe() async {
@@ -502,6 +636,8 @@ final class DirectMessageService {
         typingNames.removeAll()
         reloadTask?.cancel()
         reloadTask = nil
+        headsTask?.cancel()
+        headsTask = nil
         subscribedPropertyId = nil
         if let ch = channel {
             await supabase.realtimeV2.removeChannel(ch)
@@ -580,9 +716,16 @@ final class DirectMessageService {
         }
     }
 
+    /// Reactions are keyed by the REACTOR'S AUTH USER ID (uuid string) —
+    /// display names collide and drift. Only the caller's own key is ever
+    /// written; a legacy name key of the caller is read once and migrated to
+    /// the id key on the next toggle.
     func toggleReaction(_ msg: DirectMessage, emoji: String, myName: String) async {
         var map = msg.reactions ?? [:]
-        if map[myName] == emoji { map.removeValue(forKey: myName) } else { map[myName] = emoji }
+        let key = myUserId?.uuidString ?? myName
+        let current = map[key] ?? map[myName]
+        if myUserId != nil { map.removeValue(forKey: myName) }
+        if current == emoji { map.removeValue(forKey: key) } else { map[key] = emoji }
         do {
             try await supabase
                 .from("direct_messages")
@@ -616,11 +759,11 @@ final class DirectMessageService {
         }
     }
 
-    /// Marks incoming messages from `partner` as read (sets read_at) and updates local state.
-    func markReadRemote(member: FamilyMember, myName: String) async {
+    /// Marks incoming messages in `thread` as read (sets read_at) and updates local state.
+    func markReadRemote(thread: DMThread, myName: String) async {
         let unread = dms.filter {
             !$0.isMine(myUserId: myUserId, myName: myName) &&
-            $0.inThread(with: member, myUserId: myUserId, myName: myName) &&
+            $0.inThread(thread, myUserId: myUserId, myName: myName) &&
             $0.readAt == nil
         }
         guard !unread.isEmpty else { return }
@@ -648,7 +791,44 @@ final class DirectMessageService {
                     if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
                 }
             }
+            // Unread badges in the list are server truth — pull them down.
+            scheduleHeadsRefresh()
         } catch { return }
+    }
+
+    /// "Mark all read": stamps read_at on every loaded inbound message that
+    /// lacks one (one batched UPDATE), then refreshes the server-derived
+    /// unread counts. Messages beyond the loaded window keep their state.
+    func markAllReadRemote(propertyId: UUID, myName: String) async {
+        let unread = dms.filter {
+            !$0.isMine(myUserId: myUserId, myName: myName) && $0.readAt == nil
+        }
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        if !unread.isEmpty {
+            let needBoth = unread.filter { $0.deliveredAt == nil }.map { $0.id.uuidString }
+            let readOnly = unread.filter { $0.deliveredAt != nil }.map { $0.id.uuidString }
+            do {
+                if !needBoth.isEmpty {
+                    try await supabase.from("direct_messages")
+                        .update(["read_at": nowISO, "delivered_at": nowISO])
+                        .in("id", values: needBoth)
+                        .execute()
+                }
+                if !readOnly.isEmpty {
+                    try await supabase.from("direct_messages")
+                        .update(["read_at": nowISO])
+                        .in("id", values: readOnly)
+                        .execute()
+                }
+                for m in unread {
+                    if let i = dms.firstIndex(where: { $0.id == m.id }) {
+                        dms[i].readAt = nowISO
+                        if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
+                    }
+                }
+            } catch { /* best effort — heads refresh below reflects reality */ }
+        }
+        await refreshHeads(propertyId: propertyId)
     }
 
     // MARK: - Private helpers
@@ -660,15 +840,17 @@ final class DirectMessageService {
         return Set(arr.compactMap { UUID(uuidString: $0) })
     }
 
-    /// Last-seen mark, keyed by the partner's member id (rename-proof). The
+    /// Last-seen mark, keyed by the thread's store key (rename-proof; the
+    /// member id for roster-backed threads so existing marks survive). The
     /// pre-phase-B key was the display name; migrate it forward once so no
     /// conversation flashes fully-unread after updating.
-    private func lastSeenDate(for member: FamilyMember) -> Date {
-        let idKey = "dm.lastseen.id.\(member.id.uuidString)"
+    private func lastSeenDate(for thread: DMThread) -> Date {
+        let idKey = "dm.lastseen.id.\(thread.storeKey.uuidString)"
         if let d = UserDefaults.standard.object(forKey: idKey) as? Date { return d }
-        if let legacy = UserDefaults.standard.object(forKey: "dm.lastseen.\(member.name)") as? Date {
+        if !thread.memberName.isEmpty,
+           let legacy = UserDefaults.standard.object(forKey: "dm.lastseen.\(thread.memberName)") as? Date {
             UserDefaults.standard.set(legacy, forKey: idKey)
-            UserDefaults.standard.removeObject(forKey: "dm.lastseen.\(member.name)")
+            UserDefaults.standard.removeObject(forKey: "dm.lastseen.\(thread.memberName)")
             return legacy
         }
         return .distantPast
@@ -676,14 +858,14 @@ final class DirectMessageService {
 
     /// This device's last-open time for a conversation — captured before
     /// `markRead` so the view can place the "unread messages" divider.
-    func lastSeen(for member: FamilyMember) -> Date { lastSeenDate(for: member) }
+    func lastSeen(for thread: DMThread) -> Date { lastSeenDate(for: thread) }
 
-    /// The earliest message from `member` newer than `since` — where the
+    /// The earliest inbound message in `thread` newer than `since` — where the
     /// unread divider goes. `dms` is oldest→newest, so `.first` is the earliest.
-    func firstUnreadId(from member: FamilyMember, myName: String, since: Date) -> UUID? {
+    func firstUnreadId(in thread: DMThread, myName: String, since: Date) -> UUID? {
         dms.first {
             !$0.isMine(myUserId: myUserId, myName: myName) &&
-            $0.inThread(with: member, myUserId: myUserId, myName: myName) &&
+            $0.inThread(thread, myUserId: myUserId, myName: myName) &&
             ($0.date ?? .distantPast) > since
         }?.id
     }
@@ -692,24 +874,48 @@ final class DirectMessageService {
 // MARK: - Server-side search
 
 extension DirectMessageService {
-    /// Names of the DM partners whose history contains the query — matched
-    /// on Postgres, so results reach past the loaded page.
-    func partnersMatching(propertyId: UUID, myName: String, query: String) async -> Set<String> {
+    /// The DM partners whose history contains the query — matched on
+    /// Postgres, so results reach past the loaded page. Peers come back as
+    /// auth user ids (identity rows) plus raw names (legacy rows).
+    struct SearchHits {
+        var userIds: Set<UUID> = []
+        var names: Set<String> = []
+    }
+
+    func partnersMatching(propertyId: UUID, myName: String, query: String) async -> SearchHits {
         struct Row: Decodable {
+            let senderId: UUID?
+            let recipientId: UUID?
             let senderName: String
             let recipientName: String
             enum CodingKeys: String, CodingKey {
-                case senderName = "sender_name"
+                case senderId      = "sender_id"
+                case recipientId   = "recipient_id"
+                case senderName    = "sender_name"
                 case recipientName = "recipient_name"
             }
         }
+        var clauses = [Self.orEq("sender_name", myName), Self.orEq("recipient_name", myName)]
+        if let uid = myUserId {
+            clauses.insert(contentsOf: ["sender_id.eq.\(uid.uuidString)",
+                                        "recipient_id.eq.\(uid.uuidString)"], at: 0)
+        }
         let rows: [Row] = (try? await supabase.from("direct_messages")
-            .select("sender_name, recipient_name")
+            .select("sender_id, recipient_id, sender_name, recipient_name")
             .eq("property_id", value: propertyId.uuidString)
-            .or("\(Self.orEq("sender_name", myName)),\(Self.orEq("recipient_name", myName))")
+            .or(clauses.joined(separator: ","))
             .ilike("body", pattern: MessageService.likePattern(query))
             .limit(200)
             .execute().value) ?? []
-        return Set(rows.map { $0.senderName == myName ? $0.recipientName : $0.senderName })
+        var hits = SearchHits()
+        for r in rows {
+            let mine = (r.senderId != nil && r.senderId == myUserId)
+                || DirectMessage.nameMatches(r.senderName, myName)
+            if let peer = mine ? r.recipientId : r.senderId, peer != myUserId {
+                hits.userIds.insert(peer)
+            }
+            hits.names.insert(mine ? r.recipientName : r.senderName)
+        }
+        return hits
     }
 }

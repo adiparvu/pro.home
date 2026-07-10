@@ -53,6 +53,17 @@ struct ConversationEntry: Identifiable {
     let unread: Int
     let isGroup: Bool
     let member: FamilyMember?
+    /// The peer's durable identity + display data. Set for every DM row whose
+    /// counterpart holds an account — including peers with NO roster row
+    /// (the property owner on a non-owner device).
+    var peer: ChatPeer? = nil
+
+    /// The addressable 1:1 thread behind a DM row; nil for the group entry.
+    var dmThread: DMThread? {
+        if let member { return DMThread(member: member) }
+        if let peer { return DMThread(peer: peer) }
+        return nil
+    }
 
     var formattedTime: String {
         guard let date else { return "" }
@@ -170,26 +181,44 @@ struct ConversationRowView: View {
     private var avatar: some View {
         if entry.isGroup {
             GroupChatAvatar(members: members, photoUrl: propertyPhotoUrl)
-        } else if let member = entry.member {
-            MemberCircleAvatar(member: member, size: 54)
+        } else {
+            // Identity first: the ChatPeer carries the live profile photo
+            // (this is what used to leave DM rows on initials — the roster
+            // snapshot rarely holds the account's real avatar).
+            PeerCircleAvatar(
+                name: entry.peer?.displayName ?? entry.member?.name ?? entry.name,
+                color: entry.member?.swiftColor ?? entry.peer?.swiftColor ?? .blue,
+                avatarUrl: entry.peer?.avatarUrl ?? entry.member?.avatarUrl,
+                size: 54)
         }
     }
 }
 
-// MARK: - Member circle avatar
+// MARK: - Peer circle avatar (identity-based rows)
 
-struct MemberCircleAvatar: View {
-    let member: FamilyMember
+/// Renders any DM counterpart from plain display data (name/colour/URL) — no
+/// FamilyMember required, so a peer missing from the roster (the property
+/// owner!) gets a real avatar too. The photo wins; coloured initials are the
+/// fallback. `MemberCircleAvatar` below stays as the roster-typed convenience.
+struct PeerCircleAvatar: View {
+    let name: String
+    let color: Color
+    var avatarUrl: String? = nil
     let size: CGFloat
+
+    private var initialsString: String {
+        let parts = name.split(separator: " ")
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
+        }
+        return String(name.prefix(2)).uppercased()
+    }
 
     var body: some View {
         ZStack {
             Circle()
-                .foregroundStyle(member.swiftColor.opacity(0.18))
-            // Show the member's real photo when they have one; the coloured
-            // initials are only the fallback (matches GroupChatAvatar and the
-            // message-bubble avatars — the DM list used to show initials only).
-            if let urlStr = member.avatarUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+                .foregroundStyle(color.opacity(0.18))
+            if let urlStr = avatarUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
                 StorageImage(url: url) { phase in
                     switch phase {
                     case .success(let img):
@@ -208,9 +237,27 @@ struct MemberCircleAvatar: View {
     }
 
     private var initials: some View {
-        Text(member.initials)
+        Text(initialsString)
             .font(.system(size: size * 0.38, weight: .bold))
-            .foregroundStyle(member.swiftColor)
+            .foregroundStyle(color)
+    }
+}
+
+// MARK: - Member circle avatar
+
+struct MemberCircleAvatar: View {
+    let member: FamilyMember
+    let size: CGFloat
+
+    var body: some View {
+        // Account holders resolve their LIVE profile photo through the
+        // directory; contacts fall back to whatever snapshot the row carries.
+        PeerCircleAvatar(
+            name: member.name,
+            color: member.swiftColor,
+            avatarUrl: MemberDirectory.shared.avatarString(userId: member.userId,
+                                                           fallback: member.avatarUrl),
+            size: size)
     }
 }
 
