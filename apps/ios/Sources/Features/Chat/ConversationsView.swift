@@ -411,16 +411,10 @@ struct ConversationsView: View {
                 }
                 .accessibilityLabel("Profile and options")
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("convo_inbox_title")
-                        .font(AppFont.scaled(24, weight: .bold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(myName)
-                        .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Text("Chat")
+                    .font(AppFont.scaled(24, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 Spacer()
 
