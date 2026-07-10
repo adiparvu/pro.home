@@ -98,6 +98,10 @@ struct DirectMessageView: View {
     @State private var showEventComposer = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
+    /// Resolved FaceTime handle for the peer — account e-mail, then roster
+    /// e-mail, then roster phone (see FaceTimeBridge). Nil means the header
+    /// renders NO call buttons at all (never a dead control).
+    @State private var faceTimeHandle: String? = nil
     @State private var showProfile = false
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
@@ -283,26 +287,30 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                if member != nil {
-                    ChatHeaderActions(
-                        onVideo: { showVideoSheet = true },
-                        onCall: { showCallSheet = true }
-                    )
-                } else {
-                    // Identity-only peers have no contact-details page (the
-                    // usual search entry), so the magnifier keeps in-thread
-                    // search reachable now that the bar is no longer pinned.
-                    Button { showSearch = true } label: {
-                        Image(systemName: "magnifyingglass")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 40, height: 34)
-                            .contentShape(Rectangle())
+                HStack(spacing: 8) {
+                    // Stage-1 in-chat calling: audio/video buttons that bridge
+                    // straight to FaceTime, rendered only once a handle has
+                    // resolved for this peer (see FaceTimeBridge — no dead
+                    // controls; FaceTime owns reachability from there).
+                    if let handle = faceTimeHandle {
+                        DMFaceTimeHeaderButtons(handle: handle)
                     }
-                    .buttonStyle(.plain)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
-                    .accessibilityLabel(Text("Search in conversation"))
+                    if member == nil {
+                        // Identity-only peers have no contact-details page (the
+                        // usual search entry), so the magnifier keeps in-thread
+                        // search reachable now that the bar is no longer pinned.
+                        Button { showSearch = true } label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 40, height: 34)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+                        .accessibilityLabel(Text("Search in conversation"))
+                    }
                 }
             }
         }
@@ -403,6 +411,14 @@ struct DirectMessageView: View {
         // conversation list's teardown must never leave an open thread silent.
         // subscribeRealtime is idempotent, so this is a no-op when already live.
         .task { await MemberDirectory.shared.loadIfNeeded() }
+        // Resolve the peer's FaceTime handle (account e-mail → roster e-mail
+        // → roster phone). Keyed on the roster so the buttons appear as soon
+        // as a late-loading roster row supplies a handle — and disappear if
+        // the last handle-bearing source goes away.
+        .task(id: familyService.members) {
+            faceTimeHandle = await FaceTimeBridge.handle(
+                for: peer, member: member, roster: familyService.members)
+        }
         .task {
             // Keep any live-location bubble in this thread following the sharer
             // while it's open — mirrors the group chat's refresh loop.
