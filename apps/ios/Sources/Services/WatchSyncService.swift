@@ -73,6 +73,14 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
         } catch {}
     }
 
+    /// Push a signed-out marker (empty snapshot, `accountId == nil`) so the watch
+    /// wipes its cached glance data. Sent on logout and immediately on account
+    /// switch, before the new account's fresh payload arrives, so the wrist
+    /// never lingers on the previous account's data.
+    func pushCleared() {
+        push(WatchPayload(snapshot: PRVIOWidgetSnapshot(), accountId: nil))
+    }
+
     // MARK: WCSessionDelegate
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState,

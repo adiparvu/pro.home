@@ -115,6 +115,11 @@ final class AuthService {
         // The next account must never see this household's cached data.
         ServiceCache.clear()
         SignedStorage.clearCache()
+        // Logout bypasses reloadWorld (session is now nil), so the watch would
+        // keep its last owner payload forever — wipe the App Group glance data
+        // and tell the wrist to clear its own cache.
+        SharedDataStore.clearWatchData()
+        WatchSyncService.shared.pushCleared()
     }
 
     func switchTo(account: SavedAccount) async throws {
@@ -126,5 +131,10 @@ final class AuthService {
         // Account switch = different household visibility; drop the old cache.
         ServiceCache.clear()
         SignedStorage.clearCache()
+        // Wipe the wrist immediately; reloadWorld(.accountSwitch) then re-pushes
+        // the new account's role-scoped payload, so the watch never briefly
+        // shows the previous account's glance data.
+        SharedDataStore.clearWatchData()
+        WatchSyncService.shared.pushCleared()
     }
 }

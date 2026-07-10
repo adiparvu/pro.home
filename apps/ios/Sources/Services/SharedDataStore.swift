@@ -53,6 +53,15 @@ struct PRVIOWidgetSnapshot: Codable {
 
 struct WatchPayload: Codable {
     var snapshot: PRVIOWidgetSnapshot
+    /// The auth user id this payload belongs to. `nil` means a cleared /
+    /// signed-out state — the watch wipes its cache when it receives it, so a
+    /// logged-out or switched account never keeps showing the previous owner's
+    /// data. Optional-by-default so payloads cached by older watch apps still
+    /// decode.
+    var accountId: String? = nil
+    /// `false` when the payload was scoped for an outsider (tenant/guest/worker)
+    /// — the watch then keeps itself to the person's own surfaces only.
+    var isFamilyScope: Bool = true
     var tasks: [TaskCatalogEntry] = []
     var plants: [PlantCatalogEntry] = []
     // Optional-by-default so payloads cached by the V1 watch app still decode.
@@ -235,6 +244,42 @@ enum SharedDataStore {
     private static let pendingWateringsKey = "prvio.pending.waterings"
     private static let pendingCompletionsKey = "prvio.pending.completions"
     private static let pendingSupplyChecksKey = "prvio.pending.supplyChecks"
+    private static let accountStampKey     = "prvio.watch.accountStamp"
+
+    // MARK: Account stamp (which account/role the current snapshot belongs to)
+    //
+    // Stored so `currentWatchPayload()` can tag every push with the owning
+    // account id and role scope — the watch wipes itself when it receives a
+    // payload for a different (or no) account, so a logged-out or switched
+    // account never keeps showing the previous owner's glance data.
+
+    static func writeAccountStamp(userId: String?, isFamily: Bool) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        let stamp: [String: Any] = ["userId": userId as Any, "isFamily": isFamily]
+        ud.set(stamp, forKey: accountStampKey)
+    }
+
+    static func readAccountStamp() -> (userId: String?, isFamily: Bool) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let stamp = ud.dictionary(forKey: accountStampKey) else { return (nil, true) }
+        return (stamp["userId"] as? String, stamp["isFamily"] as? Bool ?? true)
+    }
+
+    /// Wipe every glanceable surface the watch mirrors. Called on logout and on
+    /// account switch so the App Group holds nothing from the previous account;
+    /// a cleared payload is then pushed so the watch's own cache clears too.
+    static func clearWatchData() {
+        if let ud = UserDefaults(suiteName: suiteName) {
+            for key in [snapshotKey, taskCatalogKey, plantCatalogKey, supplyCatalogKey,
+                        deliveryCatalogKey, pantryCatalogKey, sensorCatalogKey,
+                        actuatorCatalogKey, watchExtrasKey, accountStampKey] {
+                ud.removeObject(forKey: key)
+            }
+        }
+        // The emergency plan is mirrored from UserDefaults.standard.
+        UserDefaults.standard.removeObject(forKey: "prvio.emergency")
+        UserDefaults.standard.removeObject(forKey: "prvio.emergency.notes")
+    }
 
     // MARK: Widget snapshot
 
@@ -557,7 +602,10 @@ enum SharedDataStore {
     static func currentWatchPayload() -> WatchPayload? {
         guard let snapshot = read() else { return nil }
         let extras = readWatchExtras()
+        let stamp = readAccountStamp()
         return WatchPayload(snapshot: snapshot,
+                            accountId: stamp.userId,
+                            isFamilyScope: stamp.isFamily,
                             tasks: readTaskCatalog(),
                             plants: readPlantCatalog(),
                             supplies: readSupplyCatalog(),

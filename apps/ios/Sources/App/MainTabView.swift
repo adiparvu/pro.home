@@ -552,6 +552,12 @@ struct MainTabView: View {
             budgetSpent: financialService.records.isEmpty ? nil : monthSpent,
             budgetLimit: budgetLimit > 0 ? budgetLimit : nil,
             budgetCurrency: financialService.records.isEmpty ? nil : householdCurrency))
+        // Stamp the snapshot with the owning account + role scope so every push
+        // is attributable — the watch clears itself if a payload arrives for a
+        // different (or no) account, and self-limits to personal surfaces for an
+        // outsider. Written before currentWatchPayload() reads it.
+        SharedDataStore.writeAccountStamp(userId: auth.session?.user.id.uuidString,
+                                          isFamily: propertyService.isFamilyMember)
         // The watch renders the same state the widgets do — one push, in the
         // same breath as the snapshot write, so the two can never diverge.
         if let payload = SharedDataStore.currentWatchPayload() {

@@ -71,6 +71,15 @@ final class WatchStore: NSObject, WCSessionDelegate {
     private func ingestData(_ data: Data) {
         guard let decoded = try? JSONDecoder().decode(WatchPayload.self, from: data) else { return }
         Task { @MainActor in
+            // A cleared push (accountId == nil) means the phone logged out or is
+            // mid-switch — wipe the cache so the wrist stops showing the previous
+            // account's data and falls back to the "waiting for iPhone" state.
+            if decoded.accountId == nil {
+                self.payload = nil
+                Self.defaults.removeObject(forKey: Self.cacheKey)
+                WidgetCenter.shared.reloadAllTimelines()
+                return
+            }
             self.payload = decoded
             Self.defaults.set(data, forKey: Self.cacheKey)
             // Fresh state → repaint the watch-face complications too.

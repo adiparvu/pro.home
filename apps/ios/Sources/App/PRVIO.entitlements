@@ -26,18 +26,10 @@
 		<string>group.com.prvio.app</string>
 	</array>
 
-	<!-- WeatherKit — property weather card. -->
-	<key>com.apple.developer.weatherkit</key>
-	<true/>
-
-	<!-- NFC Tag Reading — NFC wallet / tag scan. -->
-	<key>com.apple.developer.nfc.readersession.formats</key>
-	<array>
-		<string>NDEF</string>
-	</array>
-
-	<!-- HomeKit — Cameras page (HMHomeManager). -->
-	<key>com.apple.developer.homekit</key>
-	<true/>
+	<!-- NFC / HomeKit / WeatherKit are intentionally not declared yet: NFC as-is
+	     fails App Store upload validation on SDK 26.5 (ITMS-90778), and all three
+	     were already stripped/non-functional. Restore in a follow-up once each is
+	     verified to pass upload validation. Keep this file in sync with the
+	     project.yml `properties` block. -->
 </dict>
 </plist>

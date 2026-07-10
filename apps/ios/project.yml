@@ -70,14 +70,13 @@ targets:
         # binary is signed with no aps-environment, and registerForRemoteNotifications
         # fails on device with error 3000 — no DM/group message ever delivers a push.
         aps-environment: production
-        # Without this, NFCNDEFReaderSession.readingAvailable is false even
-        # on NFC-capable hardware — "NFC is not available on this device".
-        com.apple.developer.nfc.readersession.formats:
-          - NDEF
-        # HomeKit camera accessories (Cameras page): HMHomeManager requires
-        # the HomeKit entitlement in the provisioning profile.
-        com.apple.developer.homekit: true
-        com.apple.developer.weatherkit: true
+        # NFC / HomeKit / WeatherKit are deliberately NOT restored here yet.
+        # They were being silently stripped by the widget-clobber bug, so they
+        # were already non-functional. Restoring NFC as-is fails App Store upload
+        # validation on SDK 26.5 (ITMS-90778 "NDEF is disallowed"), which blocked
+        # the whole push deploy. They will be restored in a follow-up once each is
+        # verified to pass validation — kept out here so the push fix ships on a
+        # guaranteed-green minimal entitlement set (app group + aps-environment).
     postBuildScripts:
       # The .xcstrings catalog is copied raw by this project, not compiled —
       # this phase generates the per-language .lproj tables into the product
@@ -95,7 +94,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "952"
+        CURRENT_PROJECT_VERSION: "953"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -183,7 +182,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "952"
+        CURRENT_PROJECT_VERSION: "953"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -221,7 +220,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "952"
+        CURRENT_PROJECT_VERSION: "953"
         # Full manual plist (the proven widgets pattern) — no generate+merge
         # behavior to trust; NSUserActivityTypes is guaranteed in the build.
         INFOPLIST_FILE: Watch/Info.plist
@@ -265,7 +264,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "952"
+        CURRENT_PROJECT_VERSION: "953"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
