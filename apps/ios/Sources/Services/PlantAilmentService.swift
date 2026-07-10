@@ -46,13 +46,24 @@ final class PlantAilmentService {
     }
 
     /// Case- and diacritic-insensitive search across the common and Latin name.
+    /// Results are ordered by the localized common name so the reference list
+    /// reads alphabetically in the device language, not just the English order
+    /// the server sorts by.
     func search(_ q: String) -> [PlantAilment] {
         let query = q.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return ailments }
-        return ailments.filter { a in
-            if a.commonName.matchesSearch(query) { return true }
-            if let latin = a.latinName, latin.matchesSearch(query) { return true }
-            return false
+        let base: [PlantAilment]
+        if query.isEmpty {
+            base = ailments
+        } else {
+            base = ailments.filter { a in
+                if a.localizedCommonName.matchesSearch(query) { return true }
+                if a.commonName.matchesSearch(query) { return true }
+                if let latin = a.latinName, latin.matchesSearch(query) { return true }
+                return false
+            }
+        }
+        return base.sorted {
+            $0.localizedCommonName.localizedCaseInsensitiveCompare($1.localizedCommonName) == .orderedAscending
         }
     }
 
@@ -72,9 +83,9 @@ final class PlantAilmentService {
             .filter { $0.speciesId == speciesId }
             .compactMap { link in
                 guard let a = ailment(id: link.ailmentId) else { return nil }
-                return (a, link.note)
+                return (a, link.localizedNote)
             }
-            .sorted { $0.ailment.commonName < $1.ailment.commonName }
+            .sorted { $0.ailment.localizedCommonName < $1.ailment.localizedCommonName }
     }
 
     // MARK: - Guided diagnosis (offline, deterministic decision tree)
@@ -148,7 +159,7 @@ final class PlantAilmentService {
             // Tie-break: fewer unrelated symptoms (broader match) first, then
             // name for a fully stable, deterministic order.
             if lhs.matchedCount != rhs.matchedCount { return lhs.matchedCount > rhs.matchedCount }
-            return lhs.ailment.commonName < rhs.ailment.commonName
+            return lhs.ailment.localizedCommonName < rhs.ailment.localizedCommonName
         }
     }
 }

@@ -106,7 +106,7 @@ struct PlantHealthView: View {
                                     .frame(width: 26, height: 26)
                                     .background(risk.ailment.severityColor.opacity(AppOpacity.tintedFill), in: Circle())
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(risk.ailment.commonName)
+                                    Text(risk.ailment.localizedCommonName)
                                         .font(AppFont.footnoteEmphasis)
                                         .foregroundStyle(.primary)
                                     if let note = risk.note, !note.isEmpty {
@@ -325,7 +325,7 @@ private struct DiagnosisResultCard: View {
                         .frame(width: 34, height: 34)
                         .background(ailment.severityColor.opacity(AppOpacity.tintedFill), in: Circle())
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(ailment.commonName)
+                        Text(ailment.localizedCommonName)
                             .font(AppFont.headline)
                             .foregroundStyle(.primary)
                         HStack(spacing: AppSpacing.xs) {
@@ -407,7 +407,7 @@ private struct AilmentRow: View {
                 .frame(width: 40, height: 40)
                 .background(ailment.severityColor.opacity(AppOpacity.tintedFill), in: Circle())
             VStack(alignment: .leading, spacing: 2) {
-                Text(ailment.commonName)
+                Text(ailment.localizedCommonName)
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -448,7 +448,7 @@ struct PlantAilmentDetailView: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
         }
-        .navigationTitle(ailment.commonName)
+        .navigationTitle(ailment.localizedCommonName)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -461,7 +461,7 @@ struct PlantAilmentDetailView: View {
                     .frame(width: 48, height: 48)
                     .background(ailment.severityColor.opacity(AppOpacity.tintedFill), in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ailment.commonName)
+                    Text(ailment.localizedCommonName)
                         .font(AppFont.title3)
                         .foregroundStyle(.primary)
                     if let latin = ailment.latinName, !latin.isEmpty {
@@ -498,10 +498,10 @@ struct AilmentSectionsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? AppSpacing.md : AppSpacing.lg) {
-            if !compact { listBlock("plant_health_sec_symptoms", icon: "list.bullet", items: ailment.symptoms) }
-            paragraphBlock("plant_health_sec_causes", icon: "questionmark.circle", text: ailment.causes)
-            paragraphBlock("plant_health_sec_treatment", icon: "cross.case", text: ailment.treatment)
-            paragraphBlock("plant_health_sec_prevention", icon: "shield.lefthalf.filled", text: ailment.prevention)
+            if !compact { listBlock("plant_health_sec_symptoms", icon: "list.bullet", items: ailment.localizedSymptoms) }
+            paragraphBlock("plant_health_sec_causes", icon: "questionmark.circle", text: ailment.localizedCauses)
+            paragraphBlock("plant_health_sec_treatment", icon: "cross.case", text: ailment.localizedTreatment)
+            paragraphBlock("plant_health_sec_prevention", icon: "shield.lefthalf.filled", text: ailment.localizedPrevention)
             sourcesBlock
         }
         .frame(maxWidth: .infinity, alignment: .leading)

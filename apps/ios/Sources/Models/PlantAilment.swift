@@ -31,6 +31,16 @@ struct PlantAilment: Identifiable, Codable, Hashable {
     var severity: String?            // low / moderate / serious
     var sources: [String]?
 
+    // Romanian localization (Plant OS P4). Parallel copy for the bilingual
+    // knowledge base; English above is the authored source and the fallback.
+    // Every field optional: a missing translation transparently falls back to
+    // English via the `localized…` accessors below — never a blank field.
+    var commonNameRo: String?
+    var symptomsRo: [String]?
+    var causesRo: String?
+    var treatmentRo: String?
+    var preventionRo: String?
+
     var createdAt: String?
     var updatedAt: String?
 
@@ -40,9 +50,26 @@ struct PlantAilment: Identifiable, Codable, Hashable {
         case latinName     = "latin_name"
         case symptomTags   = "symptom_tags"
         case affectedParts = "affected_parts"
+        case commonNameRo  = "common_name_ro"
+        case symptomsRo    = "symptoms_ro"
+        case causesRo      = "causes_ro"
+        case treatmentRo   = "treatment_ro"
+        case preventionRo  = "prevention_ro"
         case createdAt     = "created_at"
         case updatedAt     = "updated_at"
     }
+
+    // MARK: Localized content
+    //
+    // Prefer the Romanian copy on Romanian devices and fall back to the authored
+    // English everywhere else (and whenever a translation is absent). Views must
+    // render these accessors rather than the raw English fields.
+
+    var localizedCommonName: String { isRomanianLocale ? (commonNameRo ?? commonName) : commonName }
+    var localizedSymptoms: [String]? { isRomanianLocale ? (symptomsRo ?? symptoms) : symptoms }
+    var localizedCauses: String? { isRomanianLocale ? (causesRo ?? causes) : causes }
+    var localizedTreatment: String? { isRomanianLocale ? (treatmentRo ?? treatment) : treatment }
+    var localizedPrevention: String? { isRomanianLocale ? (preventionRo ?? prevention) : prevention }
 
     /// Normalized symptom tags as a set for fast decision-tree matching.
     var tagSet: Set<String> { Set(symptomTags ?? []) }
@@ -98,12 +125,26 @@ struct PlantSpeciesAilmentLink: Identifiable, Codable, Hashable {
     var speciesId: UUID
     var ailmentId: UUID
     var note: String?
+    var noteRo: String?
 
     enum CodingKeys: String, CodingKey {
         case id, note
         case speciesId = "species_id"
         case ailmentId = "ailment_id"
+        case noteRo    = "note_ro"
     }
+
+    /// Romanian susceptibility note on Romanian devices, English otherwise.
+    var localizedNote: String? { isRomanianLocale ? (noteRo ?? note) : note }
+}
+
+// MARK: - Locale selection
+//
+// Single source of truth for choosing Romanian vs. English copy across the
+// ailments knowledge base. Reads the device language per access — cheap and
+// always current, so a language change takes effect immediately.
+private var isRomanianLocale: Bool {
+    Locale.current.language.languageCode?.identifier == "ro"
 }
 
 // MARK: - Symptom-tag catalog (guided diagnosis checklist)
