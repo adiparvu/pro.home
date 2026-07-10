@@ -163,43 +163,46 @@ struct ChatTheme: Identifiable {
     }
 
     // The wallpaper must be anchored to the SCREEN, not to the message list's
-    // keyboard-shrunk frame: `.ignoresSafeArea()` alone covers only the
-    // `.container` region, so presenting the keyboard (or the composer
-    // growing) re-proposed a smaller area and `scaledToFill` visibly zoomed /
-    // panned the photo. Ignoring `.all` (container + keyboard) keeps every
-    // wallpaper variant pinned full-bleed and motionless through keyboard
-    // show/hide, multiline composer growth and the reply/edit strips.
+    // keyboard-shrunk frame. Ignoring the `.all` safe-area regions (container
+    // + keyboard) keeps the layer's bounds full-bleed — and the explicit
+    // screen-sized frame inside `ChatWallpaperAnchor` makes the render
+    // provably constant: even if some container re-proposes a smaller area
+    // (keyboard avoidance, composer growth, reply/edit strips), a fixed frame
+    // cannot rescale, so `scaledToFill` can never zoom or pan the photo.
     @ViewBuilder var background: some View {
         if let name = backgroundImage,
            let img = ChatBackgroundStore.image(named: name) {
-            Image(uiImage: img)
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea(.all)
-                // Photos arrive raw; the stock themes are designed gradients.
-                // A vertical scrim makes wallpapers read like part of the set:
-                // stronger where the header and compose bar live, lighter in
-                // the middle where the bubbles carry their own contrast.
-                .overlay(
-                    LinearGradient(stops: [
-                        .init(color: .black.opacity(0.28), location: 0),
-                        .init(color: .black.opacity(0.10), location: 0.25),
-                        .init(color: .black.opacity(0.10), location: 0.72),
-                        .init(color: .black.opacity(0.30), location: 1),
-                    ], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea(.all)
-                )
+            ChatWallpaperAnchor {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    // Photos arrive raw; the stock themes are designed
+                    // gradients. A vertical scrim makes wallpapers read like
+                    // part of the set: stronger where the header and compose
+                    // bar live, lighter where bubbles carry their own contrast.
+                    .overlay(
+                        LinearGradient(stops: [
+                            .init(color: .black.opacity(0.28), location: 0),
+                            .init(color: .black.opacity(0.10), location: 0.25),
+                            .init(color: .black.opacity(0.10), location: 0.72),
+                            .init(color: .black.opacity(0.30), location: 1),
+                        ], startPoint: .top, endPoint: .bottom)
+                    )
+            }
         } else if let animID = backgroundAnimation,
                   let preset = AnimatedBackgroundPreset.preset(for: animID) {
-            AnimatedChatBackground(preset: preset).ignoresSafeArea(.all)
+            ChatWallpaperAnchor { AnimatedChatBackground(preset: preset) }
         } else if let cols = backgroundColors {
-            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea(.all)
+            ChatWallpaperAnchor {
+                LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+            }
         } else {
-            appBackground.ignoresSafeArea(.all)
+            ChatWallpaperAnchor { appBackground }
         }
     }
 
     /// WhatsApp-style bubble colour palette for the "Chat bubble" picker.
+    // (see ChatWallpaperAnchor below for how wallpaper layers stay motionless)
     static let bubblePalette: [Color] = [
         Color(red: 0.30, green: 0.69, blue: 0.45), Color(red: 0.82, green: 0.95, blue: 0.82),
         Color(red: 0.36, green: 0.30, blue: 0.85), Color(red: 0.88, green: 0.85, blue: 0.98),
@@ -680,5 +683,27 @@ struct BackgroundPicker: View {
                 .strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.12),
                               lineWidth: selected ? 2.5 : 1)
         )
+    }
+}
+
+// MARK: - Screen-anchored wallpaper layer
+
+/// Pins a chat wallpaper layer to the physical screen. Two guarantees stack:
+/// `.ignoresSafeArea(.all)` keeps the layer's bounds out of every safe-area
+/// negotiation (container AND keyboard), and the explicit screen-sized frame
+/// makes the render constant even if some ancestor still re-proposes a
+/// smaller area — a fixed frame cannot rescale, so `scaledToFill` content can
+/// never zoom or pan when the keyboard rises, the composer grows a line, or
+/// a reply/edit strip appears. Every chat surface (DM, group, communities,
+/// Yuna) draws its background through this one anchor.
+struct ChatWallpaperAnchor<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let size = UIScreen.main.bounds.size
+        content()
+            .frame(width: size.width, height: size.height)
+            .clipped()
+            .ignoresSafeArea(.all)
     }
 }

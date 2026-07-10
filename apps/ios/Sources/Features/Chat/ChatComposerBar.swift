@@ -34,6 +34,19 @@ struct ChatComposerConfig {
     var disappearingLabel: String? = nil
     /// Seconds between typing signals.
     var typingThrottle: TimeInterval = 2
+    /// AI surfaces (Yuna): speech-to-text INTO the field, instead of the
+    /// voice-clip recorder. When set, the empty-field control dictates.
+    var dictation: ChatComposerDictation? = nil
+    /// AI surfaces: true while the assistant is answering — the trailing
+    /// control becomes a stop button wired to `onStopResponding`.
+    var isResponding: Bool = false
+    var onStopResponding: (() -> Void)? = nil
+}
+
+/// Speech-to-text state + trigger for the composer's dictation control.
+struct ChatComposerDictation {
+    let isListening: Bool
+    let onTap: () -> Void
 }
 
 /// Reply-to context shown as the strip above the field.
@@ -156,6 +169,7 @@ struct ChatComposerBar<Accessory: View>: View {
                     .padding(.bottom, 3)
             }
             .animation(.spring(duration: 0.2), value: isTextEmpty)
+            .animation(.spring(duration: 0.2), value: config.isResponding)
             .padding(.leading, 14)
             .padding(.trailing, 5)
             .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
@@ -181,15 +195,42 @@ struct ChatComposerBar<Accessory: View>: View {
             .buttonStyle(.plain)
             .disabled(isTextEmpty)
             .accessibilityLabel("Confirm edit")
+        } else if config.isResponding, let onStop = config.onStopResponding {
+            Button(action: onStop) {
+                Image(systemName: "stop.circle.fill")
+                    .font(AppFont.scaled(28))
+                    .foregroundStyle(.white, Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .transition(.scale.combined(with: .opacity))
+            .accessibilityLabel("Stop")
         } else if !isTextEmpty {
             sendButton
                 .transition(.asymmetric(
                     insertion: .scale(scale: 0.7).combined(with: .opacity),
                     removal: .scale(scale: 0.7).combined(with: .opacity)
                 ))
+        } else if let dictation = config.dictation {
+            dictationButton(dictation)
         } else if config.onSendAudio != nil {
             micButton
         }
+    }
+
+    /// iMessage's dictation glyph, red and pulsing while listening — taps
+    /// toggle the surface's speech-to-text (Yuna).
+    private func dictationButton(_ dictation: ChatComposerDictation) -> some View {
+        Button(action: dictation.onTap) {
+            Image(systemName: "waveform")
+                .font(AppFont.scaled(17, weight: .medium))
+                .foregroundStyle(dictation.isListening
+                    ? Color.red
+                    : Color.primary.opacity(AppOpacity.disabled))
+                .symbolEffect(.pulse, isActive: dictation.isListening)
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(dictation.isListening ? "Stop voice input" : "Voice input")
     }
 
     private var plusButton: some View {

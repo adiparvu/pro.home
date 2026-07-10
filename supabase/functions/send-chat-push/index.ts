@@ -189,6 +189,12 @@ serve(async (req) => {
     const isChat = n.module === 'chat'
     let custom: Record<string, unknown>
     let threadId: string
+    // The app registers the MESSAGE category (inline "Reply" text action) —
+    // without `category` in the payload iOS shows no reply field at all when
+    // the notification is pulled down. Community pushes stay category-less:
+    // the app can't yet route a reply into a sub-group, and a reply that
+    // lands in the wrong conversation is worse than no reply button.
+    let category: string | null = null
     if (isChat) {
       const chatInfo: Record<string, unknown> = {
         kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
@@ -219,6 +225,7 @@ serve(async (req) => {
       }
       threadId = (chatInfo.peer_user_id as string) ?? (chatInfo.group_id as string) ?? 'chat'
       custom = { chat: chatInfo }
+      if (chatInfo.kind !== 'community') category = 'MESSAGE'
     } else if (n.resource_type === 'task' && n.resource_id) {
       threadId = 'tasks'
       custom = { task: { id: n.resource_id } }
@@ -239,6 +246,7 @@ serve(async (req) => {
           // Wake the Notification Service Extension so it can add the sender
           // avatar + media attachment before the banner shows.
           ...(isChat ? { 'mutable-content': 1 } : {}),
+          ...(category ? { category } : {}),
           'thread-id': threadId,
         },
         ...custom,

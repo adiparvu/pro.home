@@ -66,8 +66,15 @@ struct ARIAView: View {
 
     var body: some View {
         messageList
-            .overlay(alignment: .bottom) { inputBar }
+            // The ONE composer bar, mounted the same way as every other chat
+            // surface: as a bottom safe-area inset, so the keyboard lifts it
+            // through the system mechanism instead of an overlay hack (which
+            // also left the list scrolling underneath it).
+            .safeAreaInset(edge: .bottom, spacing: 0) { composer }
             .background(chatTheme.background)
+            .onChange(of: speech.transcript) { _, t in
+                if !t.isEmpty { input = t }
+            }
             // iMessage-style header, same as the group chat: no bar, the
             // conversation slides under a progressive blur and only the
             // identity pill floats on top.
@@ -219,94 +226,43 @@ struct ARIAView: View {
         }
     }
 
-    // MARK: - Input bar — the chat's compose pill: clear glass, one trailing control
+    // MARK: - Composer — the shared chat bar (dictation + stop, no attachments)
 
-    private var inputBar: some View {
-        VStack(spacing: AppSpacing.sm) {
-            // Action confirmation banner
+    private var composer: some View {
+        ChatComposerBar(
+            text: $input,
+            focused: $focused,
+            config: ChatComposerConfig(
+                placeholder: "Message…",
+                onSendText: { sendRaw() },
+                dictation: voiceInputEnabled ? ChatComposerDictation(
+                    isListening: speech.isListening,
+                    onTap: {
+                        HapticFeedback.impact(.light)
+                        if speech.isListening {
+                            speech.stop()
+                        } else {
+                            focused = false
+                            Task { await speech.startListening() }
+                        }
+                    }
+                ) : nil,
+                isResponding: isThinking,
+                onStopResponding: { isThinking = false }
+            )
+        ) {
+            // Action confirmation banner rides above the field, inside the bar.
             if let action = proposedAction {
                 ARIAActionBanner(
                     action: action,
                     onConfirm: { confirmAction(action) },
                     onCancel: { withAnimation { proposedAction = nil } }
                 )
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.top, AppSpacing.sm)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-
-            // Slim pill field with the trailing control INSIDE it — the
-            // dictation mic when empty, the filled send arrow while typing,
-            // a stop control while the assistant is answering.
-            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                TextField("Message…", text: $input, axis: .vertical)
-                    .font(AppFont.scaled(16))
-                    .foregroundStyle(.primary)
-                    .tint(.accentColor)
-                    .lineLimit(1...6)
-                    .focused($focused)
-                    .padding(.vertical, 7)
-                    .onChange(of: speech.transcript) { _, t in
-                        if !t.isEmpty { input = t }
-                    }
-
-                if isThinking {
-                    Button {
-                        isThinking = false
-                    } label: {
-                        Image(systemName: "stop.circle.fill")
-                            .font(AppFont.scaled(28))
-                            .foregroundStyle(.white, Color.accentColor)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, 4)
-                    .transition(.scale.combined(with: .opacity))
-                    .accessibilityLabel("Stop")
-                } else if input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    if voiceInputEnabled {
-                        // Dictation-style mic (iMessage) — tap to speak to the assistant.
-                        Button {
-                            HapticFeedback.impact(.light)
-                            if speech.isListening {
-                                speech.stop()
-                            } else {
-                                focused = false
-                                Task { await speech.startListening() }
-                            }
-                        } label: {
-                            Image(systemName: speech.isListening ? "waveform" : "mic.fill")
-                                .font(AppFont.scaled(17, weight: .medium))
-                                .foregroundStyle(speech.isListening
-                                    ? Color.red
-                                    : Color.primary.opacity(AppOpacity.disabled))
-                                .symbolEffect(.pulse, isActive: speech.isListening)
-                                .frame(width: 28, height: 28)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.bottom, 4)
-                        .accessibilityLabel(speech.isListening ? "Stop voice input" : "Voice input")
-                    }
-                } else {
-                    Button {
-                        sendRaw()
-                    } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(AppFont.scaled(28))
-                            .foregroundStyle(.white, Color.accentColor)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, 4)
-                    .transition(.scale.combined(with: .opacity))
-                    .accessibilityLabel("Send")
-                }
-            }
-            .padding(.leading, 14)
-            .padding(.trailing, 5)
-            .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
         }
-        .animation(.snappy(duration: 0.2), value: input.isEmpty)
-        .animation(.snappy(duration: 0.2), value: isThinking)
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.top, AppSpacing.sm)
-        .padding(.bottom, AppSpacing.xs)
     }
 
     // MARK: - Logic

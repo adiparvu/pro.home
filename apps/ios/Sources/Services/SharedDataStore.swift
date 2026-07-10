@@ -817,15 +817,35 @@ enum SharedDataStore {
     // MARK: Chat replies typed on a notification (delegate → app → Supabase)
 
     private static let pendingChatRepliesKey = "prvio.pending.chatReplies"
+    /// Separates the conversation target from the text inside a queue entry —
+    /// the ASCII unit separator can't be typed on a keyboard.
+    private static let chatReplyTargetSeparator: Character = "\u{1F}"
 
-    static func appendPendingChatReply(_ text: String) {
+    /// A reply typed on a notification, with WHERE it belongs: "group" for
+    /// the household chat, "dm:<peer-user-id>" for a direct thread. Replies
+    /// used to be text-only and every one of them landed in the group chat —
+    /// answering a DM push delivered the message to the whole family.
+    struct PendingChatReply {
+        let target: String
+        let text: String
+    }
+
+    static func appendPendingChatReply(_ text: String, target: String = "group") {
+        let entry = target == "group" ? text : "\(target)\(chatReplyTargetSeparator)\(text)"
         coordinateQueue("chatReplies", legacyKey: pendingChatRepliesKey) { queue in
-            queue.append(text)
+            queue.append(entry)
         }
     }
 
-    static func popPendingChatReplies() -> [String] {
-        coordinatedPop("chatReplies", legacyKey: pendingChatRepliesKey)
+    static func popPendingChatReplies() -> [PendingChatReply] {
+        coordinatedPop("chatReplies", legacyKey: pendingChatRepliesKey).map { raw in
+            // Bare strings (legacy queue entries, watch replies) are group chat.
+            guard let sep = raw.firstIndex(of: chatReplyTargetSeparator) else {
+                return PendingChatReply(target: "group", text: raw)
+            }
+            return PendingChatReply(target: String(raw[..<sep]),
+                                    text: String(raw[raw.index(after: sep)...]))
+        }
     }
 
     // MARK: Control Center hand-off (control tap → app navigation)

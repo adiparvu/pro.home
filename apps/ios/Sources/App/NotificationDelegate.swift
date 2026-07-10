@@ -82,11 +82,20 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 
         case "MESSAGE_REPLY":
             // Typed, scribbled or dictated on the notification itself. The
-            // app sends it through MessageService on its next beat.
+            // app sends it on its next beat — into the conversation the push
+            // came from (the `chat` payload carries it), never blindly into
+            // the group chat.
             if let textResponse = response as? UNTextInputNotificationResponse {
                 let text = textResponse.userText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !text.isEmpty {
-                    SharedDataStore.appendPendingChatReply(text)
+                    var target = "group"
+                    if let chat = info["chat"] as? [String: Any],
+                       (chat["kind"] as? String) == "dm",
+                       let peer = chat["peer_user_id"] as? String,
+                       UUID(uuidString: peer) != nil {
+                        target = "dm:\(peer)"
+                    }
+                    SharedDataStore.appendPendingChatReply(text, target: target)
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
                 }
             }

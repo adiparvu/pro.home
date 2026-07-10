@@ -618,13 +618,24 @@ struct MainTabView: View {
                     ?? profileService.profile?.fullName ?? ""
                 Task {
                     do {
-                        try await messageService.send(propertyId: propId,
-                                                      senderName: name, body: reply)
+                        // The reply goes to the conversation the push came
+                        // from: "dm:<peer>" → that direct thread; anything
+                        // else → the household chat.
+                        if reply.target.hasPrefix("dm:"),
+                           let peerId = UUID(uuidString: String(reply.target.dropFirst(3))) {
+                            _ = try await directMessageService.send(
+                                propertyId: propId, senderName: name,
+                                to: DMThread(peer: ChatPeer(userId: peerId)),
+                                body: reply.text)
+                        } else {
+                            try await messageService.send(propertyId: propId,
+                                                          senderName: name, body: reply.text)
+                        }
                     } catch {
                         // Never lose a notification quick-reply to a silent drop:
                         // requeue it so the next foreground beat retries, instead
                         // of the `try?` swallow the send pipeline removed elsewhere.
-                        SharedDataStore.appendPendingChatReply(reply)
+                        SharedDataStore.appendPendingChatReply(reply.text, target: reply.target)
                     }
                 }
             }
