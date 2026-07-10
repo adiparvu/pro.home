@@ -624,11 +624,14 @@ enum SharedDataStore {
                             budgetSpent: extras.budgetSpent,
                             budgetLimit: extras.budgetLimit,
                             budgetCurrency: extras.budgetCurrency,
-                            pageOrder: visibleWatchPages(),
-                            sensors: readSensorCatalog(),
-                            actuators: readActuatorCatalog(),
-                            emergencyContacts: readEmergencyContacts(),
-                            emergencySteps: readEmergencySteps())
+                            // Family-only wrist surfaces: an outsider's watch keeps to
+                            // Today + their tasks; smart-home controls and the family's
+                            // emergency plan never ride an outsider payload.
+                            pageOrder: stamp.isFamily ? visibleWatchPages() : ["tasks"],
+                            sensors: stamp.isFamily ? readSensorCatalog() : [],
+                            actuators: stamp.isFamily ? readActuatorCatalog() : [],
+                            emergencyContacts: stamp.isFamily ? readEmergencyContacts() : [],
+                            emergencySteps: stamp.isFamily ? readEmergencySteps() : [])
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

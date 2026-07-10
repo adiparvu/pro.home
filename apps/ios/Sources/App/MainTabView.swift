@@ -478,18 +478,24 @@ struct MainTabView: View {
     }
 
     private func writeWidgetSnapshot() {
+        // The wrist mirrors the phone, so it must obey the same role boundary:
+        // an outsider (tenant/guest/worker) gets strictly their own surfaces —
+        // their tasks (already RLS-scoped) and their chat — never the family's
+        // plants, pantry, deliveries, budget, insight, streak or health score.
+        // Defense in depth on top of server RLS, not a substitute for it.
+        let family = propertyService.isFamilyMember
         var snapshot = PRVIOWidgetSnapshot()
         snapshot.overdueTaskCount = taskService.overdueCount
         snapshot.openTaskCount = taskService.tasks.filter { !$0.isCompleted }.count
-        snapshot.plantsNeedingWater = plantService.plantsNeedingWater.count
-        snapshot.plantNames = Array(plantService.plantsNeedingWater.prefix(3).map(\.name))
-        snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
+        snapshot.plantsNeedingWater = family ? plantService.plantsNeedingWater.count : 0
+        snapshot.plantNames = family ? Array(plantService.plantsNeedingWater.prefix(3).map(\.name)) : []
+        snapshot.activeDeliveryCount = family ? deliveryService.activeDeliveries.count : 0
         snapshot.propertyName = propertyService.primary?.name
-        snapshot.pendingSupplyCount = supplyService.totalPending
+        snapshot.pendingSupplyCount = family ? supplyService.totalPending : 0
         snapshot.unreadMessages = propertyService.primary.map {
             messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
         } ?? 0
-        snapshot.propertyHealthScore = propertyService.primary?.healthScore
+        snapshot.propertyHealthScore = family ? propertyService.primary?.healthScore : nil
         snapshot.criticalTaskTitle = taskService.tasks.first { $0.isOverdue && !$0.isCompleted }?.title
         let upcoming = taskService.tasks
             .filter { !$0.isCompleted && !$0.isOverdue && $0.dueDate != nil }
@@ -504,21 +510,21 @@ struct MainTabView: View {
                                                      isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) }
         )
         SharedDataStore.writePlantCatalog(
-            plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering, healthScore: $0.healthScore) }
+            family ? plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering, healthScore: $0.healthScore) } : []
         )
         SharedDataStore.writeSupplyCatalog(
-            supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }
+            family ? supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) } : []
         )
         SharedDataStore.writeDeliveryCatalog(
-            deliveryService.activeDeliveries.map {
+            family ? deliveryService.activeDeliveries.map {
                 DeliveryCatalogEntry(id: $0.id, title: $0.description, carrier: $0.carrier,
                                      status: $0.status, eta: $0.expectedDisplay)
-            }
+            } : []
         )
         SharedDataStore.writePantryCatalog(
-            pantryService.items.prefix(24).map {
+            family ? pantryService.items.prefix(24).map {
                 PantryCatalogEntry(id: $0.id, name: $0.name, quantity: $0.quantity, unit: $0.unit)
-            }
+            } : []
         )
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
@@ -526,11 +532,14 @@ struct MainTabView: View {
         // Wrist extras: the property pin, the engine's freshest insight, and
         // Apple Weather for the property (whatever the cache holds — the
         // refresh runs in the startup orchestration).
-        let topInsight = proactiveEngine.insights.first { !$0.isDismissed }
+        // Insight, streak and budget are family intelligence — an outsider's
+        // wrist gets none of them (weather and the property pin stay: they
+        // describe the place the person lives or works at, not the family).
+        let topInsight = family ? proactiveEngine.insights.first { !$0.isDismissed } : nil
         let weather = PropertyWeather.cached()
         // The house streak: consecutive verified all-clear days.
-        let streak = SharedDataStore.updateHouseStreak(
-            allClear: snapshot.overdueTaskCount == 0 && snapshot.plantsNeedingWater == 0)
+        let streak = family ? SharedDataStore.updateHouseStreak(
+            allClear: snapshot.overdueTaskCount == 0 && snapshot.plantsNeedingWater == 0) : nil
         // This month's spending for the wrist — household currency only, so
         // the number is honest (a EUR bill never inflates a RON total).
         let householdCurrency = financialService.currency
@@ -549,9 +558,9 @@ struct MainTabView: View {
             weatherHi: weather?.hi,
             weatherAdvisory: weather?.advisory,
             streakDays: streak,
-            budgetSpent: financialService.records.isEmpty ? nil : monthSpent,
-            budgetLimit: budgetLimit > 0 ? budgetLimit : nil,
-            budgetCurrency: financialService.records.isEmpty ? nil : householdCurrency))
+            budgetSpent: (family && !financialService.records.isEmpty) ? monthSpent : nil,
+            budgetLimit: (family && budgetLimit > 0) ? budgetLimit : nil,
+            budgetCurrency: (family && !financialService.records.isEmpty) ? householdCurrency : nil))
         // Stamp the snapshot with the owning account + role scope so every push
         // is attributable — the watch clears itself if a payload arrives for a
         // different (or no) account, and self-limits to personal surfaces for an

@@ -42,7 +42,12 @@ struct DocumentHistorySection: View {
                 }
             }
         }
-        .task { await service.load(documentId: documentId) }
+        .task {
+            // The actor names render from the profiles directory — make sure it
+            // is hydrated before the rows appear.
+            await MemberDirectory.shared.loadIfNeeded()
+            await service.load(documentId: documentId)
+        }
     }
 
     private var emptyState: some View {
@@ -58,7 +63,18 @@ struct DocumentHistorySection: View {
     private func eventRow(_ event: DocumentEvent) -> some View {
         HStack(spacing: 12) {
             Image(systemName: event.icon).font(AppFont.scaled(16)).foregroundStyle(.blue).frame(width: 30)
-            Text(LocalizedStringKey(event.labelKey)).font(AppFont.scaled(14)).foregroundStyle(.primary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(LocalizedStringKey(event.labelKey)).font(AppFont.scaled(14)).foregroundStyle(.primary).lineLimit(1)
+                // Who did it — resolved live from the profiles directory so the
+                // row always shows the account's current display name.
+                if let actorId = event.actorId,
+                   let name = MemberDirectory.shared.byId[actorId]?.name, !name.isEmpty {
+                    Text(name)
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .lineLimit(1)
+                }
+            }
             Spacer()
             if let date = event.date {
                 Text(date, format: .relative(presentation: .named))

@@ -209,6 +209,10 @@ final class DocumentService {
             let vat: Double?
             let recurrence: String?
         }
+        // No-op saves must not touch the network or the history: re-saving the
+        // edit sheet without changing anything used to append a fresh
+        // "Modificat" event every time, flooding the timeline.
+        if let old = documents.first(where: { $0.id == doc.id }), old == doc { return }
         do {
             try await supabase
                 .from("documents")
