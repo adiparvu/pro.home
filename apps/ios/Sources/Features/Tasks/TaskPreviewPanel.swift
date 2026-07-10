@@ -75,115 +75,19 @@ struct TaskPreviewPanel: View {
         }
     }
 
-    // MARK: - Hero card
+    // MARK: - Hero card (shared TaskGradientCard, fed by the live fields)
 
     private var heroCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                darkPill(dot: priorityStyle.color, text: Text(priorityStyle.label))
-                Spacer()
-                darkPill(icon: categoryStyle.icon, text: Text(categoryStyle.label))
-            }
-
-            Text(displayTitle)
-                .font(AppFont.scaled(28, weight: .bold))
-                .foregroundStyle(.white)
-                .lineLimit(3)
-                .minimumScaleFactor(0.7)
-                .contentTransition(.interpolate)
-
-            if !description.trimmingCharacters(in: .whitespaces).isEmpty {
-                Text(description)
-                    .font(AppFont.body)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 6)
-
-            VStack(alignment: .leading, spacing: 10) {
-                heroRow(icon: "calendar", text: dueDateText)
-                heroRow(icon: "person.2", text: assigneeText)
-            }
-
-            if addToCalendar || addToReminders {
-                Rectangle().fill(.white.opacity(0.15)).frame(height: 0.5)
-                HStack(spacing: AppSpacing.xl) {
-                    if addToCalendar {
-                        heroSyncChip(icon: "calendar", tint: Color.brandPurple, text: Text("task_in_calendar"))
-                    }
-                    if addToReminders {
-                        heroSyncChip(icon: "list.bullet", tint: Color.brandWarning, text: Text("task_in_reminders"))
-                    }
-                    Spacer(minLength: 0)
-                }
-            }
-        }
-        .padding(AppSpacing.xl)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 300)
-        .background(heroBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
-                .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
+        TaskGradientCard(
+            title: displayTitle,
+            description: description.trimmingCharacters(in: .whitespaces),
+            priorityStyle: priorityStyle,
+            categoryStyle: categoryStyle,
+            dueDateText: dueDateText,
+            assigneeText: assigneeText,
+            showsCalendarChip: addToCalendar,
+            showsRemindersChip: addToReminders
         )
-        .shadow(color: priorityStyle.color.opacity(0.28), radius: 24, y: 12)
-    }
-
-    private var heroBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: [priorityStyle.color, Color.brandPurple],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            LinearGradient(
-                colors: [Color.black.opacity(0.55), Color.black.opacity(0.25)],
-                startPoint: .top, endPoint: .bottom
-            )
-        }
-    }
-
-    private func heroRow(icon: String, text: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(AppFont.footnote)
-                .foregroundStyle(.white.opacity(0.9))
-                .frame(width: 20)
-            Text(text)
-                .font(AppFont.subheadline)
-                .foregroundStyle(.white)
-        }
-    }
-
-    private func heroSyncChip(icon: String, tint: Color, text: Text) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(AppFont.caption)
-                .foregroundStyle(tint)
-                .frame(width: 20, height: 20)
-                .background(tint.opacity(0.22), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            text
-                .font(AppFont.footnoteEmphasis)
-                .foregroundStyle(.white)
-        }
-    }
-
-    private func darkPill(dot: Color? = nil, icon: String? = nil, text: Text) -> some View {
-        HStack(spacing: 6) {
-            if let dot {
-                Circle().fill(dot).frame(width: 8, height: 8)
-            }
-            if let icon {
-                Image(systemName: icon).font(AppFont.scaled(11, weight: .semibold))
-            }
-            text.font(AppFont.footnoteEmphasis)
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(.black.opacity(0.28), in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.5))
     }
 
     // MARK: - List preview

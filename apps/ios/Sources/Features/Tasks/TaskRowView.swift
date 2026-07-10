@@ -22,6 +22,9 @@ struct TaskRowView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let task: MaintenanceTask
+    /// Tap = the task's dedicated detail page (owned by the screen);
+    /// editing lives behind the detail page's Edit button and the context menu.
+    let onOpen: () -> Void
 
     @State private var showEdit = false
     /// Local "the strike is drawing" window between the tap and the service
@@ -42,7 +45,14 @@ struct TaskRowView: View {
             .offset(x: dragOffset)
             .background { swipeBackdrop }
             .gesture(swipeGesture, including: task.isCompleted ? .subviews : .all)
-            .contextMenu { menuItems }
+            // Long-press: the rich gradient card as the lifted preview,
+            // with the quick actions underneath.
+            .contextMenu {
+                menuItems
+            } preview: {
+                TaskGradientCard(task: task)
+                    .frame(width: 340)
+            }
             .sheet(isPresented: $showEdit) {
                 AddTaskView(editing: task)
                     .environment(taskService)
@@ -95,7 +105,7 @@ struct TaskRowView: View {
         .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .onTapGesture {
             HapticFeedback.impact(.light)
-            showEdit = true
+            onOpen()
         }
         .accessibilityActions { accessibilityMenu }
     }
@@ -203,7 +213,7 @@ struct TaskRowView: View {
         }
     }
 
-    // MARK: - Context menu (unchanged behaviour + snooze)
+    // MARK: - Context menu quick actions
 
     @ViewBuilder
     private var menuItems: some View {
@@ -211,6 +221,12 @@ struct TaskRowView: View {
             HapticFeedback.impact(.light)
             showEdit = true
         } label: { Label("Edit", systemImage: "pencil") }
+
+        if !task.isCompleted {
+            Button {
+                WorkSessionStore.shared.start(taskId: task.id, title: task.title)
+            } label: { Label("session_start", systemImage: "timer") }
+        }
 
         Button {
             task.isCompleted ? reopen() : complete()
@@ -223,10 +239,6 @@ struct TaskRowView: View {
             Button {
                 snooze()
             } label: { Label("task_snooze_tomorrow", systemImage: "moon.zzz") }
-
-            Button {
-                WorkSessionStore.shared.start(taskId: task.id, title: task.title)
-            } label: { Label("session_start", systemImage: "timer") }
         }
 
         Divider()
@@ -237,9 +249,10 @@ struct TaskRowView: View {
         } label: { Label("Delete", systemImage: "trash") }
     }
 
-    /// The swipe actions, restated for VoiceOver users who can't drag.
+    /// The tap and swipe actions, restated for VoiceOver users who can't drag.
     @ViewBuilder
     private var accessibilityMenu: some View {
+        Button("task_view_details") { onOpen() }
         if task.isCompleted {
             Button("Reopen") { reopen() }
         } else {

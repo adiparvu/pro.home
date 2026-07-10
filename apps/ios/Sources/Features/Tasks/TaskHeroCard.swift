@@ -12,7 +12,6 @@ import SwiftUI
 
 struct TaskHeroCard: View {
     @Environment(TaskService.self) private var taskService
-    @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -22,8 +21,10 @@ struct TaskHeroCard: View {
     let candidateCount: Int
     /// Advance the hero by +1 (swipe left / "Următorul") or -1 (swipe right).
     let onAdvance: (Int) -> Void
+    /// Tap on the card body = the task's dedicated detail page (where the
+    /// Edit button lives).
+    let onOpenDetail: () -> Void
 
-    @State private var showEdit = false
     @State private var completing = false
     @State private var dragOffset: CGFloat = 0
 
@@ -50,9 +51,9 @@ struct TaskHeroCard: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 HapticFeedback.impact(.light)
-                showEdit = true
+                onOpenDetail()
             }
-            .accessibilityAction(named: Text("Edit")) { showEdit = true }
+            .accessibilityAction(named: Text("task_view_details")) { onOpenDetail() }
 
             if WorkSessionStore.shared.isTiming(task.id) {
                 HStack {
@@ -73,12 +74,6 @@ struct TaskHeroCard: View {
         )
         .offset(x: dragOffset)
         .gesture(advanceGesture, including: candidateCount > 1 ? .all : .subviews)
-        .sheet(isPresented: $showEdit) {
-            AddTaskView(editing: task)
-                .environment(taskService)
-                .environment(propertyService)
-                .environment(familyService)
-        }
     }
 
     // MARK: - Header line ("Acum" + next affordance)

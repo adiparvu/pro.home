@@ -28,8 +28,11 @@ struct TasksView: View {
     /// Position in the hero shortlist ("următorul" cycles through it).
     @State private var heroIndex = 0
     @FocusState private var searchFocused: Bool
-    /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
-    @State private var deepLinkedTask: MaintenanceTask?
+    /// The task whose detail page is pushed — set by row/hero taps and by
+    /// deep links (notification tap, Spotlight, prvio://tasks/<id>). Stored
+    /// as the id so the pushed page always reads the live task from the
+    /// service instead of a snapshot.
+    @State private var detailTaskId: UUID?
 
     enum TaskFilter: String, CaseIterable {
         case all = "All"
@@ -146,21 +149,20 @@ struct TasksView: View {
                 .environment(taskService)
                 .environment(documentService)
         }
+        // Tap on a row or the hero — and every task deep link — lands on the
+        // task's dedicated detail page; editing lives behind its Edit button.
+        .navigationDestination(item: $detailTaskId) { id in
+            TaskDetailView(taskId: id)
+                .environment(taskService)
+                .environment(propertyService)
+                .environment(familyService)
+        }
         // The user's configurable speed dial (the "P cu acoperiș" floating
         // button with quick actions) — explicitly preferred over a plain
         // purple "+" FAB.
         .floatingSpeedDial(.tasks)
         .sheet(isPresented: $showAdd) {
             AddTaskView()
-                .environment(taskService)
-                .environment(propertyService)
-                .environment(familyService)
-        }
-        // Deep link: open the specific task the notification / Spotlight / URL
-        // pointed at. Resolve on both the id arriving and the task list loading,
-        // so it works whether the tab was already open or cold-launched.
-        .sheet(item: $deepLinkedTask) { task in
-            AddTaskView(editing: task)
                 .environment(taskService)
                 .environment(propertyService)
                 .environment(familyService)
@@ -277,7 +279,7 @@ struct TasksView: View {
     }
 
     private func taskRow(_ task: MaintenanceTask) -> some View {
-        TaskRowView(task: task)
+        TaskRowView(task: task, onOpen: { detailTaskId = task.id })
             .environment(taskService)
             .environment(propertyService)
             .environment(familyService)
@@ -291,11 +293,11 @@ struct TasksView: View {
     private func heroArea(hero: MaintenanceTask?, candidates: [MaintenanceTask],
                           hasAnythingBelow: Bool) -> some View {
         if let hero {
-            TaskHeroCard(task: hero, candidateCount: candidates.count) { delta in
-                advanceHero(delta, count: candidates.count)
-            }
+            TaskHeroCard(task: hero,
+                         candidateCount: candidates.count,
+                         onAdvance: { delta in advanceHero(delta, count: candidates.count) },
+                         onOpenDetail: { detailTaskId = hero.id })
             .environment(taskService)
-            .environment(propertyService)
             .environment(familyService)
             .id(hero.id)
             .transition(reduceMotion
@@ -588,18 +590,19 @@ struct TasksView: View {
     // MARK: - Helpers
 
     /// Scrolls to the deep-linked task (the hero and every row share
-    /// `.id(task.id)`, so both are valid targets) and opens its editor.
+    /// `.id(task.id)`, so both are valid targets), then pushes its detail
+    /// page — same destination a tap lands on.
     private func resolveTaskDeepLink(_ proxy: ScrollViewProxy) {
         guard let id = router.deepLinkTaskId,
-              let task = taskService.tasks.first(where: { $0.id == id }) else { return }
+              taskService.tasks.contains(where: { $0.id == id }) else { return }
         router.deepLinkTaskId = nil
         withAnimation(reduceMotion ? nil : .taskSpring) {
             proxy.scrollTo(id, anchor: .center)
         }
-        // Present after the scroll settles so the sheet rises from context.
+        // Push after the scroll settles so the page rises from context.
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
-            deepLinkedTask = task
+            detailTaskId = id
         }
     }
 

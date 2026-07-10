@@ -49,8 +49,14 @@ struct AddTaskView: View {
 
     var body: some View {
         NavigationStack {
+            // The live preview column exists to show what a task will become —
+            // valuable while CREATING, redundant while EDITING something that
+            // already exists (and the user asked for it gone there). In edit
+            // mode the form takes the full width on every size class.
             Group {
-                if hSize == .regular {
+                if editing != nil {
+                    formScroll
+                } else if hSize == .regular {
                     HStack(alignment: .top, spacing: 0) {
                         formScroll
                             .frame(maxWidth: .infinity)
