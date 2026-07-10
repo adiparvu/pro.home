@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The widget extension only needs the shared App Group to read the
+	     SharedDataStore snapshot the app writes. It must NOT reuse the app's
+	     entitlements file: XcodeGen regenerates each `entitlements.path` from
+	     that target's `properties`, so a shared path let the widget clobber
+	     the app's aps-environment / WeatherKit / HomeKit / NFC keys. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.prvio.app</string>
+	</array>
+</dict>
+</plist>

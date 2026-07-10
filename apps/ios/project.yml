@@ -57,10 +57,19 @@ targets:
       - target: PRVIOWidgets
       - target: PRVIOWatch
     entitlements:
+      # XcodeGen GENERATES this file from `properties` on every `generate`,
+      # overwriting whatever is on disk — so `properties` is the single source
+      # of truth for the app's entitlements, NOT the hand-written file. Every
+      # capability the signed binary needs must be listed here or it is stripped
+      # at build time (the profile allowing it is necessary but not sufficient).
       path: Sources/App/PRVIO.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
+        # APNs push for chat. Without this key in the generated entitlements the
+        # binary is signed with no aps-environment, and registerForRemoteNotifications
+        # fails on device with error 3000 — no DM/group message ever delivers a push.
+        aps-environment: production
         # Without this, NFCNDEFReaderSession.readingAvailable is false even
         # on NFC-capable hardware — "NFC is not available on this device".
         com.apple.developer.nfc.readersession.formats:
@@ -86,7 +95,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "949"
+        CURRENT_PROJECT_VERSION: "950"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -151,7 +160,11 @@ targets:
       - sdk: AppIntents.framework
       - sdk: ActivityKit.framework
     entitlements:
-      path: Sources/App/PRVIO.entitlements
+      # MUST be its own file — sharing the app's path made XcodeGen regenerate
+      # Sources/App/PRVIO.entitlements from THESE properties (app group only),
+      # clobbering the app's aps-environment/NFC/HomeKit/WeatherKit keys and
+      # silently shipping the app with push disabled.
+      path: Widgets/PRVIOWidgets.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
@@ -170,7 +183,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "949"
+        CURRENT_PROJECT_VERSION: "950"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -208,7 +221,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "949"
+        CURRENT_PROJECT_VERSION: "950"
         # Full manual plist (the proven widgets pattern) — no generate+merge
         # behavior to trust; NSUserActivityTypes is guaranteed in the build.
         INFOPLIST_FILE: Watch/Info.plist
@@ -252,7 +265,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "949"
+        CURRENT_PROJECT_VERSION: "950"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
