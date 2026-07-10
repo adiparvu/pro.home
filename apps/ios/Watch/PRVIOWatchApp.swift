@@ -54,9 +54,12 @@ final class WatchStore: NSObject, WCSessionDelegate {
     override init() {
         super.init()
         // Render instantly from the last delivery, then refresh live.
+        // sanitizedForRender: a cached payload with duplicate row identities
+        // crashes at first render on EVERY launch (Series 4 stays on
+        // watchOS 10 forever, so that device never outgrows the bug).
         if let data = Self.defaults.data(forKey: Self.cacheKey),
            let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
-            payload = cached
+            payload = cached.sanitizedForRender()
         }
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
@@ -80,7 +83,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
                 WidgetCenter.shared.reloadAllTimelines()
                 return
             }
-            self.payload = decoded
+            self.payload = decoded.sanitizedForRender()
             Self.defaults.set(data, forKey: Self.cacheKey)
             // Fresh state → repaint the watch-face complications too.
             WidgetCenter.shared.reloadAllTimelines()
@@ -367,7 +370,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
             // Re-read the cache: the widget may have mutated it while we slept.
             if let data = Self.defaults.data(forKey: Self.cacheKey),
                let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
-                self?.payload = cached
+                self?.payload = cached.sanitizedForRender()
             }
         }
     }

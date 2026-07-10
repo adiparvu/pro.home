@@ -314,6 +314,15 @@ targets:
         # RelevanceKit only exists on watchOS 11+ — a hard link makes the
         # widget extension undyld-loadable on watchOS 10 devices.
         OTHER_LDFLAGS: "-weak_framework RelevanceKit"
+        # Belt-and-braces for the weak link above: `import RelevanceKit` makes
+        # the compiler embed a STRONG `-framework RelevanceKit` autolink hint
+        # (LC_LINKER_OPTION) in every object file, which some linker versions
+        # let override -weak_framework — reintroducing the hard link and the
+        # dyld kill on watchOS 10 hardware (Series 4/5 never get watchOS 11).
+        # Disabling autolink for this one framework guarantees the ONLY
+        # linkage is the explicit weak one; every RelevanceKit use is already
+        # #available-gated, so nothing resolves it at runtime on watchOS 10.
+        OTHER_SWIFT_FLAGS: "-Xfrontend -disable-autolink-framework -Xfrontend RelevanceKit"
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"

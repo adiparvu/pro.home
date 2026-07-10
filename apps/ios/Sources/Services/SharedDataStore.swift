@@ -105,6 +105,37 @@ struct WatchPayload: Codable {
     var emergencySteps: [EmergencyStepEntry] = []
 }
 
+extension WatchPayload {
+    /// A render-safe copy: every id-keyed collection deduplicated (first
+    /// occurrence wins). Two ForEach/List rows with the same identity are
+    /// undefined behavior that crashes at first render on a real watch —
+    /// the "opens and instantly exits" symptom — and because the payload is
+    /// CACHED on the wrist, a single poisoned delivery (e.g. written by an
+    /// older build, or assembled from imperfect catalogs) reproduces the
+    /// crash on EVERY launch until the cache is replaced. `pageOrder` was
+    /// already deduped defensively for exactly this reason; this extends the
+    /// same guarantee to every listed collection. Matters most on hardware
+    /// that can never move past watchOS 10 (Series 4/5), where a
+    /// crash-at-launch is permanent until the data changes.
+    func sanitizedForRender() -> WatchPayload {
+        func deduped<T>(_ items: [T], id: (T) -> UUID) -> [T] {
+            var seen = Set<UUID>()
+            return items.filter { seen.insert(id($0)).inserted }
+        }
+        var p = self
+        p.tasks             = deduped(tasks)             { $0.id }
+        p.plants            = deduped(plants)            { $0.id }
+        p.supplies          = deduped(supplies)          { $0.id }
+        p.deliveries        = deduped(deliveries)        { $0.id }
+        p.pantry            = deduped(pantry)            { $0.id }
+        p.sensors           = deduped(sensors)           { $0.id }
+        p.actuators         = deduped(actuators)         { $0.id }
+        p.emergencyContacts = deduped(emergencyContacts) { $0.id }
+        p.emergencySteps    = deduped(emergencySteps)    { $0.id }
+        return p
+    }
+}
+
 // MARK: - Intent catalogs (read by App Intents without Supabase)
 
 struct TaskCatalogEntry: Codable {
