@@ -459,14 +459,19 @@ struct AddTaskView: View {
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-            .opacity(hasDueDate ? 1 : 0.5)
         }
+        // Calendar/Reminders sync needs a due date — but a dead, greyed toggle
+        // reads as broken. Turning one ON simply switches the due date on too
+        // (the date section springs open, prefilled), so the control always
+        // does something real.
         .onChange(of: addToCalendar) { _, on in
             guard on else { return }
+            if !hasDueDate { withAnimation(.taskSpring) { hasDueDate = true } }
             Task { await prepareCalendarAccess() }
         }
         .onChange(of: addToReminders) { _, on in
             guard on else { return }
+            if !hasDueDate { withAnimation(.taskSpring) { hasDueDate = true } }
             Task {
                 if !(await TaskCalendarSync.requestReminderAccess()) {
                     addToReminders = false
@@ -496,7 +501,6 @@ struct AddTaskView: View {
             Toggle("", isOn: isOn)
                 .tint(Color.brandPurple)
                 .labelsHidden()
-                .disabled(!hasDueDate)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)

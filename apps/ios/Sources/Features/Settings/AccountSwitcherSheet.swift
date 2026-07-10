@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct AccountSwitcherSheet: View {
     @Environment(AuthService.self) private var auth
@@ -77,7 +78,17 @@ struct AccountSwitcherSheet: View {
             try await auth.switchTo(account: account)
             dismiss()
         } catch {
-            switchError = "Could not switch account. Please sign in again."
+            // An auth-layer rejection means the server no longer accepts this
+            // refresh token (logged out elsewhere, revoked, or saved before
+            // build 945's logout cleanup) — it can never switch again, so the
+            // stale row self-heals out of the list instead of erroring
+            // forever. Network failures keep the account: it may still work.
+            if error is AuthError {
+                store.remove(userId: account.userId)
+                switchError = "That session has expired, so the account was removed from the list. Sign in again to add it back."
+            } else {
+                switchError = "Could not switch account. Please sign in again."
+            }
         }
         isSwitching = false
     }

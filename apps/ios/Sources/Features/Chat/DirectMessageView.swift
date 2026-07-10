@@ -859,9 +859,18 @@ struct DirectMessageView: View {
                             // fallback, debounced via setJumpToLatest.
                             Color.clear.frame(height: 1).id("DM_BOTTOM")
                                 .onAppear {
+                                    // A mounting sentinel is honest in one
+                                    // direction only: lazy pre-mount can fire
+                                    // this near (not at) the bottom, never
+                                    // up-thread — so hiding the jump button
+                                    // here is safe on every OS and corrects
+                                    // any stale geometry emission. isAtBottom
+                                    // stays geometry-owned (pre-mount is not
+                                    // visibility; auto-follow must never yank
+                                    // an up-thread reader).
+                                    setJumpToLatest(false)
                                     guard !ChatAtBottomModifier.isGeometryDriven else { return }
                                     isAtBottom = true
-                                    setJumpToLatest(false)
                                 }
                                 .onDisappear {
                                     guard !ChatAtBottomModifier.isGeometryDriven else { return }
@@ -965,15 +974,15 @@ struct DirectMessageView: View {
                         }
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(AppFont.headline)
+                            .font(AppFont.scaled(13, weight: .semibold))
                             .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Jump to latest message"))
                     .glassCircle()
-                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.trailing, AppSpacing.lg).padding(.bottom, 10)
+                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                    .padding(.trailing, AppSpacing.lg).padding(.bottom, AppSpacing.md)
                     .transition(.scale.combined(with: .opacity))
                 }
             }

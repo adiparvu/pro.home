@@ -398,15 +398,20 @@ struct ChatAtBottomModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
-            content.onScrollGeometryChange(for: Bool.self) { geometry in
+            // Quantized distance, NOT a Bool: a Bool transform emits only on
+            // threshold crossings, so a single emission evaluated mid keyboard
+            // or composer-inset animation could go stale and strand the jump
+            // button visible at the bottom rest. Buckets re-emit every ~40pt
+            // of real movement, so the state self-corrects on the next tick.
+            content.onScrollGeometryChange(for: CGFloat.self) { geometry in
                 // Distance from the visible rect's bottom edge to the end of
                 // the content (bottom inset included — the compose bar rides
                 // in the safe area). ≤ 0 at rest on the newest message.
                 let distance = geometry.contentSize.height + geometry.contentInsets.bottom
                     - (geometry.contentOffset.y + geometry.containerSize.height)
-                return distance <= threshold
-            } action: { _, atBottom in
-                update(atBottom)
+                return (distance / 40).rounded(.down)
+            } action: { _, bucket in
+                update(bucket * 40 < threshold)
             }
         } else {
             content

@@ -162,9 +162,12 @@ struct GuestInfoCard: View {
 
     private var header: some View {
         HStack(spacing: AppSpacing.base) {
-            Image(systemName: "house.fill")
-                .font(AppFont.scaled(20, weight: .semibold))
+            Image("BrandMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
                 .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
                 .frame(width: 44, height: 44)
                 .background(CardInk.accentGradient,
                             in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))

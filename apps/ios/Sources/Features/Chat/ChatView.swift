@@ -843,9 +843,16 @@ struct ChatView: View {
                     Color.clear.frame(height: 1)
                         .id("CHAT_BOTTOM")
                         .onAppear {
+                            // A mounting sentinel is honest in one direction
+                            // only: lazy pre-mount fires near (not at) the
+                            // bottom, never up-thread — hiding the jump button
+                            // here is safe on every OS and corrects any stale
+                            // geometry emission. isAtBottom stays geometry-
+                            // owned (pre-mount is not visibility; auto-follow
+                            // must never yank an up-thread reader).
+                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
                             guard !ChatAtBottomModifier.isGeometryDriven else { return }
                             isAtBottom = true
-                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
                         }
                         .onDisappear {
                             guard !ChatAtBottomModifier.isGeometryDriven else { return }
@@ -866,9 +873,14 @@ struct ChatView: View {
             // into contentInsets.bottom, so the default one-bubble threshold
             // matches the DM thread.
             .chatAtBottomTracking { atBottom in
-                guard atBottom != isAtBottom else { return }
-                isAtBottom = atBottom
-                withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
+                // The two states are guarded separately: the sentinel's
+                // onAppear may hide the button without touching isAtBottom,
+                // so a single shared guard would swallow the emission that
+                // should bring the button back.
+                if atBottom != isAtBottom { isAtBottom = atBottom }
+                if showJumpToLatest != !atBottom {
+                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
+                }
             }
             .onChange(of: isAtBottom) { _, atBottom in
                 // Returning to the bottom is the honest "I've now seen these"
@@ -969,14 +981,14 @@ struct ChatView: View {
                         }
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(AppFont.headline)
+                            .font(AppFont.scaled(13, weight: .semibold))
                             .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
-                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.bottom, 10)
+                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                    .padding(.bottom, AppSpacing.md)
                     .transition(.scale.combined(with: .opacity))
                     .accessibilityLabel("Jump to latest message")
                 }

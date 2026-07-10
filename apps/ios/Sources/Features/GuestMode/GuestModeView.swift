@@ -119,9 +119,12 @@ struct GuestModeView: View {
     private var headerCard: some View {
         GlassCard {
             HStack(spacing: 14) {
-                Image(systemName: "house.fill")
-                    .font(AppFont.scaled(24))
+                Image("BrandMark")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
                     .foregroundStyle(Color.accentColor)
+                    .frame(width: 26, height: 26)
                     .frame(width: 48, height: 48)
                     .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
