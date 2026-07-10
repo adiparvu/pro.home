@@ -146,7 +146,10 @@ struct TasksView: View {
                 .environment(taskService)
                 .environment(documentService)
         }
-        .overlay(alignment: .bottomTrailing) { addButton }
+        // The user's configurable speed dial (the "P cu acoperiș" floating
+        // button with quick actions) — explicitly preferred over a plain
+        // purple "+" FAB.
+        .floatingSpeedDial(.tasks)
         .sheet(isPresented: $showAdd) {
             AddTaskView()
                 .environment(taskService)
@@ -350,7 +353,6 @@ struct TasksView: View {
 
                 Menu {
                     Button { showCalendar = true } label: { Label("Calendar", systemImage: "calendar") }
-                    Button { Task { await taskService.load() } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
                 } label: {
                     headerButtonLabel("ellipsis")
                 }
@@ -581,31 +583,6 @@ struct TasksView: View {
             )
             .frame(maxWidth: .infinity, minHeight: 320)
         }
-    }
-
-    // MARK: - Floating add button
-
-    private var addButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
-            showAdd = true
-        } label: {
-            Image(systemName: "plus")
-                .font(AppFont.scaled(22, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 60, height: 60)
-                .background(
-                    LinearGradient(colors: [Color.brandPurple, Color.brandPurple.opacity(0.82)],
-                                   startPoint: .top, endPoint: .bottom),
-                    in: Circle()
-                )
-                .overlay(Circle().strokeBorder(.white.opacity(0.25), lineWidth: 0.5))
-                .shadow(color: Color.brandPurple.opacity(0.5), radius: 18, y: 8)
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, AppSpacing.xl)
-        .padding(.bottom, 22)
-        .accessibilityLabel("Add task")
     }
 
     // MARK: - Helpers
