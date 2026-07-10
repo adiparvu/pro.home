@@ -1,7 +1,6 @@
 import SwiftUI
 import EventKit
 import Contacts
-import PassKit
 
 // MARK: - Status
 
@@ -43,7 +42,6 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var showContactsSuccess = false
     @Published var showPermissionDenied = false
     @Published var iCloudAvailable = false
-    @Published var applePayAvailable = false
     @Published var nfcAvailable = false
     @Published var activeSheet: IntegrationSheet? = nil
     var tasks: [MaintenanceTask] = []
@@ -62,19 +60,9 @@ final class IntegrationsViewModel: ObservableObject {
         // CKContainer(identifier:) throws NSInvalidArgumentException when the
         // provisioning profile lacks the iCloud container entitlement.
         iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil
-        applePayAvailable = ApplePayService.shared.isAvailable
         nfcAvailable = NFCScanService.isSupported
         // HomeKit checked lazily — do NOT access HMHomeManager here to avoid
         // a crash when the provisioning profile lacks the HomeKit capability.
-    }
-
-    // MARK: - Apple Pay
-
-    /// Opens the system's Apple Pay card-setup flow (Wallet). Only offered
-    /// when the device has no eligible card configured yet.
-    func openApplePaySetup() {
-        guard PKPassLibrary.isPassLibraryAvailable() else { return }
-        PKPassLibrary().openPaymentSetup()
     }
 
     func activateHomeKit() {

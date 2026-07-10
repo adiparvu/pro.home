@@ -8,16 +8,11 @@
   repo and the built binary agree.
 
   Only capabilities the app actually uses are declared. Earlier this file also
-  listed iCloud, Siri, Sign in with Apple, Family Controls and Data Protection,
-  but the code uses none of them (Apple Pay is the only other real capability —
-  see note below), so they were dead entitlements and were removed. Add a key
-  in BOTH places (here and project.yml properties) only when the App ID has the
-  matching capability enabled, or codesign will fail.
-
-  Apple Pay is NOT declared here yet: ApplePayService builds a real
-  PKPaymentRequest but PKPaymentAuthorizationController.canMakePayments()
-  degrades to false without the entitlement, so payments are simply
-  unavailable until the merchant ID + APPLE_PAY capability are wired up.
+  listed iCloud, Siri, Sign in with Apple, Family Controls, Data Protection and
+  Apple Pay, but the code uses none of them, so they were dead entitlements and
+  were removed (the Apple Pay code was deleted too). Add a key in BOTH places
+  (here and project.yml properties) only when the App ID has the matching
+  capability enabled, or codesign will fail.
 -->
 <plist version="1.0">
 <dict>

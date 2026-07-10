@@ -127,17 +127,7 @@ extension IntegrationsView {
     }
 
     var paymentsSection: some View {
-        IntegrationGroup(title: "Plăți & Acces") {
-            // Informational when a card is set up; otherwise offers the real
-            // system card-setup flow (PKPassLibrary.openPaymentSetup).
-            IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.05, green: 0.05, blue: 0.05),
-                title: "Apple Pay",
-                description: "Plăți rapide și sigure cu cardurile din Apple Wallet.",
-                status: vm.applePayAvailable
-                    ? .active(String(localized: "Disponibil"))
-                    : .deepLink(String(localized: "Configure")),
-                action: vm.applePayAvailable ? nil : { vm.openApplePaySetup() })
-
+        IntegrationGroup(title: "Wallet & Acces") {
             // Signed Wallet passes are generated on the NFC Keys page
             // (AddToWalletButton → sign-pass edge function).
             Button { vm.activeSheet = .nfcWallet } label: {
