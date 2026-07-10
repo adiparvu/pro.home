@@ -157,7 +157,10 @@ struct ConversationRowView: View {
             Spacer(minLength: AppSpacing.sm)
 
             VStack(alignment: .trailing, spacing: 8) {
-                Text(entry.relativeTime)
+                // iMessage-style trailing stamp: the TIME the last message was
+                // written today ("12:24"), "Ieri", the weekday inside a week,
+                // then the short date — not a drifting "acum X min".
+                Text(entry.formattedTime)
                     .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .lineLimit(1)
