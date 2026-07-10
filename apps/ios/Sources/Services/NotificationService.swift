@@ -37,22 +37,35 @@ struct AppNotification: Identifiable, Codable, Hashable {
         }
     }
 
-    var date: Date? {
-        let f1 = ISO8601DateFormatter()
-        f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        return f1.date(from: createdAt) ?? f2.date(from: createdAt)
-    }
+    var date: Date? { ISODate.date(from: createdAt) }
+
+    // The system relative formatter owns pluralization ("acum 1 oră" /
+    // "acum 5 ore" / "ieri") — hand-built "%lld h ago" keys can't, because
+    // the xcstrings pipeline has no plural support.
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        f.dateTimeStyle = .named
+        return f
+    }()
+
+    private static let olderFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
 
     var timeDisplay: String {
         guard let date else { return "" }
         let diff = Date().timeIntervalSince(date)
         if diff < 60 { return String(localized: "Just now") }
-        if diff < 3600 { return String(localized: "\(Int(diff / 60))m ago") }
-        if diff < 86400 { return String(localized: "\(Int(diff / 3600))h ago") }
-        let df = DateFormatter(); df.dateStyle = .short; df.timeStyle = .short
-        return df.string(from: date)
+        // Within a week the human phrase wins; older items get a short date —
+        // never the technical write-time clock.
+        if diff < 6 * 86400 {
+            return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
+        }
+        return Self.olderFormatter.string(from: date)
     }
 }
 
@@ -80,7 +93,11 @@ struct NotificationCategory: Identifiable, Hashable {
     }
 
     static func forModule(_ module: String?) -> NotificationCategory {
-        let m = module ?? "system"
+        var m = module ?? "system"
+        // Two writers, one product concept: the generator writes
+        // "maintenance", the assignment trigger writes "tasks". Without the
+        // alias the panel grew two chips both labelled "Tasks".
+        if m == "maintenance" { m = "tasks" }
         if let known = known[m] { return known }
         return NotificationCategory(module: m, label: LocalizedStringKey(m.capitalized),
                                     icon: "bell.fill", color: .blue)
@@ -89,8 +106,8 @@ struct NotificationCategory: Identifiable, Hashable {
     private static let known: [String: NotificationCategory] = [
         "chat":        .init(module: "chat", label: "Chat",
                              icon: "bubble.left.and.bubble.right.fill", color: .blue),
-        "maintenance": .init(module: "maintenance", label: "Tasks",
-                             icon: "wrench.fill", color: .orange),
+        "tasks":       .init(module: "tasks", label: "Tasks",
+                             icon: "checklist", color: .orange),
         "garden":      .init(module: "garden", label: "Garden",
                              icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)),
         "documents":   .init(module: "documents", label: "Documents",
@@ -200,6 +217,45 @@ final class NotificationService {
             if let i = notifications.firstIndex(where: { $0.id == notification.id }) {
                 notifications[i].status = "unread"
             }
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// One write for a whole inbox group (a coalesced chat sender or a
+    /// task's daily duplicates) — same optimistic/rollback contract as the
+    /// single-row path.
+    func markRead(_ group: [AppNotification]) async {
+        let ids = group.filter(\.isUnread).map(\.id)
+        guard !ids.isEmpty else { return }
+        let snapshot = notifications
+        for i in notifications.indices where ids.contains(notifications[i].id) {
+            notifications[i].status = "read"
+        }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .in("id", values: ids.map(\.uuidString))
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.localizedDescription
+        }
+    }
+
+    func dismiss(_ group: [AppNotification]) async {
+        let ids = Set(group.map(\.id))
+        guard !ids.isEmpty else { return }
+        let snapshot = notifications
+        notifications.removeAll { ids.contains($0.id) }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "dismissed"])
+                .in("id", values: ids.map(\.uuidString))
+                .execute()
+        } catch {
+            notifications = snapshot
             self.error = error.localizedDescription
         }
     }
