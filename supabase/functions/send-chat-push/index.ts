@@ -124,15 +124,17 @@ serve(async (req) => {
     })
   }
 
-  // Claim unpushed chat notifications atomically: the insert trigger can
+  // Claim unpushed instant notifications atomically: the insert trigger can
   // fire this function several times in a burst, and stamping pushed_at
-  // up-front means each row is sent by exactly one invocation.
+  // up-front means each row is sent by exactly one invocation. Chat rows are
+  // always instant; other modules opt in via metadata.instant (migration 145
+  // uses it for task assignments).
   const { data: notes, error } = await admin
     .from('notifications')
     .update({ pushed_at: new Date().toISOString() })
-    .eq('module', 'chat')
+    .or('module.eq.chat,metadata->>instant.eq.true')
     .is('pushed_at', null)
-    .select('id, user_id, title, body, resource_type, metadata')
+    .select('id, user_id, title, body, module, resource_type, resource_id, metadata')
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -175,31 +177,47 @@ serve(async (req) => {
 
     if (!tokens || tokens.length === 0) continue // nothing to deliver, nothing to retry
 
-    const badge = await unreadBadge(n.user_id)
     let anySuccess = false
     let anyTransient = false
 
-    // Tapping the push must land in the right conversation: the notification
-    // row's metadata (stamped by the DB triggers, migration 144) rides along
-    // as a custom `chat` key, and thread-id groups banners per conversation.
+    // Tapping the push must land in the right place. Chat rows carry the
+    // conversation identity in metadata (stamped by the DB triggers,
+    // migration 144) as a custom `chat` key; task rows (migration 145) carry
+    // the task id as a custom `task` key. thread-id groups banners per
+    // conversation / per module.
     const meta = (n.metadata ?? {}) as Record<string, unknown>
-    const chatInfo = {
-      kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
-      peer_user_id: (meta.peer_user_id as string) ?? null,
-      peer_name: (meta.peer_name as string) ?? null,
-      group_id: (meta.group_id as string) ?? null,
+    const isChat = n.module === 'chat'
+    let custom: Record<string, unknown>
+    let threadId: string
+    if (isChat) {
+      const chatInfo = {
+        kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
+        peer_user_id: (meta.peer_user_id as string) ?? null,
+        peer_name: (meta.peer_name as string) ?? null,
+        group_id: (meta.group_id as string) ?? null,
+      }
+      threadId = chatInfo.peer_user_id ?? chatInfo.group_id ?? 'chat'
+      custom = { chat: chatInfo }
+    } else if (n.resource_type === 'task' && n.resource_id) {
+      threadId = 'tasks'
+      custom = { task: { id: n.resource_id } }
+    } else {
+      threadId = n.module ?? 'app'
+      custom = {}
     }
-    const threadId = chatInfo.peer_user_id ?? chatInfo.group_id ?? 'chat'
+    const badge = isChat ? await unreadBadge(n.user_id) : 0
 
     for (const t of tokens) {
       const payload = {
         aps: {
           alert: { title: n.title ?? 'New message', body: n.body ?? '' },
           sound: 'default',
-          badge,
+          // The springboard badge means "unread chat"; non-chat pushes leave
+          // whatever badge is showing untouched.
+          ...(isChat ? { badge } : {}),
           'thread-id': threadId,
         },
-        chat: chatInfo,
+        ...custom,
       }
       try {
         const res = await fetch(`https://${apnsHost(t.environment)}/3/device/${t.token}`, {

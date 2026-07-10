@@ -124,7 +124,15 @@ struct PRVIOApp: App {
             // UIKit still routes the SwiftUI way.
             .onOpenURL { url in handleExternalURL(url) }
             .onReceive(NotificationCenter.default.publisher(for: .prvioOpenURL)) { notif in
-                if let url = notif.object as? URL { handleExternalURL(url) }
+                if let url = notif.object as? URL {
+                    // A notification tap stashes the same URL as a cold-launch
+                    // fallback; handling the live post consumes the stash so
+                    // it can't replay on a later foreground.
+                    if UserDefaults.standard.string(forKey: "prvio.pendingDeepLink") == url.absoluteString {
+                        UserDefaults.standard.removeObject(forKey: "prvio.pendingDeepLink")
+                    }
+                    handleExternalURL(url)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .prvioUserActivity)) { notif in
                 if let activity = notif.object as? NSUserActivity {

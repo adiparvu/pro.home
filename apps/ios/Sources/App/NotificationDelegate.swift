@@ -104,6 +104,18 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
                     ChatNotificationTarget.store("group")
                 }
                 NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
+            } else if let task = info["task"] as? [String: Any],
+                      let id = task["id"] as? String, UUID(uuidString: id) != nil {
+                // Task-assignment push (send-chat-push, migration 145) — land
+                // on that task's detail page. Belt and suspenders: the stash
+                // covers a cold launch (the post below fires before PRVIOApp
+                // subscribes); PRVIOApp clears the stash when the live post
+                // is handled so it can't replay on a later foreground.
+                let link = "prvio://tasks/\(id)"
+                UserDefaults.standard.set(link, forKey: "prvio.pendingDeepLink")
+                if let url = URL(string: link) {
+                    NotificationCenter.default.post(name: .prvioOpenURL, object: url)
+                }
             } else if let taskIdStr = info["taskId"] as? String, UUID(uuidString: taskIdStr) != nil {
                 NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.addtask")
             } else if info["plantId"] != nil {
