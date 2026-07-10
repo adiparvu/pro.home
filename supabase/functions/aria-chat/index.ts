@@ -130,6 +130,14 @@ serve(async (req) => {
     const language: string | undefined = body.language
     const tone: string | undefined = body.tone
     const assistantName: string = (body.assistant_name ?? "ARIA").toString().slice(0, 40) || "ARIA"
+    // "What ARIA can see" switches (iOS AI Settings). Default true so older
+    // clients keep full context; `false` means the domain is never loaded,
+    // never mentioned, and its tools are never offered.
+    const allowTasks: boolean = body.allow_tasks !== false
+    const allowFinances: boolean = body.allow_finances !== false
+    const allowProperty: boolean = body.allow_property !== false
+    const allowFamily: boolean = body.allow_family !== false
+    const allowPlants: boolean = body.allow_plants !== false
 
     // ── D3 Document Smart Scan: structured extraction mode ──────────────────
     // The Document Vault sends OCR text here for strict-JSON extraction plus a
@@ -223,23 +231,29 @@ Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Wri
       .order("created_at", { ascending: false })
       .limit(20)
 
-    // Load property context
-    const [tasksRes, finRes, propRes, docsRes, delivRes] = await Promise.all([
-      supabase
-        .from("maintenance_tasks")
-        .select("title, status, priority, due_date")
-        .in("status", ["pending", "in_progress", "overdue"])
-        .order("due_date", { ascending: true })
-        .limit(5),
-      supabase
-        .from("financial_records")
-        .select("type, amount, currency, title, date")
-        .gte("date", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
-        .order("date", { ascending: false })
-        .limit(8),
-      propertyId
+    // Load property context — each domain is loaded ONLY when its "What ARIA
+    // can see" switch is on. A disabled domain never reaches the model.
+    const none = Promise.resolve({ data: null })
+    const [tasksRes, finRes, propRes, docsRes, delivRes, famRes, plantsRes] = await Promise.all([
+      allowTasks
+        ? supabase
+            .from("maintenance_tasks")
+            .select("title, status, priority, due_date")
+            .in("status", ["pending", "in_progress", "overdue"])
+            .order("due_date", { ascending: true })
+            .limit(5)
+        : none,
+      allowFinances
+        ? supabase
+            .from("financial_records")
+            .select("type, amount, currency, title, date")
+            .gte("date", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
+            .order("date", { ascending: false })
+            .limit(8)
+        : none,
+      allowProperty && propertyId
         ? supabase.from("properties").select("name, address_line1, city, health_score").eq("id", propertyId).single()
-        : Promise.resolve({ data: null }),
+        : none,
       supabase
         .from("documents")
         .select("name, expires_at")
@@ -252,6 +266,15 @@ Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Wri
         .select("title, status, expected_date")
         .in("status", ["expected", "out_for_delivery"])
         .limit(5),
+      allowFamily
+        ? supabase.from("family_members").select("name, role").limit(10)
+        : none,
+      allowPlants
+        ? supabase
+            .from("plants")
+            .select("name, last_watered_at, watering_interval_days, health_status")
+            .limit(10)
+        : none,
     ])
 
     const tasks = tasksRes.data ?? []
@@ -259,6 +282,8 @@ Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Wri
     const property = propRes.data as { name?: string; address_line1?: string; city?: string; health_score?: number } | null
     const expiringDocs = (docsRes?.data ?? []) as Array<{ name: string; expires_at: string }>
     const deliveries = (delivRes?.data ?? []) as Array<{ title: string; status: string; expected_date?: string }>
+    const familyMembers = (famRes?.data ?? []) as Array<{ name: string; role?: string }>
+    const plants = (plantsRes?.data ?? []) as Array<{ name: string; last_watered_at?: string; watering_interval_days?: number; health_status?: string }>
 
     const taskCtx = tasks.length > 0
       ? tasks.map((t: { title: string; priority: string; status: string; due_date?: string }) =>
@@ -285,6 +310,15 @@ Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Wri
       ? `Property: ${property.name ?? "Home"} — ${property.address_line1 ?? ""}, ${property.city ?? ""}${property.health_score ? ` | Health: ${property.health_score}/100` : ""}`
       : ""
 
+    const famCtx = familyMembers.length > 0
+      ? familyMembers.map((m) => `• ${m.name}${m.role ? ` (${m.role})` : ""}`).join("\n")
+      : ""
+    const plantCtx = plants.length > 0
+      ? plants.map((p) =>
+          `• ${p.name}${p.health_status ? ` [${p.health_status}]` : ""}${p.last_watered_at ? `, last watered ${p.last_watered_at}` : ""}${p.watering_interval_days ? `, every ${p.watering_interval_days}d` : ""}`
+        ).join("\n")
+      : ""
+
     // Language instruction: explicit BCP-47 code from iOS client takes priority;
     // fallback to "same language the user writes in" for safety.
     const langInstruction = language
@@ -298,22 +332,36 @@ Dates as ISO YYYY-MM-DD. Amounts as plain numbers (no thousands separators). Wri
       ? "Tone: professional and precise. No exclamation marks, no small talk."
       : tone === "concise"
       ? "Tone: as few words as fully helpful. Prefer tight bullet lists."
+      : "Tone: balanced — helpful and natural, moderately detailed."
+
+    // Honesty about switched-off domains: the model has no data from them and
+    // must say so instead of guessing.
+    const disabledDomains = [
+      ...(allowTasks ? [] : ["tasks"]),
+      ...(allowFinances ? [] : ["finances"]),
+      ...(allowProperty ? [] : ["property details"]),
+      ...(allowFamily ? [] : ["family members"]),
+      ...(allowPlants ? [] : ["plants"]),
+    ]
+    const privacyInstruction = disabledDomains.length > 0
+      ? `The owner turned OFF your access to: ${disabledDomains.join(", ")}. You have NO data from those areas. If asked about them, say access is switched off in AI Settings — never guess or invent values.`
       : ""
 
     const systemPrompt = `You are ${assistantName}, the intelligent AI assistant built into PRVHouse — a smart property management app.
 You help the owner manage their property with practical, specific, and concise advice.
 ${langInstruction}
 ${toneInstruction}
+${privacyInstruction}
 Keep responses under 200 words unless a detailed breakdown is requested.
 Ground answers in the property data below — cite the actual task names, amounts and dates instead of speaking generically.
-You have access to tools to create tasks, mark plants as watered, and query property health. Use them when the user's intent clearly matches.
+Use your tools when the user's intent clearly matches one of them.
 
-${propCtx ? `PROPERTY:\n${propCtx}\n` : ""}
+${propCtx ? `PROPERTY:\n${propCtx}\n` : ""}${allowTasks ? `
 OPEN TASKS (last 5):
 ${taskCtx}
-
+` : ""}${allowFinances ? `
 FINANCES (last 30 days):
-${finCtx}${docsCtx ? `\n\nDOCUMENTS EXPIRING SOON:\n${docsCtx}` : ""}${delivCtx ? `\n\nACTIVE DELIVERIES:\n${delivCtx}` : ""}`
+${finCtx}` : ""}${famCtx ? `\n\nFAMILY MEMBERS:\n${famCtx}` : ""}${plantCtx ? `\n\nPLANTS:\n${plantCtx}` : ""}${docsCtx ? `\n\nDOCUMENTS EXPIRING SOON:\n${docsCtx}` : ""}${delivCtx ? `\n\nACTIVE DELIVERIES:\n${delivCtx}` : ""}`
 
     const claudeMessages: Array<{ role: string; content: unknown }> = [
       ...(history ?? []).reverse().map((m: { role: string; content: string }) => ({
@@ -325,6 +373,16 @@ ${finCtx}${docsCtx ? `\n\nDOCUMENTS EXPIRING SOON:\n${docsCtx}` : ""}${delivCtx 
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY")
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured")
+
+    // Tools follow the same switches as context: no task tools without task
+    // access, no plant tool without plant access, no health/appliance tools
+    // without property access.
+    const activeTools = tools.filter((t) => {
+      if (t.name === "create_task" || t.name === "schedule_maintenance") return allowTasks
+      if (t.name === "mark_plant_watered") return allowPlants
+      if (t.name === "query_twin_health" || t.name === "add_appliance") return allowProperty
+      return true
+    })
 
     // Tool-use loop — run until end_turn or a client-side action is needed
     let reply = ""
@@ -343,7 +401,7 @@ ${finCtx}${docsCtx ? `\n\nDOCUMENTS EXPIRING SOON:\n${docsCtx}` : ""}${delivCtx 
           max_tokens: 512,
           system: systemPrompt,
           messages: claudeMessages,
-          tools,
+          tools: activeTools,
         }),
       })
 

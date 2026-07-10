@@ -1,6 +1,486 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Sparkles": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparkles"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scântei"
+          }
+        }
+      }
+    },
+    "Brain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brain"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creier"
+          }
+        }
+      }
+    },
+    "CPU": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        }
+      }
+    },
+    "Guide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghid"
+          }
+        }
+      }
+    },
+    "aria_sample_balanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have 3 tasks this week — the boiler check is due Friday. Want me to prioritize them?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai 3 sarcini săptămâna aceasta — verificarea centralei e vineri. Vrei să le prioritizez?"
+          }
+        }
+      }
+    },
+    "aria_sample_professional": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three tasks are scheduled this week. I recommend completing the boiler inspection first — it is due Friday."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trei sarcini sunt programate săptămâna aceasta. Recomand finalizarea inspecției centralei cu prioritate — termenul este vineri."
+          }
+        }
+      }
+    },
+    "aria_sample_friendly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hey! Just 3 tasks this week — the boiler check lands Friday. You've got this! 🙌"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hei! Doar 3 sarcini săptămâna aceasta — vineri e verificarea centralei. Te descurci sigur! 🙌"
+          }
+        }
+      }
+    },
+    "aria_sample_concise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 tasks. Boiler check: Friday. Start there."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 sarcini. Verificarea centralei: vineri. Începe de acolo."
+          }
+        }
+      }
+    },
+    "aria_hero_footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live preview — changes apply instantly in the conversation."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previzualizare live — modificările se aplică instant în conversație."
+          }
+        }
+      }
+    },
+    "aria_personality_footer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tone changes how %@ actually writes every reply."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tonul schimbă felul în care %@ scrie fiecare răspuns."
+          }
+        }
+      }
+    },
+    "aria_ctx_tasks_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads your task list and deadlines to answer and plan."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citește lista de sarcini și termenele pentru răspunsuri și planificare."
+          }
+        }
+      }
+    },
+    "aria_ctx_finances_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads recent income and expenses for money questions."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citește veniturile și cheltuielile recente pentru întrebări financiare."
+          }
+        }
+      }
+    },
+    "aria_ctx_property_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads property details and its health score."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citește detaliile proprietății și scorul de sănătate."
+          }
+        }
+      }
+    },
+    "aria_ctx_family_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads household member names and roles."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citește numele și rolurile membrilor familiei."
+          }
+        }
+      }
+    },
+    "aria_ctx_plants_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads plant care status and can mark plants watered."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citește starea plantelor și le poate marca udate."
+          }
+        }
+      }
+    },
+    "aria_count_tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d active"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d active"
+          }
+        }
+      }
+    },
+    "aria_count_records": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d records"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d înregistrări"
+          }
+        }
+      }
+    },
+    "aria_count_properties": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d properties"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d proprietăți"
+          }
+        }
+      }
+    },
+    "aria_count_members": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d members"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d membri"
+          }
+        }
+      }
+    },
+    "aria_count_plants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d plants"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d plante"
+          }
+        }
+      }
+    },
+    "aria_ctx_off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fără acces"
+          }
+        }
+      }
+    },
+    "aria_ctx_footer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only data you enable is shared with %@ when you ask a question. Everything else stays out of the conversation."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doar datele activate sunt partajate cu %@ atunci când pui o întrebare. Restul rămân în afara conversației."
+          }
+        }
+      }
+    },
+    "aria_memory_header": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMORY"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMORIE"
+          }
+        }
+      }
+    },
+    "aria_memory_messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved messages"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaje salvate"
+          }
+        }
+      }
+    },
+    "aria_memory_messages_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation history stored in your account."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Istoricul conversației, stocat în contul tău."
+          }
+        }
+      }
+    },
+    "aria_memory_count": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d messages"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d mesaje"
+          }
+        }
+      }
+    },
+    "aria_delete_memory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete conversation memory"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge memoria conversațiilor"
+          }
+        }
+      }
+    },
+    "aria_lang_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Response language"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limba răspunsurilor"
+          }
+        }
+      }
+    },
+    "aria_lang_auto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automată"
+          }
+        }
+      }
+    },
+    "aria_lang_footer %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The language %@ replies in. Automatic follows the app language."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limba în care răspunde %@. Automată urmează limba aplicației."
+          }
+        }
+      }
+    },
     "Quick actions": {
       "localizations": {
         "en": {

@@ -2,10 +2,81 @@ import SwiftUI
 import Supabase
 import PhotosUI
 
+// MARK: - Assistant personality — single source of truth
+//
+// Every case is real behavior: the raw value travels with each aria-chat
+// request as `tone`, and the edge function turns it into a system-prompt
+// directive. The sample line previews the exact voice the directive produces.
+
+enum ARIAPersonality: String, CaseIterable, Identifiable {
+    case balanced, professional, friendly, concise
+
+    var id: String { rawValue }
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .balanced:     return "Balanced"
+        case .professional: return "Professional"
+        case .friendly:     return "Friendly"
+        case .concise:      return "Concise"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .balanced:     return "person.fill"
+        case .professional: return "briefcase.fill"
+        case .friendly:     return "heart.fill"
+        case .concise:      return "text.alignleft"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .balanced:     return .brandPrimaryBlue
+        case .professional: return .brandIndigo
+        case .friendly:     return .brandPink
+        case .concise:      return .brandTeal
+        }
+    }
+
+    /// The one-line sample reply shown on the card and in the hero preview.
+    var sample: String {
+        switch self {
+        case .balanced:     return String(localized: "aria_sample_balanced")
+        case .professional: return String(localized: "aria_sample_professional")
+        case .friendly:     return String(localized: "aria_sample_friendly")
+        case .concise:      return String(localized: "aria_sample_concise")
+        }
+    }
+}
+
+// MARK: - Assistant response language
+//
+// "auto" keeps today's behavior (follow the app language); a fixed choice
+// overrides the `language` field of every aria-chat request, which the edge
+// function converts into a hard "always respond in…" instruction.
+
+enum ARIAResponseLanguage: String, CaseIterable, Identifiable {
+    case auto
+    case romanian = "ro"
+    case english  = "en"
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .auto:     return String(localized: "aria_lang_auto")
+        case .romanian: return Language.romanian.nativeName
+        case .english:  return Language.english.nativeName
+        }
+    }
+}
+
 // MARK: - ARIA Settings View
 
 struct ARIASettingsView: View {
-    // Identity
+    // Identity — rendered live by ARIAAvatar everywhere the assistant speaks.
     @AppStorage("prvio.aria.customName") var assistantName = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") var avatarIcon = "sparkles"
     @AppStorage("prvio.aria.avatarKind") var avatarKind = "icon"
@@ -13,44 +84,52 @@ struct ARIASettingsView: View {
     @AppStorage("prvio.aria.avatarRev") var avatarRevision = 0
     @State private var avatarPhotoItem: PhotosPickerItem?
 
-    // Personality
+    // Personality — sent as `tone` with every aria-chat request.
     @AppStorage("prvio.aria.personality") var personality = "balanced"
 
-    // Context toggles
+    // Context access — sent as `allow_*` with every aria-chat request; the
+    // edge function skips loading (and offering tools over) gated domains.
     @AppStorage("prvio.aria.showTasks") var canSeeTasks = true
     @AppStorage("prvio.aria.showFinances") var canSeeFinances = true
     @AppStorage("prvio.aria.showProperty") var canSeeProperty = true
     @AppStorage("prvio.aria.showFamily") var canSeeFamily = true
     @AppStorage("prvio.aria.showPlants") var canSeePlants = true
 
-    // Model / API key
-    // Keychain-backed (SecretStore): a billable API key must not sit in
-    // UserDefaults plaintext. One-time migration from the old default below.
-    @State var customApiKey = SecretStore.string(for: "aria.customApiKey")
-    @AppStorage("prvio.aria.useCustomModel") var useCustomModel = false
+    // Memory — response-language override for aria-chat requests.
+    @AppStorage("prvio.aria.responseLanguage") var responseLanguage = "auto"
 
     // UI state
     @State private var showNameEditor = false
     @State private var pendingName = ""
-    @State private var showApiKeySheet = false
     @State private var showClearConfirm = false
     @State private var showThemePicker = false
     @State private var showShareSheet = false
     @State private var exportURL: URL? = nil
     @State private var isDeletingHistory = false
+    /// Real stored-message count from aria_messages; nil while loading.
+    @State private var storedMessageCount: Int? = nil
 
     @Environment(TaskService.self) var taskService
+    @Environment(FinancialService.self) var financialService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(FamilyService.self) var familyService
+    @Environment(PlantService.self) var plantService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) var dismiss
+
+    private var currentPersonality: ARIAPersonality {
+        ARIAPersonality(rawValue: personality) ?? .balanced
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
+            VStack(spacing: AppSpacing.xxl) {
+                heroSection
                 identitySection
-                appearanceSection
                 personalitySection
                 contextSection
-                modelSection
-                conversationSection
+                memorySection
+                appearanceSection
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -70,22 +149,8 @@ struct ARIASettingsView: View {
         } message: {
             Text("Enter a custom name for your AI assistant.")
         }
-        .sheet(isPresented: $showApiKeySheet) {
-            ApiKeyEditorSheet(apiKey: $customApiKey)
-        }
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker(scope: "aria")
-        }
-        .onChange(of: customApiKey) { SecretStore.set(customApiKey, for: "aria.customApiKey") }
-        .onAppear {
-            // Migrate the key out of UserDefaults, where it lived in plaintext.
-            if let legacy = UserDefaults.standard.string(forKey: "prvio.aria.customApiKey"), !legacy.isEmpty {
-                if customApiKey.isEmpty {
-                    customApiKey = legacy
-                    SecretStore.set(legacy, for: "aria.customApiKey")
-                }
-                UserDefaults.standard.removeObject(forKey: "prvio.aria.customApiKey")
-            }
         }
         .confirmationDialog(
             "Clear Conversation History",
@@ -103,6 +168,68 @@ struct ARIASettingsView: View {
             if let url = exportURL {
                 ShareSheet(url: url)
             }
+        }
+        .task { await loadStoredMessageCount() }
+        .task { await refreshDomainCounts() }
+    }
+
+    // MARK: - Hero — live assistant preview
+    //
+    // The card is the setting made visible: name, avatar and one sample reply
+    // in the currently selected tone. Every identity change below re-renders
+    // it instantly, so the user sees exactly what the chat will look like.
+
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                HStack(spacing: AppSpacing.md) {
+                    ARIAAvatar(size: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(assistantName)
+                            .font(AppFont.title3)
+                            .foregroundStyle(.primary)
+                            .contentTransition(.opacity)
+                        Text("AI Assistant")
+                            .font(AppFont.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                // One sample reply bubble, morphing with the selected tone.
+                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                    ARIAAvatar(size: 24)
+                    Text(currentPersonality.sample)
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, 9)
+                        .background(Color.primary.opacity(0.08),
+                                    in: ChatBubbleShape(isOwn: false, hasTail: true))
+                        .id(personality)
+                        .transition(reduceMotion
+                            ? AnyTransition.opacity
+                            : AnyTransition(BlurReplaceTransition(configuration: .downUp)))
+                    Spacer(minLength: AppSpacing.lg)
+                }
+            }
+            .padding(AppSpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .liquidGlass(cornerRadius: AppRadius.xxl)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: personality)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: assistantName)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: avatarKind)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: avatarIcon)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: avatarEmoji)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(assistantName)
+            .accessibilityValue(Text(currentPersonality.sample))
+
+            Text("aria_hero_footer")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+                .padding(.top, 6)
         }
     }
 
@@ -132,13 +259,16 @@ struct ARIASettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text("Assistant Name"))
+            .accessibilityValue(Text(assistantName))
 
             rowDivider
 
-            // Avatar style picker
+            // Avatar — every option here really renders in the conversation
+            // (header pill, reply bubbles, typing indicator) via ARIAAvatar.
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 12) {
-                    ColoredIconBadge(icon: avatarIcon, color: .purple)
+                    ColoredIconBadge(icon: "person.crop.circle.fill", color: .purple)
                     Text("Avatar Style")
                         .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
@@ -157,8 +287,6 @@ struct ARIASettingsView: View {
                 // Beyond icons: the assistant can wear an emoji or a photo of
                 // the owner's choosing — same identity everywhere it speaks.
                 HStack(spacing: 10) {
-                    ARIAAvatar(size: 40)
-
                     Button {
                         HapticFeedback.selection()
                         avatarKind = "emoji"
@@ -173,6 +301,8 @@ struct ARIASettingsView: View {
                                     in: Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Emoji"))
+                    .accessibilityAddTraits(avatarKind == "emoji" ? .isSelected : [])
 
                     if avatarKind == "emoji" {
                         TextField("✨", text: Binding(
@@ -184,6 +314,8 @@ struct ARIASettingsView: View {
                         .padding(.vertical, 5)
                         .background(Color.primary.opacity(AppOpacity.subtleFill),
                                     in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                        .accessibilityLabel(Text("Emoji"))
+                        .transition(.scale(scale: 0.85).combined(with: .opacity))
                     }
 
                     PhotosPicker(selection: $avatarPhotoItem, matching: .images) {
@@ -197,6 +329,8 @@ struct ARIASettingsView: View {
                                     in: Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Photo"))
+                    .accessibilityAddTraits(avatarKind == "photo" ? .isSelected : [])
                     .onChange(of: avatarPhotoItem) { _, item in
                         guard let item else { return }
                         Task {
@@ -214,6 +348,7 @@ struct ARIASettingsView: View {
                 }
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.bottom, AppSpacing.md)
+                .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: avatarKind)
             }
 
             rowDivider
@@ -241,7 +376,9 @@ struct ARIASettingsView: View {
     }
 
     private func avatarChip(option: AvatarOption) -> some View {
-        let isSelected = avatarIcon == option.icon
+        // Selected only when the icon is what actually renders right now —
+        // an emoji/photo avatar must not leave a stale-highlighted icon.
+        let isSelected = avatarKind == "icon" && avatarIcon == option.icon
         return Button {
             HapticFeedback.selection()
             avatarIcon = option.icon
@@ -265,6 +402,309 @@ struct ARIASettingsView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .accessibilityLabel(Text(option.label))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Personality Section
+    //
+    // Cards, not chips: each tone shows the sentence it will actually write.
+    // Selection changes the `tone` sent with every request — the hero above
+    // morphs to the same sample so cause and effect stay visible.
+
+    private var personalitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PERSONALITY")
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.sm)
+
+            VStack(spacing: 10) {
+                ForEach(ARIAPersonality.allCases) { option in
+                    personalityCard(option)
+                }
+            }
+
+            Text("aria_personality_footer \(assistantName)")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+                .padding(.top, 2)
+        }
+    }
+
+    private func personalityCard(_ option: ARIAPersonality) -> some View {
+        let isSelected = currentPersonality == option
+        let cardShape = RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+        return Button {
+            guard !isSelected else { return }
+            HapticFeedback.selection()
+            withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
+                personality = option.rawValue
+            }
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: option.icon)
+                    .font(AppFont.scaled(15, weight: .semibold))
+                    .foregroundStyle(isSelected ? .white : option.accent)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        isSelected
+                            ? AnyShapeStyle(option.accent)
+                            : AnyShapeStyle(option.accent.opacity(AppOpacity.tintedFill)),
+                        in: Circle()
+                    )
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(option.label)
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(.primary)
+                    Text(option.sample)
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(AppFont.scaled(20))
+                    .foregroundStyle(isSelected ? option.accent : Color.primary.opacity(0.15))
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .padding(AppSpacing.base)
+            .contentShape(cardShape)
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: AppRadius.xl)
+        .overlay(
+            cardShape.strokeBorder(
+                isSelected ? option.accent.opacity(0.55) : Color.clear,
+                lineWidth: 1.5
+            )
+        )
+        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: isSelected)
+        .accessibilityLabel(Text(option.label))
+        .accessibilityValue(Text(option.sample))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Context Section
+    //
+    // Each row states what access means and shows the real live count from
+    // the same @Observable service the rest of the app renders. The switch is
+    // enforcement, not decoration: `allow_*` flags ride along with every
+    // aria-chat request and the edge function refuses to load gated data.
+
+    private var contextSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("WHAT \(assistantName) CAN SEE")
+                .textCase(.uppercase)
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.sm)
+
+            VStack(spacing: 0) {
+                contextToggleRow(
+                    icon: "checklist", color: .orange, label: "Tasks",
+                    detail: "aria_ctx_tasks_desc",
+                    count: String(format: String(localized: "aria_count_tasks"), taskService.openCount),
+                    value: $canSeeTasks)
+                rowDivider
+                contextToggleRow(
+                    icon: "banknote.fill", color: Color.brandSuccess, label: "Finances",
+                    detail: "aria_ctx_finances_desc",
+                    count: String(format: String(localized: "aria_count_records"), financialService.records.count),
+                    value: $canSeeFinances)
+                rowDivider
+                contextToggleRow(
+                    icon: "house.fill", color: .blue, label: "Property",
+                    detail: "aria_ctx_property_desc",
+                    count: String(format: String(localized: "aria_count_properties"), propertyService.properties.count),
+                    value: $canSeeProperty)
+                rowDivider
+                contextToggleRow(
+                    icon: "person.2.fill", color: .purple, label: "Family",
+                    detail: "aria_ctx_family_desc",
+                    count: String(format: String(localized: "aria_count_members"), familyService.members.count),
+                    value: $canSeeFamily)
+                rowDivider
+                contextToggleRow(
+                    icon: "leaf.fill", color: Color.brandSuccess, label: "Plants",
+                    detail: "aria_ctx_plants_desc",
+                    count: String(format: String(localized: "aria_count_plants"), plantService.plants.count),
+                    value: $canSeePlants)
+            }
+            .liquidGlass(cornerRadius: AppRadius.xl)
+
+            Text("aria_ctx_footer \(assistantName)")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+                .padding(.top, 2)
+        }
+    }
+
+    private func contextToggleRow(icon: String, color: Color,
+                                  label: LocalizedStringKey,
+                                  detail: LocalizedStringKey,
+                                  count: String,
+                                  value: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(label)
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                    Text(value.wrappedValue ? count : String(localized: "aria_ctx_off"))
+                        .font(AppFont.caption)
+                        .foregroundStyle(value.wrappedValue
+                            ? Color.primary.opacity(AppOpacity.secondaryText)
+                            : Color.primary.opacity(AppOpacity.disabled))
+                        .contentTransition(.opacity)
+                }
+                Text(detail)
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Toggle(isOn: value) { Text(label) }
+                .labelsHidden()
+                .tint(.accentColor)
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: value.wrappedValue)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(value.wrappedValue ? count : String(localized: "aria_ctx_off")))
+    }
+
+    // MARK: - Memory Section
+    //
+    // Real numbers, real deletion: the count is the live row count of
+    // aria_messages, and the destructive action deletes those rows.
+
+    private var memorySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("aria_memory_header")
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.sm)
+
+            VStack(spacing: 0) {
+                // Stored messages count
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "brain.head.profile", color: .pink)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("aria_memory_messages")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(.primary)
+                        Text("aria_memory_messages_desc")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    }
+                    Spacer()
+                    if let count = storedMessageCount {
+                        Text(String(format: String(localized: "aria_memory_count"), count))
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.primary.opacity(0.38))
+                            .contentTransition(.numericText())
+                            .animation(reduceMotion ? nil : .snappy(duration: 0.3),
+                                       value: storedMessageCount)
+                    } else {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
+                .accessibilityElement(children: .combine)
+
+                rowDivider
+
+                // Response language — overrides the `language` sent to aria-chat.
+                Menu {
+                    Picker("aria_lang_title", selection: $responseLanguage) {
+                        ForEach(ARIAResponseLanguage.allCases) { lang in
+                            Text(lang.label).tag(lang.rawValue)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "globe", color: .indigo)
+                        Text("aria_lang_title")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text((ARIAResponseLanguage(rawValue: responseLanguage) ?? .auto).label)
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.primary.opacity(0.38))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(0.28))
+                    }
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("aria_lang_title"))
+                .accessibilityValue(Text((ARIAResponseLanguage(rawValue: responseLanguage) ?? .auto).label))
+
+                rowDivider
+
+                // Export — the stored history as a shareable JSON file.
+                Button {
+                    Task { await exportHistory() }
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "square.and.arrow.up", color: .blue)
+                        Text("Export conversation history")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(0.28))
+                    }
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                rowDivider
+
+                // Delete — removes every stored aria_messages row.
+                Button(role: .destructive) {
+                    showClearConfirm = true
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "trash.fill", color: .red)
+                        Text("aria_delete_memory")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(.red)
+                        Spacer()
+                        if isDeletingHistory {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(isDeletingHistory)
+            }
+            .liquidGlass(cornerRadius: AppRadius.xl)
+
+            Text("aria_lang_footer \(assistantName)")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+                .padding(.top, 2)
+        }
     }
 
     // MARK: - Appearance Section
@@ -296,240 +736,6 @@ struct ARIASettingsView: View {
         }
     }
 
-    // MARK: - Personality Section
-
-    private var personalitySection: some View {
-        settingsGroup("PERSONALITY") {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(personalityOptions, id: \.id) { option in
-                    personalityChip(id: option.id, label: option.label, icon: option.icon)
-                }
-            }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.base)
-        }
-    }
-
-    private struct PersonalityOption {
-        let id: String
-        let label: LocalizedStringKey
-        let icon: String
-    }
-
-    private var personalityOptions: [PersonalityOption] {
-        [
-            PersonalityOption(id: "balanced", label: "Balanced", icon: "person.fill"),
-            PersonalityOption(id: "professional", label: "Professional", icon: "briefcase.fill"),
-            PersonalityOption(id: "friendly", label: "Friendly", icon: "heart.fill"),
-            PersonalityOption(id: "concise", label: "Concise", icon: "text.alignleft")
-        ]
-    }
-
-    private func personalityChip(id: String, label: LocalizedStringKey, icon: String) -> some View {
-        let isActive = personality == id
-        return Button {
-            HapticFeedback.selection()
-            personality = id
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(AppFont.footnoteEmphasis)
-                Text(label)
-                    .font(AppFont.captionEmphasis)
-            }
-            .foregroundStyle(isActive ? .white : .primary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.md)
-            .background(
-                isActive
-                    ? AnyShapeStyle(Color.accentColor)
-                    : AnyShapeStyle(.regularMaterial),
-                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Context Section
-
-    private var contextSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("WHAT \(assistantName) CAN SEE")
-                .textCase(.uppercase)
-                .font(AppFont.captionStrong)
-                .foregroundStyle(.secondary)
-                .padding(.leading, AppSpacing.sm)
-
-            VStack(spacing: 0) {
-                contextToggleRow(icon: "checklist", color: .orange,
-                                 label: "Tasks", value: $canSeeTasks)
-                rowDivider
-                contextToggleRow(icon: "banknote.fill",
-                                 color: Color.brandSuccess,
-                                 label: "Finances", value: $canSeeFinances)
-                rowDivider
-                contextToggleRow(icon: "house.fill", color: .blue,
-                                 label: "Property", value: $canSeeProperty)
-                rowDivider
-                contextToggleRow(icon: "person.2.fill", color: .purple,
-                                 label: "Family", value: $canSeeFamily)
-                rowDivider
-                contextToggleRow(icon: "leaf.fill",
-                                 color: Color(red: 0.3, green: 0.75, blue: 0.4),
-                                 label: "Plants", value: $canSeePlants)
-            }
-            .liquidGlass(cornerRadius: AppRadius.xl)
-
-            Text("Disable to prevent \(assistantName) from accessing this data type in conversations")
-                .font(AppFont.scaled(12))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, AppSpacing.sm)
-                .padding(.top, 2)
-        }
-    }
-
-    private func contextToggleRow(icon: String, color: Color, label: LocalizedStringKey, value: Binding<Bool>) -> some View {
-        HStack(spacing: 12) {
-            ColoredIconBadge(icon: icon, color: color)
-            Text(label)
-                .font(AppFont.scaled(15))
-                .foregroundStyle(.primary)
-            Spacer()
-            Toggle("", isOn: value)
-                .labelsHidden()
-                .tint(.accentColor)
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, AppSpacing.md)
-    }
-
-    // MARK: - Model Section
-
-    private var modelSection: some View {
-        settingsGroup("AI MODEL") {
-            // Default Claude row
-            Button {
-                HapticFeedback.selection()
-                useCustomModel = false
-            } label: {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "sparkles", color: .blue)
-                    Text("Claude (Default)")
-                        .font(AppFont.scaled(15))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    if !useCustomModel {
-                        Image(systemName: "checkmark")
-                            .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color.accentColor)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            rowDivider
-
-            // Custom API Key row
-            Button {
-                showApiKeySheet = true
-            } label: {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "key.fill", color: .orange)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Custom API Key")
-                            .font(AppFont.scaled(15))
-                            .foregroundStyle(.primary)
-                        Text("Advanced")
-                            .font(AppFont.scaled(12))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                    }
-                    Spacer()
-                    Text(LocalizedStringKey(customApiKey.isEmpty ? "Not set" : "Configured"))
-                        .font(AppFont.scaled(13))
-                        .foregroundStyle(customApiKey.isEmpty
-                            ? Color.primary.opacity(AppOpacity.disabled)
-                            : Color.brandSuccess)
-                    Image(systemName: "chevron.right")
-                        .font(AppFont.caption)
-                        .foregroundStyle(Color.primary.opacity(0.28))
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            rowDivider
-
-            // Use custom model toggle
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "cpu", color: .indigo)
-                Text("Use Custom Model")
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Toggle("", isOn: $useCustomModel)
-                    .labelsHidden()
-                    .tint(.accentColor)
-                    .disabled(customApiKey.isEmpty)
-            }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.md)
-            .opacity(customApiKey.isEmpty ? 0.45 : 1.0)
-        }
-    }
-
-    // MARK: - Conversation Section
-
-    private var conversationSection: some View {
-        settingsGroup("CONVERSATIONS") {
-            Button {
-                Task { await exportHistory() }
-            } label: {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "square.and.arrow.up", color: .blue)
-                    Text("Export conversation history")
-                        .font(AppFont.scaled(15))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(AppFont.caption)
-                        .foregroundStyle(Color.primary.opacity(0.28))
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            rowDivider
-
-            Button(role: .destructive) {
-                showClearConfirm = true
-            } label: {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "trash.fill", color: .red)
-                    Text("Clear conversation history")
-                        .font(AppFont.scaled(15))
-                        .foregroundStyle(.red)
-                    Spacer()
-                    if isDeletingHistory {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(isDeletingHistory)
-        }
-    }
-
     // MARK: - Layout Helpers
 
     private func settingsGroup<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
@@ -551,6 +757,30 @@ struct ARIASettingsView: View {
     }
 
     // MARK: - Actions
+
+    /// The real number of stored assistant messages (aria_messages rows).
+    private func loadStoredMessageCount() async {
+        do {
+            let response: PostgrestResponse<Void> = try await supabase
+                .from("aria_messages")
+                .select("id", head: true, count: .exact)
+                .execute()
+            storedMessageCount = response.count ?? 0
+        } catch {
+            storedMessageCount = 0
+        }
+    }
+
+    /// The context counts read live services; refresh any that haven't been
+    /// loaded yet this session so the numbers are real, not stale zeros.
+    private func refreshDomainCounts() async {
+        if taskService.tasks.isEmpty { await taskService.load() }
+        if financialService.records.isEmpty { await financialService.load() }
+        if familyService.members.isEmpty { await familyService.load() }
+        if plantService.plants.isEmpty, let propertyId = propertyService.primary?.id {
+            await plantService.load(propertyId: propertyId)
+        }
+    }
 
     private func exportHistory() async {
         struct ExportMessage: Decodable, Encodable {
@@ -595,6 +825,7 @@ struct ARIASettingsView: View {
         } catch {
             // ignore — table may already be empty
         }
+        storedMessageCount = 0
         // The open conversation resets to the welcome message right away.
         NotificationCenter.default.post(name: .ariaHistoryCleared, object: nil)
     }
@@ -602,124 +833,4 @@ struct ARIASettingsView: View {
 
 extension Notification.Name {
     static let ariaHistoryCleared = Notification.Name("prvio.aria.historyCleared")
-}
-
-// MARK: - API Key Editor Sheet
-
-private struct ApiKeyEditorSheet: View {
-    @Binding var apiKey: String
-    @State private var draft = ""
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 8) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 64, height: 64)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
-                                )
-                            Image(systemName: "key.fill")
-                                .font(AppFont.scaled(26, weight: .semibold))
-                                .foregroundStyle(.orange)
-                        }
-                        Text("Custom API Key")
-                            .font(AppFont.scaled(20, weight: .bold))
-                        Text("Bring your own Anthropic API key")
-                            .font(AppFont.scaled(14))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    }
-                    .padding(.top, AppSpacing.lg)
-
-                    // Input
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("API KEY")
-                            .font(AppFont.label)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, AppSpacing.xxs)
-
-                        SecureField("sk-ant-api03-...", text: $draft)
-                            .font(AppFont.scaled(14, design: .monospaced))
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .padding(.horizontal, AppSpacing.base)
-                            .padding(.vertical, AppSpacing.base)
-                            .liquidGlass(cornerRadius: 14)
-                    }
-
-                    // Security notice
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "lock.shield.fill")
-                            .font(AppFont.scaled(18))
-                            .foregroundStyle(.green)
-                        Text("Your API key is stored securely on this device and never shared with PRVIO servers.")
-                            .font(AppFont.scaled(13))
-                            .foregroundStyle(Color.primary.opacity(0.65))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.horizontal, AppSpacing.base)
-                    .padding(.vertical, AppSpacing.base)
-                    .liquidGlass(cornerRadius: 14)
-
-                    // Save / Clear buttons
-                    VStack(spacing: 10) {
-                        Button {
-                            let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-                            apiKey = trimmed
-                            dismiss()
-                        } label: {
-                            Text("Save Key")
-                                .font(AppFont.subheadline)
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, AppSpacing.base)
-                                .background(
-                                    draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                        ? Color.accentColor.opacity(0.4)
-                                        : Color.accentColor,
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                        if !apiKey.isEmpty {
-                            Button(role: .destructive) {
-                                apiKey = ""
-                                draft = ""
-                                dismiss()
-                            } label: {
-                                Text("Clear Key")
-                                    .font(AppFont.subheadline)
-                                    .foregroundStyle(.red)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, AppSpacing.base)
-                                    .background(.regularMaterial,
-                                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    Spacer(minLength: 40)
-                }
-                .padding(.horizontal, AppSpacing.xl)
-            }
-            .background(appBackground.ignoresSafeArea())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
-        .onAppear { draft = apiKey }
-    }
 }

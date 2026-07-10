@@ -20,6 +20,16 @@ struct ARIAView: View {
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
     @AppStorage("prvio.aria.personality") private var aiTone: String = "balanced"
+    // Context access — the "What ARIA can see" switches. They ride along with
+    // every request; the aria-chat edge function refuses to load (or offer
+    // tools over) any domain the owner has switched off.
+    @AppStorage("prvio.aria.showTasks") private var allowTasks = true
+    @AppStorage("prvio.aria.showFinances") private var allowFinances = true
+    @AppStorage("prvio.aria.showProperty") private var allowProperty = true
+    @AppStorage("prvio.aria.showFamily") private var allowFamily = true
+    @AppStorage("prvio.aria.showPlants") private var allowPlants = true
+    /// "auto" follows the app language; "ro"/"en" force the reply language.
+    @AppStorage("prvio.aria.responseLanguage") private var responseLanguage = "auto"
     @State private var showSettings = false
     @State private var themeRefresh = 0
 
@@ -337,18 +347,37 @@ struct ARIAView: View {
         Task {
             do {
                 let propId = propertyService.primary?.id.uuidString
-                let lang = followSystemLanguage
-                    ? (Language.devicePreferred.rawValue)
-                    : currentLocale
+                // Reply language: the assistant's own setting wins; "auto"
+                // follows the app language exactly as before.
+                let lang: String
+                switch responseLanguage {
+                case ARIAResponseLanguage.romanian.rawValue,
+                     ARIAResponseLanguage.english.rawValue:
+                    lang = responseLanguage
+                default:
+                    lang = followSystemLanguage
+                        ? Language.devicePreferred.rawValue
+                        : currentLocale
+                }
                 struct ARIAChatPayload: Encodable {
                     let message: String
                     let property_id: String?
                     let language: String
                     let tone: String
                     let assistant_name: String
+                    let allow_tasks: Bool
+                    let allow_finances: Bool
+                    let allow_property: Bool
+                    let allow_family: Bool
+                    let allow_plants: Bool
                 }
                 let payload = ARIAChatPayload(message: text, property_id: propId, language: lang,
-                                              tone: aiTone, assistant_name: assistantName)
+                                              tone: aiTone, assistant_name: assistantName,
+                                              allow_tasks: allowTasks,
+                                              allow_finances: allowFinances,
+                                              allow_property: allowProperty,
+                                              allow_family: allowFamily,
+                                              allow_plants: allowPlants)
                 let rawResponse: Data = try await supabase.functions
                     .invoke("aria-chat", options: .init(body: payload))
 
