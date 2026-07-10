@@ -23,6 +23,13 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     /// whether or not the `worked_seconds` column (migration 136) has shipped —
     /// the local App Group total is the authority until then.
     var workedSeconds: Int = 0
+    /// Photos attached to the task (public URLs, documents bucket) and the
+    /// place it happens — a free-typed name or an Apple Maps pick (name +
+    /// coordinates). All tolerant-decoded: rows predate migration 147.
+    var photoUrls: [String] = []
+    var locationName: String?
+    var locationLat: Double?
+    var locationLon: Double?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, category, priority, status, notes, tags
@@ -36,6 +43,10 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         case assigneeNames = "assignee_names"
         case elementId     = "element_id"
         case workedSeconds = "worked_seconds"
+        case photoUrls     = "photo_urls"
+        case locationName  = "location_name"
+        case locationLat   = "location_lat"
+        case locationLon   = "location_lon"
     }
 
     init(from decoder: Decoder) throws {
@@ -58,6 +69,10 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         assigneeNames  = (try? c.decode([String].self, forKey: .assigneeNames)) ?? []
         elementId      = try c.decodeIfPresent(UUID.self, forKey: .elementId)
         workedSeconds  = (try? c.decode(Int.self, forKey: .workedSeconds)) ?? 0
+        photoUrls      = (try? c.decode([String].self, forKey: .photoUrls)) ?? []
+        locationName   = try? c.decodeIfPresent(String.self, forKey: .locationName)
+        locationLat    = try? c.decodeIfPresent(Double.self, forKey: .locationLat)
+        locationLon    = try? c.decodeIfPresent(Double.self, forKey: .locationLon)
     }
 
     var isCompleted: Bool { status == "completed" }
@@ -108,6 +123,11 @@ struct NewTaskPayload: Encodable {
     let status: String = "pending"
     let assigneeIds: [String]
     let assigneeNames: [String]
+    // Defaulted so pre-existing call sites (watch quick-add, intents) build on.
+    var photoUrls: [String] = []
+    var locationName: String? = nil
+    var locationLat: Double? = nil
+    var locationLon: Double? = nil
 
     enum CodingKeys: String, CodingKey {
         case propertyId    = "property_id"
@@ -116,6 +136,10 @@ struct NewTaskPayload: Encodable {
         case priority, category, status
         case assigneeIds   = "assignee_ids"
         case assigneeNames = "assignee_names"
+        case photoUrls     = "photo_urls"
+        case locationName  = "location_name"
+        case locationLat   = "location_lat"
+        case locationLon   = "location_lon"
     }
 }
 

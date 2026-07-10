@@ -1,0 +1,424 @@
+import SwiftUI
+import PhotosUI
+import MapKit
+import Supabase
+
+// MARK: - Task photos (form section + upload)
+//
+// Photos attach from the task form (IMG_8216): a PhotosPicker row under the
+// description, thumbnails in a horizontal strip with per-photo delete.
+// Existing URLs (editing) and freshly picked images live side by side; the
+// pending images upload on save through the same pipeline as Photo Journal
+// (documents bucket, resized JPEG, public URL).
+
+struct TaskPhotoSection: View {
+    @Binding var existingUrls: [String]
+    @Binding var pendingImages: [UIImage]
+
+    @State private var pickerItems: [PhotosPickerItem] = []
+    private let maxPhotos = 6
+
+    private var remaining: Int { max(0, maxPhotos - existingUrls.count - pendingImages.count) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    Text("task_photos_title")
+                        .font(AppFont.scaled(14, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                }
+                Spacer()
+                if remaining > 0 {
+                    PhotosPicker(selection: $pickerItems,
+                                 maxSelectionCount: remaining,
+                                 matching: .images) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "plus")
+                                .font(AppFont.scaled(12, weight: .semibold))
+                            Text("task_photos_add")
+                                .font(AppFont.scaled(13, weight: .medium))
+                        }
+                        .foregroundStyle(Color.brandPurple)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, 6)
+                        .background(Color.brandPurple.opacity(0.12), in: Capsule())
+                    }
+                }
+            }
+
+            if !existingUrls.isEmpty || !pendingImages.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(existingUrls, id: \.self) { url in
+                            thumb {
+                                AsyncImage(url: URL(string: url)) { phase in
+                                    if case .success(let img) = phase {
+                                        img.resizable().scaledToFill()
+                                    } else {
+                                        Color.primary.opacity(AppOpacity.subtleFill)
+                                    }
+                                }
+                            } onDelete: {
+                                withAnimation(.snappy(duration: 0.2)) {
+                                    existingUrls.removeAll { $0 == url }
+                                }
+                            }
+                        }
+                        ForEach(Array(pendingImages.enumerated()), id: \.offset) { index, image in
+                            thumb {
+                                Image(uiImage: image).resizable().scaledToFill()
+                            } onDelete: {
+                                withAnimation(.snappy(duration: 0.2)) {
+                                    if pendingImages.indices.contains(index) {
+                                        pendingImages.remove(at: index)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+        .onChange(of: pickerItems) { _, items in
+            guard !items.isEmpty else { return }
+            pickerItems = []
+            Task {
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        await MainActor.run {
+                            withAnimation(.snappy(duration: 0.2)) { pendingImages.append(image) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func thumb<Content: View>(@ViewBuilder content: () -> Content,
+                                      onDelete: @escaping () -> Void) -> some View {
+        content()
+            .frame(width: 84, height: 84)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                Button(action: onDelete) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(16))
+                        .foregroundStyle(.white, .black.opacity(0.55))
+                }
+                .buttonStyle(.plain)
+                .padding(4)
+                .accessibilityLabel(Text("task_photos_remove"))
+            }
+    }
+}
+
+enum TaskPhotoUploader {
+    /// Uploads freshly picked photos and returns their public URLs — the same
+    /// pipeline Photo Journal uses (documents bucket, resized JPEG).
+    static func upload(_ images: [UIImage], propertyId: UUID) async throws -> [String] {
+        guard let ownerId = supabase.auth.currentSession?.user.id else { return [] }
+        var urls: [String] = []
+        for image in images {
+            guard let data = image.uploadJPEG(quality: 0.8) else { continue }
+            let path = "\(ownerId.uuidString.lowercased())/tasks/\(propertyId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
+            try await supabase.storage
+                .from("documents")
+                .upload(path, data: data,
+                        options: FileOptions(contentType: "image/jpeg", upsert: false))
+            let publicURL = try supabase.storage.from("documents").getPublicURL(path: path)
+            urls.append(publicURL.absoluteString)
+        }
+        return urls
+    }
+}
+
+// MARK: - Task location (form row + Apple Maps picker)
+//
+// The place a task happens (IMG_8217): either a real Apple Maps location
+// (live search results, name + coordinates) or exactly the text the user
+// typed. Coordinates are kept only for real picks, so the detail page can
+// open Maps honestly.
+
+struct TaskLocationValue: Equatable {
+    var name: String
+    var lat: Double?
+    var lon: Double?
+}
+
+struct TaskLocationSection: View {
+    @Binding var location: TaskLocationValue?
+    @State private var showPicker = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                Text("task_location_title")
+                    .font(AppFont.scaled(14, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+            }
+
+            Button {
+                HapticFeedback.impact(.light)
+                showPicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: location == nil ? "mappin.circle" : "mappin.circle.fill")
+                        .font(AppFont.scaled(17))
+                        .foregroundStyle(Color.brandPurple)
+                        .frame(width: 22)
+                    Text(location?.name ?? String(localized: "task_location_add"))
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(location == nil ? Color.primary.opacity(AppOpacity.disabled) : .primary)
+                        .lineLimit(1)
+                    Spacer()
+                    if location != nil {
+                        Button {
+                            withAnimation(.snappy(duration: 0.2)) { location = nil }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(Color.primary.opacity(0.25))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("task_location_clear"))
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(0.28))
+                    }
+                }
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showPicker) {
+            TaskLocationPickerSheet(location: $location)
+        }
+    }
+}
+
+/// Live Apple Maps completions for the picker (MKLocalSearchCompleter).
+@Observable
+final class TaskLocationSearchModel: NSObject, MKLocalSearchCompleterDelegate {
+    var results: [MKLocalSearchCompletion] = []
+    @ObservationIgnored private lazy var completer: MKLocalSearchCompleter = {
+        let c = MKLocalSearchCompleter()
+        c.delegate = self
+        c.resultTypes = [.address, .pointOfInterest]
+        return c
+    }()
+
+    func update(query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            completer.cancel()
+            results = []
+        } else {
+            completer.queryFragment = trimmed
+        }
+    }
+
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        results = completer.results
+    }
+
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        results = []
+    }
+}
+
+struct TaskLocationPickerSheet: View {
+    @Binding var location: TaskLocationValue?
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var model = TaskLocationSearchModel()
+    @State private var query = ""
+    @State private var isResolving = false
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !trimmedQuery.isEmpty {
+                    Button {
+                        location = TaskLocationValue(name: trimmedQuery, lat: nil, lon: nil)
+                        dismiss()
+                    } label: {
+                        Label {
+                            Text(String(format: String(localized: "task_location_use_text"), trimmedQuery))
+                                .foregroundStyle(.primary)
+                        } icon: {
+                            Image(systemName: "character.cursor.ibeam")
+                                .foregroundStyle(Color.brandPurple)
+                        }
+                    }
+                }
+
+                ForEach(model.results, id: \.self) { completion in
+                    Button {
+                        resolve(completion)
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: completion.title)
+                                    .foregroundStyle(.primary)
+                                if !completion.subtitle.isEmpty {
+                                    Text(verbatim: completion.subtitle)
+                                        .font(AppFont.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        } icon: {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(Color.brandDanger)
+                        }
+                    }
+                    .disabled(isResolving)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle(Text("task_location_title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: Text("task_location_search"))
+            .onChange(of: query) { _, q in model.update(query: q) }
+            .overlay {
+                if trimmedQuery.isEmpty && model.results.isEmpty {
+                    EmptyStateView(icon: "mappin.and.ellipse", title: "task_location_hint")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    /// A tapped completion resolves to a real map item — name + coordinates.
+    private func resolve(_ completion: MKLocalSearchCompletion) {
+        isResolving = true
+        Task {
+            defer { isResolving = false }
+            let search = MKLocalSearch(request: MKLocalSearch.Request(completion: completion))
+            guard let item = try? await search.start().mapItems.first else {
+                // Apple couldn't resolve it — keep the visible name, no coords.
+                location = TaskLocationValue(name: completion.title, lat: nil, lon: nil)
+                dismiss()
+                return
+            }
+            let coord = item.placemark.coordinate
+            location = TaskLocationValue(name: item.name ?? completion.title,
+                                         lat: coord.latitude, lon: coord.longitude)
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Detail page pieces (photo strip + location row)
+
+/// Identifiable URL wrapper for the fullscreen viewer sheet (same pattern as
+/// ShareURL in ElementPDFExporter — no retroactive conformance on URL).
+private struct TaskPhotoURL: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
+}
+
+struct TaskDetailPhotoStrip: View {
+    let urls: [String]
+    @State private var viewerUrl: TaskPhotoURL?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(urls, id: \.self) { url in
+                    Button {
+                        if let u = URL(string: url) { viewerUrl = TaskPhotoURL(url: u) }
+                    } label: {
+                        AsyncImage(url: URL(string: url)) { phase in
+                            if case .success(let img) = phase {
+                                img.resizable().scaledToFill()
+                            } else {
+                                Color.primary.opacity(AppOpacity.subtleFill)
+                            }
+                        }
+                        .frame(width: 108, height: 108)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .sheet(item: $viewerUrl) { wrapped in
+            NavigationStack {
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    AsyncImage(url: wrapped.url) { phase in
+                        if case .success(let img) = phase {
+                            img.resizable().scaledToFit()
+                        } else {
+                            ProgressView().tint(.white)
+                        }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { viewerUrl = nil }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct TaskDetailLocationRow: View {
+    let task: MaintenanceTask
+
+    var body: some View {
+        if let name = task.locationName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            Button {
+                guard let lat = task.locationLat, let lon = task.locationLon else { return }
+                let placemark = MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                let item = MKMapItem(placemark: placemark)
+                item.name = name
+                item.openInMaps()
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(AppFont.scaled(17))
+                        .foregroundStyle(Color.brandDanger)
+                    Text(verbatim: name)
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    // Only a real Apple Maps pick can open Maps — free text has
+                    // no coordinates, so it shows without pretending to navigate.
+                    if task.locationLat != nil, task.locationLon != nil {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(0.35))
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(task.locationLat == nil || task.locationLon == nil)
+        }
+    }
+}

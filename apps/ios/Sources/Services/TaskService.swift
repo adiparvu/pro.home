@@ -170,7 +170,11 @@ final class TaskService {
         _ task: MaintenanceTask,
         title: String, description: String?,
         dueDate: String?, priority: String, category: String,
-        assigneeIds: [String], assigneeNames: [String]
+        assigneeIds: [String], assigneeNames: [String],
+        photoUrls: [String]? = nil,
+        locationName: String?? = .none,
+        locationLat: Double?? = .none,
+        locationLon: Double?? = .none
     ) async throws {
         struct TaskFieldUpdate: Encodable {
             let title: String
@@ -181,19 +185,49 @@ final class TaskService {
             let assigneeIds: [String]
             let assigneeNames: [String]
             let updatedAt: String
+            let photoUrls: [String]?
+            let locationName: String?
+            let locationLat: Double?
+            let locationLon: Double?
             enum CodingKeys: String, CodingKey {
                 case title, description, priority, category
                 case dueDate       = "due_date"
                 case assigneeIds   = "assignee_ids"
                 case assigneeNames = "assignee_names"
                 case updatedAt     = "updated_at"
+                case photoUrls     = "photo_urls"
+                case locationName  = "location_name"
+                case locationLat   = "location_lat"
+                case locationLon   = "location_lon"
+            }
+            // Explicit encode: location keys write SQL NULL when nil so
+            // clearing a location persists (synthesized Codable would omit
+            // them and the old value would survive the save).
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(title, forKey: .title)
+                try c.encode(description, forKey: .description)
+                try c.encode(dueDate, forKey: .dueDate)
+                try c.encode(priority, forKey: .priority)
+                try c.encode(category, forKey: .category)
+                try c.encode(assigneeIds, forKey: .assigneeIds)
+                try c.encode(assigneeNames, forKey: .assigneeNames)
+                try c.encode(updatedAt, forKey: .updatedAt)
+                try c.encode(photoUrls ?? [], forKey: .photoUrls)
+                try c.encode(locationName, forKey: .locationName)
+                try c.encode(locationLat, forKey: .locationLat)
+                try c.encode(locationLon, forKey: .locationLon)
             }
         }
         let update = TaskFieldUpdate(
             title: title, description: description,
             dueDate: dueDate, priority: priority, category: category,
             assigneeIds: assigneeIds, assigneeNames: assigneeNames,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISO8601DateFormatter().string(from: Date()),
+            photoUrls: photoUrls ?? task.photoUrls,
+            locationName: locationName ?? task.locationName,
+            locationLat: locationLat ?? task.locationLat,
+            locationLon: locationLon ?? task.locationLon
         )
         try await supabase
             .from("maintenance_tasks")
@@ -209,6 +243,10 @@ final class TaskService {
             tasks[idx].assigneeIds = assigneeIds
             tasks[idx].assigneeNames = assigneeNames
             tasks[idx].updatedAt = update.updatedAt
+            tasks[idx].photoUrls = update.photoUrls ?? []
+            tasks[idx].locationName = update.locationName
+            tasks[idx].locationLat = update.locationLat
+            tasks[idx].locationLon = update.locationLon
         }
     }
 

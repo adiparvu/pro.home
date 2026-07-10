@@ -78,6 +78,18 @@ struct TaskDetailView: View {
                     }
                 }
 
+                if !task.photoUrls.isEmpty {
+                    infoCard("task_photos_title") {
+                        TaskDetailPhotoStrip(urls: task.photoUrls)
+                    }
+                }
+
+                if let loc = task.locationName?.trimmingCharacters(in: .whitespacesAndNewlines), !loc.isEmpty {
+                    infoCard("task_location_title") {
+                        TaskDetailLocationRow(task: task)
+                    }
+                }
+
                 factsCard(task)
 
                 if !task.assigneeNames.isEmpty {

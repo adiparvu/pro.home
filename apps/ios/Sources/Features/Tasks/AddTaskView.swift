@@ -29,6 +29,9 @@ struct AddTaskView: View {
     @State private var availableCalendars: [EKCalendar] = []
     @State private var selectedCalendarId: String? = nil
     @State private var syncHint: String? = nil
+    @State private var existingPhotoUrls: [String] = []
+    @State private var pendingPhotos: [UIImage] = []
+    @State private var location: TaskLocationValue? = nil
     @Namespace private var chipNS
 
     let priorities  = TaskPriorityStyle.order
@@ -168,9 +171,12 @@ struct AddTaskView: View {
     private var formContent: some View {
         VStack(alignment: .leading, spacing: 22) {
             detailsSection
+            TaskPhotoSection(existingUrls: $existingPhotoUrls,
+                             pendingImages: $pendingPhotos)
             priorityPicker
             categoryPicker
             dueDateSection
+            TaskLocationSection(location: $location)
             assigneesSection
             syncSection
             workedTimeRow
@@ -287,40 +293,30 @@ struct AddTaskView: View {
         }
     }
 
+    // Round Liquid Glass capsules (IMG_8215) — the same selection language as
+    // the app's filter chips, replacing the old dark rectangular tiles.
     private func categoryChip(_ cat: String) -> some View {
         let style = TaskCategoryStyle(cat)
         let selected = category == cat
         return Button {
             HapticFeedback.selection()
-            withAnimation(.taskSpring) { category = cat }
+            withAnimation(.snappy(duration: 0.25)) { category = cat }
         } label: {
-            VStack(spacing: 7) {
+            HStack(spacing: 6) {
                 Image(systemName: style.icon)
-                    .font(AppFont.scaled(17, weight: .semibold))
+                    .font(AppFont.scaled(13, weight: .semibold))
                 Text(style.label)
-                    .font(AppFont.scaled(12, weight: .medium))
+                    .font(AppFont.scaled(13, weight: selected ? .semibold : .medium))
                     .lineLimit(1)
             }
-            .foregroundStyle(selected ? .white : Color.primary.opacity(0.6))
-            .frame(width: 78, height: 68)
-            .background {
-                if selected {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(Self.categorySelectedFill)
-                        .matchedGeometryEffect(id: "categorySelection", in: chipNS)
-                } else {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(Color.primary.opacity(AppOpacity.subtleFill))
-                }
-            }
+            .foregroundStyle(selected ? Color.accentColor : Color.primary.opacity(AppOpacity.emphasis))
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, 9)
+            .glassFilterCapsule(selected: selected)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
-
-    /// Dark slate fill for the selected category chip — legible with white
-    /// content in both light and dark appearances.
-    private static let categorySelectedFill = Color(red: 0.15, green: 0.20, blue: 0.24)
 
     // MARK: - Due date
 
@@ -639,6 +635,10 @@ struct AddTaskView: View {
                 dueTime = d
             }
         }
+        existingPhotoUrls = t.photoUrls
+        if let name = t.locationName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            location = TaskLocationValue(name: name, lat: t.locationLat, lon: t.locationLon)
+        }
     }
 
     // MARK: - Save (unchanged business logic)
@@ -661,6 +661,17 @@ struct AddTaskView: View {
 
         Task {
             do {
+                // Photos upload first (both flows need the final URL list).
+                guard let propId = editing?.propertyId ?? propertyService.primary?.id else {
+                    errorMsg = String(localized: "No property found. Please set up your property first.")
+                    isSaving = false
+                    return
+                }
+                var allPhotoUrls = existingPhotoUrls
+                if !pendingPhotos.isEmpty {
+                    allPhotoUrls += try await TaskPhotoUploader.upload(pendingPhotos, propertyId: propId)
+                }
+
                 let savedTaskId: UUID
                 if let existing = editing {
                     try await taskService.updateTask(
@@ -671,15 +682,14 @@ struct AddTaskView: View {
                         priority: priority,
                         category: category,
                         assigneeIds: assigneeIds,
-                        assigneeNames: assigneeNames
+                        assigneeNames: assigneeNames,
+                        photoUrls: allPhotoUrls,
+                        locationName: location?.name,
+                        locationLat: location?.lat ?? nil,
+                        locationLon: location?.lon ?? nil
                     )
                     savedTaskId = existing.id
                 } else {
-                    guard let propId = propertyService.primary?.id else {
-                        errorMsg = String(localized: "No property found. Please set up your property first.")
-                        isSaving = false
-                        return
-                    }
                     let payload = NewTaskPayload(
                         propertyId: propId,
                         title: trimmedTitle,
@@ -688,7 +698,11 @@ struct AddTaskView: View {
                         priority: priority,
                         category: category,
                         assigneeIds: assigneeIds,
-                        assigneeNames: assigneeNames
+                        assigneeNames: assigneeNames,
+                        photoUrls: allPhotoUrls,
+                        locationName: location?.name,
+                        locationLat: location?.lat,
+                        locationLon: location?.lon
                     )
                     let created = try await taskService.addTask(payload)
                     savedTaskId = created.id
