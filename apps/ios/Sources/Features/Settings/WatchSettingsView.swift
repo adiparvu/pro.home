@@ -1,52 +1,63 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Apple Watch hub
 //
-// One page that owns the whole wrist experience from the phone: a live
-// preview of the watch with the owner's pages in the owner's order, the
-// page personalization itself, the sync link (paired / installed / last
-// delivery, with a manual push), what data actually rides each payload,
-// and the Siri phrases the wrist understands. Choices persist in the App
-// Group and ride the very next payload push, so the watch rearranges
-// itself within seconds — no watch-side settings screen to maintain.
-// Today is the anchor: always first, never hideable, because it is the
-// page every other page reports into.
+// One fluid scroll that owns the whole wrist experience from the phone,
+// hero-first: a live, auto-cycling preview of the watch rendering the REAL
+// App Group data (the same snapshot + catalogs every payload push carries),
+// a single connection pill for the phone↔watch link, large drag-to-reorder
+// page cards, one honest line about what rides the payload, a quiet role-
+// scope note, and the Siri/complications manual condensed at the bottom.
+// Choices persist in the App Group and ride the very next payload push, so
+// the watch rearranges itself within seconds — no watch-side settings
+// screen to maintain. Today is the anchor: always first, never hideable,
+// because it is the page every other page reports into.
 
 struct WatchSettingsView: View {
-    private struct PageItem: Identifiable, Equatable {
+    fileprivate struct PageItem: Identifiable, Equatable {
         let key: String
         var enabled: Bool
         var id: String { key }
     }
 
+    @Environment(PropertyService.self) private var propertyService
+
     @State private var items: [PageItem] = []
     @State private var link: WatchSyncService.LinkStatus?
     @State private var lastPush: Date?
     @State private var payload: WatchPayload?
+    /// The page key currently lifted by a reorder drag.
+    @State private var draggingKey: String?
 
-    private static let meta: [String: (icon: String, color: Color, label: LocalizedStringKey)] = [
-        "tasks":      ("checklist", .teal, "watch_tasks"),
-        "plants":     ("leaf.fill", Color(red: 0.15, green: 0.80, blue: 0.40), "watch_plants"),
-        "shopping":   ("cart.fill", Color.brandSkyBlue, "watch_shopping"),
-        "pantry":     ("basket.fill", .orange, "watch_pantry"),
-        "deliveries": ("shippingbox.fill", .indigo, "watch_deliveries"),
-        "map":        ("map.fill", .purple, "watch_map"),
+    private static let meta: [String: (icon: String, label: LocalizedStringKey,
+                                       description: LocalizedStringKey)] = [
+        "tasks":      ("checklist",         "watch_tasks",      "watch_page_desc_tasks"),
+        "plants":     ("leaf.fill",         "watch_plants",     "watch_page_desc_plants"),
+        "shopping":   ("cart.fill",         "watch_shopping",   "watch_page_desc_shopping"),
+        "pantry":     ("basket.fill",       "watch_pantry",     "watch_page_desc_pantry"),
+        "deliveries": ("shippingbox.fill",  "watch_deliveries", "watch_page_desc_deliveries"),
+        "map":        ("map.fill",          "watch_map",        "watch_page_desc_map"),
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-
-            List {
-                previewSection
-                syncSection
-                todaySection
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                heroSection
+                connectionPill
                 pagesSection
-                dataSection
+                if let payload {
+                    payloadSection(payload)
+                }
+                scopeRow
                 siriSection
-                complicationsSection
             }
-            .environment(\.editMode, .constant(.active))
-            .scrollContentBackground(.hidden)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xxl)
+            // Catch-all: a reorder drag released between cards still lands
+            // here, so the lifted card never stays dimmed after a miss.
+            .onDrop(of: [.text], delegate: DragResetDelegate(draggingKey: $draggingKey))
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("watch_settings_title")
@@ -59,261 +70,346 @@ struct WatchSettingsView: View {
         }
     }
 
-    // MARK: Live preview — the wrist as it will actually look
+    // MARK: Hero — the wrist as it looks right now
 
-    /// Today plus the enabled pages, in the chosen order.
-    private var previewKeys: [String] {
-        ["today"] + items.filter(\.enabled).map(\.key)
-    }
-
-    private var previewSection: some View {
-        Section {
-            HStack {
-                Spacer()
-                watchMock
-                Spacer()
+    /// The pages the wrist would actually render, mirroring the watch's own
+    /// gating: shopping hides when nothing is pending, pantry/deliveries hide
+    /// when empty, map hides without coordinates — and an outsider's watch
+    /// keeps to Today + their tasks, exactly like the payload it receives.
+    private var heroPageKeys: [String] {
+        guard let payload else { return [] }
+        guard payload.isFamilyScope else { return ["today", "tasks"] }
+        var keys = ["today"]
+        for item in items where item.enabled {
+            switch item.key {
+            case "shopping":
+                if payload.supplies.contains(where: { !$0.isCompleted }) { keys.append(item.key) }
+            case "pantry":
+                if !payload.pantry.isEmpty { keys.append(item.key) }
+            case "deliveries":
+                if !payload.deliveries.isEmpty { keys.append(item.key) }
+            case "map":
+                if payload.latitude != nil, payload.longitude != nil { keys.append(item.key) }
+            default:
+                keys.append(item.key)   // tasks & plants always render on the wrist
             }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+        }
+        return keys
+    }
+
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionHeader("watch_hero_title")
+            WatchSettingsHero(payload: payload, pageKeys: heroPageKeys)
         }
     }
 
-    /// A miniature watch: the case is a bespoke illustration, so its
-    /// geometry is intentionally literal rather than token-driven.
-    private var watchMock: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(.black)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 36, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.30), lineWidth: 3)
-                )
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(previewKeys, id: \.self) { key in
-                    previewChip(key)
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-        }
-        .frame(width: 150, height: 186)
-        .overlay(alignment: .trailing) {
-            // Digital crown + side button.
-            VStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.primary.opacity(0.30))
-                    .frame(width: 4, height: 26)
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.primary.opacity(0.22))
-                    .frame(width: 3, height: 18)
-            }
-            .offset(x: 6)
-        }
-        .animation(.snappy(duration: 0.3), value: previewKeys)
-        .accessibilityHidden(true)
+    // MARK: Connection — one pill for the whole link
+
+    private var linkHealthy: Bool {
+        (link?.paired ?? false) && (link?.installed ?? false)
     }
 
-    private func previewChip(_ key: String) -> some View {
-        let icon = key == "today" ? "house.fill" : (Self.meta[key]?.icon ?? "circle")
-        let color: Color = key == "today" ? .blue : (Self.meta[key]?.color ?? .gray)
-        let label: LocalizedStringKey = key == "today" ? "watch_page_today"
-                                                       : (Self.meta[key]?.label ?? "")
-        return HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(AppFont.scaled(9, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 12)
-            Text(label)
-                .font(AppFont.scaled(10, weight: .medium))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-        }
-        .transition(.opacity.combined(with: .move(edge: .leading)))
-    }
+    private var connectionPill: some View {
+        HStack(spacing: AppSpacing.md) {
+            Circle()
+                .fill(linkHealthy ? Color.brandSuccess : Color.primary.opacity(AppOpacity.disabled))
+                .frame(width: 9, height: 9)
 
-    // MARK: Sync link
-
-    private var syncSection: some View {
-        Section {
-            if let link, link.paired {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "applewatch", color: .blue)
-                    Text("watch_sync_paired")
-                        .font(AppFont.scaled(15))
-                    Spacer()
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.brandSuccess)
-                }
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "square.and.arrow.down.on.square", color: .indigo)
-                    Text(link.installed ? "watch_sync_installed" : "watch_sync_not_installed")
-                        .font(AppFont.scaled(15))
-                    Spacer()
-                    Image(systemName: link.installed ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundStyle(link.installed ? Color.brandSuccess : Color.brandWarning)
-                }
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "arrow.triangle.2.circlepath", color: .teal)
-                    Text("watch_sync_last_push")
-                        .font(AppFont.scaled(15))
-                    Spacer()
-                    if let lastPush {
-                        Text(lastPush, style: .relative)
-                            .font(AppFont.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("watch_sync_never")
-                            .font(AppFont.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                if link.installed {
-                    Button {
-                        HapticFeedback.success()
-                        syncNow()
-                    } label: {
-                        HStack(spacing: 12) {
-                            ColoredIconBadge(icon: "arrow.up.applewatch", color: .green)
-                            Text("watch_sync_now")
-                                .font(AppFont.scaled(15))
-                                .foregroundStyle(Color.accentColor)
-                            Spacer()
-                        }
-                    }
-                }
-            } else {
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "applewatch.slash", color: .gray)
-                    Text("watch_sync_not_paired")
-                        .font(AppFont.scaled(15))
+            VStack(alignment: .leading, spacing: 2) {
+                connectionTitle
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                if linkHealthy {
+                    connectionSubtitle
+                        .font(AppFont.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-        } header: {
-            Text("watch_sync_header")
-        }
-    }
 
-    // MARK: Pages (Today locked, the rest reorderable + toggleable)
+            Spacer(minLength: AppSpacing.sm)
 
-    private var todaySection: some View {
-        Section {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "house.fill", color: .blue)
-                Text("watch_page_today")
-                    .font(AppFont.scaled(15))
-                Spacer()
-                Image(systemName: "lock.fill")
-                    .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(0.28))
+            if linkHealthy {
+                Button {
+                    HapticFeedback.success()
+                    syncNow()
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.up.applewatch")
+                            .font(AppFont.scaled(12, weight: .semibold))
+                        Text("watch_sync_action")
+                            .font(AppFont.captionEmphasis)
+                    }
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, 7)
+                    .glassFilterCapsule(selected: true)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("watch_sync_now")
             }
-        } footer: {
-            Text("watch_today_footer")
         }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .glassCapsule()
+        .accessibilityElement(children: .combine)
     }
+
+    private var connectionTitle: Text {
+        if let link, link.paired {
+            return link.installed ? Text("watch_sync_paired") : Text("watch_sync_not_installed")
+        }
+        return Text("watch_sync_not_paired")
+    }
+
+    private var connectionSubtitle: Text {
+        if let lastPush {
+            return Text("watch_synced_ago \(lastPush, format: .relative(presentation: .named))")
+        }
+        return Text("watch_sync_last_push") + Text(verbatim: ": ") + Text("watch_sync_never")
+    }
+
+    // MARK: Pages — large cards, drag to reorder, Today pinned
 
     private var pagesSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionHeader("watch_pages_header")
+
+            todayCard
+
             ForEach($items) { $item in
-                HStack(spacing: 12) {
-                    ColoredIconBadge(icon: Self.meta[item.key]?.icon ?? "circle",
-                                     color: Self.meta[item.key]?.color ?? .gray)
-                    Text(Self.meta[item.key]?.label ?? "")
-                        .font(AppFont.scaled(15))
-                    Spacer()
-                    Toggle("", isOn: $item.enabled)
-                        .labelsHidden()
-                }
+                pageCard($item)
             }
-            .onMove { from, to in
-                items.move(fromOffsets: from, toOffset: to)
-            }
-        } header: {
-            Text("watch_pages_header")
-        } footer: {
-            Text("watch_pages_footer")
+
+            footnote("watch_pages_footer")
         }
     }
 
-    // MARK: What actually rides the payload
-
-    private var dataSection: some View {
-        Section {
-            if let payload {
-                dataRow("checklist", .teal, "watch_tasks",
-                        count: payload.tasks.filter { !$0.isCompleted }.count)
-                dataRow("leaf.fill", Color(red: 0.15, green: 0.80, blue: 0.40), "watch_plants",
-                        count: payload.plants.filter(\.needsWatering).count)
-                dataRow("cart.fill", Color.brandSkyBlue, "watch_shopping",
-                        count: payload.supplies.filter { !$0.isCompleted }.count)
-                dataRow("basket.fill", .orange, "watch_pantry", count: payload.pantry.count)
-                dataRow("shippingbox.fill", .indigo, "watch_deliveries", count: payload.deliveries.count)
-                dataRow("cloud.sun.fill", .cyan, "watch_data_weather",
-                        present: payload.weatherTemp != nil)
-                dataRow("chart.pie.fill", .pink, "watch_data_budget",
-                        present: payload.budgetSpent != nil)
-                dataRow("flame.fill", .orange, "watch_data_streak",
-                        count: payload.streakDays ?? 0)
+    /// Today: always first, never hideable — shown as pinned, not editable.
+    private var todayCard: some View {
+        HStack(spacing: AppSpacing.md) {
+            ColoredIconBadge(icon: "house.fill", color: .blue, size: 38)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("watch_page_today")
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                Text("watch_today_pinned")
+                    .font(AppFont.caption)
+                    .foregroundStyle(.secondary)
             }
-        } header: {
-            Text("watch_data_header")
-        } footer: {
-            Text("watch_data_footer")
-        }
-    }
-
-    private func dataRow(_ icon: String, _ color: Color, _ label: LocalizedStringKey,
-                         count: Int) -> some View {
-        HStack(spacing: 12) {
-            ColoredIconBadge(icon: icon, color: color)
-            Text(label)
-                .font(AppFont.scaled(15))
             Spacer()
-            Text("\(count)")
-                .font(AppFont.captionEmphasis)
+            Image(systemName: "pin.fill")
+                .font(AppFont.caption)
+                .foregroundStyle(Color.primary.opacity(0.28))
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .liquidGlass(cornerRadius: AppRadius.xl)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func pageCard(_ item: Binding<PageItem>) -> some View {
+        let key = item.wrappedValue.key
+        let meta = Self.meta[key]
+        return HStack(spacing: AppSpacing.md) {
+            ColoredIconBadge(icon: meta?.icon ?? "circle", color: .gray, size: 38)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(meta?.label ?? "")
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                Text(meta?.description ?? "")
+                    .font(AppFont.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            .opacity(item.wrappedValue.enabled ? 1 : AppOpacity.secondaryText)
+            Spacer()
+            Image(systemName: "line.3.horizontal")
+                .font(AppFont.caption)
+                .foregroundStyle(Color.primary.opacity(0.28))
+                .accessibilityHidden(true)
+            Toggle("", isOn: item.enabled)
+                .labelsHidden()
+                .tint(.accentColor)
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .liquidGlass(cornerRadius: AppRadius.xl)
+        .opacity(draggingKey == key ? 0.55 : 1)
+        .onDrag {
+            draggingKey = key
+            return NSItemProvider(object: key as NSString)
+        }
+        .onDrop(of: [.text], delegate: PageDropDelegate(key: key, items: $items,
+                                                        draggingKey: $draggingKey))
+        .accessibilityElement(children: .combine)
+        // VoiceOver can't drag — expose the reorder as custom actions.
+        .accessibilityAction(named: Text("watch_move_up")) { move(key, by: -1) }
+        .accessibilityAction(named: Text("watch_move_down")) { move(key, by: +1) }
+    }
+
+    private func move(_ key: String, by delta: Int) {
+        guard let from = items.firstIndex(where: { $0.key == key }) else { return }
+        let to = from + delta
+        guard items.indices.contains(to) else { return }
+        HapticFeedback.impact(.light)
+        withAnimation(.snappy(duration: 0.25)) {
+            items.swapAt(from, to)
+        }
+    }
+
+    /// Reorders live while the drag hovers over a sibling card — the same
+    /// feel as List's reorder, with a haptic per displacement. Persistence
+    /// rides the existing items onChange → save() path.
+    private struct PageDropDelegate: DropDelegate {
+        let key: String
+        @Binding var items: [PageItem]
+        @Binding var draggingKey: String?
+
+        func dropEntered(info: DropInfo) {
+            guard let draggingKey, draggingKey != key,
+                  let from = items.firstIndex(where: { $0.key == draggingKey }),
+                  let to = items.firstIndex(where: { $0.key == key }) else { return }
+            HapticFeedback.impact(.light)
+            withAnimation(.snappy(duration: 0.25)) {
+                items.move(fromOffsets: IndexSet(integer: from),
+                           toOffset: to > from ? to + 1 : to)
+            }
+        }
+
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            DropProposal(operation: .move)
+        }
+
+        func performDrop(info: DropInfo) -> Bool {
+            draggingKey = nil
+            return true
+        }
+    }
+
+    /// Clears the drag highlight when a reorder drag ends anywhere else on
+    /// the page (between cards, over the hero, …).
+    private struct DragResetDelegate: DropDelegate {
+        @Binding var draggingKey: String?
+
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            DropProposal(operation: .move)
+        }
+
+        func performDrop(info: DropInfo) -> Bool {
+            draggingKey = nil
+            return true
+        }
+    }
+
+    // MARK: What actually rides the payload — one honest line
+
+    private func payloadSection(_ payload: WatchPayload) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionHeader("watch_data_header")
+
+            HStack(spacing: AppSpacing.md) {
+                ColoredIconBadge(icon: "arrow.up.applewatch", color: .teal, size: 38)
+                (Text("watch_payload_tasks \(payload.tasks.count)")
+                    + Text(verbatim: " · ")
+                    + Text("watch_payload_plants \(payload.plants.count)")
+                    + Text(verbatim: " · ")
+                    + Text("watch_payload_sensors \(payload.sensors.count)"))
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .liquidGlass(cornerRadius: AppRadius.xl)
+            .accessibilityElement(children: .combine)
+
+            footnote("watch_data_footer")
+        }
+    }
+
+    // MARK: Role scope — what this wrist is allowed to see
+
+    private var scopeRow: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: propertyService.isFamilyMember
+                    ? "person.2.fill" : "person.fill.checkmark")
+                .font(AppFont.caption)
                 .foregroundStyle(.secondary)
-                .monospacedDigit()
+            Text(propertyService.isFamilyMember ? "watch_scope_family" : "watch_scope_personal")
+                .font(AppFont.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.sm)
+        .background(Color.subtleFill, in: Capsule())
+        .accessibilityElement(children: .combine)
     }
 
-    private func dataRow(_ icon: String, _ color: Color, _ label: LocalizedStringKey,
-                         present: Bool) -> some View {
-        HStack(spacing: 12) {
-            ColoredIconBadge(icon: icon, color: color)
-            Text(label)
-                .font(AppFont.scaled(15))
-            Spacer()
-            Image(systemName: present ? "checkmark.circle.fill" : "minus.circle")
-                .foregroundStyle(present ? Color.brandSuccess : Color.secondary)
-        }
-    }
-
-    // MARK: Siri on the wrist
+    // MARK: Siri + complications, condensed
 
     private var siriSection: some View {
-        Section {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "checkmark.circle.fill", color: .teal)
-                Text("watch_siri_complete_task")
-                    .font(AppFont.scaled(15))
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionHeader("watch_siri_header")
+
+            VStack(spacing: 0) {
+                siriRow(icon: "checkmark.circle.fill", phrase: "watch_siri_complete_task")
+                hairline
+                siriRow(icon: "drop.fill", phrase: "watch_siri_water")
+                hairline
+                HStack(alignment: .top, spacing: AppSpacing.md) {
+                    ColoredIconBadge(icon: "applewatch.watchface", color: .purple)
+                    Text("watch_complications_footer")
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
             }
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "drop.fill", color: .blue)
-                Text("watch_siri_water")
-                    .font(AppFont.scaled(15))
-            }
-        } header: {
-            Text("watch_siri_header")
-        } footer: {
-            Text("watch_siri_footer")
+            .liquidGlass(cornerRadius: AppRadius.xl)
+
+            footnote("watch_siri_footer")
         }
     }
 
-    private var complicationsSection: some View {
-        Section {
-        } footer: {
-            Text("watch_complications_footer")
+    private func siriRow(icon: String, phrase: LocalizedStringKey) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            ColoredIconBadge(icon: icon, color: .teal)
+            Text(phrase)
+                .font(AppFont.scaled(15))
+                .foregroundStyle(.primary)
+            Spacer()
         }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+    }
+
+    private var hairline: some View {
+        Rectangle()
+            .fill(Color.hairline)
+            .frame(height: 0.4)
+            .padding(.leading, 52)
+    }
+
+    // MARK: Shared section chrome
+
+    private func sectionHeader(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .textCase(.uppercase)
+            .font(AppFont.captionStrong)
+            .foregroundStyle(.secondary)
+            .padding(.leading, AppSpacing.sm)
+    }
+
+    private func footnote(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(AppFont.caption)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, AppSpacing.sm)
     }
 
     // MARK: Load / save

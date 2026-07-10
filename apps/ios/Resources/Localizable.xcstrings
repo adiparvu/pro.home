@@ -1,6 +1,400 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "watch_hero_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watch, live"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceasul tău, live"
+          }
+        }
+      }
+    },
+    "watch_hero_empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data appears here after the first sync."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datele apar aici după prima sincronizare."
+          }
+        }
+      }
+    },
+    "watch_hero_ax %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live watch preview. Pages: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previzualizare live a ceasului. Pagini: %@"
+          }
+        }
+      }
+    },
+    "watch_synced_ago %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizat %@"
+          }
+        }
+      }
+    },
+    "watch_sync_action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizează"
+          }
+        }
+      }
+    },
+    "watch_today_pinned": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always the first page"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mereu prima pagină"
+          }
+        }
+      }
+    },
+    "watch_page_desc_tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check off tasks right from your wrist"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bifează sarcini direct de pe încheietură"
+          }
+        }
+      }
+    },
+    "watch_page_desc_plants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The plants asking for water now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plantele care cer apă acum"
+          }
+        }
+      }
+    },
+    "watch_page_desc_shopping": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shopping list, checkable on the go"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista de cumpărături, bifabilă din mers"
+          }
+        }
+      }
+    },
+    "watch_page_desc_pantry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pantry stock — consume with a tap"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stocul cămării — consumă cu un tap"
+          }
+        }
+      }
+    },
+    "watch_page_desc_deliveries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcels on their way home"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coletele în drum spre casă"
+          }
+        }
+      }
+    },
+    "watch_page_desc_map": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your property, on the map"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proprietatea ta, pe hartă"
+          }
+        }
+      }
+    },
+    "watch_payload_tasks %lld": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 task"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld tasks"
+                }
+              }
+            }
+          }
+        },
+        "ro": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 sarcină"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sarcini"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld de sarcini"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "watch_payload_plants %lld": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 plant"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld plants"
+                }
+              }
+            }
+          }
+        },
+        "ro": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 plantă"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld plante"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld de plante"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "watch_payload_sensors %lld": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 sensor"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sensors"
+                }
+              }
+            }
+          }
+        },
+        "ro": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "1 senzor"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld senzori"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld de senzori"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "watch_scope_family": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watch shows everything your role sees."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceasul arată tot ce vede rolul tău."
+          }
+        }
+      }
+    },
+    "watch_scope_personal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watch shows only your own tasks and messages."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceasul arată doar sarcinile și mesajele tale."
+          }
+        }
+      }
+    },
+    "watch_move_up": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mută mai sus"
+          }
+        }
+      }
+    },
+    "watch_move_down": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mută mai jos"
+          }
+        }
+      }
+    },
     "Lives here — shares the home, tasks, finances and chat": {
       "localizations": {
         "en": {
