@@ -193,6 +193,7 @@ platform :ios do
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp' 'PRVIOWatch' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp.widgets' 'PRVIOWatchWidgets' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.notificationservice' 'PRVIONotificationService' 'SU92TVZT8W'")
 
     # App Groups (group.com.prvio.app) are registered and linked in the Apple
     # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
@@ -298,6 +299,26 @@ platform :ios do
           puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..400]}"
         end
 
+        # Communication Notifications (sender avatars on chat pushes) must be
+        # enabled on both the app and the notification-service extension, or
+        # sigh's profiles lack com.apple.developer.usernotifications.communication
+        # and the export fails / the avatar silently never renders.
+        if ["com.prvio.app", "com.prvio.app.notificationservice"].include?(bundle_id)
+          comm_cap = caps.find { |c| c.dig("attributes","capabilityType") == "USERNOTIFICATIONS_COMMUNICATION" }
+          if comm_cap
+            puts "  USERNOTIFICATIONS_COMMUNICATION already enabled (id=#{comm_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "USERNOTIFICATIONS_COMMUNICATION" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable USERNOTIFICATIONS_COMMUNICATION → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+        end
+
         # The NFC wallet needs the Tag Reading capability on the APP bundle —
         # without it the regenerated profile lacks the readersession
         # entitlement and readingAvailable stays false on real devices.
@@ -377,7 +398,7 @@ platform :ios do
       $stdout.flush
     RUBY
 
-    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets' 'com.prvio.app.watchkitapp' 'com.prvio.app.watchkitapp.widgets'")
+    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets' 'com.prvio.app.watchkitapp' 'com.prvio.app.watchkitapp.widgets' 'com.prvio.app.notificationservice'")
 
     # Wait for Developer Portal capability changes to propagate before sigh().
     sleep(12)
@@ -428,6 +449,17 @@ platform :ios do
     )
     watch_widgets_uuid = ENV["SIGH_UUID"]
     UI.message("Watch widgets profile UUID: #{watch_widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.notificationservice",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIONotificationService_AppStore.mobileprovision",
+      force:          true
+    )
+    notification_service_uuid = ENV["SIGH_UUID"]
+    UI.message("Notification service profile UUID: #{notification_service_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
     # ── Watch profiles MUST carry the app group ─────────────────────────────
@@ -499,6 +531,16 @@ platform :ios do
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          watch_widgets_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIONotificationService"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.notificationservice",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          notification_service_uuid
     )
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
@@ -627,6 +669,8 @@ platform :ios do
           <string>#{watch_uuid}</string>
           <key>com.prvio.app.watchkitapp.widgets</key>
           <string>#{watch_widgets_uuid}</string>
+          <key>com.prvio.app.notificationservice</key>
+          <string>#{notification_service_uuid}</string>
         </dict>
       </dict>
       </plist>

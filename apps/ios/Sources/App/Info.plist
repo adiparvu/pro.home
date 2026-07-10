@@ -115,6 +115,7 @@
 	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
+		<string>INSendMessageIntent</string>
 		<string>com.prvio.task</string>
 		<string>com.prvio.plants</string>
 		<string>com.prvio.chat</string>

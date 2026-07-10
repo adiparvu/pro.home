@@ -190,13 +190,34 @@ serve(async (req) => {
     let custom: Record<string, unknown>
     let threadId: string
     if (isChat) {
-      const chatInfo = {
+      const chatInfo: Record<string, unknown> = {
         kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
         peer_user_id: (meta.peer_user_id as string) ?? null,
         peer_name: (meta.peer_name as string) ?? null,
         group_id: (meta.group_id as string) ?? null,
+        // Rich-notification extras (migration 146): the service extension
+        // renders the sender's avatar and attaches voice/photo media.
+        sender_id: (meta.sender_id as string) ?? (meta.peer_user_id as string) ?? null,
+        avatar_url: typeof meta.avatar_url === 'string' && meta.avatar_url.startsWith('http')
+          ? meta.avatar_url : null,
+        media_kind: (meta.media_kind as string) ?? null,
+        media_url: null as string | null,
       }
-      threadId = chatInfo.peer_user_id ?? chatInfo.group_id ?? 'chat'
+      // chat-media is a private bucket — sign the path so the notification
+      // extension can download it without credentials. Legacy public URLs
+      // pass through untouched.
+      const mediaPath = typeof meta.media_path === 'string' ? meta.media_path : null
+      if (mediaPath) {
+        if (mediaPath.startsWith('http')) {
+          chatInfo.media_url = mediaPath
+        } else {
+          const { data: signed } = await admin.storage
+            .from('chat-media')
+            .createSignedUrl(mediaPath, 600)
+          chatInfo.media_url = signed?.signedUrl ?? null
+        }
+      }
+      threadId = (chatInfo.peer_user_id as string) ?? (chatInfo.group_id as string) ?? 'chat'
       custom = { chat: chatInfo }
     } else if (n.resource_type === 'task' && n.resource_id) {
       threadId = 'tasks'
@@ -215,6 +236,9 @@ serve(async (req) => {
           // The springboard badge means "unread chat"; non-chat pushes leave
           // whatever badge is showing untouched.
           ...(isChat ? { badge } : {}),
+          // Wake the Notification Service Extension so it can add the sender
+          // avatar + media attachment before the banner shows.
+          ...(isChat ? { 'mutable-content': 1 } : {}),
           'thread-id': threadId,
         },
         ...custom,
