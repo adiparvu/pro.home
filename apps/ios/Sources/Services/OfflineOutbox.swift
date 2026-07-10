@@ -57,6 +57,11 @@ func withChatTimeout<T: Sendable>(
 struct PendingMessage: Identifiable, Codable, Equatable {
     let id: UUID
     let propertyId: UUID
+    /// Community-group scope of a queued GROUP message; nil = the main
+    /// property chat (and DMs). Without it, every group scope shared one
+    /// queue file and a failed community message rendered in — and re-sent
+    /// into — the wrong conversation.
+    let groupId: UUID?
     let senderName: String
     let recipientName: String?     // nil = group chat; set = DM recipient
     /// family_members.id of the DM recipient. Required for the row to be
@@ -82,14 +87,16 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     /// "still trying" from "failed, tap to retry".
     var state: ChatSendState
 
-    init(id: UUID = UUID(), propertyId: UUID, senderName: String, recipientName: String? = nil,
+    init(id: UUID = UUID(), propertyId: UUID, groupId: UUID? = nil,
+         senderName: String, recipientName: String? = nil,
          recipientMemberId: UUID? = nil, recipientUserId: UUID? = nil,
          body: String?, attachmentUrl: String? = nil, attachmentType: String? = nil,
          latitude: Double? = nil, longitude: Double? = nil,
          kind: PendingKind = .text,
          mentionedIds: [String] = [], replyTo: UUID? = nil, createdAt: Date = Date(),
          state: ChatSendState = .sending) {
-        self.id = id; self.propertyId = propertyId; self.senderName = senderName
+        self.id = id; self.propertyId = propertyId; self.groupId = groupId
+        self.senderName = senderName
         self.recipientName = recipientName
         self.recipientMemberId = recipientMemberId
         self.recipientUserId = recipientUserId
@@ -101,7 +108,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, propertyId, senderName, recipientName, recipientMemberId, recipientUserId
+        case id, propertyId, groupId, senderName, recipientName, recipientMemberId, recipientUserId
         case body, attachmentUrl, attachmentType, latitude, longitude, kind
         case mentionedIds, replyTo, createdAt, state
     }
@@ -113,6 +120,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         propertyId = try c.decode(UUID.self, forKey: .propertyId)
+        groupId = try c.decodeIfPresent(UUID.self, forKey: .groupId)
         senderName = try c.decode(String.self, forKey: .senderName)
         recipientName = try c.decodeIfPresent(String.self, forKey: .recipientName)
         recipientMemberId = try c.decodeIfPresent(UUID.self, forKey: .recipientMemberId)
@@ -180,8 +188,13 @@ final class OfflineOutbox {
         monitor.cancel()
     }
 
-    func pending(for propertyId: UUID) -> [PendingMessage] {
-        pending.filter { $0.propertyId == propertyId }.sorted { $0.createdAt < $1.createdAt }
+    /// Queued messages for ONE conversation: the property AND its group scope
+    /// (nil = the main chat). Rows persisted before groupId existed decode as
+    /// nil and stay attached to the main chat.
+    func pending(for propertyId: UUID, groupId: UUID? = nil) -> [PendingMessage] {
+        pending
+            .filter { $0.propertyId == propertyId && $0.groupId == groupId }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     func enqueue(_ message: PendingMessage) {

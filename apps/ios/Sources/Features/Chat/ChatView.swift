@@ -23,6 +23,11 @@ struct ChatView: View {
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showJumpToLatest = false
+    /// Whether the reader is at (or within a bubble of) the bottom — the gate
+    /// for auto-following incoming messages and for honest read receipts.
+    /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
+    /// the bottom sentinel keeps it updated on older systems.
+    @State private var isAtBottom = true
     /// First unread message on open — anchors the "unread messages" divider.
     /// Frozen for the lifetime of this view so it doesn't chase read receipts.
     @State private var unreadDividerId: UUID? = nil
@@ -78,7 +83,9 @@ struct ChatView: View {
     /// Guards the jump-to-latest button against rapid re-taps mid-flight.
     @State private var isJumpingToLatest = false
     @State private var audioRecorder = ChatAudioRecorder()
-    @State var outbox = OfflineOutbox()
+    /// Scope-keyed offline queue — assigned in init so each conversation
+    /// (main chat / each community group) persists to its own file.
+    @State var outbox: OfflineOutbox
 
     // Optional community group scope. When nil, this is the main property chat
     // and every behaviour below is byte-for-byte identical to before; when set,
@@ -87,6 +94,19 @@ struct ChatView: View {
     var groupId: UUID? = nil
     var groupTitle: String? = nil
     var groupSettingsAction: (() -> Void)? = nil
+
+    /// Explicit init so the offline outbox can key its persistence FILE by the
+    /// conversation scope. All group scopes used to share one chat_outbox.json,
+    /// so a failed community-group message rendered in — and re-sent into —
+    /// whichever conversation flushed first.
+    init(groupId: UUID? = nil, groupTitle: String? = nil,
+         groupSettingsAction: (() -> Void)? = nil) {
+        self.groupId = groupId
+        self.groupTitle = groupTitle
+        self.groupSettingsAction = groupSettingsAction
+        _outbox = State(initialValue: OfflineOutbox(
+            filename: groupId.map { "chat_outbox_group_\($0.uuidString).json" } ?? "chat_outbox.json"))
+    }
 
     // The conversation's theme scope; overrides live under prvio.chatTheme.<scope>.
     // Each community group gets its own scope so its theme never collides with
@@ -103,7 +123,7 @@ struct ChatView: View {
     }
     private var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
-        return outbox.pending(for: pid)
+        return outbox.pending(for: pid, groupId: groupId)
     }
 
     var propertyId: UUID? { propertyService.primary?.id }
@@ -149,12 +169,19 @@ struct ChatView: View {
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
     }
-    /// Family members (other than me) currently online, for the header subtitle.
-    private var onlineText: String? {
+    /// Family members (other than me) currently online, for the header
+    /// subtitle. Presence is keyed by AUTH USER ID (names drift and carry
+    /// stray whitespace); `now` is the PresenceTicker's clock so the online
+    /// window re-evaluates while the header is visible.
+    private func onlineText(at now: Date) -> String? {
         let me = senderName
+        let myId = supabase.auth.currentSession?.user.id
         let online = familyService.members
+            .filter {
+                $0.userId != myId && $0.name != me
+                    && presenceService.status(userId: $0.userId, name: $0.name, at: now) == .online
+            }
             .map(\.name)
-            .filter { $0 != me && presenceService.status(for: $0) == .online }
             .sorted()
         guard let first = online.first else { return nil }
         if online.count == 1 { return String(format: String(localized: "%@ is online"), first) }
@@ -288,10 +315,14 @@ struct ChatView: View {
                                 Text(t)
                                     .font(AppFont.scaled(11))
                                     .foregroundStyle(Color.accentColor)
-                            } else if let o = onlineText {
-                                Text(o)
-                                    .font(AppFont.scaled(11))
-                                    .foregroundStyle(Color.brandSuccess)
+                            } else {
+                                PresenceTicker { now in
+                                    if let o = onlineText(at: now) {
+                                        Text(o)
+                                            .font(AppFont.scaled(11))
+                                            .foregroundStyle(Color.brandSuccess)
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -315,10 +346,14 @@ struct ChatView: View {
                                     Text(t)
                                         .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.accentColor)
-                                } else if let o = onlineText {
-                                    Text(o)
-                                        .font(AppFont.scaled(11))
-                                        .foregroundStyle(Color.brandSuccess)
+                                } else {
+                                    PresenceTicker { now in
+                                        if let o = onlineText(at: now) {
+                                            Text(o)
+                                                .font(AppFont.scaled(11))
+                                                .foregroundStyle(Color.brandSuccess)
+                                        }
+                                    }
                                 }
                             }
                             .contentShape(Rectangle())
@@ -364,11 +399,14 @@ struct ChatView: View {
                 since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
             await presenceService.load(propertyId: pid)
-            await messageService.loadReads(propertyId: pid)
-            await messageService.loadDeliveries(propertyId: pid)
-            await messageService.loadReactions(propertyId: pid)
+            await messageService.loadReads(propertyId: pid, groupId: groupId)
+            await messageService.loadDeliveries(propertyId: pid, groupId: groupId)
+            await messageService.loadReactions(propertyId: pid, groupId: groupId)
             await messageService.markDelivered(propertyId: pid, delivererName: senderName)
             await messageService.markRead(propertyId: pid, readerName: senderName)
+            // Retry queued messages only after load() scoped the service to
+            // this conversation, so a flush can never stamp the wrong group.
+            await flushOutbox()
             // Opening the group thread clears the chat notification rows + the
             // springboard badge so the bell can't keep claiming read messages.
             if let uid = supabase.auth.currentSession?.user.id {
@@ -378,24 +416,29 @@ struct ChatView: View {
         .task {
             guard let pid = propertyId else { return }
             messageService.myName = senderName
-            await messageService.subscribeRealtime(propertyId: pid)
+            // The group scope rides along explicitly: these tasks race
+            // load(), so deriving the channel topic from currentGroupId
+            // could subscribe a community thread to the MAIN chat's topic —
+            // the realtime client would then return the already-subscribed
+            // channel and silently drop the new callbacks.
+            await messageService.subscribeRealtime(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeReads(propertyId: pid)
+            await messageService.subscribeReads(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeDeliveries(propertyId: pid)
+            await messageService.subscribeDeliveries(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeReactions(propertyId: pid)
+            await messageService.subscribeReactions(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.loadPollVotes(propertyId: pid)
-            await messageService.subscribePollVotes(propertyId: pid)
+            await messageService.loadPollVotes(propertyId: pid, groupId: groupId)
+            await messageService.subscribePollVotes(propertyId: pid, groupId: groupId)
         }
         .task {
             // Keep live-location bubbles following the sharer while the
@@ -785,12 +828,22 @@ struct ChatView: View {
                     // and stole the first tap; before that, a GeometryReader
                     // preference reset to 0 whenever the LazyVStack culled the
                     // off-screen marker, hiding the button on deep scroll-back).
+                    // On iOS 18+ the live scroll geometry (chatAtBottomTracking
+                    // below) owns the at-bottom state and the jump button —
+                    // lazy-window appearance is NOT viewport visibility, and
+                    // the stale flag used to block auto-follow while the
+                    // reader sat at the bottom. The sentinel callbacks survive
+                    // purely as the pre-iOS-18 fallback.
                     Color.clear.frame(height: chatBottomInset)
                         .id("CHAT_BOTTOM")
                         .onAppear {
+                            guard !ChatAtBottomModifier.isGeometryDriven else { return }
+                            isAtBottom = true
                             withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
                         }
                         .onDisappear {
+                            guard !ChatAtBottomModifier.isGeometryDriven else { return }
+                            isAtBottom = false
                             withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
                         }
                 }
@@ -800,6 +853,23 @@ struct ChatView: View {
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
+            // Live at-bottom detection (iOS 18+): drives auto-follow and the
+            // jump button from real viewport geometry instead of the
+            // lazy-culled sentinel. The tall bottom inset counts as "at the
+            // bottom", matching the sentinel's zone.
+            .chatAtBottomTracking(threshold: chatBottomInset + 60) { atBottom in
+                guard atBottom != isAtBottom else { return }
+                isAtBottom = atBottom
+                withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
+            }
+            .onChange(of: isAtBottom) { _, atBottom in
+                // Returning to the bottom is the honest "I've now seen these"
+                // moment for messages that arrived while reading up-thread.
+                // The receipt upsert pushes over realtime, so the sender's
+                // ticks flip to "seen" instantly.
+                guard atBottom, chatDidLoad, let pid = propertyId else { return }
+                Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
+            }
             .onChange(of: messageService.messages.count) { old, new in
                 guard new > 0 else { return }
                 // Decide the animation for THIS change — onChange runs ahead
@@ -814,24 +884,33 @@ struct ChatView: View {
                 newestMessageId = newest
                 // Prepends (older pages) keep the reading position; only
                 // appends may move the viewport.
+                let ownLatest = messageService.messages.last?.senderId
+                    == supabase.auth.currentSession?.user.id
                 if appended {
-                    let ownLatest = messageService.messages.last?.senderId
-                        == supabase.auth.currentSession?.user.id
                     if !chatDidLoad {
                         // Entry batches: snap straight to the bottom rest.
                         proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                    } else if !showJumpToLatest || ownLatest {
+                    } else if isAtBottom || ownLatest {
                         // Follow new messages only when already at the bottom
                         // or when we sent it — never yank a reader up-thread.
+                        // Gated on the geometry-backed at-bottom state, NOT
+                        // the debounced jump-button flag, whose staleness used
+                        // to strand the newest message below the fold.
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
                             proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                         }
                     }
                 }
                 if let pid = propertyId {
+                    // Delivery is device truth (it arrived here) — always.
+                    // Read is claimed only when the reader is actually at the
+                    // bottom (or just sent a message); scrolling back down
+                    // stamps it via the isAtBottom onChange above.
                     Task {
                         await messageService.markDelivered(propertyId: pid, delivererName: senderName)
-                        await messageService.markRead(propertyId: pid, readerName: senderName)
+                        if !chatDidLoad || isAtBottom || ownLatest {
+                            await messageService.markRead(propertyId: pid, readerName: senderName)
+                        }
                     }
                 }
             }

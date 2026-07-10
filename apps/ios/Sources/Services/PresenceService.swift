@@ -3,32 +3,51 @@ import Observation
 import SwiftUI
 import Supabase
 
-/// WhatsApp-style presence: a per-member heartbeat gives each conversation an
-/// "online" / "last seen {relative}" status.
+/// WhatsApp-style presence: "online" / "last seen {relative}" per member.
 ///
-/// Deliberately heartbeat-based rather than Realtime Presence: the client
-/// upserts its own `presence` row every ~45s while foregrounded and reads the
-/// property's rows to derive status. This keeps presence off the realtime
-/// postgres-change subscriptions (leaving that path untouched) and costs one
-/// tiny upsert + one select per interval. Sharing is opt-out — a member who
-/// turns it off simply stops heartbeating and reads as offline to everyone.
+/// Two complementary sources, both keyed by AUTH USER ID (display names are
+/// snapshots that drift and — in production — carry stray whitespace, so they
+/// can never be a key):
+///
+///  1. Realtime channel presence (track / join / leave / sync): the instant
+///     signal. A client tracks `{user_id}` on the property's presence channel
+///     while foregrounded, so peers flip online the moment it joins and back
+///     to "last seen just now" the moment it leaves — no heartbeat lag.
+///  2. The `presence` table heartbeat (one upsert per ~45s, primary key
+///     (property_id, user_id)): the durable "last seen" timestamp that
+///     survives app restarts and covers clients that predate channel
+///     presence. Row changes are pushed via postgres-changes (migration 087),
+///     so a heartbeat also refreshes peers within seconds.
+///
+/// Sharing is opt-out — a member who turns it off stops heartbeating and
+/// untracks, reading as offline/hidden to everyone.
 @MainActor
 @Observable
 final class PresenceService {
-    /// user_name → last heartbeat time, for every member of the loaded property.
-    private(set) var lastSeen: [String: Date] = [:]
+    /// auth user id → last heartbeat time, for every member of the loaded
+    /// property (server rows).
+    private(set) var lastSeenById: [UUID: Date] = [:]
+    /// TRIMMED display name → last heartbeat. Legacy fallback only, for
+    /// callers that know a member by name alone (no linked account id).
+    private(set) var lastSeenByName: [String: Date] = [:]
+    /// User ids currently tracked on the realtime presence channel — the
+    /// instant "online" signal, ahead of any heartbeat row.
+    private(set) var onlineUserIds: Set<UUID> = []
 
     /// Whether this device advertises its own presence. Off ⇒ no heartbeat.
     @ObservationIgnored
     @AppStorage("presence.shareStatus") private var shareStatus = true
 
     @ObservationIgnored private var channel: RealtimeChannelV2?
-    /// onPostgresChange handles remove their callback on deinit, so they must be
-    /// retained for the callbacks to keep firing; cleared on unsubscribe.
+    /// onPostgresChange/onPresenceChange handles remove their callback on
+    /// deinit, so they must be retained for the callbacks to keep firing;
+    /// cleared on unsubscribe.
     @ObservationIgnored private var postgresSubs: [RealtimeSubscription] = []
+    @ObservationIgnored private var presenceSub: RealtimeSubscription?
     @ObservationIgnored private var subscribedPropertyId: UUID?
 
-    /// A member counts as "online" if seen within this window.
+    /// A member counts as "online" if seen within this window (heartbeat
+    /// fallback; channel presence flips instantly regardless).
     static let onlineWindow: TimeInterval = 90
 
     enum Status: Equatable {
@@ -38,39 +57,69 @@ final class PresenceService {
         case hidden
     }
 
-    func status(for userName: String) -> Status {
-        guard !userName.isEmpty, let seen = lastSeen[userName] else { return .hidden }
-        return Date().timeIntervalSince(seen) < Self.onlineWindow ? .online : .lastSeen(seen)
+    /// Presence status by identity. The auth user id is authoritative; the
+    /// (trimmed) name only covers legacy rows for members without a known id.
+    /// Pass the render clock (`TimelineView` date) as `now` so relative
+    /// statuses re-evaluate while visible instead of freezing.
+    func status(userId: UUID?, name: String? = nil, at now: Date = Date()) -> Status {
+        if let uid = userId {
+            if onlineUserIds.contains(uid) { return .online }
+            if let seen = lastSeenById[uid] {
+                return now.timeIntervalSince(seen) < Self.onlineWindow ? .online : .lastSeen(seen)
+            }
+        }
+        let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let seen = lastSeenByName[trimmed] else { return .hidden }
+        return now.timeIntervalSince(seen) < Self.onlineWindow ? .online : .lastSeen(seen)
     }
 
     func load(propertyId: UUID) async {
         do {
             let rows: [PresenceRow] = try await supabase
                 .from("presence")
-                .select("user_name,last_seen_at")
+                .select("user_id,user_name,last_seen_at")
                 .eq("property_id", value: propertyId.uuidString)
                 .execute()
                 .value
-            var map: [String: Date] = [:]
-            for r in rows where !r.userName.isEmpty {
-                if let d = ISODate.date(from: r.lastSeenAt) { map[r.userName] = d }
+            var byId: [UUID: Date] = [:]
+            var byName: [String: Date] = [:]
+            for r in rows {
+                guard let d = ISODate.date(from: r.lastSeenAt) else { continue }
+                if let uid = UUID(uuidString: r.userId) { byId[uid] = d }
+                // Names are display data and may carry stray whitespace
+                // ("Adi " in production) — key the fallback map TRIMMED.
+                let name = r.userName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty { byName[name] = d }
             }
-            lastSeen = map
+            lastSeenById = byId
+            lastSeenByName = byName
         } catch {
             // presence table may not exist yet (migration 086 not applied) —
             // degrade silently to "no presence data".
         }
     }
 
-    /// Live presence: reload the property's statuses whenever any member's row
-    /// changes (a heartbeat upsert), so "online" flips within seconds instead of
-    /// on the next poll. Idempotent — re-subscribing to the same property is a
-    /// no-op; switching properties tears down the old channel first.
+    /// Live presence. Two push paths on one channel:
+    ///  - channel presence join/leave/sync → `onlineUserIds` flips instantly;
+    ///  - postgres-changes on the `presence` table → heartbeat timestamps
+    ///    refresh within seconds of any member's upsert.
+    /// Idempotent — re-subscribing to the same property is a no-op; switching
+    /// properties tears down the old channel first.
     func subscribe(propertyId: UUID) async {
         guard subscribedPropertyId != propertyId else { return }
         await unsubscribe()
-        let ch = supabase.realtimeV2.channel("presence:\(propertyId.uuidString)")
+        let myId = supabase.auth.currentSession?.user.id
+        // The presence key IS the auth user id, so join/leave maps arrive
+        // keyed by identity and need no payload decoding.
+        let ch = supabase.realtimeV2.channel("presence:\(propertyId.uuidString)") {
+            $0.presence.key = myId?.uuidString ?? ""
+        }
         // Callbacks must be registered before subscribing.
+        presenceSub = ch.onPresenceChange { [weak self] action in
+            let joins = action.joins.keys.compactMap(UUID.init(uuidString:))
+            let leaves = action.leaves.keys.compactMap(UUID.init(uuidString:))
+            Task { @MainActor in self?.applyPresenceDiff(joins: joins, leaves: leaves) }
+        }
         postgresSubs.append(ch.onPostgresChange(
             InsertAction.self, schema: "public", table: "presence",
             filter: "property_id=eq.\(propertyId.uuidString)"
@@ -86,24 +135,36 @@ final class PresenceService {
         try? await ch.subscribeWithError()
         channel = ch
         subscribedPropertyId = propertyId
+        // Advertise ourselves the moment the channel is live (heartbeat
+        // re-tracks on every beat, but peers shouldn't wait for it).
+        if shareStatus, let myId {
+            await ch.track(state: ["user_id": .string(myId.uuidString)])
+        }
     }
 
     func unsubscribe() async {
         if let ch = channel {
+            // Leaving the channel emits our "leave" to every peer.
             await supabase.realtimeV2.removeChannel(ch)
             channel = nil
         }
+        presenceSub = nil
         postgresSubs.removeAll()
         subscribedPropertyId = nil
+        onlineUserIds.removeAll()
     }
 
     func heartbeat(propertyId: UUID, userId: UUID, userName: String) async {
-        guard shareStatus, !userName.isEmpty else { return }
+        guard shareStatus, !userName.isEmpty else {
+            // Sharing turned off: stop advertising on the live channel too.
+            if let ch = channel { await ch.untrack() }
+            return
+        }
         let now = ISODate.plain.string(from: Date())
         let row = PresenceUpsert(
             property_id: propertyId.uuidString,
             user_id: userId.uuidString,
-            user_name: userName,
+            user_name: userName.trimmingCharacters(in: .whitespacesAndNewlines),
             last_seen_at: now,
             updated_at: now
         )
@@ -111,13 +172,36 @@ final class PresenceService {
             .from("presence")
             .upsert(row, onConflict: "property_id,user_id")
             .execute()
+        // Keep the channel-presence advertisement alive alongside the row
+        // (also self-heals if sharing was re-enabled after subscribe).
+        if let ch = channel, subscribedPropertyId == propertyId, ch.status == .subscribed {
+            await ch.track(state: ["user_id": .string(userId.uuidString)])
+        }
+    }
+
+    // MARK: - Private
+
+    /// Applies a presence join/leave diff. A leaver's timestamp is stamped
+    /// locally so their subtitle flips to "last seen just now" immediately —
+    /// the heartbeat row (up to ~45s stale) catches up on its own.
+    private func applyPresenceDiff(joins: [UUID], leaves: [UUID]) {
+        for uid in joins {
+            onlineUserIds.insert(uid)
+            lastSeenById[uid] = Date()
+        }
+        for uid in leaves {
+            onlineUserIds.remove(uid)
+            lastSeenById[uid] = Date()
+        }
     }
 }
 
 private struct PresenceRow: Decodable {
+    let userId: String
     let userName: String
     let lastSeenAt: String
     enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
         case userName = "user_name"
         case lastSeenAt = "last_seen_at"
     }

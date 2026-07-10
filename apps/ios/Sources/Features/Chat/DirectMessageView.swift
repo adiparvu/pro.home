@@ -69,6 +69,11 @@ struct DirectMessageView: View {
     @State private var menuMessage: DirectMessage? = nil
     @State private var deleteCandidate: DirectMessage? = nil
     @State private var showJumpToLatest = false
+    /// Whether the reader is at (or within a bubble of) the bottom — the gate
+    /// for auto-following incoming messages and for honest read receipts.
+    /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
+    /// the bottom sentinel keeps it updated on older systems.
+    @State private var isAtBottom = true
     /// How many of the most-recent messages to render. The service holds the
     /// full conversation in memory; the list only builds this trailing window
     /// so opening a long chat stays cheap, growing a page at a time as the user
@@ -188,19 +193,26 @@ struct DirectMessageView: View {
     }
 
     /// "online" / "last seen {relative}" under the partner's name, shown only
-    /// when they're sharing presence.
+    /// when they're sharing presence. Looked up by the peer's AUTH USER ID —
+    /// display names drift and carry stray whitespace ("Adi " in production),
+    /// so a name-keyed lookup silently missed. The ticker re-evaluates the
+    /// status every 30s so the relative time never freezes and a stopped
+    /// heartbeat decays from "online" without needing a new event.
     @ViewBuilder private var presenceSubtitle: some View {
-        switch presenceService.status(for: member?.name ?? peerName) {
-        case .online:
-            Text("online")
-                .font(AppFont.scaled(11))
-                .foregroundStyle(Color.brandSuccess)
-        case .lastSeen(let date):
-            Text("last seen \(date, format: .relative(presentation: .named))")
-                .font(AppFont.scaled(11))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-        case .hidden:
-            EmptyView()
+        PresenceTicker { now in
+            switch presenceService.status(userId: thread.peerUserId,
+                                          name: member?.name ?? peerName, at: now) {
+            case .online:
+                Text("online")
+                    .font(AppFont.scaled(11))
+                    .foregroundStyle(Color.brandSuccess)
+            case .lastSeen(let date):
+                Text("last seen \(date, format: .relative(presentation: .named))")
+                    .font(AppFont.scaled(11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            case .hidden:
+                EmptyView()
+            }
         }
     }
 
@@ -439,6 +451,15 @@ struct DirectMessageView: View {
         }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
+        }
+        .onChange(of: isAtBottom) { _, atBottom in
+            // Scrolling back down to the bottom is the honest "I've now seen
+            // these" moment for messages that arrived while reading up-thread
+            // (the count handler deliberately skips them). The remote stamp
+            // flips the sender's ticks to read in realtime.
+            guard atBottom, chatDidLoad else { return }
+            directMessageService.markRead(thread: thread)
+            Task { await directMessageService.markReadRemote(thread: thread, myName: myName) }
         }
         .onChange(of: propertyService.primary?.id) { _, id in
             // The property can load after onAppear; retry any queued messages
@@ -802,16 +823,26 @@ struct DirectMessageView: View {
                                     }
                                 }
                             }
-                            // Jump-button sentinel. Visibility is driven by the
-                            // marker entering/leaving the lazy render window —
-                            // the old GeometryReader preference reset to 0 once
-                            // the LazyVStack culled the off-screen marker, which
-                            // hid the button exactly when it was needed. Toggles
-                            // are debounced (setJumpToLatest): a 1pt zone flips
-                            // on sub-point settles at rest otherwise.
+                            // Jump-button + at-bottom sentinel. On iOS 18+ the
+                            // live scroll geometry (chatAtBottomTracking below)
+                            // owns both signals — the sentinel's lazy-window
+                            // appearance is NOT viewport visibility and went
+                            // stale (keyboard presentation or a tall incoming
+                            // bubble culled it while the reader sat at the
+                            // bottom, which blocked auto-follow until a manual
+                            // scroll). It survives purely as the pre-iOS-18
+                            // fallback, debounced via setJumpToLatest.
                             Color.clear.frame(height: 1).id("DM_BOTTOM")
-                                .onAppear { setJumpToLatest(false) }
-                                .onDisappear { setJumpToLatest(true) }
+                                .onAppear {
+                                    guard !ChatAtBottomModifier.isGeometryDriven else { return }
+                                    isAtBottom = true
+                                    setJumpToLatest(false)
+                                }
+                                .onDisappear {
+                                    guard !ChatAtBottomModifier.isGeometryDriven else { return }
+                                    isAtBottom = false
+                                    setJumpToLatest(true)
+                                }
                         }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.bottom, AppSpacing.md)
@@ -819,6 +850,13 @@ struct DirectMessageView: View {
                     }
                     .defaultScrollAnchor(.bottom)
                     .scrollDismissesKeyboard(.immediately)
+                    // Live at-bottom detection (iOS 18+): drives auto-follow
+                    // and the jump button from real viewport geometry instead
+                    // of the lazy-culled sentinel.
+                    .chatAtBottomTracking { atBottom in
+                        isAtBottom = atBottom
+                        setJumpToLatest(!atBottom)
+                    }
                     .onAppear {
                         // The empty state replaces this ScrollView, so it mounts
                         // only once messages already exist and its count-based
@@ -852,10 +890,13 @@ struct DirectMessageView: View {
                         if !chatDidLoad {
                             // Entry batches: snap straight to the bottom rest.
                             proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                        } else if !showJumpToLatest || isOwnLatest {
+                        } else if isAtBottom || isOwnLatest {
                             // Follow new messages only when already at the
                             // bottom or when we sent it ourselves — never yank
-                            // a reader up-thread.
+                            // a reader up-thread. Gated on the geometry-backed
+                            // at-bottom state, NOT the debounced jump-button
+                            // flag, whose staleness used to strand the newest
+                            // message below the fold.
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
                                 proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
                             }

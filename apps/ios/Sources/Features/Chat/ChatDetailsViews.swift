@@ -204,16 +204,24 @@ struct ContactDetailsView: View {
         HStack(spacing: 6) {
             Text(member.roleLabel)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            switch presenceService.status(for: member.name) {
-            case .online:
-                Text("·").foregroundStyle(Color.primary.opacity(0.25))
-                Text("online").foregroundStyle(Color.brandSuccess)
-            case .lastSeen(let date):
-                Text("·").foregroundStyle(Color.primary.opacity(0.25))
-                Text("last seen \(date, format: .relative(presentation: .named))")
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            case .hidden:
-                EmptyView()
+            // Presence keys on the linked auth user id (names drift and carry
+            // stray whitespace); the ticker keeps the relative time counting.
+            PresenceTicker { now in
+                switch presenceService.status(userId: member.userId, name: member.name, at: now) {
+                case .online:
+                    HStack(spacing: 6) {
+                        Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                        Text("online").foregroundStyle(Color.brandSuccess)
+                    }
+                case .lastSeen(let date):
+                    HStack(spacing: 6) {
+                        Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                        Text("last seen \(date, format: .relative(presentation: .named))")
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    }
+                case .hidden:
+                    EmptyView()
+                }
             }
         }
         .font(AppFont.scaled(15))

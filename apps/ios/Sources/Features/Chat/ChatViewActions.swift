@@ -35,8 +35,10 @@ extension ChatView {
             )
             return true
         } catch {
+            // The queued row records its conversation scope so it can only
+            // ever render in — and re-send into — this group (or main chat).
             outbox.enqueue(PendingMessage(
-                propertyId: pid, senderName: senderName, body: body,
+                propertyId: pid, groupId: groupId, senderName: senderName, body: body,
                 attachmentUrl: attachmentUrl, attachmentType: attachmentType,
                 latitude: latitude, longitude: longitude, kind: kind,
                 mentionedIds: mentionedIds, replyTo: replyTo
@@ -65,11 +67,15 @@ extension ChatView {
         if ok { scheduleLocalMentionNotifications(names: names, body: body) }
     }
 
-    /// Retries every queued message for this property, attachments included.
+    /// Retries every queued message for this conversation, attachments
+    /// included. Scope-guarded twice: the queued row must belong to this
+    /// property AND group, and the service must already be scoped to the same
+    /// group (send stamps group_id from currentGroupId) — a flush racing
+    /// load() can otherwise re-send a group message into the main chat.
     func flushOutbox() async {
-        guard let pid = propertyId else { return }
+        guard let pid = propertyId, messageService.currentGroupId == groupId else { return }
         await outbox.flush { pm in
-            guard pm.propertyId == pid else { return false }
+            guard pm.propertyId == pid, pm.groupId == groupId else { return false }
             do {
                 try await messageService.send(
                     propertyId: pm.propertyId, senderName: pm.senderName,

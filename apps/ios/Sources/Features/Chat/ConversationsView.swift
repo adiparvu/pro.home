@@ -533,8 +533,12 @@ struct ConversationsView: View {
                                     muted: mutedIds.contains(entry.id),
                                     pinned: pinnedIds.contains(entry.id),
                                     forceUnread: manualUnreadIds.contains(entry.id),
-                                    online: (entry.member?.name ?? entry.peer?.displayName)
-                                        .map { presenceService.status(for: $0) == .online } ?? false
+                                    // Presence keys on the peer's auth user id;
+                                    // the roster name is a legacy fallback only.
+                                    online: presenceService.status(
+                                        userId: entry.peer?.id ?? entry.member?.userId,
+                                        name: entry.member?.name ?? entry.peer?.displayName
+                                    ) == .online
                                 )
                             }
                             .buttonStyle(.plain)

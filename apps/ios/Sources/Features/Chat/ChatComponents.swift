@@ -344,3 +344,73 @@ struct ReactionPickerView: View {
         .presentationBackground(.ultraThinMaterial)
     }
 }
+
+// MARK: - Presence ticker (shared)
+
+/// Re-evaluates its content on a fixed clock so presence-derived text can't
+/// freeze while visible: "last seen 5 minutes ago" keeps counting and an
+/// "online" that stopped heartbeating decays to "last seen" without needing a
+/// new realtime event. Pass the tick's date into `PresenceService.status(at:)`
+/// so the re-render actually re-evaluates the window.
+struct PresenceTicker<Content: View>: View {
+    var interval: TimeInterval = 30
+    @ViewBuilder let content: (Date) -> Content
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: interval)) { context in
+            content(context.date)
+        }
+    }
+}
+
+// MARK: - At-bottom tracking (shared by both chat engines)
+
+/// Robust "is the reader at (or within a bubble of) the bottom?" detection for
+/// a chat ScrollView, from live scroll geometry (iOS 18+). The bottom-sentinel
+/// onAppear/onDisappear fallback used alone goes stale: a LazyVStack culls and
+/// re-mounts the sentinel on its own schedule (keyboard presentation, a tall
+/// incoming bubble, deep scroll-back), which left the flag claiming "not at
+/// bottom" while the reader WAS there — so incoming messages didn't auto-follow
+/// until a manual scroll. Callers keep the sentinel only as the pre-iOS-18 path.
+struct ChatAtBottomModifier: ViewModifier {
+    /// Slack below which the reader still counts as "at the bottom" — roughly
+    /// one bubble, so a sub-point settle or a just-landed message never flips
+    /// the state.
+    var threshold: CGFloat = 120
+    let update: (Bool) -> Void
+
+    /// True when live scroll geometry drives the detection on this OS, so
+    /// callers can mute the legacy sentinel toggles and avoid the two sources
+    /// fighting over the same state.
+    static var isGeometryDriven: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return false
+    }
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.onScrollGeometryChange(for: Bool.self) { geometry in
+                // Distance from the visible rect's bottom edge to the end of
+                // the content (bottom inset included — the compose bar rides
+                // in the safe area). ≤ 0 at rest on the newest message.
+                let distance = geometry.contentSize.height + geometry.contentInsets.bottom
+                    - (geometry.contentOffset.y + geometry.containerSize.height)
+                return distance <= threshold
+            } action: { _, atBottom in
+                update(atBottom)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// Reports at-bottom transitions of a chat scroll view (see
+    /// ``ChatAtBottomModifier``). No-op below iOS 18 — pair with the bottom
+    /// sentinel for those systems.
+    func chatAtBottomTracking(threshold: CGFloat = 120,
+                              _ update: @escaping (Bool) -> Void) -> some View {
+        modifier(ChatAtBottomModifier(threshold: threshold, update: update))
+    }
+}

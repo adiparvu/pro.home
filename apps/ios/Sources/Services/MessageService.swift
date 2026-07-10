@@ -174,14 +174,20 @@ final class MessageService {
         }
     }
 
-    func subscribeRealtime(propertyId: UUID) async {
+    func subscribeRealtime(propertyId: UUID, groupId: UUID? = nil) async {
         // Idempotent: keep a single live channel for the chat session so opening
         // a thread never tears down the tab-level subscription (and vice-versa).
         if realtimeChannel != nil, subscribedPropertyId == propertyId { return }
         if realtimeChannel != nil { await unsubscribe() }
+        // The group scope arrives EXPLICITLY: this races load() (separate .task),
+        // and deriving the topic from a not-yet-set currentGroupId subscribed a
+        // community thread to the MAIN chat's topic — the realtime client
+        // returns the already-subscribed channel for a duplicate topic and
+        // silently drops callbacks registered after subscribe.
+        currentGroupId = groupId
         // Topic includes the group scope so a community thread's channel never
         // collides with the main chat's channel for the same property.
-        let scope = currentGroupId?.uuidString ?? "main"
+        let scope = groupId?.uuidString ?? "main"
         let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString):\(scope)")
         // Callbacks must be registered before subscribing.
         postgresSubs.append(channel.onPostgresChange(
@@ -472,14 +478,30 @@ final class MessageService {
 
     // MARK: - Read receipts
 
-    /// Loads all read receipts for the property and groups them by message id.
-    /// Fails silently if the table isn't available yet so chat keeps working.
-    func loadReads(propertyId: UUID) async {
-        let myId = supabase.auth.currentSession?.user.id
-        guard let rows: [MessageRead] = try? await supabase
-            .from("message_reads")
-            .select()
+    /// Builds a receipt query scoped to ONE conversation. The receipt tables
+    /// carry no group column, so the scope rides an inner join on the parent
+    /// message's group_id (null-safe: the main chat is group_id IS NULL).
+    /// Property-wide loads made the main chat and every community group load
+    /// each other's receipts.
+    private static func scopedReceiptQuery(
+        _ table: String, propertyId: UUID, groupId: UUID?
+    ) -> PostgrestFilterBuilder {
+        let query = supabase
+            .from(table)
+            .select("*, messages!inner(group_id)")
             .eq("property_id", value: propertyId.uuidString)
+        if let gid = groupId {
+            return query.eq("messages.group_id", value: gid.uuidString)
+        }
+        return query.filter("messages.group_id", operator: "is", value: "null")
+    }
+
+    /// Loads this conversation's read receipts and groups them by message id.
+    /// Fails silently if the table isn't available yet so chat keeps working.
+    func loadReads(propertyId: UUID, groupId: UUID?) async {
+        let myId = supabase.auth.currentSession?.user.id
+        guard let rows: [MessageRead] = try? await Self.scopedReceiptQuery(
+            "message_reads", propertyId: propertyId, groupId: groupId)
             .execute()
             .value
         else { return }
@@ -516,9 +538,15 @@ final class MessageService {
         unreadCount = 0
     }
 
-    /// Subscribes to read receipt changes so the sender sees "seen" updates live.
-    func subscribeReads(propertyId: UUID) async {
-        let channel = supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString)")
+    /// Subscribes to read receipt changes so the sender sees "seen" updates
+    /// live. The topic carries the group scope: the main chat and a community
+    /// group used to claim the SAME "message_reads:{propertyId}" topic, and
+    /// the realtime client returns the already-subscribed channel for a
+    /// duplicate topic — the second conversation's callbacks were silently
+    /// dropped and its receipts never updated.
+    func subscribeReads(propertyId: UUID, groupId: UUID?) async {
+        let scope = groupId?.uuidString ?? "main"
+        let channel = supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -531,7 +559,7 @@ final class MessageService {
                 self.reloadTasks["reads"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
                     guard !Task.isCancelled else { return }
-                    await self?.loadReads(propertyId: propertyId)
+                    await self?.loadReads(propertyId: propertyId, groupId: groupId)
                 }
             }
         })
@@ -548,14 +576,12 @@ final class MessageService {
 
     // MARK: - Delivery receipts
 
-    /// Loads delivery receipts for the property, grouped by message id
+    /// Loads this conversation's delivery receipts, grouped by message id
     /// (excludes my own device's receipts so they count as "delivered to others").
-    func loadDeliveries(propertyId: UUID) async {
+    func loadDeliveries(propertyId: UUID, groupId: UUID?) async {
         let myId = supabase.auth.currentSession?.user.id
-        guard let rows: [MessageDelivery] = try? await supabase
-            .from("message_deliveries")
-            .select()
-            .eq("property_id", value: propertyId.uuidString)
+        guard let rows: [MessageDelivery] = try? await Self.scopedReceiptQuery(
+            "message_deliveries", propertyId: propertyId, groupId: groupId)
             .execute()
             .value
         else { return }
@@ -590,8 +616,10 @@ final class MessageService {
     }
 
     /// Subscribes to delivery changes so the sender's ticks advance live.
-    func subscribeDeliveries(propertyId: UUID) async {
-        let channel = supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString)")
+    /// Topic is group-scoped — see subscribeReads for why.
+    func subscribeDeliveries(propertyId: UUID, groupId: UUID?) async {
+        let scope = groupId?.uuidString ?? "main"
+        let channel = supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -604,7 +632,7 @@ final class MessageService {
                 self.reloadTasks["deliveries"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
                     guard !Task.isCancelled else { return }
-                    await self?.loadDeliveries(propertyId: propertyId)
+                    await self?.loadDeliveries(propertyId: propertyId, groupId: groupId)
                 }
             }
         })
@@ -621,11 +649,9 @@ final class MessageService {
 
     // MARK: - Reactions
 
-    func loadReactions(propertyId: UUID) async {
-        guard let rows: [MessageReaction] = try? await supabase
-            .from("message_reactions")
-            .select()
-            .eq("property_id", value: propertyId.uuidString)
+    func loadReactions(propertyId: UUID, groupId: UUID?) async {
+        guard let rows: [MessageReaction] = try? await Self.scopedReceiptQuery(
+            "message_reactions", propertyId: propertyId, groupId: groupId)
             .execute()
             .value
         else { return }
@@ -693,8 +719,10 @@ final class MessageService {
         }
     }
 
-    func subscribeReactions(propertyId: UUID) async {
-        let channel = supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
+    /// Topic is group-scoped — see subscribeReads for why.
+    func subscribeReactions(propertyId: UUID, groupId: UUID?) async {
+        let scope = groupId?.uuidString ?? "main"
+        let channel = supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -707,7 +735,7 @@ final class MessageService {
                 self.reloadTasks["reactions"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
                     guard !Task.isCancelled else { return }
-                    await self?.loadReactions(propertyId: propertyId)
+                    await self?.loadReactions(propertyId: propertyId, groupId: groupId)
                 }
             }
         })
@@ -727,11 +755,9 @@ final class MessageService {
     var pollVotes: [UUID: [PollVote]] = [:]
     private var pollVotesChannel: RealtimeChannelV2?
 
-    func loadPollVotes(propertyId: UUID) async {
-        guard let rows: [PollVote] = try? await supabase
-            .from("message_poll_votes")
-            .select()
-            .eq("property_id", value: propertyId.uuidString)
+    func loadPollVotes(propertyId: UUID, groupId: UUID?) async {
+        guard let rows: [PollVote] = try? await Self.scopedReceiptQuery(
+            "message_poll_votes", propertyId: propertyId, groupId: groupId)
             .execute()
             .value
         else { return }
@@ -765,11 +791,13 @@ final class MessageService {
                   user_id: uid.uuidString, voter_name: voterName, option_index: optionIndex)
             ).execute()
         }
-        await loadPollVotes(propertyId: propertyId)
+        await loadPollVotes(propertyId: propertyId, groupId: currentGroupId)
     }
 
-    func subscribePollVotes(propertyId: UUID) async {
-        let channel = supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString)")
+    /// Topic is group-scoped — see subscribeReads for why.
+    func subscribePollVotes(propertyId: UUID, groupId: UUID?) async {
+        let scope = groupId?.uuidString ?? "main"
+        let channel = supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -782,7 +810,7 @@ final class MessageService {
                 self.reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
                     guard !Task.isCancelled else { return }
-                    await self?.loadPollVotes(propertyId: propertyId)
+                    await self?.loadPollVotes(propertyId: propertyId, groupId: groupId)
                 }
             }
         })
