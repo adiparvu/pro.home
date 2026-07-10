@@ -22,12 +22,10 @@ struct TasksView: View {
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
     @State private var searchText = ""
-    @State private var showSearch = false
     /// "Finalizate azi" starts folded — it's a receipt, not a to-do.
     @State private var collapsed: Set<TaskSectionKind> = [.doneToday]
     /// Position in the hero shortlist ("următorul" cycles through it).
     @State private var heroIndex = 0
-    @FocusState private var searchFocused: Bool
     /// The task whose detail page is pushed — set by row/hero taps and by
     /// deep links (notification tap, Spotlight, prvio://tasks/<id>). Stored
     /// as the id so the pushed page always reads the live task from the
@@ -46,6 +44,27 @@ struct TasksView: View {
             case .open:    return "circle"
             case .overdue: return "exclamationmark.circle.fill"
             case .done:    return "checkmark.circle.fill"
+            }
+        }
+
+        /// Localized display name — the raw values are storage identifiers,
+        /// never UI ("Nicio sarcină overdue" was this leaking to the screen).
+        var title: LocalizedStringKey {
+            switch self {
+            case .all:     return "task_filter_all"
+            case .open:    return "task_stat_in_progress"
+            case .overdue: return "task_stat_overdue"
+            case .done:    return "task_stat_completed"
+            }
+        }
+
+        /// Empty-state title when this filter has nothing to show.
+        var emptyTitle: LocalizedStringKey {
+            switch self {
+            case .all:     return "task_empty_all_clear"
+            case .open:    return "task_empty_open"
+            case .overdue: return "task_empty_overdue"
+            case .done:    return "task_empty_done"
             }
         }
     }
@@ -176,6 +195,10 @@ struct TasksView: View {
             Text(taskService.error ?? "")
         }
         .refreshable { await taskService.load() }
+        // Native navigation search — the same appearance as every other list
+        // page (the header's dedicated magnifier button is gone; its slot now
+        // creates a task). The system prompt localizes itself.
+        .searchable(text: $searchText)
         .userActivity("com.prvio.task") { activity in
             activity.title = String(localized: "Tasks — PRVIO")
             activity.userInfo = ["tab": "tasks"]
@@ -223,7 +246,6 @@ struct TasksView: View {
                 header
                     .padding(.horizontal, AppSpacing.xl)
                     .padding(.top, AppSpacing.sm)
-                if showSearch { searchBar }
                 // The progress line is the page's filter system, so it stays
                 // whenever there is (or was) work to filter — but on a fully
                 // quiet day with no filter engaged it is pure noise and hides.
@@ -336,18 +358,17 @@ struct TasksView: View {
             }
             Spacer()
             HStack(spacing: 10) {
-                headerButton("magnifyingglass", label: "Search") {
-                    withAnimation(.taskSpring) { showSearch.toggle() }
-                    searchFocused = showSearch
-                    if !showSearch { searchText = "" }
-                }
+                headerButton("plus", label: "task_new") { showAdd = true }
                 Menu {
                     ForEach(TaskFilter.allCases, id: \.self) { f in
                         Button {
                             withAnimation(.taskSpring) { filter = f }
                         } label: {
-                            Label("\(f.rawValue)  (\(countFor(f)))",
-                                  systemImage: filter == f ? "checkmark" : f.icon)
+                            Label {
+                                Text(f.title) + Text(verbatim: "  (\(countFor(f)))")
+                            } icon: {
+                                Image(systemName: filter == f ? "checkmark" : f.icon)
+                            }
                         }
                     }
                 } label: {
@@ -355,12 +376,7 @@ struct TasksView: View {
                 }
                 .accessibilityLabel("Filter tasks")
 
-                Menu {
-                    Button { showCalendar = true } label: { Label("Calendar", systemImage: "calendar") }
-                } label: {
-                    headerButtonLabel("ellipsis")
-                }
-                .accessibilityLabel("More")
+                headerButton("calendar", label: "Calendar") { showCalendar = true }
             }
             .padding(.top, 6)
         }
@@ -386,32 +402,6 @@ struct TasksView: View {
             .shadow(color: Color.primary.opacity(0.05), radius: 8, y: 3)
     }
 
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(AppFont.footnote)
-                .foregroundStyle(Color.secondaryTextColor)
-            TextField(text: $searchText) {
-                Text("Search…")
-            }
-            .focused($searchFocused)
-            .font(AppFont.body)
-            .tint(.accentColor)
-            .submitLabel(.search)
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.primary.opacity(0.3))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 11)
-        .liquidGlass(cornerRadius: AppRadius.md)
-        .padding(.horizontal, AppSpacing.xl)
-        .transition(.move(edge: .top).combined(with: .opacity))
-    }
 
     // MARK: - Progress line
 
@@ -585,11 +575,8 @@ struct TasksView: View {
                 .frame(maxWidth: .infinity, minHeight: 320)
             }
         } else {
-            EmptyStateView(
-                icon: "checklist",
-                title: LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks")
-            )
-            .frame(maxWidth: .infinity, minHeight: 320)
+            EmptyStateView(icon: "checklist", title: filter.emptyTitle)
+                .frame(maxWidth: .infinity, minHeight: 320)
         }
     }
 
