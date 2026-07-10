@@ -5,16 +5,26 @@ import UniformTypeIdentifiers
 
 // MARK: - Document files section (Document Intelligence D2)
 //
-// The multi-file layer on the document page: the primary file lives above in
-// the file card; this lists every additional attachment (scans, photos, PDFs,
-// Files-app imports) and lets the user add or remove them. Reads go through
-// signed URLs; adds reuse the private `documents` bucket.
+// THE one source of truth for a document's files. The primary file renders as
+// the first row (badged "Principal"; its Open/Share actions are supplied by
+// the parent, which owns the document), followed by every additional
+// attachment (scans, photos, PDFs, Files-app imports) with add / replace /
+// remove. Attachment reads go through signed URLs; adds reuse the private
+// `documents` bucket. The old separate "file card" above this section is gone:
+// it duplicated the primary file and contradicted this section's empty state.
 
 struct DocumentFilesSection: View {
     let documentId: UUID
+    /// The document whose primary file should lead the list. Optional so the
+    /// section can also render a pure-attachments list if ever needed.
+    var primary: DocumentModel? = nil
     /// When the parent document is read-only (D6), every add/replace/delete
     /// affordance in this section is genuinely disabled.
     var readOnly: Bool = false
+    /// Open / share the primary file — provided by the owner of the document
+    /// (they log the honest "viewed" history event and host QuickLook/share).
+    var onOpenPrimary: (() -> Void)? = nil
+    var onSharePrimary: (() -> Void)? = nil
 
     @State private var service = DocumentFilesService()
     @State private var previewURL: URL?
@@ -32,14 +42,18 @@ struct DocumentFilesSection: View {
     // Version groups whose history disclosure is expanded.
     @State private var expandedGroups: Set<UUID> = []
 
+    /// The primary file counts too — the header badge reports every file the
+    /// document actually has, matching what the list below shows.
+    private var totalCount: Int { service.files.count + (primary == nil ? 0 : 1) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "paperclip").font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
                 Text("doc_sec_files").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
                 Spacer()
-                if !service.files.isEmpty {
-                    Text("\(service.files.count)")
+                if totalCount > 0 {
+                    Text("\(totalCount)")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 if !readOnly { addMenu }
@@ -47,15 +61,24 @@ struct DocumentFilesSection: View {
             .padding(.leading, AppSpacing.sm)
 
             GlassCard {
-                if service.isLoading && service.files.isEmpty {
+                if service.isLoading && service.files.isEmpty && primary == nil {
                     HStack { Spacer(); ProgressView().padding(.vertical, AppSpacing.lg); Spacer() }
-                } else if service.files.isEmpty {
+                } else if service.files.isEmpty && primary == nil {
                     emptyState
                 } else {
                     VStack(spacing: 0) {
+                        if let primary { primaryRow(primary) }
                         ForEach(Array(service.files.enumerated()), id: \.element.id) { idx, file in
-                            if idx > 0 { divider }
+                            if idx > 0 || primary != nil { divider }
                             fileRow(file)
+                        }
+                        // No attachments beyond the primary yet: instead of a
+                        // contradictory "no files" line, a first-rank guided
+                        // action — scan pages straight into this document.
+                        if primary != nil, service.files.isEmpty, !service.isLoading,
+                           !readOnly, DocumentScannerView.isSupported {
+                            divider
+                            scanCTA
                         }
                     }
                 }
@@ -140,6 +163,61 @@ struct DocumentFilesSection: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.lg)
+    }
+
+    /// One tap from "only the primary file" to scanning extra pages — reuses
+    /// the same system scanner the add menu offers.
+    private var scanCTA: some View {
+        Button {
+            HapticFeedback.selection()
+            showScanner = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.viewfinder").font(AppFont.scaled(15))
+                Text("doc_files_scan_cta").font(AppFont.scaled(13, weight: .medium))
+                Spacer()
+                Image(systemName: "chevron.right").font(AppFont.scaled(11))
+                    .foregroundStyle(Color.accentColor.opacity(0.5))
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The document's primary file — first in the list, badged, and opened /
+    /// shared through the parent's own actions (single "viewed" logging path).
+    private func primaryRow(_ doc: DocumentModel) -> some View {
+        Button {
+            HapticFeedback.selection()
+            onOpenPrimary?()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: doc.fileGlyph).font(AppFont.scaled(18)).foregroundStyle(.blue).frame(width: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(doc.fileName).font(AppFont.scaled(14)).foregroundStyle(.primary).lineLimit(1)
+                    if !doc.fileSizeDisplay.isEmpty {
+                        Text(doc.fileSizeDisplay).font(AppFont.scaled(11))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    }
+                }
+                Spacer()
+                Text("doc_file_primary").font(AppFont.scaled(11, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.12), in: Capsule())
+                Image(systemName: "chevron.right").font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { onOpenPrimary?() } label: { Label("Open file", systemImage: "eye") }
+            Button { onSharePrimary?() } label: { Label("Share", systemImage: "square.and.arrow.up") }
+        }
     }
 
     @ViewBuilder

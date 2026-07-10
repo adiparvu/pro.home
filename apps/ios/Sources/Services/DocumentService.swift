@@ -212,7 +212,8 @@ final class DocumentService {
         // No-op saves must not touch the network or the history: re-saving the
         // edit sheet without changing anything used to append a fresh
         // "Modificat" event every time, flooding the timeline.
-        if let old = documents.first(where: { $0.id == doc.id }), old == doc { return }
+        let old = documents.first(where: { $0.id == doc.id })
+        if let old, old == doc { return }
         do {
             try await supabase
                 .from("documents")
@@ -234,9 +235,16 @@ final class DocumentService {
             if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
                 documents[idx] = doc
             }
-            // History (D5): metadata was edited. Best-effort.
+            // History (D5): metadata was edited. Best-effort. The entry carries
+            // the real per-field diff (old → new) so the timeline can say WHAT
+            // changed, not just that something did; pre-diff rows render as
+            // before.
+            var details = ["name": doc.name]
+            if let old {
+                details.merge(DocumentFieldChange.encode(old: old, new: doc)) { _, new in new }
+            }
             await DocumentEventsService.log(documentId: doc.id, kind: .edited,
-                                            details: ["name": doc.name])
+                                            details: details)
         } catch {
             self.error = error.localizedDescription
         }

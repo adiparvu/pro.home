@@ -60,7 +60,7 @@ struct LinkedDocumentsSection: View {
                     .foregroundStyle(documentCategoryColor(doc.category)).frame(width: 34)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(doc.name).font(AppFont.scaled(14)).foregroundStyle(.primary).lineLimit(1)
-                    Text(LocalizedStringKey(doc.category.capitalized)).font(AppFont.scaled(11))
+                    Text(DocumentTypeDisplay.name(doc.category)).font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 Spacer()

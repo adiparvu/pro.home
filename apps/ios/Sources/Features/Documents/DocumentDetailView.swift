@@ -55,7 +55,7 @@ struct DocumentRowPreview: View {
             VStack(spacing: 4) {
                 Text(doc.name).font(AppFont.scaled(17, weight: .semibold))
                     .foregroundStyle(.primary).multilineTextAlignment(.center).lineLimit(2)
-                Text(LocalizedStringKey(doc.category.capitalized))
+                Text(DocumentTypeDisplay.name(doc.category))
                     .font(AppFont.scaled(12)).foregroundStyle(tint)
                 if !doc.fileSizeDisplay.isEmpty {
                     Text(doc.fileSizeDisplay).font(AppFont.scaled(11)).foregroundStyle(.secondary)
@@ -115,8 +115,15 @@ struct DocumentDetailView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         header
-                        fileCard
-                        DocumentFilesSection(documentId: doc.id, readOnly: live.isReadOnly)
+                        primaryActions
+                        // One source of truth for files (see DocumentFilesSection):
+                        // the primary file is listed there, first, marked
+                        // "Principal" — the old separate file card is gone.
+                        DocumentFilesSection(documentId: doc.id,
+                                             primary: live,
+                                             readOnly: live.isReadOnly,
+                                             onOpenPrimary: { open() },
+                                             onSharePrimary: { share() })
                         DocumentRelationsSection(documentId: doc.id, readOnly: live.isReadOnly)
                         DocumentHistorySection(documentId: doc.id)
                         richDetailsCard
@@ -348,10 +355,13 @@ struct DocumentDetailView: View {
                 .font(AppFont.scaled(23, weight: .bold)).foregroundStyle(.white)
                 .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.7)
             HStack(spacing: 8) {
-                Text(LocalizedStringKey(live.category.capitalized))
+                Text(DocumentTypeDisplay.name(live.category))
                     .font(AppFont.caption).foregroundStyle(.white.opacity(0.9))
                     .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
                     .background(.white.opacity(0.14), in: Capsule())
+                if let days = live.daysUntilExpiry, days <= 30 {
+                    DocumentExpiryChip(days: days)
+                }
                 if live.isCritical {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.circle.fill").font(AppFont.scaled(10))
@@ -389,25 +399,17 @@ struct DocumentDetailView: View {
         .background(.white.opacity(0.18), in: Capsule())
     }
 
-    // MARK: File card + primary actions
-
-    private var fileCard: some View {
-        GlassCard {
-            VStack(spacing: 14) {
-                HStack(spacing: 12) {
-                    Image(systemName: fileGlyph).font(AppFont.scaled(22)).foregroundStyle(tint).frame(width: 40)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(live.fileName).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
-                        Text(live.fileSizeDisplay.isEmpty ? (live.mimeType ?? "File") : live.fileSizeDisplay)
-                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    }
-                    Spacer()
-                }
-                HStack(spacing: 10) {
-                    actionButton("Open", "arrow.up.forward.square", tint: .accentColor) { open() }
-                    actionButton("Share", "square.and.arrow.up", tint: .primary) { share() }
-                }
-            }
+    // MARK: Primary actions
+    //
+    // Files have ONE source of truth: the "Files" section below, where the
+    // primary file is the first row (badged "Principal"). The hero area keeps
+    // only the two primary actions — the old file card duplicated the file
+    // listing and contradicted the section's empty state ("No files attached
+    // yet" under a card showing the PDF).
+    private var primaryActions: some View {
+        HStack(spacing: 10) {
+            actionButton("Open", "arrow.up.forward.square", tint: .accentColor) { open() }
+            actionButton("Share", "square.and.arrow.up", tint: .primary) { share() }
         }
     }
 
@@ -654,12 +656,6 @@ struct DocumentDetailView: View {
         .buttonStyle(.plain)
     }
 
-    private var fileGlyph: String {
-        if live.mimeType == "application/pdf" { return "doc.richtext.fill" }
-        if live.mimeType?.hasPrefix("image/") == true { return "photo.fill" }
-        return "doc.fill"
-    }
-
     private var formattedCreated: String {
         let iso = ISO8601DateFormatter()
         if let d = iso.date(from: live.createdAt) ?? ISO8601DateFormatter.withFractional.date(from: live.createdAt) {
@@ -747,7 +743,7 @@ struct EditDocumentSheet: View {
                     Text("Category").font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Picker("", selection: $category) {
-                        ForEach(categories, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
+                        ForEach(categories, id: \.self) { Text(DocumentTypeDisplay.name($0)).tag($0) }
                     }
                     .tint(Color.primary.opacity(AppOpacity.emphasis))
                 }

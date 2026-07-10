@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 import UIKit
 
 // MARK: - Document OCR prefill (Document Intelligence D2)
@@ -45,6 +46,45 @@ enum DocumentOCR {
         await VisionCaptureService.recognizeText(in: image)
     }
 
+    /// Recognizes text in an attached PDF: the first pages render through
+    /// PDFKit at 300 dpi (same approach as the receipt scanner) and run the
+    /// same Vision pass an image does. Two pages, not one — invoices routinely
+    /// carry the total on page 2 — and never more, so a 100-page manual costs
+    /// two OCR passes at most.
+    static func recognizePDF(_ data: Data) async -> [String] {
+        let images = await Task.detached(priority: .userInitiated) {
+            renderPDFPages(data, maxPages: 2)
+        }.value
+        var lines: [String] = []
+        for image in images {
+            lines += await VisionCaptureService.recognizeText(in: image)
+        }
+        return lines
+    }
+
+    private nonisolated static func renderPDFPages(_ data: Data, maxPages: Int) -> [UIImage] {
+        guard let document = PDFDocument(data: data) else { return [] }
+        let pageCount = min(document.pageCount, maxPages)
+        guard pageCount > 0 else { return [] }
+        let scale: CGFloat = 300.0 / 72.0
+        var images: [UIImage] = []
+        for index in 0..<pageCount {
+            guard let page = document.page(at: index) else { continue }
+            let bounds = page.bounds(for: .mediaBox)
+            guard bounds.width > 0, bounds.height > 0 else { continue }
+            let size = CGSize(width: bounds.width * scale, height: bounds.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: size)
+            images.append(renderer.image { ctx in
+                UIColor.white.setFill()
+                ctx.fill(CGRect(origin: .zero, size: size))
+                ctx.cgContext.translateBy(x: 0, y: size.height)
+                ctx.cgContext.scaleBy(x: scale, y: -scale)
+                page.draw(with: .mediaBox, to: ctx.cgContext)
+            })
+        }
+        return images
+    }
+
     // MARK: Extraction
 
     static func extract(from lines: [String]) -> DocumentPrefill {
@@ -56,6 +96,11 @@ enum DocumentOCR {
         if let (name, category) = matchIssuer(in: lower) {
             p.issuerCompany = name
             p.suggestedCategory = category
+            p.filledLabels.append(String(localized: "doc_f_company"))
+        } else if let company = detectCompany(in: lines) {
+            // No lexicon hit — fall back to the first prominent line that
+            // carries a legal-form suffix (SRL / SA / GmbH / Ltd / …).
+            p.issuerCompany = company
             p.filledLabels.append(String(localized: "doc_f_company"))
         }
 
@@ -159,6 +204,45 @@ enum DocumentOCR {
         return nil
     }
 
+    // MARK: - Company by legal form
+    //
+    // The issuer sits in the letterhead: one of the first lines, usually ending
+    // in a legal-form suffix ("OMV Petrom SA", "Regnify Media S.R.L.",
+    // "Vaillant GmbH"). Only the token run up to and including the suffix is
+    // returned, so trailing addresses on the same line don't pollute the name.
+
+    /// True for a token that is a company legal form. The short, all-caps forms
+    /// ("SA", "AG", "NV", "BV") only count when they actually appear uppercase —
+    /// "sa" is an everyday Romanian word and must never trigger this.
+    private static func isLegalForm(_ raw: String) -> Bool {
+        let token = raw.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:()"))
+        guard !token.isEmpty else { return false }
+        let upper = token.uppercased()
+        let ambiguous: Set<String> = ["SA", "AG", "NV", "BV", "SPA"]
+        if ambiguous.contains(upper) { return token == upper }
+        let forms: Set<String> = ["SRL", "S.R.L", "SRL-D", "S.A", "A.G", "GMBH",
+                                  "B.V", "N.V", "S.P.A", "LTD", "LLC", "INC", "PFA", "I.I"]
+        return forms.contains(upper)
+    }
+
+    /// The first prominent line (top of the document) whose token run ends in a
+    /// legal-form suffix. Returns nil rather than guessing when nothing matches.
+    static func detectCompany(in lines: [String]) -> String? {
+        for line in lines.prefix(12) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.count >= 5, trimmed.count <= 80 else { continue }
+            let tokens = trimmed.split(separator: " ").map(String.init)
+            guard tokens.count >= 2,
+                  let idx = tokens.firstIndex(where: isLegalForm), idx >= 1 else { continue }
+            let name = tokens[0...idx].joined(separator: " ")
+            // A real name, not a serial: mostly letters, of sane length.
+            let letters = name.filter(\.isLetter).count
+            guard letters >= 4, name.count <= 60 else { continue }
+            return name
+        }
+        return nil
+    }
+
     // MARK: - Field extractors
 
     /// The earliest PAST date on a line with an issue keyword; falls back to
@@ -195,7 +279,22 @@ enum DocumentOCR {
             }
             return nil
         }
-        return scan(strong) ?? scan(weak)
+        // Last tier: no total keyword anywhere, but a line pairs a decimal
+        // amount (12,50 / 12.50) with an explicit currency marker (LEI / RON /
+        // EUR / € / …) — a receipt-style "843,00 EUR" line. Word-bounded so
+        // "ulei" never reads as "lei".
+        func scanCurrencyLines() -> (Double, String)? {
+            for line in lines {
+                let lower = line.lowercased()
+                let hasMarker = lower.contains("€") || lower.contains("$") || lower.contains("£")
+                    || lower.firstMatch(of: #/\b(lei|ron|eur|euro|usd|gbp)\b/#) != nil
+                guard hasMarker, line.firstMatch(of: #/\d+[.,]\d{2}\b/#) != nil,
+                      let amount = largestAmount(in: line) else { continue }
+                return (amount, currency(in: lower))
+            }
+            return nil
+        }
+        return scan(strong) ?? scan(weak) ?? scanCurrencyLines()
     }
 
     private static func currency(in lower: String) -> String {

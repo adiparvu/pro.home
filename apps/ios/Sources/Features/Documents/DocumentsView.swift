@@ -18,6 +18,10 @@ struct DocumentsView: View {
     // Bumped when a favorite toggles so the (UserDefaults-backed) filter/badges refresh.
     @State private var favRefresh = 0
     @State private var showReview = false
+    // Scan as a first-rank action: the header scanner feeds its result into
+    // the add sheet, so a scanned paper arrives with PDF + OCR prefill set.
+    @State private var showScanner = false
+    @State private var pendingScan: DocumentScanResult?
 
     private let categories = ["All", "Favorite", "warranty", "contract", "legal", "insurance",
                                "certificate", "manual", "invoice", "permit", "tax", "utility",
@@ -140,6 +144,24 @@ struct DocumentsView: View {
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))
                         .frame(width: 0.5, height: 18)
+                    if DocumentScannerView.isSupported {
+                        Button {
+                            if propertyService.primary == nil {
+                                errorToast = "Please set up your property first in Settings."
+                            } else {
+                                showScanner = true
+                            }
+                        } label: {
+                            Image(systemName: "doc.viewfinder")
+                                .font(AppFont.subheadline)
+                                .frame(width: 38, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("doc_scan_pdf"))
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.15))
+                            .frame(width: 0.5, height: 18)
+                    }
                     Button {
                         if propertyService.primary == nil {
                             errorToast = "Please set up your property first in Settings."
@@ -157,11 +179,24 @@ struct DocumentsView: View {
             }
         }
         .task { await documentService.load() }
-        .sheet(isPresented: $showAdd) {
+        .sheet(isPresented: $showAdd, onDismiss: { pendingScan = nil }) {
             if let propertyId = propertyService.primary?.id {
-                AddDocumentSheet(propertyId: propertyId) { await documentService.load() }
-                    .environment(documentService)
+                AddDocumentSheet(propertyId: propertyId, initialScan: pendingScan) {
+                    await documentService.load()
+                }
+                .environment(documentService)
             }
+        }
+        .fullScreenCover(isPresented: $showScanner, onDismiss: {
+            // Present the add sheet only once the scanner cover is fully gone —
+            // presenting while dismissing gets silently dropped by UIKit.
+            if pendingScan != nil { showAdd = true }
+        }) {
+            DocumentScannerView { result in
+                pendingScan = result   // nil on cancel → nothing opens
+                showScanner = false
+            }
+            .ignoresSafeArea()
         }
         .navigationDestination(item: $selectedDoc) { doc in
             DocumentDetailView(doc: doc).environment(documentService)
@@ -361,23 +396,14 @@ struct DocumentsView: View {
         }
     }
 
+    /// Filter chip labels. The two pseudo-filters have their own keys; every
+    /// real category goes through the one shared type-name mapping, so the
+    /// chips and the type badges can never disagree ("Factură" vs "Invoice").
     private func docCategoryName(_ cat: String) -> String {
-        let ro = Locale.appIsRomanian
         switch cat {
-        case "All":         return ro ? "Toate" : "All"
-        case "Favorite":    return ro ? "Favorite" : "Favorites"
-        case "warranty":    return ro ? "Garanție" : "Warranty"
-        case "contract":    return ro ? "Contract" : "Contract"
-        case "legal":       return ro ? "Juridic" : "Legal"
-        case "insurance":   return ro ? "Asigurare" : "Insurance"
-        case "certificate": return ro ? "Certificat" : "Certificate"
-        case "manual":      return ro ? "Manual" : "Manual"
-        case "invoice":     return ro ? "Factură" : "Invoice"
-        case "permit":      return ro ? "Autorizație" : "Permit"
-        case "tax":         return ro ? "Taxe" : "Tax"
-        case "utility":     return ro ? "Utilități" : "Utility"
-        case "photo":       return ro ? "Fotografie" : "Photo"
-        default:            return ro ? "Altele" : "Other"
+        case "All":      return String(localized: "doc_filter_all")
+        case "Favorite": return String(localized: "doc_filter_favorites")
+        default:         return DocumentTypeDisplay.name(cat)
         }
     }
 
@@ -508,7 +534,7 @@ struct DocumentRow: View {
                             }
                         }
                         HStack(spacing: 8) {
-                            Text(LocalizedStringKey(doc.category.capitalized))
+                            Text(DocumentTypeDisplay.name(doc.category))
                                 .font(AppFont.caption2)
                                 .foregroundStyle(categoryColor.opacity(0.8))
                                 .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
@@ -518,12 +544,19 @@ struct DocumentRow: View {
                                     .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             }
                         }
-                        if let expiry = doc.expiresDisplay {
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar").font(AppFont.scaled(10))
-                                Text("Expires \(expiry)").font(AppFont.scaled(11))
+                        // Expiry, made visible: inside 30 days it becomes a
+                        // colored chip (danger within 7 / after expiry);
+                        // further out, the plain dated line as before.
+                        if let days = doc.daysUntilExpiry {
+                            if days <= 30 {
+                                DocumentExpiryChip(days: days)
+                            } else if let expiry = doc.expiresDisplay {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "calendar").font(AppFont.scaled(10))
+                                    Text("Expires \(expiry)").font(AppFont.scaled(11))
+                                }
+                                .foregroundStyle(Color.primary.opacity(0.4))
                             }
-                            .foregroundStyle(doc.isExpiringSoon ? .orange : Color.primary.opacity(0.4))
                         }
                     }
 
@@ -582,5 +615,39 @@ struct DocumentRow: View {
         case "photo":       return .pink
         default:            return .white
         }
+    }
+}
+
+// MARK: - Expiry chip
+//
+// The visible countdown a document with expires_at deserves (the backend has
+// notified from it since migration 111 — the UI now shows it too). Rendered on
+// the list row and the detail header ONLY when it means something: within 30
+// days (warning), within 7 days or already past (danger). No expiry date, or a
+// far-away one → no chip.
+struct DocumentExpiryChip: View {
+    /// Whole calendar days until expiry (negative = expired). See
+    /// `DocumentModel.daysUntilExpiry`.
+    let days: Int
+
+    private var tint: Color { days <= 7 ? .brandDanger : .brandWarning }
+
+    private var label: String {
+        if days < 0 { return String(localized: "doc_exp_chip_expired") }
+        if days == 0 { return String(localized: "doc_exp_chip_today") }
+        if days == 1 { return String(localized: "doc_exp_chip_tomorrow") }
+        return String(format: String(localized: "doc_exp_chip_days"), Int64(days))
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: days < 0 ? "exclamationmark.triangle.fill" : "calendar.badge.exclamationmark")
+                .font(AppFont.scaled(10))
+            Text(label).font(AppFont.scaled(11, weight: .medium))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 2)
+        .background(tint.opacity(0.14), in: Capsule())
+        .accessibilityLabel(Text(label))
     }
 }

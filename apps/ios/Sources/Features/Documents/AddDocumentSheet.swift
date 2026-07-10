@@ -6,6 +6,9 @@ import UniformTypeIdentifiers
 
 struct AddDocumentSheet: View {
     let propertyId: UUID
+    /// A scan captured before this sheet opened (the list header's "Scan"
+    /// entry): applied once on appear, exactly as an in-sheet scan would be.
+    var initialScan: DocumentScanResult? = nil
     let onSaved: () async -> Void
 
     @Environment(DocumentService.self) private var documentService
@@ -119,7 +122,7 @@ struct AddDocumentSheet: View {
                                 Spacer()
                                 Picker("", selection: $category) {
                                     ForEach(categories, id: \.self) { c in
-                                        Text(LocalizedStringKey(c.capitalized)).tag(c)
+                                        Text(DocumentTypeDisplay.name(c)).tag(c)
                                     }
                                 }
                                 .tint(Color.primary.opacity(AppOpacity.emphasis))
@@ -157,7 +160,10 @@ struct AddDocumentSheet: View {
 
                         shareSection
         }
-        .task { if familyService.members.isEmpty { await familyService.load() } }
+        .task {
+            if let scan = initialScan, pickedFileData == nil { applyScan(scan) }
+            if familyService.members.isEmpty { await familyService.load() }
+        }
         .fileImporter(
                 isPresented: $showFilePicker,
                 allowedContentTypes: [.pdf, .jpeg, .png, .webP, .heic, .plainText, .data],
@@ -385,7 +391,7 @@ struct AddDocumentSheet: View {
     /// built strictly from values the model returned, never fabricated.
     private func smartScanHeadline(_ ex: DocumentAIExtraction) -> String {
         var parts: [String] = []
-        if let type = ex.documentType ?? ex.mappedCategory?.capitalized {
+        if let type = ex.documentType ?? ex.mappedCategory.map({ DocumentTypeDisplay.name($0) }) {
             parts.append(ex.issuer.map { "\(type) \($0)" } ?? type)
         } else if let issuer = ex.issuer {
             parts.append(issuer)
@@ -503,8 +509,36 @@ struct AddDocumentSheet: View {
             if name.isEmpty { name = url.deletingPathExtension().lastPathComponent }
             let ext = url.pathExtension.lowercased()
             pickedMimeType = UTType(filenameExtension: ext)?.preferredMIMEType ?? "application/octet-stream"
+            // OCR autofill: an attached PDF or image runs the same on-device
+            // Vision pass a scan does, and its findings land as SUGGESTIONS in
+            // still-empty fields only (the sparkles review banner announces
+            // them; nothing typed by hand is ever overwritten). If nothing is
+            // extracted, nothing appears.
+            extractFromAttachment(data: data, mimeType: pickedMimeType)
         case .failure(let err):
             error = err.localizedDescription
+        }
+    }
+
+    /// Runs Vision over an attached PDF (first pages rendered via PDFKit) or
+    /// image, then routes the recognized lines through the shared prefill.
+    private func extractFromAttachment(data: Data, mimeType: String) {
+        let isPDF = mimeType == "application/pdf"
+        let isImage = mimeType.hasPrefix("image/")
+        guard isPDF || isImage else { return }
+        isScanning = true
+        Task {
+            defer { isScanning = false }
+            let lines: [String]
+            if isPDF {
+                lines = await DocumentOCR.recognizePDF(data)
+            } else if let image = UIImage(data: data) {
+                lines = await DocumentOCR.recognize(image)
+            } else {
+                return
+            }
+            guard !lines.isEmpty else { return }
+            applyPrefill(from: lines)
         }
     }
 

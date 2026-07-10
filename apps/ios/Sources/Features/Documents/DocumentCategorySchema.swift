@@ -302,6 +302,15 @@ enum DocPriority {
         default:          return .secondary
         }
     }
+    /// Localized plain String — for value renderers (history diffs, rows).
+    static func text(_ p: String) -> String {
+        switch p {
+        case "important": return String(localized: "doc_prio_important")
+        case "critical":  return String(localized: "doc_prio_critical")
+        case "urgent":    return String(localized: "doc_prio_urgent")
+        default:          return String(localized: "doc_prio_normal")
+        }
+    }
     static func isCritical(_ p: String) -> Bool { p == "critical" || p == "urgent" }
 }
 

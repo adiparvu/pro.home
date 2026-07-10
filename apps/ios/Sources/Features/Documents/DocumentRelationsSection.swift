@@ -95,7 +95,17 @@ struct DocumentRelationsSection: View {
                 if service.isLoading && service.links.isEmpty {
                     loadingRow
                 } else if service.links.isEmpty {
-                    emptyState("link.badge.plus", "doc_rel_none_linked")
+                    // Guided, not passive: the empty state offers the same
+                    // pickers the "+" menu opens, one tap away.
+                    if readOnly {
+                        emptyState("link.badge.plus", "doc_rel_none_linked")
+                    } else {
+                        guidedEmpty("link.badge.plus", "doc_rel_none_linked", actions: [
+                            (DocumentTargetKind.element.icon, "doc_rel_cta_element", { pickingKind = .element }),
+                            (DocumentTargetKind.appliance.icon, "doc_rel_cta_appliance", { pickingKind = .appliance }),
+                            (DocumentTargetKind.room.icon, "doc_rel_cta_room", { pickingKind = .room }),
+                        ])
+                    }
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(service.links.enumerated()), id: \.element.id) { idx, link in
@@ -175,7 +185,13 @@ struct DocumentRelationsSection: View {
 
             GlassCard {
                 if relatedRows.isEmpty {
-                    emptyState("doc.on.doc", "doc_rel_none_related")
+                    if readOnly {
+                        emptyState("doc.on.doc", "doc_rel_none_related")
+                    } else {
+                        guidedEmpty("doc.on.doc", "doc_rel_none_related", actions: [
+                            ("doc.on.doc.fill", "doc_rel_cta_related", { showAddRelated = true }),
+                        ])
+                    }
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(relatedRows.enumerated()), id: \.element.id) { idx, row in
@@ -257,6 +273,45 @@ struct DocumentRelationsSection: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.lg)
+    }
+
+    /// The empty state that helps: the caption plus direct, tappable routes
+    /// into the existing linking pickers (only for kinds that really exist —
+    /// nothing here fabricates a flow the app doesn't have).
+    private func guidedEmpty(_ icon: String, _ text: LocalizedStringKey,
+                             actions: [(icon: String, title: LocalizedStringKey, run: () -> Void)]) -> some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 6) {
+                Image(systemName: icon).font(AppFont.scaled(22)).foregroundStyle(Color.primary.opacity(0.25))
+                Text(text).font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .multilineTextAlignment(.center)
+            }
+            VStack(spacing: 6) {
+                ForEach(Array(actions.enumerated()), id: \.offset) { _, action in
+                    Button {
+                        HapticFeedback.selection()
+                        action.run()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: action.icon).font(AppFont.scaled(13)).frame(width: 20)
+                            Text(action.title).font(AppFont.scaled(13, weight: .medium))
+                            Spacer()
+                            Image(systemName: "chevron.right").font(AppFont.scaled(10))
+                                .foregroundStyle(Color.accentColor.opacity(0.5))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
+                        .background(Color.accentColor.opacity(0.10),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.lg)
     }
 
     private var loadingRow: some View {
