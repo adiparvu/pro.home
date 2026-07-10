@@ -232,15 +232,16 @@ struct ChatComposerBar<Accessory: View>: View {
         .accessibilityLabel(Text("Send"))
     }
 
-    // iMessage-style: a plain dictation glyph inside the field, no chrome —
-    // tap to start recording; the pill becomes the recording surface.
+    // iMessage-style: the dictation waveform glyph (vertical bars) inside the
+    // field, no chrome — tap to start recording; the pill becomes the
+    // recording surface.
     private var micButton: some View {
         Button {
             focused.wrappedValue = false
             audioRecorder.start()
             HapticFeedback.impact(.medium)
         } label: {
-            Image(systemName: "mic.fill")
+            Image(systemName: "waveform")
                 .font(AppFont.scaled(17, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(width: 28, height: 28)
