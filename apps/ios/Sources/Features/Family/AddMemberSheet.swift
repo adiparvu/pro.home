@@ -1,4 +1,5 @@
 import SwiftUI
+import ContactsUI
 
 // MARK: - Add member (rebuilt)
 //
@@ -43,6 +44,9 @@ struct AddFamilyMemberSheet: View {
     @State private var familyVariant = "member"
     @State private var showRoleInfo = false
 
+    // Contacts import
+    @State private var showContactPicker = false
+
     // More (collapsed by default)
     @State private var showMore = false
     @State private var includeBirthday = false
@@ -64,9 +68,8 @@ struct AddFamilyMemberSheet: View {
     private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
 
     private var emailIsValid: Bool {
-        // Light-weight sanity check; the server still validates properly.
-        trimmedEmail.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#,
-                           options: .regularExpression) != nil
+        // One shared authority (EmailFormat) with the tenant and edit flows.
+        EmailFormat.isValid(trimmedEmail)
     }
     /// Empty is fine (e-mail is optional); non-empty must look like an address.
     private var emailFieldOK: Bool { trimmedEmail.isEmpty || emailIsValid }
@@ -117,6 +120,15 @@ struct AddFamilyMemberSheet: View {
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
             }
+            .sheet(isPresented: $showContactPicker) {
+                MemberContactPicker { picked in
+                    applyImportedContact(picked)
+                    showContactPicker = false
+                } onCancel: {
+                    showContactPicker = false
+                }
+                .ignoresSafeArea()
+            }
             .sheet(isPresented: $showRoleInfo) {
                 RolePermissionsSheet(highlighted: role)
             }
@@ -135,7 +147,7 @@ struct AddFamilyMemberSheet: View {
 
     private func applyPreselectedRole() {
         switch preselectedRole {
-        case "partner", "member", "child":
+        case "partner", "member", "teen", "child":
             roleCard = .family
             familyVariant = preselectedRole ?? "member"
         case "owner":
@@ -170,7 +182,41 @@ struct AddFamilyMemberSheet: View {
                         .textContentType(.familyName)
                 }
             }
+            importFromContactsButton
         }
+    }
+
+    /// One tap into the system contact picker; the selection pre-fills the
+    /// name and contact fields (the user still reviews before saving).
+    private var importFromContactsButton: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            showContactPicker = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .font(AppFont.captionEmphasis)
+                Text("mem_import_contacts")
+                    .font(AppFont.captionEmphasis)
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
+            .background(Color.accentColor.opacity(0.1), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Fills the form from a picked address-book card. Only non-empty fields
+    /// overwrite, so importing a phone-only contact never wipes a typed e-mail.
+    private func applyImportedContact(_ contact: ImportedContact) {
+        withAnimation(revealAnimation) {
+            if !contact.firstName.isEmpty { firstName = contact.firstName }
+            if !contact.lastName.isEmpty { lastName = contact.lastName }
+            if let mail = contact.email, !mail.isEmpty { email = mail }
+            if let tel = contact.phone, !tel.isEmpty { phone = tel }
+        }
+        HapticFeedback.success()
     }
 
     private var avatarColor: Color { Color(hex: color) ?? .blue }
@@ -339,14 +385,21 @@ struct AddFamilyMemberSheet: View {
         }
     }
 
-    /// The family card fans out into who exactly: partner, adult or child —
-    /// each with the same honest one-liner the permissions sheet uses.
+    /// The family card fans out into who exactly: partner, adult, teen or
+    /// child — each with the same honest one-liner the permissions sheet uses.
+    /// Tags are the exact role strings the backend accepts at invite time
+    /// (send-invite-email's mapRole: "partner" → partner, "member" →
+    /// family_adult, "teen" → family_teen, "child" → family_child).
     private var familyVariantPicker: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                variantChip("Partner", icon: "heart.fill", tag: "partner")
-                variantChip("Adult", icon: "person.fill", tag: "member")
-                variantChip("Child", icon: "figure.child", tag: "child")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.sm) {
+                    variantChip("Partner", icon: "heart.fill", tag: "partner")
+                    variantChip("Adult", icon: "person.fill", tag: "member")
+                    variantChip("Teen", icon: "figure.wave", tag: "teen")
+                    variantChip("Child", icon: "figure.child", tag: "child")
+                }
+                .padding(.horizontal, AppSpacing.xxs)
             }
             if let desc = kRoleDescriptions[familyVariant] {
                 Text(LocalizedStringKey(desc))
@@ -354,29 +407,18 @@ struct AddFamilyMemberSheet: View {
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .padding(.leading, AppSpacing.xxs)
                     .fixedSize(horizontal: false, vertical: true)
+                    .id(familyVariant)
+                    .transition(.opacity)
             }
         }
     }
 
-    private func variantChip(_ title: LocalizedStringKey, icon: String, tag: String) -> some View {
-        let selected = familyVariant == tag
-        return Button {
-            HapticFeedback.selection()
+    private func variantChip(_ title: String.LocalizationValue, icon: String, tag: String) -> some View {
+        GlassFilterChip(label: String(localized: title),
+                        systemImage: icon,
+                        isSelected: familyVariant == tag) {
             withAnimation(selectSpring) { familyVariant = tag }
-        } label: {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: icon).font(AppFont.label)
-                Text(title).font(AppFont.captionEmphasis)
-            }
-            .foregroundStyle(selected ? Color.white : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
-            .frame(maxWidth: .infinity)
-            .background(selected ? AnyShapeStyle(Color.accentColor)
-                                 : AnyShapeStyle(Color.primary.opacity(0.05)),
-                        in: Capsule())
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 
     // MARK: 4. More — birthday + social networks, collapsed by default
@@ -623,6 +665,56 @@ private enum MemberRoleCard: String, CaseIterable, Identifiable {
         case .tenant: return Color.brandWarning
         case .worker: return Color.brandTeal
         case .guest:  return Color.brandSkyBlue
+        }
+    }
+}
+
+// MARK: - Contacts import (system picker bridge)
+
+/// The fields lifted off a picked address-book card.
+struct ImportedContact {
+    let firstName: String
+    let lastName: String
+    let email: String?
+    let phone: String?
+}
+
+/// System contact picker (CNContactPickerViewController) that hands back the
+/// structured fields the add-member form needs. The chat's ChatContactPicker
+/// returns a pre-formatted "name | phone" string for message composition, so
+/// this form needs its own bridge to keep first/last name and e-mail intact.
+/// The picker runs out-of-process — no Contacts permission prompt.
+struct MemberContactPicker: UIViewControllerRepresentable {
+    let onPick: (ImportedContact) -> Void
+    let onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> CNContactPickerViewController {
+        let vc = CNContactPickerViewController()
+        vc.delegate = context.coordinator
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: CNContactPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, CNContactPickerDelegate {
+        let parent: MemberContactPicker
+        init(_ parent: MemberContactPicker) { self.parent = parent }
+
+        func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
+            parent.onPick(ImportedContact(
+                firstName: contact.givenName.trimmingCharacters(in: .whitespaces),
+                lastName: contact.familyName.trimmingCharacters(in: .whitespaces),
+                email: (contact.emailAddresses.first?.value as String?)?
+                    .trimmingCharacters(in: .whitespaces),
+                phone: contact.phoneNumbers.first?.value.stringValue
+                    .trimmingCharacters(in: .whitespaces)
+            ))
+        }
+
+        func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+            parent.onCancel()
         }
     }
 }

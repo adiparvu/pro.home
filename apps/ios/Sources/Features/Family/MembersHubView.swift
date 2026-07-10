@@ -6,10 +6,22 @@ import SwiftUI
 // supervision), non-family members (tenants, workers, friends) and the
 // invitation audit trail (who was invited, when, and for how long the link is
 // still valid). Replaces the separate "Family Members" + "Supervision" rows.
+//
+// The Family/Others lists merge TWO real sources by auth user id:
+//  - property_members + profiles (AccountMemberService): everyone with an
+//    ACTIVE account — including the owner, who never gets a family_members
+//    row of their own (creating the property grants membership directly).
+//    This is why a partner's device used to show no owner here at all.
+//  - family_members (FamilyService): the hand-added roster, with or without
+//    a linked account.
+// An account linked to a roster row renders ONCE (live profile name, roster
+// contact details). The owner sorts first; your own row wears a "You · role"
+// badge; a green dot marks members online right now (PresenceService).
 
 struct MembersHubView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(PresenceService.self) private var presenceService
 
     @State private var invitationService = InvitationService()
     @State private var accountService = AccountMemberService()
@@ -18,6 +30,7 @@ struct MembersHubView: View {
     @State private var showAdd = false
     @State private var editingMember: FamilyMember?
     @State private var reviewingAccount: AccountMember?
+    @State private var showRevokedHistory = false
 
     enum Segment: String, CaseIterable, Identifiable {
         case family, others, accounts, invitations
@@ -43,20 +56,53 @@ struct MembersHubView: View {
     // Tenants are NOT family — they belong to the Tenants page and to the
     // "others" section here (tenants, workers, friends), never to the
     // family list.
-    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child"]
+    private static let familyRoles: Set<String> = ["owner", "partner", "member", "teen", "child"]
 
-    private var familyMembers: [FamilyMember] {
-        familyService.members.filter { Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }
-    }
-    private var otherMembers: [FamilyMember] {
-        familyService.members.filter { !Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }
-    }
     private var children: [FamilyMember] {
         familyService.members.filter { $0.role == "child" }
     }
 
-    private func matchesMemberSearch(_ member: FamilyMember) -> Bool {
-        member.name.matchesSearch(searchText) || (member.email ?? "").matchesSearch(searchText)
+    // MARK: Unified people (accounts ∪ roster, deduped by user id)
+
+    private var familyPeople: [HubPerson] { people(family: true) }
+    private var otherPeople: [HubPerson] { people(family: false) }
+
+    private func people(family: Bool) -> [HubPerson] {
+        let myId = accountService.currentUserId
+        var rosterByUserId: [UUID: FamilyMember] = [:]
+        for m in familyService.members {
+            if let uid = m.userId { rosterByUserId[uid] = m }
+        }
+
+        var linkedUserIds: Set<UUID> = []
+        var result: [HubPerson] = []
+
+        // 1. Active accounts, split family/outsider by the typed property
+        //    role — the same gate RLS uses (PropertyRole.isFamilyMember).
+        for account in accountService.members where account.status == "active" {
+            guard let role = PropertyRole.resolve(account.role),
+                  role.isFamilyMember == family else { continue }
+            linkedUserIds.insert(account.userId)
+            result.append(HubPerson(account: account,
+                                    profile: accountService.profiles[account.userId],
+                                    member: rosterByUserId[account.userId],
+                                    isSelf: account.userId == myId))
+        }
+
+        // 2. Roster rows without an active account behind them.
+        for m in familyService.members {
+            guard Self.familyRoles.contains(m.role) == family else { continue }
+            if let uid = m.userId, linkedUserIds.contains(uid) { continue }
+            result.append(HubPerson(account: nil, profile: nil, member: m,
+                                    isSelf: m.userId != nil && m.userId == myId))
+        }
+
+        return result
+            .filter { $0.matchesSearch(searchText) }
+            .sorted { a, b in
+                if a.sortRank != b.sortRank { return a.sortRank < b.sortRank }
+                return a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
+            }
     }
 
     private var filteredAccounts: [AccountMember] {
@@ -95,7 +141,8 @@ struct MembersHubView: View {
             if let pid = propertyService.primary?.id {
                 async let a: Void = invitationService.load(propertyId: pid)
                 async let b: Void = accountService.load(propertyId: pid)
-                _ = await (a, b)
+                async let c: Void = presenceService.load(propertyId: pid)
+                _ = await (a, b, c)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -142,7 +189,10 @@ struct MembersHubView: View {
             if let pid = propertyService.primary?.id {
                 async let a: Void = invitationService.load(propertyId: pid)
                 async let b: Void = accountService.load(propertyId: pid)
-                _ = await (a, b)
+                async let c: Void = presenceService.load(propertyId: pid)
+                _ = await (a, b, c)
+                // Idempotent — live join/leave flips the green dots instantly.
+                await presenceService.subscribe(propertyId: pid)
             }
         }
     }
@@ -213,28 +263,25 @@ struct MembersHubView: View {
                 .buttonStyle(.plain)
             }
 
-            memberList(familyMembers, empty: "No family members yet")
+            personList(familyPeople, empty: "No family members yet")
         }
     }
 
     // MARK: Others segment
 
     private var othersSection: some View {
-        memberList(otherMembers, empty: "No tenants, workers or friends yet")
+        personList(otherPeople, empty: "No tenants, workers or friends yet")
     }
 
     @ViewBuilder
-    private func memberList(_ members: [FamilyMember], empty: LocalizedStringKey) -> some View {
-        if members.isEmpty {
+    private func personList(_ people: [HubPerson], empty: LocalizedStringKey) -> some View {
+        if people.isEmpty {
             emptyState(icon: "person.crop.circle.badge.questionmark", text: empty)
         } else {
             VStack(spacing: 0) {
-                ForEach(Array(members.enumerated()), id: \.element.id) { idx, member in
-                    Button { editingMember = member } label: {
-                        MemberHubRow(member: member)
-                    }
-                    .buttonStyle(.plain)
-                    if idx < members.count - 1 {
+                ForEach(Array(people.enumerated()), id: \.element.id) { idx, person in
+                    personRow(person)
+                    if idx < people.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05))
                             .frame(height: 0.5).padding(.leading, 66)
                     }
@@ -242,6 +289,71 @@ struct MembersHubView: View {
             }
             .liquidGlass(cornerRadius: AppRadius.lg)
         }
+    }
+
+    @ViewBuilder
+    private func personRow(_ person: HubPerson) -> some View {
+        let row = PersonHubRow(person: person, isOnline: isOnline(person))
+        if person.isSelf {
+            // Your own row is informational — profile/account editing lives in
+            // Settings, so it deliberately isn't a button.
+            row
+        } else if let member = person.member {
+            Button { editingMember = member } label: { row }
+                .buttonStyle(.plain)
+                .contextMenu { personMenu(person) }
+        } else if let account = person.account {
+            Button { reviewingAccount = account } label: { row }
+                .buttonStyle(.plain)
+                .contextMenu { personMenu(person) }
+        } else {
+            row
+        }
+    }
+
+    private func isOnline(_ person: HubPerson) -> Bool {
+        guard let uid = person.userId else { return false }
+        return presenceService.status(userId: uid) == .online
+    }
+
+    @ViewBuilder
+    private func personMenu(_ person: HubPerson) -> some View {
+        if person.chatTarget != nil {
+            Button {
+                openChat(with: person)
+            } label: {
+                Label("mem_send_message", systemImage: "bubble.left.fill")
+            }
+        }
+        if let phone = person.phone {
+            Button {
+                call(phone)
+            } label: {
+                Label("Call", systemImage: "phone.fill")
+            }
+        }
+        if let account = person.account {
+            Button { reviewingAccount = account } label: {
+                Label("Review account", systemImage: "person.text.rectangle")
+            }
+        }
+    }
+
+    /// Lands on the chat tab with the DM target persisted — the exact route a
+    /// tapped chat push takes (ChatNotificationTarget → .prvioOpenChat →
+    /// MainTabView switches tab → ConversationsView drains and opens the
+    /// thread), so Members needs no chat-stack plumbing of its own.
+    private func openChat(with person: HubPerson) {
+        guard let target = person.chatTarget else { return }
+        HapticFeedback.impact(.light)
+        ChatNotificationTarget.store(target)
+        NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
+    }
+
+    private func call(_ phone: String) {
+        let dial = phone.filter { $0.isNumber || $0 == "+" }
+        guard !dial.isEmpty, let url = URL(string: "tel://\(dial)") else { return }
+        UIApplication.shared.open(url)
     }
 
     // MARK: Accounts segment
@@ -317,6 +429,16 @@ struct MembersHubView: View {
 
     // MARK: Invitations segment
 
+    private var pendingInvitations: [MemberInvitation] {
+        filteredInvitations.filter { !$0.accepted && !$0.isRevoked }
+    }
+    private var acceptedInvitations: [MemberInvitation] {
+        filteredInvitations.filter { $0.accepted && !$0.isRevoked }
+    }
+    private var revokedInvitations: [MemberInvitation] {
+        filteredInvitations.filter { $0.isRevoked }
+    }
+
     @ViewBuilder
     private var invitationsSection: some View {
         if invitationService.isLoading && invitationService.invitations.isEmpty {
@@ -327,14 +449,79 @@ struct MembersHubView: View {
         } else if !searchText.isEmpty && filteredInvitations.isEmpty {
             EmptyStateView(icon: "magnifyingglass", title: "No results")
         } else {
-            VStack(spacing: 12) {
-                ForEach(filteredInvitations) { inv in
-                    InvitationRow(invitation: inv,
-                                  onResend: { resend(inv) },
-                                  onRevoke: { revoke(inv) })
+            VStack(alignment: .leading, spacing: 12) {
+                if !pendingInvitations.isEmpty {
+                    inviteSectionHeader("mem_invites_pending", count: pendingInvitations.count)
+                    ForEach(pendingInvitations) { inv in
+                        InvitationRow(invitation: inv,
+                                      onResend: { resend(inv) },
+                                      onRevoke: { revoke(inv) })
+                    }
+                }
+
+                if !acceptedInvitations.isEmpty {
+                    inviteSectionHeader("mem_invites_accepted", count: acceptedInvitations.count)
+                    ForEach(acceptedInvitations) { inv in
+                        InvitationRow(invitation: inv)
+                    }
+                }
+
+                if !revokedInvitations.isEmpty {
+                    revokedHistoryToggle
+                    if showRevokedHistory {
+                        ForEach(revokedInvitations) { inv in
+                            InvitationRow(invitation: inv)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
             }
         }
+    }
+
+    private func inviteSectionHeader(_ title: LocalizedStringKey, count: Int) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            Text(verbatim: "\(count)")
+                .font(AppFont.label).monospacedDigit()
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+        }
+        .padding(.leading, AppSpacing.xxs)
+        .padding(.top, AppSpacing.xs)
+    }
+
+    /// Revoked invitations are an audit trail, not daily business — folded
+    /// behind one honest "show history" toggle.
+    private var revokedHistoryToggle: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            withAnimation(.smooth(duration: 0.3)) { showRevokedHistory.toggle() }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                Text("mem_show_history")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                Text(verbatim: "\(revokedInvitations.count)")
+                    .font(AppFont.label).monospacedDigit()
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                Spacer()
+                Image(systemName: "chevron.down")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+                    .rotationEffect(.degrees(showRevokedHistory ? 180 : 0))
+            }
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .background(Color.primary.opacity(0.04),
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(showRevokedHistory ? [.isSelected] : [])
     }
 
     private func resend(_ inv: MemberInvitation) {
@@ -371,38 +558,176 @@ struct MembersHubView: View {
     }
 }
 
-// MARK: - Member row
+// MARK: - Unified person (account ∪ roster)
 
-private struct MemberHubRow: View {
-    let member: FamilyMember
+/// One human in the Family/Others lists: an active account (property_members
+/// + live profile), a hand-added roster row (family_members), or both merged
+/// by auth user id. Display data prefers the live profile; contact details
+/// prefer the roster (that's where hand-entered phones live).
+private struct HubPerson: Identifiable {
+    let account: AccountMember?
+    let profile: AccountProfile?
+    let member: FamilyMember?
+    let isSelf: Bool
+
+    var id: String {
+        if let account { return account.userId.uuidString }
+        return "roster-" + (member?.id.uuidString ?? "")
+    }
+
+    var userId: UUID? { account?.userId ?? member?.userId }
+
+    var displayName: String {
+        if let p = profile, !p.bestName.isEmpty { return p.bestName }
+        return member?.name ?? ""
+    }
+
+    var email: String? {
+        let e = member?.email ?? profile?.email
+        return (e?.isEmpty == false) ? e : nil
+    }
+
+    var phone: String? {
+        let p = member?.phone ?? profile?.phone
+        return (p?.isEmpty == false) ? p : nil
+    }
+
+    var isOwner: Bool { account?.role == "owner" || member?.role == "owner" }
+
+    /// When they joined: the account's joined_at, else the roster row's
+    /// created_at. nil (unparseable/missing) simply hides the subtitle —
+    /// only real fields are shown.
+    var joinedDate: Date? {
+        if let d = account?.joinedDate { return d }
+        guard let created = member?.createdAt else { return nil }
+        return ISODate.date(from: created)
+    }
+
+    var roleLabel: LocalizedStringKey {
+        if let account { return accountRoleLabel(account.role) }
+        let role = member?.role ?? ""
+        return LocalizedStringKey(kRoleLabels[role] ?? role.capitalized)
+    }
+
+    var roleColor: Color { member?.swiftColor ?? Color.accentColor }
+
+    /// Destination for "Send message": the durable auth user id when there is
+    /// one (ConversationsView hydrates a ChatPeer from it), else the roster
+    /// row id (its legacy member-DM path). nil for yourself — no self-DMs.
+    var chatTarget: String? {
+        guard !isSelf else { return nil }
+        if let uid = userId { return uid.uuidString }
+        return member?.id.uuidString
+    }
+
+    /// Owner first, then yourself, then other account holders, then
+    /// roster-only rows — each group alphabetized by the caller.
+    var sortRank: Int {
+        if isOwner { return 0 }
+        if isSelf { return 1 }
+        if account != nil { return 2 }
+        return 3
+    }
+
+    func matchesSearch(_ text: String) -> Bool {
+        displayName.matchesSearch(text) || (email ?? "").matchesSearch(text)
+    }
+}
+
+// MARK: - Person row
+
+private struct PersonHubRow: View {
+    let person: HubPerson
+    let isOnline: Bool
 
     var body: some View {
         HStack(spacing: 12) {
-            MemberAvatar(member: member, size: 42)
+            avatar
             VStack(alignment: .leading, spacing: 2) {
-                Text(member.name)
+                Text(person.displayName)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
-                if let email = member.email, !email.isEmpty {
-                    Text(email)
-                        .font(AppFont.scaled(12))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        .lineLimit(1)
-                }
+                subtitle
             }
             Spacer()
-            Text(LocalizedStringKey(kRoleLabels[member.role] ?? member.role.capitalized))
-                .font(AppFont.label)
-                .foregroundStyle(member.swiftColor)
-                .padding(.horizontal, 9).padding(.vertical, 4)
-                .background(member.swiftColor.opacity(0.14), in: Capsule())
-            Image(systemName: "chevron.right")
-                .font(AppFont.captionStrong)
-                .foregroundStyle(Color.primary.opacity(0.25))
+            roleBadge
+            if !person.isSelf {
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var avatar: some View {
+        avatarImage
+            .overlay(alignment: .bottomTrailing) {
+                if isOnline {
+                    Circle()
+                        .fill(Color.brandSuccess)
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 2))
+                        .accessibilityLabel(Text("convo_online"))
+                }
+            }
+    }
+
+    @ViewBuilder private var avatarImage: some View {
+        if let member = person.member {
+            MemberAvatar(member: member, size: 42)
+        } else if let urlStr = person.profile?.avatarUrl, let url = URL(string: urlStr) {
+            StorageImage(url: url) { phase in
+                if case .success(let img) = phase { img.resizable().scaledToFill() }
+                else { initialsCircle }
+            }
+            .frame(width: 42, height: 42)
+            .clipShape(Circle())
+        } else {
+            initialsCircle.frame(width: 42, height: 42)
+        }
+    }
+
+    private var initialsCircle: some View {
+        ZStack {
+            Circle().fill(Color.accentColor.opacity(0.18))
+            Text(String(person.displayName.prefix(2)).uppercased())
+                .font(AppFont.scaled(14, weight: .bold))
+                .foregroundStyle(Color.accentColor)
+        }
+    }
+
+    /// "member since <month year>" from real dates only; falls back to the
+    /// e-mail when there's no join date to show.
+    @ViewBuilder private var subtitle: some View {
+        if let joined = person.joinedDate {
+            Text("mem_member_since \(joined.formatted(.dateTime.month(.wide).year()))")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .lineLimit(1)
+        } else if let email = person.email {
+            Text(email)
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .lineLimit(1)
+        }
+    }
+
+    private var roleBadge: some View {
+        Group {
+            if person.isSelf {
+                Text("You") + Text(verbatim: " · ") + Text(person.roleLabel)
+            } else {
+                Text(person.roleLabel)
+            }
+        }
+        .font(AppFont.label)
+        .foregroundStyle(person.roleColor)
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(person.roleColor.opacity(0.14), in: Capsule())
     }
 }
 
@@ -410,15 +735,37 @@ private struct MemberHubRow: View {
 
 private struct InvitationRow: View {
     let invitation: MemberInvitation
-    let onResend: () -> Void
-    let onRevoke: () -> Void
+    var onResend: (() -> Void)? = nil
+    var onRevoke: (() -> Void)? = nil
 
     private var status: (text: LocalizedStringKey, color: Color) {
-        if invitation.isRevoked { return ("Revoked", .red) }
+        if invitation.isRevoked { return ("Revoked", Color.brandDanger) }
         if invitation.accepted { return ("Accepted", Color.brandSuccess) }
         if invitation.isExpired { return ("Expired", .gray) }
-        let d = max(invitation.daysLeft, 0)
-        return (d == 1 ? "Expires in 1 day" : "Expires in \(d) days", .orange)
+        return ("Pending", Color.brandWarning)
+    }
+
+    /// Days until the link dies, painted urgent (brandWarning) at ≤ 2 days.
+    @ViewBuilder private var expiryCountdown: some View {
+        if !invitation.accepted && !invitation.isRevoked && !invitation.isExpired {
+            let d = max(invitation.daysLeft, 0)
+            Label {
+                Group {
+                    if d == 0 {
+                        Text("mem_expires_today")
+                    } else if d == 1 {
+                        Text("Expires in 1 day")
+                    } else {
+                        Text("Expires in \(d) days")
+                    }
+                }
+                .font(AppFont.scaled(11, weight: d <= 2 ? .semibold : .regular))
+            } icon: {
+                Image(systemName: "hourglass").font(AppFont.scaled(10))
+            }
+            .foregroundStyle(d <= 2 ? Color.brandWarning
+                                    : Color.primary.opacity(AppOpacity.secondaryText))
+        }
     }
 
     var body: some View {
@@ -432,6 +779,11 @@ private struct InvitationRow: View {
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
+                    if invitation.accepted && !invitation.isRevoked {
+                        Text("mem_became_member")
+                            .font(AppFont.scaled(11))
+                            .foregroundStyle(Color.brandSuccess)
+                    }
                 }
                 Spacer()
                 Text(status.text)
@@ -453,9 +805,11 @@ private struct InvitationRow: View {
                     .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
+                expiryCountdown
+
                 Spacer()
 
-                if !invitation.accepted && !invitation.isRevoked {
+                if let onResend {
                     Button { onResend() } label: {
                         Text("Resend")
                             .font(AppFont.captionStrong)
@@ -463,7 +817,7 @@ private struct InvitationRow: View {
                     }
                     .buttonStyle(.plain)
                 }
-                if !invitation.isRevoked {
+                if let onRevoke {
                     Button(role: .destructive) { onRevoke() } label: {
                         Text("Revoke")
                             .font(AppFont.captionStrong)
@@ -496,6 +850,12 @@ struct EditMemberSheet: View {
     @State private var isSaving = false
     @State private var confirmDelete = false
     @State private var errorMessage: String?
+
+    /// Empty is fine (e-mail is optional); non-empty must pass the shared
+    /// EmailFormat authority — same rule as the add-member and tenant flows.
+    private var emailFieldOK: Bool {
+        email.trimmingCharacters(in: .whitespaces).isEmpty || EmailFormat.isValid(email)
+    }
 
     var body: some View {
         NavigationStack {
@@ -550,6 +910,20 @@ struct EditMemberSheet: View {
                         }
                         .liquidGlass(cornerRadius: AppRadius.lg)
 
+                        if !emailFieldOK {
+                            Label {
+                                Text("This e-mail address doesn't look valid")
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(Color.brandDanger)
+                            } icon: {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(Color.brandDanger)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, AppSpacing.xxs)
+                        }
+
                         if let err = errorMessage {
                             Text(err).font(AppFont.scaled(13)).foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
@@ -587,7 +961,9 @@ struct EditMemberSheet: View {
                         if isSaving { ProgressView().tint(.accentColor) }
                         else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
                     }
-                    .disabled(isSaving || name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(isSaving
+                              || name.trimmingCharacters(in: .whitespaces).isEmpty
+                              || !emailFieldOK)
                 }
             }
             .confirmationDialog("Remove this member?", isPresented: $confirmDelete, titleVisibility: .visible) {

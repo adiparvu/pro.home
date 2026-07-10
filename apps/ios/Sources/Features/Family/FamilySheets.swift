@@ -2,20 +2,21 @@ import SwiftUI
 
 // MARK: - Constants
 
-let kRoles = ["owner", "partner", "child", "member", "tenant", "worker", "guest"]
+let kRoles = ["owner", "partner", "member", "teen", "child", "tenant", "worker", "guest"]
 let kRoleLabels: [String: String] = [
-    "owner": "Owner", "partner": "Partner", "child": "Child",
+    "owner": "Owner", "partner": "Partner", "child": "Child", "teen": "Teen",
     "member": "Member", "tenant": "Tenant", "worker": "Worker", "guest": "Guest"
 ]
 let kRoleIcons: [String: String] = [
     "owner": "house.fill", "partner": "heart.fill", "child": "figure.child",
-    "member": "person.fill", "tenant": "key.fill", "worker": "hammer.fill",
-    "guest": "person.badge.clock"
+    "teen": "figure.wave", "member": "person.fill", "tenant": "key.fill",
+    "worker": "hammer.fill", "guest": "person.badge.clock"
 ]
 let kRoleDescriptions: [String: String] = [
     "owner":   "Full access to everything",
     "partner": "Full access, same as the owner",
     "member":  "Family adult — home, tasks, finances",
+    "teen":    "mem_role_teen_desc",
     "child":   "Limited access, with supervision",
     "tenant":  "Sees own tasks and shared bills",
     "worker":  "Sees only assigned tasks and chat",
@@ -23,6 +24,19 @@ let kRoleDescriptions: [String: String] = [
 ]
 let kColors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter"]
+
+// MARK: - E-mail sanity — the one client-side authority
+//
+// Shared by the add-member, tenant and edit-member flows so an invitation can
+// never be handed to something like "bb". Deliberately light-weight: the
+// server still validates properly; this only catches obvious non-addresses
+// before anything is created.
+enum EmailFormat {
+    static func isValid(_ raw: String) -> Bool {
+        raw.trimmingCharacters(in: .whitespaces)
+            .range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#, options: .regularExpression) != nil
+    }
+}
 
 // MARK: - Add Social Link sheet
 
@@ -142,6 +156,18 @@ struct RolePermissionsSheet: View {
                           "Analytics", "Property Report", "Tenants",
                           "Property Value", "Guest Mode",
                           "Members", "Integrations"]),
+        // Teens share the child feature set today (SettingsView.allowed treats
+        // .familyChild and .familyTeen identically) — they just aren't listed
+        // under Supervision. If the gating matrix ever splits them, split here.
+        RoleSpec(id: "teen",
+                 sees: ["Supplies", "Plants", "Deliveries", "Photo Journal",
+                        "Seasonal Checklists", "Chat"],
+                 hidden: ["My Property", "Documents", "Plans & 3D", "Finances",
+                          "Inventory", "Utilities", "Contractors", "Analytics",
+                          "Property Report", "Tenants", "Appliances",
+                          "Paint Colors", "Property Value", "Guest Mode",
+                          "Members", "Live Activities",
+                          "Floating Buttons", "NFC Keys", "Integrations"]),
         RoleSpec(id: "child",
                  sees: ["Supplies", "Plants", "Deliveries", "Photo Journal",
                         "Seasonal Checklists", "Chat"],

@@ -211,9 +211,8 @@ struct TenantFormSheet: View {
     private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
 
     private var emailIsValid: Bool {
-        // Light-weight sanity check; the server still validates properly.
-        let pattern = #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#
-        return trimmedEmail.range(of: pattern, options: .regularExpression) != nil
+        // One shared authority (EmailFormat) with the add-member and edit flows.
+        EmailFormat.isValid(trimmedEmail)
     }
 
     private func save() async {
