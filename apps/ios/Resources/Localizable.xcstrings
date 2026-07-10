@@ -71420,6 +71420,1638 @@
           }
         }
       }
+    },
+    "emg_address_copy_hint": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atinge ca să copiezi adresa"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to copy the address"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen, um die Adresse zu kopieren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez pour copier l'adresse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik om het adres te kopiëren"
+          }
+        }
+      }
+    },
+    "emg_address_copied": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiert"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copié"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gekopieerd"
+          }
+        }
+      }
+    },
+    "emg_address_a11y %@ %@": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresa proprietății: %1$@, %2$@. Atinge ca să o copiezi."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Property address: %1$@, %2$@. Tap to copy."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse der Immobilie: %1$@, %2$@. Zum Kopieren tippen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse du bien : %1$@, %2$@. Touchez pour copier."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres van de woning: %1$@, %2$@. Tik om te kopiëren."
+          }
+        }
+      }
+    },
+    "emg_alert_family": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertează familia"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert the family"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie alarmieren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerter la famille"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie waarschuwen"
+          }
+        }
+      }
+    },
+    "emg_alert_family_subtitle": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un mesaj instant în chatul familiei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One instant message to the family chat"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Sofortnachricht in den Familienchat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un message instantané dans la discussion familiale"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eén direct bericht in de familiechat"
+          }
+        }
+      }
+    },
+    "emg_alert_sending": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se trimite…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird gesendet…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoi en cours…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wordt verzonden…"
+          }
+        }
+      }
+    },
+    "emg_alert_sent": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familia a fost alertată ✓"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The family has been alerted ✓"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Familie wurde alarmiert ✓"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La famille a été alertée ✓"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De familie is gewaarschuwd ✓"
+          }
+        }
+      }
+    },
+    "emg_alert_again": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atinge ca să trimiți din nou"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to send again"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen, um erneut zu senden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez pour renvoyer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik om opnieuw te verzenden"
+          }
+        }
+      }
+    },
+    "emg_alert_failed": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimiterea a eșuat — încearcă din nou"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending failed — try again"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senden fehlgeschlagen — bitte erneut versuchen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec de l'envoi — réessayez"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzenden mislukt — probeer opnieuw"
+          }
+        }
+      }
+    },
+    "emg_alert_confirm_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertezi familia?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert the family?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie alarmieren?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerter la famille ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie waarschuwen?"
+          }
+        }
+      }
+    },
+    "emg_alert_confirm_msg %@": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se trimite instant în chatul familiei: „⚠️ Urgență la %@ — sunați-mă!\""
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends instantly to the family chat: “⚠️ Emergency at %@ — call me!”"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird sofort in den Familienchat gesendet: „⚠️ Notfall bei %@ — ruft mich an!“"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyé instantanément dans la discussion familiale : « ⚠️ Urgence à %@ — appelez-moi ! »"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wordt direct naar de familiechat gestuurd: “⚠️ Noodgeval bij %@ — bel me!”"
+          }
+        }
+      }
+    },
+    "emg_alert_confirm_send": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite alerta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send alert"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alarm senden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer l'alerte"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waarschuwing verzenden"
+          }
+        }
+      }
+    },
+    "emg_alert_message": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Urgență la %@ — sunați-mă!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Emergency at %@ — call me!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Notfall bei %@ — ruft mich an!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Urgence à %@ — appelez-moi !"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Noodgeval bij %@ — bel me!"
+          }
+        }
+      }
+    },
+    "emg_gas_edit_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Număr urgență gaz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gas emergency number"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gas-Notrufnummer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numéro d'urgence gaz"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noodnummer gas"
+          }
+        }
+      }
+    },
+    "emg_gas_edit_msg": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numărul apelat de cardul „Urgență gaz\" pentru această proprietate. Gol = revine la 0800-001122 (România)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The number the “Gas emergency” card dials for this property. Leave empty to reset to 0800-001122 (Romania)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Nummer, die die Karte „Gas-Notfall“ für diese Immobilie wählt. Leer lassen setzt auf 0800-001122 (Rumänien) zurück."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le numéro composé par la carte « Urgence gaz » pour ce bien. Vide = retour au 0800-001122 (Roumanie)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het nummer dat de kaart “Gasnoodgeval” voor deze woning belt. Leeg = terug naar 0800-001122 (Roemenië)."
+          }
+        }
+      }
+    },
+    "emg_gas_edit_ph": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Număr de telefon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phone number"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefonnummer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numéro de téléphone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefoonnummer"
+          }
+        }
+      }
+    },
+    "emg_guides_header": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce fac dacă…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do I do if…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was tun bei…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que faire en cas de…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat doe ik bij…"
+          }
+        }
+      }
+    },
+    "emg_place_photo_header": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        }
+      }
+    },
+    "emg_place_photo_camera": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fă o poză"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto aufnehmen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prendre une photo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak een foto"
+          }
+        }
+      }
+    },
+    "emg_place_photo_library": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alege din galerie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose from library"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus der Mediathek wählen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir dans la photothèque"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies uit bibliotheek"
+          }
+        }
+      }
+    },
+    "emg_place_photo_remove": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge fotografia"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto entfernen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer la photo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto verwijderen"
+          }
+        }
+      }
+    },
+    "emg_place_photo_footer": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O poză cu locul exact — robinetul, tabloul electric — te scutește de căutat în panică."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A photo of the exact spot — the valve, the breaker panel — saves you searching in a panic."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Foto der genauen Stelle — Hahn, Sicherungskasten — erspart die Suche in der Panik."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une photo de l'endroit exact — la vanne, le tableau électrique — vous évite de chercher dans la panique."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een foto van de exacte plek — de kraan, de meterkast — bespaart zoeken in paniek."
+          }
+        }
+      }
+    },
+    "emg_place_photo_a11y %@": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — atinge ca să vezi fotografia"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — tap to view the photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — tippen, um das Foto zu sehen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — touchez pour voir la photo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — tik om de foto te bekijken"
+          }
+        }
+      }
+    },
+    "emg_guide_flood_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inundație"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flood"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wasserschaden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inondation"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wateroverlast"
+          }
+        }
+      }
+    },
+    "emg_guide_gas_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scurgere de gaz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gas leak"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gasleck"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuite de gaz"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gaslek"
+          }
+        }
+      }
+    },
+    "emg_guide_power_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pană de curent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power outage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stromausfall"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panne de courant"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stroomuitval"
+          }
+        }
+      }
+    },
+    "emg_guide_fire_title": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incendiu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brand"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incendie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brand"
+          }
+        }
+      }
+    },
+    "emg_guide_flood_step1": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Închide robinetul general de apă."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shut off the main water valve."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe den Haupthahn des Wassers zu."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermez la vanne d'arrivée d'eau principale."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai de hoofdkraan van het water dicht."
+          }
+        }
+      }
+    },
+    "emg_guide_flood_step2": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oprește curentul de la tabloul electric dacă apa se apropie de prize sau de cabluri."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut the power at the breaker panel if water is getting near outlets or cables."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schalte den Strom am Sicherungskasten ab, wenn Wasser in die Nähe von Steckdosen oder Kabeln kommt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coupez le courant au tableau électrique si l'eau s'approche des prises ou des câbles."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schakel de stroom uit bij de meterkast als het water in de buurt van stopcontacten of kabels komt."
+          }
+        }
+      }
+    },
+    "emg_guide_flood_step3": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mută obiectele de valoare și documentele mai sus, departe de apă."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move valuables and documents up, away from the water."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bringe Wertsachen und Dokumente nach oben, weg vom Wasser."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mettez les objets de valeur et les documents en hauteur, à l'abri de l'eau."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet waardevolle spullen en documenten hoger, weg van het water."
+          }
+        }
+      }
+    },
+    "emg_guide_flood_step4": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografiază pagubele pentru asigurare înainte să faci curățenie."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph the damage for insurance before you clean up."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografiere die Schäden für die Versicherung, bevor du aufräumst."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photographiez les dégâts pour l'assurance avant de nettoyer."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografeer de schade voor de verzekering voordat je gaat opruimen."
+          }
+        }
+      }
+    },
+    "emg_guide_flood_step5": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dacă apa vine de la vecini sau din instalația comună, anunță asociația și un instalator."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the water comes from neighbours or a shared pipe, notify the building manager and a plumber."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kommt das Wasser von Nachbarn oder aus einer Gemeinschaftsleitung, informiere die Hausverwaltung und einen Installateur."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si l'eau vient des voisins ou d'une canalisation commune, prévenez le syndic et un plombier."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komt het water van de buren of uit een gedeelde leiding, waarschuw dan de VvE en een loodgieter."
+          }
+        }
+      }
+    },
+    "emg_guide_gas_step1": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NU aprinde lumina, nu folosi întrerupătoare, prize sau flacără deschisă."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do NOT turn on lights, use switches, sockets, or any open flame."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schalte KEIN Licht ein und benutze keine Schalter, Steckdosen oder offenes Feuer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "N'allumez PAS la lumière, n'utilisez ni interrupteurs, ni prises, ni flamme nue."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doe GEEN licht aan en gebruik geen schakelaars, stopcontacten of open vuur."
+          }
+        }
+      }
+    },
+    "emg_guide_gas_step2": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide larg ferestrele și ușile."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the windows and doors wide."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Fenster und Türen weit."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez grand les fenêtres et les portes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet ramen en deuren wijd open."
+          }
+        }
+      }
+    },
+    "emg_guide_gas_step3": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Închide robinetul de gaz."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shut off the gas valve."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe den Gashahn zu."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermez le robinet de gaz."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai de gaskraan dicht."
+          }
+        }
+      }
+    },
+    "emg_guide_gas_step4": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scoate pe toată lumea din casă."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get everyone out of the house."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bringe alle aus dem Haus."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites sortir tout le monde de la maison."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haal iedereen het huis uit."
+          }
+        }
+      }
+    },
+    "emg_guide_gas_step5": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sună la urgența de gaz de afară, de la distanță de casă."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call the gas emergency line from outside, away from the house."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rufe den Gas-Notruf von draußen an, in sicherer Entfernung zum Haus."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appelez l'urgence gaz depuis l'extérieur, à distance de la maison."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bel het noodnummer voor gas van buiten, op afstand van het huis."
+          }
+        }
+      }
+    },
+    "emg_guide_power_step1": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifică tabloul electric — o siguranță căzută se ridică la loc."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the breaker panel — a tripped breaker flips back up."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe den Sicherungskasten — ein ausgelöster Schalter lässt sich wieder hochklappen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez le tableau électrique — un disjoncteur déclenché se réarme."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleer de meterkast — een uitgeschakelde zekering zet je weer om."
+          }
+        }
+      }
+    },
+    "emg_guide_power_step2": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uită-te afară: dacă și vecinii sunt în beznă, e o avarie de rețea — anunță furnizorul."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look outside: if the neighbours are dark too, it's a grid outage — report it to your provider."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schau nach draußen: Sind auch die Nachbarn dunkel, ist es eine Netzstörung — melde sie dem Versorger."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regardez dehors : si les voisins sont aussi dans le noir, c'est une panne de réseau — signalez-la au fournisseur."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kijk naar buiten: zitten de buren ook in het donker, dan is het een netstoring — meld het bij je leverancier."
+          }
+        }
+      }
+    },
+    "emg_guide_power_step3": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scoate din priză aparatele sensibile, ca revenirea curentului să nu le strice."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unplug sensitive appliances so the surge when power returns doesn't damage them."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziehe empfindliche Geräte aus der Steckdose, damit die Spannungsspitze beim Wiedereinschalten sie nicht beschädigt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Débranchez les appareils sensibles pour que le retour du courant ne les endommage pas."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haal gevoelige apparaten uit het stopcontact, zodat de stroompiek bij terugkeer ze niet beschadigt."
+          }
+        }
+      }
+    },
+    "emg_guide_power_step4": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ține ușile frigiderului și congelatorului închise — păstrează frigul câteva ore."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the fridge and freezer doors closed — they hold the cold for hours."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte Kühl- und Gefrierschrank geschlossen — sie halten die Kälte stundenlang."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardez les portes du réfrigérateur et du congélateur fermées — le froid tient plusieurs heures."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Houd de deuren van koelkast en vriezer dicht — ze houden de kou urenlang vast."
+          }
+        }
+      }
+    },
+    "emg_guide_fire_step1": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scoate imediat pe toată lumea din casă. Nu te opri după lucruri."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get everyone out of the house immediately. Don't stop for belongings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bringe sofort alle aus dem Haus. Halte dich nicht mit Sachen auf."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites sortir tout le monde immédiatement. Ne vous arrêtez pas pour des objets."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haal iedereen onmiddellijk het huis uit. Stop niet voor spullen."
+          }
+        }
+      }
+    },
+    "emg_guide_fire_step2": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sună la 112 imediat ce ești în siguranță."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call 112 as soon as you are safe."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rufe 112 an, sobald du in Sicherheit bist."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appelez le 112 dès que vous êtes en sécurité."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bel 112 zodra je veilig bent."
+          }
+        }
+      }
+    },
+    "emg_guide_fire_step3": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atinge ușile cu dosul palmei înainte să le deschizi — dacă sunt fierbinți, nu le deschide."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch doors with the back of your hand before opening — if a door is hot, don't open it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berühre Türen mit dem Handrücken, bevor du sie öffnest — ist eine Tür heiß, öffne sie nicht."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez les portes du revers de la main avant de les ouvrir — si une porte est chaude, ne l'ouvrez pas."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voel met de rug van je hand aan deuren voordat je ze opent — is een deur heet, open hem dan niet."
+          }
+        }
+      }
+    },
+    "emg_guide_fire_step4": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dacă e fum, mergi aplecat, aproape de podea. Nu folosi liftul."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If there is smoke, stay low, close to the floor. Don't use the lift."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei Rauch bleib tief, nah am Boden. Benutze keinen Aufzug."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S'il y a de la fumée, restez baissé, près du sol. Ne prenez pas l'ascenseur."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blijf bij rook laag, dicht bij de vloer. Gebruik de lift niet."
+          }
+        }
+      }
+    },
+    "emg_guide_fire_step5": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stinge singur doar un foc mic și doar dacă ai o ieșire liberă în spate."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only fight a small fire yourself, and only with a clear exit behind you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lösche nur ein kleines Feuer selbst, und nur mit freiem Fluchtweg im Rücken."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "N'éteignez vous-même qu'un petit feu, et seulement avec une sortie dégagée derrière vous."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blus alleen zelf een klein brandje, en alleen met een vrije uitgang achter je."
+          }
+        }
+      }
+    },
+    "emg_guide_disclaimer": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghid orientativ, nu înlocuiește serviciile de urgență. Într-un pericol imediat, sună întâi la 112."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A general guide, not a substitute for emergency services. In immediate danger, call 112 first."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine allgemeine Orientierung, kein Ersatz für den Notruf. Bei unmittelbarer Gefahr zuerst 112 anrufen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un guide indicatif, qui ne remplace pas les services d'urgence. En cas de danger immédiat, appelez d'abord le 112."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een algemene leidraad, geen vervanging voor de hulpdiensten. Bel bij direct gevaar eerst 112."
+          }
+        }
+      }
+    },
+    "emg_guide_flood_valve_link": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robinetul general — locul salvat de tine"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main water valve — your saved place"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haupthahn — dein gespeicherter Ort"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vanne principale — votre emplacement enregistré"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoofdkraan — jouw opgeslagen plek"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

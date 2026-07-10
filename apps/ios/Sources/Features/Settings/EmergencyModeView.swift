@@ -5,29 +5,51 @@ import AVFoundation
 //
 // The page for the burst pipe at 2 AM: one screen with the numbers to call,
 // where the shut-off valves are, the insurance papers, and a flashlight —
-// zero navigation between you and the thing you need. Critical places are
+// zero navigation between you and the thing you need. This page is used IN
+// PANIC, so the design rules invert: huge full-color tap targets, maximum
+// contrast, no subtle elegance in the action path. Critical places are
 // written by the household ahead of time (a picker over property elements
 // would guess; the owner knows), and everything here works offline because
-// contacts and notes live on the device.
+// contacts, notes, and photos live on the device.
 
 struct EmergencyModeView: View {
     @Environment(DocumentService.self) private var documentService
     @Environment(AppRouter.self) private var router
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(MessageService.self) private var messageService
 
     @State private var contacts: [EmergencyContact] = []
     @State private var notes: [EmergencyNote] = []
+    @State private var placeImages: [UUID: UIImage] = [:]
     @State private var editingNote: EmergencyNote? = nil
     @State private var showAddNote = false
     @State private var showAddContact = false
     @State private var torchOn = false
     @State private var incidentPinned = false
+    @State private var addressCopied = false
+    @State private var photoItem: EmergencyPhotoItem? = nil
+    @State private var activeGuide: EmergencyScenario? = nil
+
+    // Family alert
+    private enum FamilyAlertState: Equatable { case idle, sending, sent, failed }
+    @State private var familyAlert: FamilyAlertState = .idle
+    @State private var showAlertConfirm = false
+
+    // Editable gas number (per property, device-local)
+    private static let defaultGasNumber = "0800-001122"
+    @State private var gasNumber = EmergencyModeView.defaultGasNumber
+    @State private var gasEditText = ""
+    @State private var showGasEdit = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
                 callSection
+                familyAlertCard
                 torchCard
                 islandPinCard
+                guidesSection
                 placesSection
                 insuranceSection
                 Spacer(minLength: 100)
@@ -47,64 +69,67 @@ struct EmergencyModeView: View {
             }
         }
         .sheet(isPresented: $showAddNote) {
-            EmergencyNoteSheet { note in
+            EmergencyNoteSheet { note, photoChange in
                 notes.append(note)
                 saveNotes()
+                applyPhotoChange(photoChange, id: note.id)
             }
         }
         .sheet(item: $editingNote) { note in
-            EmergencyNoteSheet(editing: note) { updated in
+            EmergencyNoteSheet(editing: note) { updated, photoChange in
                 if let i = notes.firstIndex(where: { $0.id == updated.id }) {
                     notes[i] = updated
                     saveNotes()
                 }
+                applyPhotoChange(photoChange, id: updated.id)
             }
+        }
+        .sheet(item: $activeGuide) { scenario in
+            EmergencyGuideSheet(scenario: scenario,
+                                valvePlace: waterValvePlace,
+                                valveImage: waterValvePlace.flatMap { placeImages[$0.id] })
+        }
+        .fullScreenCover(item: $photoItem) { item in
+            EmergencyPhotoViewer(title: item.title, image: item.image)
+        }
+        .confirmationDialog("emg_alert_confirm_title", isPresented: $showAlertConfirm,
+                            titleVisibility: .visible) {
+            Button("emg_alert_confirm_send") { sendFamilyAlert() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("emg_alert_confirm_msg \(propertyService.primary?.name ?? "")")
+        }
+        .alert("emg_gas_edit_title", isPresented: $showGasEdit) {
+            TextField(String(localized: "emg_gas_edit_ph"), text: $gasEditText)
+                .keyboardType(.phonePad)
+            Button("Save") { saveGasNumber() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("emg_gas_edit_msg")
         }
     }
 
-    // MARK: Call
+    // MARK: Call — huge, full-color cards; tap anywhere dials
+    //
+    // 112 leads, the property address follows immediately (the dispatcher's
+    // first question, and the one a blank mind can't answer), then gas and
+    // the household's own numbers.
 
     private var callSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader("emergency_call_header")
-            VStack(spacing: 8) {
-                ForEach(allContacts) { c in
-                    Button {
-                        HapticFeedback.impact(.heavy)
-                        call(c.phone)
-                    } label: {
-                        HStack(spacing: 12) {
-                            ColoredIconBadge(icon: "phone.fill", color: contactColor(c))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(c.name)
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(.primary)
-                                Text(LocalizedStringKey(c.role))
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(c.phone)
-                                .font(.system(.subheadline, design: .rounded).weight(.bold))
-                                .foregroundStyle(contactColor(c))
-                        }
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, AppSpacing.md)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                    .accessibilityLabel(Text("emergency_call_a11y \(c.name)"))
-                    .contextMenu {
-                        if isCustom(c) {
-                            Button(role: .destructive) {
-                                contacts.removeAll { $0.id == c.id }
-                                saveContacts()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                    }
+            VStack(spacing: 10) {
+                emergencyCallCard(
+                    title: Text(verbatim: "112"),
+                    subtitle: Text("emergency_112_role"),
+                    phone: "112",
+                    fill: Color.brandDanger,
+                    a11yName: "112"
+                )
+                addressCard
+                gasCard
+                ForEach(contacts) { c in
+                    customContactCard(c)
                 }
                 Button {
                     showAddContact = true
@@ -123,65 +148,298 @@ struct EmergencyModeView: View {
         }
     }
 
-    /// 112 always leads, the standing services follow, then the
-    /// household's own numbers (long-press to remove those).
-    private var allContacts: [EmergencyContact] {
-        [EmergencyContact(name: "112", role: String(localized: "emergency_112_role"),
-                          phone: "112", color: "red"),
-         EmergencyContact(name: String(localized: "emergency_gas_name"),
-                          role: String(localized: "emergency_gas_role"),
-                          phone: "0800-001122", color: "orange")] + contacts
+    /// A full-bleed colored call card: the whole surface dials.
+    private func emergencyCallCard(title: Text, subtitle: Text, phone: String,
+                                   fill: Color, a11yName: String) -> some View {
+        Button {
+            HapticFeedback.impact(.heavy)
+            call(phone)
+        } label: {
+            HStack(spacing: AppSpacing.base) {
+                VStack(alignment: .leading, spacing: 3) {
+                    title
+                        .font(AppFont.scaled(26, weight: .heavy, design: .rounded))
+                    subtitle
+                        .font(AppFont.footnoteEmphasis)
+                        .opacity(0.9)
+                }
+                Spacer()
+                Image(systemName: "phone.fill")
+                    .font(AppFont.scaled(28, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(fill, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("emergency_call_a11y \(a11yName)"))
     }
 
-    private func isCustom(_ c: EmergencyContact) -> Bool {
-        contacts.contains { $0.id == c.id }
-    }
-
-    private func contactColor(_ c: EmergencyContact) -> Color {
-        switch c.color {
-        case "blue":   return .blue
-        case "orange": return .orange
-        case "green":  return Color.brandSuccess
-        default:       return .red
+    /// Gas keeps the big-orange treatment plus a long-press to edit the
+    /// number (0800-001122 is Romania's default; abroad it's different).
+    private var gasCard: some View {
+        Button {
+            HapticFeedback.impact(.heavy)
+            call(gasNumber)
+        } label: {
+            HStack(spacing: AppSpacing.base) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("emergency_gas_name")
+                        .font(AppFont.scaled(22, weight: .heavy, design: .rounded))
+                    Text(verbatim: gasNumber)
+                        .font(AppFont.scaled(16, weight: .bold, design: .rounded))
+                        .opacity(0.9)
+                }
+                Spacer()
+                Image(systemName: "phone.fill")
+                    .font(AppFont.scaled(28, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(Color.orange, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("emergency_call_a11y \(String(localized: "emergency_gas_name"))"))
+        .contextMenu {
+            Button {
+                gasEditText = gasNumber
+                showGasEdit = true
+            } label: {
+                Label("emg_gas_edit_title", systemImage: "pencil")
+            }
         }
     }
 
-    private func call(_ number: String) {
-        let clean = number.filter { $0.isNumber || $0 == "+" }
-        guard !clean.isEmpty, let url = URL(string: "tel://\(clean)") else { return }
-        UIApplication.shared.open(url)
+    /// Household numbers get the same size at a neutral tint — big targets,
+    /// but never mistaken for 112. Long-press to remove.
+    private func customContactCard(_ c: EmergencyContact) -> some View {
+        Button {
+            HapticFeedback.impact(.heavy)
+            call(c.phone)
+        } label: {
+            HStack(spacing: AppSpacing.base) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(c.name)
+                        .font(AppFont.scaled(22, weight: .heavy, design: .rounded))
+                    Text(verbatim: c.role.isEmpty ? c.phone : "\(c.role) · \(c.phone)")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "phone.fill")
+                    .font(AppFont.scaled(28, weight: .bold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(Color.primary.opacity(AppOpacity.tintedFill),
+                        in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("emergency_call_a11y \(c.name)"))
+        .contextMenu {
+            Button(role: .destructive) {
+                contacts.removeAll { $0.id == c.id }
+                saveContacts()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
-    // MARK: Flashlight
+    // MARK: Address — the dispatcher's first question
+    //
+    // Big and directly under 112, because "what's the address?" is exactly
+    // the question a panicking mind goes blank on. Tap copies it.
+
+    @ViewBuilder
+    private var addressCard: some View {
+        if let property = propertyService.primary {
+            let address = [property.addressLine1, property.postalCode ?? "", property.city]
+                .filter { !$0.isEmpty }
+                .joined(separator: ", ")
+            Button {
+                copyAddress(name: property.name, address: address)
+            } label: {
+                HStack(spacing: AppSpacing.base) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(property.name)
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.secondary)
+                        Text(verbatim: address)
+                            .font(AppFont.scaled(19, weight: .bold))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                        Text(addressCopied ? "emg_address_copied" : "emg_address_copy_hint")
+                            .font(AppFont.caption)
+                            .foregroundStyle(addressCopied ? Color.brandSuccess : .secondary)
+                    }
+                    Spacer()
+                    Image(systemName: addressCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                        .font(AppFont.scaled(24, weight: .semibold))
+                        .foregroundStyle(addressCopied ? Color.brandSuccess : .primary)
+                }
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.vertical, AppSpacing.lg)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .liquidGlass(cornerRadius: AppRadius.xl)
+            .accessibilityLabel(Text("emg_address_a11y \(property.name) \(address)"))
+        }
+    }
+
+    private func copyAddress(name: String, address: String) {
+        UIPasteboard.general.string = "\(name), \(address)"
+        HapticFeedback.success()
+        withAnimation(.snappy) { addressCopied = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation(.smooth) { addressCopied = false }
+        }
+    }
+
+    // MARK: Alert family — one tap, one confirmation
+    //
+    // Sends "⚠️ Emergency at <property> — call me!" to the family group chat;
+    // the existing DB trigger fans it out as an instant push. The single
+    // confirmation is deliberate: a pocket-tap false alarm here costs real
+    // adrenaline in the whole household.
+
+    @ViewBuilder
+    private var familyAlertCard: some View {
+        if propertyService.primary != nil {
+            Button {
+                guard familyAlert != .sending else { return }
+                HapticFeedback.impact(.heavy)
+                showAlertConfirm = true
+            } label: {
+                HStack(spacing: AppSpacing.base) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(familyAlert == .sent ? "emg_alert_sent" : "emg_alert_family")
+                            .font(AppFont.scaled(20, weight: .bold))
+                        Text(familyAlertSubtitle)
+                            .font(AppFont.footnote)
+                            .opacity(0.9)
+                    }
+                    Spacer()
+                    if familyAlert == .sending {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: familyAlert == .sent
+                              ? "checkmark.seal.fill" : "exclamationmark.bubble.fill")
+                            .font(AppFont.scaled(28, weight: .bold))
+                    }
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.vertical, AppSpacing.lg)
+                .frame(maxWidth: .infinity)
+                .background(familyAlert == .sent ? Color.brandSuccess : Color.brandPrimaryBlue,
+                            in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(familyAlert == .sending)
+            .accessibilityLabel(Text(familyAlert == .sent ? "emg_alert_sent" : "emg_alert_family"))
+        }
+    }
+
+    private var familyAlertSubtitle: LocalizedStringKey {
+        switch familyAlert {
+        case .idle:    return "emg_alert_family_subtitle"
+        case .sending: return "emg_alert_sending"
+        case .sent:    return "emg_alert_again"
+        case .failed:  return "emg_alert_failed"
+        }
+    }
+
+    private func sendFamilyAlert() {
+        guard let property = propertyService.primary else { return }
+        let sender = profileService.profile?.preferredName ?? "Me"
+        let body = String(format: String(localized: "emg_alert_message"), property.name)
+        familyAlert = .sending
+        Task {
+            do {
+                try await messageService.send(propertyId: property.id, senderName: sender, body: body)
+                familyAlert = .sent
+                HapticFeedback.success()
+            } catch {
+                familyAlert = .failed
+                HapticFeedback.error()
+            }
+        }
+    }
+
+    // MARK: Flashlight — instant, no checkbox
+    //
+    // Tap = light. While on, the whole card turns torch-yellow so the state
+    // is readable from arm's length.
 
     private var torchCard: some View {
         Button {
             setTorch(!torchOn)
             HapticFeedback.impact(.medium)
         } label: {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: torchOn ? "flashlight.on.fill" : "flashlight.off.fill",
-                                 color: torchOn ? .yellow : .gray)
-                Text(torchOn ? "emergency_torch_on" : "emergency_torch_off")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Image(systemName: torchOn ? "circle.fill" : "circle")
-                    .font(AppFont.caption)
-                    .foregroundStyle(torchOn ? .yellow : Color.primary.opacity(0.28))
-            }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.md)
-            .contentShape(Rectangle())
+            torchLabel
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.lg)
         .disabled(!Self.hasTorch)
         .opacity(Self.hasTorch ? 1 : 0.4)
+        .accessibilityLabel(Text(torchOn ? "emergency_torch_on" : "emergency_torch_off"))
+    }
+
+    @ViewBuilder
+    private var torchLabel: some View {
+        let content = HStack(spacing: AppSpacing.base) {
+            Image(systemName: torchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                .font(AppFont.scaled(28, weight: .bold))
+            Text(torchOn ? "emergency_torch_on" : "emergency_torch_off")
+                .font(AppFont.scaled(20, weight: .bold))
+            Spacer()
+        }
+        .foregroundStyle(torchOn ? Color.black : Color.primary)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.lg)
+        .frame(maxWidth: .infinity)
+
+        if torchOn {
+            content
+                .background(Color.yellow, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        } else {
+            content
+                .contentShape(Rectangle())
+                .liquidGlass(cornerRadius: AppRadius.xl)
+        }
     }
 
     private static var hasTorch: Bool {
         AVCaptureDevice.default(for: .video)?.hasTorch ?? false
+    }
+
+    private func setTorch(_ on: Bool) {
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
+        do {
+            try device.lockForConfiguration()
+            device.torchMode = on ? .on : .off
+            device.unlockForConfiguration()
+            torchOn = on
+        } catch {
+            torchOn = false
+        }
     }
 
     // MARK: Dynamic Island pin
@@ -229,19 +487,52 @@ struct EmergencyModeView: View {
         .accessibilityLabel(Text(incidentPinned ? "emergency_pin_on" : "emergency_pin_off"))
     }
 
-    private func setTorch(_ on: Bool) {
-        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
-        do {
-            try device.lockForConfiguration()
-            device.torchMode = on ? .on : .off
-            device.unlockForConfiguration()
-            torchOn = on
-        } catch {
-            torchOn = false
+    // MARK: Mini-guides — "what do I do if…"
+
+    private var guidesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("emg_guides_header")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())],
+                      spacing: 10) {
+                ForEach(EmergencyScenario.allCases) { scenario in
+                    Button {
+                        activeGuide = scenario
+                        HapticFeedback.impact(.medium)
+                    } label: {
+                        VStack(spacing: AppSpacing.sm) {
+                            Image(systemName: scenario.icon)
+                                .font(AppFont.scaled(28, weight: .semibold))
+                                .foregroundStyle(scenario.color)
+                            Text(scenario.titleKey)
+                                .font(AppFont.headline)
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 92)
+                        .padding(.vertical, AppSpacing.md)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .liquidGlass(cornerRadius: AppRadius.xl)
+                    .accessibilityLabel(Text(scenario.titleKey))
+                }
+            }
         }
     }
 
-    // MARK: Critical places
+    /// The flood guide links to the household's own "main water valve" place.
+    /// Matched by title keywords across the app's languages — honest best
+    /// effort: no match, no link.
+    private var waterValvePlace: EmergencyNote? {
+        let keywords = ["robinet", "valve", "haupthahn", "absperr", "wasser",
+                        "vanne", "eau", "kraan", "water", "apa", "apă"]
+        return notes.first { note in
+            let title = note.title.lowercased()
+            return keywords.contains { title.contains($0) }
+        }
+    }
+
+    // MARK: Critical places (with photos)
 
     private var placesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -254,39 +545,7 @@ struct EmergencyModeView: View {
             }
             VStack(spacing: 8) {
                 ForEach(notes) { note in
-                    Button {
-                        editingNote = note
-                    } label: {
-                        HStack(spacing: 12) {
-                            ColoredIconBadge(icon: "mappin.and.ellipse", color: .orange)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(note.title)
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(.primary)
-                                Text(note.detail)
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(AppFont.caption)
-                                .foregroundStyle(Color.primary.opacity(0.28))
-                        }
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, AppSpacing.md)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            notes.removeAll { $0.id == note.id }
-                            saveNotes()
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+                    placeRow(note)
                 }
             }
             Button {
@@ -302,6 +561,86 @@ struct EmergencyModeView: View {
                                 in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    /// With a photo: big thumbnail, tap opens it fullscreen (finding the
+    /// valve beats reading about it). Without: tap edits, as before.
+    /// Long-press always offers Edit / Delete.
+    private func placeRow(_ note: EmergencyNote) -> some View {
+        let image = placeImages[note.id]
+        return Button {
+            if let image {
+                photoItem = EmergencyPhotoItem(title: note.title, image: image)
+                HapticFeedback.impact(.medium)
+            } else {
+                editingNote = note
+            }
+        } label: {
+            HStack(spacing: AppSpacing.base) {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 96, height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                } else {
+                    ColoredIconBadge(icon: "mappin.and.ellipse", color: .orange)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(note.title)
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                    Text(note.detail)
+                        .font(AppFont.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+                Spacer()
+                Image(systemName: image != nil ? "arrow.up.left.and.arrow.down.right" : "chevron.right")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: AppRadius.lg)
+        .accessibilityLabel(image != nil
+                            ? Text("emg_place_photo_a11y \(note.title)")
+                            : Text(note.title))
+        .contextMenu {
+            Button {
+                editingNote = note
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                notes.removeAll { $0.id == note.id }
+                saveNotes()
+                EmergencyPlaceImageStore.delete(for: note.id)
+                placeImages[note.id] = nil
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    private func applyPhotoChange(_ change: EmergencyPlacePhotoChange, id: UUID) {
+        switch change {
+        case .unchanged:
+            return
+        case .set(let image):
+            placeImages[id] = image
+            Task.detached(priority: .utility) {
+                EmergencyPlaceImageStore.save(image, for: id)
+            }
+        case .removed:
+            placeImages[id] = nil
+            Task.detached(priority: .utility) {
+                EmergencyPlaceImageStore.delete(for: id)
+            }
         }
     }
 
@@ -348,10 +687,43 @@ struct EmergencyModeView: View {
             .padding(.leading, AppSpacing.xxs)
     }
 
+    // MARK: Dialing
+
+    private func call(_ number: String) {
+        let clean = number.filter { $0.isNumber || $0 == "+" }
+        guard !clean.isEmpty, let url = URL(string: "tel://\(clean)") else { return }
+        UIApplication.shared.open(url)
+    }
+
+    // MARK: Gas number (editable, per property, device-local)
+
+    private var gasNumberKey: String {
+        if let pid = propertyService.primary?.id {
+            return "prvio.emergency.gasNumber.\(pid.uuidString)"
+        }
+        return "prvio.emergency.gasNumber"
+    }
+
+    private func loadGasNumber() {
+        gasNumber = UserDefaults.standard.string(forKey: gasNumberKey) ?? Self.defaultGasNumber
+    }
+
+    private func saveGasNumber() {
+        let trimmed = gasEditText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed == Self.defaultGasNumber {
+            UserDefaults.standard.removeObject(forKey: gasNumberKey)
+            gasNumber = Self.defaultGasNumber
+        } else {
+            UserDefaults.standard.set(trimmed, forKey: gasNumberKey)
+            gasNumber = trimmed
+        }
+    }
+
     // MARK: Storage (device-local, works with zero connectivity)
 
     private func load() {
         incidentPinned = LiveActivityService.shared.isActive(.emergency)
+        loadGasNumber()
         if let d = UserDefaults.standard.data(forKey: "prvio.emergency"),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: d) {
             contacts = decoded
@@ -360,6 +732,26 @@ struct EmergencyModeView: View {
            let decoded = try? JSONDecoder().decode([EmergencyNote].self, from: d) {
             notes = decoded
         }
+        reloadPlaceImages()
+    }
+
+    /// Decode place photos off the main thread — camera JPEGs are the one
+    /// thing on this page heavy enough to stutter a panicked scroll.
+    private func reloadPlaceImages() {
+        let ids = notes.map(\.id)
+        Task {
+            placeImages = await Self.loadPlaceImages(ids: ids)
+        }
+    }
+
+    private nonisolated static func loadPlaceImages(ids: [UUID]) async -> [UUID: UIImage] {
+        var loaded: [UUID: UIImage] = [:]
+        for id in ids {
+            if let img = EmergencyPlaceImageStore.load(for: id) {
+                loaded[id] = img
+            }
+        }
+        return loaded
     }
 
     private func saveContacts() {
@@ -374,62 +766,6 @@ struct EmergencyModeView: View {
         }
     }
 }
-
-// MARK: - Critical place note
-
-struct EmergencyNote: Identifiable, Codable, Equatable {
-    var id = UUID()
-    var title: String
-    var detail: String
-}
-
-private struct EmergencyNoteSheet: View {
-    var editing: EmergencyNote? = nil
-    let onSave: (EmergencyNote) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var title = ""
-    @State private var detail = ""
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField(String(localized: "emergency_note_title_ph"), text: $title)
-                    TextField(String(localized: "emergency_note_detail_ph"), text: $detail, axis: .vertical)
-                        .lineLimit(3...6)
-                } footer: {
-                    Text("emergency_note_footer")
-                }
-            }
-            .navigationTitle(Text(editing == nil ? "emergency_add_place" : "emergency_edit_place"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        var note = editing ?? EmergencyNote(title: "", detail: "")
-                        note.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-                        note.detail = detail.trimmingCharacters(in: .whitespacesAndNewlines)
-                        onSave(note)
-                        dismiss()
-                    }
-                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-            .onAppear {
-                if let editing {
-                    title = editing.title
-                    detail = editing.detail
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-}
-
 
 // MARK: - Emergency contact (device-local)
 

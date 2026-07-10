@@ -651,6 +651,9 @@ struct SettingsView: View {
                 EmergencyModeView()
                     .environment(documentService)
                     .environment(router)
+                    .environment(propertyService)
+                    .environment(profileService)
+                    .environment(messageService)
             }
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
                 HelpFAQView()
