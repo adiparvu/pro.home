@@ -142,4 +142,7 @@ extension Notification.Name {
     static let prvioProcessPending = Notification.Name("prvio.processPending")
     static let prvioOpenURL        = Notification.Name("prvio.openURL")
     static let prvioUserActivity   = Notification.Name("prvio.userActivity")
+    /// A chat push was tapped — switch to the chat tab and open the stored
+    /// ChatNotificationTarget (the conversation list drains it).
+    static let prvioOpenChat       = Notification.Name("prvio.openChat")
 }

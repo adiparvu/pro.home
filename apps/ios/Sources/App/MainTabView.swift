@@ -205,6 +205,11 @@ struct MainTabView: View {
             guard let newId, newId != oldId else { return }
             Task { await reloadWorld(reason: .accountSwitch(userId: newId)) }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .prvioOpenChat)) { _ in
+            // A chat push was tapped: land on the chat tab; the conversation
+            // list drains the stored target and opens the right thread.
+            router.selectedTab = .chat
+        }
         .onChange(of: router.selectedTab) { _, _ in
             tabBarVis.scrollOffset = 0
         }

@@ -1,6 +1,23 @@
 import UIKit
 import UserNotifications
 
+/// Where a tapped chat push should land. Persisted (not just posted) so a tap
+/// that COLD-LAUNCHES the app still routes once the conversation list exists.
+enum ChatNotificationTarget {
+    private static let key = "prvio.pending.chatTarget"
+
+    /// "group" for the household chat, or a peer auth-user id for a DM.
+    static func store(_ target: String) {
+        UserDefaults.standard.set(target, forKey: key)
+    }
+
+    static func take() -> String? {
+        guard let v = UserDefaults.standard.string(forKey: key) else { return nil }
+        UserDefaults.standard.removeObject(forKey: key)
+        return v
+    }
+}
+
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationDelegate()
     private override init() {}
@@ -75,8 +92,19 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             }
 
         case UNNotificationDefaultActionIdentifier:
-            // User tapped notification body — route to correct screen
-            if let taskIdStr = info["taskId"] as? String, UUID(uuidString: taskIdStr) != nil {
+            // User tapped notification body — route to correct screen.
+            // Chat pushes carry a `chat` dictionary (kind + identifiers) from
+            // the send-chat-push function: a DM lands directly in that thread,
+            // anything else lands in the household chat.
+            if let chat = info["chat"] as? [String: Any] {
+                let kind = chat["kind"] as? String
+                if kind == "dm", let peer = chat["peer_user_id"] as? String, UUID(uuidString: peer) != nil {
+                    ChatNotificationTarget.store(peer)
+                } else {
+                    ChatNotificationTarget.store("group")
+                }
+                NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
+            } else if let taskIdStr = info["taskId"] as? String, UUID(uuidString: taskIdStr) != nil {
                 NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.addtask")
             } else if info["plantId"] != nil {
                 NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.plants")

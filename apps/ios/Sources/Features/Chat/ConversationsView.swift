@@ -149,6 +149,16 @@ struct ConversationsView: View {
         }
     }
 
+    /// Opens the conversation a tapped push pointed at ("group" or a peer
+    /// user id). Deferred a beat so the navigation stack is mounted when the
+    /// tap cold-launched the app.
+    private func drainChatNotificationTarget() {
+        guard let target = ChatNotificationTarget.take() else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            navTarget = target
+        }
+    }
+
     private func loadFlags() {
         archivedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.archived") ?? [])
         favoriteIds = Set(UserDefaults.standard.stringArray(forKey: "chat.favorites") ?? [])
@@ -295,7 +305,15 @@ struct ConversationsView: View {
             await messageService.load(propertyId: pid)
             await messageService.subscribeRealtime(propertyId: pid)
         }
-        .onAppear { loadFlags() }
+        .onAppear {
+            loadFlags()
+            drainChatNotificationTarget()
+        }
+        // A tapped chat push stored its destination (persisted, so cold
+        // launches route too); open it the moment the list is on screen.
+        .onReceive(NotificationCenter.default.publisher(for: .prvioOpenChat)) { _ in
+            drainChatNotificationTarget()
+        }
         .onChange(of: searchText) { _, text in scheduleServerSearch(text) }
         .navigationDestination(item: $navTarget) { id in
             if id == "group" {

@@ -132,7 +132,7 @@ serve(async (req) => {
     .update({ pushed_at: new Date().toISOString() })
     .eq('module', 'chat')
     .is('pushed_at', null)
-    .select('id, user_id, title, body')
+    .select('id, user_id, title, body, resource_type, metadata')
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -179,14 +179,27 @@ serve(async (req) => {
     let anySuccess = false
     let anyTransient = false
 
+    // Tapping the push must land in the right conversation: the notification
+    // row's metadata (stamped by the DB triggers, migration 144) rides along
+    // as a custom `chat` key, and thread-id groups banners per conversation.
+    const meta = (n.metadata ?? {}) as Record<string, unknown>
+    const chatInfo = {
+      kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
+      peer_user_id: (meta.peer_user_id as string) ?? null,
+      peer_name: (meta.peer_name as string) ?? null,
+      group_id: (meta.group_id as string) ?? null,
+    }
+    const threadId = chatInfo.peer_user_id ?? chatInfo.group_id ?? 'chat'
+
     for (const t of tokens) {
       const payload = {
         aps: {
           alert: { title: n.title ?? 'New message', body: n.body ?? '' },
           sound: 'default',
           badge,
-          'thread-id': 'chat',
+          'thread-id': threadId,
         },
+        chat: chatInfo,
       }
       try {
         const res = await fetch(`https://${apnsHost(t.environment)}/3/device/${t.token}`, {
