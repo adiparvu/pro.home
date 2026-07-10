@@ -1,0 +1,208 @@
+import SwiftUI
+
+// MARK: - "Acum" hero card
+//
+// The assistant's answer to "what should I do next?": one large glass card
+// featuring the single most actionable task (ranking lives in TaskTriage).
+// A big completion circle, the title, one metadata line, and the same
+// "Începe sesiunea" action the task detail uses — WorkSessionStore.shared,
+// which drives the Live Activity and the pinned banner. A horizontal swipe
+// (or the "Următorul" chip when more candidates wait) advances through the
+// shortlist.
+
+struct TaskHeroCard: View {
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let task: MaintenanceTask
+    /// How many tasks are in today's shortlist (shows the advance affordance
+    /// only when there is somewhere to go).
+    let candidateCount: Int
+    /// Advance the hero by +1 (swipe left / "Următorul") or -1 (swipe right).
+    let onAdvance: (Int) -> Void
+
+    @State private var showEdit = false
+    @State private var completing = false
+    @State private var dragOffset: CGFloat = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            heroHeader
+
+            HStack(alignment: .center, spacing: AppSpacing.base) {
+                TaskCheckCircle(isOn: completing, ringColor: task.priorityStyle.color, size: 38) {
+                    complete()
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(task.title)
+                        .font(AppFont.title3)
+                        .foregroundStyle(completing ? Color.primary.opacity(AppOpacity.disabled) : Color.primary)
+                        .strikethrough(completing, color: Color.primary.opacity(0.3))
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                    TaskMetaLine(task: task, muted: completing)
+                        .environment(familyService)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                HapticFeedback.impact(.light)
+                showEdit = true
+            }
+            .accessibilityAction(named: Text("Edit")) { showEdit = true }
+
+            if WorkSessionStore.shared.isTiming(task.id) {
+                HStack {
+                    SessionRowTimer()
+                    Spacer()
+                }
+            } else if !completing {
+                GlassWideButton(icon: "play.fill", label: "session_start") {
+                    WorkSessionStore.shared.start(taskId: task.id, title: task.title)
+                }
+            }
+        }
+        .padding(AppSpacing.xl)
+        .liquidGlass(cornerRadius: AppRadius.xxl, thick: true)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
+                .strokeBorder(task.priorityStyle.color.opacity(0.22), lineWidth: 1)
+        )
+        .offset(x: dragOffset)
+        .gesture(advanceGesture, including: candidateCount > 1 ? .all : .subviews)
+        .sheet(isPresented: $showEdit) {
+            AddTaskView(editing: task)
+                .environment(taskService)
+                .environment(propertyService)
+                .environment(familyService)
+        }
+    }
+
+    // MARK: - Header line ("Acum" + next affordance)
+
+    private var heroHeader: some View {
+        HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: 5) {
+                Image(systemName: "sparkles")
+                    .font(AppFont.scaled(11, weight: .bold))
+                Text("task_hero_now")
+                    .font(AppFont.label)
+                    .kerning(1.1)
+                    .textCase(.uppercase)
+            }
+            .foregroundStyle(task.isOverdue ? Color.brandDanger : Color.brandPurple)
+            .accessibilityElement(children: .combine)
+
+            Spacer()
+
+            if candidateCount > 1 {
+                Button {
+                    HapticFeedback.selection()
+                    onAdvance(1)
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("task_hero_next")
+                            .font(AppFont.caption)
+                        Image(systemName: "chevron.right")
+                            .font(AppFont.scaled(10, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.secondaryTextColor)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, 5)
+                    .glassCapsule()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("task_hero_next"))
+            }
+        }
+    }
+
+    // MARK: - Advance swipe
+
+    private var advanceGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onChanged { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                // Subtle parallax only — the card hints, the release commits.
+                dragOffset = reduceMotion ? 0 : max(-36, min(36, value.translation.width * 0.35))
+            }
+            .onEnded { value in
+                withAnimation(.taskSpring) { dragOffset = 0 }
+                guard abs(value.translation.width) > abs(value.translation.height),
+                      abs(value.translation.width) > 56 else { return }
+                HapticFeedback.selection()
+                onAdvance(value.translation.width < 0 ? 1 : -1)
+            }
+    }
+
+    // MARK: - Complete
+
+    private func complete() {
+        guard !completing else { return }
+        HapticFeedback.success()
+        withAnimation(reduceMotion ? .smooth(duration: 0.2) : .taskSpring) { completing = true }
+        Task {
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 550))
+            await taskService.toggleComplete(task)
+            completing = false
+        }
+    }
+}
+
+// MARK: - "Casa e în regulă azi" — the hero slot when nothing is actionable
+//
+// Shown in place of the hero when today's shortlist is empty but tasks still
+// exist further out: the calm all-clear message, the real house streak from
+// SharedDataStore (read-only, App Group defaults — effectively free), and a
+// subdued add hint. When the whole list is empty the screen's EmptyStateView
+// carries the same voice instead.
+
+struct TaskAllClearCard: View {
+    var onAdd: () -> Void
+
+    @State private var streak = 0
+
+    var body: some View {
+        HStack(spacing: AppSpacing.base) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(AppFont.scaled(20, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.brandSuccess)
+                .frame(width: 44, height: 44)
+                .glassCircle()
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("task_empty_all_clear")
+                    .font(AppFont.headline)
+                    .foregroundStyle(.primary)
+                if streak > 0 {
+                    Text("task_empty_streak \(streak)")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.secondaryTextColor)
+                }
+            }
+
+            Spacer(minLength: AppSpacing.sm)
+
+            Button {
+                HapticFeedback.impact(.light)
+                onAdd()
+            } label: {
+                Text("task_empty_add_hint")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.secondaryTextColor)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, 6)
+                    .glassCapsule()
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.lg)
+        .liquidGlass(cornerRadius: AppRadius.xxl)
+        .onAppear { streak = SharedDataStore.currentHouseStreak() }
+        .accessibilityElement(children: .contain)
+    }
+}

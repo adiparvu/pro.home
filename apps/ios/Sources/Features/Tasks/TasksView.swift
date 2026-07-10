@@ -1,5 +1,15 @@
 import SwiftUI
 
+// MARK: - Tasks screen
+//
+// Not a pretty list — an assistant that tells you what's next. The page
+// leads with the "Acum" hero (the single most actionable task, ranked by
+// TaskTriage), a slim progress line ("X din Y azi" + the three filter
+// chips), then the temporal sections (Astăzi / Săptămâna aceasta / Mai
+// târziu, sticky and collapsible) and a collapsed "Finalizate azi" at the
+// bottom. All business logic — TaskService, WorkSessionStore, deep links,
+// realtime, calendar/reminders sync — is untouched; only the surface moved.
+
 struct TasksView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(PropertyService.self) private var propertyService
@@ -7,12 +17,16 @@ struct TasksView: View {
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
     @Environment(FamilyService.self) private var familyService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
     @State private var searchText = ""
     @State private var showSearch = false
-    @State private var collapsed: Set<TaskSectionKind> = []
+    /// "Finalizate azi" starts folded — it's a receipt, not a to-do.
+    @State private var collapsed: Set<TaskSectionKind> = [.doneToday]
+    /// Position in the hero shortlist ("următorul" cycles through it).
+    @State private var heroIndex = 0
     @FocusState private var searchFocused: Bool
     /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
     @State private var deepLinkedTask: MaintenanceTask?
@@ -78,11 +92,16 @@ struct TasksView: View {
         }
     }
 
+    // MARK: - Filtering (one system: chips, the header menu and search all
+    // drive this same state)
+
     private var filtered: [MaintenanceTask] {
         let base: [MaintenanceTask]
         switch filter {
         case .all:
-            base = taskService.tasks
+            // The default view plans the open work; finished items live in
+            // "Finalizate azi" below and under the Finalizate chip.
+            base = taskService.tasks.filter { !$0.isCompleted && $0.status != "cancelled" }
         case .open:
             base = taskService.tasks.filter { !$0.isCompleted && $0.status != "cancelled" }
         case .overdue:
@@ -90,8 +109,12 @@ struct TasksView: View {
         case .done:
             base = historyPeriod.apply(to: taskService.tasks.filter { $0.isCompleted })
         }
-        guard !searchText.isEmpty else { return base }
-        return base.filter {
+        return applySearch(to: base)
+    }
+
+    private func applySearch(to tasks: [MaintenanceTask]) -> [MaintenanceTask] {
+        guard !searchText.isEmpty else { return tasks }
+        return tasks.filter {
             $0.title.matchesSearch(searchText)
                 || ($0.description ?? "").matchesSearch(searchText)
                 || $0.category.matchesSearch(searchText)
@@ -139,8 +162,6 @@ struct TasksView: View {
                 .environment(propertyService)
                 .environment(familyService)
         }
-        .onChange(of: router.deepLinkTaskId) { resolveTaskDeepLink() }
-        .task(id: taskService.tasks.count) { resolveTaskDeepLink() }
         .alert("Error", isPresented: Binding(
             get: { taskService.error != nil },
             set: { if !$0 { taskService.error = nil } }
@@ -163,64 +184,134 @@ struct TasksView: View {
     // MARK: - Content
 
     private var content: some View {
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
-                Section {
-                    header
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.top, AppSpacing.sm)
-                    if showSearch { searchBar }
-                    statCards
-                        .padding(.horizontal, AppSpacing.xl)
-                }
+        ScrollViewReader { proxy in
+            ScrollView(showsIndicators: false) {
+                list
+                    .padding(.bottom, 120)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(key: ScrollOffsetKey.self,
+                                                   value: geo.frame(in: .named("tasksScroll")).minY)
+                        }
+                    )
+            }
+            .coordinateSpace(name: "tasksScroll")
+            .onPreferenceChange(ScrollOffsetKey.self) { y in
+                tabBarVis.scrollOffset = y
+            }
+            .onChange(of: router.deepLinkTaskId) { resolveTaskDeepLink(proxy) }
+            .task(id: taskService.tasks.count) { resolveTaskDeepLink(proxy) }
+        }
+    }
 
-                if filter == .done {
-                    Section {
-                        historyPeriodBar
-                        if filtered.isEmpty {
-                            inlineEmpty
-                        } else {
-                            ForEach(filtered) { task in
-                                TaskRowView(task: task, isActive: false)
-                                    .environment(taskService)
-                                    .environment(propertyService)
-                                    .environment(familyService)
-                                    .padding(.horizontal, AppSpacing.xl)
-                            }
+    private var list: some View {
+        // The hero only exists in the default, unfiltered view — don't rank
+        // the shortlist at all while a chip or a search narrows the list.
+        let candidates = (filter == .all && searchText.isEmpty)
+            ? TaskTriage.heroCandidates(in: taskService.tasks) : []
+        let hero = candidates.isEmpty ? nil : candidates[heroIndex % candidates.count]
+        let openSections = sections(excluding: hero?.id)
+        let doneToday = filter == .all ? applySearch(to: doneTodayTasks) : []
+
+        return LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
+            Section {
+                header
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
+                if showSearch { searchBar }
+                progressLine
+                    .padding(.horizontal, AppSpacing.xl)
+                heroArea(hero: hero, candidates: candidates,
+                         hasAnythingBelow: !openSections.isEmpty || !doneToday.isEmpty)
+            }
+
+            if filter == .done {
+                Section {
+                    historyPeriodBar
+                    if filtered.isEmpty {
+                        inlineEmpty
+                    } else {
+                        ForEach(filtered) { task in
+                            taskRow(task)
                         }
                     }
-                } else if filtered.isEmpty {
-                    Section { inlineEmpty }
-                } else {
-                    ForEach(sections, id: \.kind) { section in
-                        Section {
-                            if !collapsed.contains(section.kind) {
-                                ForEach(section.tasks) { task in
-                                    TaskRowView(task: task, isActive: section.kind == .today)
-                                        .environment(taskService)
-                                        .environment(propertyService)
-                                        .environment(familyService)
-                                        .padding(.horizontal, AppSpacing.xl)
-                                        .transition(.move(edge: .top).combined(with: .opacity))
-                                }
+                }
+            } else if openSections.isEmpty && doneToday.isEmpty && hero == nil {
+                Section { inlineEmpty }
+            } else {
+                ForEach(openSections, id: \.kind) { section in
+                    Section {
+                        if !collapsed.contains(section.kind) {
+                            ForEach(section.tasks) { task in
+                                taskRow(task)
+                                    .transition(reduceMotion
+                                                ? .opacity
+                                                : .move(edge: .top).combined(with: .opacity))
                             }
-                        } header: {
-                            sectionHeader(section)
                         }
+                    } header: {
+                        sectionHeader(kind: section.kind)
+                    }
+                }
+
+                if !doneToday.isEmpty {
+                    Section {
+                        if !collapsed.contains(.doneToday) {
+                            ForEach(doneToday) { task in
+                                taskRow(task)
+                                    .transition(reduceMotion
+                                                ? .opacity
+                                                : .move(edge: .top).combined(with: .opacity))
+                            }
+                        }
+                    } header: {
+                        sectionHeader(kind: .doneToday, count: doneToday.count)
                     }
                 }
             }
-            .padding(.bottom, 120)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self,
-                                           value: geo.frame(in: .named("tasksScroll")).minY)
-                }
-            )
         }
-        .coordinateSpace(name: "tasksScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            tabBarVis.scrollOffset = y
+        .animation(reduceMotion ? nil : .taskSpring, value: taskService.tasks)
+    }
+
+    private func taskRow(_ task: MaintenanceTask) -> some View {
+        TaskRowView(task: task)
+            .environment(taskService)
+            .environment(propertyService)
+            .environment(familyService)
+            .padding(.horizontal, AppSpacing.xl)
+            .id(task.id)
+    }
+
+    // MARK: - Hero ("Acum")
+
+    @ViewBuilder
+    private func heroArea(hero: MaintenanceTask?, candidates: [MaintenanceTask],
+                          hasAnythingBelow: Bool) -> some View {
+        if let hero {
+            TaskHeroCard(task: hero, candidateCount: candidates.count) { delta in
+                advanceHero(delta, count: candidates.count)
+            }
+            .environment(taskService)
+            .environment(propertyService)
+            .environment(familyService)
+            .id(hero.id)
+            .transition(reduceMotion
+                        ? .opacity
+                        : .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                      removal: .move(edge: .leading).combined(with: .opacity)))
+            .padding(.horizontal, AppSpacing.xl)
+        } else if filter == .all, searchText.isEmpty, hasAnythingBelow {
+            // Nothing on today's plate but the list still has content below —
+            // say so, with the real house streak, instead of an abrupt gap.
+            TaskAllClearCard { showAdd = true }
+                .padding(.horizontal, AppSpacing.xl)
+        }
+    }
+
+    private func advanceHero(_ delta: Int, count: Int) {
+        guard count > 1 else { return }
+        withAnimation(reduceMotion ? .smooth(duration: 0.2) : .taskSpring) {
+            heroIndex = ((heroIndex % count) + delta + count) % count
         }
     }
 
@@ -316,53 +407,82 @@ struct TasksView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    // MARK: - Stat cards
+    // MARK: - Progress line
 
-    private var statCards: some View {
-        HStack(spacing: 10) {
-            TaskStatCard(icon: "checklist", tint: .brandSuccess,
-                         value: taskService.tasks.count, label: "task_stat_all",
-                         isSelected: filter == .all) { select(.all) }
-            TaskStatCard(icon: "circle.dotted", tint: .brandPurple,
-                         value: taskService.openCount, label: "task_stat_in_progress",
-                         isSelected: filter == .open) { select(.open) }
-            TaskStatCard(icon: "clock.fill", tint: .brandWarning,
-                         value: taskService.overdueCount, label: "task_stat_overdue",
-                         isSelected: filter == .overdue) { select(.overdue) }
-            TaskStatCard(icon: "checkmark.seal.fill", tint: .brandTeal,
-                         value: taskService.tasks.filter { $0.isCompleted }.count, label: "task_stat_completed",
-                         isSelected: filter == .done) { select(.done) }
-        }
+    private var progressLine: some View {
+        TaskProgressLine(
+            doneToday: completedTodayCount,
+            plateToday: todayPlateCount,
+            chips: [
+                .init(id: "overdue", label: "task_stat_overdue",
+                      count: taskService.overdueCount, tint: .brandWarning,
+                      isSelected: filter == .overdue) { select(.overdue) },
+                .init(id: "open", label: "task_stat_in_progress",
+                      count: taskService.openCount, tint: .brandPurple,
+                      isSelected: filter == .open) { select(.open) },
+                .init(id: "done", label: "task_stat_completed",
+                      count: completedCount, tint: .brandTeal,
+                      isSelected: filter == .done) { select(.done) }
+            ]
+        )
+    }
+
+    private var completedCount: Int {
+        taskService.tasks.filter { $0.isCompleted }.count
+    }
+
+    private var completedTodayCount: Int { doneTodayTasks.count }
+
+    /// Today's plate: everything already finished today plus everything
+    /// still actionable today — so "3 din 5 azi" reads as real progress.
+    private var todayPlateCount: Int {
+        completedTodayCount + taskService.tasks.filter { TaskTriage.isActionableToday($0) }.count
+    }
+
+    private var doneTodayTasks: [MaintenanceTask] {
+        taskService.tasks
+            .filter { TaskTriage.isCompletedToday($0) }
+            .sorted { $0.updatedAt > $1.updatedAt }
     }
 
     private func select(_ f: TaskFilter) {
-        HapticFeedback.selection()
         withAnimation(.taskSpring) { filter = (filter == f && f != .all) ? .all : f }
     }
 
     // MARK: - Section header
 
-    private func sectionHeader(_ section: TaskSection) -> some View {
+    private func sectionHeader(kind: TaskSectionKind, count: Int? = nil) -> some View {
         Button {
             HapticFeedback.impact(.light)
             withAnimation(.taskSpring) {
-                if collapsed.contains(section.kind) { collapsed.remove(section.kind) }
-                else { collapsed.insert(section.kind) }
+                if collapsed.contains(kind) { collapsed.remove(kind) }
+                else { collapsed.insert(kind) }
             }
         } label: {
             HStack {
-                Text(section.kind.title)
+                Text(kind.title)
                     .font(AppFont.title3)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
                 Spacer()
-                HStack(spacing: 4) {
-                    Text("task_see_all")
-                        .font(AppFont.footnote)
-                        .foregroundStyle(Color.secondaryTextColor)
+                HStack(spacing: 6) {
+                    if let count {
+                        Text(verbatim: "\(count)")
+                            .font(AppFont.captionStrong)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                            .foregroundStyle(Color.secondaryTextColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.subtleFill, in: Capsule())
+                    } else {
+                        Text("task_see_all")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(Color.secondaryTextColor)
+                    }
                     Image(systemName: "chevron.right")
                         .font(AppFont.scaled(12, weight: .semibold))
                         .foregroundStyle(Color.secondaryTextColor)
-                        .rotationEffect(.degrees(collapsed.contains(section.kind) ? 90 : 0))
+                        .rotationEffect(.degrees(collapsed.contains(kind) ? 90 : 0))
                 }
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -372,13 +492,16 @@ struct TasksView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: - Grouping
 
     private struct TaskSection { let kind: TaskSectionKind; let tasks: [MaintenanceTask] }
 
-    private var sections: [TaskSection] {
+    /// Temporal grouping of the open work; the task featured in the hero is
+    /// excluded so it never appears twice on screen.
+    private func sections(excluding heroId: UUID?) -> [TaskSection] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         guard let weekEnd = cal.date(byAdding: .day, value: 7, to: today) else { return [] }
@@ -387,7 +510,7 @@ struct TasksView: View {
         var weekTasks: [MaintenanceTask] = []
         var laterTasks: [MaintenanceTask] = []
 
-        for task in filtered {
+        for task in filtered where task.id != heroId {
             guard let ds = task.dueDate, let due = MaintenanceTask.parseDate(ds) else {
                 laterTasks.append(task); continue
             }
@@ -424,14 +547,40 @@ struct TasksView: View {
 
     // MARK: - Empty state
 
+    @ViewBuilder
     private var inlineEmpty: some View {
-        EmptyStateView(
-            icon: "checklist",
-            title: filter == .all ? "No tasks yet" : LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks"),
-            actionLabel: filter == .all ? "Add your first task" : nil,
-            action: filter == .all ? { showAdd = true } : nil
-        )
-        .frame(maxWidth: .infinity, minHeight: 320)
+        if !searchText.isEmpty {
+            EmptyStateView(icon: "magnifyingglass", title: "No results")
+                .frame(maxWidth: .infinity, minHeight: 320)
+        } else if filter == .all {
+            if taskService.tasks.isEmpty {
+                EmptyStateView(
+                    icon: "checklist",
+                    title: "No tasks yet",
+                    actionLabel: "Add your first task",
+                    action: { showAdd = true }
+                )
+                .frame(maxWidth: .infinity, minHeight: 320)
+            } else {
+                // Everything's handled: the all-clear voice, with the real
+                // house streak when there is one.
+                let streak = SharedDataStore.currentHouseStreak()
+                EmptyStateView(
+                    icon: "checkmark.seal.fill",
+                    title: "task_empty_all_clear",
+                    message: streak > 0 ? "task_empty_streak \(streak)" : nil,
+                    actionLabel: "task_empty_add_hint",
+                    action: { showAdd = true }
+                )
+                .frame(maxWidth: .infinity, minHeight: 320)
+            }
+        } else {
+            EmptyStateView(
+                icon: "checklist",
+                title: LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks")
+            )
+            .frame(maxWidth: .infinity, minHeight: 320)
+        }
     }
 
     // MARK: - Floating add button
@@ -461,11 +610,20 @@ struct TasksView: View {
 
     // MARK: - Helpers
 
-    private func resolveTaskDeepLink() {
+    /// Scrolls to the deep-linked task (the hero and every row share
+    /// `.id(task.id)`, so both are valid targets) and opens its editor.
+    private func resolveTaskDeepLink(_ proxy: ScrollViewProxy) {
         guard let id = router.deepLinkTaskId,
               let task = taskService.tasks.first(where: { $0.id == id }) else { return }
-        deepLinkedTask = task
         router.deepLinkTaskId = nil
+        withAnimation(reduceMotion ? nil : .taskSpring) {
+            proxy.scrollTo(id, anchor: .center)
+        }
+        // Present after the scroll settles so the sheet rises from context.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            deepLinkedTask = task
+        }
     }
 
     private func countFor(_ f: TaskFilter) -> Int {
@@ -473,7 +631,7 @@ struct TasksView: View {
         case .all:     return taskService.tasks.count
         case .open:    return taskService.openCount
         case .overdue: return taskService.overdueCount
-        case .done:    return taskService.tasks.filter { $0.isCompleted }.count
+        case .done:    return completedCount
         }
     }
 }
@@ -481,13 +639,14 @@ struct TasksView: View {
 // MARK: - Section kind
 
 enum TaskSectionKind: Hashable {
-    case today, week, later
+    case today, week, later, doneToday
 
     var title: LocalizedStringKey {
         switch self {
-        case .today: return "task_section_today"
-        case .week:  return "task_section_week"
-        case .later: return "task_section_later"
+        case .today:     return "task_section_today"
+        case .week:      return "task_section_week"
+        case .later:     return "task_section_later"
+        case .doneToday: return "task_section_done_today"
         }
     }
 }
