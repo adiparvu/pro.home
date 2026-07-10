@@ -9,6 +9,7 @@
 // each surface renders exactly the features it supports without forking the
 // component.
 import SwiftUI
+import UIKit
 
 // MARK: - Configuration
 
@@ -88,6 +89,22 @@ struct ChatComposerBar<Accessory: View>: View {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// How far the bar sinks into the bottom safe area while the keyboard is
+    /// away. The surfaces mount the bar as a bottom `safeAreaInset`, which
+    /// places it ABOVE the whole home-indicator inset (~34pt) — added to the
+    /// row's own `AppSpacing.sm`, that painted a tall empty `.bar` band
+    /// between the pill and the home indicator. iMessage instead rests the
+    /// pill ~8pt above the indicator, whose top edge sits ~13pt from the
+    /// physical screen bottom: overlapping by (inset − 13) leaves exactly
+    /// the row's 8pt of breathing room above it. Devices without a home
+    /// indicator report inset 0 → no overlap, nothing changes for them.
+    private var homeIndicatorOverlap: CGFloat {
+        let inset = (UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom) ?? 0
+        return max(inset - 13, 0)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if let edit {
@@ -130,10 +147,21 @@ struct ChatComposerBar<Accessory: View>: View {
                 composeRow
             }
         }
+        // iMessage geometry: with the keyboard away the row sinks into the
+        // bottom safe area (negative padding shrinks the inset the exact
+        // amount the content overflows, so the scroll inset stays correct)
+        // and the pill rests ~8pt above the home indicator instead of above
+        // the whole indicator band. While the keyboard is up the bottom safe
+        // area belongs to the keyboard, so the overlap must vanish — the
+        // pill then sits its usual 8pt above the keyboard.
+        .padding(.bottom, focused.wrappedValue ? 0 : -homeIndicatorOverlap)
         // A proper bar material so the compose row stays legible over any
         // wallpaper (a bare glass pill on its own read as near-transparent).
-        // `.bar` turns opaque automatically under Reduce Transparency.
+        // `.bar` turns opaque automatically under Reduce Transparency, and
+        // bleeds into the remaining safe area on its own, so the band covers
+        // exactly the bar + safe area — no gap, no extra band.
         .background(.bar)
+        .animation(.snappy(duration: 0.25), value: focused.wrappedValue)
         .animation(.spring(duration: 0.3), value: reply?.snippet)
         .animation(.spring(duration: 0.3), value: edit?.snippet)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)

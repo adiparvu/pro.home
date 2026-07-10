@@ -307,8 +307,9 @@ struct DirectMessageView: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+                        // iOS 26 wraps toolbar items in system Liquid Glass —
+                        // only pre-26 draws its own capsule.
+                        .chatToolbarCapsule()
                         .accessibilityLabel(Text("Search in conversation"))
                     }
                 }

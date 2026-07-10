@@ -153,7 +153,8 @@ struct DMFaceTimeHeaderButtons: View {
             .buttonStyle(.plain)
             .accessibilityLabel(Text(String(localized: "call_facetime_audio")))
         }
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+        // iOS 26 wraps toolbar items in system Liquid Glass — only pre-26
+        // draws its own capsule (see chatToolbarCapsule).
+        .chatToolbarCapsule()
     }
 }

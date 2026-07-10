@@ -142,10 +142,6 @@ struct ARIAView: View {
 
     // MARK: - Message list
 
-    /// Clearance so the newest message rests above the overlaid input bar
-    /// (which blurs the messages behind it = real glass), same as the chat.
-    private let chatBottomInset: CGFloat = 78
-
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
@@ -170,7 +166,6 @@ struct ARIAView: View {
                             .padding(.top, 6)
                             .id("ARIA_TYPING")
                     }
-                    Color.clear.frame(height: chatBottomInset)
                     // Jump-button sentinel — visibility follows the marker
                     // entering/leaving the lazy render window.
                     Color.clear.frame(height: 1).id("ARIA_BOTTOM")
@@ -183,6 +178,10 @@ struct ARIAView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
+                // The composer inset already keeps the newest message above
+                // the bar (safe-area mounting, same as the group chat) — this
+                // is just breathing room, matching ChatView.
+                .padding(.bottom, AppSpacing.md)
                 .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil,
                            value: messages.count)
                 .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil,
@@ -218,7 +217,7 @@ struct ARIAView: View {
                     .buttonStyle(.plain)
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.bottom, chatBottomInset + 8)
+                    .padding(.bottom, 10)
                     .transition(.scale.combined(with: .opacity))
                     .accessibilityLabel("Jump to latest message")
                 }

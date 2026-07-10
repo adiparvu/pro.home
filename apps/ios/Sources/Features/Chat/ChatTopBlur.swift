@@ -31,6 +31,27 @@ struct ChatTopBlur: View {
 
 // MARK: - Floating glass toolbar pieces
 
+extension View {
+    /// Capsule chrome for a control (or control cluster) hosted in the chat
+    /// navigation toolbar. On iOS 26 the system already wraps every
+    /// `ToolbarItem`'s content in its own Liquid Glass capsule — drawing our
+    /// own material inside it produced two visibly stacked capsules — so
+    /// there this adds nothing and lets the system glass be the only chrome.
+    /// Pre-26 it applies the hand-drawn glass capsule the chat header has
+    /// always used (ultra-thin material + hairline stroke), pixel-identical
+    /// to before.
+    @ViewBuilder
+    func chatToolbarCapsule() -> some View {
+        if #available(iOS 26, *) {
+            self
+        } else {
+            self
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+        }
+    }
+}
+
 /// The centered identity pill (avatar + name + status) — a soft glass
 /// capsule like iMessage's contact pill, so it stays readable over any
 /// wallpaper without needing a bar behind it.
@@ -41,8 +62,7 @@ struct ChatHeaderPill<Content: View>: View {
         content()
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+            .chatToolbarCapsule()
     }
 }
 
@@ -79,7 +99,6 @@ struct ChatHeaderActions: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Call")
         }
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+        .chatToolbarCapsule()
     }
 }

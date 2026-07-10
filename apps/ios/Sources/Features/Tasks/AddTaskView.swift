@@ -247,6 +247,9 @@ struct AddTaskView: View {
         }
     }
 
+    // Same Liquid Glass selection language as the category chips below —
+    // `glassFilterCapsule` supplies the material, while the priority tint
+    // stays visible through the colored dot and, when selected, the label.
     private func priorityChip(_ p: String) -> some View {
         let style = TaskPriorityStyle(p)
         let selected = priority == p
@@ -259,21 +262,13 @@ struct AddTaskView: View {
                 Text(style.label)
                     .font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
             }
-            .foregroundStyle(selected ? (style == .low ? Color.black.opacity(0.85) : .white)
-                                      : Color.primary.opacity(0.65))
+            .foregroundStyle(selected ? style.color : Color.primary.opacity(AppOpacity.emphasis))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
-            .background(chipBackground(style: style, selected: selected), in: Capsule())
+            .glassFilterCapsule(selected: selected)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-    }
-
-    private func chipBackground(style: TaskPriorityStyle, selected: Bool) -> Color {
-        if selected { return style.color }
-        // Critical keeps a soft danger tint even when unselected.
-        if style == .critical { return style.color.opacity(0.14) }
-        return Color.primary.opacity(AppOpacity.subtleFill)
     }
 
     // MARK: - Category

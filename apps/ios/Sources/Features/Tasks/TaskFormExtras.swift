@@ -45,7 +45,9 @@ struct TaskPhotoSection: View {
                         .foregroundStyle(Color.brandPurple)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, 6)
-                        .background(Color.brandPurple.opacity(0.12), in: Capsule())
+                        // Same Liquid Glass capsule as the form's filter
+                        // chips — the brandPurple label carries the accent.
+                        .glassFilterCapsule(selected: false)
                     }
                 }
             }
