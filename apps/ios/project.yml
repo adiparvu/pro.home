@@ -71,12 +71,11 @@ targets:
         # binary is signed with no aps-environment, and registerForRemoteNotifications
         # fails on device with error 3000 — no DM/group message ever delivers a push.
         aps-environment: production
-        # Communication Notifications (sender avatars on chat pushes) is
-        # deliberately NOT claimed yet: the ASC API could not enable the
-        # capability and the App Group association for the notification-service
-        # App ID is portal-manual (same as the watch ids). Until the one-time
-        # portal step is done, claiming it fails the archive — the service
-        # extension still runs and attaches voice/photo media without it.
+        # Communication Notifications (sender avatars on chat pushes) —
+        # claimed now that the one-time portal step is done (capability
+        # ticked on com.prvio.app + the notification-service App ID, and the
+        # app group associated there, same as the watch ids).
+        com.apple.developer.usernotifications.communication: true
         # NFC / HomeKit / WeatherKit are deliberately NOT restored here yet.
         # They were being silently stripped by the widget-clobber bug, so they
         # were already non-functional. Restoring NFC as-is fails App Store upload
@@ -207,11 +206,14 @@ targets:
     dependencies:
       - sdk: UserNotifications.framework
       - sdk: Intents.framework
-    # No entitlements on purpose: the App ID's App Group association and the
-    # Communication Notifications capability are portal-manual steps not done
-    # yet — claiming either fails the archive ("profile doesn't include...").
-    # The extension degrades gracefully: avatar cache falls back to tmp, and
-    # media attachments need no entitlement at all.
+    entitlements:
+      # Own file (never share the app's path — see PRVIOWidgets note above).
+      # Both capabilities were enabled portal-side (one-time manual step).
+      path: NotificationService/PRVIONotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+        com.apple.developer.usernotifications.communication: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.notificationservice
