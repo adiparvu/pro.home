@@ -26,6 +26,7 @@ struct BudgetView: View {
             EditBudgetSheet(
                 category: item.value,
                 current: budgetService.budget(for: item.value),
+                currencySymbol: financialService.currencySymbol,
                 onSave: { amount in
                     budgetService.setBudget(amount, for: item.value)
                     HapticFeedback.success()
@@ -193,6 +194,8 @@ struct BudgetView: View {
 private struct EditBudgetSheet: View {
     let category: String
     let current: Double
+    /// The household's real currency symbol — this sheet used to hardcode "€".
+    let currencySymbol: String
     let onSave: (Double) -> Void
 
     @State private var amount: String = ""
@@ -210,7 +213,7 @@ private struct EditBudgetSheet: View {
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             HStack(spacing: 8) {
-                                Text("€")
+                                Text(verbatim: currencySymbol)
                                     .font(AppFont.scaled(32, weight: .light))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)

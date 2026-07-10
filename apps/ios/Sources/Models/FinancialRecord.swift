@@ -15,12 +15,21 @@ struct FinancialRecord: Identifiable, Codable {
     /// Free-form labels. The appliance service book rides here:
     /// ["service", "appliance:<uuid>"] links a repair expense to its appliance.
     var tags: [String] = []
+    /// Recurring template flag (migration 015): rows with `is_recurring` are
+    /// cloned server-side on `next_occurrence` by a daily pg_cron job.
+    /// Optional so cached rows written before the columns existed still decode.
+    var isRecurring: Bool?
+    var recurrenceInterval: String?   // "monthly" | "yearly"
+    var nextOccurrence: String?       // "YYYY-MM-DD"
 
     enum CodingKeys: String, CodingKey {
         case id, title, amount, currency, type, category, date, description, tags
         case propertyId = "property_id"
         case createdAt = "created_at"
         case sharedMemberIds = "shared_member_ids"
+        case isRecurring = "is_recurring"
+        case recurrenceInterval = "recurrence_interval"
+        case nextOccurrence = "next_occurrence"
     }
 
     var dateFormatted: String {

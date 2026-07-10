@@ -31,7 +31,17 @@ struct InventoryRow: View {
                             .offset(x: 4, y: 4)
                         }
                 } else {
-                    ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
+                    // Category-tinted fallback badge — the same colour mapping
+                    // as the long-press preview, so every row carries its
+                    // category identity even without a photo.
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(item.categoryColor.opacity(0.15))
+                        Image(systemName: item.categoryIcon)
+                            .font(AppFont.scaled(18, weight: .medium))
+                            .foregroundStyle(item.categoryColor)
+                    }
+                    .frame(width: 44, height: 44)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
@@ -50,7 +60,11 @@ struct InventoryRow: View {
                         Text(LocalizedStringKey(item.location.capitalized)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
-                        Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")
+                        // "La Vasile · 3 iul." — who has it and since when.
+                        Label(String(format: String(localized: "inv_loaned_short"),
+                                     loan.borrowerName,
+                                     loan.loanedAt.formatted(.dateTime.day().month(.abbreviated))),
+                              systemImage: "person.fill")
                             .font(AppFont.scaled(10, weight: .medium)).foregroundStyle(.orange)
                     }
                 }
@@ -97,6 +111,9 @@ struct AddInventorySheet: View {
     @State private var notes = ""
     @State private var selectedImageData: Data?
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var receiptImageData: Data?
+    @State private var receiptPhotoItem: PhotosPickerItem?
+    @State private var showSerialScanner = false
     @State private var showCamera = false
     @State private var showFileImporter = false
     @State private var showPhotoMenu = false
@@ -121,12 +138,12 @@ struct AddInventorySheet: View {
                             div
                             picker("mappin.circle.fill", "Location", $location, locations)
                             div
-                            picker("sparkles", "Condition", $condition, conditions)
+                            picker("checkmark.seal", "Condition", $condition, conditions)
                         }
                         card {
                             field("building.2.fill", "Brand", $brand)
                             div
-                            field("number", "Număr de serie", $serial)
+                            serialField
                             div
                             field("eurosign.circle.fill", "Valoare (€)", $price, keyboard: .decimalPad)
                         }
@@ -147,6 +164,8 @@ struct AddInventorySheet: View {
                                     Color.clear.frame(width: 28)
                                     DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
+                                div
+                                receiptRow
                             }
                         }
                         card {
@@ -178,6 +197,13 @@ struct AddInventorySheet: View {
                 }
                 .ignoresSafeArea()
             }
+            .fullScreenCover(isPresented: $showSerialScanner) {
+                SerialScannerSheet { text in
+                    serial = text
+                    showSerialScanner = false
+                    HapticFeedback.success()
+                }
+            }
             .fileImporter(
                 isPresented: $showFileImporter,
                 allowedContentTypes: [.image, .jpeg, .png, .heic]
@@ -192,6 +218,13 @@ struct AddInventorySheet: View {
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self) {
                         selectedImageData = data
+                    }
+                }
+            }
+            .onChange(of: receiptPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        receiptImageData = data
                     }
                 }
             }
@@ -274,6 +307,8 @@ struct AddInventorySheet: View {
         notes = e.notes
         selectedImageData = InventoryImageStore.load(for: e.id)?
             .jpegData(compressionQuality: 0.85)
+        receiptImageData = InventoryImageStore.loadReceipt(for: e.id)?
+            .jpegData(compressionQuality: 0.85)
     }
 
     private func save() async {
@@ -292,6 +327,11 @@ struct AddInventorySheet: View {
         } else if editing != nil {
             InventoryImageStore.delete(for: item.id)
         }
+        if let data = receiptImageData {
+            InventoryImageStore.saveReceipt(data, for: item.id)
+        } else if editing != nil {
+            InventoryImageStore.deleteReceipt(for: item.id)
+        }
         onSave(item)
         HapticFeedback.success()
         dismiss()
@@ -302,6 +342,61 @@ struct AddInventorySheet: View {
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
+    /// Serial-number field with a Live Text scan button — VisionKit reads the
+    /// label with the camera and fills the field. Hidden on hardware without
+    /// data-scanning support, so the control is never dead.
+    private var serialField: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "number").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField("Număr de serie", text: $serial)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.characters)
+            if DataScannerViewController.isSupported {
+                Button { HapticFeedback.impact(.light); showSerialScanner = true } label: {
+                    Image(systemName: "text.viewfinder")
+                        .font(AppFont.scaled(16, weight: .medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("inv_scan_serial"))
+            }
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+    }
+
+    /// Warranty proof — an optional receipt/invoice photo kept alongside the
+    /// item's other local photos.
+    private var receiptRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.text.image").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            if let data = receiptImageData, let img = UIImage(data: data) {
+                Image(uiImage: img)
+                    .resizable().scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                Text("inv_receipt").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                Spacer()
+                Button { receiptImageData = nil; receiptPhotoItem = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(18))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("inv_receipt_remove"))
+            } else {
+                PhotosPicker(selection: $receiptPhotoItem, matching: .images) {
+                    HStack {
+                        Text("inv_receipt_attach").font(AppFont.scaled(15)).foregroundStyle(Color.accentColor)
+                        Spacer()
+                        Image(systemName: "plus.circle.fill")
+                            .font(AppFont.scaled(16))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+            }
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
+    }
+
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
@@ -366,13 +461,20 @@ struct QRScannerSheet: View {
 }
 
 struct DataScannerRepresentable: UIViewControllerRepresentable {
+    /// What VisionKit should recognize — defaults to the QR configuration
+    /// used by the inventory QR sheet.
+    var recognizedDataTypes: Set<DataScannerViewController.RecognizedDataType> = [.barcode(symbologies: [.qr])]
+    /// Barcodes fire on first recognition. Freeform text waits for an
+    /// explicit tap on the highlighted line instead — auto-filling on first
+    /// detection would happily grab the wrong label off a crowded sticker.
+    var firesOnFirstRecognition = true
     let onScan: (String) -> Void
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let vc = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.qr])],
+            recognizedDataTypes: recognizedDataTypes,
             qualityLevel: .accurate,
-            recognizesMultipleItems: false,
+            recognizesMultipleItems: !firesOnFirstRecognition,
             isHighFrameRateTrackingEnabled: false,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
@@ -384,22 +486,89 @@ struct DataScannerRepresentable: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {}
-    func makeCoordinator() -> Coordinator { Coordinator(onScan: onScan) }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(firesOnFirstRecognition: firesOnFirstRecognition, onScan: onScan)
+    }
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let firesOnFirstRecognition: Bool
         let onScan: (String) -> Void
         private var fired = false
-        init(onScan: @escaping (String) -> Void) { self.onScan = onScan }
+
+        init(firesOnFirstRecognition: Bool, onScan: @escaping (String) -> Void) {
+            self.firesOnFirstRecognition = firesOnFirstRecognition
+            self.onScan = onScan
+        }
+
+        private func payload(of item: RecognizedItem) -> String? {
+            switch item {
+            case .barcode(let b): return b.payloadStringValue
+            case .text(let t):    return t.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            @unknown default:     return nil
+            }
+        }
+
+        private func deliver(_ value: String, from scanner: DataScannerViewController) {
+            guard !fired, !value.isEmpty else { return }
+            fired = true
+            scanner.stopScanning()
+            DispatchQueue.main.async { self.onScan(value) }
+        }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
-            guard !fired else { return }
+            guard firesOnFirstRecognition else { return }
             for item in addedItems {
-                if case .barcode(let b) = item, let value = b.payloadStringValue {
-                    fired = true
-                    dataScanner.stopScanning()
-                    DispatchQueue.main.async { self.onScan(value) }
+                if let value = payload(of: item) {
+                    deliver(value, from: dataScanner)
                     return
                 }
+            }
+        }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            if let value = payload(of: item) { deliver(value, from: dataScanner) }
+        }
+    }
+}
+
+// MARK: - Serial number scanner (Live Text)
+
+/// Camera capture for the serial-number field: VisionKit highlights the text
+/// it recognizes and the user taps the correct line to fill the field.
+struct SerialScannerSheet: View {
+    let onScan: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            if DataScannerViewController.isSupported {
+                DataScannerRepresentable(recognizedDataTypes: [.text()],
+                                         firesOnFirstRecognition: false,
+                                         onScan: onScan)
+                    .ignoresSafeArea()
+            } else {
+                appBackground.ignoresSafeArea()
+                VStack(spacing: 16) {
+                    Image(systemName: "camera.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
+                }
+            }
+            VStack {
+                HStack {
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(30))
+                            .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
+                    }
+                    .accessibilityLabel("Close scanner")
+                    .padding(AppSpacing.xl)
+                }
+                Spacer()
+                Text("inv_scan_serial_hint")
+                    .font(AppFont.body).foregroundStyle(.primary)
+                    .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
+                    .background(Color.black.opacity(0.5), in: Capsule())
+                    .padding(.bottom, 60)
             }
         }
     }
@@ -438,6 +607,7 @@ enum InventoryImageStore {
     static func migrate(from oldId: UUID, to newId: UUID) {
         guard oldId != newId else { return }
         try? FileManager.default.moveItem(at: url(for: oldId), to: url(for: newId))
+        try? FileManager.default.moveItem(at: receiptURL(for: oldId), to: receiptURL(for: newId))
         let oldDir = galleryDir(for: oldId, create: false)
         if FileManager.default.fileExists(atPath: oldDir.path) {
             try? FileManager.default.moveItem(at: oldDir, to: galleryDir(for: newId, create: false))
@@ -446,7 +616,34 @@ enum InventoryImageStore {
 
     static func deleteAll(for id: UUID) {
         delete(for: id)
+        deleteReceipt(for: id)
         try? FileManager.default.removeItem(at: galleryDir(for: id, create: false))
+    }
+
+    // MARK: Receipt / invoice photo (warranty proof)
+
+    private static func receiptURL(for id: UUID) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inventory_receipt_\(id.uuidString).jpg")
+    }
+
+    static func saveReceipt(_ data: Data, for id: UUID) {
+        let compressed: Data
+        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+            compressed = jpg
+        } else {
+            compressed = data
+        }
+        try? compressed.write(to: receiptURL(for: id))
+    }
+
+    static func loadReceipt(for id: UUID) -> UIImage? {
+        guard let data = try? Data(contentsOf: receiptURL(for: id)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func deleteReceipt(for id: UUID) {
+        try? FileManager.default.removeItem(at: receiptURL(for: id))
     }
 
     // MARK: Gallery (additional photos, separate from the cover)

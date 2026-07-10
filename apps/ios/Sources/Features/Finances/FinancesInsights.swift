@@ -85,10 +85,18 @@ struct SixMonthTrendSection: View {
         let label: String
         let isIncome: Bool
         let amount: Double
+        /// False when the month has no records at all — "no history" is drawn
+        /// as a dim tick so it never masquerades as "earned/spent zero".
+        let hasData: Bool
         var id: String { "\(monthStart.timeIntervalSinceReferenceDate)-\(isIncome)" }
     }
 
     let points: [Point]
+
+    /// Axis labels of months without any recorded history (dimmed).
+    private var noDataLabels: Set<String> {
+        Set(points.lazy.filter { !$0.hasData }.map(\.label))
+    }
 
     var body: some View {
         if points.contains(where: { $0.amount > 0 }) {
@@ -100,20 +108,31 @@ struct SixMonthTrendSection: View {
                     .kerning(0.5)
 
                 Chart(points) { point in
-                    BarMark(
-                        x: .value("Month", point.label),
-                        y: .value("Amount", point.amount),
-                        width: .ratio(0.35)
-                    )
-                    .foregroundStyle(point.isIncome ? Color.brandSuccess : Color.red.opacity(0.85))
-                    .position(by: .value("Kind", point.isIncome ? "income" : "expense"))
-                    .cornerRadius(3)
+                    if point.hasData {
+                        BarMark(
+                            x: .value("Month", point.label),
+                            y: .value("Amount", point.amount),
+                            width: .ratio(0.35)
+                        )
+                        .foregroundStyle(point.isIncome ? Color.brandSuccess : Color.red.opacity(0.85))
+                        .position(by: .value("Kind", point.isIncome ? "income" : "expense"))
+                        .cornerRadius(3)
+                    } else if point.isIncome {
+                        // One dim tick per no-history month, drawn at the
+                        // baseline: distinct from a real zero-height bar.
+                        PointMark(
+                            x: .value("Month", point.label),
+                            y: .value("Amount", 0.0)
+                        )
+                        .symbolSize(14)
+                        .foregroundStyle(Color.primary.opacity(0.22))
+                    }
                 }
                 .chartXAxis {
-                    AxisMarks { _ in
+                    AxisMarks { value in
                         AxisValueLabel()
                             .font(AppFont.label)
-                            .foregroundStyle(Color.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(isNoDataMonth(value) ? 0.18 : 0.4))
                     }
                 }
                 .chartYAxis {
@@ -129,12 +148,20 @@ struct SixMonthTrendSection: View {
                 HStack(spacing: AppSpacing.lg) {
                     legendDot(color: Color.brandSuccess, label: "Income")
                     legendDot(color: Color.red.opacity(0.85), label: "Expenses")
+                    if !noDataLabels.isEmpty {
+                        legendDot(color: Color.primary.opacity(0.25), label: "fin_trend_no_data")
+                    }
                 }
             }
             .padding(AppSpacing.lg)
             .background(Color.primary.opacity(0.05),
                         in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         }
+    }
+
+    private func isNoDataMonth(_ value: AxisValue) -> Bool {
+        guard let label = value.as(String.self) else { return false }
+        return noDataLabels.contains(label)
     }
 
     private func legendDot(color: Color, label: LocalizedStringKey) -> some View {

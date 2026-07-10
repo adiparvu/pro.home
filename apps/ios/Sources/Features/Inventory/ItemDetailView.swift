@@ -167,6 +167,19 @@ struct ItemDetailView: View {
                     rowDiv
                 }
                 dRow(warrantyIcon, "Warranty", warrantyText, color: warrantyColor)
+                if let receipt = InventoryImageStore.loadReceipt(for: live.id) {
+                    rowDiv
+                    HStack(spacing: 12) {
+                        Image(systemName: "doc.text.image").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+                        Text("inv_receipt").font(AppFont.scaled(14)).foregroundStyle(.primary)
+                        Spacer()
+                        Image(uiImage: receipt)
+                            .resizable().scaledToFill()
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                    }
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                }
                 if !live.loanHistory.isEmpty {
                     rowDiv
                     Button { withAnimation { showHistory.toggle() } } label: {

@@ -1,6 +1,16 @@
 import SwiftUI
 import Charts
 
+// MARK: - Balance insight
+
+/// One sentence under the balance, only ever built from real data.
+enum FinanceInsight: Equatable {
+    /// Spending changed vs. the previous month (both months have expenses).
+    case comparison(percent: Int, less: Bool, previousMonth: String)
+    /// The displayed month's biggest expense category.
+    case topCategory(category: String, amount: Double)
+}
+
 // MARK: - Main View
 
 struct FinancesView: View {
@@ -8,12 +18,13 @@ struct FinancesView: View {
     @Environment(BudgetService.self) var budgetService
     @Environment(CurrencyService.self) var currencyService
     @Environment(DocumentService.self) var documentService
+    @Environment(FamilyService.self) var familyService
     @Environment(AppSettings.self) var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
     @State private var showAddSheet    = false
-    @State private var selectedType: String? = nil
+    @State var selectedType: String? = nil
     @State var displayedMonth: Date   = Calendar.current.startOfMonth(Date())
     @State private var searchText = ""
 
@@ -83,7 +94,9 @@ struct FinancesView: View {
     }
 
     /// Income vs. expenses for the six months ending at the displayed month,
-    /// zeros included so the chart never lies by omission.
+    /// zeros included so the chart never lies by omission. Months with no
+    /// records at all are flagged (`hasData == false`) so the chart can show
+    /// "no history" differently from a real zero.
     func trendPoints() -> [SixMonthTrendSection.Point] {
         let cal = Calendar.current
         guard let end = cal.date(byAdding: .month, value: 1, to: displayedMonth),
@@ -97,15 +110,101 @@ struct FinancesView: View {
             if r.isIncome { b.income += v } else { b.expense += v }
             buckets[m] = b
         }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        formatter.locale = .current
-        return (0..<6).compactMap { cal.date(byAdding: .month, value: $0, to: start) }.flatMap { m in
-            let b = buckets[m] ?? (0, 0)
-            let label = formatter.string(from: m).capitalized
-            return [SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: true, amount: b.income),
-                    SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: false, amount: b.expense)]
+        return (0..<6).compactMap { cal.date(byAdding: .month, value: $0, to: start) }
+            .flatMap { m -> [SixMonthTrendSection.Point] in
+                let bucket = buckets[m]
+                let b = bucket ?? (0, 0)
+                let label = AppDate.monthLabel.string(from: m).capitalized
+                return [SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: true,
+                                                   amount: b.income, hasData: bucket != nil),
+                        SixMonthTrendSection.Point(monthStart: m, label: label, isIncome: false,
+                                                   amount: b.expense, hasData: bucket != nil)]
+            }
+    }
+
+    /// The one honest sentence under the balance: spending compared with the
+    /// previous month when both months actually have expenses, otherwise the
+    /// displayed month's biggest expense category. Nil when the data can't
+    /// back either claim — then nothing is shown, nothing is invented.
+    func insight(expenses: Double, month: [FinancialRecord]) -> FinanceInsight? {
+        let cal = Calendar.current
+        if expenses > 0, let prevStart = cal.date(byAdding: .month, value: -1, to: displayedMonth) {
+            let previous = financialService.records.filter { r in
+                guard let d = AppDate.day(from: r.date) else { return false }
+                return d >= prevStart && d < displayedMonth
+            }
+            let prevExpenses = total("expense", in: previous)
+            if prevExpenses > 0 {
+                let percent = Int((abs(expenses - prevExpenses) / prevExpenses * 100).rounded())
+                if percent >= 1 {
+                    return .comparison(percent: percent,
+                                       less: expenses < prevExpenses,
+                                       previousMonth: AppDate.monthName.string(from: prevStart))
+                }
+            }
         }
+        if let top = categoryItems(month: month).first {
+            return .topCategory(category: top.category, amount: top.amount)
+        }
+        return nil
+    }
+
+    /// The next few real recurring due dates, merged from the two sources the
+    /// backend actually has: recurring financial-record templates
+    /// (`is_recurring` + `next_occurrence`, migration 015) and active tenant
+    /// leases (`monthly_rent` + `payment_day`, migration 105). No recurring
+    /// data → empty array → the section never appears.
+    func upcomingPayments(limit: Int = 3) -> [UpcomingPaymentItem] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        var items: [UpcomingPaymentItem] = []
+
+        for r in financialService.records where r.isRecurring == true {
+            guard let nextStr = r.nextOccurrence,
+                  let due = AppDate.day(from: nextStr), due >= today else { continue }
+            items.append(UpcomingPaymentItem(
+                id: "record-\(r.id.uuidString)",
+                kind: .record(title: r.title),
+                category: r.category,
+                date: due,
+                amount: currencyService.convert(r.amount, from: r.currency, to: preferred),
+                isIncome: r.isIncome))
+        }
+
+        for lease in familyService.leases.values {
+            guard let rent = lease.monthlyRent, rent > 0,
+                  let day = lease.paymentDay, (1...31).contains(day),
+                  !lease.hasEnded,
+                  let due = Self.nextMonthlyDate(day: day, onOrAfter: today, calendar: cal)
+            else { continue }
+            if let endStr = lease.leaseEnd, let end = AppDate.day(from: endStr), due > end { continue }
+            if let startStr = lease.leaseStart, let start = AppDate.day(from: startStr), due < start { continue }
+            let tenant = familyService.members.first { $0.id == lease.memberId }?.name
+            items.append(UpcomingPaymentItem(
+                id: "lease-\(lease.id.uuidString)",
+                kind: .rent(tenantName: tenant),
+                category: "rent",
+                date: due,
+                amount: currencyService.convert(rent, from: lease.currency, to: preferred),
+                isIncome: true))
+        }
+
+        return Array(items.sorted { $0.date < $1.date }.prefix(limit))
+    }
+
+    /// First occurrence of `day`-of-month on/after `date`, clamped to the
+    /// month's length (a "31st" rent day falls on Feb 28/29, like Calendar).
+    private static func nextMonthlyDate(day: Int, onOrAfter date: Date, calendar cal: Calendar) -> Date? {
+        func clamped(in monthStart: Date) -> Date? {
+            guard let daysInMonth = cal.range(of: .day, in: .month, for: monthStart)?.count else { return nil }
+            var comps = cal.dateComponents([.year, .month], from: monthStart)
+            comps.day = min(day, daysInMonth)
+            return cal.date(from: comps)
+        }
+        let thisMonth = cal.startOfMonth(date)
+        if let due = clamped(in: thisMonth), due >= date { return due }
+        guard let nextMonth = cal.date(byAdding: .month, value: 1, to: thisMonth) else { return nil }
+        return clamped(in: nextMonth)
     }
 
     var body: some View {
@@ -126,12 +225,28 @@ struct FinancesView: View {
         if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        heroSection(net: income - expenses)
-                        kpiStrip(income: income, expenses: expenses)
+                        heroSection(net: income - expenses,
+                                    insight: insight(expenses: expenses, month: month))
+                        kpiStrip(income: income, expenses: expenses) { type in
+                            HapticFeedback.selection()
+                            withAnimation(.spring(response: 0.3)) {
+                                selectedType = selectedType == type ? nil : type
+                            }
+                            if selectedType != nil {
+                                withAnimation(.spring(response: 0.35)) {
+                                    proxy.scrollTo("fin_transactions", anchor: .top)
+                                }
+                            }
+                        }
                         quickActionsRow
                             .padding(.top, AppSpacing.xl)
+                            .padding(.horizontal, AppSpacing.xl)
+                        UpcomingPaymentsSection(items: upcomingPayments(),
+                                                format: { fmt($0) })
+                            .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         CategoryBreakdownSection(items: categoryItems(month: month),
                                                  format: { fmt($0) })
@@ -148,6 +263,7 @@ struct FinancesView: View {
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         transactionList(filtered)
+                            .id("fin_transactions")
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
@@ -164,6 +280,7 @@ struct FinancesView: View {
                     tabBarVis.scrollOffset = y
                 }
                 .refreshable { await financialService.load() }
+                }
         }
         }
         .background(appBackground.ignoresSafeArea())
@@ -185,7 +302,7 @@ struct FinancesView: View {
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
-                    prompt: Text("Search transactions…"))
+                    prompt: Text("fin_search_prompt"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
             ToolbarItem(placement: .topBarTrailing) {
@@ -193,7 +310,7 @@ struct FinancesView: View {
                     Image(systemName: "plus")
                         .font(AppFont.headline)
                 }
-                .accessibilityLabel("Add transaction")
+                .accessibilityLabel("fin_add_transaction")
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -205,7 +322,15 @@ struct FinancesView: View {
         )) {
             Button("OK") { financialService.error = nil }
         } message: { Text(LocalizedStringKey(financialService.error ?? "")) }
-        .task { await financialService.load() }
+        .task {
+            await financialService.load()
+            // Leases feed the "next payments" strip (rent due dates); load
+            // members too so a due rent can carry the tenant's name.
+            if let pid = PropertyService.activePropertyId {
+                if familyService.members.isEmpty { await familyService.load() }
+                await familyService.loadLeases(propertyId: pid)
+            }
+        }
     }
 
     private var filterMenu: some View {
@@ -226,6 +351,6 @@ struct FinancesView: View {
                 .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
-        .accessibilityLabel("Filter transactions")
+        .accessibilityLabel("fin_filter_transactions")
     }
 }

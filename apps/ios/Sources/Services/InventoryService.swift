@@ -144,6 +144,8 @@ final class InventoryService {
 
     var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }
     var loanedCount: Int { items.filter { $0.isLoaned }.count }
+    /// Items that have a warranty on record (valid, expiring or expired).
+    var warrantyCount: Int { items.filter { $0.warrantyExpiresAt != nil }.count }
     var expiringWarrantyCount: Int { items.filter { $0.warrantyStatus == .expiringSoon }.count }
 
     // MARK: - Private

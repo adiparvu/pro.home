@@ -15,6 +15,7 @@ struct InventoryView: View {
     @State private var showScanner = false
     @State private var selectedItem: InventoryItem?
     @State private var editItem: InventoryItem?
+    @State private var loanItem: InventoryItem?
     @State private var deleteCandidate: InventoryItem?
     @State private var scannedUnknown = false
     @State private var didAutoScan = false
@@ -22,14 +23,16 @@ struct InventoryView: View {
     private let favorites = InventoryFavorites.shared
 
     enum InvFilter: String, CaseIterable {
-        case all = "Toate", favorites = "Favorite", loaned = "Împrumutate", tools = "Unelte"
-        case garden = "Grădină", outdoor = "Exterior", electronics = "Electronice", other = "Altele"
+        case all = "Toate", favorites = "Favorite", loaned = "Împrumutate", warranty = "Garanții"
+        case tools = "Unelte", garden = "Grădină", outdoor = "Exterior", electronics = "Electronice"
+        case other = "Altele"
 
         var icon: String {
             switch self {
             case .all:         return "square.grid.2x2.fill"
             case .favorites:   return "star.fill"
             case .loaned:      return "arrow.uturn.right.circle.fill"
+            case .warranty:    return "checkmark.shield.fill"
             case .tools:       return "wrench.and.screwdriver.fill"
             case .garden:      return "leaf.fill"
             case .outdoor:     return "sun.max.fill"
@@ -45,6 +48,12 @@ struct InventoryView: View {
         case .all:         base = service.items
         case .favorites:   base = service.items.filter { favorites.isFavorite($0.id) }
         case .loaned:      base = service.items.filter { $0.isLoaned }
+        case .warranty:
+            // Items that carry a warranty, the ones expiring (or expired)
+            // soonest first — the slice the user checks under time pressure.
+            base = service.items
+                .filter { $0.warrantyExpiresAt != nil }
+                .sorted { ($0.warrantyExpiresAt ?? .distantFuture) < ($1.warrantyExpiresAt ?? .distantFuture) }
         case .tools:       base = service.items.filter { $0.category == "tools" }
         case .garden:      base = service.items.filter { $0.category == "garden" }
         case .outdoor:     base = service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }
@@ -102,6 +111,10 @@ struct InventoryView: View {
                                             Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: {
                                                 Label("Returned", systemImage: "checkmark.circle")
                                             }
+                                        } else {
+                                            Button { HapticFeedback.impact(.medium); loanItem = item } label: {
+                                                Label("inv_lend_action", systemImage: "arrow.uturn.right.circle")
+                                            }
                                         }
                                         Divider()
                                         Button(role: .destructive) { deleteCandidate = item } label: {
@@ -118,7 +131,7 @@ struct InventoryView: View {
                                             Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: { Label("Returned", systemImage: "checkmark.circle") }
                                                 .tint(Color.brandSuccess)
                                         } else {
-                                            Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
+                                            Button { HapticFeedback.impact(.medium); loanItem = item } label: { Label("inv_lend_action", systemImage: "arrow.uturn.right.circle") }
                                                 .tint(.accentColor)
                                         }
                                     }
@@ -193,6 +206,11 @@ struct InventoryView: View {
         .sheet(item: $editItem) { item in
             AddInventorySheet(editing: item) { updated in Task { await service.update(updated) } }
         }
+        .sheet(item: $loanItem) { item in
+            LoanItemSheet { borrower, returnDate in
+                Task { await service.loanOut(item, to: borrower, expectedReturn: returnDate) }
+            }
+        }
         .confirmationDialog("Delete this item?", isPresented: .init(
             get: { deleteCandidate != nil },
             set: { if !$0 { deleteCandidate = nil } }
@@ -225,23 +243,51 @@ struct InventoryView: View {
         HStack(spacing: 8) {
             infoTile(CurrencyService.money(service.totalValue, code: "EUR", whole: true), "Value")
             infoTile("\(service.items.count)", "Items")
-            infoTile("\(service.loanedCount)", "Loaned", highlight: service.loanedCount > 0)
-            infoTile("\(service.expiringWarrantyCount)", "Warranty !", highlight: service.expiringWarrantyCount > 0)
+            filterTile("\(service.loanedCount)", "Loaned", target: .loaned,
+                       highlight: service.loanedCount > 0 ? .orange : nil)
+            filterTile("\(service.warrantyCount)", "inv_stat_warranties", target: .warranty,
+                       highlight: service.expiringWarrantyCount > 0 ? Color.brandDanger : nil)
         }
     }
 
-    private func infoTile(_ value: String, _ label: LocalizedStringKey, highlight: Bool = false) -> some View {
+    private func infoTile(_ value: String, _ label: LocalizedStringKey) -> some View {
         GlassCard(padding: 10) {
             VStack(spacing: 3) {
                 // Was `.white`, which is invisible on the light-mode card. Use
                 // `.primary` so it's readable in both light and dark.
                 Text(value).font(AppFont.scaled(15, weight: .bold))
-                    .foregroundStyle(highlight ? .orange : .primary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 Text(label).font(AppFont.scaled(10, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }.frame(maxWidth: .infinity)
         }
+    }
+
+    /// A summary tile that doubles as a filter: tap filters the list to this
+    /// slice, tap again returns to All. Selection speaks the GlassFilterChip
+    /// language (accent-tinted glass / accent ring) so it reads instantly.
+    private func filterTile(_ value: String, _ label: LocalizedStringKey,
+                            target: InvFilter, highlight: Color? = nil) -> some View {
+        let isSelected = filter == target
+        return Button {
+            HapticFeedback.impact(.light)
+            withAnimation(.spring(response: 0.25)) { filter = isSelected ? .all : target }
+        } label: {
+            VStack(spacing: 3) {
+                Text(value).font(AppFont.scaled(15, weight: .bold))
+                    .foregroundStyle(isSelected ? Color.accentColor : (highlight ?? .primary))
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(AppFont.scaled(10, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.secondaryText))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .glassFilterRoundedRect(selected: isSelected, cornerRadius: 24)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     private var emptyState: some View {
@@ -262,6 +308,7 @@ struct InventoryView: View {
         for item in service.items {
             if favorites.isFavorite(item.id) { counts[.favorites, default: 0] += 1 }
             if item.isLoaned { counts[.loaned, default: 0] += 1 }
+            if item.warrantyExpiresAt != nil { counts[.warranty, default: 0] += 1 }
             switch item.category {
             case "tools":                          counts[.tools, default: 0] += 1
             case "garden":                         counts[.garden, default: 0] += 1

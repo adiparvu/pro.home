@@ -37,12 +37,6 @@ final class InventoryFavorites {
 struct InventoryItemPreview: View {
     let item: InventoryItem
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        return f
-    }()
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let img = InventoryImageStore.load(for: item.id) {
@@ -82,20 +76,30 @@ struct InventoryItemPreview: View {
                     .foregroundStyle(Color.secondaryTextColor)
                 }
 
-                HStack(spacing: AppSpacing.sm) {
-                    if item.purchasePrice > 0 {
-                        previewChip("eurosign.circle.fill", Text(verbatim: CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)), .blue)
-                    }
-                    previewChip("sparkles", Text(LocalizedStringKey(item.condition.capitalized)), .purple)
-                    switch item.warrantyStatus {
-                    case .valid:
-                        previewChip("checkmark.shield.fill", Text("Warranty"), .green)
-                    case .expiringSoon:
-                        previewChip("exclamationmark.shield.fill", Text("Warranty"), .orange)
-                    case .expired:
-                        previewChip("xmark.shield.fill", Text("Expired"), .red)
-                    case .none:
-                        EmptyView()
+                previewChip("checkmark.seal", Text(LocalizedStringKey(item.condition.capitalized)), .purple)
+
+                // Discreet facts: what it's worth and how long the warranty
+                // lives — the price/warranty chips grew into real rows.
+                if item.purchasePrice > 0 || item.warrantyStatus != .none {
+                    VStack(alignment: .leading, spacing: 5) {
+                        if item.purchasePrice > 0 {
+                            infoRow("eurosign.circle",
+                                    Text(verbatim: CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)),
+                                    Color.primary.opacity(AppOpacity.mediumText))
+                        }
+                        switch item.warrantyStatus {
+                        case .valid, .expiringSoon:
+                            if let exp = item.warrantyExpiresAt {
+                                infoRow(item.warrantyStatus == .expiringSoon ? "exclamationmark.shield" : "checkmark.shield",
+                                        Text(String(format: String(localized: "inv_warranty_until"),
+                                                    exp.formatted(date: .abbreviated, time: .omitted))),
+                                        item.warrantyStatus == .expiringSoon ? .orange : Color.primary.opacity(AppOpacity.mediumText))
+                            }
+                        case .expired:
+                            infoRow("xmark.shield", Text("inv_warranty_expired"), Color.brandDanger)
+                        case .none:
+                            EmptyView()
+                        }
                     }
                 }
 
@@ -131,5 +135,16 @@ struct InventoryItemPreview: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
         .background(color.opacity(0.13), in: Capsule())
+    }
+
+    private func infoRow(_ icon: String, _ label: Text, _ color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(11, weight: .medium))
+                .foregroundStyle(color)
+            label
+                .font(AppFont.scaled(12))
+                .foregroundStyle(color)
+        }
     }
 }

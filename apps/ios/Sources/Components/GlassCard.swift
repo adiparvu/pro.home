@@ -260,6 +260,31 @@ extension View {
                 .contentShape(Capsule())
         }
     }
+
+    /// Rounded-rect sibling of `glassFilterCapsule` for tile-shaped filters —
+    /// stat tiles that double as toggleable filters (e.g. the inventory
+    /// summary bar). Same selection language: accent-tinted interactive glass
+    /// on iOS 26, accent ring on the material fallback.
+    @ViewBuilder
+    func glassFilterRoundedRect(selected: Bool, cornerRadius: CGFloat = AppRadius.lg) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if #available(iOS 26, *) {
+            if selected {
+                self.glassEffect(Glass.regular.tint(Color.accentColor.opacity(0.22)).interactive(),
+                                 in: shape)
+                    .contentShape(shape)
+            } else {
+                self.glassEffect(.regular.interactive(), in: shape)
+                    .contentShape(shape)
+            }
+        } else {
+            self.background(.ultraThinMaterial, in: shape)
+                .overlay(shape.strokeBorder(
+                    selected ? Color.accentColor.opacity(0.9) : Color.primary.opacity(0.1),
+                    lineWidth: selected ? 1.5 : 0.5))
+                .contentShape(shape)
+        }
+    }
 }
 
 // MARK: - GlassCard

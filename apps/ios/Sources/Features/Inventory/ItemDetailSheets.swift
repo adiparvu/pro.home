@@ -94,6 +94,7 @@ struct PublicContactSheet: View {
 struct LoanItemSheet: View {
     let onSave: (String, Date?) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(FamilyService.self) private var familyService
     @State private var borrower = ""
     @State private var hasReturnDate = false
     @State private var returnDate = Calendar.current.date(byAdding: .weekOfYear, value: 2, to: Date()) ?? Date()
@@ -103,6 +104,26 @@ struct LoanItemSheet: View {
             ZStack {
                 Color.clear
                 VStack(spacing: 16) {
+                    // One tap for the usual suspects — the household members —
+                    // with the free-text field still there for anyone else.
+                    if !familyService.members.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("inv_loan_family")
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .padding(.leading, AppSpacing.xxs)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(familyService.members) { member in
+                                        GlassFilterChip(label: member.name,
+                                                        isSelected: borrower == member.name) {
+                                            borrower = borrower == member.name ? "" : member.name
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
                             Image(systemName: "person.fill").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
