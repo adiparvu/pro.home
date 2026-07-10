@@ -1,9 +1,12 @@
 import SwiftUI
 
-// MARK: - Models
+// MARK: - Period filter
 
-private enum ActivityPeriod: String, CaseIterable {
-    case week = "1W", month = "1M", threeMonths = "3M", sixMonths = "6M", year = "1Y"
+/// Feed lookback window. Chips carry explicit localized words ("Week",
+/// "3 months"), never ticker codes like "1W" that read as a cryptic "1S"
+/// once localized.
+enum ActivityPeriod: CaseIterable {
+    case week, month, threeMonths, sixMonths, year
 
     var days: Int {
         switch self {
@@ -14,9 +17,23 @@ private enum ActivityPeriod: String, CaseIterable {
         case .year:        return 365
         }
     }
+
+    /// Reuses catalog keys that already exist ("Month", "3 months"); the
+    /// remaining labels are feed-specific `activity_` keys.
+    var label: String {
+        switch self {
+        case .week:        return String(localized: "activity_period_week")
+        case .month:       return String(localized: "Month")
+        case .threeMonths: return String(localized: "3 months")
+        case .sixMonths:   return String(localized: "activity_period_6m")
+        case .year:        return String(localized: "activity_period_year")
+        }
+    }
 }
 
-private enum ActivityCategory: String, CaseIterable {
+// MARK: - Category filter
+
+enum ActivityCategory: String, CaseIterable {
     case all        = "All"
     case tasks      = "Tasks"
     case finances   = "Finances"
@@ -25,8 +42,8 @@ private enum ActivityCategory: String, CaseIterable {
     case appliances = "Appliances"
     case plants     = "Plants"
 
-    /// Outline symbols — the chips and timeline render monochrome and
-    /// hierarchical, so the lighter variants read cleaner than `.fill`.
+    /// Outline symbols — the filter chips render monochrome, so the lighter
+    /// variants read cleaner than `.fill`.
     var icon: String {
         switch self {
         case .all:        return "square.grid.2x2"
@@ -38,25 +55,169 @@ private enum ActivityCategory: String, CaseIterable {
         case .plants:     return "leaf"
         }
     }
+
+    var label: String { String(localized: String.LocalizationValue(rawValue)) }
 }
 
-/// One synthesized feed entry. `title` is a `LocalizedStringKey` built from a
-/// catalog key at the synthesis site, so every event title resolves through
-/// Localizable.xcstrings (ro + en) instead of shipping raw English text.
-private struct ActivityEvent: Identifiable {
-    let id = UUID()
+// MARK: - Event kind
+
+/// The typed identity of a feed entry. Everything derived from the event
+/// type lives here: title, module accent color, aggregate wording, and the
+/// real navigation target for a tap.
+enum ActivityKind: String {
+    case incomeAdded, expenseRecorded, documentAdded
+    case taskCompleted, taskOverdue, taskAdded
+    case plantWatered, plantAdded
+    case elementAdded, applianceAdded
+
+    var category: ActivityCategory {
+        switch self {
+        case .incomeAdded, .expenseRecorded:           return .finances
+        case .documentAdded:                           return .documents
+        case .taskCompleted, .taskOverdue, .taskAdded: return .tasks
+        case .plantWatered, .plantAdded:               return .plants
+        case .elementAdded:                            return .elements
+        case .applianceAdded:                          return .appliances
+        }
+    }
+
+    /// Existing catalog keys — the same titles the feed has always shown.
+    var title: LocalizedStringKey {
+        switch self {
+        case .incomeAdded:     return "Income added"
+        case .expenseRecorded: return "Expense recorded"
+        case .documentAdded:   return "Document added"
+        case .taskCompleted:   return "Task completed"
+        case .taskOverdue:     return "Task overdue"
+        case .taskAdded:       return "Task added"
+        case .plantWatered:    return "Plant watered"
+        case .plantAdded:      return "Plant added"
+        case .elementAdded:    return "Element added"
+        case .applianceAdded:  return "Appliance added"
+        }
+    }
+
+    /// Module accent, consistent with the rest of the app: finances green
+    /// banknote, documents orange, watered plants blue drop, completed tasks
+    /// green check, overdue red, twin content purple/indigo — the same hues
+    /// the Settings rows and module pages already use.
+    var color: Color {
+        switch self {
+        case .incomeAdded, .expenseRecorded: return .brandSuccess
+        case .documentAdded:                 return .brandWarning
+        case .taskCompleted:                 return .brandSuccess
+        case .taskOverdue:                   return .brandDanger
+        case .taskAdded:                     return .brandPrimaryBlue
+        case .plantWatered:                  return .brandSkyBlue
+        case .plantAdded:                    return .brandSuccess
+        case .elementAdded:                  return .brandPurple
+        case .applianceAdded:                return .brandIndigo
+        }
+    }
+
+    /// Where a tap lands. Tasks and plants open the object itself (the
+    /// router carries the deep-link id); finances and documents open their
+    /// module page (the router has no per-record route for them); elements
+    /// and appliances live in the property twin — the closest real
+    /// destination the router has (the same mapping NFC deep links use).
+    func route(objectId: UUID?) -> AppRouter.AppRoute {
+        switch self {
+        case .taskCompleted, .taskOverdue, .taskAdded: return .tasks(id: objectId)
+        case .plantWatered, .plantAdded:               return .plants(id: objectId)
+        case .incomeAdded, .expenseRecorded:           return .finances
+        case .documentAdded:                           return .documents
+        case .elementAdded, .applianceAdded:           return .twin
+        }
+    }
+
+    /// "2 tasks completed" — aggregate row titles. Only ever called with
+    /// count ≥ 2, so each key is the plural wording by construction; the
+    /// singular path renders individual rows, keeping the catalog free of
+    /// plural variations.
+    func aggregateTitle(_ count: Int) -> String {
+        let format: String
+        switch self {
+        case .incomeAdded:     format = String(localized: "activity_agg_incomes")
+        case .expenseRecorded: format = String(localized: "activity_agg_expenses")
+        case .documentAdded:   format = String(localized: "activity_agg_documents")
+        case .taskCompleted:   format = String(localized: "activity_agg_tasks_completed")
+        case .taskOverdue:     format = String(localized: "activity_agg_tasks_overdue")
+        case .taskAdded:       format = String(localized: "activity_agg_tasks_added")
+        case .plantWatered:    format = String(localized: "activity_agg_plants_watered")
+        case .plantAdded:      format = String(localized: "activity_agg_plants_added")
+        case .elementAdded:    format = String(localized: "activity_agg_elements")
+        case .applianceAdded:  format = String(localized: "activity_agg_appliances")
+        }
+        return String.localizedStringWithFormat(format, count)
+    }
+}
+
+// MARK: - Event model
+
+/// One synthesized feed entry. Carries its source identity (kind + object
+/// id) so a tap can open the real object, and whether the source stored a
+/// real time of day — date-only sources must never display a fictitious
+/// "00:00".
+struct ActivityEvent: Identifiable {
+    let kind: ActivityKind
     let icon: String
-    let title: LocalizedStringKey
     let subtitle: String
     let date: Date
+    /// False when the source stores only a calendar day (finance records,
+    /// date-only due dates) — the row then shows a short date, not 00:00.
+    let hasTime: Bool
+    /// Filter identity: the "You" sentinel or a family member's name.
     let member: String
-    let category: ActivityCategory
+    /// `family_members.id` when the source knows it (task assignees) — the
+    /// strongest avatar key; name matching is the fallback.
+    let memberId: String?
+    /// The id of the object this event describes, when one exists.
+    let sourceId: UUID?
+
+    /// Stable across body evaluations (unlike a fresh UUID), so expansion
+    /// state and animation diffs keep tracking the same row.
+    var id: String {
+        "\(kind.rawValue)|\(sourceId?.uuidString ?? subtitle)|\(Int(date.timeIntervalSince1970))"
+    }
+
+    var title: LocalizedStringKey { kind.title }
+    var color: Color { kind.color }
+    var category: ActivityCategory { kind.category }
 }
 
-/// Events of one calendar day, newest first.
-private struct ActivityDayGroup: Identifiable {
-    let day: Date
+/// Consecutive same-day events of the same kind by the same member,
+/// collapsed into one expandable row ("2 tasks completed").
+struct ActivityAggregate: Identifiable {
+    let kind: ActivityKind
+    let member: String
+    let memberId: String?
+    /// Newest first, ≥ 2 by construction.
     let events: [ActivityEvent]
+
+    var id: String { "agg|\(events.first?.id ?? kind.rawValue)|\(events.count)" }
+    var icon: String { events.first?.icon ?? kind.category.icon }
+    var title: String { kind.aggregateTitle(events.count) }
+    var subtitle: String { events.map(\.subtitle).joined(separator: ", ") }
+}
+
+/// One rendered row of a day card: a single event or an aggregate.
+enum ActivityRowItem: Identifiable {
+    case single(ActivityEvent)
+    case aggregate(ActivityAggregate)
+
+    var id: String {
+        switch self {
+        case .single(let e):    return e.id
+        case .aggregate(let a): return a.id
+        }
+    }
+}
+
+/// Rows of one calendar day, newest first.
+struct ActivityDayGroup: Identifiable {
+    let day: Date
+    let items: [ActivityRowItem]
+    let eventCount: Int
     var id: Date { day }
 }
 
@@ -81,34 +242,41 @@ struct ActivityFeedView: View {
     @Environment(PropertyElementService.self) private var elementService
     @Environment(ApplianceService.self) private var applianceService
     @Environment(PlantService.self) private var plantService
+    @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var period:           ActivityPeriod   = .month
     @State private var selectedMember:   String?          = nil
     @State private var selectedCategory: ActivityCategory = .all
+    /// Aggregate rows the user opened up into their individual events.
+    @State private var expandedAggregates: Set<String> = []
 
     /// Internal sentinel for "the signed-in user" — kept stable for filter
     /// equality; presented through the localized "You" catalog key.
     private let currentUser = "You"
 
     private var filterAnimation: Animation? { reduceMotion ? nil : .smooth }
+    private var expandAnimation: Animation? { reduceMotion ? nil : .snappy }
 
     // MARK: Event synthesis
 
     private var allEvents: [ActivityEvent] {
         var events: [ActivityEvent] = []
 
-        // Finances
+        // Finances — record dates are calendar days ("YYYY-MM-DD"), so no
+        // real time of day exists; the row shows a short date instead.
         for r in financialService.records {
             guard let date = AppDate.day(from: r.date) else { continue }
             let isIncome = r.type == "income"
             events.append(ActivityEvent(
-                icon:     isIncome ? "arrow.down.circle" : "arrow.up.circle",
-                title:    isIncome ? "Income added" : "Expense recorded",
+                kind:     isIncome ? .incomeAdded : .expenseRecorded,
+                icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
                 subtitle: "\(r.title) · \(financialService.moneyDisplay(r.amount))",
                 date:     date,
+                hasTime:  r.date.count > 10,
                 member:   currentUser,
-                category: .finances
+                memberId: nil,
+                sourceId: r.id
             ))
         }
 
@@ -116,48 +284,60 @@ struct ActivityFeedView: View {
         for doc in documentService.documents {
             let date = AppDate.timestamp(from: doc.createdAt) ?? Date()
             events.append(ActivityEvent(
+                kind:     .documentAdded,
                 icon:     doc.categoryIcon,
-                title:    "Document added",
                 subtitle: doc.name,
                 date:     date,
+                hasTime:  true,
                 member:   currentUser,
-                category: .documents
+                memberId: nil,
+                sourceId: doc.id
             ))
         }
 
         // Tasks
         for task in taskService.tasks {
-            let date = AppDate.timestamp(from: task.updatedAt)
-                ?? AppDate.timestamp(from: task.createdAt) ?? Date()
-            let taskMember = task.assigneeNames.first ?? currentUser
+            let taskMember   = task.assigneeNames.first ?? currentUser
+            let taskMemberId = task.assigneeIds.first
             if task.isCompleted {
+                let date = AppDate.timestamp(from: task.updatedAt)
+                    ?? AppDate.timestamp(from: task.createdAt) ?? Date()
                 events.append(ActivityEvent(
-                    icon:     "checkmark.circle",
-                    title:    "Task completed",
+                    kind:     .taskCompleted,
+                    icon:     "checkmark.circle.fill",
                     subtitle: task.title,
                     date:     date,
+                    hasTime:  true,
                     member:   taskMember,
-                    category: .tasks
+                    memberId: taskMemberId,
+                    sourceId: task.id
                 ))
             } else if let due = task.dueDate,
-                      let dueDate = AppDate.timestamp(from: due), dueDate < Date() {
+                      let dueDate = AppDate.day(from: due),
+                      isOverdue(dueDate, hasTime: due.count > 10) {
+                // Due dates are usually date-only — a day is overdue once it
+                // has fully passed, and its row never invents a 00:00 time.
                 events.append(ActivityEvent(
-                    icon:     "exclamationmark.circle",
-                    title:    "Task overdue",
+                    kind:     .taskOverdue,
+                    icon:     "exclamationmark.circle.fill",
                     subtitle: task.title,
                     date:     dueDate,
+                    hasTime:  due.count > 10,
                     member:   taskMember,
-                    category: .tasks
+                    memberId: taskMemberId,
+                    sourceId: task.id
                 ))
             } else {
                 let created = AppDate.timestamp(from: task.createdAt) ?? Date()
                 events.append(ActivityEvent(
-                    icon:     "clock",
-                    title:    "Task added",
+                    kind:     .taskAdded,
+                    icon:     "clock.fill",
                     subtitle: task.title,
                     date:     created,
+                    hasTime:  true,
                     member:   taskMember,
-                    category: .tasks
+                    memberId: taskMemberId,
+                    sourceId: task.id
                 ))
             }
         }
@@ -167,23 +347,27 @@ struct ActivityFeedView: View {
             if let wateredStr = plant.lastWateredAt,
                let wateredDate = AppDate.timestamp(from: wateredStr) {
                 events.append(ActivityEvent(
-                    icon:     "drop",
-                    title:    "Plant watered",
+                    kind:     .plantWatered,
+                    icon:     "drop.fill",
                     subtitle: plant.name,
                     date:     wateredDate,
+                    hasTime:  true,
                     member:   currentUser,
-                    category: .plants
+                    memberId: nil,
+                    sourceId: plant.id
                 ))
             }
             let addedDate = AppDate.timestamp(from: plant.createdAt) ?? Date()
             let plantSubtitle = plant.emoji.isEmpty ? plant.name : "\(plant.emoji) \(plant.name)"
             events.append(ActivityEvent(
-                icon:     "leaf",
-                title:    "Plant added",
+                kind:     .plantAdded,
+                icon:     "leaf.fill",
                 subtitle: plantSubtitle,
                 date:     addedDate,
+                hasTime:  true,
                 member:   currentUser,
-                category: .plants
+                memberId: nil,
+                sourceId: plant.id
             ))
         }
 
@@ -191,12 +375,14 @@ struct ActivityFeedView: View {
         for el in elementService.elements {
             let date = AppDate.timestamp(from: el.createdAt) ?? Date()
             events.append(ActivityEvent(
+                kind:     .elementAdded,
                 icon:     el.elementType.icon,
-                title:    "Element added",
                 subtitle: el.name,
                 date:     date,
+                hasTime:  true,
                 member:   currentUser,
-                category: .elements
+                memberId: nil,
+                sourceId: el.id
             ))
         }
 
@@ -204,19 +390,28 @@ struct ActivityFeedView: View {
         for ap in applianceService.appliances {
             let date = AppDate.timestamp(from: ap.createdAt) ?? Date()
             events.append(ActivityEvent(
+                kind:     .applianceAdded,
                 icon:     ap.categoryIcon,
-                title:    "Appliance added",
                 subtitle: [ap.brand, ap.name].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " "),
                 date:     date,
+                hasTime:  true,
                 member:   currentUser,
-                category: .appliances
+                memberId: nil,
+                sourceId: ap.id
             ))
         }
 
         return events.sorted { $0.date > $1.date }
     }
 
-    /// Filters and groups in one pass; called once per body evaluation.
+    /// A timed due date is overdue the moment it passes; a date-only due
+    /// date only once its whole day has passed — never at a fictitious 00:00.
+    private func isOverdue(_ due: Date, hasTime: Bool) -> Bool {
+        hasTime ? due < Date() : due < Calendar.current.startOfDay(for: Date())
+    }
+
+    /// Filters, groups and aggregates in one pass; called once per body
+    /// evaluation.
     private var feedSnapshot: ActivityFeedSnapshot {
         let cutoff = Calendar.current.date(byAdding: .day, value: -period.days, to: Date()) ?? Date()
         let inPeriod = allEvents.filter { $0.date >= cutoff }
@@ -231,12 +426,41 @@ struct ActivityFeedView: View {
             buckets[cal.startOfDay(for: event.date), default: []].append(event)
         }
         // `visible` is already newest-first, so each bucket stays sorted.
-        let groups = buckets.keys.sorted(by: >).map {
-            ActivityDayGroup(day: $0, events: buckets[$0] ?? [])
+        let groups = buckets.keys.sorted(by: >).map { day -> ActivityDayGroup in
+            let dayEvents = buckets[day] ?? []
+            return ActivityDayGroup(day: day,
+                                    items: Self.aggregated(dayEvents),
+                                    eventCount: dayEvents.count)
         }
         return ActivityFeedSnapshot(groups: groups,
                                     periodCount: inPeriod.count,
                                     visibleCount: visible.count)
+    }
+
+    /// Collapses runs of ≥ 2 consecutive events of the same kind by the same
+    /// member into one aggregate row; everything else stays a single row.
+    private static func aggregated(_ events: [ActivityEvent]) -> [ActivityRowItem] {
+        var items: [ActivityRowItem] = []
+        var i = 0
+        while i < events.count {
+            let head = events[i]
+            var j = i + 1
+            while j < events.count,
+                  events[j].kind == head.kind,
+                  events[j].member == head.member {
+                j += 1
+            }
+            if j - i >= 2 {
+                items.append(.aggregate(ActivityAggregate(kind: head.kind,
+                                                          member: head.member,
+                                                          memberId: head.memberId,
+                                                          events: Array(events[i..<j]))))
+            } else {
+                items.append(.single(head))
+            }
+            i = j
+        }
+        return items
     }
 
     // MARK: Members for filter
@@ -252,14 +476,10 @@ struct ActivityFeedView: View {
         VStack(spacing: 0) {
 
             periodRow(count: snapshot.visibleCount)
-                .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.sm)
 
-            categoryRow
+            filterRow
                 .padding(.top, AppSpacing.sm)
-
-            memberRow
-                .padding(.top, AppSpacing.xs)
 
             Divider().opacity(0.3).padding(.top, AppSpacing.sm)
 
@@ -272,112 +492,78 @@ struct ActivityFeedView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Activity")
         .navigationBarTitleDisplayMode(.large)
+        .task { await MemberDirectory.shared.loadIfNeeded() }
     }
 
-    // MARK: Period chips
+    // MARK: Period row (period chips + explicit event count)
 
     private func periodRow(count: Int) -> some View {
-        HStack(spacing: AppSpacing.xs) {
-            ForEach(ActivityPeriod.allCases, id: \.self) { p in
-                let isSelected = period == p
-                Button {
-                    HapticFeedback.selection()
-                    withAnimation(filterAnimation) { period = p }
-                } label: {
-                    Text(LocalizedStringKey(p.rawValue))
-                        .font(isSelected ? AppFont.captionStrong : AppFont.caption)
-                        .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.xs)
-                        .filterChip(isSelected: isSelected)
+        HStack(spacing: AppSpacing.sm) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(ActivityPeriod.allCases, id: \.self) { p in
+                        GlassFilterChip(label: p.label, isSelected: period == p) {
+                            withAnimation(filterAnimation) { period = p }
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .padding(.leading, AppSpacing.xl)
+                .padding(.trailing, AppSpacing.sm)
             }
-            Spacer()
-            Text("\(count)")
+
+            Text(eventCountLabel(count))
                 .font(AppFont.caption2)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, AppSpacing.xs)
-                .glassCapsule()
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.trailing, AppSpacing.xl)
                 .contentTransition(.numericText())
                 .animation(filterAnimation, value: count)
         }
     }
 
-    // MARK: Category chips
+    /// "12 events" — explicit wording instead of a bare number pill. The
+    /// singular/plural key is chosen in code, keeping the catalog free of
+    /// plural variations.
+    private func eventCountLabel(_ count: Int) -> String {
+        count == 1
+            ? String(localized: "activity_event_count_one")
+            : String.localizedStringWithFormat(String(localized: "activity_event_count_many"), count)
+    }
 
-    private var categoryRow: some View {
+    // MARK: Category + member row (one scrollable line)
+
+    private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(ActivityCategory.allCases, id: \.self) { cat in
-                    let isSelected = selectedCategory == cat
-                    Button {
-                        HapticFeedback.selection()
+                    GlassFilterChip(label: cat.label,
+                                    systemImage: cat.icon,
+                                    isSelected: selectedCategory == cat) {
                         withAnimation(filterAnimation) { selectedCategory = cat }
-                    } label: {
-                        HStack(spacing: AppSpacing.xxs) {
-                            Image(systemName: cat.icon)
-                                .font(AppFont.label)
-                                .symbolRenderingMode(.hierarchical)
-                            Text(LocalizedStringKey(cat.rawValue))
-                                .font(isSelected ? AppFont.captionStrong : AppFont.caption)
-                        }
-                        .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.xs)
-                        .filterChip(isSelected: isSelected)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-        }
-    }
 
-    // MARK: Member filter
+                Rectangle()
+                    .fill(Color.hairline)
+                    .frame(width: 1, height: 20)
 
-    private var memberRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
                 ForEach(allMembers, id: \.self) { name in
                     let isSelected = selectedMember == name
-                    Button {
-                        HapticFeedback.selection()
+                    ActivityMemberChip(
+                        name: displayName(name),
+                        member: familyMember(named: name, id: nil),
+                        isCurrentUser: name == currentUser,
+                        isSelected: isSelected
+                    ) {
+                        // Tap toggles: tapping the selected member clears the
+                        // filter, so no extra "All" chip competes with the
+                        // category "All" on the same line.
                         withAnimation(filterAnimation) {
                             selectedMember = isSelected ? nil : name
                         }
-                    } label: {
-                        HStack(spacing: AppSpacing.xs) {
-                            memberAvatar(name: name, size: 22)
-                            Text(displayName(name))
-                                .font(isSelected ? AppFont.captionEmphasis : AppFont.caption)
-                                .foregroundStyle(isSelected ? Color.primary : Color.secondaryTextColor)
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.xs)
-                        .filterChip(isSelected: isSelected)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
-
-                if selectedMember != nil {
-                    Button {
-                        HapticFeedback.selection()
-                        withAnimation(filterAnimation) { selectedMember = nil }
-                    } label: {
-                        Text("All")
-                            .font(AppFont.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, AppSpacing.md)
-                            .padding(.vertical, AppSpacing.xs)
-                            .filterChip(isSelected: false)
-                    }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -393,14 +579,14 @@ struct ActivityFeedView: View {
                     Section {
                         GlassCard(padding: 0) {
                             VStack(spacing: 0) {
-                                ForEach(Array(group.events.enumerated()), id: \.element.id) { idx, event in
-                                    eventRow(event, isLast: idx == group.events.count - 1)
+                                ForEach(Array(group.items.enumerated()), id: \.element.id) { idx, item in
+                                    rows(for: item, isLastItem: idx == group.items.count - 1)
                                 }
                             }
                         }
                         .padding(.horizontal, AppSpacing.xl)
                     } header: {
-                        dayHeader(group.day)
+                        dayHeader(group.day, eventCount: group.eventCount)
                     }
                 }
                 Spacer(minLength: 100)
@@ -412,14 +598,80 @@ struct ActivityFeedView: View {
         }
     }
 
-    private func dayHeader(_ day: Date) -> some View {
-        HStack {
+    /// A single row, or an aggregate row followed by its expanded children.
+    @ViewBuilder
+    private func rows(for item: ActivityRowItem, isLastItem: Bool) -> some View {
+        switch item {
+        case .single(let event):
+            eventRow(event, showsDivider: !isLastItem, indented: false)
+
+        case .aggregate(let agg):
+            let isExpanded = expandedAggregates.contains(agg.id)
+            ActivityAggregateRow(
+                aggregate: agg,
+                isExpanded: isExpanded,
+                member: familyMember(named: agg.member, id: agg.memberId),
+                memberDisplayName: displayName(agg.member),
+                isCurrentUser: agg.member == currentUser,
+                showsDivider: isExpanded || !isLastItem
+            ) {
+                toggleAggregate(agg.id)
+            }
+            if isExpanded {
+                ForEach(Array(agg.events.enumerated()), id: \.element.id) { idx, event in
+                    eventRow(event,
+                             showsDivider: idx < agg.events.count - 1 || !isLastItem,
+                             indented: true)
+                }
+            }
+        }
+    }
+
+    private func eventRow(_ event: ActivityEvent, showsDivider: Bool, indented: Bool) -> some View {
+        ActivityEventRow(
+            event: event,
+            member: familyMember(named: event.member, id: event.memberId),
+            memberDisplayName: displayName(event.member),
+            isCurrentUser: event.member == currentUser,
+            showsDivider: showsDivider,
+            indented: indented
+        ) {
+            open(event)
+        }
+    }
+
+    private func toggleAggregate(_ id: String) {
+        HapticFeedback.selection()
+        withAnimation(expandAnimation) {
+            if expandedAggregates.contains(id) {
+                expandedAggregates.remove(id)
+            } else {
+                expandedAggregates.insert(id)
+            }
+        }
+    }
+
+    /// Opens the real object behind an event: tasks/plants deep-link to the
+    /// item itself, finances/documents open their module page, elements and
+    /// appliances open the property twin. Routing through the router lands
+    /// correctly regardless of which tab or stack is current.
+    private func open(_ event: ActivityEvent) {
+        HapticFeedback.selection()
+        router.navigate(to: event.kind.route(objectId: event.sourceId))
+    }
+
+    private func dayHeader(_ day: Date, eventCount: Int) -> some View {
+        HStack(spacing: AppSpacing.sm) {
             dayTitle(day)
                 .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
+            Text(eventCountLabel(eventCount))
+                .font(AppFont.caption2)
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
         }
         .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
@@ -435,50 +687,6 @@ struct ActivityFeedView: View {
         let formatter = cal.isDate(day, equalTo: Date(), toGranularity: .year)
             ? AppDate.monthDay : AppDate.monthDayYear
         return Text(formatter.string(from: day))
-    }
-
-    private func eventRow(_ event: ActivityEvent, isLast: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: AppSpacing.md) {
-                // Monochrome hierarchical symbol on a neutral circle — the
-                // sanctioned icon idiom; never a tinted color square.
-                Image(systemName: event.icon)
-                    .font(AppFont.body)
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-                    .background(Color.subtleFill, in: Circle())
-                    .overlay(Circle().strokeBorder(Color.hairline, lineWidth: 0.5))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(event.title)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
-                    Text(event.subtitle)
-                        .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: AppSpacing.xxs) {
-                    Text(event.date, format: .dateTime.hour().minute())
-                        .font(AppFont.caption2)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    memberAvatar(name: event.member, size: 18)
-                }
-            }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.md)
-
-            if !isLast {
-                Rectangle()
-                    .fill(Color.hairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, AppSpacing.base + 36 + AppSpacing.md)
-            }
-        }
     }
 
     // MARK: Empty state
@@ -507,54 +715,15 @@ struct ActivityFeedView: View {
         member == currentUser ? String(localized: "You") : member
     }
 
-    private func memberAvatar(name: String, size: CGFloat) -> some View {
-        let member = familyService.members.first { $0.name == name }
-        let color: Color = member.map { colorFromHex($0.color) } ?? .blue
-        return ZStack {
-            Circle().fill(color.opacity(0.2))
-            Text(String(displayName(name).prefix(1)).uppercased())
-                .font(.system(size: size * 0.5, weight: .semibold))
-                .foregroundStyle(color)
+    /// Resolves the family member behind an event — by `family_members.id`
+    /// when the source carried one (task assignees), by name otherwise.
+    private func familyMember(named name: String, id: String?) -> FamilyMember? {
+        if let id,
+           let match = familyService.members.first(where: {
+               $0.id.uuidString.caseInsensitiveCompare(id) == .orderedSame
+           }) {
+            return match
         }
-        .frame(width: size, height: size)
-    }
-
-    private func colorFromHex(_ hex: String) -> Color {
-        let h = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: h).scanHexInt64(&int)
-        return Color(red: Double((int >> 16) & 0xFF) / 255,
-                     green: Double((int >> 8) & 0xFF) / 255,
-                     blue: Double(int & 0xFF) / 255)
-    }
-}
-
-// MARK: - Filter chip style
-
-/// The feed's one neutral chip treatment: a quiet capsule fill with a subtle
-/// primary stroke when selected — never an accent-color fill. Monochrome keeps
-/// every state legible on Liquid Glass in both light and dark.
-private struct FilterChipStyle: ViewModifier {
-    let isSelected: Bool
-
-    func body(content: Content) -> some View {
-        content
-            .background(
-                Color.primary.opacity(isSelected ? AppOpacity.subtleFill + 0.05 : AppOpacity.subtleFill),
-                in: Capsule()
-            )
-            .overlay(
-                Capsule().strokeBorder(
-                    Color.primary.opacity(isSelected ? 0.25 : AppOpacity.hairline),
-                    lineWidth: isSelected ? 1 : 0.5
-                )
-            )
-            .contentShape(Capsule())
-    }
-}
-
-private extension View {
-    func filterChip(isSelected: Bool) -> some View {
-        modifier(FilterChipStyle(isSelected: isSelected))
+        return familyService.members.first { $0.name == name }
     }
 }

@@ -30,6 +30,7 @@ struct PaintColor: Identifiable, Codable, Equatable {
     var finish: PaintFinish?
     var hexColor: String?
     var notes: String?
+    var photoUrl: String?
     var createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -41,6 +42,7 @@ struct PaintColor: Identifiable, Codable, Equatable {
         case colorName  = "color_name"
         case brand, code, finish, notes
         case hexColor   = "hex_color"
+        case photoUrl   = "photo_url"
         case createdAt  = "created_at"
     }
 
@@ -77,6 +79,7 @@ struct NewPaintColorPayload: Encodable {
     let finish: String?
     let hexColor: String?
     let notes: String?
+    let photoUrl: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -87,6 +90,7 @@ struct NewPaintColorPayload: Encodable {
         case colorName  = "color_name"
         case brand, code, finish, notes
         case hexColor   = "hex_color"
+        case photoUrl   = "photo_url"
         case createdAt  = "created_at"
     }
 }

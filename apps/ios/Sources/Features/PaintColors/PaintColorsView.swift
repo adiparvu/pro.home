@@ -9,6 +9,7 @@ struct PaintColorsView: View {
     @State private var showAdd = false
     @State private var selectedRoom: String? = nil
     @State private var colorToDelete: PaintColor? = nil
+    @State private var photoPreview: PaintColor? = nil
     @State private var searchText = ""
 
     private var filteredByRoom: [String: [PaintColor]] {
@@ -80,6 +81,9 @@ struct PaintColorsView: View {
             AddPaintColorSheet()
                 .environment(paintColorService)
                 .environment(propertyService)
+        }
+        .sheet(item: $photoPreview) { color in
+            PaintPhotoSheet(color: color)
         }
         .confirmationDialog(
             "Delete \"\(colorToDelete?.colorName ?? "")\"?",
@@ -171,10 +175,19 @@ struct PaintColorsView: View {
                 HStack(spacing: 12) {
                     ForEach(colors) { color in
                         PaintSwatch(paintColor: color)
+                            .onTapGesture {
+                                // Only entries saved with a photo respond —
+                                // the badge on the swatch is the affordance.
+                                guard color.photoUrl?.isEmpty == false else { return }
+                                photoPreview = color
+                                HapticFeedback.impact(.light)
+                            }
                             .onLongPressGesture(minimumDuration: 0.5) {
                                 colorToDelete = color
                                 HapticFeedback.warning()
                             }
+                            .accessibilityHint(color.photoUrl?.isEmpty == false
+                                               ? Text("paint_photo_view") : Text(verbatim: ""))
                     }
                 }
                 .padding(.horizontal, 2)
@@ -310,6 +323,52 @@ private struct PaintColorsSpecSheet: View {
     }
 }
 
+// MARK: - Photo preview
+//
+// The optional photo saved with a color (the painted wall or the tin
+// label), shown full-size over the app background. Opened by tapping a
+// swatch that carries the photo badge.
+
+private struct PaintPhotoSheet: View {
+    let color: PaintColor
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                if let url = color.photoUrl.flatMap({ URL(string: $0) }) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                                .padding(AppSpacing.lg)
+                        case .failure:
+                            Image(systemName: "photo")
+                                .font(AppFont.scaled(34))
+                                .foregroundStyle(Color.secondaryTextColor)
+                        default:
+                            ProgressView()
+                        }
+                    }
+                }
+            }
+            .navigationTitle(Text(verbatim: color.colorName))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationBackground(.thinMaterial)
+        .presentationDragIndicator(.visible)
+    }
+}
+
 // MARK: - PaintSwatch
 
 private struct PaintSwatch: View {
@@ -324,6 +383,15 @@ private struct PaintSwatch: View {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8)
                 )
+                .overlay(alignment: .topTrailing) {
+                    // Entries saved with a photo carry a badge — tap to view.
+                    if paintColor.photoUrl?.isEmpty == false {
+                        Image(systemName: "photo.fill")
+                            .font(AppFont.scaled(8, weight: .semibold))
+                            .foregroundStyle(paintColor.swatchColor.readableText.opacity(0.85))
+                            .padding(5)
+                    }
+                }
                 .shadow(color: paintColor.swatchColor.opacity(0.4), radius: 8, y: 3)
 
             Text(paintColor.colorName)
