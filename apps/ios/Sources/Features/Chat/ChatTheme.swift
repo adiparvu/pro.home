@@ -162,13 +162,20 @@ struct ChatTheme: Identifiable {
                          bgImage: img, bgAnim: anim)
     }
 
+    // The wallpaper must be anchored to the SCREEN, not to the message list's
+    // keyboard-shrunk frame: `.ignoresSafeArea()` alone covers only the
+    // `.container` region, so presenting the keyboard (or the composer
+    // growing) re-proposed a smaller area and `scaledToFill` visibly zoomed /
+    // panned the photo. Ignoring `.all` (container + keyboard) keeps every
+    // wallpaper variant pinned full-bleed and motionless through keyboard
+    // show/hide, multiline composer growth and the reply/edit strips.
     @ViewBuilder var background: some View {
         if let name = backgroundImage,
            let img = ChatBackgroundStore.image(named: name) {
             Image(uiImage: img)
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
+                .ignoresSafeArea(.all)
                 // Photos arrive raw; the stock themes are designed gradients.
                 // A vertical scrim makes wallpapers read like part of the set:
                 // stronger where the header and compose bar live, lighter in
@@ -180,15 +187,15 @@ struct ChatTheme: Identifiable {
                         .init(color: .black.opacity(0.10), location: 0.72),
                         .init(color: .black.opacity(0.30), location: 1),
                     ], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(.all)
                 )
         } else if let animID = backgroundAnimation,
                   let preset = AnimatedBackgroundPreset.preset(for: animID) {
-            AnimatedChatBackground(preset: preset).ignoresSafeArea()
+            AnimatedChatBackground(preset: preset).ignoresSafeArea(.all)
         } else if let cols = backgroundColors {
-            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea(.all)
         } else {
-            appBackground.ignoresSafeArea()
+            appBackground.ignoresSafeArea(.all)
         }
     }
 

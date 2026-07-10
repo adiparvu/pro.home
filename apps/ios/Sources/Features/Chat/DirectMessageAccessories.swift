@@ -1,5 +1,5 @@
-// Camera picker, attachment option and starred list for the DM screen
-// (split from DirectMessageView).
+// Camera picker and starred list for the DM screen (split from
+// DirectMessageView).
 import SwiftUI
 import PhotosUI
 import UIKit
@@ -41,30 +41,9 @@ struct DMCameraPickerView: UIViewControllerRepresentable {
     }
 }
 
-// MARK: - Attachment Option
-
-struct DMAttachmentOption: View {
-    let icon: String
-    let label: String
-    let color: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(AppFont.scaled(24, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 58, height: 58)
-                    .glassRoundedRect(14)
-                Text(label)
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(0.6))
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
+// (DMAttachmentOption is gone — the legacy two-icon tray it served was
+// unreachable once the iMessage "+" menu (ChatAttachmentSheet) took over, and
+// the shared ChatComposerBar has no tray at all.)
 
 // MARK: - DM Starred (marked) messages
 

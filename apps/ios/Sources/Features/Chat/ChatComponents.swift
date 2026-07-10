@@ -313,37 +313,8 @@ struct ChatBubbleShape: Shape {
     }
 }
 
-// MARK: - Reaction Picker
-
-struct ReactionPickerView: View {
-    let myReaction: String?
-    let onSelect: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    private let emojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(emojis, id: \.self) { emoji in
-                Button {
-                    onSelect(emoji)
-                    dismiss()
-                } label: {
-                    Text(emoji)
-                        .font(AppFont.scaled(28))
-                        .scaleEffect(myReaction == emoji ? 1.2 : 1.0)
-                        .padding(AppSpacing.sm)
-                        .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.clear,
-                                    in: Circle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, AppSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationBackground(.ultraThinMaterial)
-    }
-}
+// (ReactionPickerView is gone — its only presenter was a dead sheet in the
+// old MessageBubble; reactions live in the long-press ChatActionOverlay.)
 
 // MARK: - Presence ticker (shared)
 
@@ -360,6 +331,44 @@ struct PresenceTicker<Content: View>: View {
         TimelineView(.periodic(from: .now, by: interval)) { context in
             content(context.date)
         }
+    }
+}
+
+// MARK: - On-demand in-thread search (shared by both chat engines)
+
+/// In-thread search summoned on demand instead of a bar pinned permanently
+/// under the header: `searchable` is attached only while search is open, so
+/// the field appears when the user asks for it (details page / magnifier
+/// button) and the native cancel removes it entirely — the thread's top edge
+/// stays clean the rest of the time.
+struct ChatOnDemandSearch: ViewModifier {
+    @Binding var text: String
+    @Binding var isPresented: Bool
+    let prompt: Text
+
+    func body(content: Content) -> some View {
+        Group {
+            if isPresented {
+                content.searchable(text: $text, isPresented: $isPresented,
+                                   placement: .navigationBarDrawer(displayMode: .always),
+                                   prompt: prompt)
+            } else {
+                content
+            }
+        }
+        .onChange(of: isPresented) { _, open in
+            // Leaving search must never keep filtering the thread.
+            if !open { text = "" }
+        }
+    }
+}
+
+extension View {
+    /// Presents the system search field only while `isPresented` is true (see
+    /// ``ChatOnDemandSearch``).
+    func chatOnDemandSearch(text: Binding<String>, isPresented: Binding<Bool>,
+                            prompt: Text) -> some View {
+        modifier(ChatOnDemandSearch(text: text, isPresented: isPresented, prompt: prompt))
     }
 }
 

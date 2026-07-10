@@ -90,7 +90,6 @@ struct DirectMessageView: View {
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var showCameraPicker = false
-    @State private var showAttachmentTray = false
     @State private var showAttachmentSheet = false
     @State private var showContactPicker = false
     @State private var showSendLater = false
@@ -103,8 +102,6 @@ struct DirectMessageView: View {
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
     @State private var isSending = false
-    @State private var lastTypingSent = Date.distantPast
-    @State private var audioRecorder = ChatAudioRecorder()
     @State private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
     @State private var blockRefresh = false
 
@@ -172,10 +169,6 @@ struct DirectMessageView: View {
         return ChatDisappearStore.filter(kept, convId: disappearKey) { $0.date }
     }
 
-    private var isTextEmpty: Bool {
-        input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
     // This DM's theme scope; a per-conversation override wins over the global default.
     private var themeScope: String { convId }
     private var chatTheme: ChatTheme {
@@ -236,9 +229,10 @@ struct DirectMessageView: View {
                 inputBar
             }
         }
-        // Full-bleed behind both the list and the compose inset; `.background`
-        // ignores the safe area by default, so the wallpaper still reaches
-        // every edge without dictating the list's width.
+        // Full-bleed behind both the list and the compose inset. The theme
+        // view pins itself to the whole screen via ignoresSafeArea(.all) —
+        // container AND keyboard — so the wallpaper never re-scales when the
+        // keyboard presents or the composer grows (the reported zoom/pan).
         .background(chatTheme.background)
         // iMessage-style header: no bar, the conversation slides under a
         // progressive blur and only glass controls float on top.
@@ -253,11 +247,10 @@ struct DirectMessageView: View {
         }
         .navigationTitle(peerName)
         .navigationBarTitleDisplayMode(.inline)
-        // The system search field replaces the old hand-built bar — instant,
-        // with the native cancel flow.
-        .searchable(text: $searchText, isPresented: $showSearch,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
-                    prompt: Text("Search in conversation"))
+        // Search is summoned on demand (contact details / the magnifier for
+        // identity-only peers) — never a bar pinned under the header.
+        .chatOnDemandSearch(text: $searchText, isPresented: $showSearch,
+                            prompt: Text("Search in conversation"))
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -295,6 +288,21 @@ struct DirectMessageView: View {
                         onVideo: { showVideoSheet = true },
                         onCall: { showCallSheet = true }
                     )
+                } else {
+                    // Identity-only peers have no contact-details page (the
+                    // usual search entry), so the magnifier keeps in-thread
+                    // search reachable now that the bar is no longer pinned.
+                    Button { showSearch = true } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 40, height: 34)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+                    .accessibilityLabel(Text("Search in conversation"))
                 }
             }
         }
@@ -1010,177 +1018,29 @@ struct DirectMessageView: View {
         .background(.regularMaterial)
     }
 
+    // The shared iMessage composer (ChatComposerBar) — same component as the
+    // group chat, configured with this thread's capabilities.
     private var inputBar: some View {
-        VStack(spacing: 0) {
-            if let replyingTo {
-                replyPreviewBar(replyingTo)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            if showAttachmentTray {
-                dmAttachmentTray
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            // iMessage-style compose row: round + on the left, one slim pill
-            // holding the field and the trailing control INSIDE it (mic when
-            // empty, filled send arrow while typing). Camera lives in the +
-            // tray, like iMessage. While recording, the whole row becomes the
-            // iMessage recording pill; stop parks the clip for review.
-            if audioRecorder.isRecording {
-                VoiceRecordingPill(recorder: audioRecorder) {
-                    audioRecorder.finishRecording()
+        ChatComposerBar(
+            text: $input,
+            focused: $focused,
+            isSending: isSending,
+            config: ChatComposerConfig(
+                onPlus: { showAttachmentSheet = true },
+                onTyping: { directMessageService.sendTyping() },
+                onSendText: { Task { await sendMessage() } },
+                onSendAudio: { url in Task { await sendAudio(url) } },
+                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey))
+            ),
+            reply: replyingTo.map { m in
+                ChatComposerReply(sender: m.senderName, snippet: dmSnippet(m)) {
+                    withAnimation { replyingTo = nil }
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 8)
-            } else if let voicePreview = audioRecorder.preview {
-                VoiceReviewRow(preview: voicePreview, isSending: isSending) {
-                    audioRecorder.discardPreview()
-                } onSend: {
-                    if let clip = audioRecorder.takePreview() {
-                        Task { await sendAudio(clip.url) }
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 8)
-            } else {
-                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    plusButton
-
-                    HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                        TextField("Message…", text: $input, axis: .vertical)
-                            .font(AppFont.scaled(16))
-                            .foregroundStyle(.primary)
-                            .tint(.accentColor)
-                            .lineLimit(1...6)
-                            .focused($focused)
-                            .padding(.vertical, 7)
-                            .onChange(of: input) { _, val in
-                                if !val.isEmpty, showAttachmentTray {
-                                    withAnimation { showAttachmentTray = false }
-                                }
-                                let now = Date()
-                                if !val.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
-                                    lastTypingSent = now
-                                    directMessageService.sendTyping()
-                                }
-                                // Draft persistence happens on disappear — a
-                                // per-keystroke UserDefaults write is typing lag.
-                            }
-
-                        if isTextEmpty {
-                            micButton
-                                .padding(.bottom, 3)
-                        } else {
-                            sendButton
-                                .padding(.bottom, 3)
-                                .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.7).combined(with: .opacity),
-                                    removal: .scale(scale: 0.7).combined(with: .opacity)
-                                ))
-                        }
-                    }
-                    .animation(.spring(duration: 0.2), value: isTextEmpty)
-                    .padding(.leading, 14)
-                    .padding(.trailing, 5)
-                    .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 8)
-                // iMessage has no separate band behind the compose row — the bar
-                // sits directly on the conversation background, which the root
-                // ZStack already draws full-screen. Re-rendering the theme here
-                // painted photo wallpapers a second time (scaledToFill on a bar-
-                // sized area spills the whole image across the screen).
             }
-        }
-        // A proper bar material so the compose row stays legible over any
-        // wallpaper (a bare glass pill on its own read as near-transparent).
-        // `.bar` turns opaque automatically under Reduce Transparency.
-        .background(.bar)
-        .animation(.spring(duration: 0.3), value: showAttachmentTray)
-        .animation(.spring(duration: 0.3), value: replyingTo?.id)
-        .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
-        .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
+        )
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
                       maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
-    }
-
-    @ViewBuilder
-    private func replyPreviewBar(_ msg: DirectMessage) -> some View {
-        ChatReplyBanner(sender: msg.senderName, snippet: replyPreviewText(msg)) {
-            withAnimation { replyingTo = nil }
-        }
-    }
-
-    private func replyPreviewText(_ msg: DirectMessage) -> String { dmSnippet(msg) }
-
-    private var plusButton: some View {
-        Button {
-            focused = false
-            showAttachmentSheet = true
-        } label: {
-            Image(systemName: "plus")
-                .font(AppFont.scaled(17, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 36, height: 36)
-                // Clear Liquid Glass on iOS 26; legible material fallback
-                // earlier (a flat fill vanished against same-brightness
-                // wallpapers).
-                .mediaGlass(in: Circle(), interactive: true)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Add attachment")
-    }
-
-    private var sendButton: some View {
-        Button {
-            Task { await sendMessage() }
-        } label: {
-            Image(systemName: "arrow.up.circle.fill")
-                .font(AppFont.scaled(28))
-                .foregroundStyle(.white, Color.accentColor)
-        }
-        .buttonStyle(.plain)
-        .disabled(isSending)
-        .accessibilityLabel(Text("Send"))
-    }
-
-    // iMessage-style: a plain dictation glyph inside the field, no chrome —
-    // tap to start recording; the pill becomes the recording surface.
-    private var micButton: some View {
-        Button {
-            focused = false
-            audioRecorder.start()
-            HapticFeedback.impact(.medium)
-        } label: {
-            Image(systemName: "mic.fill")
-                .font(AppFont.scaled(17, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .frame(width: 28, height: 28)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Record voice message"))
-    }
-
-    private var dmAttachmentTray: some View {
-        HStack(spacing: 28) {
-            DMAttachmentOption(icon: "photo.on.rectangle.angled", label: "Gallery", color: .purple) {
-                withAnimation { showAttachmentTray = false }
-                showPhotoPicker = true
-            }
-            DMAttachmentOption(icon: "camera.fill", label: "Camera", color: .blue) {
-                withAnimation { showAttachmentTray = false }
-                showCameraPicker = true
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 28)
-        .padding(.vertical, AppSpacing.lg)
-        .background(.regularMaterial)
     }
 
     // MARK: - Send

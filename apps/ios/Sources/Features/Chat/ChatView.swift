@@ -40,7 +40,6 @@ struct ChatView: View {
     @State private var deleteCandidate: Message?
     @State private var editingMessage: Message? = nil
     @State private var editText = ""
-    @State private var lastTypingSent = Date.distantPast
     @State var replyingTo: Message?
     @State private var forwardingMessage: Message?
     @State private var showLocationSheet = false
@@ -82,7 +81,6 @@ struct ChatView: View {
     @State private var newestMessageId: UUID? = nil
     /// Guards the jump-to-latest button against rapid re-taps mid-flight.
     @State private var isJumpingToLatest = false
-    @State private var audioRecorder = ChatAudioRecorder()
     /// Scope-keyed offline queue — assigned in init so each conversation
     /// (main chat / each community group) persists to its own file.
     @State var outbox: OfflineOutbox
@@ -273,7 +271,11 @@ struct ChatView: View {
 
     var body: some View {
         messageList
-            .overlay(alignment: .bottom) { inputBar }
+            // The compose bar lives in the safe-area inset — the canonical
+            // iMessage structure (matches the DM thread): the scroll view
+            // gains the matching bottom inset automatically and the content
+            // still slides under the bar's material.
+            .safeAreaInset(edge: .bottom, spacing: 0) { inputBar }
             .background(chatTheme.background)
             // iMessage-style header: no bar, the conversation slides under a
             // progressive blur and only glass controls float on top.
@@ -293,11 +295,10 @@ struct ChatView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        // The system search field (pull-down / magnifier-presented) replaces
-        // the old hand-built bar — instant, with the native cancel flow.
-        .searchable(text: $searchText, isPresented: $showSearch,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
-                    prompt: Text("Search messages…"))
+        // Search is summoned on demand (group details / the magnifier for
+        // community groups) — never a bar pinned under the header.
+        .chatOnDemandSearch(text: $searchText, isPresented: $showSearch,
+                            prompt: Text("Search messages…"))
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -366,18 +367,33 @@ struct ChatView: View {
                 if groupId != nil {
                     // A community group manages everything (rename, members,
                     // notifications, delete) through its settings sheet, so the
-                    // trailing control is a single gear instead of call/video.
-                    Button { groupSettingsAction?() } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 40, height: 34)
-                            .contentShape(Rectangle())
+                    // trailing cluster is magnifier + gear instead of
+                    // call/video. The magnifier keeps in-thread search
+                    // reachable now that the bar is no longer pinned (a
+                    // community group has no group-details page).
+                    HStack(spacing: 0) {
+                        Button { showSearch = true } label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 40, height: 34)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Search messages…"))
+
+                        Button { groupSettingsAction?() } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 40, height: 34)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Group settings")
                     }
-                    .buttonStyle(.plain)
                     .background(.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
-                    .accessibilityLabel("Group settings")
                 } else {
                     ChatHeaderActions(
                         onVideo: { showVideoSheet = true },
@@ -480,17 +496,13 @@ struct ChatView: View {
             }
         }
         .onChange(of: text) { _, newValue in
+            // Typing "@" summons the mention picker; the typing broadcast is
+            // throttled inside ChatComposerBar. Draft persistence happens on
+            // disappear — a UserDefaults write per keystroke is typing lag.
             if newValue.hasSuffix("@") && !showMentionPicker {
                 text = String(newValue.dropLast())
                 showMentionPicker = true
             }
-            let now = Date()
-            if !newValue.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
-                lastTypingSent = now
-                messageService.sendTyping()
-            }
-            // Draft persistence happens on disappear — a UserDefaults write on
-            // every keystroke is measurable typing lag.
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
@@ -625,8 +637,6 @@ struct ChatView: View {
     }
 
     // MARK: - Message list
-
-    private let chatBottomInset: CGFloat = 78
 
     /// Arms the entry grace window once. `chatDidLoad` may only flip after the
     /// network refresh has had time to land; flipping it on the first count
@@ -819,22 +829,17 @@ struct ChatView: View {
                             }
                         }
                     }
-                    // Clearance so the newest message rests above the overlaid
-                    // input bar (which blurs the messages behind it = real glass).
-                    // It doubles as the jump-button sentinel: visibility follows
-                    // it entering/leaving the lazy render window. A tall zone
-                    // means the sub-point settle at rest can't flip the button
-                    // in and out (the previous 1pt marker toggled on any nudge
-                    // and stole the first tap; before that, a GeometryReader
-                    // preference reset to 0 whenever the LazyVStack culled the
-                    // off-screen marker, hiding the button on deep scroll-back).
+                    // Jump-button + at-bottom sentinel. The compose bar now
+                    // rides in the safe-area inset (like the DM thread), so the
+                    // scroll view gains the matching bottom inset automatically
+                    // and this marker no longer needs to reserve bar clearance.
                     // On iOS 18+ the live scroll geometry (chatAtBottomTracking
                     // below) owns the at-bottom state and the jump button —
                     // lazy-window appearance is NOT viewport visibility, and
                     // the stale flag used to block auto-follow while the
                     // reader sat at the bottom. The sentinel callbacks survive
                     // purely as the pre-iOS-18 fallback.
-                    Color.clear.frame(height: chatBottomInset)
+                    Color.clear.frame(height: 1)
                         .id("CHAT_BOTTOM")
                         .onAppear {
                             guard !ChatAtBottomModifier.isGeometryDriven else { return }
@@ -849,15 +854,17 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.md)
                 .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             // Live at-bottom detection (iOS 18+): drives auto-follow and the
             // jump button from real viewport geometry instead of the
-            // lazy-culled sentinel. The tall bottom inset counts as "at the
-            // bottom", matching the sentinel's zone.
-            .chatAtBottomTracking(threshold: chatBottomInset + 60) { atBottom in
+            // lazy-culled sentinel. The compose bar's safe-area inset counts
+            // into contentInsets.bottom, so the default one-bubble threshold
+            // matches the DM thread.
+            .chatAtBottomTracking { atBottom in
                 guard atBottom != isAtBottom else { return }
                 isAtBottom = atBottom
                 withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
@@ -968,7 +975,7 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.bottom, chatBottomInset + 8)
+                    .padding(.bottom, 10)
                     .transition(.scale.combined(with: .opacity))
                     .accessibilityLabel("Jump to latest message")
                 }
@@ -976,189 +983,67 @@ struct ChatView: View {
         } // end ScrollViewReader
     }
 
-    // MARK: - Input bar
+    // MARK: - Input bar (the shared iMessage composer)
 
     private var inputBar: some View {
-        VStack(spacing: 0) {
-            if editingMessage != nil {
-                HStack(spacing: 8) {
-                    Image(systemName: "pencil")
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 18)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Edit message")
-                            .font(AppFont.label).foregroundStyle(Color.accentColor)
-                        Text(editingMessage?.body ?? "")
-                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
+        ChatComposerBar(
+            // Inline edit reuses the same field — the binding swaps to the
+            // edit text while an edit is active (identical to the old bar).
+            text: editingMessage != nil ? $editText : $text,
+            focused: $focused,
+            isSending: isSending,
+            config: ChatComposerConfig(
+                onPlus: { showAttachmentSheet = true },
+                onTyping: { messageService.sendTyping() },
+                onSendText: { Task { await sendText() } },
+                onSendAudio: { url in Task { await sendAudio(url: url) } },
+                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl("group"))
+            ),
+            reply: replyingTo.map { m in
+                ChatComposerReply(sender: m.senderName, snippet: pinnedSnippet(m)) {
+                    withAnimation { replyingTo = nil }
+                }
+            },
+            edit: editingMessage.map { m in
+                ChatComposerEdit(snippet: m.body ?? "") {
+                    withAnimation { editingMessage = nil; editText = "" }
+                } onConfirm: {
+                    let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !newText.isEmpty, newText != (m.body ?? "") {
+                        Task { await messageService.editMessage(id: m.id, newBody: newText) }
                     }
-                    Spacer()
-                    Button {
-                        withAnimation { editingMessage = nil; editText = "" }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
-                    }.buttonStyle(.plain)
-                    .accessibilityLabel("Cancel edit")
-                }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                .background(Color.primary.opacity(0.05))
-            }
-            if let replyingTo {
-                ChatReplyBanner(sender: replyingTo.senderName, snippet: pinnedSnippet(replyingTo)) {
-                    withAnimation { self.replyingTo = nil }
+                    editingMessage = nil; editText = ""; focused = false
                 }
             }
-            if !mentionedNames.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(Array(zip(mentionedIds, mentionedNames)), id: \.0) { id, name in
-                            HStack(spacing: 4) {
-                                Text("@\(name)")
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(Color.accentColor)
-                                Button {
-                                    mentionedIds.removeAll { $0 == id }
-                                    mentionedNames.removeAll { $0 == name }
-                                } label: {
-                                    Image(systemName: "xmark").font(AppFont.scaled(9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                                }
-                                .accessibilityLabel("Remove mention of \(name)")
+        ) {
+            mentionChips
+        }
+    }
+
+    /// The pending @mention chips above the field (group-only accessory).
+    @ViewBuilder private var mentionChips: some View {
+        if !mentionedNames.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(zip(mentionedIds, mentionedNames)), id: \.0) { id, name in
+                        HStack(spacing: 4) {
+                            Text("@\(name)")
+                                .font(AppFont.caption)
+                                .foregroundStyle(Color.accentColor)
+                            Button {
+                                mentionedIds.removeAll { $0 == id }
+                                mentionedNames.removeAll { $0 == name }
+                            } label: {
+                                Image(systemName: "xmark").font(AppFont.scaled(9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
-                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
-                            .background(.blue.opacity(0.15), in: Capsule())
+                            .accessibilityLabel("Remove mention of \(name)")
                         }
-                    }
-                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
-                }
-            }
-
-            if audioRecorder.isRecording {
-                // iMessage: the whole compose row becomes the recording pill —
-                // live waveform, red timer, red stop. Stop parks the clip for
-                // review; nothing sends yet.
-                VoiceRecordingPill(recorder: audioRecorder) {
-                    audioRecorder.finishRecording()
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xs)
-            } else if let voicePreview = audioRecorder.preview {
-                // iMessage review: ✕ discards, play auditions, the arrow sends.
-                VoiceReviewRow(preview: voicePreview, isSending: isSending) {
-                    audioRecorder.discardPreview()
-                } onSend: {
-                    if let clip = audioRecorder.takePreview() {
-                        Task { await sendAudio(url: clip.url) }
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
+                        .background(.blue.opacity(0.15), in: Capsule())
                     }
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xs)
-            } else {
-                // iMessage-style compose row: a round + button on the left and a
-                // slim pill field with the trailing control INSIDE it — the
-                // dictation-style mic when empty, the filled send arrow while
-                // typing.
-                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    Button {
-                        focused = false
-                        showAttachmentSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.scaled(17, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                            // Clear Liquid Glass on iOS 26; legible material
-                            // fallback earlier (a flat fill vanished against
-                            // same-brightness wallpapers).
-                            .mediaGlass(in: Circle(), interactive: true)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add attachment")
-
-                    HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                        TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
-                            .font(AppFont.scaled(16))
-                            .foregroundStyle(.primary)
-                            .tint(.accentColor)
-                            .lineLimit(1...6)
-                            .focused($focused)
-                            .padding(.vertical, 7)
-
-                        if editingMessage != nil {
-                            Button {
-                                guard let m = editingMessage else { return }
-                                let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                if !newText.isEmpty, newText != (m.body ?? "") {
-                                    Task { await messageService.editMessage(id: m.id, newBody: newText) }
-                                }
-                                editingMessage = nil; editText = ""; focused = false
-                            } label: {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(AppFont.scaled(28))
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.bottom, 4)
-                            .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            .accessibilityLabel("Confirm edit")
-                        } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            // Dictation-style mic (iMessage) — tap to start
-                            // recording; the pill becomes the recording surface.
-                            Button {
-                                focused = false
-                                audioRecorder.start()
-                                HapticFeedback.impact(.medium)
-                            } label: {
-                                Image(systemName: "mic.fill")
-                                    .font(AppFont.scaled(17, weight: .medium))
-                                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                    .frame(width: 28, height: 28)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.bottom, 4)
-                            .accessibilityLabel("Record voice message")
-                        } else {
-                            Button {
-                                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                                Task { await sendText() }
-                            } label: {
-                                if isSending {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .tint(.white)
-                                        .frame(width: 28, height: 28)
-                                        .background(Circle().fill(Color.accentColor))
-                                } else {
-                                    Image(systemName: "arrow.up.circle.fill")
-                                        .font(AppFont.scaled(28))
-                                        .foregroundStyle(.white, Color.accentColor)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.bottom, 4)
-                            .disabled(isSending)
-                            .transition(.scale.combined(with: .opacity))
-                            .accessibilityLabel("Send")
-                        }
-                    }
-                    .padding(.leading, 14)
-                    .padding(.trailing, 5)
-                    .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
-                }
-                .animation(.snappy(duration: 0.2), value: text.isEmpty)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xs)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
             }
         }
-        // A proper bar material so the compose row stays legible over any
-        // wallpaper (a bare glass pill on its own read as near-transparent).
-        // `.bar` turns opaque automatically under Reduce Transparency.
-        .background(.bar)
-        .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
-        .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
     }
 }
