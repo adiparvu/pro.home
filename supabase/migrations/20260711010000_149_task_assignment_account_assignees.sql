@@ -1,12 +1,13 @@
--- 149: Tasks can be assigned to account holders without a roster row.
+-- 149: Task assignment pushes reach every real person.
 --
--- The assignee picker now unions the family_members roster with active
--- property_members accounts (the same source as the Members hub, migration
--- 106) so every real person is assignable — notably the owner, who never
--- has a roster row on a partner's device. Those account-only people are
--- stored in assignee_ids as 'user_<auth uuid>' (roster people keep their
--- family_members.id strings from migration 090). The assignment trigger
--- learns to resolve both shapes.
+-- Two failures fixed in notify_on_task_assignment (migration 145):
+-- 1. The app writes assignee_ids as UPPERCASE uuid strings (Swift
+--    UUID().uuidString); comparing them to fm.id::text (lowercase) never
+--    matched, so no assignment notification was ever inserted. Compare as
+--    uuid, which is case-insensitive.
+-- 2. The assignee picker now also stores 'user_<auth uuid>' for account
+--    holders without a roster row (the owner on a partner's device);
+--    resolve those directly.
 
 create or replace function public.notify_on_task_assignment()
 returns trigger
@@ -32,11 +33,11 @@ begin
     return new;
   end if;
 
-  -- Resolve each added entry to an auth user id: family_members.id strings
-  -- through the roster, 'user_<uuid>' entries directly. Free-text
-  -- ('custom_<name>') entries match neither branch and stay silent. The
-  -- actor never notifies themselves (fallback: the task creator, for
-  -- service writes).
+  -- Resolve each added entry to an auth user id: bare uuids through the
+  -- roster (family_members.id, migration 090), 'user_<uuid>' entries
+  -- directly. Free-text ('custom_<name>') entries match neither branch and
+  -- stay silent. The actor never notifies themselves (fallback: the task
+  -- creator, for service writes).
   insert into public.notifications (
     property_id, user_id, title, body, priority, status,
     module, action_url, resource_type, resource_id, metadata
@@ -49,13 +50,15 @@ begin
   from (
     select fm.user_id as uid
     from public.family_members fm
-    where fm.id::text = any (v_added)
-      and fm.user_id is not null
+    join unnest(v_added) x
+      on x ~* '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
+     and fm.id = x::uuid
+    where fm.user_id is not null
     union
     select (substring(x from 6))::uuid
     from unnest(v_added) x
-    where x like 'user\_%' escape '\'
-      and (substring(x from 6)) ~ '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$'
+    where x ilike 'user\_%' escape '\'
+      and substring(x from 6) ~* '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
   ) u
   where u.uid <> coalesce(v_actor, new.created_by)
   group by u.uid;

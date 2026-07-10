@@ -414,10 +414,15 @@ private struct PickPerson: Identifiable {
 
     var id: String { pickId }
 
-    /// The value stored in assignee_ids: the roster id when one exists
-    /// (migration 090), else the account fallback (migration 149).
+    /// The value stored in assignee_ids: the roster id (migration 090) when
+    /// that row can actually deliver — i.e. it's linked to an auth user or
+    /// there's no account to fall back to. An unlinked roster row shadowing
+    /// a real account would silence the assignment push, so the account
+    /// fallback (migration 149) wins there.
     var pickId: String {
-        if let member { return member.id.uuidString }
+        if let member, member.userId != nil || account == nil {
+            return member.id.uuidString
+        }
         return "user_" + (account?.userId.uuidString ?? "")
     }
 

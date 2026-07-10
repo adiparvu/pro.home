@@ -705,7 +705,6 @@ struct AddTaskView: View {
                     )
                     let created = try await taskService.addTask(payload)
                     savedTaskId = created.id
-                    scheduleAssigneeNotifications()
                 }
                 if hasDueDate {
                     if addToCalendar {
@@ -729,28 +728,6 @@ struct AddTaskView: View {
         }
     }
 
-    private func scheduleAssigneeNotifications() {
-        guard !assigneeNames.isEmpty else { return }
-        let center = UNUserNotificationCenter.current()
-        let taskTitle = title.trimmingCharacters(in: .whitespaces)
-        let display = DateFormatter(); display.locale = .current; display.dateStyle = .medium
-        let dateStr = hasDueDate ? display.string(from: dueDate) : ""
-        for name in assigneeNames {
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "Task assigned")
-            content.body = dateStr.isEmpty
-                ? String(format: String(localized: "%@, you have a new task: \"%@\""), name, taskTitle)
-                : String(format: String(localized: "%@, you have a new task: \"%@\" · Due: %@"), name, taskTitle, dateStr)
-            content.sound = .default
-            content.badge = 1
-            let req = UNNotificationRequest(
-                identifier: "task.assign.\(UUID().uuidString)",
-                content: content,
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
-            )
-            center.add(req)
-        }
-    }
 
     // MARK: - Helpers
 
