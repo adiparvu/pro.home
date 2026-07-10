@@ -96,10 +96,37 @@ enum PushTokenService {
         Task { try? await supabase.from("push_debug").insert(row).execute() }
     }
 
+    /// The device's current APNs token, kept so account switches can bind the
+    /// incoming account and sign-out can unbind exactly the leaving one.
+    private static let currentTokenKey = "push.token.current"
+
     /// Called from AppDelegate once APNs hands us a token.
     static func handle(deviceToken: Data) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        UserDefaults.standard.set(hex, forKey: currentTokenKey)
         await upload(hex: hex)
+    }
+
+    /// Binds the device token to the CURRENT session's account. Called after an
+    /// account switch: bindings are per (token, user), so every account signed
+    /// into this phone keeps receiving its own pushes — like any multi-account
+    /// messenger. No-op until APNs has issued a token.
+    static func bindCurrentAccount() async {
+        guard let hex = UserDefaults.standard.string(forKey: currentTokenKey), !hex.isEmpty else { return }
+        await upload(hex: hex)
+    }
+
+    /// Removes ONLY the signed-out account's binding for this device. Must run
+    /// while that account's session is still valid (RLS lets an account delete
+    /// only its own rows). Other accounts' bindings survive.
+    static func unbindCurrentAccount() async {
+        guard let hex = UserDefaults.standard.string(forKey: currentTokenKey), !hex.isEmpty,
+              let uid = supabase.auth.currentSession?.user.id else { return }
+        _ = try? await supabase.from("device_tokens")
+            .delete()
+            .eq("token", value: hex)
+            .eq("user_id", value: uid.uuidString)
+            .execute()
     }
 
     /// Re-uploads a token that arrived before the user was signed in.
@@ -129,9 +156,13 @@ enum PushTokenService {
             app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         )
         do {
+            // Conflict target is (token, user_id): a phone signed into several
+            // accounts holds one binding per account, so switching accounts
+            // ADDS a binding instead of stealing the token from the previous
+            // account — all signed-in accounts keep receiving their pushes.
             try await supabase
                 .from("device_tokens")
-                .upsert(row, onConflict: "token")
+                .upsert(row, onConflict: "token,user_id")
                 .execute()
             UserDefaults.standard.removeObject(forKey: pendingKey)
             logDebug("upload", detail: "ok env=\(environment)")

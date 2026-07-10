@@ -105,6 +105,10 @@ final class AuthService {
     func signOut() async throws {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
         let signedOutUserId = session?.user.id.uuidString
+        // Unbind this device from the leaving account BEFORE the session dies
+        // (RLS only lets an account delete its own binding). Other accounts
+        // signed into this phone keep their bindings — and their pushes.
+        await PushTokenService.unbindCurrentAccount()
         try await supabase.auth.signOut()
         session = nil
         // Signing out of an account removes it from the quick-switch list — a
@@ -136,5 +140,8 @@ final class AuthService {
         // shows the previous account's glance data.
         SharedDataStore.clearWatchData()
         WatchSyncService.shared.pushCleared()
+        // Bind this device to the account we just became — bindings are per
+        // (token, user), so the previous account keeps receiving its pushes too.
+        await PushTokenService.bindCurrentAccount()
     }
 }
