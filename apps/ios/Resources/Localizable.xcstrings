@@ -1,6 +1,134 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Lives here — shares the home, tasks, finances and chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lives here — shares the home, tasks, finances and chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locuiește aici — împarte casa, sarcinile, finanțele și chatul"
+          }
+        }
+      }
+    },
+    "Adult": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adult"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adult"
+          }
+        }
+      }
+    },
+    "More": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mai multe"
+          }
+        }
+      }
+    },
+    "This e-mail address doesn't look valid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This e-mail address doesn't look valid"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresa de e-mail nu pare validă"
+          }
+        }
+      }
+    },
+    "The phone number can contain only digits, spaces and +": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The phone number can contain only digits, spaces and +"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numărul de telefon poate conține doar cifre, spații și +"
+          }
+        }
+      }
+    },
+    "The member was not added because the invitation failed:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The member was not added because the invitation failed:"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membrul nu a fost adăugat deoarece invitația a eșuat:"
+          }
+        }
+      }
+    },
+    "You need to be signed in to add a member.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You need to be signed in to add a member."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trebuie să fii autentificat ca să adaugi un membru."
+          }
+        }
+      }
+    },
+    "Avatar color": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avatar color"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Culoare avatar"
+          }
+        }
+      }
+    },
     "Sparkles": {
       "localizations": {
         "en": {
