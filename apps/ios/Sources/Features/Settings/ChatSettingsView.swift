@@ -1,18 +1,22 @@
 import SwiftUI
 
-// MARK: - Chat settings hub (Settings › Familie & Chat › Chat)
+// MARK: - Chat hub (Profil › Chat)
 //
-// Not a list of doors — a control surface. The page opens with a LIVE
-// preview of the current chat theme (the actual wallpaper and bubble
-// colour, animated presets included), and every row states its current
-// value the way iOS Settings does: starred count, disappearing-message
-// duration, encryption state, the group the notifications apply to.
+// Rebuilt from scratch when it moved out of Settings: this page is a live
+// mirror of the household chat, not a list of doors. The hero renders the
+// ACTUAL wallpaper and outgoing-bubble colour (animated presets included),
+// the snapshot tiles read the same observable services the inbox reads — so
+// every number here moves the moment the chat does — and every row below
+// controls something real. No dead controls, no mockups.
 
 struct ChatSettingsView: View {
+    @Environment(AuthService.self) private var auth
     @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
     @Environment(MessageService.self) private var messageService
+    @Environment(DirectMessageService.self) private var directMessageService
+    @Environment(PresenceService.self) private var presenceService
     @Environment(AppRouter.self) private var router
 
     @AppStorage("presence.shareStatus") private var shareStatus = true
@@ -29,6 +33,20 @@ struct ChatSettingsView: View {
         (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup")
     }
 
+    // Live snapshot — the same sources the inbox renders from.
+    private var conversationCount: Int {
+        directMessageService.conversationHeads.count + 1   // DMs + the household chat
+    }
+    private var unreadTotal: Int {
+        directMessageService.conversationHeads.reduce(0) { $0 + $1.unreadCount }
+            + messageService.unreadCount
+    }
+    private var onlineCount: Int {
+        var ids = presenceService.onlineUserIds
+        if let me = auth.session?.user.id { ids.remove(me) }
+        return ids.count
+    }
+
     /// The global chat theme (per-conversation overrides don't apply here).
     private var globalTheme: ChatTheme {
         _ = themeRefresh
@@ -41,10 +59,7 @@ struct ChatSettingsView: View {
 
                 themeHero
 
-                SettingsGroup(title: "Conversații") {
-                    valueTapRow(icon: "star.fill", label: "Mesaje marcate",
-                                value: marked.isEmpty ? nil : "\(marked.count)") { showStarred = true }
-                }
+                liveSnapshot
 
                 SettingsGroup(title: "Confidențialitate") {
                     ToggleSettingsRow(icon: "eye.fill", color: .blue,
@@ -52,7 +67,7 @@ struct ChatSettingsView: View {
                     NavSettingsRow(icon: "shield.lefthalf.filled", color: .indigo, label: "Confidențialitate avansată") {
                         AdvancedPrivacyView(convId: "group")
                     }
-                    NavSettingsRow(icon: "lock.fill", color: Color(red: 0.3, green: 0.8, blue: 0.5), label: "Criptare") {
+                    NavSettingsRow(icon: "lock.fill", color: Color.brandSuccess, label: "Criptare") {
                         EncryptionInfoView()
                     }
                 }
@@ -67,7 +82,7 @@ struct ChatSettingsView: View {
 
                 SettingsGroup(title: "Funcții") {
                     TapSettingsRow(icon: "person.3.fill", color: .purple, label: "chat_groups_title") { showCommunities = true }
-                    NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: Color(red: 0.2, green: 0.75, blue: 0.45), label: "Cross-app messaging") {
+                    NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: Color.brandSuccess, label: "Cross-app messaging") {
                         InterAppChatView()
                     }
                 }
@@ -88,6 +103,13 @@ struct ChatSettingsView: View {
             CommunitiesView(propertyId: propertyService.primary?.id,
                             members: familyService.members,
                             myName: myName)
+        }
+        .task {
+            // The inbox keeps these fresh while it's open; refresh here too so
+            // the snapshot is truthful even when the page is reached directly.
+            if let pid = propertyService.primary?.id {
+                await directMessageService.refreshHeads(propertyId: pid)
+            }
         }
     }
 
@@ -155,36 +177,74 @@ struct ChatSettingsView: View {
         .accessibilityHint(Text("Personalizează"))
     }
 
-    // MARK: - Row with a trailing value + tap action (iOS-Settings style)
+    // MARK: - Live snapshot (the chat, in numbers, right now)
 
-    @ViewBuilder
-    private func valueTapRow(icon: String, label: LocalizedStringKey,
-                             value: String?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: icon, color: .yellow)
-                Text(label)
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
-                Spacer()
-                if let value {
-                    Text(value)
-                        .font(AppFont.scaled(14))
-                        .foregroundStyle(Color.primary.opacity(0.38))
-                        .monospacedDigit()
+    private var liveSnapshot: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Chatul tău acum")
+                .textCase(.uppercase)
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.sm)
+
+            GlassCard {
+                HStack(spacing: 0) {
+                    statTile(value: conversationCount, label: "Conversații",
+                             icon: "bubble.left.and.bubble.right.fill", color: .blue)
+                    tileDivider
+                    statTile(value: unreadTotal, label: "Necitite",
+                             icon: "envelope.badge.fill", color: .orange)
+                    tileDivider
+                    statTile(value: onlineCount, label: "Online acum",
+                             icon: "circle.fill", color: Color.brandSuccess)
+                    tileDivider
+                    Button {
+                        HapticFeedback.selection()
+                        showStarred = true
+                    } label: {
+                        statTileContent(value: marked.count, label: "Mesaje marcate",
+                                        icon: "star.fill", color: .yellow)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Mesaje marcate"))
+                    .accessibilityValue(Text("\(marked.count)"))
                 }
-                Image(systemName: "chevron.right")
-                    .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(0.28))
+                .padding(.vertical, AppSpacing.md)
             }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.md)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+    }
+
+    private var tileDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.05))
-            .frame(height: 0.5)
-            .padding(.leading, 52)
+            .fill(Color.primary.opacity(AppOpacity.hairline))
+            .frame(width: 0.5)
+            .padding(.vertical, AppSpacing.sm)
+    }
+
+    private func statTile(value: Int, label: LocalizedStringKey,
+                          icon: String, color: Color) -> some View {
+        statTileContent(value: value, label: label, icon: icon, color: color)
+            .accessibilityElement(children: .combine)
+    }
+
+    private func statTileContent(value: Int, label: LocalizedStringKey,
+                                 icon: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(AppFont.caption)
+                .foregroundStyle(color)
+            Text("\(value)")
+                .font(AppFont.scaled(20, weight: .bold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+            Text(label)
+                .font(AppFont.scaled(10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
     }
 }

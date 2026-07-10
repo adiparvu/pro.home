@@ -7,6 +7,10 @@ struct ProfileView: View {
     @Environment(NotificationScheduler.self) private var notificationScheduler
     @Environment(TaskService.self) private var taskService
     @Environment(DocumentService.self) private var documentService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(MessageService.self) private var messageService
+    @Environment(DirectMessageService.self) private var directMessageService
+    @Environment(PresenceService.self) private var presenceService
 
     @State private var showEdit = false
     @State private var showChangeEmail = false
@@ -20,6 +24,9 @@ struct ProfileView: View {
     @State private var toastIsError = false
     @State private var copiedAccountId = false
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    /// Bumped on every appearance so the chat card re-reads the (non-observable,
+    /// UserDefaults-backed) global chat theme after it was changed inside the hub.
+    @State private var themeTick = 0
 
     private var ringColor: Color { avatarRingColor(for: avatarRingColorName) }
 
@@ -28,6 +35,7 @@ struct ProfileView: View {
             VStack(spacing: 24) {
                 avatarSection
                 infoCard
+                chatCard
                 accountSection
                 Spacer(minLength: 110)
             }
@@ -280,6 +288,110 @@ struct ProfileView: View {
 
     private var div: some View {
         Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, AppSpacing.lg)
+    }
+
+    // MARK: - Live chat card
+    //
+    // The chat hub moved here from Settings. This is not a navigation row —
+    // it's a living preview: the ACTUAL wallpaper + outgoing-bubble colour,
+    // and the inbox's real numbers, updating with the same observable
+    // services the chat itself renders from. Tap = open the full hub.
+
+    private var chatCard: some View {
+        let theme: ChatTheme = {
+            _ = themeTick
+            return .effective(scope: nil)
+        }()
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Chat")
+                .textCase(.uppercase)
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.sm)
+
+            NavigationLink {
+                ChatSettingsView()
+            } label: {
+                ZStack {
+                    theme.background
+                    VStack(spacing: 8) {
+                        HStack {
+                            Capsule()
+                                .fill(theme.isDark ? Color.white.opacity(0.92) : Color(.systemBackground).opacity(0.92))
+                                .frame(width: 110, height: 26)
+                            Spacer(minLength: 90)
+                        }
+                        HStack {
+                            Spacer(minLength: 90)
+                            Capsule()
+                                .fill(theme.id == "appDefault" ? Color.accentColor : theme.outgoingBubble)
+                                .frame(width: 84, height: 26)
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, 34)
+                    .padding(.top, AppSpacing.md)
+                    .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+                }
+                .frame(height: 128)
+                .overlay(alignment: .bottom) { chatCardStats }
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.7)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Chat"))
+        }
+        .onAppear { themeTick += 1 }
+        .task {
+            if let pid = propertyService.primary?.id {
+                await directMessageService.refreshHeads(propertyId: pid)
+            }
+        }
+    }
+
+    /// The inbox's numbers, told with icons so the strip needs no words.
+    private var chatCardStats: some View {
+        let conversations = directMessageService.conversationHeads.count + 1
+        let unread = directMessageService.conversationHeads.reduce(0) { $0 + $1.unreadCount }
+            + messageService.unreadCount
+        var online = presenceService.onlineUserIds
+        if let me = auth.session?.user.id { online.remove(me) }
+
+        return HStack(spacing: AppSpacing.lg) {
+            statChip(icon: "bubble.left.and.bubble.right.fill", color: .blue,
+                     value: conversations, label: "Conversații")
+            statChip(icon: "envelope.badge.fill", color: .orange,
+                     value: unread, label: "Necitite")
+            statChip(icon: "circle.fill", color: Color.brandSuccess,
+                     value: online.count, label: "Online acum")
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(AppFont.caption)
+                .foregroundStyle(.primary.opacity(0.5))
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+    }
+
+    private func statChip(icon: String, color: Color, value: Int, label: LocalizedStringKey) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(11))
+                .foregroundStyle(color)
+            Text("\(value)")
+                .font(AppFont.scaled(13, weight: .semibold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(label))
+        .accessibilityValue(Text("\(value)"))
     }
 
     // MARK: - Account actions

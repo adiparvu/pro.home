@@ -553,21 +553,8 @@ struct SettingsView: View {
                     GuestModeView().environment(propertyService).environment(familyService)
                 }
             }
-            NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
-                Group {
-                    if propertyService.primary?.id != nil {
-                        ChatSettingsView()
-                            .environment(propertyService)
-                            .environment(familyService)
-                            .environment(profileService)
-                            .environment(messageService)
-                    } else {
-                        SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Chat", description: "Adaugă o proprietate pentru a putea trimite mesaje.")
-                    }
-                }
-            }
-            // Cross-app messaging lives inside the Chat settings page — no need
-            // for a duplicate row here.
+            // Chat settings moved to Profil (the avatar is the door to
+            // everything personal) — the live chat card there opens the hub.
         }
     }
 
