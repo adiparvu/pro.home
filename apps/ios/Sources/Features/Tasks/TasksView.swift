@@ -224,8 +224,13 @@ struct TasksView: View {
                     .padding(.horizontal, AppSpacing.xl)
                     .padding(.top, AppSpacing.sm)
                 if showSearch { searchBar }
-                progressLine
-                    .padding(.horizontal, AppSpacing.xl)
+                // The progress line is the page's filter system, so it stays
+                // whenever there is (or was) work to filter — but on a fully
+                // quiet day with no filter engaged it is pure noise and hides.
+                if filter != .all || taskService.openCount > 0 || taskService.overdueCount > 0 {
+                    progressLine
+                        .padding(.horizontal, AppSpacing.xl)
+                }
                 heroArea(hero: hero, candidates: candidates,
                          hasAnythingBelow: !openSections.isEmpty || !doneToday.isEmpty)
             }
@@ -305,12 +310,9 @@ struct TasksView: View {
                         : .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
                                       removal: .move(edge: .leading).combined(with: .opacity)))
             .padding(.horizontal, AppSpacing.xl)
-        } else if filter == .all, searchText.isEmpty, hasAnythingBelow {
-            // Nothing on today's plate but the list still has content below —
-            // say so, with the real house streak, instead of an abrupt gap.
-            TaskAllClearCard { showAdd = true }
-                .padding(.horizontal, AppSpacing.xl)
         }
+        // No all-clear filler card: when today's plate is empty the sections
+        // below speak for themselves (the user found the card redundant).
     }
 
     private func advanceHero(_ delta: Int, count: Int) {
@@ -569,10 +571,14 @@ struct TasksView: View {
                 // Everything's handled: the all-clear voice, with the real
                 // house streak when there is one.
                 let streak = SharedDataStore.currentHouseStreak()
+                // Simple singular/plural keys chosen in code — the xcstrings
+                // compile script has no plural-variation support, so a
+                // variation-based key renders as its raw name at runtime.
                 EmptyStateView(
                     icon: "checkmark.seal.fill",
                     title: "task_empty_all_clear",
-                    message: streak > 0 ? "task_empty_streak \(streak)" : nil,
+                    message: streak > 1 ? "task_empty_streak_many \(streak)"
+                           : streak == 1 ? "task_empty_streak_one" : nil,
                     actionLabel: "task_empty_add_hint",
                     action: { showAdd = true }
                 )

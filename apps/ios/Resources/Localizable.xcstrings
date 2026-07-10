@@ -66725,52 +66725,6 @@
         }
       }
     },
-    "task_empty_streak %lld": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "All clear for 1 day"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "All clear for %lld days"
-                }
-              }
-            }
-          }
-        },
-        "ro": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Totul în ordine de o zi"
-                }
-              },
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Totul în ordine de %lld zile"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Totul în ordine de %lld de zile"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "task_empty_add_hint": {
       "localizations": {
         "en": {
@@ -66895,6 +66849,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cost estimat"
+          }
+        }
+      }
+    },
+    "task_empty_streak_one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 day with everything in order"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O zi cu totul în regulă"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Tag, an dem alles in Ordnung ist"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 jour où tout est en ordre"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 dag waarop alles in orde is"
+          }
+        }
+      }
+    },
+    "task_empty_streak_many %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days with everything in order"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld zile cu totul în regulă"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Tage, an denen alles in Ordnung ist"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld jours où tout est en ordre"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dagen waarop alles in orde is"
           }
         }
       }
