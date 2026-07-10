@@ -11,6 +11,9 @@ struct TasksView: View {
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
     @State private var searchText = ""
+    @State private var showSearch = false
+    @State private var collapsed: Set<TaskSectionKind> = []
+    @FocusState private var searchFocused: Bool
     /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
     @State private var deepLinkedTask: MaintenanceTask?
 
@@ -100,79 +103,32 @@ struct TasksView: View {
         Group {
             if taskService.isLoading && taskService.tasks.isEmpty {
                 VStack {
+                    header
                     Spacer()
                     ProgressView().scaleEffect(1.2)
                     Spacer()
                 }
-            } else if filtered.isEmpty {
-                emptyState
             } else {
-                taskList
+                content
             }
         }
         .background(appBackground.ignoresSafeArea())
+        .navigationBarHidden(true)
         // The running work session stays pinned above the list, always visible
         // however far you scroll — with its live clock, Pause and Finish.
         .safeAreaInset(edge: .top, spacing: 0) { SessionBanner() }
         .animation(.snappy, value: WorkSessionStore.shared.active)
-        .navigationTitle("Tasks")
-        .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
-                    prompt: Text("Search…"))
-        .floatingSpeedDial(.tasks)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                NavigationLink {
-                    CalendarView()
-                        .environment(taskService)
-                        .environment(documentService)
-                } label: {
-                    Image(systemName: "calendar")
-                        .font(AppFont.scaled(18))
-                        .foregroundStyle(Color.primary.opacity(0.85))
-                }
-                .accessibilityLabel("Calendar")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 0) {
-                    Menu {
-                        ForEach(TaskFilter.allCases, id: \.self) { f in
-                            Button {
-                                withAnimation(.spring(response: 0.25)) { filter = f }
-                            } label: {
-                                Label(
-                                    "\(f.rawValue)  (\(countFor(f)))",
-                                    systemImage: filter == f ? "checkmark" : f.icon
-                                )
-                            }
-                        }
-                    } label: {
-                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(AppFont.subheadline)
-                            .frame(width: 38, height: 32)
-                    }
-                    .accessibilityLabel("Filter tasks")
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(width: 0.5, height: 18)
-                    Button {
-                        showAdd = true
-                        HapticFeedback.impact(.medium)
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.subheadline)
-                            .frame(width: 38, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add task")
-                }
-            }
+        .navigationDestination(isPresented: $showCalendar) {
+            CalendarView()
+                .environment(taskService)
+                .environment(documentService)
         }
+        .overlay(alignment: .bottomTrailing) { addButton }
         .sheet(isPresented: $showAdd) {
             AddTaskView()
                 .environment(taskService)
                 .environment(propertyService)
+                .environment(familyService)
         }
         // Deep link: open the specific task the notification / Spotlight / URL
         // pointed at. Resolve on both the id arriving and the task list loading,
@@ -202,6 +158,309 @@ struct TasksView: View {
         }
     }
 
+    @State private var showCalendar = false
+
+    // MARK: - Content
+
+    private var content: some View {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
+                Section {
+                    header
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.sm)
+                    if showSearch { searchBar }
+                    statCards
+                        .padding(.horizontal, AppSpacing.xl)
+                }
+
+                if filter == .done {
+                    Section {
+                        historyPeriodBar
+                        if filtered.isEmpty {
+                            inlineEmpty
+                        } else {
+                            ForEach(filtered) { task in
+                                TaskRowView(task: task, isActive: false)
+                                    .environment(taskService)
+                                    .environment(propertyService)
+                                    .environment(familyService)
+                                    .padding(.horizontal, AppSpacing.xl)
+                            }
+                        }
+                    }
+                } else if filtered.isEmpty {
+                    Section { inlineEmpty }
+                } else {
+                    ForEach(sections, id: \.kind) { section in
+                        Section {
+                            if !collapsed.contains(section.kind) {
+                                ForEach(section.tasks) { task in
+                                    TaskRowView(task: task, isActive: section.kind == .today)
+                                        .environment(taskService)
+                                        .environment(propertyService)
+                                        .environment(familyService)
+                                        .padding(.horizontal, AppSpacing.xl)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
+                        } header: {
+                            sectionHeader(section)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 120)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self,
+                                           value: geo.frame(in: .named("tasksScroll")).minY)
+                }
+            )
+        }
+        .coordinateSpace(name: "tasksScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { y in
+            tabBarVis.scrollOffset = y
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("task_screen_title")
+                    .font(AppFont.title)
+                    .foregroundStyle(.primary)
+                Text("task_subtitle")
+                    .font(AppFont.footnote)
+                    .foregroundStyle(Color.secondaryTextColor)
+            }
+            Spacer()
+            HStack(spacing: 10) {
+                headerButton("magnifyingglass", label: "Search") {
+                    withAnimation(.taskSpring) { showSearch.toggle() }
+                    searchFocused = showSearch
+                    if !showSearch { searchText = "" }
+                }
+                Menu {
+                    ForEach(TaskFilter.allCases, id: \.self) { f in
+                        Button {
+                            withAnimation(.taskSpring) { filter = f }
+                        } label: {
+                            Label("\(f.rawValue)  (\(countFor(f)))",
+                                  systemImage: filter == f ? "checkmark" : f.icon)
+                        }
+                    }
+                } label: {
+                    headerButtonLabel("slider.horizontal.3")
+                }
+                .accessibilityLabel("Filter tasks")
+
+                Menu {
+                    Button { showCalendar = true } label: { Label("Calendar", systemImage: "calendar") }
+                    Button { Task { await taskService.load() } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
+                } label: {
+                    headerButtonLabel("ellipsis")
+                }
+                .accessibilityLabel("More")
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    private func headerButton(_ icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            headerButtonLabel(icon)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    private func headerButtonLabel(_ icon: String) -> some View {
+        Image(systemName: icon)
+            .font(AppFont.scaled(17, weight: .semibold))
+            .foregroundStyle(Color.primary.opacity(0.8))
+            .frame(width: 44, height: 44)
+            .glassCircle()
+            .shadow(color: Color.primary.opacity(0.05), radius: 8, y: 3)
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(AppFont.footnote)
+                .foregroundStyle(Color.secondaryTextColor)
+            TextField(text: $searchText) {
+                Text("Search…")
+            }
+            .focused($searchFocused)
+            .font(AppFont.body)
+            .tint(.accentColor)
+            .submitLabel(.search)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 11)
+        .liquidGlass(cornerRadius: AppRadius.md)
+        .padding(.horizontal, AppSpacing.xl)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    // MARK: - Stat cards
+
+    private var statCards: some View {
+        HStack(spacing: 10) {
+            TaskStatCard(icon: "checklist", tint: .brandSuccess,
+                         value: taskService.tasks.count, label: "task_stat_all",
+                         isSelected: filter == .all) { select(.all) }
+            TaskStatCard(icon: "circle.dotted", tint: .brandPurple,
+                         value: taskService.openCount, label: "task_stat_in_progress",
+                         isSelected: filter == .open) { select(.open) }
+            TaskStatCard(icon: "clock.fill", tint: .brandWarning,
+                         value: taskService.overdueCount, label: "task_stat_overdue",
+                         isSelected: filter == .overdue) { select(.overdue) }
+            TaskStatCard(icon: "checkmark.seal.fill", tint: .brandTeal,
+                         value: taskService.tasks.filter { $0.isCompleted }.count, label: "task_stat_completed",
+                         isSelected: filter == .done) { select(.done) }
+        }
+    }
+
+    private func select(_ f: TaskFilter) {
+        HapticFeedback.selection()
+        withAnimation(.taskSpring) { filter = (filter == f && f != .all) ? .all : f }
+    }
+
+    // MARK: - Section header
+
+    private func sectionHeader(_ section: TaskSection) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            withAnimation(.taskSpring) {
+                if collapsed.contains(section.kind) { collapsed.remove(section.kind) }
+                else { collapsed.insert(section.kind) }
+            }
+        } label: {
+            HStack {
+                Text(section.kind.title)
+                    .font(AppFont.title3)
+                    .foregroundStyle(.primary)
+                Spacer()
+                HStack(spacing: 4) {
+                    Text("task_see_all")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.secondaryTextColor)
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                        .foregroundStyle(Color.secondaryTextColor)
+                        .rotationEffect(.degrees(collapsed.contains(section.kind) ? 90 : 0))
+                }
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.sm)
+            .background(appBackground)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Grouping
+
+    private struct TaskSection { let kind: TaskSectionKind; let tasks: [MaintenanceTask] }
+
+    private var sections: [TaskSection] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let weekEnd = cal.date(byAdding: .day, value: 7, to: today) else { return [] }
+
+        var todayTasks: [MaintenanceTask] = []
+        var weekTasks: [MaintenanceTask] = []
+        var laterTasks: [MaintenanceTask] = []
+
+        for task in filtered {
+            guard let ds = task.dueDate, let due = MaintenanceTask.parseDate(ds) else {
+                laterTasks.append(task); continue
+            }
+            let day = cal.startOfDay(for: due)
+            if day <= today { todayTasks.append(task) }        // today or overdue
+            else if day < weekEnd { weekTasks.append(task) }
+            else { laterTasks.append(task) }
+        }
+
+        return [
+            TaskSection(kind: .today, tasks: todayTasks),
+            TaskSection(kind: .week,  tasks: weekTasks),
+            TaskSection(kind: .later, tasks: laterTasks)
+        ].filter { !$0.tasks.isEmpty }
+    }
+
+    // MARK: - History bar (completed filter)
+
+    private var historyPeriodBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(HistoryPeriod.allCases, id: \.self) { period in
+                    GlassFilterChip(label: String(localized: String.LocalizationValue(period.rawValue)),
+                                    isSelected: historyPeriod == period) {
+                        withAnimation(.taskSpring) { historyPeriod = period }
+                        HapticFeedback.selection()
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.xs)
+        }
+    }
+
+    // MARK: - Empty state
+
+    private var inlineEmpty: some View {
+        EmptyStateView(
+            icon: "checklist",
+            title: filter == .all ? "No tasks yet" : LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks"),
+            actionLabel: filter == .all ? "Add your first task" : nil,
+            action: filter == .all ? { showAdd = true } : nil
+        )
+        .frame(maxWidth: .infinity, minHeight: 320)
+    }
+
+    // MARK: - Floating add button
+
+    private var addButton: some View {
+        Button {
+            HapticFeedback.impact(.medium)
+            showAdd = true
+        } label: {
+            Image(systemName: "plus")
+                .font(AppFont.scaled(22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(
+                    LinearGradient(colors: [Color.brandPurple, Color.brandPurple.opacity(0.82)],
+                                   startPoint: .top, endPoint: .bottom),
+                    in: Circle()
+                )
+                .overlay(Circle().strokeBorder(.white.opacity(0.25), lineWidth: 0.5))
+                .shadow(color: Color.brandPurple.opacity(0.5), radius: 18, y: 8)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, AppSpacing.xl)
+        .padding(.bottom, 22)
+        .accessibilityLabel("Add task")
+    }
+
+    // MARK: - Helpers
+
     private func resolveTaskDeepLink() {
         guard let id = router.deepLinkTaskId,
               let task = taskService.tasks.first(where: { $0.id == id }) else { return }
@@ -217,240 +476,18 @@ struct TasksView: View {
         case .done:    return taskService.tasks.filter { $0.isCompleted }.count
         }
     }
-
-    // MARK: - Task list
-
-    private var taskList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                if filter == .done {
-                    historyPeriodBar
-                        .padding(.top, AppSpacing.xxs)
-                }
-                LazyVStack(spacing: 10) {
-                    ForEach(filtered) { task in
-                        TaskRowView(task: task)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    HapticFeedback.warning()
-                                    Task { await taskService.delete(task) }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    HapticFeedback.success()
-                                    Task { await taskService.toggleComplete(task) }
-                                } label: {
-                                    Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Done"),
-                                          systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
-                                }
-                                .tint(Color.brandSuccess)
-                            }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.xl)
-                .padding(.top, AppSpacing.xxs)
-                .padding(.bottom, 110)
-            }
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("tasksScroll")).minY)
-                }
-            )
-        }
-        .coordinateSpace(name: "tasksScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            tabBarVis.scrollOffset = y
-        }
-    }
-
-    private var historyPeriodBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(HistoryPeriod.allCases, id: \.self) { period in
-                    GlassFilterChip(label: String(localized: String.LocalizationValue(period.rawValue)),
-                                    isSelected: historyPeriod == period) {
-                        withAnimation(.spring(response: 0.28)) { historyPeriod = period }
-                        HapticFeedback.selection()
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, AppSpacing.xs)
-        }
-    }
-
-    // MARK: - Empty state
-
-    private var emptyTitle: LocalizedStringKey {
-        filter == .all ? "No tasks yet" : LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks")
-    }
-
-    private var emptyState: some View {
-        EmptyStateView(
-            icon: "checklist",
-            title: emptyTitle,
-            actionLabel: filter == .all ? "Add your first task" : nil,
-            action: filter == .all ? { showAdd = true } : nil
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
 }
 
-// MARK: - Filter Chip
+// MARK: - Section kind
 
-struct FilterChip: View {
-    let label: LocalizedStringKey
-    let count: Int
-    let isSelected: Bool
-    let action: () -> Void
+enum TaskSectionKind: Hashable {
+    case today, week, later
 
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Text(label)
-                    .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
-                if count > 0 {
-                    Text("\(count)")
-                        .font(AppFont.label)
-                        .foregroundStyle(isSelected ? .black.opacity(0.6) : Color.primary.opacity(0.4))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(isSelected ? .black.opacity(0.12) : Color.primary.opacity(0.1), in: Capsule())
-                }
-            }
-            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.sm)
-            .background(isSelected ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Task Row
-
-struct TaskRowView: View {
-    @Environment(TaskService.self) private var taskService
-    @Environment(PropertyService.self) private var propertyService
-    @Environment(FamilyService.self) private var familyService
-    let task: MaintenanceTask
-
-    @State private var showEdit = false
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Button {
-                HapticFeedback.success()
-                Task { await taskService.toggleComplete(task) }
-            } label: {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(AppFont.scaled(24))
-                    .foregroundStyle(
-                        task.isCompleted
-                            ? Color(red: 0.25, green: 0.85, blue: 0.52)
-                            : Color.primary.opacity(0.28)
-                    )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(AppFont.body)
-                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.primary)
-                    .strikethrough(task.isCompleted, color: Color.primary.opacity(0.3))
-                    .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    Text(LocalizedStringKey(task.category.capitalized))
-                        .font(AppFont.scaled(11))
-                        .foregroundStyle(Color.primary.opacity(0.38))
-                    if task.dueDate != nil {
-                        Text("·")
-                            .foregroundStyle(Color.primary.opacity(0.22))
-                        Text(LocalizedStringKey(task.dueDateDisplay))
-                            .font(AppFont.scaled(11))
-                            .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
-                    }
-                }
-            }
-
-            Spacer()
-
-            // The live session clock, exactly where the timer was requested —
-            // running (green) or paused (amber), with a one-tap pause/resume.
-            if WorkSessionStore.shared.isTiming(task.id) {
-                SessionRowTimer()
-            }
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Circle()
-                    .fill(task.priorityColor)
-                    .frame(width: 7, height: 7)
-                if task.isOverdue {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .font(AppFont.scaled(12))
-                        .foregroundStyle(.red.opacity(0.7))
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.vertical, AppSpacing.base)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(
-                    task.isOverdue ? .red.opacity(0.22) : Color.primary.opacity(AppOpacity.hairline),
-                    lineWidth: 0.5
-                )
-        )
-        // Tapping the row (anywhere but the checkbox) opens the task's details.
-        // The checkbox Button consumes its own taps, so completion still works.
-        .contentShape(Rectangle())
-        .onTapGesture {
-            HapticFeedback.impact(.light)
-            showEdit = true
-        }
-        .contextMenu {
-            Button {
-                HapticFeedback.impact(.light)
-                showEdit = true
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-            Button {
-                HapticFeedback.success()
-                Task { await taskService.toggleComplete(task) }
-            } label: {
-                Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Mark as Done"),
-                      systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark.circle")
-            }
-            if !task.isCompleted {
-                // Start the real work-session engine — a live timer on the row
-                // and in the pinned banner, mirrored to the Dynamic Island and
-                // the Apple Watch, with Pause/Finish everywhere.
-                Button {
-                    WorkSessionStore.shared.start(taskId: task.id, title: task.title)
-                } label: {
-                    Label("session_start", systemImage: "timer")
-                }
-            }
-            Divider()
-            Button(role: .destructive) {
-                HapticFeedback.warning()
-                Task { await taskService.delete(task) }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .sheet(isPresented: $showEdit) {
-            AddTaskView(editing: task)
-                .environment(taskService)
-                .environment(propertyService)
-                .environment(familyService)
+    var title: LocalizedStringKey {
+        switch self {
+        case .today: return "task_section_today"
+        case .week:  return "task_section_week"
+        case .later: return "task_section_later"
         }
     }
 }

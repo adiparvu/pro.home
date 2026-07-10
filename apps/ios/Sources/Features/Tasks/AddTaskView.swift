@@ -7,6 +7,7 @@ struct AddTaskView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var hSize
 
     var editing: MaintenanceTask? = nil
 
@@ -28,24 +29,64 @@ struct AddTaskView: View {
     @State private var availableCalendars: [EKCalendar] = []
     @State private var selectedCalendarId: String? = nil
     @State private var syncHint: String? = nil
+    @Namespace private var chipNS
 
-    let priorities  = ["low", "medium", "high", "critical"]
+    let priorities  = TaskPriorityStyle.order
     let categories  = ["maintenance", "repair", "inspection", "cleaning", "upgrade", "administrative", "other"]
 
+    private let descriptionLimit = 500
+
+    /// The combined due-date the preview and the calendar sync both read.
+    private var combinedDue: Date? {
+        guard hasDueDate else { return nil }
+        guard hasDueTime else { return dueDate }
+        let cal = Calendar.current
+        var comps = cal.dateComponents([.year, .month, .day], from: dueDate)
+        let t = cal.dateComponents([.hour, .minute], from: dueTime)
+        comps.hour = t.hour; comps.minute = t.minute
+        return cal.date(from: comps) ?? dueDate
+    }
+
     var body: some View {
-        FormScaffold(title: editing != nil ? "Edit Task" : "New Task",
-                     saveLabel: editing != nil ? "Save Changes" : "Add Task",
-                     canSave: canSave, isSaving: isSaving,
-                     error: $errorMsg, onSave: { save() }) {
-            titleField
-            descriptionField
-            priorityPicker
-            categoryPicker
-            dueDatePicker
-            assigneesSection
-            calendarToggle
-            workedTimeRow
+        NavigationStack {
+            Group {
+                if hSize == .regular {
+                    HStack(alignment: .top, spacing: 0) {
+                        formScroll
+                            .frame(maxWidth: .infinity)
+                        Divider()
+                        previewScroll
+                            .frame(maxWidth: .infinity)
+                    }
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 24) {
+                            formContent
+                            preview
+                        }
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.top, AppSpacing.md)
+                        .padding(.bottom, 40)
+                    }
+                }
+            }
+            .navigationTitle(Text(editing != nil ? "task_editor_edit_title" : "task_editor_new_title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                }
+                ToolbarItem(placement: .confirmationAction) { saveButton }
+            }
+            .alert("Something went wrong", isPresented: Binding(
+                get: { errorMsg != nil }, set: { if !$0 { errorMsg = nil } }
+            )) {
+                Button("OK", role: .cancel) { errorMsg = nil }
+            } message: { Text(errorMsg ?? "") }
         }
+        .presentationBackground(.thinMaterial)
+        .presentationDragIndicator(.visible)
         .sheet(isPresented: $showAssigneePicker) {
             AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
         }
@@ -53,151 +94,283 @@ struct AddTaskView: View {
         .task { await familyService.load() }
     }
 
-    private func populateFromEditing() {
-        guard let t = editing else { return }
-        title = t.title
-        description = t.description ?? ""
-        priority = t.priority
-        category = t.category
-        assigneeIds = t.assigneeIds
-        assigneeNames = t.assigneeNames
-        if let ds = t.dueDate, let d = MaintenanceTask.parseDate(ds) {
-            hasDueDate = true
-            dueDate = d
-            if ds.count > 10 {
-                hasDueTime = true
-                dueTime = d
-            }
-        }
-    }
+    // MARK: - Save button (purple check)
 
-    // MARK: - Fields
-
-    /// The total time logged against this task by the work-session timer —
-    /// shown only when editing an existing task that has recorded time.
-    @ViewBuilder
-    private var workedTimeRow: some View {
-        if let t = editing {
-            // The larger of the local App Group total and the server mirror —
-            // so the number is right whether this device banked the time or
-            // another one did (once migration 136's column ships).
-            let worked = max(WorkSessionStore.shared.workedSeconds(for: t.id),
-                             TimeInterval(t.workedSeconds))
-            if worked > 0 {
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "timer")
-                        .font(AppFont.scaled(15, weight: .semibold))
-                        .foregroundStyle(Color.brandSuccess)
-                        .frame(width: 34, height: 34)
-                        .glassCircle()
-                    Text("session_worked_total")
-                        .font(AppFont.footnote)
-                        .foregroundStyle(Color.secondaryTextColor)
-                    Spacer()
-                    Text(verbatim: worked.workedTotalDisplay)
-                        .font(.system(.footnote, design: .rounded).weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.primary)
+    private var saveButton: some View {
+        Group {
+            if isSaving {
+                ProgressView()
+            } else {
+                Button {
+                    HapticFeedback.impact(.light)
+                    save()
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(AppFont.scaled(16, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 38, height: 38)
+                        .background(
+                            LinearGradient(colors: [Color.brandPurple, Color.brandPurple.opacity(0.82)],
+                                           startPoint: .top, endPoint: .bottom),
+                            in: Circle()
+                        )
+                        .opacity(canSave ? 1 : 0.4)
+                        .shadow(color: Color.brandPurple.opacity(canSave ? 0.4 : 0), radius: 8, y: 3)
                 }
-                .padding(AppSpacing.base)
-                .liquidGlass(cornerRadius: AppRadius.md)
+                .buttonStyle(.plain)
+                .disabled(!canSave)
+                .accessibilityLabel(editing != nil ? "Save Changes" : "Add Task")
             }
         }
     }
 
-    private var titleField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("Title")
-            TextField("What needs to be done?", text: $title)
-                .font(AppFont.scaled(16))
-                .foregroundStyle(.primary)
-                .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    // MARK: - Layout pieces
+
+    private var formScroll: some View {
+        ScrollView(showsIndicators: false) {
+            formContent
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, 40)
         }
     }
 
-    private var descriptionField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("Description (optional)")
-            TextField("Add details…", text: $description, axis: .vertical)
-                .font(AppFont.scaled(15))
-                .foregroundStyle(.primary)
-                .lineLimit(3...6)
-                .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    private var previewScroll: some View {
+        ScrollView(showsIndicators: false) {
+            preview
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, 40)
         }
     }
 
-    private var priorityPicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("Priority")
-            HStack(spacing: 8) {
-                ForEach(priorities, id: \.self) { p in
-                    Button { priority = p } label: {
-                        Text(LocalizedStringKey(p.capitalized))
-                            .font(AppFont.scaled(13, weight: priority == p ? .semibold : .regular))
-                            .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
-                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+    private var preview: some View {
+        TaskPreviewPanel(
+            title: title,
+            description: description,
+            priority: priority,
+            category: category,
+            dueDate: combinedDue,
+            hasDueTime: hasDueTime,
+            assigneeNames: assigneeNames,
+            addToCalendar: addToCalendar && hasDueDate,
+            addToReminders: addToReminders && hasDueDate
+        )
+        .environment(familyService)
+    }
+
+    private var formContent: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            detailsSection
+            priorityPicker
+            categoryPicker
+            dueDateSection
+            assigneesSection
+            syncSection
+            workedTimeRow
         }
     }
 
-    private var categoryPicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("Category")
-            ScrollView(.horizontal, showsIndicators: false) {
+    // MARK: - Details (title + description)
+
+    private var detailsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeader(icon: "square.text.square", key: "task_editor_details")
+
+            VStack(alignment: .leading, spacing: 8) {
+                fieldLabel("Title")
                 HStack(spacing: 8) {
-                    ForEach(categories, id: \.self) { cat in
-                        Button { category = cat } label: {
-                            Text(LocalizedStringKey(cat.capitalized))
-                                .font(AppFont.scaled(13, weight: category == cat ? .semibold : .regular))
-                                .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
-                                .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
-                                .background(category == cat ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
+                    TextField(text: $title) { Text("What needs to be done?") }
+                        .font(AppFont.scaled(16))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                    if !title.isEmpty {
+                        Button { title = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(Color.primary.opacity(0.25))
                         }
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                fieldLabel("Description (optional)")
+                VStack(alignment: .trailing, spacing: 4) {
+                    TextField(text: $description, axis: .vertical) { Text("Add details…") }
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(3...6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onChange(of: description) { _, new in
+                            if new.count > descriptionLimit {
+                                description = String(new.prefix(descriptionLimit))
+                            }
+                        }
+                    Text("\(description.count)/\(descriptionLimit)")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
         }
     }
 
-    private var dueDatePicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle(isOn: $hasDueDate.animation()) {
-                fieldLabel("Due Date")
-            }
-            .tint(.accentColor)
-            if hasDueDate {
-                HStack(spacing: 12) {
-                    DatePicker("", selection: $dueDate, displayedComponents: .date)
-                        .datePickerStyle(.compact)
-                        .labelsHidden()
-                        .tint(.accentColor)
-                    Spacer()
-                    Button {
-                        withAnimation { hasDueTime.toggle() }
-                    } label: {
-                        Label(hasDueTime ? "Remove time" : "Add time", systemImage: "clock")
-                            .font(AppFont.scaled(13, weight: .medium))
-                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(AppOpacity.secondaryText))
-                            .labelStyle(.iconOnly)
-                            .padding(AppSpacing.sm)
-                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill),
-                                        in: Circle())
-                    }
-                    .buttonStyle(.plain)
+    // MARK: - Priority
+
+    private var priorityPicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(icon: "flag.fill", key: "Priority")
+            HStack(spacing: 8) {
+                ForEach(priorities, id: \.self) { p in
+                    priorityChip(p)
                 }
-                if hasDueTime {
-                    DatePicker("", selection: $dueTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.compact)
-                        .labelsHidden()
-                        .tint(.accentColor)
+            }
+        }
+    }
+
+    private func priorityChip(_ p: String) -> some View {
+        let style = TaskPriorityStyle(p)
+        let selected = priority == p
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.taskSpring) { priority = p }
+        } label: {
+            HStack(spacing: 6) {
+                Circle().fill(style.color).frame(width: 8, height: 8)
+                Text(style.label)
+                    .font(AppFont.scaled(13, weight: selected ? .semibold : .regular))
+            }
+            .foregroundStyle(selected ? (style == .low ? Color.black.opacity(0.85) : .white)
+                                      : Color.primary.opacity(0.65))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(chipBackground(style: style, selected: selected), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private func chipBackground(style: TaskPriorityStyle, selected: Bool) -> Color {
+        if selected { return style.color }
+        // Critical keeps a soft danger tint even when unselected.
+        if style == .critical { return style.color.opacity(0.14) }
+        return Color.primary.opacity(AppOpacity.subtleFill)
+    }
+
+    // MARK: - Category
+
+    private var categoryPicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(icon: "square.grid.2x2.fill", key: "Category")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(categories, id: \.self) { cat in
+                        categoryChip(cat)
+                    }
+                }
+                .padding(.horizontal, 1)
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
+    private func categoryChip(_ cat: String) -> some View {
+        let style = TaskCategoryStyle(cat)
+        let selected = category == cat
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.taskSpring) { category = cat }
+        } label: {
+            VStack(spacing: 7) {
+                Image(systemName: style.icon)
+                    .font(AppFont.scaled(17, weight: .semibold))
+                Text(style.label)
+                    .font(AppFont.scaled(12, weight: .medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(selected ? .white : Color.primary.opacity(0.6))
+            .frame(width: 78, height: 68)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                        .fill(Self.categorySelectedFill)
+                        .matchedGeometryEffect(id: "categorySelection", in: chipNS)
+                } else {
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                        .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// Dark slate fill for the selected category chip — legible with white
+    /// content in both light and dark appearances.
+    private static let categorySelectedFill = Color(red: 0.15, green: 0.20, blue: 0.24)
+
+    // MARK: - Due date
+
+    private var dueDateSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle(isOn: $hasDueDate.animation(.taskSpring)) {
+                sectionHeader(icon: "calendar", key: "Due Date")
+            }
+            .tint(Color.brandPurple)
+
+            if hasDueDate {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "calendar")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(Color.brandPurple)
+                            .frame(width: 22)
+                        DatePicker("", selection: $dueDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                            .tint(Color.brandPurple)
+                        Spacer()
+                        Button {
+                            withAnimation(.taskSpring) { hasDueTime.toggle() }
+                        } label: {
+                            Image(systemName: "clock")
+                                .font(AppFont.scaled(15, weight: .medium))
+                                .foregroundStyle(hasDueTime ? Color.brandPurple : Color.primary.opacity(AppOpacity.secondaryText))
+                                .padding(AppSpacing.sm)
+                                .background(hasDueTime ? Color.brandPurple.opacity(0.14) : Color.primary.opacity(AppOpacity.subtleFill),
+                                            in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(hasDueTime ? "Remove time" : "Add time")
+                    }
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+
+                    if hasDueTime {
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .font(AppFont.footnote)
+                                .foregroundStyle(Color.brandPurple)
+                                .frame(width: 22)
+                            DatePicker("", selection: $dueTime, displayedComponents: .hourAndMinute)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .tint(Color.brandPurple)
+                            Spacer()
+                        }
+                        .padding(AppSpacing.base)
+                        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                 }
             }
         }
@@ -206,8 +379,8 @@ struct AddTaskView: View {
     // MARK: - Assignees
 
     private var assigneesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("Assign To")
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(icon: "person.2.fill", key: "Assign To")
             Button {
                 HapticFeedback.impact(.light)
                 showAssigneePicker = true
@@ -215,10 +388,10 @@ struct AddTaskView: View {
                 HStack(spacing: 10) {
                     if assigneeIds.isEmpty {
                         Image(systemName: "person.badge.plus")
-                            .font(AppFont.scaled(14))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(Color.primary.opacity(0.4))
                         Text("Add team members…")
-                            .font(AppFont.scaled(14))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     } else {
                         ForEach(Array(zip(assigneeIds, assigneeNames)), id: \.0) { _, name in
@@ -235,11 +408,12 @@ struct AddTaskView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(AppFont.scaled(12))
+                        .font(AppFont.scaled(13, weight: .semibold))
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(.plain)
         }
@@ -247,73 +421,49 @@ struct AddTaskView: View {
 
     private func personIcon(name: String) -> some View {
         ZStack {
-            Circle().fill(.blue.opacity(0.25))
-            Text(String(name.prefix(1)).uppercased()).font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.accentColor)
+            Circle().fill(Color.brandPrimaryBlue.opacity(0.22))
+            Text(String(name.prefix(1)).uppercased())
+                .font(AppFont.scaled(11, weight: .bold))
+                .foregroundStyle(Color.brandPrimaryBlue)
         }
         .frame(width: 30, height: 30)
     }
 
-    // MARK: - Calendar & Reminders sync
+    // MARK: - Sync (Calendar + Reminders)
 
-    private var calendarToggle: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(AppFont.scaled(14))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Add to Calendar")
-                        .font(AppFont.scaled(15))
-                        .foregroundStyle(.primary)
-                    if !hasDueDate {
-                        Text("Set a due date to enable")
-                            .font(AppFont.scaled(11))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                    }
+    private var syncSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(icon: "arrow.triangle.2.circlepath", key: "task_sync_section")
+            VStack(spacing: 0) {
+                syncRow(icon: "calendar", tint: Color.brandPurple,
+                        title: "Add to Calendar", subtitle: "task_calendar_hint",
+                        isOn: $addToCalendar)
+
+                if addToCalendar && hasDueDate && !availableCalendars.isEmpty {
+                    syncDivider
+                    calendarPickerRow
                 }
-                Spacer()
-                Toggle("", isOn: $addToCalendar)
-                    .tint(.accentColor)
-                    .labelsHidden()
-                    .disabled(!hasDueDate)
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
 
-            if addToCalendar && hasDueDate && !availableCalendars.isEmpty {
                 syncDivider
-                calendarPickerRow
-            }
 
-            syncDivider
+                syncRow(icon: "list.bullet", tint: Color.brandWarning,
+                        title: "Add to Apple Reminders", subtitle: "task_reminders_hint",
+                        isOn: $addToReminders)
 
-            HStack(spacing: 12) {
-                Image(systemName: "checklist")
-                    .font(AppFont.scaled(14))
-                    .foregroundStyle(Color.brandWarning)
-                    .frame(width: 28)
-                Text("Add to Apple Reminders")
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Toggle("", isOn: $addToReminders)
-                    .tint(.accentColor)
-                    .labelsHidden()
-                    .disabled(!hasDueDate)
+                if let syncHint {
+                    Text(syncHint)
+                        .font(AppFont.scaled(11))
+                        .foregroundStyle(Color.brandWarning)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.bottom, AppSpacing.md)
+                }
             }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-
-            if let syncHint {
-                Text(syncHint)
-                    .font(AppFont.scaled(11))
-                    .foregroundStyle(Color.brandWarning)
-                    .padding(.horizontal, AppSpacing.base)
-                    .padding(.bottom, AppSpacing.md)
-            }
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .opacity(hasDueDate ? 1 : 0.5)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-        .opacity(hasDueDate ? 1 : 0.5)
         .onChange(of: addToCalendar) { _, on in
             guard on else { return }
             Task { await prepareCalendarAccess() }
@@ -329,11 +479,37 @@ struct AddTaskView: View {
         }
     }
 
+    private func syncRow(icon: String, tint: Color, title: LocalizedStringKey,
+                         subtitle: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(15, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(AppOpacity.tintedFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppFont.scaled(15, weight: .medium))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(AppFont.scaled(11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            }
+            Spacer()
+            Toggle("", isOn: isOn)
+                .tint(Color.brandPurple)
+                .labelsHidden()
+                .disabled(!hasDueDate)
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+    }
+
     private var syncDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
-            .padding(.leading, 52)
+            .padding(.leading, 54)
     }
 
     private var selectedCalendar: EKCalendar? {
@@ -361,9 +537,9 @@ struct AddTaskView: View {
         } label: {
             HStack(spacing: 12) {
                 Circle()
-                    .fill(selectedCalendar.map { Color(UIColor(cgColor: $0.cgColor)) } ?? Color.accentColor)
+                    .fill(selectedCalendar.map { Color(UIColor(cgColor: $0.cgColor)) } ?? Color.brandPurple)
                     .frame(width: 10, height: 10)
-                    .frame(width: 28)
+                    .frame(width: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedCalendar?.title ?? String(localized: "Default calendar"))
                         .font(AppFont.scaled(15))
@@ -402,7 +578,6 @@ struct AddTaskView: View {
             }
             syncHint = nil
         case .writeOnly:
-            // Can save to the default calendar but not list others.
             availableCalendars = []
             syncHint = nil
         case .denied:
@@ -411,7 +586,56 @@ struct AddTaskView: View {
         }
     }
 
-    // MARK: - Save
+    // MARK: - Worked time (editing only)
+
+    @ViewBuilder
+    private var workedTimeRow: some View {
+        if let t = editing {
+            let worked = max(WorkSessionStore.shared.workedSeconds(for: t.id),
+                             TimeInterval(t.workedSeconds))
+            if worked > 0 {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "timer")
+                        .font(AppFont.scaled(15, weight: .semibold))
+                        .foregroundStyle(Color.brandSuccess)
+                        .frame(width: 34, height: 34)
+                        .glassCircle()
+                    Text("session_worked_total")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(Color.secondaryTextColor)
+                    Spacer()
+                    Text(verbatim: worked.workedTotalDisplay)
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                }
+                .padding(AppSpacing.base)
+                .liquidGlass(cornerRadius: AppRadius.md)
+            }
+        }
+    }
+
+    // MARK: - Populate
+
+    private func populateFromEditing() {
+        guard let t = editing else { return }
+        title = t.title
+        description = t.description ?? ""
+        priority = t.priority
+        category = t.category
+        assigneeIds = t.assigneeIds
+        assigneeNames = t.assigneeNames
+        if let ds = t.dueDate, let d = MaintenanceTask.parseDate(ds) {
+            hasDueDate = true
+            dueDate = d
+            if ds.count > 10 {
+                hasDueTime = true
+                dueTime = d
+            }
+        }
+    }
+
+    // MARK: - Save (unchanged business logic)
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && (editing != nil || propertyService.primary != nil)
@@ -423,14 +647,7 @@ struct AddTaskView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let trimmedDesc = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description
-        let combinedDueDate: Date = {
-            guard hasDueTime else { return dueDate }
-            let cal = Calendar.current
-            var comps = cal.dateComponents([.year, .month, .day], from: dueDate)
-            let timeComps = cal.dateComponents([.hour, .minute], from: dueTime)
-            comps.hour = timeComps.hour; comps.minute = timeComps.minute
-            return cal.date(from: comps) ?? dueDate
-        }()
+        let combinedDueDate: Date = combinedDue ?? dueDate
         let dueDateStr: String? = {
             guard hasDueDate else { return nil }
             return (hasDueTime ? AppDate.dayTime : AppDate.day).string(from: combinedDueDate)
@@ -478,9 +695,6 @@ struct AddTaskView: View {
                                                   calendarId: selectedCalendarId)
                     }
                     if addToReminders {
-                        // The link is what makes completion travel both ways:
-                        // checking the reminder off in the Reminders app
-                        // completes this task on next foreground, and vice versa.
                         if let reminderId = TaskCalendarSync.addReminder(
                             title: trimmedTitle, notes: trimmedDesc,
                             date: combinedDueDate, hasTime: hasDueTime) {
@@ -495,8 +709,6 @@ struct AddTaskView: View {
             isSaving = false
         }
     }
-
-    // MARK: - Assignee notifications
 
     private func scheduleAssigneeNotifications() {
         guard !assigneeNames.isEmpty else { return }
@@ -523,16 +735,20 @@ struct AddTaskView: View {
 
     // MARK: - Helpers
 
-    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key).font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+    private func sectionHeader(icon: String, key: LocalizedStringKey) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(12, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text(key)
+                .font(AppFont.scaled(14, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+        }
     }
 
-    private func priorityColor(_ p: String) -> Color {
-        switch p {
-        case "critical": return Color.brandDanger
-        case "high":     return .orange
-        case "medium":   return Color(red: 1, green: 0.85, blue: 0.25)
-        default:         return Color(red: 0.3, green: 0.9, blue: 0.5)
-        }
+    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(AppFont.scaled(13, weight: .medium))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
     }
 }
