@@ -21,6 +21,7 @@ struct PRVIOWatchWidgetBundle: WidgetBundle {
         PRVIOHealthComplication()
         PRVIOWeatherComplication()
         PRVIOBudgetComplication()
+        PRVIOSessionComplication()
         PRVIOChoiceComplication()
     }
 }

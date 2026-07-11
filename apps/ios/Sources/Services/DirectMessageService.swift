@@ -334,11 +334,52 @@ final class DirectMessageService {
 
     /// Refetches the conversation heads (one cheap aggregate row per peer).
     func refreshHeads(propertyId: UUID) async {
+        // The heads can be fetched before load() ever ran (startup mirrors
+        // them to the watch) — make sure "is this mine" has its identity.
+        if myUserId == nil { myUserId = supabase.auth.currentSession?.user.id }
         let rows: [ConversationHead]? = try? await supabase
             .rpc("dm_conversation_heads", params: ["p_property": propertyId.uuidString])
             .execute()
             .value
-        if let rows { conversationHeads = rows }
+        if let rows {
+            conversationHeads = rows
+            syncWatchDMCatalog()
+        }
+    }
+
+    /// Mirrors the conversation heads into the App-Group DM catalog the
+    /// watch renders, and pushes a fresh payload so the wrist inbox stays
+    /// live while the phone app is open. Only id-bearing threads ride along —
+    /// a wrist reply targets "dm:<peer-user-id>", so a legacy thread without
+    /// one would be a row the watch can't answer. Media/tombstone previews
+    /// are flattened to a flag; a raw storage path never reaches the wrist.
+    private func syncWatchDMCatalog() {
+        let entries: [DMConversationEntry] = conversationHeads
+            .sorted { ($0.lastDate ?? .distantPast) > ($1.lastDate ?? .distantPast) }
+            .compactMap { head in
+                guard let peerId = head.peerUserId else { return nil }
+                var body = head.lastDeletedForAll ? nil : head.lastBody
+                var isMedia = false
+                if let b = body, ChatMedia.dmBodyKind(b) != .text {
+                    isMedia = true
+                    body = nil
+                }
+                return DMConversationEntry(
+                    id: peerId,
+                    peerName: head.peerName.trimmingCharacters(in: .whitespacesAndNewlines),
+                    lastBody: body,
+                    isMedia: isMedia,
+                    lastIsMine: head.lastSenderId != nil && head.lastSenderId == myUserId,
+                    lastAt: head.lastDate,
+                    unread: head.unreadCount)
+            }
+        SharedDataStore.writeDMCatalog(Array(entries.prefix(8)))
+        // Push only when a stamped payload exists — assembling one before the
+        // account stamp is written would carry accountId == nil, which the
+        // watch treats as "signed out" and wipes itself.
+        if let payload = SharedDataStore.currentWatchPayload(), payload.accountId != nil {
+            WatchSyncService.shared.push(payload)
+        }
     }
 
     /// Debounced heads refresh piggybacking on sends and realtime events, so

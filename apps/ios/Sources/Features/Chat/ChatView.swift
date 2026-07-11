@@ -19,6 +19,13 @@ struct ChatView: View {
     @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
     @State var text = ""
+    /// The composer's optional subject line (iMessage's "Show Subject Field").
+    /// Encoded into the body at send time (see MessageSubject), so the send
+    /// pipeline, outbox and realtime stay untouched.
+    @State private var subject = ""
+    /// Chat Settings → "Show Subject Field". OFF by default; gates the row in
+    /// the composer for the family chat and every community group.
+    @AppStorage(MessageSubject.showFieldDefaultsKey) private var showSubjectField = false
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State private var searchText = ""
     @State private var showSearch = false
@@ -127,6 +134,7 @@ struct ChatView: View {
     var propertyId: UUID? { propertyService.primary?.id }
 
     private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none").\(groupId?.uuidString ?? "main")" }
+    private var subjectDraftKey: String { draftKey + ".subject" }
 
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
         let dA = a.date ?? Date()
@@ -194,7 +202,8 @@ struct ChatView: View {
     }
     private var exportTranscript: String {
         ChatExport.transcript(title: "Group", lines: messageService.messages.map {
-            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
+            (sender: $0.senderName, time: $0.timeDisplay,
+             body: MessageSubject.strip($0.body ?? ""))
         })
     }
     private var pinnedMessages: [Message] { visibleMessages.filter { $0.pinned == true && $0.deletedForAll != true } }
@@ -232,13 +241,15 @@ struct ChatView: View {
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
-            ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = b } },
+            ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = MessageSubject.strip(b) } },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
         ]
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
             items.append(ChatActionItem("Edit", "pencil") {
-                editingMessage = m; editText = m.body ?? ""
+                // Edit the TEXT only — a subject stays untouched (re-encoded
+                // on confirm), and the marker never enters the field.
+                editingMessage = m; editText = MessageSubject.parse(m.body ?? "").text
                 replyingTo = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
             })
@@ -257,7 +268,8 @@ struct ChatView: View {
         if m.isLocationMessage { return "📍 Location" }
         if m.isFileMessage { return "📎 File" }
         if m.isStickerMessage { return "😀 Sticker" }
-        if let b = m.body, !b.isEmpty { return b }
+        // One line, marker-free — a subject-bearing body reads "subject — text".
+        if let b = m.body, !b.isEmpty { return MessageSubject.strip(b) }
         return String(localized: "Attachment")
     }
     var senderName: String {
@@ -475,6 +487,7 @@ struct ChatView: View {
             themeRefresh &+= 1
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
+            if subject.isEmpty, let s = UserDefaults.standard.string(forKey: subjectDraftKey), !s.isEmpty { subject = s }
         }
         .onDisappear {
             chatLoadGraceTask?.cancel()
@@ -482,6 +495,8 @@ struct ChatView: View {
             // Persist the unsent composer draft once, on the way out.
             if text.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(text, forKey: draftKey) }
+            if subject.isEmpty { UserDefaults.standard.removeObject(forKey: subjectDraftKey) }
+            else { UserDefaults.standard.set(subject, forKey: subjectDraftKey) }
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             // Remember we've now seen everything, so the next open computes the
             // unread divider from this point forward.
@@ -767,7 +782,7 @@ struct ChatView: View {
                             onMark: { Task { await messageService.toggleMark(msg) } },
                             onForward: { forwardingMessage = msg },
                             onEdit: {
-                                editingMessage = msg; editText = msg.body ?? ""
+                                editingMessage = msg; editText = MessageSubject.parse(msg.body ?? "").text
                                 replyingTo = nil
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
                             },
@@ -1018,9 +1033,20 @@ struct ChatView: View {
             config: ChatComposerConfig(
                 onPlus: { showAttachmentSheet = true },
                 onTyping: { messageService.sendTyping() },
-                onSendText: { Task { await sendText() } },
+                onSendText: {
+                    // Fold the subject into the body BEFORE the send path runs
+                    // (see MessageSubject) — sendText and the offline outbox
+                    // then carry one opaque body, exactly as today. An empty
+                    // subject encodes to the text unchanged.
+                    if showSubjectField {
+                        text = MessageSubject.encode(subject: subject, text: text)
+                        subject = ""
+                    }
+                    Task { await sendText() }
+                },
                 onSendAudio: { url in Task { await sendAudio(url: url) } },
-                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl("group"))
+                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl("group")),
+                showsSubject: showSubjectField
             ),
             reply: replyingTo.map { m in
                 ChatComposerReply(sender: m.senderName, snippet: pinnedSnippet(m)) {
@@ -1028,16 +1054,22 @@ struct ChatView: View {
                 }
             },
             edit: editingMessage.map { m in
-                ChatComposerEdit(snippet: m.body ?? "") {
+                // Editing rewrites the TEXT; a subject on the original message
+                // is preserved verbatim through re-encoding on confirm.
+                let original = MessageSubject.parse(m.body ?? "")
+                return ChatComposerEdit(snippet: original.text) {
                     withAnimation { editingMessage = nil; editText = "" }
                 } onConfirm: {
                     let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !newText.isEmpty, newText != (m.body ?? "") {
-                        Task { await messageService.editMessage(id: m.id, newBody: newText) }
+                    if !newText.isEmpty, newText != original.text {
+                        let newBody = MessageSubject.encode(subject: original.subject ?? "",
+                                                            text: newText)
+                        Task { await messageService.editMessage(id: m.id, newBody: newBody) }
                     }
                     editingMessage = nil; editText = ""; focused = false
                 }
-            }
+            },
+            subject: showSubjectField ? $subject : nil
         ) {
             mentionChips
         }

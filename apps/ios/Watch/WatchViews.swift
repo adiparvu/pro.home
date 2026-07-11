@@ -11,7 +11,7 @@ import MapKit
 // the watch is a decorative stub.
 
 enum WatchPage: Hashable {
-    case today, tasks, plants, shopping, pantry, deliveries, map
+    case today, messages, tasks, plants, shopping, pantry, deliveries, map
     case controls, sensors, emergency
 }
 
@@ -152,6 +152,13 @@ struct WatchRootView: View {
         let tabs = TabView(selection: $selection) {
             TodayGlance(payload: payload, selection: $selection)
                 .tag(WatchPage.today)
+            // The wrist inbox rides right after Today (communication first),
+            // gated on real conversations existing — it is not part of the
+            // owner-ordered page set, so old iPhone preferences can't hide it.
+            if !payload.dmConversations.isEmpty {
+                MessagesPage(conversations: payload.dmConversations)
+                    .tag(WatchPage.messages)
+            }
             // The owner's pages, in the owner's order (chosen on the
             // iPhone). Data-gating stays: an enabled page with nothing
             // to show still steps aside.
@@ -168,9 +175,13 @@ struct WatchRootView: View {
                 SensorsPage(sensors: payload.sensors)
                     .tag(WatchPage.sensors)
             }
-            if !payload.emergencyContacts.isEmpty || !payload.emergencySteps.isEmpty {
+            // The emergency page also exists whenever the property is known —
+            // "Alert the family" must work even before any shutoff plan is
+            // written; steps/contacts still only render when they exist.
+            if Self.showsEmergency(payload) {
                 EmergencyPage(contacts: payload.emergencyContacts,
-                              steps: payload.emergencySteps)
+                              steps: payload.emergencySteps,
+                              canAlertFamily: Self.canAlertFamily(payload))
                     .tag(WatchPage.emergency)
             }
         }
@@ -221,9 +232,22 @@ struct WatchRootView: View {
         }
     }
 
+    /// "Alert the family" needs a known property (the message names it) —
+    /// the same guard the iPhone's Emergency page applies.
+    static func canAlertFamily(_ payload: WatchPayload) -> Bool {
+        !(payload.snapshot.propertyName ?? "").isEmpty
+    }
+
+    static func showsEmergency(_ payload: WatchPayload) -> Bool {
+        canAlertFamily(payload)
+            || !payload.emergencyContacts.isEmpty
+            || !payload.emergencySteps.isEmpty
+    }
+
     private static func handoffKey(for page: WatchPage) -> String {
         switch page {
         case .today:      return "home"
+        case .messages:   return "chat"
         case .tasks:      return "tasks"
         case .plants:     return "plants"
         case .shopping:   return "supplies"
@@ -278,6 +302,10 @@ private struct WatchModuleGrid: View {
             .init(page: .tasks,  label: "watch_menu_tasks",  icon: "checklist",      tint: .blue),
             .init(page: .plants, label: "watch_menu_plants", icon: "leaf.fill",      tint: .green),
         ]
+        if !payload.dmConversations.isEmpty {
+            m.insert(.init(page: .messages, label: "watch_menu_messages",
+                           icon: "message.fill", tint: .blue), at: 1)
+        }
         if payload.supplies.contains(where: { !$0.isCompleted }) {
             m.append(.init(page: .shopping, label: "watch_menu_shopping", icon: "cart.fill", tint: .orange))
         }
@@ -296,7 +324,7 @@ private struct WatchModuleGrid: View {
         if !payload.sensors.isEmpty {
             m.append(.init(page: .sensors, label: "watch_menu_sensors", icon: "sensor.fill", tint: .mint))
         }
-        if !payload.emergencyContacts.isEmpty || !payload.emergencySteps.isEmpty {
+        if WatchRootView.showsEmergency(payload) {
             m.append(.init(page: .emergency, label: "watch_menu_emergency",
                            icon: "cross.case.fill", tint: .red))
         }
@@ -738,6 +766,143 @@ private struct ActingSymbol: View {
     }
 }
 
+// MARK: - Page 1b: Messages (the wrist inbox)
+//
+// One row per DM thread — peer, unread badge, last exchange — and a reply
+// dictated/scribbled straight from the wrist. The reply rides the guaranteed
+// queue with its thread's identity, so it lands in THAT conversation on the
+// phone, never in the family chat. Threads without a durable peer id can't
+// be answered by id, so they honestly never reach this page.
+
+private struct MessagesPage: View {
+    let conversations: [DMConversationEntry]
+
+    private var rows: [DMConversationEntry] { Array(conversations.prefix(8)) }
+
+    var body: some View {
+        NavigationStack {
+            List(rows, id: \.id) { convo in
+                NavigationLink(value: convo.id) {
+                    row(convo)
+                }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(WatchDesign.cardFill(convo.unread > 0 ? .blue : .gray))
+                )
+            }
+            .navigationDestination(for: UUID.self) { id in
+                if let convo = rows.first(where: { $0.id == id }) {
+                    DMThreadDetail(convo: convo)
+                }
+            }
+            .navigationTitle(Text("watch_menu_messages"))
+            .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+        }
+    }
+
+    private func row(_ convo: DMConversationEntry) -> some View {
+        HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: convo.peerName)
+                    .font(.system(.footnote, design: .rounded).weight(.semibold))
+                    .lineLimit(1)
+                DMPreviewText(convo: convo)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 0)
+            if convo.unread > 0 {
+                Text(verbatim: "\(min(convo.unread, 99))")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Color.blue, in: Capsule())
+                    .accessibilityLabel(Text("watch_unread"))
+            }
+        }
+        // Mail is not for whoever glances at a resting wrist.
+        .privacySensitive()
+    }
+}
+
+/// The last message, safely: media becomes a label, never a raw storage path.
+private struct DMPreviewText: View {
+    let convo: DMConversationEntry
+
+    var body: some View {
+        if convo.isMedia {
+            Text("watch_dm_media")
+        } else if let body = convo.lastBody, !body.isEmpty {
+            if convo.lastIsMine {
+                Text(verbatim: "\(String(localized: "watch_dm_you")): \(body)")
+            } else {
+                Text(verbatim: body)
+            }
+        } else {
+            Text(verbatim: "—")
+        }
+    }
+}
+
+private struct DMThreadDetail: View {
+    let convo: DMConversationEntry
+    @Environment(WatchStore.self) private var store
+    @State private var justSent = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                // The last exchange — enough context to answer from the wrist.
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(verbatim: convo.lastIsMine
+                         ? String(localized: "watch_dm_you") : convo.peerName)
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    DMPreviewText(convo: convo)
+                        .font(.system(.footnote, design: .rounded))
+                        .foregroundStyle(.primary)
+                    if let at = convo.lastAt {
+                        Text(at, format: .relative(presentation: .named))
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .privacySensitive()
+
+                // Dictation / scribble reply — the watch input surface.
+                TextFieldLink(prompt: Text("watch_dm_reply_prompt")) {
+                    Label {
+                        Text(justSent ? "watch_dm_sent" : "watch_dm_reply")
+                    } icon: {
+                        Image(systemName: justSent
+                              ? "checkmark.circle.fill" : "arrowshape.turn.up.left.fill")
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                } onSubmit: { value in
+                    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    withAnimation(.snappy) { justSent = true }
+                    store.sendDM(to: convo.id, text: trimmed)
+                    Task {
+                        try? await Task.sleep(for: .seconds(3))
+                        withAnimation(.smooth) { justSent = false }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(justSent ? .green : .blue)
+                .primaryDoubleTap()
+            }
+        }
+        .navigationTitle(Text(verbatim: convo.peerName))
+        .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+    }
+}
+
 // MARK: - Page 2: Tasks
 
 private struct TasksPage: View {
@@ -1111,6 +1276,19 @@ private struct PantryPage: View {
                                   isPrimary: item.id == stocked.first?.id) {
                             store.consumePantry(item.id)
                         }
+                        // Swipe → straight onto the shopping list: the phone
+                        // performs the real SupplyService insert on its next
+                        // beat (duplicates are skipped there, so a repeat
+                        // swipe can't double a row).
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button {
+                                store.addPantryItemToShoppingList(item.id)
+                            } label: {
+                                Label("watch_pantry_to_list",
+                                      systemImage: "cart.fill.badge.plus")
+                            }
+                            .tint(.orange)
+                        }
                         .listRowBackground(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(WatchDesign.cardFill(.green))
@@ -1178,28 +1356,49 @@ private struct PantryRow: View {
     }
 }
 
-// MARK: - Page 5: Deliveries (glanceable, read-only)
+// MARK: - Page 5: Deliveries (confirm a parcel from the doormat)
+//
+// The symbol acts on the spot (the Things split, as on Tasks): tapping the
+// circle marks a still-active parcel received — locally instantly, then for
+// real through DeliveryService.markDelivered on the phone's next beat. The
+// row still opens the detail, which offers the same action as a big button.
 
 private struct DeliveriesPage: View {
     let deliveries: [DeliveryCatalogEntry]
+    @Environment(WatchStore.self) private var store
+
+    private static func isActive(_ parcel: DeliveryCatalogEntry) -> Bool {
+        parcel.status == "expected" || parcel.status == "out_for_delivery"
+    }
 
     var body: some View {
         NavigationStack {
             List(deliveries.prefix(10), id: \.id) { parcel in
                 NavigationLink(value: parcel.id) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Image(systemName: DeliveryGlyphs.icon(for: parcel.status))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(parcel.status == "out_for_delivery" ? .orange : .secondary)
-                            Text(parcel.title)
-                                .font(.system(.footnote, design: .rounded))
-                                .lineLimit(2)
+                    HStack(spacing: 8) {
+                        if Self.isActive(parcel) {
+                            ActingSymbol(idle: "circle",
+                                         acted: "checkmark.seal.fill",
+                                         tint: .green,
+                                         label: "watch_delivery_received",
+                                         isPrimary: parcel.id == deliveries.first(where: Self.isActive)?.id) {
+                                withAnimation(.snappy) { store.markDeliveryReceived(parcel.id) }
+                            }
                         }
-                        DeliveryGlyphs.statusLabel(for: parcel.status)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Image(systemName: DeliveryGlyphs.icon(for: parcel.status))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(parcel.status == "out_for_delivery" ? .orange : .secondary)
+                                Text(parcel.title)
+                                    .font(.system(.footnote, design: .rounded))
+                                    .lineLimit(2)
+                            }
+                            DeliveryGlyphs.statusLabel(for: parcel.status)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
                 .listRowBackground(
@@ -1220,6 +1419,8 @@ private struct DeliveriesPage: View {
 
 private struct DeliveryDetail: View {
     let parcel: DeliveryCatalogEntry
+    @Environment(WatchStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ScrollView {
@@ -1244,6 +1445,21 @@ private struct DeliveryDetail: View {
                     Text(verbatim: eta)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                }
+
+                if parcel.status == "expected" || parcel.status == "out_for_delivery" {
+                    Button {
+                        store.markDeliveryReceived(parcel.id)
+                        dismiss()
+                    } label: {
+                        Label { Text("watch_delivery_received") } icon: {
+                            Image(systemName: "checkmark.seal.fill")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .primaryDoubleTap()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1439,11 +1655,19 @@ private struct ControlsPage: View {
 private struct SensorsPage: View {
     let sensors: [SensorCatalogEntry]
 
+    /// Hazards first: a critical alarm belongs at the top of a small screen.
+    /// Stable partition, so the phone's own order survives within each tier.
+    private var ordered: [SensorCatalogEntry] {
+        sensors.filter { $0.isCritical && $0.isAlerting }
+            + sensors.filter { !($0.isCritical && $0.isAlerting) && $0.isAlerting }
+            + sensors.filter { !$0.isAlerting }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 6) {
-                    ForEach(sensors, id: \.id) { s in
+                    ForEach(ordered, id: \.id) { s in
                         row(s)
                     }
                 }
@@ -1495,11 +1719,51 @@ private struct EmergencyPage: View {
     @Environment(WatchStore.self) private var store
     let contacts: [EmergencyContactEntry]
     let steps: [EmergencyStepEntry]
+    /// Whether the property is known — the family alert names it, exactly
+    /// like the iPhone Emergency page's own guard.
+    var canAlertFamily = false
+
+    @State private var showAlertConfirm = false
+    @State private var alertSent = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 8) {
+                    // One tap + one confirmation (a pocket-tap false alarm
+                    // costs real adrenaline): the phone sends the SAME
+                    // "⚠️ Emergency at <property> — call me!" the iPhone
+                    // button sends, into the household chat.
+                    if canAlertFamily {
+                        Button {
+                            guard !alertSent else { return }
+                            showAlertConfirm = true
+                        } label: {
+                            Label {
+                                Text(alertSent ? "emg_alert_sent" : "emg_alert_family")
+                            } icon: {
+                                Image(systemName: alertSent
+                                      ? "checkmark.seal.fill" : "exclamationmark.bubble.fill")
+                            }
+                            .font(.system(.footnote, design: .rounded).weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(alertSent ? .green : .red)
+                        .confirmationDialog("emg_alert_confirm_title",
+                                            isPresented: $showAlertConfirm,
+                                            titleVisibility: .visible) {
+                            Button("emg_alert_confirm_send", role: .destructive) {
+                                store.alertFamily()
+                                withAnimation(.snappy) { alertSent = true }
+                                Task {
+                                    try? await Task.sleep(for: .seconds(5))
+                                    withAnimation(.smooth) { alertSent = false }
+                                }
+                            }
+                        }
+                    }
+
                     Button {
                         store.startEmergency()
                     } label: {

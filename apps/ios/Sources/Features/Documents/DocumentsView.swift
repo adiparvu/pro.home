@@ -588,7 +588,7 @@ struct DocumentRow: View {
             if isLocked {
                 LockedItemPreview(name: doc.name)
             } else {
-                DocumentRowPreview(doc: doc)
+                DocumentPreviewCard(doc: doc, isFavorite: isFavorite)
             }
         }
         .swipeActions(edge: .leading) {
@@ -614,6 +614,93 @@ struct DocumentRow: View {
         case "invoice":     return .orange
         case "photo":       return .pink
         default:            return .white
+        }
+    }
+}
+
+// MARK: - Long-press preview (PreviewCard)
+//
+// The document's lifted context-menu card: image documents show their real
+// thumbnail, everything else the category glyph; rows carry only fields the
+// row actually has (added date always, size and expiry when present).
+// Locked documents never reach this view — the row shows LockedItemPreview.
+struct DocumentPreviewCard: View {
+    let doc: DocumentModel
+    var isFavorite: Bool = false
+
+    private var tint: Color { documentCategoryColor(doc.category) }
+    private var isImage: Bool { doc.mimeType?.hasPrefix("image/") == true }
+
+    var body: some View {
+        PreviewCard(
+            title: Text(verbatim: doc.name),
+            subtitle: Text(verbatim: DocumentTypeDisplay.name(doc.category)),
+            tint: tint,
+            details: details,
+            chips: chips
+        ) {
+            thumbnail
+        }
+    }
+
+    private var details: [PreviewCardDetail] {
+        var rows: [PreviewCardDetail] = []
+        if let added = ISODate.date(from: doc.createdAt) {
+            rows.append(PreviewCardDetail(icon: "calendar",
+                                          label: Text("preview_added"),
+                                          value: Text(verbatim: AppDate.monthDayYear.string(from: added))))
+        }
+        if !doc.fileSizeDisplay.isEmpty {
+            rows.append(PreviewCardDetail(icon: "externaldrive",
+                                          label: Text("preview_size"),
+                                          value: Text(verbatim: doc.fileSizeDisplay)))
+        }
+        if let expiry = doc.expiresDisplay {
+            rows.append(PreviewCardDetail(icon: "calendar.badge.exclamationmark",
+                                          label: Text("doc_f_expires"),
+                                          value: Text(verbatim: expiry)))
+        }
+        return rows
+    }
+
+    private var chips: [PreviewCardChip] {
+        var chips: [PreviewCardChip] = []
+        if isFavorite {
+            chips.append(PreviewCardChip(icon: "star.fill", text: Text("Favorite"), tint: .yellow))
+        }
+        if doc.isCritical {
+            chips.append(PreviewCardChip(icon: "exclamationmark.circle.fill",
+                                         text: Text("Critical"), tint: .brandDanger))
+        }
+        return chips
+    }
+
+    /// Real thumbnail for image documents; the category glyph disc otherwise.
+    /// While the image loads (or if it fails) the glyph stands in — never a
+    /// blank placeholder.
+    @ViewBuilder private var thumbnail: some View {
+        if isImage {
+            StorageImage(source: doc.fileUrl) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    glyphDisc
+                }
+            }
+            .frame(width: 54, height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        } else {
+            glyphDisc.frame(width: 54, height: 54)
+        }
+    }
+
+    private var glyphDisc: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(tint.opacity(AppOpacity.tintedFill))
+            Image(systemName: doc.categoryIcon)
+                .font(AppFont.scaled(22, weight: .medium))
+                .foregroundStyle(tint)
         }
     }
 }

@@ -2129,3 +2129,16 @@
 "🎂 %@" = "🎂 %@";
 "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)";
 "[%@] %@" = "[%@] %@";
+
+/* ── Watch: DMs, deliveries, pantry→list, sensor alerts, session complication ── */
+"watch_menu_messages" = "Messages";
+"watch_dm_reply" = "Reply";
+"watch_dm_reply_prompt" = "Your reply";
+"watch_dm_sent" = "Sent ✓";
+"watch_dm_you" = "Me";
+"watch_dm_media" = "Attachment";
+"watch_delivery_received" = "Received";
+"watch_pantry_to_list" = "Add to list";
+"watch_sensor_alert_title" = "Critical sensor";
+"watch_session_none" = "No active session";
+"watch_comp_session_desc" = "The active work session on your wrist.";

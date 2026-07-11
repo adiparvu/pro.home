@@ -89,11 +89,22 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
                 let text = textResponse.userText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !text.isEmpty {
                     var target = "group"
-                    if let chat = info["chat"] as? [String: Any],
-                       (chat["kind"] as? String) == "dm",
-                       let peer = chat["peer_user_id"] as? String,
-                       UUID(uuidString: peer) != nil {
-                        target = "dm:\(peer)"
+                    if let chat = info["chat"] as? [String: Any] {
+                        let kind = chat["kind"] as? String
+                        if kind == "dm",
+                           let peer = chat["peer_user_id"] as? String,
+                           UUID(uuidString: peer) != nil {
+                            target = "dm:\(peer)"
+                        } else if kind == "community" {
+                            // Community sub-group: route via its group id. A
+                            // community push without one never carries the
+                            // MESSAGE category (send-chat-push guards it), so
+                            // this branch can't misdeliver into the household
+                            // chat — but guard anyway rather than fall through.
+                            guard let gid = chat["group_id"] as? String,
+                                  UUID(uuidString: gid) != nil else { break }
+                            target = "grp:\(gid)"
+                        }
                     }
                     SharedDataStore.appendPendingChatReply(text, target: target)
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
@@ -104,15 +115,28 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             // User tapped notification body — route to correct screen.
             // Chat pushes carry a `chat` dictionary (kind + identifiers) from
             // the send-chat-push function: a DM lands directly in that thread,
-            // anything else lands in the household chat.
+            // a community message opens its sub-group (via the existing
+            // prvio://communities/<id> deep link, which survives cold launch
+            // through the pendingDeepLink stash), anything else lands in the
+            // household chat.
             if let chat = info["chat"] as? [String: Any] {
                 let kind = chat["kind"] as? String
                 if kind == "dm", let peer = chat["peer_user_id"] as? String, UUID(uuidString: peer) != nil {
                     ChatNotificationTarget.store(peer)
+                    NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
+                } else if kind == "community", let gid = chat["group_id"] as? String,
+                          UUID(uuidString: gid) != nil {
+                    // Same belt-and-suspenders as the task branch below: the
+                    // stash covers a cold launch, the post covers a warm one.
+                    let link = "prvio://communities/\(gid)"
+                    UserDefaults.standard.set(link, forKey: "prvio.pendingDeepLink")
+                    if let url = URL(string: link) {
+                        NotificationCenter.default.post(name: .prvioOpenURL, object: url)
+                    }
                 } else {
                     ChatNotificationTarget.store("group")
+                    NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
                 }
-                NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
             } else if let task = info["task"] as? [String: Any],
                       let id = task["id"] as? String, UUID(uuidString: id) != nil {
                 // Task-assignment push (send-chat-push, migration 145) — land

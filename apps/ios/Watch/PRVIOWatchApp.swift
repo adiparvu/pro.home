@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import WatchConnectivity
 import WatchKit
 import WidgetKit
@@ -40,7 +41,7 @@ extension TimeInterval {
 // MARK: - Store (session delegate + cache)
 
 @Observable
-final class WatchStore: NSObject, WCSessionDelegate {
+final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDelegate {
     private(set) var payload: WatchPayload?
 
     private static let cacheKey = "prvio.watch.payload"
@@ -61,6 +62,9 @@ final class WatchStore: NSObject, WCSessionDelegate {
            let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
             payload = cached.sanitizedForRender()
         }
+        // Local critical-sensor alerts must show even while the app is up —
+        // the delegate's willPresent grants them the banner.
+        UNUserNotificationCenter.current().delegate = self
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
@@ -80,14 +84,63 @@ final class WatchStore: NSObject, WCSessionDelegate {
             if decoded.accountId == nil {
                 self.payload = nil
                 Self.defaults.removeObject(forKey: Self.cacheKey)
+                Self.defaults.removeObject(forKey: Self.criticalSensorsKey)
                 WidgetCenter.shared.reloadAllTimelines()
                 return
             }
             self.payload = decoded.sanitizedForRender()
             Self.defaults.set(data, forKey: Self.cacheKey)
+            // A hazard sensor that JUST went critical taps the wrist — the
+            // one payload change that must never pass silently.
+            self.alertCriticalSensorTransitions(in: decoded)
             // Fresh state → repaint the watch-face complications too.
             WidgetCenter.shared.reloadAllTimelines()
         }
+    }
+
+    // MARK: Critical sensor alerts (local, on the wrist)
+    //
+    // Fires exactly on the TRANSITION into critical (smoke / gas / water
+    // alerting), deduplicated across launches by persisting the set of
+    // currently-critical sensor ids — a payload refresh while the leak is
+    // still active must not re-alarm. Honest scope: detection runs when a
+    // payload actually reaches the watch app (delivery or refresh); the
+    // watch has no background channel of its own.
+
+    private static let criticalSensorsKey = "prvio.watch.criticalSensorIds"
+
+    private func alertCriticalSensorTransitions(in payload: WatchPayload) {
+        let critical = payload.sensors.filter { $0.isCritical && $0.isAlerting }
+        let previous = Set((Self.defaults.stringArray(forKey: Self.criticalSensorsKey) ?? [])
+            .compactMap(UUID.init(uuidString:)))
+        let currentIds = Set(critical.map(\.id))
+        guard currentIds != previous else { return }
+        Self.defaults.set(currentIds.map(\.uuidString), forKey: Self.criticalSensorsKey)
+        let fresh = critical.filter { !previous.contains($0.id) }
+        guard !fresh.isEmpty else { return }
+        WKInterfaceDevice.current().play(.failure)
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            for sensor in fresh {
+                let content = UNMutableNotificationContent()
+                content.title = String(localized: "watch_sensor_alert_title")
+                content.body = [sensor.name, sensor.zone, sensor.displayValue]
+                    .compactMap { $0 }.joined(separator: " · ")
+                content.sound = .default
+                center.add(UNNotificationRequest(
+                    identifier: "prvio.sensor.\(sensor.id.uuidString)",
+                    content: content, trigger: nil))
+            }
+        }
+    }
+
+    /// Show our local sensor alarms as banners even while the app is open.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler:
+                                    @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 
     // MARK: On-demand refresh
@@ -229,29 +282,12 @@ final class WatchStore: NSObject, WCSessionDelegate {
     // but the quarter-hour haptic only fires while the session screen is up
     // (background haptics would require a workout session we can't justify).
 
-    struct WorkSession: Codable, Equatable {
-        var taskId: UUID
-        var title: String
-        var startedAt: Date
-        /// Seconds banked from segments that already ran before each pause.
-        var accumulated: TimeInterval = 0
-        /// Start of the current running segment; nil while paused. Defaulted
-        /// from `startedAt` so a session persisted by an older build resumes
-        /// running rather than appearing paused.
-        var segmentStart: Date? = nil
+    /// The session model now lives in SharedDataStore (same on-disk JSON,
+    /// same key) so the watch WIDGET extension renders the identical session
+    /// this store is timing — the typealias keeps every existing call site.
+    typealias WorkSession = WatchWorkSession
 
-        var isPaused: Bool { segmentStart == nil && accumulated > 0 }
-
-        /// Live elapsed, pauses excluded. Falls back to `startedAt` for
-        /// sessions saved before pause support existed.
-        func elapsed(at now: Date) -> TimeInterval {
-            if let seg = segmentStart { return accumulated + max(0, now.timeIntervalSince(seg)) }
-            if accumulated > 0 { return accumulated }
-            return max(0, now.timeIntervalSince(startedAt))
-        }
-    }
-
-    private static let sessionKey = "prvio.watch.session"
+    private static let sessionKey = SharedDataStore.watchSessionKey
 
     private(set) var activeSession: WorkSession? = {
         guard let data = (UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard)
@@ -285,6 +321,9 @@ final class WatchStore: NSObject, WCSessionDelegate {
         } else {
             Self.defaults.removeObject(forKey: Self.sessionKey)
         }
+        // The session complication reads this exact key — repaint the face
+        // on every start/pause/resume/end.
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Freezes the clock on the wrist and tells the phone to pause the same
@@ -316,7 +355,7 @@ final class WatchStore: NSObject, WCSessionDelegate {
     func endSession(completingTask: Bool) {
         let session = activeSession
         activeSession = nil
-        Self.defaults.removeObject(forKey: Self.sessionKey)
+        persistSession()
         if completingTask, let session { completeTask(session.taskId) }
         else { WKInterfaceDevice.current().play(.stop) }
         guard WCSession.isSupported() else { return }
@@ -332,6 +371,60 @@ final class WatchStore: NSObject, WCSessionDelegate {
         WKInterfaceDevice.current().play(.success)
         guard WCSession.isSupported() else { return }
         WCSession.default.transferUserInfo(["action": "sendMessage", "text": trimmed])
+    }
+
+    /// Dictated reply to a direct thread. Rides the same guaranteed queue as
+    /// the house chat, with the "dm:<peer-user-id>" target the notification
+    /// quick-reply pipeline already routes — the phone's DirectMessageService
+    /// performs the real send on its next beat. Optimistic: the conversation
+    /// preview flips to the reply so the inbox reflects the tap instantly.
+    func sendDM(to peerId: UUID, text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        mutate { payload in
+            guard let i = payload.dmConversations.firstIndex(where: { $0.id == peerId }) else { return }
+            payload.dmConversations[i].lastBody = trimmed
+            payload.dmConversations[i].isMedia = false
+            payload.dmConversations[i].lastIsMine = true
+            payload.dmConversations[i].lastAt = Date()
+        }
+        WKInterfaceDevice.current().play(.success)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "sendMessage",
+                                            "text": trimmed,
+                                            "target": "dm:\(peerId.uuidString)"])
+    }
+
+    /// "Alert the family" — the phone sends the exact emergency message the
+    /// iPhone Emergency page's own button sends, into the household chat
+    /// (the DB trigger fans it out as pushes). Guaranteed delivery to the
+    /// phone; the strong haptic confirms the request left the wrist.
+    func alertFamily() {
+        WKInterfaceDevice.current().play(.notification)
+        guard WCSession.isSupported() else { return }
+        WCSession.default.transferUserInfo(["action": "alertFamily"])
+    }
+
+    /// Package received, confirmed from the wrist. The parcel flips locally,
+    /// and the phone lands the real DeliveryService.markDelivered through
+    /// the same pending queue the Live Activity island uses.
+    func markDeliveryReceived(_ id: UUID) {
+        mutate { payload in
+            guard let i = payload.deliveries.firstIndex(where: { $0.id == id }),
+                  payload.deliveries[i].status != "delivered" else { return }
+            payload.deliveries[i].status = "delivered"
+            payload.deliveries[i].eta = nil
+            payload.snapshot.activeDeliveryCount = payload.deliveries
+                .filter { $0.status == "expected" || $0.status == "out_for_delivery" }.count
+        }
+        queue(action: "deliveryReceived", id: id, haptic: .success)
+    }
+
+    /// Pantry → shopping list. No optimistic supply row (the real one is
+    /// born server-side with its own id); the click confirms the queued
+    /// request and the next authoritative payload shows it on the list.
+    func addPantryItemToShoppingList(_ id: UUID) {
+        queue(action: "pantryToList", id: id, haptic: .click)
     }
 
     private func mutate(_ change: (inout WatchPayload) -> Void) {

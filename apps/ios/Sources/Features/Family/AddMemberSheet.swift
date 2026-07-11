@@ -1,5 +1,6 @@
 import SwiftUI
 import ContactsUI
+import PhotosUI
 
 // MARK: - Add member (rebuilt)
 //
@@ -33,6 +34,8 @@ struct AddFamilyMemberSheet: View {
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var color = kColors[0]
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var avatarImage: UIImage?
 
     // Contact
     @State private var email = ""
@@ -119,6 +122,10 @@ struct AddFamilyMemberSheet: View {
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
+            }
+            .onChange(of: selectedPhoto) { _, newItem in
+                guard let newItem else { return }
+                Task { await handlePhotoPick(newItem) }
             }
             .sheet(isPresented: $showContactPicker) {
                 MemberContactPicker { picked in
@@ -221,24 +228,71 @@ struct AddFamilyMemberSheet: View {
 
     private var avatarColor: Color { Color(hex: color) ?? .blue }
 
+    /// Tapping the avatar opens the photo library; the picked photo previews
+    /// instantly and uploads once the member row exists (in `save()`).
     private var avatar: some View {
+        VStack(spacing: AppSpacing.sm) {
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                avatarCircle
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(avatarImage == nil ? Text("Add photo") : Text("Change photo"))
+            if avatarImage != nil {
+                Button {
+                    HapticFeedback.impact(.light)
+                    withAnimation(revealAnimation) {
+                        avatarImage = nil
+                        selectedPhoto = nil
+                    }
+                } label: {
+                    Text("Remove photo")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.brandDanger.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var avatarCircle: some View {
         ZStack {
-            Circle().fill(avatarColor.opacity(0.22))
-                .overlay(Circle().strokeBorder(avatarColor.opacity(0.5), lineWidth: 2))
-            if fullName.isEmpty {
-                Image(systemName: "person.fill")
-                    .font(AppFont.scaled(34, weight: .semibold))
-                    .foregroundStyle(avatarColor.opacity(0.8))
+            if let avatarImage {
+                Image(uiImage: avatarImage)
+                    .resizable().scaledToFill()
             } else {
-                Text(String(fullName.prefix(2)).uppercased())
-                    .font(AppFont.scaled(30, weight: .bold, design: .rounded))
-                    .foregroundStyle(avatarColor)
-                    .contentTransition(.opacity)
+                Circle().fill(avatarColor.opacity(0.22))
+                    .overlay(Circle().strokeBorder(avatarColor.opacity(0.5), lineWidth: 2))
+                if fullName.isEmpty {
+                    Image(systemName: "person.fill")
+                        .font(AppFont.scaled(34, weight: .semibold))
+                        .foregroundStyle(avatarColor.opacity(0.8))
+                } else {
+                    Text(String(fullName.prefix(2)).uppercased())
+                        .font(AppFont.scaled(30, weight: .bold, design: .rounded))
+                        .foregroundStyle(avatarColor)
+                        .contentTransition(.opacity)
+                }
             }
         }
         .frame(width: 88, height: 88)
+        .clipShape(Circle())
+        .overlay(alignment: .bottomTrailing) {
+            Image(systemName: "camera.fill")
+                .font(AppFont.scaled(10, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Color.accentColor, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
+        }
         .animation(revealAnimation, value: color)
-        .accessibilityHidden(true)
+    }
+
+    private func handlePhotoPick(_ item: PhotosPickerItem) async {
+        defer { selectedPhoto = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return }
+        withAnimation(revealAnimation) { avatarImage = image }
+        HapticFeedback.success()
     }
 
     /// The avatar's colour, presented as a deliberate choice right under it —
@@ -612,7 +666,12 @@ struct AddFamilyMemberSheet: View {
         }
 
         // Side effects only after the pipeline fully succeeded, so a rollback
-        // never leaves a stray recurring calendar event behind.
+        // never leaves a stray photo or recurring calendar event behind. The
+        // photo is cosmetic: a failed upload must not undo a successful add,
+        // so it's best-effort — FamilyService.error surfaces the failure.
+        if let avatarImage {
+            _ = await familyService.uploadAvatar(for: member, image: avatarImage)
+        }
         if includeBirthday {
             await familyService.addBirthdayToCalendar(name: name, birthday: birthday)
         }

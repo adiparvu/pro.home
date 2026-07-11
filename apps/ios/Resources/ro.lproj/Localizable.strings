@@ -2218,3 +2218,16 @@
 "🎂 %@" = "🎂 %@";
 "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "Pictograma \"%@\" nu este disponibilă încă. Vă vom notifica când toate variantele sunt gata.\n\n(%@)";
 "[%@] %@" = "[%@] %@";
+
+/* ── Watch: DM-uri, livrări, cămară→listă, alerte senzori, complicație sesiune ── */
+"watch_menu_messages" = "Mesaje";
+"watch_dm_reply" = "Răspunde";
+"watch_dm_reply_prompt" = "Răspunsul tău";
+"watch_dm_sent" = "Trimis ✓";
+"watch_dm_you" = "Eu";
+"watch_dm_media" = "Atașament";
+"watch_delivery_received" = "Primit";
+"watch_pantry_to_list" = "Pune pe listă";
+"watch_sensor_alert_title" = "Senzor critic";
+"watch_session_none" = "Nicio sesiune activă";
+"watch_comp_session_desc" = "Sesiunea de lucru activă, pe încheietură.";

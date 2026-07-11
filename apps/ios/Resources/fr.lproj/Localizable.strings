@@ -2111,3 +2111,16 @@
 "🎂 %@" = "🎂 %@";
 "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "L'icône \"%@\" n'est pas encore disponible. Nous vous informerons quand toutes les variantes seront prêtes.\n\n(%@)";
 "[%@] %@" = "[%@] %@";
+
+/* ── Watch: MP, livraisons, garde-manger→liste, alertes capteurs, complication session ── */
+"watch_menu_messages" = "Messages";
+"watch_dm_reply" = "Répondre";
+"watch_dm_reply_prompt" = "Votre réponse";
+"watch_dm_sent" = "Envoyé ✓";
+"watch_dm_you" = "Moi";
+"watch_dm_media" = "Pièce jointe";
+"watch_delivery_received" = "Reçu";
+"watch_pantry_to_list" = "Ajouter à la liste";
+"watch_sensor_alert_title" = "Capteur critique";
+"watch_session_none" = "Aucune session active";
+"watch_comp_session_desc" = "La session de travail active, au poignet.";

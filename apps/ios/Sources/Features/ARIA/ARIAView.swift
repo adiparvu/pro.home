@@ -43,10 +43,12 @@ struct ARIAView: View {
         _ = themeRefresh
         return .effective(scope: "aria")
     }
-    // Same resolution as the group chat: the stock accent bubble for the
-    // default theme, the theme's outgoing colour otherwise.
+    // Same resolution as the DM thread (the unified bubble language this
+    // screen follows): the stock accent bubble for the default theme, the
+    // theme's outgoing colour otherwise — DMBubble's
+    // `outgoingColor ?? Color.accentColor` fallback, expressed directly.
     private var ownBubbleColor: Color {
-        chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble
+        chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
     }
 
     @State private var messages: [ARIAMessage] = []
@@ -282,7 +284,8 @@ struct ARIAView: View {
             } else {
                 messages = history.map { ARIAMessage(
                     role: $0.role == "user" ? .user : .aria,
-                    content: $0.content
+                    content: $0.content,
+                    date: ISODate.date(from: $0.createdAt) ?? Date()
                 )}
             }
         } catch {
@@ -497,49 +500,80 @@ struct ARIAView: View {
     }
 }
 
-// MARK: - Message row — the chat's bubble anatomy (shape, tail, colors)
+// MARK: - Message row — the unified chat's bubble anatomy (shape, tail, colors)
 
+/// The assistant thread's counterpart of `DMBubble`: the same row geometry the
+/// shared renderer (`ChatMessageBubbleShared`) draws — bottom-aligned HStack,
+/// 72pt clearance on the opposite side, a 3pt bubble→status column — with the
+/// DM bubble language: `ChatTextBubbleView` for the user's messages and the
+/// DM incoming fill for the assistant's, time row underneath in the shared
+/// status-row style. Replicated minimally instead of mounting
+/// `ChatMessageBubbleShared` itself because that renderer hard-wires the
+/// swipe/long-press affordances and per-row bubble-frame tracking that a
+/// passive assistant thread has no use for.
 private struct ARIAMessageRow: View {
     let message: ARIAMessage
     /// Last bubble of a same-speaker run — carries the tail (and the avatar
-    /// for the assistant), exactly like the group chat's grouping.
+    /// for the assistant), exactly like the DM/group chat's grouping.
     let isGroupEnd: Bool
     let ownBubbleColor: Color
 
     private var isUser: Bool { message.role == .user }
-    private var bubbleShape: ChatBubbleShape {
-        ChatBubbleShape(isOwn: isUser, hasTail: isGroupEnd)
-    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             if isUser {
-                Spacer(minLength: 60)
-                Text(message.content)
-                    .font(AppFont.scaled(15))
-                    // Adaptive text: a light custom bubble gets dark text,
-                    // not invisible white — same rule as MessageBubble.
-                    .foregroundStyle(ownBubbleColor.readableText)
-                    .tint(ownBubbleColor.readableText)
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                    .background(ownBubbleColor, in: bubbleShape)
+                Spacer(minLength: 72)
+            } else if isGroupEnd {
+                ARIAAvatar(size: 28)
             } else {
-                if isGroupEnd {
-                    ARIAAvatar(size: 28)
-                } else {
-                    Color.clear.frame(width: 28, height: 1)
-                }
-                // LocalizedStringKey renders the assistant's inline Markdown
-                // (bold, lists, links) the way Text was designed to.
-                Text(LocalizedStringKey(message.content))
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
-                    .tint(Color.accentColor)
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                    .background(Color.primary.opacity(0.08), in: bubbleShape)
-                Spacer(minLength: 60)
+                Color.clear.frame(width: 28, height: 1)
             }
+
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 3) {
+                if isUser {
+                    // The DM's own-message bubble, verbatim — theme fill with
+                    // luminance-adaptive text lives inside ChatTextBubbleView.
+                    ChatTextBubbleView(text: message.content, isOwn: true,
+                                       hasTail: isGroupEnd, fill: ownBubbleColor)
+                } else {
+                    ARIAAssistantBubble(text: message.content, hasTail: isGroupEnd)
+                }
+                // Time under the bubble — the shared renderer's status row,
+                // minus the states an assistant thread doesn't have
+                // (ticks, edited, pinned, starred).
+                Text(message.timeDisplay)
+                    .font(AppFont.scaled(10))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .padding(.horizontal, AppSpacing.xxs)
+            }
+
+            if !isUser { Spacer(minLength: 72) }
         }
+        // Same per-row breathing room DMBubble adds around itself.
+        .padding(.vertical, 1)
+    }
+}
+
+/// `ChatTextBubbleView`'s incoming variant (opaque system fill so it stays
+/// legible over any wallpaper, and satisfies Reduce Transparency) with one
+/// difference: the assistant's replies carry inline Markdown, which
+/// `Text(LocalizedStringKey:)` renders and the shared view's plain `Text`
+/// deliberately does not. Kept as a minimal local replica; if
+/// `ChatTextBubbleView` ever grows a Markdown switch, this view collapses
+/// into it.
+private struct ARIAAssistantBubble: View {
+    let text: String
+    var hasTail: Bool = true
+
+    var body: some View {
+        Text(LocalizedStringKey(text))
+            .font(AppFont.scaled(15))
+            .foregroundStyle(.primary)
+            .tint(Color.accentColor)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+            .background(Color(.secondarySystemBackground),
+                        in: ChatBubbleShape(isOwn: false, hasTail: hasTail))
     }
 }
 
@@ -566,9 +600,10 @@ private struct ARIATypingBubble: View {
                 }
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 12)
-            .background(Color.primary.opacity(0.08),
+            // Same opaque incoming fill as the message bubbles above it.
+            .background(Color(.secondarySystemBackground),
                         in: ChatBubbleShape(isOwn: false, hasTail: true))
-            Spacer(minLength: 60)
+            Spacer(minLength: 72)
         }
         .onAppear { bounce = true }
         .accessibilityElement(children: .ignore)
@@ -583,6 +618,12 @@ struct ARIAMessage: Identifiable {
     enum Role { case user, aria }
     let role: Role
     let content: String
+    /// Persisted send time for history rows; `now` for messages appended live.
+    var date = Date()
+
+    /// The clock shown under every bubble — same formatter as the DM/group
+    /// threads (HH:mm; the calendar date belongs to day separators, not here).
+    var timeDisplay: String { ISODate.timeOnly.string(from: date) }
 
     static var welcome: [ARIAMessage] {
         [ARIAMessage(role: .aria, content: String(localized: "aria_welcome"))]

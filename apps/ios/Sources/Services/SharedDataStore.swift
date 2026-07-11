@@ -103,6 +103,11 @@ struct WatchPayload: Codable {
     /// the wrist for a real incident. Empty until the user fills it in.
     var emergencyContacts: [EmergencyContactEntry] = []
     var emergencySteps: [EmergencyStepEntry] = []
+    /// The signed-in user's latest DM conversations (one row per peer), so
+    /// the wrist can read the last exchange and dictate a reply. Personal
+    /// mail, not a family surface — it rides outsider payloads too (it is
+    /// THEIR mail). Empty until the phone's conversation heads load.
+    var dmConversations: [DMConversationEntry] = []
 }
 
 extension WatchPayload {
@@ -132,6 +137,7 @@ extension WatchPayload {
         p.actuators         = deduped(actuators)         { $0.id }
         p.emergencyContacts = deduped(emergencyContacts) { $0.id }
         p.emergencySteps    = deduped(emergencySteps)    { $0.id }
+        p.dmConversations   = deduped(dmConversations)   { $0.id }
         return p
     }
 }
@@ -225,6 +231,67 @@ struct EmergencyStepEntry: Codable {
     var detail: String
 }
 
+// MARK: - DM conversations (the wrist's inbox)
+//
+// One row per direct-message peer, flattened from the server-side
+// conversation heads on the phone. `id` is the PEER'S AUTH USER ID — the
+// same durable thread identity DirectMessageService keys on, and exactly
+// what a wrist reply targets ("dm:<peer-user-id>" through the pending
+// chat-reply queue). Legacy threads whose rows carry no peer id can't be
+// replied to by id, so they honestly don't ride to the watch.
+
+struct DMConversationEntry: Codable {
+    var id: UUID              // peer auth user id (thread identity)
+    var peerName: String
+    /// Last message text, nil when it was media or deleted-for-all.
+    var lastBody: String? = nil
+    /// True when the last message is an attachment (photo/audio/video) —
+    /// the watch shows a localized "Attachment" label, never a raw path.
+    var isMedia: Bool = false
+    /// True when the signed-in user sent the last message ("Me: …").
+    var lastIsMine: Bool = false
+    var lastAt: Date? = nil
+    var unread: Int = 0
+}
+
+// MARK: - Work session snapshot (watch app ↔ watch complications)
+//
+// The wrist's maintenance timer, persisted in the App Group by the watch APP
+// and read by the watch WIDGET extension so the face can show the running
+// session. Field names must never change: they are the on-disk JSON contract
+// under `prvio.watch.session` (previously declared inside WatchStore).
+
+struct WatchWorkSession: Codable, Equatable {
+    var taskId: UUID
+    var title: String
+    var startedAt: Date
+    /// Seconds banked from segments that already ran before each pause.
+    var accumulated: TimeInterval = 0
+    /// Start of the current running segment; nil while paused. Defaulted
+    /// from `startedAt` so a session persisted by an older build resumes
+    /// running rather than appearing paused.
+    var segmentStart: Date? = nil
+
+    var isPaused: Bool { segmentStart == nil && accumulated > 0 }
+
+    /// Live elapsed, pauses excluded. Falls back to `startedAt` for
+    /// sessions saved before pause support existed.
+    func elapsed(at now: Date) -> TimeInterval {
+        if let seg = segmentStart { return accumulated + max(0, now.timeIntervalSince(seg)) }
+        if accumulated > 0 { return accumulated }
+        return max(0, now.timeIntervalSince(startedAt))
+    }
+
+    /// "1:20:05" past an hour, else "20:05" — the frozen readout the
+    /// complication shows while paused (running state uses live timer text).
+    func clockText(at now: Date) -> String {
+        let total = Int(max(0, elapsed(at: now)))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s)
+                     : String(format: "%d:%02d", m, s)
+    }
+}
+
 // MARK: - Watch action relay (widget extension → watch app → phone)
 //
 // Interactive complications run in the watch WIDGET extension, which cannot
@@ -303,7 +370,7 @@ enum SharedDataStore {
         if let ud = UserDefaults(suiteName: suiteName) {
             for key in [snapshotKey, taskCatalogKey, plantCatalogKey, supplyCatalogKey,
                         deliveryCatalogKey, pantryCatalogKey, sensorCatalogKey,
-                        actuatorCatalogKey, watchExtrasKey, accountStampKey] {
+                        actuatorCatalogKey, dmCatalogKey, watchExtrasKey, accountStampKey] {
                 ud.removeObject(forKey: key)
             }
         }
@@ -498,6 +565,22 @@ enum SharedDataStore {
         return (try? JSONDecoder().decode([DeliveryCatalogEntry].self, from: data)) ?? []
     }
 
+    // MARK: DM conversation catalog (written by DirectMessageService)
+
+    private static let dmCatalogKey = "prvio.catalog.dms"
+
+    static func writeDMCatalog(_ items: [DMConversationEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: dmCatalogKey)
+    }
+
+    static func readDMCatalog() -> [DMConversationEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: dmCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([DMConversationEntry].self, from: data)) ?? []
+    }
+
     // MARK: Smart-home catalogs + wrist commands
 
     private static let sensorCatalogKey   = "prvio.catalog.sensors"
@@ -592,6 +675,38 @@ enum SharedDataStore {
         coordinatedPop("deliveryReceived", legacyKey: nil).compactMap { UUID(uuidString: $0) }
     }
 
+    /// Optimistic echo for a wrist "package received" tap — the shared
+    /// catalog and snapshot flip to delivered immediately, and the pending
+    /// queue reconciles the real DeliveryService write on the next beat.
+    static func applyLocalDeliveryReceived(_ id: UUID) {
+        var catalog = readDeliveryCatalog()
+        guard let idx = catalog.firstIndex(where: { $0.id == id }),
+              catalog[idx].status != "delivered" else { return }
+        catalog[idx].status = "delivered"
+        catalog[idx].eta = nil
+        writeDeliveryCatalog(catalog)
+        if var snap = read() {
+            snap.activeDeliveryCount = catalog
+                .filter { $0.status == "expected" || $0.status == "out_for_delivery" }.count
+            write(snap)
+        }
+    }
+
+    // MARK: Pantry → shopping list (wrist "put it on the list")
+    //
+    // Pantry item ids the wrist asked to re-buy. Drained on the app's next
+    // active beat into SupplyService.addItem — the same real insert the
+    // supplies screen performs. Idempotent: asking twice for the same jar
+    // before the drain must not produce two list rows.
+
+    static func appendPendingPantryToList(_ itemId: UUID) {
+        coordinatedAppendUnique("pantryToList", legacyKey: nil, itemId.uuidString)
+    }
+
+    static func popPendingPantryToList() -> [UUID] {
+        coordinatedPop("pantryToList", legacyKey: nil).compactMap { UUID(uuidString: $0) }
+    }
+
     // MARK: Watch extras (coordinates + top insight, set by writeWidgetSnapshot)
 
     private static let watchExtrasKey = "prvio.watch.extras"
@@ -662,7 +777,11 @@ enum SharedDataStore {
                             sensors: stamp.isFamily ? readSensorCatalog() : [],
                             actuators: stamp.isFamily ? readActuatorCatalog() : [],
                             emergencyContacts: stamp.isFamily ? readEmergencyContacts() : [],
-                            emergencySteps: stamp.isFamily ? readEmergencySteps() : [])
+                            emergencySteps: stamp.isFamily ? readEmergencySteps() : [],
+                            // Personal mail: the DM catalog is written from the
+                            // signed-in user's own conversation heads, so it is
+                            // theirs on every role — family or outsider.
+                            dmConversations: readDMCatalog())
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)
@@ -755,6 +874,18 @@ enum SharedDataStore {
     // shows the TRUE elapsed time, not the time since the mirror appeared.
 
     private static let pendingSessionKey = "prvio.pending.session"
+
+    /// Where the WATCH app persists its live work session (WatchWorkSession
+    /// JSON). Public so the watch widget extension renders the same session
+    /// the watch app is timing. Falls back to .standard exactly like the
+    /// watch app's own store does (simulator without group entitlements).
+    static let watchSessionKey = "prvio.watch.session"
+
+    static func readWatchWorkSession() -> WatchWorkSession? {
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        guard let data = defaults.data(forKey: watchSessionKey) else { return nil }
+        return try? JSONDecoder().decode(WatchWorkSession.self, from: data)
+    }
 
     static func writePendingSessionStart(taskId: UUID, title: String, startedAt: Date) {
         writePendingSessionEvent(["id": taskId.uuidString, "title": title,
@@ -853,14 +984,17 @@ enum SharedDataStore {
     private static let chatReplyTargetSeparator: Character = "\u{1F}"
 
     /// A reply typed on a notification, with WHERE it belongs: "group" for
-    /// the household chat, "dm:<peer-user-id>" for a direct thread. Replies
-    /// used to be text-only and every one of them landed in the group chat —
-    /// answering a DM push delivered the message to the whole family.
+    /// the household chat, "dm:<peer-user-id>" for a direct thread,
+    /// "grp:<chat-group-id>" for a community sub-group. Replies used to be
+    /// text-only and every one of them landed in the group chat — answering
+    /// a DM push delivered the message to the whole family.
     struct PendingChatReply {
         let target: String
         let text: String
     }
 
+    /// Queue entry format: `<target>\u{1F}<text>`; the bare text (no
+    /// separator) is the legacy household-chat form and still decodes.
     static func appendPendingChatReply(_ text: String, target: String = "group") {
         let entry = target == "group" ? text : "\(target)\(chatReplyTargetSeparator)\(text)"
         coordinateQueue("chatReplies", legacyKey: pendingChatRepliesKey) { queue in

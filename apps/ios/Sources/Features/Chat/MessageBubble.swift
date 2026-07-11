@@ -173,7 +173,8 @@ struct MessageBubble: View {
         if m.isLocationMessage { return "📍 Location" }
         if m.isStickerMessage { return "😀 Sticker" }
         if m.isFileMessage { return "📎 File" }
-        if let b = m.body, !b.isEmpty { return b }
+        // One line, marker-free — a subject-bearing body reads "subject — text".
+        if let b = m.body, !b.isEmpty { return MessageSubject.strip(b) }
         return "Attachment"
     }
 

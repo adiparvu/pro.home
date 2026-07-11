@@ -191,9 +191,10 @@ serve(async (req) => {
     let threadId: string
     // The app registers the MESSAGE category (inline "Reply" text action) —
     // without `category` in the payload iOS shows no reply field at all when
-    // the notification is pulled down. Community pushes stay category-less:
-    // the app can't yet route a reply into a sub-group, and a reply that
-    // lands in the wrong conversation is worse than no reply button.
+    // the notification is pulled down. Community (sub-group) pushes get it
+    // too now that the app routes replies via chatInfo.group_id — but only
+    // when group_id is actually present, because a reply that lands in the
+    // wrong conversation is worse than no reply button.
     let category: string | null = null
     if (isChat) {
       const chatInfo: Record<string, unknown> = {
@@ -225,7 +226,7 @@ serve(async (req) => {
       }
       threadId = (chatInfo.peer_user_id as string) ?? (chatInfo.group_id as string) ?? 'chat'
       custom = { chat: chatInfo }
-      if (chatInfo.kind !== 'community') category = 'MESSAGE'
+      if (chatInfo.kind !== 'community' || chatInfo.group_id) category = 'MESSAGE'
     } else if (n.resource_type === 'task' && n.resource_id) {
       threadId = 'tasks'
       custom = { task: { id: n.resource_id } }
@@ -238,7 +239,13 @@ serve(async (req) => {
     for (const t of tokens) {
       const payload = {
         aps: {
-          alert: { title: n.title ?? 'New message', body: n.body ?? '' },
+          alert: {
+            title: n.title ?? 'New message',
+            // The app encodes an optional subject line into the body as
+            // {subject}\u001E{text} (MessageSubject) — banners render the
+            // human form, never the raw control character.
+            body: (n.body ?? '').replaceAll('\u001E', ' — '),
+          },
           sound: 'default',
           // The springboard badge means "unread chat"; non-chat pushes leave
           // whatever badge is showing untouched.

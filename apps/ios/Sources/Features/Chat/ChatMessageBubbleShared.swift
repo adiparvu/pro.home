@@ -376,12 +376,25 @@ struct ChatTextBubbleView: View {
     var fill: Color = .accentColor
 
     var body: some View {
-        Text(text)
-            .font(AppFont.scaled(15))
-            .foregroundStyle(isOwn ? fill.readableText : .primary)
-            .tint(isOwn ? fill.readableText : Color.accentColor)
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(isOwn ? fill : Color(.secondarySystemBackground),
-                        in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
+        // A subject-bearing body (see MessageSubject) renders iMessage-style:
+        // the subject as a semibold title line above the message text, in one
+        // bubble. Marker-free bodies — every pre-existing message — take the
+        // single-Text path unchanged.
+        let parts = MessageSubject.parse(text)
+        VStack(alignment: .leading, spacing: 1) {
+            if let subject = parts.subject {
+                Text(subject)
+                    .font(AppFont.scaled(15, weight: .semibold))
+            }
+            if parts.subject == nil || !parts.text.isEmpty {
+                Text(parts.text)
+                    .font(AppFont.scaled(15))
+            }
+        }
+        .foregroundStyle(isOwn ? fill.readableText : .primary)
+        .tint(isOwn ? fill.readableText : Color.accentColor)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+        .background(isOwn ? fill : Color(.secondarySystemBackground),
+                    in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
     }
 }

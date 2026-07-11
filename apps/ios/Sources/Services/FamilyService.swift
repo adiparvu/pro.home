@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 import EventKit
+import Supabase
+import UIKit
 
 @MainActor
 @Observable
@@ -181,6 +183,91 @@ final class FamilyService {
             self.error = error.localizedDescription
             return false
         }
+    }
+
+    // MARK: - Roster avatars
+    //
+    // Roster-only members (children, grandparents, contacts — rows without a
+    // PRVIO account) have no `profiles` row, so their photo lives on
+    // `family_members.avatar_url`, which `MemberAvatar` already renders as the
+    // fallback when the member holds no account. Uploads mirror the account
+    // avatar pipeline (ProfileService.uploadAvatar): same public "documents"
+    // bucket, same `avatars/<auth-uid>/` folder so the existing per-user
+    // storage policy applies (the uploader is the signed-in owner/partner),
+    // same resize-at-source, and a fresh timestamped filename as cache-buster
+    // so no storage update policy is needed. RLS on `family_members` is the
+    // existing owner/partner write path — nothing new.
+
+    /// Uploads a photo for a roster member and persists it on the row.
+    /// Returns the updated member on success; on failure sets `error` and
+    /// returns nil so callers can keep their editor open.
+    func uploadAvatar(for member: FamilyMember, image: UIImage) async -> FamilyMember? {
+        guard let uploaderId = supabase.auth.currentSession?.user.id,
+              let data = image.uploadJPEG(quality: 0.85, maxDimension: 1024) else {
+            error = String(localized: "Couldn't save changes.")
+            return nil
+        }
+        do {
+            let oldPath = Self.documentsStoragePath(fromPublicURL: member.avatarUrl)
+            let path = "avatars/\(uploaderId.uuidString.lowercased())/member-\(member.id.uuidString.lowercased())-\(Int(Date().timeIntervalSince1970)).jpg"
+            try await supabase.storage
+                .from("documents")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
+            let urlString = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
+            let updated = try await setAvatarUrl(urlString, memberId: member.id)
+            // Previous photo is removed best-effort — a stray file must never
+            // fail the upload that already succeeded.
+            if let oldPath, oldPath != path {
+                _ = try? await supabase.storage.from("documents").remove(paths: [oldPath])
+            }
+            return updated
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Clears a roster member's photo (row first, then best-effort storage
+    /// cleanup). Returns the updated member, or nil on failure with `error` set.
+    func removeAvatar(for member: FamilyMember) async -> FamilyMember? {
+        do {
+            let updated = try await setAvatarUrl(nil, memberId: member.id)
+            if let oldPath = Self.documentsStoragePath(fromPublicURL: member.avatarUrl) {
+                _ = try? await supabase.storage.from("documents").remove(paths: [oldPath])
+            }
+            return updated
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
+    }
+
+    private func setAvatarUrl(_ urlString: String?, memberId: UUID) async throws -> FamilyMember {
+        // [String: String?] encodes the nil as an explicit JSON null, so
+        // removal genuinely clears the column instead of omitting the key.
+        let updated: FamilyMember = try await supabase
+            .from("family_members")
+            .update(["avatar_url": urlString])
+            .eq("id", value: memberId.uuidString)
+            .select()
+            .single()
+            .execute()
+            .value
+        if let i = members.firstIndex(where: { $0.id == memberId }) {
+            members[i] = updated
+        }
+        return updated
+    }
+
+    /// Extracts the in-bucket path from a public "documents" bucket URL so an
+    /// old photo can be cleaned up (same parsing as ProfileService's avatars).
+    private static func documentsStoragePath(fromPublicURL urlString: String?) -> String? {
+        guard let urlString,
+              let range = urlString.range(of: "/object/public/documents/") else { return nil }
+        let tail = String(urlString[range.upperBound...])
+        guard let path = tail.split(separator: "?").first.map(String.init),
+              !path.isEmpty else { return nil }
+        return path.removingPercentEncoding ?? path
     }
 
     func delete(_ member: FamilyMember) async {

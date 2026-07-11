@@ -208,7 +208,8 @@ struct DMBubble: View {
         case .audio: return String(localized: "dm_prev_audio")
         case .image: return String(localized: "dm_prev_photo")
         case .video: return String(localized: "dm_prev_video")
-        case .text:  return replied.body
+        // One line, marker-free — a subject-bearing body reads "subject — text".
+        case .text:  return MessageSubject.strip(replied.body)
         }
     }
 

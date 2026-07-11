@@ -204,7 +204,10 @@ struct ARIASettingsView: View {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.base)
                         .padding(.vertical, 9)
-                        .background(Color.primary.opacity(0.08),
+                        // Same opaque incoming fill the real thread's bubbles
+                        // use (the DM's ChatTextBubbleView incoming variant),
+                        // so the preview is faithful.
+                        .background(Color(.secondarySystemBackground),
                                     in: ChatBubbleShape(isOwn: false, hasTail: true))
                         .id(personality)
                         .transition(reduceMotion

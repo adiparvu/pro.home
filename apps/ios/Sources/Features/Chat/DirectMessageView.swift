@@ -87,6 +87,12 @@ struct DirectMessageView: View {
     @State private var unreadResolved = false
     @State private var highlightedId: UUID? = nil
     @State private var input = ""
+    /// The composer's optional subject line (iMessage's "Show Subject Field").
+    /// Encoded into the body at send time (see MessageSubject), so the DM
+    /// send path, outbox and realtime stay untouched.
+    @State private var subject = ""
+    /// Chat Settings → "Show Subject Field". OFF by default.
+    @AppStorage(MessageSubject.showFieldDefaultsKey) private var showSubjectField = false
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var showCameraPicker = false
@@ -183,6 +189,7 @@ struct DirectMessageView: View {
         return .effective(scope: themeScope)
     }
     private var draftKey: String { "draft.dm.\(convId)" }
+    private var subjectDraftKey: String { draftKey + ".subject" }
     private var pendingOutbox: [PendingMessage] {
         outbox.pending
             .filter { ($0.recipientName.map(matchesPeer) ?? false) && $0.propertyId == propertyService.primary?.id }
@@ -456,6 +463,7 @@ struct DirectMessageView: View {
                 Task { await presenceService.load(propertyId: pid) }
             }
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
+            if subject.isEmpty, let s = UserDefaults.standard.string(forKey: subjectDraftKey), !s.isEmpty { subject = s }
         }
         .onDisappear {
             chatLoadGraceTask?.cancel()
@@ -465,6 +473,8 @@ struct DirectMessageView: View {
             // Persist the unsent composer draft once, on the way out.
             if input.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(input, forKey: draftKey) }
+            if subject.isEmpty { UserDefaults.standard.removeObject(forKey: subjectDraftKey) }
+            else { UserDefaults.standard.set(subject, forKey: subjectDraftKey) }
         }
         .onChange(of: conversationMessages.count) { _, _ in
             // The parent loads messages asynchronously, so they may arrive after
@@ -530,7 +540,11 @@ struct DirectMessageView: View {
                 if let m = editingMessage {
                     let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !newText.isEmpty {
-                        Task { await directMessageService.editMessage(id: m.id, newBody: newText) }
+                        // Editing rewrites the TEXT; a subject on the original
+                        // message is preserved verbatim through re-encoding.
+                        let newBody = MessageSubject.encode(
+                            subject: MessageSubject.parse(m.body).subject ?? "", text: newText)
+                        Task { await directMessageService.editMessage(id: m.id, newBody: newBody) }
                     }
                 }
                 editingMessage = nil
@@ -615,7 +629,8 @@ struct DirectMessageView: View {
         case .audio: return String(localized: "dm_prev_audio")
         case .image: return String(localized: "dm_prev_photo")
         case .video: return String(localized: "dm_prev_video")
-        case .text:  return m.body
+        // One line, marker-free — a subject-bearing body reads "subject — text".
+        case .text:  return MessageSubject.strip(m.body)
         }
     }
 
@@ -651,12 +666,16 @@ struct DirectMessageView: View {
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
-            ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = m.body },
+            ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = MessageSubject.strip(m.body) },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } }
         ]
         if own, m.deletedForAll != true, !isStructured {
-            items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body })
+            // Edit the TEXT only — a subject stays untouched (re-encoded on
+            // save), and the marker never enters the field.
+            items.append(ChatActionItem("Edit", "pencil") {
+                editingMessage = m; editText = MessageSubject.parse(m.body).text
+            })
         }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
@@ -797,7 +816,7 @@ struct DirectMessageView: View {
                                     },
                                     onReply: { withAnimation { replyingTo = msg } },
                                     onForward: { forwarding = msg },
-                                    onEdit: isOwn ? { editingMessage = msg; editText = msg.body } : nil,
+                                    onEdit: isOwn ? { editingMessage = msg; editText = MessageSubject.parse(msg.body).text } : nil,
                                     onPin: { Task { await directMessageService.togglePin(msg) } },
                                     onMark: { Task { await directMessageService.toggleMark(msg) } },
                                     onDeleteForEveryone: { Task { await directMessageService.deleteForEveryone(id: msg.id) } },
@@ -1044,7 +1063,8 @@ struct DirectMessageView: View {
 
     private var exportTranscript: String {
         ChatExport.transcript(title: peerName, lines: conversationMessages.map {
-            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body)
+            (sender: $0.senderName, time: $0.timeDisplay,
+             body: MessageSubject.strip($0.body))
         })
     }
 
@@ -1077,13 +1097,15 @@ struct DirectMessageView: View {
                 onTyping: { directMessageService.sendTyping() },
                 onSendText: { Task { await sendMessage() } },
                 onSendAudio: { url in Task { await sendAudio(url) } },
-                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey))
+                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey)),
+                showsSubject: showSubjectField
             ),
             reply: replyingTo.map { m in
                 ChatComposerReply(sender: m.senderName, snippet: dmSnippet(m)) {
                     withAnimation { replyingTo = nil }
                 }
-            }
+            },
+            subject: showSubjectField ? $subject : nil
         )
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
                       maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
@@ -1123,14 +1145,19 @@ struct DirectMessageView: View {
     private func sendMessage() async {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isSending else { return }
+        // Fold the subject into the body (see MessageSubject) so the whole
+        // persistence path — send, outbox, realtime — carries one opaque
+        // string. An empty subject encodes to the text unchanged.
+        let body = MessageSubject.encode(subject: showSubjectField ? subject : "", text: text)
         input = ""
+        subject = ""
         isSending = true
         defer { isSending = false }
         let replyUUID = replyingTo?.id
         withAnimation { replyingTo = nil }
         HapticFeedback.impact(.light)
         MessageSounds.sent()
-        await performDMSend(body: text, kind: .text, replyTo: replyUUID)
+        await performDMSend(body: body, kind: .text, replyTo: replyUUID)
     }
 
     private func flushOutbox() async {

@@ -129,12 +129,30 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
             }
             return
         }
-        // Dictated on the wrist for the house chat — rides the same queue the
-        // notification reply action uses, so one drain path sends both.
+        // Dictated on the wrist for the house chat or a direct thread — rides
+        // the same queue the notification reply action uses, so one drain
+        // path sends all of them. `target` speaks the queue's own dialect
+        // ("dm:<peer-user-id>"); absent means the household chat, as before.
         if action == "sendMessage", let text = userInfo["text"] as? String,
            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let target = userInfo["target"] as? String ?? "group"
             DispatchQueue.main.async {
-                SharedDataStore.appendPendingChatReply(text)
+                SharedDataStore.appendPendingChatReply(text, target: target)
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+            return
+        }
+        // "Alert the family" from the wrist — the EXACT message the Emergency
+        // page's own button sends (same emg_alert_message body, same
+        // MessageService.send into the household chat), delivered through the
+        // guaranteed chat-reply queue so a pocketed phone still sends it on
+        // its next beat. The DB trigger fans it out as pushes, as on iPhone.
+        if action == "alertFamily" {
+            DispatchQueue.main.async {
+                guard let property = SharedDataStore.read()?.propertyName,
+                      !property.isEmpty else { return }
+                let body = String(format: String(localized: "emg_alert_message"), property)
+                SharedDataStore.appendPendingChatReply(body)
                 NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
             }
             return
@@ -217,6 +235,16 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
         case "consumePantry":
             SharedDataStore.appendPendingPantryConsume(id)
             SharedDataStore.applyLocalPantryConsume(id)
+        case "deliveryReceived":
+            // Same pending queue the Live Activity island uses — the app's
+            // next beat lands it in DeliveryService.markDelivered.
+            SharedDataStore.appendPendingDeliveryReceived(id)
+            SharedDataStore.applyLocalDeliveryReceived(id)
+        case "pantryToList":
+            // No optimistic catalog echo: the real supply row (with its
+            // server id) appears in the next authoritative payload after
+            // SupplyService.addItem runs on the drain.
+            SharedDataStore.appendPendingPantryToList(id)
         default:
             return
         }

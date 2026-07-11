@@ -420,6 +420,10 @@ struct MainTabView: View {
             await receiptsLoad; await plantsLoad; await appliancesLoad
             await journalLoad; await paintLoad; await valueLoad
             await inventoryLoad; await budgetLoad
+            // DM conversation heads (one cheap aggregate row per peer) — the
+            // service mirrors them into the watch's DM catalog, so the wrist
+            // inbox exists without the chat tab ever being opened.
+            await directMessageService.refreshHeads(propertyId: propId)
         }
 
         // Phase 3 — glanceable surfaces, always in the same order.
@@ -619,7 +623,8 @@ struct MainTabView: View {
                 Task {
                     do {
                         // The reply goes to the conversation the push came
-                        // from: "dm:<peer>" → that direct thread; anything
+                        // from: "dm:<peer>" → that direct thread;
+                        // "grp:<group>" → that community sub-group; anything
                         // else → the household chat.
                         if reply.target.hasPrefix("dm:"),
                            let peerId = UUID(uuidString: String(reply.target.dropFirst(3))) {
@@ -627,6 +632,11 @@ struct MainTabView: View {
                                 propertyId: propId, senderName: name,
                                 to: DMThread(peer: ChatPeer(userId: peerId)),
                                 body: reply.text)
+                        } else if reply.target.hasPrefix("grp:"),
+                                  let groupId = UUID(uuidString: String(reply.target.dropFirst(4))) {
+                            try await ChatGroupService.sendMessage(
+                                propertyId: propId, groupId: groupId,
+                                senderName: name, body: reply.text)
                         } else {
                             try await messageService.send(propertyId: propId,
                                                           senderName: name, body: reply.text)
@@ -674,6 +684,49 @@ struct MainTabView: View {
         for (id, count) in consumeCounts {
             if let item = pantryService.items.first(where: { $0.id == id }) {
                 Task { await pantryService.adjust(item, by: -Double(count)) }
+            }
+        }
+        // Pantry items the wrist asked to re-buy — one real SupplyService
+        // insert each, into the first shopping list (created if the household
+        // has none yet). Sequential on purpose: parallel inserts with no list
+        // would each create their own. An item already pending on a list is
+        // skipped, so a repeated wrist tap never duplicates a row.
+        let pantryToListIds = SharedDataStore.popPendingPantryToList()
+        if !pantryToListIds.isEmpty, let propId = propertyService.primary?.id {
+            let ownerId = auth.session?.user.id
+            Task {
+                for id in pantryToListIds {
+                    guard let name = pantryService.items.first(where: { $0.id == id })?.name
+                    else { continue }
+                    guard !supplyService.items.contains(where: {
+                        !$0.isCompleted && $0.name.caseInsensitiveCompare(name) == .orderedSame
+                    }) else { continue }
+                    let now = ISO8601DateFormatter().string(from: Date())
+                    do {
+                        let listId: UUID
+                        if let list = supplyService.lists.first {
+                            listId = list.id
+                        } else if let ownerId {
+                            listId = try await supplyService.addList(NewSupplyListPayload(
+                                propertyId: propId, ownerId: ownerId,
+                                name: String(localized: "Shopping list"),
+                                icon: "cart.fill", color: "#3B82F6", note: nil,
+                                createdAt: now, updatedAt: now)).id
+                        } else { continue }
+                        _ = try await supplyService.addItem(NewSupplyItemPayload(
+                            listId: listId, propertyId: propId, name: name,
+                            quantity: nil, category: "food", priority: "medium",
+                            notes: nil, isCompleted: false, location: nil,
+                            createdAt: now, updatedAt: now))
+                    } catch {
+                        // Never lose a wrist request to a network blip —
+                        // requeue for the next foreground beat (same policy
+                        // as the chat-reply drain above).
+                        SharedDataStore.appendPendingPantryToList(id)
+                    }
+                }
+                // The wrist's shopping page repaints from the fresh catalog.
+                writeWidgetSnapshot()
             }
         }
         // The watch's work session, mirrored into the Dynamic Island. This

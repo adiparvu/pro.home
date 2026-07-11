@@ -2111,3 +2111,16 @@
 "🎂 %@" = "🎂 %@";
 "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "Das Symbol \"%@\" ist noch nicht verfügbar. Wir benachrichtigen Sie, wenn alle Varianten bereit sind.\n\n(%@)";
 "[%@] %@" = "[%@] %@";
+
+/* ── Watch: DMs, Lieferungen, Vorrat→Liste, Sensor-Alarme, Sitzungs-Komplikation ── */
+"watch_menu_messages" = "Nachrichten";
+"watch_dm_reply" = "Antworten";
+"watch_dm_reply_prompt" = "Deine Antwort";
+"watch_dm_sent" = "Gesendet ✓";
+"watch_dm_you" = "Ich";
+"watch_dm_media" = "Anhang";
+"watch_delivery_received" = "Erhalten";
+"watch_pantry_to_list" = "Auf die Liste";
+"watch_sensor_alert_title" = "Kritischer Sensor";
+"watch_session_none" = "Keine aktive Sitzung";
+"watch_comp_session_desc" = "Die aktive Arbeitssitzung am Handgelenk.";

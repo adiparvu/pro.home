@@ -301,14 +301,56 @@ struct MembersHubView: View {
         } else if let member = person.member {
             Button { editingMember = member } label: { row }
                 .buttonStyle(.plain)
-                .contextMenu { personMenu(person) }
+                .contextMenu { personMenu(person) } preview: { personPreview(person) }
         } else if let account = person.account {
             Button { reviewingAccount = account } label: { row }
                 .buttonStyle(.plain)
-                .contextMenu { personMenu(person) }
+                .contextMenu { personMenu(person) } preview: { personPreview(person) }
         } else {
             row
         }
+    }
+
+    // MARK: Long-press preview (PreviewCard)
+    //
+    // Real fields only: avatar, name, role — plus e-mail/phone rows and the
+    // "member since" subtitle exactly when the person actually has them.
+    private func personPreview(_ person: HubPerson) -> some View {
+        PreviewCard(
+            title: Text(verbatim: person.displayName),
+            subtitle: person.joinedDate.map {
+                Text("mem_member_since \($0.formatted(.dateTime.month(.wide).year()))")
+            },
+            tint: person.roleColor,
+            details: personDetails(person),
+            chips: isOnline(person)
+                ? [PreviewCardChip(icon: "circle.fill", text: Text("convo_online"), tint: .brandSuccess)]
+                : []
+        ) {
+            HubAvatar(member: person.member,
+                      avatarUrl: person.profile?.avatarUrl,
+                      name: person.displayName,
+                      size: 54)
+        }
+    }
+
+    private func personDetails(_ person: HubPerson) -> [PreviewCardDetail] {
+        var rows: [PreviewCardDetail] = [
+            PreviewCardDetail(icon: "person.text.rectangle",
+                              label: Text("Role"),
+                              value: Text(person.roleLabel)),
+        ]
+        if let email = person.email {
+            rows.append(PreviewCardDetail(icon: "envelope.fill",
+                                          label: Text("E-mail"),
+                                          value: Text(verbatim: email)))
+        }
+        if let phone = person.phone {
+            rows.append(PreviewCardDetail(icon: "phone.fill",
+                                          label: Text("Phone"),
+                                          value: Text(verbatim: phone)))
+        }
+        return rows
     }
 
     private func isOnline(_ person: HubPerson) -> Bool {
@@ -375,7 +417,7 @@ struct MembersHubView: View {
                                          profile: accountService.profiles[account.userId])
                     }
                     .buttonStyle(.plain)
-                    .contextMenu { accountMenu(account) }
+                    .contextMenu { accountMenu(account) } preview: { accountPreview(account) }
                     if idx < filteredAccounts.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05))
                             .frame(height: 0.5).padding(.leading, 66)
@@ -383,6 +425,42 @@ struct MembersHubView: View {
                 }
             }
             .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+    }
+
+    /// Long-press preview for the Accounts segment: live profile data only.
+    /// A profile that hasn't loaded (or was deleted) falls back to the role
+    /// label as the title — real data, never a fabricated name.
+    private func accountPreview(_ account: AccountMember) -> some View {
+        let profile = accountService.profiles[account.userId]
+        let name = profile?.bestName ?? ""
+        var rows: [PreviewCardDetail] = [
+            PreviewCardDetail(icon: "person.text.rectangle",
+                              label: Text("Role"),
+                              value: Text(accountRoleLabel(account.role))),
+        ]
+        if let email = profile?.email, !email.isEmpty {
+            rows.append(PreviewCardDetail(icon: "envelope.fill",
+                                          label: Text("E-mail"),
+                                          value: Text(verbatim: email)))
+        }
+        if let phone = profile?.phone, !phone.isEmpty {
+            rows.append(PreviewCardDetail(icon: "phone.fill",
+                                          label: Text("Phone"),
+                                          value: Text(verbatim: phone)))
+        }
+        return PreviewCard(
+            title: name.isEmpty ? Text(accountRoleLabel(account.role)) : Text(verbatim: name),
+            subtitle: account.joinedDate.map {
+                Text("mem_member_since \($0.formatted(.dateTime.month(.wide).year()))")
+            },
+            tint: .accentColor,
+            details: rows,
+            chips: account.isBlocked
+                ? [PreviewCardChip(icon: "hand.raised.fill", text: Text("Blocked"), tint: .brandDanger)]
+                : []
+        ) {
+            HubAvatar(member: nil, avatarUrl: profile?.avatarUrl, name: name, size: 54)
         }
     }
 
@@ -676,28 +754,11 @@ private struct PersonHubRow: View {
             }
     }
 
-    @ViewBuilder private var avatarImage: some View {
-        if let member = person.member {
-            MemberAvatar(member: member, size: 42)
-        } else if let urlStr = person.profile?.avatarUrl, let url = URL(string: urlStr) {
-            StorageImage(url: url) { phase in
-                if case .success(let img) = phase { img.resizable().scaledToFill() }
-                else { initialsCircle }
-            }
-            .frame(width: 42, height: 42)
-            .clipShape(Circle())
-        } else {
-            initialsCircle.frame(width: 42, height: 42)
-        }
-    }
-
-    private var initialsCircle: some View {
-        ZStack {
-            Circle().fill(Color.accentColor.opacity(0.18))
-            Text(String(person.displayName.prefix(2)).uppercased())
-                .font(AppFont.scaled(14, weight: .bold))
-                .foregroundStyle(Color.accentColor)
-        }
+    private var avatarImage: some View {
+        HubAvatar(member: person.member,
+                  avatarUrl: person.profile?.avatarUrl,
+                  name: person.displayName,
+                  size: 42)
     }
 
     /// "member since <month year>" from real dates only; falls back to the
@@ -728,6 +789,43 @@ private struct PersonHubRow: View {
         .foregroundStyle(person.roleColor)
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background(person.roleColor.opacity(0.14), in: Capsule())
+    }
+}
+
+// MARK: - Hub avatar (row + long-press preview)
+//
+// One avatar for everyone in the hub: roster members render through
+// MemberAvatar (live profile photo for account holders), profile-only people
+// through their avatar URL, and everyone else as accent initials. Shared by
+// PersonHubRow and both PreviewCard mounts so the peek always matches the row.
+private struct HubAvatar: View {
+    let member: FamilyMember?
+    var avatarUrl: String? = nil
+    let name: String
+    var size: CGFloat = 42
+
+    var body: some View {
+        if let member {
+            MemberAvatar(member: member, size: size)
+        } else if let urlStr = avatarUrl, let url = URL(string: urlStr) {
+            StorageImage(url: url) { phase in
+                if case .success(let img) = phase { img.resizable().scaledToFill() }
+                else { initialsCircle }
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+        } else {
+            initialsCircle.frame(width: size, height: size)
+        }
+    }
+
+    private var initialsCircle: some View {
+        ZStack {
+            Circle().fill(Color.accentColor.opacity(0.18))
+            Text(String(name.prefix(2)).uppercased())
+                .font(AppFont.scaled(size * 0.33, weight: .bold))
+                .foregroundStyle(Color.accentColor)
+        }
     }
 }
 

@@ -344,6 +344,8 @@ struct PlantCard: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+        // Long-press: the PreviewCard as the system-lifted preview, with the
+        // existing quick actions beneath.
         .contextMenu {
             Button {
                 HapticFeedback.success()
@@ -367,6 +369,80 @@ struct PlantCard: View {
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        } preview: {
+            PlantPreviewCard(plant: plant)
+        }
+    }
+}
+
+// MARK: - Long-press preview (PreviewCard)
+//
+// Real data only: the plant's own photo when one exists (emoji disc
+// otherwise), name, species as the subtitle (omitted when unset), the next
+// watering and last watering, the location when set, and the health status
+// as a tinted state chip. All value strings come from the model's existing
+// localized computed properties.
+struct PlantPreviewCard: View {
+    let plant: Plant
+
+    var body: some View {
+        PreviewCard(
+            title: Text(verbatim: plant.name),
+            subtitle: plant.species.flatMap { $0.isEmpty ? nil : Text(verbatim: $0) },
+            tint: plant.healthColor,
+            details: details,
+            chips: [
+                PreviewCardChip(icon: plant.healthIcon,
+                                text: Text(verbatim: plant.localizedHealthLabel),
+                                tint: plant.healthColor)
+            ]
+        ) {
+            photo
+        }
+    }
+
+    private var details: [PreviewCardDetail] {
+        var rows: [PreviewCardDetail] = [
+            // "Needs water" / "Water today" / "In N days" — the next watering.
+            PreviewCardDetail(icon: "drop.fill",
+                              label: Text("Watering"),
+                              value: Text(verbatim: plant.wateringLabel)),
+            PreviewCardDetail(icon: "clock.arrow.circlepath",
+                              label: Text("Last watered"),
+                              value: Text(verbatim: plant.lastWateredDisplay)),
+        ]
+        if let location = plant.location, !location.isEmpty {
+            rows.append(PreviewCardDetail(icon: "mappin.and.ellipse",
+                                          label: Text("Location"),
+                                          value: Text(verbatim: location)))
+        }
+        return rows
+    }
+
+    /// The plant's real photo when one exists; the emoji on a health-tinted
+    /// disc otherwise (also the stand-in while the photo loads or fails).
+    @ViewBuilder private var photo: some View {
+        if let urlStr = plant.photoUrl, !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    emojiDisc
+                }
+            }
+            .frame(width: 54, height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        } else {
+            emojiDisc.frame(width: 54, height: 54)
+        }
+    }
+
+    private var emojiDisc: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(plant.healthColor.opacity(AppOpacity.tintedFill))
+            Text(verbatim: plant.emoji)
+                .font(AppFont.scaled(30))
         }
     }
 }

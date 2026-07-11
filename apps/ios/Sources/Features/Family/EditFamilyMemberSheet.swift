@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - Edit sheet
 
@@ -21,6 +22,13 @@ struct EditFamilyMemberSheet: View {
     @State private var showAddSocial = false
     @State private var saveError: String?
 
+    // Photo (roster-only members — account holders' photos come from their
+    // live profile via MemberDirectory, so they're not editable from here).
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var previewImage: UIImage?
+    @State private var avatarUrl: String?
+    @State private var isUploadingPhoto = false
+
     init(member: FamilyMember) {
         self.member = member
         let parts = member.name.split(separator: " ", maxSplits: 1)
@@ -34,6 +42,7 @@ struct EditFamilyMemberSheet: View {
         _role      = State(initialValue: member.role)
         _color     = State(initialValue: member.color)
         _socialLinks = State(initialValue: member.socialLinks ?? [])
+        _avatarUrl = State(initialValue: member.avatarUrl)
     }
 
     private var fullName: String {
@@ -65,16 +74,135 @@ struct EditFamilyMemberSheet: View {
         .sheet(isPresented: $showAddSocial) {
             AddSocialLinkSheet { link in socialLinks.append(link) }
         }
+        .onChange(of: selectedPhoto) { _, newItem in
+            guard let newItem else { return }
+            Task { await handlePhotoPick(newItem) }
+        }
     }
 
+    // MARK: Photo
+
+    /// Roster-only members carry their photo on the `family_members` row;
+    /// account holders always show their live profile photo, so offering a
+    /// picker here would set a URL that never renders.
+    private var canEditPhoto: Bool { member.userId == nil }
+
+    private var hasPhoto: Bool {
+        previewImage != nil || !(avatarUrl ?? "").isEmpty
+    }
+
+    /// The freshest row (avatar ops update `familyService.members`), so a
+    /// second upload in the same session cleans up the first file.
+    private var freshMember: FamilyMember {
+        familyService.members.first { $0.id == member.id } ?? member
+    }
+
+    @ViewBuilder
     private var avatarPreview: some View {
+        VStack(spacing: AppSpacing.sm) {
+            if canEditPhoto {
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    avatarCircle
+                }
+                .buttonStyle(.plain)
+                .disabled(isUploadingPhoto)
+                .accessibilityLabel(hasPhoto ? Text("Change photo") : Text("Add photo"))
+                if hasPhoto {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        Task { await removePhoto() }
+                    } label: {
+                        Text("Remove photo")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.brandDanger.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isUploadingPhoto)
+                }
+            } else {
+                avatarCircle
+            }
+        }
+        .padding(.top, AppSpacing.sm)
+    }
+
+    private var avatarCircle: some View {
+        ZStack {
+            if let previewImage {
+                Image(uiImage: previewImage)
+                    .resizable().scaledToFill()
+            } else if let avatarUrl, !avatarUrl.isEmpty {
+                StorageImage(source: avatarUrl) { phase in
+                    if case .success(let img) = phase { img.resizable().scaledToFill() }
+                    else { initialsCircle }
+                }
+            } else {
+                initialsCircle
+            }
+        }
+        .frame(width: 80, height: 80)
+        .clipShape(Circle())
+        .overlay(alignment: .bottomTrailing) {
+            if canEditPhoto {
+                Image(systemName: "camera.fill")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 24, height: 24)
+                    .background(Color.accentColor, in: Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
+            }
+        }
+        .overlay {
+            if isUploadingPhoto {
+                Circle().fill(.black.opacity(0.35))
+                ProgressView().tint(.white)
+            }
+        }
+    }
+
+    private var initialsCircle: some View {
         ZStack {
             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
             Text(fullName.isEmpty ? "?" : String(fullName.prefix(2)).uppercased())
                 .font(AppFont.scaled(28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
         }
-        .frame(width: 80, height: 80).padding(.top, AppSpacing.sm)
+    }
+
+    private func handlePhotoPick(_ item: PhotosPickerItem) async {
+        defer { selectedPhoto = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return }
+        previewImage = image  // instant preview while the upload runs
+        isUploadingPhoto = true
+        defer { isUploadingPhoto = false }
+        if let updated = await familyService.uploadAvatar(for: freshMember, image: image) {
+            avatarUrl = updated.avatarUrl
+            HapticFeedback.success()
+        } else {
+            previewImage = nil
+            surfacePhotoError()
+        }
+    }
+
+    private func removePhoto() async {
+        isUploadingPhoto = true
+        defer { isUploadingPhoto = false }
+        if let updated = await familyService.removeAvatar(for: freshMember) {
+            previewImage = nil
+            avatarUrl = updated.avatarUrl
+            HapticFeedback.success()
+        } else {
+            surfacePhotoError()
+        }
+    }
+
+    /// Shows the failure in THIS sheet's banner and clears the service copy,
+    /// so FamilyView's global alert doesn't fire a second time behind us.
+    private func surfacePhotoError() {
+        saveError = familyService.error ?? String(localized: "Couldn't save changes.")
+        familyService.error = nil
+        HapticFeedback.warning()
     }
 
     private var colorRow: some View {

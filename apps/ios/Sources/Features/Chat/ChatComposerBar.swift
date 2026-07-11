@@ -43,6 +43,11 @@ struct ChatComposerConfig {
     /// control becomes a stop button wired to `onStopResponding`.
     var isResponding: Bool = false
     var onStopResponding: (() -> Void)? = nil
+    /// iMessage's optional "Subject" line above the message field, inside the
+    /// same pill (Settings → Chat → Show Subject Field). Family chat + DMs
+    /// only — AI surfaces (Yuna) never set this, so nothing changes for them.
+    /// The surface must also pass the bar's `subject` binding.
+    var showsSubject: Bool = false
 }
 
 /// Speech-to-text state + trigger for the composer's dictation control.
@@ -77,6 +82,10 @@ struct ChatComposerBar<Accessory: View>: View {
     let config: ChatComposerConfig
     var reply: ChatComposerReply? = nil
     var edit: ChatComposerEdit? = nil
+    /// The subject line's text — owned by the surface (like `text`), so the
+    /// send closure can read/clear it. nil hides the subject row regardless
+    /// of `config.showsSubject`.
+    var subject: Binding<String>? = nil
     /// Surface-specific strip above the compose row (the group chat's mention
     /// chips). EmptyView when the surface has none.
     @ViewBuilder var accessory: () -> Accessory
@@ -85,10 +94,24 @@ struct ChatComposerBar<Accessory: View>: View {
     /// surfaces only receive the finished clip via `onSendAudio`.
     @State private var audioRecorder = ChatAudioRecorder()
     @State private var lastTypingSent = Date.distantPast
+    /// Focus for the subject line — return there hands focus to the message
+    /// field (iMessage's behaviour), and the bar's keyboard geometry below
+    /// must treat "subject focused" exactly like "message focused".
+    @FocusState private var subjectFocused: Bool
 
     private var isTextEmpty: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    /// The subject row shows only when the surface opted in AND supplied the
+    /// binding; inline edit hides it (an edit rewrites the text, never the
+    /// subject) and the recording/review pills replace the whole row anyway.
+    private var showsSubjectRow: Bool {
+        config.showsSubject && subject != nil && edit == nil
+    }
+
+    /// True while ANY field in the pill drives the keyboard.
+    private var anyFieldFocused: Bool { focused.wrappedValue || subjectFocused }
 
     /// How far the bar sinks into the bottom safe area while the keyboard is
     /// away. The surfaces mount the bar as a bottom `safeAreaInset`, which
@@ -155,14 +178,14 @@ struct ChatComposerBar<Accessory: View>: View {
         // the whole indicator band. While the keyboard is up the bottom safe
         // area belongs to the keyboard, so the overlap must vanish — the
         // pill then sits its usual 8pt above the keyboard.
-        .padding(.bottom, focused.wrappedValue ? 0 : -homeIndicatorOverlap)
+        .padding(.bottom, anyFieldFocused ? 0 : -homeIndicatorOverlap)
         // A proper bar material so the compose row stays legible over any
         // wallpaper (a bare glass pill on its own read as near-transparent).
         // `.bar` turns opaque automatically under Reduce Transparency, and
         // bleeds into the remaining safe area on its own, so the band covers
         // exactly the bar + safe area — no gap, no extra band.
         .background(.bar)
-        .animation(.snappy(duration: 0.25), value: focused.wrappedValue)
+        .animation(.snappy(duration: 0.25), value: anyFieldFocused)
         .animation(.spring(duration: 0.3), value: reply?.snippet)
         .animation(.spring(duration: 0.3), value: edit?.snippet)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
@@ -175,38 +198,49 @@ struct ChatComposerBar<Accessory: View>: View {
         HStack(alignment: .bottom, spacing: AppSpacing.sm) {
             if config.onPlus != nil { plusButton }
 
-            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                TextField(config.placeholder, text: $text, axis: .vertical)
-                    .font(AppFont.scaled(16))
-                    .foregroundStyle(.primary)
-                    .tint(.accentColor)
-                    .lineLimit(1...6)
-                    .focused(focused)
-                    .padding(.vertical, 7)
-                    .onChange(of: text) { _, val in
-                        // The keyboard's return key must be inert while the
-                        // pill is empty (IMG_8285): on a vertical-axis field
-                        // it would otherwise stack invisible blank lines.
-                        // Whitespace-only content snaps straight back to
-                        // empty — the SwiftUI equivalent of UIKit's
-                        // enablesReturnKeyAutomatically.
-                        if !val.isEmpty,
-                           val.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            text = ""
-                            return
-                        }
-                        let now = Date()
-                        if !val.isEmpty,
-                           now.timeIntervalSince(lastTypingSent) > config.typingThrottle {
-                            lastTypingSent = now
-                            config.onTyping?()
-                        }
-                        // Draft persistence is the surface's job (on disappear) —
-                        // a per-keystroke UserDefaults write is typing lag.
-                    }
+            VStack(spacing: 0) {
+                // iMessage's "Subject" line: a semibold single-line field over
+                // a hairline, sharing the message field's pill.
+                if showsSubjectRow, let subject {
+                    subjectField(subject)
+                    Rectangle()
+                        .fill(Color.hairline)
+                        .frame(height: 0.5)
+                }
 
-                trailingControl
-                    .padding(.bottom, 3)
+                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                    TextField(config.placeholder, text: $text, axis: .vertical)
+                        .font(AppFont.scaled(16))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(1...6)
+                        .focused(focused)
+                        .padding(.vertical, 7)
+                        .onChange(of: text) { _, val in
+                            // The keyboard's return key must be inert while the
+                            // pill is empty (IMG_8285): on a vertical-axis field
+                            // it would otherwise stack invisible blank lines.
+                            // Whitespace-only content snaps straight back to
+                            // empty — the SwiftUI equivalent of UIKit's
+                            // enablesReturnKeyAutomatically.
+                            if !val.isEmpty,
+                               val.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                text = ""
+                                return
+                            }
+                            let now = Date()
+                            if !val.isEmpty,
+                               now.timeIntervalSince(lastTypingSent) > config.typingThrottle {
+                                lastTypingSent = now
+                                config.onTyping?()
+                            }
+                            // Draft persistence is the surface's job (on disappear) —
+                            // a per-keystroke UserDefaults write is typing lag.
+                        }
+
+                    trailingControl
+                        .padding(.bottom, 3)
+                }
             }
             .animation(.spring(duration: 0.2), value: isTextEmpty)
             .animation(.spring(duration: 0.2), value: config.isResponding)
@@ -218,6 +252,21 @@ struct ChatComposerBar<Accessory: View>: View {
         .padding(.vertical, AppSpacing.sm)
         // iMessage has no separate band behind the compose row — the bar sits
         // directly on the conversation background (the `.bar` material above).
+    }
+
+    /// iMessage's "Subject" line: one semibold row inside the same pill,
+    /// above the hairline. Return moves the caret down to the message field.
+    private func subjectField(_ subject: Binding<String>) -> some View {
+        TextField("composer_subject_placeholder", text: subject)
+            .font(AppFont.scaled(16, weight: .semibold))
+            .foregroundStyle(.primary)
+            .tint(.accentColor)
+            .focused($subjectFocused)
+            .submitLabel(.next)
+            .onSubmit { focused.wrappedValue = true }
+            .padding(.vertical, 7)
+            // The trailing control lives on the MESSAGE row below, so the
+            // subject line spans the pill's full width — like iMessage.
     }
 
     /// The control inside the pill's trailing edge: the edit checkmark while
@@ -384,9 +433,11 @@ extension ChatComposerBar where Accessory == EmptyView {
          isSending: Bool = false,
          config: ChatComposerConfig,
          reply: ChatComposerReply? = nil,
-         edit: ChatComposerEdit? = nil) {
+         edit: ChatComposerEdit? = nil,
+         subject: Binding<String>? = nil) {
         self.init(text: text, focused: focused, isSending: isSending,
-                  config: config, reply: reply, edit: edit) { EmptyView() }
+                  config: config, reply: reply, edit: edit,
+                  subject: subject) { EmptyView() }
     }
 }
 

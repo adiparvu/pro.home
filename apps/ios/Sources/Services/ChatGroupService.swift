@@ -304,6 +304,25 @@ final class ChatGroupService {
         }
     }
 
+    /// Sends one text message into a specific sub-group without any UI
+    /// context — used by the notification quick-reply queue. There is no
+    /// direct group-send on this service; the group screen (GroupChatView)
+    /// sends through a group-scoped `MessageService`, so this invokes exactly
+    /// that same path: `load(propertyId:groupId:)` scopes the service to the
+    /// group (it is the only public way to set its group id) and `send` then
+    /// stamps `group_id`, honors the group's disappearing-message TTL and
+    /// rides the same RLS as an in-app send. Throws on failure so the caller
+    /// can requeue the reply instead of dropping it.
+    static func sendMessage(propertyId: UUID, groupId: UUID,
+                            senderName: String, body: String) async throws {
+        let svc = MessageService()
+        // Scopes currentGroupId up-front (before its own fetch), so even a
+        // failed history load leaves the send correctly group-targeted; a
+        // real network outage then surfaces in `send`, which throws.
+        await svc.load(propertyId: propertyId, groupId: groupId)
+        try await svc.send(propertyId: propertyId, senderName: senderName, body: body)
+    }
+
     /// Removes one member from a group.
     func removeMember(_ member: ChatGroupMember, from group: ChatGroup) async {
         do {

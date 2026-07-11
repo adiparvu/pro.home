@@ -554,7 +554,13 @@ struct ConversationsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .contextMenu { conversationMenu(entry) }
+                            // Long-press: the PreviewCard as the system-lifted
+                            // preview, with the existing quick actions beneath.
+                            .contextMenu {
+                                conversationMenu(entry)
+                            } preview: {
+                                conversationPreview(entry)
+                            }
                         }
                     }
 
@@ -570,6 +576,69 @@ struct ConversationsView: View {
             .padding(.top, AppSpacing.sm)
             .padding(.bottom, AppSpacing.xxl)
         }
+    }
+
+    // MARK: - Long-press preview
+    //
+    // The lifted card the system shows above the quick actions. Real data
+    // only: the avatar, name, last-message preview and timestamp the row
+    // already renders, plus unread/online state chips when they apply.
+    // A secured (locked) conversation must never leak content through the
+    // peek — it gets the same lock cover as locked documents.
+    @ViewBuilder
+    private func conversationPreview(_ entry: ConversationEntry) -> some View {
+        if ChatLockStore.isLocked(entry.id) && !lockedRevealed {
+            LockedItemPreview(name: entry.name)
+        } else {
+            PreviewCard(
+                title: Text(verbatim: entry.name),
+                subtitle: entry.preview.isEmpty ? nil : Text(verbatim: entry.preview),
+                headerTrailing: entry.formattedTime.isEmpty ? nil : Text(verbatim: entry.formattedTime),
+                tint: .brandIndigo,
+                chips: conversationChips(entry)
+            ) {
+                if entry.isGroup {
+                    GroupChatAvatar(members: familyService.members,
+                                    photoUrl: propertyService.primary?.photoUrl)
+                } else {
+                    PeerCircleAvatar(
+                        name: entry.peer?.displayName ?? entry.member?.name ?? entry.name,
+                        color: entry.member?.swiftColor ?? entry.peer?.swiftColor ?? .blue,
+                        avatarUrl: entry.peer?.avatarUrl ?? entry.member?.avatarUrl,
+                        size: 54)
+                }
+            }
+        }
+    }
+
+    /// State chips for the preview footer — only states that are true right
+    /// now, all through existing localized labels. Pin/mute state is shown
+    /// on the row itself and toggled in the menu below the preview, so the
+    /// chips stay focused on what the spec asks for: unread + presence.
+    private func conversationChips(_ entry: ConversationEntry) -> [PreviewCardChip] {
+        var chips: [PreviewCardChip] = []
+        if entry.isGroup {
+            chips.append(PreviewCardChip(icon: "person.2.fill",
+                                         text: Text("Group chat"),
+                                         tint: .brandIndigo))
+        }
+        if entry.unread > 0 {
+            chips.append(PreviewCardChip(icon: "message.badge.fill",
+                                         text: Text("convo_unread_count \(entry.unread)"),
+                                         tint: .brandIndigo))
+        } else if manualUnreadIds.contains(entry.id) {
+            chips.append(PreviewCardChip(icon: "message.badge.fill",
+                                         text: Text("convo_unread"),
+                                         tint: .brandIndigo))
+        }
+        if !entry.isGroup,
+           presenceService.status(userId: entry.peer?.id ?? entry.member?.userId,
+                                  name: entry.member?.name ?? entry.peer?.displayName) == .online {
+            chips.append(PreviewCardChip(icon: "circle.fill",
+                                         text: Text("convo_online"),
+                                         tint: .brandSuccess))
+        }
+        return chips
     }
 
     @ViewBuilder
@@ -843,7 +912,7 @@ struct ConversationsView: View {
             let prefix = isOwn ? String(localized: "convo_prev_you") : (m.senderName.components(separatedBy: " ").first.map { "\($0): " } ?? "")
             if m.deletedForAll == true { return prefix + String(localized: "convo_prev_deleted") }
             if m.isContactShare { return prefix + String(localized: "convo_prev_contact") }
-            if let body = m.body, !body.isEmpty { return prefix + body }
+            if let body = m.body, !body.isEmpty { return prefix + MessageSubject.strip(body) }
             switch m.attachmentType {
             case "image":    return prefix + String(localized: "convo_prev_image")
             case "video":    return prefix + String(localized: "convo_prev_video")
@@ -923,7 +992,7 @@ struct ConversationsView: View {
                 case .audio: return prefix + String(localized: "convo_prev_audio")
                 case .image: return prefix + String(localized: "convo_prev_image")
                 case .video: return prefix + String(localized: "convo_prev_video")
-                case .text:  return prefix + last.body
+                case .text:  return prefix + MessageSubject.strip(last.body)
                 }
             }()
             items.append(ConversationEntry(

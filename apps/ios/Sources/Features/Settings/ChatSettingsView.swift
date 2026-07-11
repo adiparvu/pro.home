@@ -20,6 +20,10 @@ struct ChatSettingsView: View {
     @Environment(AppRouter.self) private var router
 
     @AppStorage("presence.shareStatus") private var shareStatus = true
+    /// iMessage's "Show Subject Field" (Settings → Messages): an optional
+    /// subject line in the composer of the family chat and DMs. Default OFF;
+    /// AI surfaces (Yuna) never show it.
+    @AppStorage(MessageSubject.showFieldDefaultsKey) private var showSubjectField = false
     @State private var showTheme = false
     @State private var showStarred = false
     @State private var showCommunities = false
@@ -81,6 +85,8 @@ struct ChatSettingsView: View {
                 }
 
                 SettingsGroup(title: "Funcții") {
+                    ToggleSettingsRow(icon: "textformat", color: .orange,
+                                      label: "chat_show_subject_field", value: $showSubjectField)
                     TapSettingsRow(icon: "person.3.fill", color: .purple, label: "chat_groups_title") { showCommunities = true }
                     NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: Color.brandSuccess, label: "Cross-app messaging") {
                         InterAppChatView()

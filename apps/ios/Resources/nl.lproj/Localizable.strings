@@ -2111,3 +2111,16 @@
 "🎂 %@" = "🎂 %@";
 "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "Het pictogram \"%@\" is nog niet beschikbaar. We laten u weten wanneer alle varianten klaar zijn.\n\n(%@)";
 "[%@] %@" = "[%@] %@";
+
+/* ── Watch: DM's, leveringen, voorraad→lijst, sensormeldingen, sessiecomplicatie ── */
+"watch_menu_messages" = "Berichten";
+"watch_dm_reply" = "Antwoord";
+"watch_dm_reply_prompt" = "Je antwoord";
+"watch_dm_sent" = "Verzonden ✓";
+"watch_dm_you" = "Ik";
+"watch_dm_media" = "Bijlage";
+"watch_delivery_received" = "Ontvangen";
+"watch_pantry_to_list" = "Op de lijst zetten";
+"watch_sensor_alert_title" = "Kritieke sensor";
+"watch_session_none" = "Geen actieve sessie";
+"watch_comp_session_desc" = "De actieve werksessie, op je pols.";
