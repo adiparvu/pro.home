@@ -231,4 +231,26 @@ enum HouseAgenda {
             return $0.date < $1.date
         }
     }
+
+    /// The standard planning window — one month back to a year ahead — shared
+    /// by the in-app calendar, the Apple Calendar mirror and the notification
+    /// scheduler, so all three reason over exactly the same set of deadlines.
+    static func upcomingYear(
+        tasks: [MaintenanceTask],
+        documents: [DocumentModel],
+        appliances: [Appliance],
+        members: [FamilyMember],
+        financial: [FinancialRecord],
+        plants: [Plant],
+        leases: [TenantLease]
+    ) -> [AgendaItem] {
+        let cal = Calendar.current
+        let now = Date()
+        let start = cal.date(byAdding: .month, value: -1, to: now) ?? now
+        let end = cal.date(byAdding: .month, value: 12, to: now) ?? now
+        return items(
+            in: start...end,
+            tasks: tasks, documents: documents, appliances: appliances,
+            members: members, financial: financial, plants: plants, leases: leases)
+    }
 }

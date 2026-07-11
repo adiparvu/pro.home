@@ -182,10 +182,20 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
                 if let url = URL(string: link) {
                     NotificationCenter.default.post(name: .prvioOpenURL, object: url)
                 }
+            } else if let idStr = info["taskId"] as? String, UUID(uuidString: idStr) != nil,
+                      let link = info["deepLink"] as? String, !link.isEmpty, let url = URL(string: link) {
+                // Deadline reminders (unified scheduler) carry a prvio:// deep
+                // link straight to the item — a task lands on its detail page.
+                UserDefaults.standard.set(link, forKey: "prvio.pendingDeepLink")
+                NotificationCenter.default.post(name: .prvioOpenURL, object: url)
             } else if let taskIdStr = info["taskId"] as? String, UUID(uuidString: taskIdStr) != nil {
                 NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.addtask")
             } else if info["plantId"] != nil {
                 NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.plants")
+            } else if let link = info["deepLink"] as? String, !link.isEmpty, let url = URL(string: link) {
+                // Document / warranty / financial / lease deadline reminders.
+                UserDefaults.standard.set(link, forKey: "prvio.pendingDeepLink")
+                NotificationCenter.default.post(name: .prvioOpenURL, object: url)
             }
 
         default:

@@ -441,10 +441,7 @@ struct MainTabView: View {
             await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
         }
         notificationScheduler.registerCategories()
-        await notificationScheduler.reschedule(
-            tasks: taskService.tasks,
-            documents: documentService.documents
-        )
+        await notificationScheduler.reschedule(agenda: houseAgendaSnapshot())
         writeWidgetSnapshot()
         updateDynamicShortcuts()
         await indexSpotlight()
@@ -490,12 +487,7 @@ struct MainTabView: View {
     /// against on foreground, matching the in-app calendar's own window.
     @MainActor
     private func houseAgendaSnapshot() -> [AgendaItem] {
-        let now = Date()
-        let cal = Calendar.current
-        let start = cal.date(byAdding: .month, value: -1, to: now) ?? now
-        let end = cal.date(byAdding: .month, value: 12, to: now) ?? now
-        return HouseAgenda.items(
-            in: start...end,
+        HouseAgenda.upcomingYear(
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,

@@ -25,11 +25,7 @@ struct CalendarView: View {
     /// The full mirror window (−1…+12 months), ALL categories — what the Apple
     /// Calendar mirror reconciles against, independent of the on-screen filter.
     private func fullAgenda() -> [AgendaItem] {
-        let now = Date()
-        let start = calendar.date(byAdding: .month, value: -1, to: now) ?? now
-        let end = calendar.date(byAdding: .month, value: 12, to: now) ?? now
-        return HouseAgenda.items(
-            in: start...end,
+        HouseAgenda.upcomingYear(
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
