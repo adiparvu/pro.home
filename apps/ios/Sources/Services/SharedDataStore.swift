@@ -2,6 +2,17 @@ import Foundation
 
 // MARK: - Widget snapshot (shared between main app and widget extension via App Groups)
 
+/// One upcoming deadline, flattened for the widgets and the watch. The app
+/// owns the HouseAgenda aggregator; the extension processes can't see it, so
+/// the phone projects the next few items down to these primitives. `date` is
+/// the day the deadline falls on; `icon` is its category's SF Symbol.
+struct WidgetDeadline: Codable, Hashable {
+    var title: String
+    var date: Date
+    var icon: String
+    var category: String
+}
+
 struct PRVIOWidgetSnapshot: Codable {
     var overdueTaskCount: Int = 0
     var openTaskCount: Int = 0
@@ -16,6 +27,9 @@ struct PRVIOWidgetSnapshot: Codable {
     // Optional so snapshots written before this field existed still decode.
     var nextMaintenanceDue: String? = nil
     var activeDeliveryCount: Int = 0
+    /// The next few dated things the house knows about (tasks, documents,
+    /// warranties, birthdays, rents…), for the "Upcoming" lock-screen widget.
+    var upcomingDeadlines: [WidgetDeadline] = []
     var updatedAt: Date = Date()
 
     init() {}
@@ -39,6 +53,7 @@ struct PRVIOWidgetSnapshot: Codable {
         nextMaintenanceTitle = try c.decodeIfPresent(String.self,   forKey: .nextMaintenanceTitle)
         nextMaintenanceDue   = try c.decodeIfPresent(String.self,   forKey: .nextMaintenanceDue)
         activeDeliveryCount  = try c.decodeIfPresent(Int.self,      forKey: .activeDeliveryCount) ?? 0
+        upcomingDeadlines    = try c.decodeIfPresent([WidgetDeadline].self, forKey: .upcomingDeadlines) ?? []
         updatedAt            = try c.decodeIfPresent(Date.self,     forKey: .updatedAt) ?? Date()
     }
 }

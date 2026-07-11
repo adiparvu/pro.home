@@ -529,6 +529,17 @@ struct MainTabView: View {
             .first
         snapshot.nextMaintenanceTitle = upcoming?.title
         snapshot.nextMaintenanceDue = upcoming?.dueDateDisplay
+        // The "Upcoming" widget: the next few dated things across every module.
+        // An outsider only ever sees their own tasks — the family's documents,
+        // warranties, birthdays and rents never reach their lock screen.
+        let today = Calendar.current.startOfDay(for: Date())
+        let upcomingAgenda = houseAgendaSnapshot()
+            .filter { !$0.isCompleted && Calendar.current.startOfDay(for: $0.date) >= today }
+        snapshot.upcomingDeadlines = (family ? upcomingAgenda
+                                             : upcomingAgenda.filter { $0.category == .task })
+            .prefix(4)
+            .map { WidgetDeadline(title: $0.title, date: $0.date,
+                                  icon: $0.category.icon, category: $0.category.rawValue) }
         SharedDataStore.write(snapshot)
 
         SharedDataStore.writeTaskCatalog(

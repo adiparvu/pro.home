@@ -305,6 +305,68 @@ struct LockScreenNextTaskView: View {
     }
 }
 
+// MARK: Upcoming deadlines (Rectangular)
+
+struct LockScreenUpcomingWidget: Widget {
+    let kind = "LockScreenUpcomingWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
+            LockScreenUpcomingView(entry: entry)
+        }
+        .configurationDisplayName("Upcoming (Lock Screen)")
+        .description("Your next deadlines from the house calendar.")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}
+
+struct LockScreenUpcomingView: View {
+    let entry: PRVIOWidgetEntry
+
+    var body: some View {
+        let items = Array(entry.snapshot.upcomingDeadlines.prefix(3))
+        VStack(alignment: .leading, spacing: 2) {
+            if items.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(AppFont.captionStrong)
+                        .widgetAccentable()
+                    Text("Nothing upcoming")
+                        .font(AppFont.captionEmphasis)
+                }
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(AppFont.scaled(9, weight: .semibold))
+                        .widgetAccentable()
+                    Text("Upcoming")
+                        .font(AppFont.scaled(9, weight: .semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(items, id: \.self) { deadline in
+                    HStack(spacing: 5) {
+                        Image(systemName: deadline.icon)
+                            .font(AppFont.scaled(10, weight: .semibold))
+                            .frame(width: 12)
+                        Text(deadline.title)
+                            .font(AppFont.scaled(12))
+                            .lineLimit(1)
+                        Spacer(minLength: 2)
+                        Text(deadline.date, format: .relative(presentation: .named))
+                            .font(AppFont.scaled(10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(for: .widget) { Color.clear }
+        .widgetURL(URL(string: "prvio://tasks"))
+    }
+}
+
 // MARK: Dashboard (Rectangular + Inline)
 
 struct LockScreenDashboardWidget: Widget {
