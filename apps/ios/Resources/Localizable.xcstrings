@@ -75386,6 +75386,91 @@
           }
         }
       }
+    },
+    "rentroll_monthly_income": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly income"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Venit lunar"
+          }
+        }
+      }
+    },
+    "rentroll_per_year": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "≈ %@ / year"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "≈ %@ / an"
+          }
+        }
+      }
+    },
+    "rentroll_next_rent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next rent"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Următoarea chirie"
+          }
+        }
+      }
+    },
+    "rentroll_deposits": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deposits held"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depozite reținute"
+          }
+        }
+      }
+    },
+    "rentroll_occupants": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occupants"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocupanți"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

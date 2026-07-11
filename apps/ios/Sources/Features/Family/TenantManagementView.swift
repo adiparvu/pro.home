@@ -6,6 +6,8 @@ import Foundation
 struct TenantManagementView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AppSettings.self) private var appSettings
 
     @State private var showAdd        = false
     @State private var selectedTenant: FamilyMember?
@@ -21,6 +23,18 @@ struct TenantManagementView: View {
         }
     }
 
+    /// Cashflow snapshot over every lease on the property — income (converted
+    /// to the preferred currency), next rent due, deposits, occupancy.
+    private var rentRoll: RentRoll {
+        RentRoll.build(
+            leases: Array(familyService.leases.values),
+            nameFor: { id in familyService.members.first { $0.id == id }?.name
+                ?? String(localized: "agenda_lease_tenant") },
+            convert: { amount, code in
+                currencyService.convert(amount, from: code, to: appSettings.preferredCurrency) },
+            preferred: appSettings.preferredCurrency)
+    }
+
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
@@ -32,6 +46,7 @@ struct TenantManagementView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 12) {
+                            if case let roll = rentRoll, !roll.isEmpty { RentRollCard(roll: roll) }
                             statsStrip
                             leaseAlerts
                             ForEach(tenants) { tenant in
@@ -96,9 +111,6 @@ struct TenantManagementView: View {
         let phoneCount = tenants.filter { !($0.phone ?? "").isEmpty }.count
         return HStack(spacing: 12) {
             statCell(value: "\(tenants.count)", label: tenants.count == 1 ? "Tenant" : "Tenants", icon: "person.fill", color: .purple)
-            if let rent = monthlyRentTotal {
-                statCell(value: rent, label: "tenant_stat_rent", icon: "banknote.fill", color: Color.brandSuccess)
-            }
             if waCount > 0 {
                 statCell(value: "\(waCount)", label: "WhatsApp", icon: "message.fill", color: Color(red: 0.16, green: 0.72, blue: 0.37))
             }
@@ -106,18 +118,6 @@ struct TenantManagementView: View {
                 statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color.brandSuccess)
             }
         }
-    }
-
-    /// Total monthly rent across the leases — shown only when every lease
-    /// uses the same currency (sums never mix currencies).
-    private var monthlyRentTotal: String? {
-        let leases = tenants.compactMap { familyService.leases[$0.id] }
-            .filter { $0.monthlyRent != nil }
-        guard !leases.isEmpty,
-              let currency = leases.first?.currency,
-              leases.allSatisfy({ $0.currency == currency }) else { return nil }
-        let total = leases.reduce(0.0) { $0 + ($1.monthlyRent ?? 0) }
-        return CurrencyService.money(total, code: currency, whole: true)
     }
 
     private func statCell(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
