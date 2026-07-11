@@ -419,6 +419,7 @@ extension DirectMessageView {
                             // then re-assert once the lazy rows take their real
                             // heights — the estimated first pass lands short.
                             proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                            setJumpToLatest(false)
                             Task { @MainActor in
                                 try? await Task.sleep(for: .seconds(0.45))
                                 if !chatDidLoad || isAtBottom {
@@ -435,6 +436,12 @@ extension DirectMessageView {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
                                 proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
                             }
+                            // We just parked at the bottom: hide the jump
+                            // button explicitly, since the geometry signal only
+                            // re-emits on a bucket CHANGE and a snap that
+                            // doesn't cross one used to leave it stranded
+                            // visible (IMG_8303).
+                            setJumpToLatest(false)
                         } else {
                             // Reading up-thread: leave the viewport alone and
                             // don't mark the (unseen) message read.

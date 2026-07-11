@@ -25,6 +25,15 @@ extension ChatView {
         return Calendar.current.isDate(dA, inSameDayAs: dB)
     }
 
+    /// Force the jump-to-latest button hidden after a programmatic snap to the
+    /// bottom. `chatAtBottomTracking` re-emits only when the scroll geometry
+    /// crosses a bucket boundary, so a snap that lands without moving 40pt
+    /// could leave the button stranded visible at the bottom (IMG_8303).
+    private func hideJumpButton() {
+        guard showJumpToLatest else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+    }
+
     /// Scroll to a message (e.g. from tapping a reply's quote) and flash it. No-op
     /// if it isn't in the loaded window — older pages aren't force-loaded here.
     private func jumpToMessage(_ id: UUID) {
@@ -454,6 +463,7 @@ extension ChatView {
                         // newest bubble half-hidden behind the composer
                         // (IMG_8284).
                         proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                        hideJumpButton()
                         Task { @MainActor in
                             try? await Task.sleep(for: .seconds(0.45))
                             if !chatDidLoad || isAtBottom {
@@ -469,6 +479,12 @@ extension ChatView {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
                             proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                         }
+                        // We just parked at the bottom: hide the jump button
+                        // explicitly. The geometry signal only re-emits on a
+                        // bucket CHANGE, so a programmatic snap that doesn't
+                        // cross a bucket boundary used to leave it stranded
+                        // visible (IMG_8303).
+                        hideJumpButton()
                     }
                 }
                 if let pid = propertyId {
@@ -506,7 +522,7 @@ extension ChatView {
                 scrollTarget = nil
             }
             } // end VStack (search + scroll)
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomTrailing) {
                 if showJumpToLatest {
                     Button {
                         // Idempotent: re-taps mid-flight are ignored instead of
@@ -538,7 +554,7 @@ extension ChatView {
                     .buttonStyle(.plain)
                     .glassCircle()
                     .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
-                    .padding(.bottom, AppSpacing.md)
+                    .padding(.trailing, AppSpacing.lg).padding(.bottom, AppSpacing.md)
                     .transition(.scale.combined(with: .opacity))
                     .accessibilityLabel("Jump to latest message")
                 }
