@@ -261,10 +261,49 @@ struct DeliveriesView: View {
                     .glassProminent(in: Capsule())
             }
             .buttonStyle(.plain)
+            // The auto-import superpower — surfaced here so it isn't hidden
+            // behind the toolbar envelope on an empty screen.
+            Button { showAutoImport = true; HapticFeedback.impact(.light) } label: {
+                Label("deliv_import_cta", systemImage: "envelope.badge")
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 40)
+    }
+}
+
+// MARK: - Delivery progress bar
+//
+// The parcel's journey as four filling segments — Info received → In transit →
+// Out for delivery → Delivered — driven by the live tracking status when the
+// aggregator is following it, otherwise by the manual status. An exception
+// turns the first segment red so a problem reads at a glance.
+struct DeliveryProgressBar: View {
+    let delivery: Delivery
+
+    var body: some View {
+        let stage = delivery.progressStage
+        let exception = delivery.hasException
+        HStack(spacing: 3) {
+            ForEach(0..<Delivery.journeyStages, id: \.self) { i in
+                Capsule()
+                    .fill(fill(for: i, stage: stage, exception: exception))
+                    .frame(height: 3)
+            }
+        }
+        .animation(.smooth(duration: 0.3), value: stage)
+        .accessibilityElement()
+        .accessibilityLabel(Text(delivery.liveStatusLabel ?? delivery.statusLabel))
+    }
+
+    private func fill(for index: Int, stage: Int, exception: Bool) -> Color {
+        if exception { return index == 0 ? Color.brandDanger : Color.primary.opacity(0.1) }
+        return index <= stage ? delivery.statusColor : Color.primary.opacity(0.1)
     }
 }
 
@@ -277,66 +316,81 @@ struct DeliveryRow: View {
 
     var body: some View {
         GlassCard(padding: 14) {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(delivery.statusColor.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: delivery.statusIcon)
-                        .font(AppFont.title3)
-                        .foregroundStyle(delivery.statusColor)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(delivery.description)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 4) {
-                        if let carrier = delivery.carrier, !carrier.isEmpty {
-                            Text(carrier)
-                                .font(AppFont.scaled(12))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let tn = delivery.trackingNumber, !tn.isEmpty {
-                            Text("·")
-                                .foregroundStyle(Color.primary.opacity(0.3))
-                            Text(tn)
-                                .font(AppFont.scaled(12))
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                .lineLimit(1)
-                        }
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(delivery.statusColor.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: delivery.statusIcon)
+                            .font(AppFont.title3)
+                            .foregroundStyle(delivery.statusColor)
                     }
 
-                    if let expected = delivery.expectedDisplay {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(delivery.description)
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
                         HStack(spacing: 4) {
-                            Image(systemName: "calendar")
+                            if let carrier = delivery.carrier, !carrier.isEmpty {
+                                Text(carrier)
+                                    .font(AppFont.scaled(12))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let tn = delivery.trackingNumber, !tn.isEmpty {
+                                Text("·")
+                                    .foregroundStyle(Color.primary.opacity(0.3))
+                                Text(tn)
+                                    .font(AppFont.scaled(12, design: .monospaced))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        // The courier's own live status wins when it's tracking;
+                        // otherwise the expected/entered arrival date.
+                        HStack(spacing: 4) {
+                            Image(systemName: delivery.isLiveTracked ? "dot.radiowaves.up.forward" : "calendar")
                                 .font(AppFont.scaled(10))
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                            Text(expected)
-                                .font(AppFont.scaled(11))
-                                .foregroundStyle(
-                                    expected == "Today"
-                                        ? Color.orange
-                                        : Color.primary.opacity(0.4)
-                                )
+                                .foregroundStyle(delivery.isLiveTracked ? delivery.statusColor : Color.primary.opacity(AppOpacity.disabled))
+                            if let live = delivery.liveStatusLabel {
+                                Text(live)
+                                    .font(AppFont.scaled(11, weight: .medium))
+                                    .foregroundStyle(delivery.statusColor)
+                                if let eta = delivery.etaDisplay {
+                                    Text("· \(eta)")
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.primary.opacity(0.4))
+                                }
+                            } else if let eta = delivery.etaDisplay {
+                                Text(eta)
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(eta == String(localized: "Today") ? Color.orange
+                                                     : Color.primary.opacity(0.4))
+                            }
                         }
                     }
+
+                    Spacer()
+
+                    Text(LocalizedStringKey(delivery.statusLabel))
+                        .font(AppFont.label)
+                        .foregroundStyle(delivery.statusColor)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(
+                            delivery.statusColor.opacity(0.13),
+                            in: Capsule()
+                        )
                 }
 
-                Spacer()
-
-                Text(LocalizedStringKey(delivery.statusLabel))
-                    .font(AppFont.label)
-                    .foregroundStyle(delivery.statusColor)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(
-                        delivery.statusColor.opacity(0.13),
-                        in: Capsule()
-                    )
+                // The journey, at a glance — only while the parcel is on its way.
+                if delivery.isActive {
+                    DeliveryProgressBar(delivery: delivery)
+                }
             }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: true) {

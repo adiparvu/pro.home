@@ -82,6 +82,58 @@ struct Delivery: Identifiable, Codable, Hashable {
         status == "expected" || status == "out_for_delivery"
     }
 
+    // MARK: Live journey (progress stepper)
+    //
+    // Four milestones every parcel passes through, derived from the live
+    // tracking status when the aggregator is following it, otherwise from the
+    // manual status. The bar fills up to `progressStage`.
+    static let journeyStages = 4  // Info received → In transit → Out for delivery → Delivered
+
+    /// 0…3 — how far along the journey this parcel is.
+    var progressStage: Int {
+        switch liveStatus ?? status {
+        case "delivered":                            return 3
+        case "out_for_delivery", "available_for_pickup": return 2
+        case "in_transit":                           return 1
+        default:                                     return 0  // pending / info_received / expected
+        }
+    }
+
+    /// A problem on the way — the bar turns to a warning instead of progress.
+    var hasException: Bool {
+        switch liveStatus ?? status {
+        case "exception", "failed_attempt", "expired", "missed", "returned": return true
+        default: return false
+        }
+    }
+
+    /// The most precise arrival estimate available: the courier's own ETA when
+    /// live-tracked, otherwise the expected date the user entered.
+    var etaDisplay: String? {
+        if let e = estimatedDelivery, let d = AppDate.day(from: e) {
+            if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
+            if Calendar.current.isDateInTomorrow(d) { return String(localized: "Tomorrow") }
+            return AppDate.monthDay.string(from: d)
+        }
+        return expectedDisplay
+    }
+
+    /// The live status phrase to show while tracked ("In transit", "Out for
+    /// delivery"…), or nil to fall back to the manual status pill.
+    var liveStatusLabel: String? {
+        guard let live = liveStatus else { return nil }
+        switch live {
+        case "pending", "info_received":   return String(localized: "deliv_live_info")
+        case "in_transit":                 return String(localized: "deliv_live_transit")
+        case "out_for_delivery":           return String(localized: "Out for delivery")
+        case "available_for_pickup":       return String(localized: "deliv_live_pickup")
+        case "delivered":                  return String(localized: "Delivered")
+        case "exception", "failed_attempt": return String(localized: "deliv_live_exception")
+        case "expired":                    return String(localized: "deliv_live_expired")
+        default:                           return nil
+        }
+    }
+
     var expectedDisplay: String? {
         guard let ds = expectedDate else { return nil }
         guard let d = AppDate.day(from: ds) else { return ds }
