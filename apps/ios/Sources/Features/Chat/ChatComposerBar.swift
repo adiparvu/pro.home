@@ -195,12 +195,11 @@ struct ChatComposerBar<Accessory: View>: View {
         // area belongs to the keyboard, so the overlap must vanish — the
         // pill then sits its usual 8pt above the keyboard.
         .padding(.bottom, anyFieldFocused ? 0 : -homeIndicatorOverlap)
-        // A proper bar material so the compose row stays legible over any
-        // wallpaper (a bare glass pill on its own read as near-transparent).
-        // `.bar` turns opaque automatically under Reduce Transparency, and
-        // bleeds into the remaining safe area on its own, so the band covers
-        // exactly the bar + safe area — no gap, no extra band.
-        .background(.bar)
+        // No bar/blur band behind the row — the compose pill and the "+" float
+        // directly over the conversation, so only they are visible (IMG_8307).
+        // Each already carries its own material for legibility (the pill's
+        // mediaGlass, the "+"'s glass circle), and both go opaque under Reduce
+        // Transparency, so dropping the band costs no readability.
         .animation(.snappy(duration: 0.25), value: anyFieldFocused)
         .animation(.spring(duration: 0.3), value: reply?.snippet)
         .animation(.spring(duration: 0.3), value: edit?.snippet)
@@ -289,7 +288,13 @@ struct ChatComposerBar<Accessory: View>: View {
                         .tint(.accentColor)
                         .lineLimit(1...6)
                         .focused(focused)
-                        .padding(.vertical, 7)
+                        // A stable single-line height so the row never changes
+                        // size when the trailing control morphs mic→send (that
+                        // subtle height change read as the bar "jumping" on the
+                        // first keystroke — IMG_8306) and a slightly taller,
+                        // more comfortable field, matching iMessage.
+                        .frame(minHeight: 26)
+                        .padding(.vertical, 8)
                         .onChange(of: draft) { _, val in
                             // The keyboard's return key must be inert while the
                             // pill is empty (IMG_8285): on a vertical-axis field
