@@ -3,10 +3,12 @@ import ContactsUI
 
 // MARK: - iMessage-style attachment menu
 
-/// The iOS 26 iMessage "+" menu, faithfully: a floating CLEAR Liquid Glass
-/// panel anchored above the compose bar (not a detented sheet), colourful
-/// app-style icon discs, plain 17pt labels, and a tap anywhere outside to
-/// dismiss. Presented as an overlay by the chat views.
+/// The iOS 26 iMessage "+" menu, faithfully. Two independent motions, exactly
+/// like Apple's: the whole conversation BLURS behind a full-screen backdrop
+/// that fades in, while the menu PANEL springs up from the "+" corner.
+/// Presented as a plain overlay by the chat views — this view owns both the
+/// entrance and the exit (it animates itself out, then clears `isPresented`),
+/// so the caller must NOT wrap it in a transition.
 struct ChatAttachmentSheet: View {
     @Binding var isPresented: Bool
     var onPhotos: () -> Void
@@ -18,49 +20,88 @@ struct ChatAttachmentSheet: View {
     var onEvent: (() -> Void)? = nil
     var onSendLater: (() -> Void)? = nil
 
-    private func pick(_ action: @escaping () -> Void) {
-        withAnimation(.snappy(duration: 0.22)) { isPresented = false }
-        // Let the panel finish closing before presenting the next surface.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: action)
+    /// Drives both motions. Flipped true on appear (spring in) and false on
+    /// dismiss (the view stays mounted through the exit because `isPresented`
+    /// only clears after the animation lands).
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var entrance: Animation {
+        reduceMotion ? .easeOut(duration: 0.2)
+                     : .spring(response: 0.34, dampingFraction: 0.82)
+    }
+    private var exit: Animation {
+        reduceMotion ? .easeIn(duration: 0.18) : .snappy(duration: 0.26)
+    }
+
+    /// Animate the menu closed, THEN unmount and (optionally) run the picked
+    /// action so the next surface presents over a settled screen.
+    private func dismiss(then action: (() -> Void)? = nil) {
+        withAnimation(exit) { shown = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            isPresented = false
+            action?()
+        }
     }
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // Tap-outside catcher with the system-style dim.
-            Color.black.opacity(0.25)
+            // Full-screen frosted backdrop — the conversation blurs behind the
+            // menu, exactly like iMessage (a bare dim read as flat). Fades on
+            // its OWN opacity, independent of the panel's scale.
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(Color.black.opacity(0.12))
                 .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation(.snappy(duration: 0.22)) { isPresented = false }
-                }
+                .opacity(shown ? 1 : 0)
+                .contentShape(Rectangle())
+                .onTapGesture { dismiss() }
                 .accessibilityLabel(Text("Cancel"))
+                .accessibilityAddTraits(.isButton)
 
-            VStack(alignment: .leading, spacing: 4) {
-                row("Camera", "camera.fill", [Color(white: 0.35), Color(white: 0.15)]) { pick(onCamera) }
-                row("Photos", "photo.on.rectangle.angled", [.pink, .orange]) { pick(onPhotos) }
+            // The menu panel: springs up FROM the "+" corner (bottom-leading
+            // anchor) and fades, over the already-blurred backdrop.
+            VStack(alignment: .leading, spacing: 2) {
+                row("Camera", "camera.fill", [Color(white: 0.35), Color(white: 0.15)]) { dismiss(then: onCamera) }
+                row("Photos", "photo.on.rectangle.angled", [.pink, .orange]) { dismiss(then: onPhotos) }
                 if let onPoll {
-                    row("Poll", "chart.bar.fill", [.yellow, .orange]) { pick(onPoll) }
+                    row("Poll", "chart.bar.fill", [.yellow, .orange]) { dismiss(then: onPoll) }
                 }
                 if let onEvent {
-                    row("Event", "calendar", [.red, .pink]) { pick(onEvent) }
+                    row("Event", "calendar", [.red, .pink]) { dismiss(then: onEvent) }
                 }
                 if let onLocation {
-                    row("Location", "location.fill", [.green, .teal]) { pick(onLocation) }
+                    row("Location", "location.fill", [.green, .teal]) { dismiss(then: onLocation) }
                 }
-                row("Contact", "person.crop.circle.fill", [.blue, .cyan]) { pick(onContact) }
+                row("Contact", "person.crop.circle.fill", [.blue, .cyan]) { dismiss(then: onContact) }
                 if let onDocument {
-                    row("Document", "doc.fill", [.indigo, .blue]) { pick(onDocument) }
+                    row("Document", "doc.fill", [.indigo, .blue]) { dismiss(then: onDocument) }
                 }
                 if let onSendLater {
-                    row("Send Later", "clock.badge", [.brandSkyBlue, .blue]) { pick(onSendLater) }
+                    row("Send Later", "clock.badge", [.brandSkyBlue, .blue]) { dismiss(then: onSendLater) }
                 }
             }
-            .padding(.vertical, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.xs)
             .frame(width: 300, alignment: .leading)
-            .mediaGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            // A clean frosted panel, NOT interactive clear glass — the clear
+            // variant warped the wallpaper behind it into an ugly smear
+            // (IMG_8305). Regular material reads like Apple's own menu.
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(.regularMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.22), radius: 22, y: 8)
+            .scaleEffect(shown ? 1 : 0.55, anchor: .bottomLeading)
+            .opacity(shown ? 1 : 0)
             .padding(.leading, AppSpacing.base)
-            .padding(.bottom, 8)
+            .padding(.bottom, AppSpacing.md)
         }
+        .onAppear { withAnimation(entrance) { shown = true } }
     }
 
     private func row(_ label: LocalizedStringKey, _ icon: String, _ colors: [Color],

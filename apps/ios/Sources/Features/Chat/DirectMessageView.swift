@@ -378,22 +378,23 @@ struct DirectMessageView: View {
                 scrollTarget = id
             }
         }
-        .overlay(alignment: .bottomLeading) {
+        .overlay {
+            // The menu owns its own blur-in + spring-from-corner motion, so
+            // it mounts without a transition (a wrapping scale would zoom the
+            // full-screen backdrop from the corner too — see ChatAttachmentSheet).
             if showAttachmentSheet {
                 ChatAttachmentSheet(
                     isPresented: $showAttachmentSheet,
-                onPhotos: { showPhotoPicker = true },
-                onCamera: { showCameraPicker = true },
-                onLocation: { showLocationSheet = true },
-                onDocument: { showFileImporter = true },
-                onContact: { showContactPicker = true },
-                onEvent: { showEventComposer = true },
-                onSendLater: { showSendLater = true }
-            )
-                .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
+                    onPhotos: { showPhotoPicker = true },
+                    onCamera: { showCameraPicker = true },
+                    onLocation: { showLocationSheet = true },
+                    onDocument: { showFileImporter = true },
+                    onContact: { showContactPicker = true },
+                    onEvent: { showEventComposer = true },
+                    onSendLater: { showSendLater = true }
+                )
             }
         }
-        .animation(.snappy(duration: 0.22), value: showAttachmentSheet)
         .sheet(isPresented: $showSendLater) {
             if let uid = supabase.auth.currentSession?.user.id {
                 SendLaterSheet(context: .dm(
