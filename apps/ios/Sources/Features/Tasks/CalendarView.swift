@@ -254,7 +254,9 @@ struct CalendarView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 8) {
                         ForEach(items) { item in
-                            AgendaRow(item: item)
+                            let task = taskForItem(item)
+                            AgendaRow(item: item, task: task,
+                                      onToggle: task.map { t in { Task { await taskService.toggleComplete(t) } } })
                         }
                     }
                     .padding(.horizontal, AppSpacing.xl)
@@ -277,6 +279,13 @@ struct CalendarView: View {
 
     private var monthTitle: String {
         AppDateDisplay.fullMonthYear.string(from: displayedMonth).capitalized
+    }
+
+    /// The live task behind a `.task` agenda item (matched by id), so its row
+    /// can be checked off. nil for every other category.
+    private func taskForItem(_ item: AgendaItem) -> MaintenanceTask? {
+        guard item.category == .task else { return nil }
+        return taskService.tasks.first { $0.id.uuidString == item.sourceId }
     }
 
     private func daysInMonth() -> [Date?] {
@@ -343,6 +352,11 @@ private struct DayCell: View {
 
 private struct AgendaRow: View {
     let item: AgendaItem
+    /// The live task behind a `.task` item, so the calendar can check it off in
+    /// place — completion flows through TaskService (which mirrors the linked
+    /// Apple Reminder both ways). nil for every non-task category.
+    var task: MaintenanceTask? = nil
+    var onToggle: (() -> Void)? = nil
 
     var body: some View {
         Button {
@@ -351,7 +365,21 @@ private struct AgendaRow: View {
             NotificationCenter.default.post(name: .prvioOpenURL, object: url)
         } label: {
             HStack(spacing: 12) {
-                ColoredIconBadge(icon: item.category.icon, color: item.category.color, size: 36)
+                if task != nil, let onToggle {
+                    Button {
+                        HapticFeedback.selection()
+                        onToggle()
+                    } label: {
+                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(AppFont.scaled(20))
+                            .foregroundStyle(item.isCompleted ? Color.brandSuccess : Color.primary.opacity(0.3))
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(item.isCompleted ? "task_mark_incomplete" : "task_mark_complete"))
+                } else {
+                    ColoredIconBadge(icon: item.category.icon, color: item.category.color, size: 36)
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)
                         .font(AppFont.footnote)

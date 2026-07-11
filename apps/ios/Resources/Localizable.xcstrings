@@ -75335,6 +75335,40 @@
           }
         }
       }
+    },
+    "task_mark_complete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark complete"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează finalizat"
+          }
+        }
+      }
+    },
+    "task_mark_incomplete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark not done"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează nefinalizat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
