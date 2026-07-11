@@ -183,6 +183,17 @@ struct ChatComposerBar<Accessory: View>: View {
                     .focused(focused)
                     .padding(.vertical, 7)
                     .onChange(of: text) { _, val in
+                        // The keyboard's return key must be inert while the
+                        // pill is empty (IMG_8285): on a vertical-axis field
+                        // it would otherwise stack invisible blank lines.
+                        // Whitespace-only content snaps straight back to
+                        // empty — the SwiftUI equivalent of UIKit's
+                        // enablesReturnKeyAutomatically.
+                        if !val.isEmpty,
+                           val.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            text = ""
+                            return
+                        }
                         let now = Date()
                         if !val.isEmpty,
                            now.timeIntervalSince(lastTypingSent) > config.typingThrottle {
