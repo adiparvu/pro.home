@@ -7,7 +7,6 @@ struct AddTaskView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var hSize
 
     var editing: MaintenanceTask? = nil
 
@@ -52,33 +51,7 @@ struct AddTaskView: View {
 
     var body: some View {
         NavigationStack {
-            // The live preview column exists to show what a task will become —
-            // valuable while CREATING, redundant while EDITING something that
-            // already exists (and the user asked for it gone there). In edit
-            // mode the form takes the full width on every size class.
-            Group {
-                if editing != nil {
-                    formScroll
-                } else if hSize == .regular {
-                    HStack(alignment: .top, spacing: 0) {
-                        formScroll
-                            .frame(maxWidth: .infinity)
-                        Divider()
-                        previewScroll
-                            .frame(maxWidth: .infinity)
-                    }
-                } else {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 24) {
-                            formContent
-                            preview
-                        }
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.top, AppSpacing.md)
-                        .padding(.bottom, 40)
-                    }
-                }
-            }
+            formScroll
             .navigationTitle(Text(editing != nil ? "task_editor_edit_title" : "task_editor_new_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -142,30 +115,6 @@ struct AddTaskView: View {
                 .padding(.top, AppSpacing.md)
                 .padding(.bottom, 40)
         }
-    }
-
-    private var previewScroll: some View {
-        ScrollView(showsIndicators: false) {
-            preview
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, 40)
-        }
-    }
-
-    private var preview: some View {
-        TaskPreviewPanel(
-            title: title,
-            description: description,
-            priority: priority,
-            category: category,
-            dueDate: combinedDue,
-            hasDueTime: hasDueTime,
-            assigneeNames: assigneeNames,
-            addToCalendar: addToCalendar && hasDueDate,
-            addToReminders: addToReminders && hasDueDate
-        )
-        .environment(familyService)
     }
 
     private var formContent: some View {
