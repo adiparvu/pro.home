@@ -5,6 +5,7 @@ import SwiftUI
 struct AddSupplyItemSheet: View {
     @Environment(SupplyService.self) private var supplyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(ReceiptService.self) private var receiptService
     @Environment(\.dismiss) private var dismiss
 
     let list: SupplyList?
@@ -19,6 +20,8 @@ struct AddSupplyItemSheet: View {
     @State private var selectedListId: UUID? = nil
     @State private var isSaving = false
     @State private var error: String?
+    /// Real purchase history only, computed once per presentation.
+    @State private var frequentSuggestions: [String] = []
 
     init(list: SupplyList?, editingItem: SupplyItem?) {
         self.list = list
@@ -29,7 +32,9 @@ struct AddSupplyItemSheet: View {
             _category  = State(initialValue: item.category)
             _priority  = State(initialValue: item.priority)
             _notes     = State(initialValue: item.notes ?? "")
-            _location  = State(initialValue: item.location ?? "")
+            // Stored canonically (or as legacy free text) — edit what the
+            // user reads, not the slug.
+            _location  = State(initialValue: (item.location).map(SupplyLocation.displayName(for:)) ?? "")
         }
     }
 
@@ -45,6 +50,7 @@ struct AddSupplyItemSheet: View {
                      error: $error,
                      onSave: { save() }) {
             nameField
+            if editingItem == nil && !frequentSuggestions.isEmpty { frequentSection }
             quantityField
             if list == nil && supplyService.lists.count > 1 { listPicker }
             categoryPicker
@@ -54,6 +60,11 @@ struct AddSupplyItemSheet: View {
         }
         .onAppear {
             if list == nil { selectedListId = supplyService.lists.first?.id }
+            if editingItem == nil {
+                frequentSuggestions = receiptService.frequentProducts(
+                    excluding: supplyService.items.filter { !$0.isCompleted }.map(\.name),
+                    limit: 6)
+            }
         }
     }
 
@@ -81,9 +92,49 @@ struct AddSupplyItemSheet: View {
         }
     }
 
+    /// "You buy this often" — the household's most scanned products, one
+    /// tap to fill the name (category follows the lexicon). Only real
+    /// history: no scans, no section.
+    private var frequentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 5) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(String(localized: "sup_frequent_label"))
+                    .font(AppFont.label).foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(frequentSuggestions, id: \.self) { suggestion in
+                        GlassFilterChip(label: suggestion,
+                                        isSelected: name == suggestion) {
+                            name = suggestion
+                            category = supplyCategory(forProduct: suggestion)
+                            HapticFeedback.selection()
+                        }
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+        }
+    }
+
+    /// Maps the lexicon's ReceiptCategory to this form's supply categories.
+    private func supplyCategory(forProduct product: String) -> String {
+        let receiptCategory = ReceiptProductLexicon.category(for: product)
+        return supplyCategories.contains { $0.id == receiptCategory } ? receiptCategory : "other"
+    }
+
     private var locationField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LOCATION (OPTIONAL)")
+            HStack(spacing: 5) {
+                Image(systemName: "mappin")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                fieldLabel("LOCATION (OPTIONAL)")
+            }
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -173,6 +224,8 @@ struct AddSupplyItemSheet: View {
         let n = name.trimmingCharacters(in: .whitespaces)
         guard !n.isEmpty else { return }
         isSaving = true
+        // Locations persist canonically ("kitchen"), display localized.
+        let storedLocation = SupplyLocation.normalized(location)
 
         if let existing = editingItem {
             var updated = existing
@@ -181,7 +234,7 @@ struct AddSupplyItemSheet: View {
             updated.category = category
             updated.priority = priority
             updated.notes    = notes.isEmpty ? nil : notes
-            updated.location = location.isEmpty ? nil : location
+            updated.location = storedLocation.isEmpty ? nil : storedLocation
             Task {
                 await supplyService.updateItem(updated)
                 HapticFeedback.success()
@@ -198,7 +251,7 @@ struct AddSupplyItemSheet: View {
                 category: category, priority: priority,
                 notes: notes.isEmpty ? nil : notes,
                 isCompleted: false,
-                location: location.isEmpty ? nil : location,
+                location: storedLocation.isEmpty ? nil : storedLocation,
                 createdAt: now, updatedAt: now
             )
             Task {

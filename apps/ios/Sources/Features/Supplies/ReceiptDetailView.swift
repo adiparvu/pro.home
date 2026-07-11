@@ -5,12 +5,17 @@ import SwiftUI
 struct ReceiptDetailView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     let receipt: Receipt
     @State private var showDeleteConfirm = false
 
     private var items: [ReceiptItem] { receiptService.items(for: receipt.id) }
+
+    private func money(_ amount: Double) -> String {
+        CurrencyService.money(amount, code: appSettings.preferredCurrency)
+    }
 
     var body: some View {
         NavigationStack {
@@ -74,7 +79,7 @@ struct ReceiptDetailView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(receipt.formattedTotal)
+                    Text(verbatim: money(receipt.total))
                         .font(AppFont.title2)
                         .foregroundStyle(.primary)
                         .monospacedDigit()
@@ -97,25 +102,36 @@ struct ReceiptDetailView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                         VStack(spacing: 0) {
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.name)
-                                        .font(AppFont.footnote)
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(2)
-                                    if item.quantity != 1 {
-                                        Text(String(format: "%.0f × %@", item.quantity, Receipt.format(item.unitPrice)))
-                                            .font(AppFont.scaled(11))
-                                            .foregroundStyle(.secondary)
+                            // Each line is a real purchase — link it to the
+                            // product's price history across all receipts.
+                            NavigationLink {
+                                ProductPriceHistoryView(productName: item.name)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name)
+                                            .font(AppFont.footnote)
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(2)
+                                        if item.quantity != 1 {
+                                            Text(String(format: "%.0f × %@", item.quantity, money(item.unitPrice)))
+                                                .font(AppFont.scaled(11))
+                                                .foregroundStyle(.secondary)
+                                        }
                                     }
+                                    Spacer()
+                                    Text(verbatim: money(item.totalPrice))
+                                        .font(AppFont.footnoteEmphasis)
+                                        .foregroundStyle(.primary)
+                                        .monospacedDigit()
+                                    Image(systemName: "chevron.right")
+                                        .font(AppFont.scaled(10))
+                                        .foregroundStyle(Color.primary.opacity(0.25))
                                 }
-                                Spacer()
-                                Text(Receipt.format(item.totalPrice))
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(.primary)
-                                    .monospacedDigit()
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                            .buttonStyle(.plain)
                             if idx < items.count - 1 {
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                             }
@@ -128,7 +144,7 @@ struct ReceiptDetailView: View {
                         Text(String(localized: "receipt_total_label"))
                             .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Spacer()
-                        Text(receipt.formattedTotal)
+                        Text(verbatim: money(receipt.total))
                             .font(AppFont.scaled(15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)

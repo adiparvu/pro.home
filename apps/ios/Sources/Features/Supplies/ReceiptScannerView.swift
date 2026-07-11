@@ -733,7 +733,7 @@ private struct ReceiptReviewView: View {
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
                         ForEach($parsed.items) { $item in
-                            ReviewItemRow(item: $item)
+                            ReviewItemRow(item: $item, currency: parsed.currency)
                             if item.id != parsed.items.last?.id {
                                 Rectangle().fill(Color.hairline)
                                     .frame(height: 0.5)
@@ -758,6 +758,9 @@ private struct ReceiptReviewView: View {
 
 private struct ReviewItemRow: View {
     @Binding var item: ParsedItem
+    /// The receipt's detected currency — prices are shown in what was
+    /// actually printed, never a bare number.
+    let currency: String
     @State private var isEditing = false
     /// The OCR's original name, captured when the editor opens — the
     /// before/after pair is what the lexicon memory learns from.
@@ -797,12 +800,12 @@ private struct ReviewItemRow: View {
             }
             Spacer(minLength: AppSpacing.sm)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(Receipt.format(item.totalPrice))
+                Text(verbatim: CurrencyService.money(item.totalPrice, code: currency, whole: false))
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .monospacedDigit()
                 if item.quantity != 1 {
-                    Text(verbatim: "\(quantityText) × \(Receipt.format(item.unitPrice))")
+                    Text(verbatim: "\(quantityText) × \(CurrencyService.money(item.unitPrice, code: currency, whole: false))")
                         .font(AppFont.caption2)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .monospacedDigit()

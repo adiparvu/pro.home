@@ -9,10 +9,12 @@ import SwiftUI
 struct PantryView: View {
     @Environment(PantryService.self) private var pantryService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(ReceiptService.self) private var receiptService
 
     @State private var searchText = ""
     @State private var editingItem: PantryItem?
     @State private var showAddSheet = false
+    @State private var priceHistoryTarget: PriceHistoryTarget? = nil
 
     private var filtered: [PantryItem] {
         pantryService.items.filter { $0.name.matchesSearch(searchText) }
@@ -55,6 +57,10 @@ struct PantryView: View {
             PantryItemSheet(item: item)
                 .environment(pantryService)
                 .environment(propertyService)
+        }
+        .sheet(item: $priceHistoryTarget) { target in
+            ProductPriceHistorySheet(productName: target.name)
+                .environment(receiptService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -140,16 +146,14 @@ struct PantryView: View {
             .frame(width: 34, height: 34)
             .mediaGlass(in: Circle())
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
                     .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(verbatim: item.quantityDisplay)
-                    .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(item.isLow ? Color.red : Color.secondary)
-                    .contentTransition(.numericText())
+                // The module's one quantity treatment; the accent only
+                // marks the pantry's real low-stock state.
+                QuantityBadge(text: item.quantityDisplay, isLow: item.isLow)
             }
 
             Spacer(minLength: 8)
@@ -166,6 +170,14 @@ struct PantryView: View {
         .contentShape(Rectangle())
         .onTapGesture { editingItem = item }
         .contextMenu {
+            if !receiptService.receiptItems.isEmpty {
+                Button {
+                    priceHistoryTarget = PriceHistoryTarget(name: item.name)
+                } label: {
+                    Label(String(localized: "price_history_title"),
+                          systemImage: "chart.line.uptrend.xyaxis")
+                }
+            }
             Button(role: .destructive) {
                 Task { await pantryService.deleteItem(item) }
             } label: { Label("Delete", systemImage: "trash") }

@@ -5,6 +5,7 @@ import SwiftUI
 struct AddReceiptSheet: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var storeName = ""
@@ -125,7 +126,8 @@ struct AddReceiptSheet: View {
                     Button {
                         total = String(format: "%.2f", computed)
                     } label: {
-                        Text(String(format: String(localized: "add_receipt_use_computed"), Receipt.format(computed)))
+                        Text(String(format: String(localized: "add_receipt_use_computed"),
+                                    CurrencyService.money(computed, code: appSettings.preferredCurrency)))
                             .font(AppFont.scaled(12))
                             .foregroundStyle(Color.accentColor)
                     }

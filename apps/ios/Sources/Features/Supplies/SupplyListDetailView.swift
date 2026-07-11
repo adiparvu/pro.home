@@ -3,6 +3,7 @@ import SwiftUI
 struct SupplyListDetailView: View {
     @Environment(SupplyService.self) private var supplyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(ReceiptService.self) private var receiptService
     var list: SupplyList
 
     @State private var searchText = ""
@@ -10,6 +11,7 @@ struct SupplyListDetailView: View {
     @State private var showAddItem = false
     @State private var editingItem: SupplyItem? = nil
     @State private var showCompleted = false
+    @State private var priceHistoryTarget: PriceHistoryTarget? = nil
 
     private var listItems: [SupplyItem] { supplyService.items(for: list.id) }
 
@@ -60,11 +62,17 @@ struct SupplyListDetailView: View {
             AddSupplyItemSheet(list: list, editingItem: nil)
                 .environment(supplyService)
                 .environment(propertyService)
+                .environment(receiptService)
         }
         .sheet(item: $editingItem) { item in
             AddSupplyItemSheet(list: list, editingItem: item)
                 .environment(supplyService)
                 .environment(propertyService)
+                .environment(receiptService)
+        }
+        .sheet(item: $priceHistoryTarget) { target in
+            ProductPriceHistorySheet(productName: target.name)
+                .environment(receiptService)
         }
         .floatingSpeedDial(.supplies)
     }
@@ -106,13 +114,16 @@ struct SupplyListDetailView: View {
                         GlassCard(padding: 0) {
                             VStack(spacing: 0) {
                                 ForEach(Array(pending.enumerated()), id: \.element.id) { idx, item in
-                                    SupplyItemRow(item: item, isLast: idx == pending.count - 1) {
-                                        Task { await supplyService.toggleComplete(item); HapticFeedback.success() }
-                                    } onEdit: {
-                                        editingItem = item
-                                    } onDelete: {
-                                        Task { await supplyService.deleteItem(item) }
-                                    }
+                                    SupplyItemRow(
+                                        item: item,
+                                        isLast: idx == pending.count - 1,
+                                        onToggle: { Task { await supplyService.toggleComplete(item); HapticFeedback.success() } },
+                                        onEdit: { editingItem = item },
+                                        onDelete: { Task { await supplyService.deleteItem(item) } },
+                                        onPriceHistory: receiptService.receiptItems.isEmpty
+                                            ? nil
+                                            : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
+                                    )
                                 }
                             }
                         }
@@ -128,13 +139,16 @@ struct SupplyListDetailView: View {
                             GlassCard(padding: 0) {
                                 VStack(spacing: 0) {
                                     ForEach(Array(completed.enumerated()), id: \.element.id) { idx, item in
-                                        SupplyItemRow(item: item, isLast: idx == completed.count - 1) {
-                                            Task { await supplyService.toggleComplete(item); HapticFeedback.selection() }
-                                        } onEdit: {
-                                            editingItem = item
-                                        } onDelete: {
-                                            Task { await supplyService.deleteItem(item) }
-                                        }
+                                        SupplyItemRow(
+                                            item: item,
+                                            isLast: idx == completed.count - 1,
+                                            onToggle: { Task { await supplyService.toggleComplete(item); HapticFeedback.selection() } },
+                                            onEdit: { editingItem = item },
+                                            onDelete: { Task { await supplyService.deleteItem(item) } },
+                                            onPriceHistory: receiptService.receiptItems.isEmpty
+                                                ? nil
+                                                : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
+                                        )
                                     }
                                 }
                             }

@@ -7,6 +7,7 @@ struct ExpenseDashboardView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
     @Environment(SupplyService.self) private var supplyService
+    @Environment(AppSettings.self) private var appSettings
 
     @Binding var activeTab: ExpenseTab
     @Binding var showScanner: Bool
@@ -28,6 +29,7 @@ struct ExpenseDashboardView: View {
                 quickActionsRow
                 categoryBreakdownCard
                 if !budgetsForMonth.isEmpty { budgetProgressCard }
+                if !receiptService.receiptItems.isEmpty { priceHistoryCard }
                 recentReceiptsSection
                 let recurring = receiptService.recurringItems()
                 if !recurring.isEmpty { recurringSection(recurring) }
@@ -52,6 +54,15 @@ struct ExpenseDashboardView: View {
         .onChange(of: receiptService.currentMonthKey) { _, new in
             if selectedMonth.isEmpty { selectedMonth = new }
         }
+    }
+
+    // MARK: - Money display
+    //
+    // Every amount in the module goes through the app's one money
+    // authority, in the household's currency — never a bare number.
+
+    private func money(_ amount: Double, whole: Bool = false) -> String {
+        CurrencyService.money(amount, code: appSettings.preferredCurrency, whole: whole)
     }
 
     // MARK: - Lists stats card
@@ -115,7 +126,7 @@ struct ExpenseDashboardView: View {
             }
 
             VStack(spacing: 8) {
-                Text(Receipt.format(total))
+                Text(verbatim: money(total))
                     .font(AppFont.scaled(46, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
@@ -143,11 +154,30 @@ struct ExpenseDashboardView: View {
                 }
 
                 if count == 0 {
-                    Text(String(localized: "expense_no_receipts_month"))
-                        .font(AppFont.scaled(12))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 2)
+                    // Honest empty state + a real way out: straight into the
+                    // existing scanning flow, not a hint about a hidden "+".
+                    VStack(spacing: 10) {
+                        Text(String(localized: "expense_month_empty"))
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                        if isCurrent {
+                            Button {
+                                showScanner = true
+                                HapticFeedback.impact(.light)
+                            } label: {
+                                Label(String(localized: "expense_scan_receipt"),
+                                      systemImage: "camera.viewfinder")
+                                    .font(AppFont.scaled(13, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, AppSpacing.lg)
+                                    .padding(.vertical, 9)
+                                    .background(.white.opacity(0.2), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.top, 2)
                 }
             }
         }
@@ -227,7 +257,7 @@ struct ExpenseDashboardView: View {
                         AxisMarks(position: .leading) { val in
                             if let v = val.as(Double.self) {
                                 AxisValueLabel {
-                                    Text(Receipt.format(v))
+                                    Text(verbatim: money(v, whole: true))
                                         .font(AppFont.scaled(9))
                                 }
                             }
@@ -359,7 +389,7 @@ struct ExpenseDashboardView: View {
                                 .font(AppFont.scaled(13, weight: .medium))
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit))")
+                            Text(verbatim: "\(money(spent)) / \(money(budget.monthlyLimit))")
                                 .font(AppFont.label)
                                 .foregroundStyle(isOver ? .red : .secondary)
                         }
@@ -381,6 +411,45 @@ struct ExpenseDashboardView: View {
         }
     }
 
+    // MARK: - Price history entry
+    //
+    // Shown only when scanned receipt items exist — the page it opens is
+    // built entirely from them.
+
+    private var priceHistoryCard: some View {
+        NavigationLink {
+            PriceHistoryView()
+        } label: {
+            GlassCard(padding: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(AppFont.scaled(17, weight: .medium))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .mediaGlass(in: Circle())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(String(localized: "price_history_title"))
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        Text(String(localized: "price_history_subtitle"))
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Recent receipts
 
     @ViewBuilder
@@ -396,8 +465,8 @@ struct ExpenseDashboardView: View {
 
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
-                        let recentSlice = Array(recent.prefix(10).enumerated())
-                        let lastIdx = min(recent.count, 10) - 1
+                        let recentSlice = Array(recent.prefix(5).enumerated())
+                        let lastIdx = min(recent.count, 5) - 1
                         ForEach(recentSlice, id: \.element.id) { idx, receipt in
                             receiptRow(receipt, isLast: idx == lastIdx)
                                 .onTapGesture {
@@ -408,8 +477,10 @@ struct ExpenseDashboardView: View {
                     }
                 }
 
-                if recent.count > 10 {
-                    Button { showReports = true } label: {
+                if recent.count > 5 {
+                    NavigationLink {
+                        ReceiptListView()
+                    } label: {
                         Text(String(format: String(localized: "expense_see_all"), recent.count))
                             .font(AppFont.scaled(13, weight: .medium))
                             .foregroundStyle(Color.accentColor)
@@ -443,7 +514,7 @@ struct ExpenseDashboardView: View {
 
                 Spacer()
 
-                Text(receipt.formattedTotal)
+                Text(verbatim: money(receipt.total))
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .monospacedDigit()
@@ -482,7 +553,7 @@ struct ExpenseDashboardView: View {
                                         .font(AppFont.scaled(11)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Text("~\(Receipt.format(item.avgPrice))")
+                                Text(verbatim: "~\(money(item.avgPrice))")
                                     .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.accentColor)
                                     .monospacedDigit()

@@ -36,6 +36,7 @@ struct SuppliesView: View {
     @State private var showBudgets = false
     @State private var showReports = false
     @State private var searchText = ""
+    @State private var priceHistoryTarget: PriceHistoryTarget? = nil
 
     private var filteredLists: [SupplyList] {
         supplyService.lists.filter { $0.name.matchesSearch(searchText) }
@@ -112,6 +113,10 @@ struct SuppliesView: View {
         }
         .sheet(isPresented: $showReports) {
             SpendingReportView().environment(receiptService)
+        }
+        .sheet(item: $priceHistoryTarget) { target in
+            ProductPriceHistorySheet(productName: target.name)
+                .environment(receiptService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -346,7 +351,10 @@ struct SuppliesView: View {
                                             isLast: idx == pending.count - 1,
                                             onToggle: { Task { await supplyService.toggleComplete(item) } },
                                             onEdit: {},
-                                            onDelete: { Task { await supplyService.deleteItem(item) } }
+                                            onDelete: { Task { await supplyService.deleteItem(item) } },
+                                            onPriceHistory: receiptService.receiptItems.isEmpty
+                                                ? nil
+                                                : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
                                         )
                                     }
                                 }
@@ -388,7 +396,10 @@ struct SuppliesView: View {
                                             isLast: idx == done.count - 1,
                                             onToggle: { Task { await supplyService.toggleComplete(item) } },
                                             onEdit: {},
-                                            onDelete: { Task { await supplyService.deleteItem(item) } }
+                                            onDelete: { Task { await supplyService.deleteItem(item) } },
+                                            onPriceHistory: receiptService.receiptItems.isEmpty
+                                                ? nil
+                                                : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
                                         )
                                     }
                                 }
@@ -478,6 +489,9 @@ struct SupplyItemRow: View {
     let onToggle: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    /// Optional "price history" context action — offered only where the
+    /// caller can actually present the history (real receipt data).
+    var onPriceHistory: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -498,12 +512,12 @@ struct SupplyItemRow: View {
                             .font(AppFont.scaled(15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
-                            Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
-                                .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
+                            QuantityBadge(text: qty)
                         }
                     }
                     if let loc = item.location, !loc.isEmpty {
-                        Label(loc, systemImage: "mappin.circle").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        Label(SupplyLocation.displayName(for: loc), systemImage: "mappin")
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
                 Spacer()
@@ -517,6 +531,12 @@ struct SupplyItemRow: View {
                 Button { onToggle() } label: {
                     Label(LocalizedStringKey(item.isCompleted ? "Mark as incomplete" : "Mark as complete"),
                           systemImage: item.isCompleted ? "circle" : "checkmark.circle")
+                }
+                if let onPriceHistory {
+                    Button { onPriceHistory() } label: {
+                        Label(String(localized: "price_history_title"),
+                              systemImage: "chart.line.uptrend.xyaxis")
+                    }
                 }
                 Divider()
                 Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }

@@ -140,6 +140,90 @@ final class ReceiptService {
             .sorted { $0.0 < $1.0 }
     }
 
+    // MARK: - Price history (per product, lexicon-normalized)
+
+    /// Every real purchase of `productName` read off scanned receipts,
+    /// newest first. Matching goes through the product lexicon so
+    /// "Lapte Zuzu 1.5%" and "Milk" land on the same product; nothing is
+    /// interpolated — every entry is a line that exists on a stored receipt.
+    func priceEntries(matching productName: String) -> [ProductPriceEntry] {
+        let target = ReceiptProductLexicon.fold(
+            ReceiptProductLexicon.normalize(productName))
+        guard !target.isEmpty else { return [] }
+        let receiptsById = Dictionary(uniqueKeysWithValues: receipts.map { ($0.id, $0) })
+        return receiptItems.compactMap { item -> ProductPriceEntry? in
+            let itemKey = ReceiptProductLexicon.fold(
+                ReceiptProductLexicon.normalize(item.name))
+            guard itemKey == target
+                || ReceiptProductLexicon.match(item.name, against: productName)
+                    >= ReceiptProductLexicon.matchThreshold else { return nil }
+            guard let receipt = receiptsById[item.receiptId],
+                  let date = isoDate.date(from: receipt.date) else { return nil }
+            return ProductPriceEntry(
+                id: item.id,
+                date: date,
+                price: item.unitPrice > 0 ? item.unitPrice : item.totalPrice,
+                store: receipt.storeName,
+                receipt: receipt)
+        }
+        .sorted { $0.date > $1.date }
+    }
+
+    /// All scanned products grouped by their lexicon-normalized name,
+    /// each with its purchase entries (newest first). Ordered by purchase
+    /// count, then recency — the products the household actually tracks.
+    func productPriceGroups() -> [ProductPriceGroup] {
+        let receiptsById = Dictionary(uniqueKeysWithValues: receipts.map { ($0.id, $0) })
+        var groups: [String: (display: String, entries: [ProductPriceEntry])] = [:]
+        for item in receiptItems {
+            let display = ReceiptProductLexicon.normalize(item.name)
+            let key = ReceiptProductLexicon.fold(display)
+            guard !key.isEmpty,
+                  let receipt = receiptsById[item.receiptId],
+                  let date = isoDate.date(from: receipt.date) else { continue }
+            let entry = ProductPriceEntry(
+                id: item.id,
+                date: date,
+                price: item.unitPrice > 0 ? item.unitPrice : item.totalPrice,
+                store: receipt.storeName,
+                receipt: receipt)
+            groups[key, default: (display, [])].entries.append(entry)
+        }
+        return groups.map { key, value in
+            ProductPriceGroup(id: key,
+                              name: value.display,
+                              entries: value.entries.sorted { $0.date > $1.date })
+        }
+        .sorted {
+            if $0.entries.count != $1.entries.count {
+                return $0.entries.count > $1.entries.count
+            }
+            return ($0.entries.first?.date ?? .distantPast)
+                 > ($1.entries.first?.date ?? .distantPast)
+        }
+    }
+
+    /// The most frequently scanned product names (lexicon-normalized),
+    /// excluding anything that already matches a name in `excluding` —
+    /// real purchase history only, for "you buy this often" suggestions.
+    func frequentProducts(excluding excludedNames: [String], limit: Int = 6) -> [String] {
+        let groups = productPriceGroups()
+        guard !groups.isEmpty else { return [] }
+        let excludedKeys = Set(excludedNames.map {
+            ReceiptProductLexicon.fold(ReceiptProductLexicon.normalize($0))
+        })
+        return groups
+            .filter { group in
+                guard !excludedKeys.contains(group.id) else { return false }
+                return !excludedNames.contains {
+                    ReceiptProductLexicon.match(group.name, against: $0)
+                        >= ReceiptProductLexicon.matchThreshold
+                }
+            }
+            .prefix(limit)
+            .map(\.name)
+    }
+
     // MARK: - Load
 
     func load(propertyId: UUID) async {
@@ -244,4 +328,24 @@ final class ReceiptService {
                 .eq("id", value: budget.id.uuidString).execute()
         } catch { self.error = error.localizedDescription }
     }
+}
+
+// MARK: - Price history models
+
+/// One real purchase of a product, read off a stored receipt line.
+struct ProductPriceEntry: Identifiable {
+    let id: UUID
+    let date: Date
+    /// Unit price when the receipt states one; otherwise the line total.
+    let price: Double
+    let store: String
+    let receipt: Receipt
+}
+
+/// A product (lexicon-normalized name) with all its scanned purchases,
+/// newest first.
+struct ProductPriceGroup: Identifiable {
+    let id: String        // folded normalized name
+    let name: String
+    let entries: [ProductPriceEntry]
 }
