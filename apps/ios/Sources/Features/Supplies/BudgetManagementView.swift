@@ -17,6 +17,7 @@ struct BudgetManagementView: View {
     @State private var budgetInput: String = ""
     @State private var isSaving = false
     @State private var isCopying = false
+    @State private var saveError: String? = nil
     @FocusState private var amountFocused: Bool
 
     private var currentMonth: String { receiptService.currentMonthKey }
@@ -57,6 +58,13 @@ struct BudgetManagementView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Done")) { dismiss() }.fontWeight(.semibold)
                 }
+            }
+            .alert(String(localized: "budget_save_failed"),
+                   isPresented: Binding(get: { saveError != nil },
+                                        set: { if !$0 { saveError = nil } })) {
+                Button(String(localized: "OK"), role: .cancel) { saveError = nil }
+            } message: {
+                if let saveError { Text(saveError) }
             }
         }
         .presentationBackground(.thinMaterial)
@@ -280,7 +288,14 @@ struct BudgetManagementView: View {
         guard let propId = propertyService.primary?.id, let limit = parsedInput else { return }
         isSaving = true
         defer { isSaving = false }
-        await receiptService.upsertBudget(propertyId: propId, category: category, monthlyLimit: limit)
+        let ok = await receiptService.upsertBudget(propertyId: propId, category: category, monthlyLimit: limit)
+        guard ok else {
+            // The save didn't land — keep the editor open with the amount intact
+            // and surface why, rather than pretending it worked.
+            HapticFeedback.error()
+            saveError = receiptService.error ?? String(localized: "budget_save_failed")
+            return
+        }
         HapticFeedback.success()
         withAnimation(.snappy(duration: 0.25)) {
             expandedCategory = nil

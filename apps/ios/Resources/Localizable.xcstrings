@@ -75369,6 +75369,23 @@
           }
         }
       }
+    },
+    "budget_save_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save the budget"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugetul nu a putut fi salvat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

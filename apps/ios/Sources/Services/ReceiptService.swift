@@ -299,24 +299,51 @@ final class ReceiptService {
 
     // MARK: - Budgets
 
-    func upsertBudget(propertyId: UUID, category: String, monthlyLimit: Double) async {
+    @discardableResult
+    func upsertBudget(propertyId: UUID, category: String, monthlyLimit: Double) async -> Bool {
+        let month = currentMonthKey
         let now = ISODate.string(from: Date())
         let payload = BudgetUpsertPayload(
             propertyId: propertyId, category: category,
-            monthlyLimit: monthlyLimit, month: currentMonthKey,
+            monthlyLimit: monthlyLimit, month: month,
             createdAt: now, updatedAt: now
         )
         do {
-            let upserted: HouseholdBudget = try await supabase
+            // Write only — do NOT decode a `.select().single()` return. The
+            // read-back couples the write's success to a second round-trip and
+            // to decoding the row shape; a hiccup there used to look like the
+            // save silently failing. We upsert, then reflect the value locally
+            // and reconcile ids from a reload.
+            try await supabase
                 .from("household_budgets")
                 .upsert(payload, onConflict: "property_id,category,month")
-                .select().single().execute().value
-            if let i = budgets.firstIndex(where: { $0.id == upserted.id }) {
-                budgets[i] = upserted
+                .execute()
+            error = nil
+            if let i = budgets.firstIndex(where: {
+                $0.propertyId == propertyId && $0.category == category && $0.month == month
+            }) {
+                budgets[i].monthlyLimit = monthlyLimit
+                budgets[i].updatedAt = now
             } else {
-                budgets.insert(upserted, at: 0)
+                await loadBudgets(propertyId: propertyId)
             }
-        } catch { self.error = error.localizedDescription }
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Re-fetch just the budgets for a property (used after an insert to pick
+    /// up the server-assigned id without reloading receipts).
+    func loadBudgets(propertyId: UUID) async {
+        do {
+            budgets = try await PropertyRepo.fetch(
+                table: "household_budgets", propertyId: propertyId,
+                scope: .strict, order: "month", limit: 500)
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     func deleteBudget(_ budget: HouseholdBudget) async {
