@@ -15,6 +15,14 @@ extension DirectMessageView {
         return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
     }
 
+    /// What the peer is doing right now (nil = idle). Recording wins over
+    /// typing — the recorder replaces the keyboard, so both can't be true.
+    private var peerActivity: ChatActivityKind? {
+        if directMessageService.recordingNames.contains(where: matchesPeer) { return .recording }
+        if directMessageService.typingNames.contains(where: matchesPeer) { return .typing }
+        return nil
+    }
+
     /// Flash a message briefly after jumping to it from a reply.
     private func flashHighlight(_ id: UUID) {
         HapticFeedback.impact(.light)
@@ -298,6 +306,18 @@ extension DirectMessageView {
                                     }
                                 }
                             }
+                            // Live peer activity (typing / recording a voice
+                            // message) as an incoming-side bubble, WhatsApp
+                            // style — same broadcast the header subtitle uses.
+                            if let activity = peerActivity {
+                                HStack {
+                                    ChatActivityBubble(kind: activity)
+                                    Spacer(minLength: 72)
+                                }
+                                .padding(.top, 2)
+                                .transition(.scale(scale: 0.85, anchor: .bottomLeading)
+                                    .combined(with: .opacity))
+                            }
                             // Jump-button + at-bottom sentinel. On iOS 18+ the
                             // live scroll geometry (chatAtBottomTracking below)
                             // owns both signals — the sentinel's lazy-window
@@ -340,6 +360,17 @@ extension DirectMessageView {
                     .chatAtBottomTracking { atBottom in
                         isAtBottom = atBottom
                         setJumpToLatest(!atBottom)
+                    }
+                    .animation(.snappy(duration: 0.25), value: peerActivity)
+                    .onChange(of: peerActivity) { _, activity in
+                        // The bubble grows the content below the viewport — a
+                        // reader sitting at the bottom should see it appear,
+                        // never have to chase it. Up-thread readers are left
+                        // alone (same contract as message auto-follow).
+                        guard activity != nil, isAtBottom else { return }
+                        withAnimation(.snappy(duration: 0.25)) {
+                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                        }
                     }
                     .onAppear {
                         // The empty state replaces this ScrollView, so it mounts

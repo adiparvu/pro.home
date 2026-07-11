@@ -158,7 +158,8 @@ struct DirectMessageView: View {
     var disappearKey: String { member?.name ?? peerName }
     /// Name-keyed live signals (typing, presence) may carry either the roster
     /// snapshot or the (possibly untrimmed) profile name — match both.
-    private func matchesPeer(_ name: String) -> Bool {
+    /// Internal: the message list extension derives the activity bubble from it.
+    func matchesPeer(_ name: String) -> Bool {
         DirectMessage.nameMatches(name, peerName)
             || (member.map { DirectMessage.nameMatches(name, $0.name) } ?? false)
     }
@@ -283,7 +284,11 @@ struct DirectMessageView: View {
                                 // The only text under the name is the
                                 // transient typing signal — everything else
                                 // leaves the name vertically centered.
-                                if directMessageService.typingNames.contains(where: matchesPeer) {
+                                if directMessageService.recordingNames.contains(where: matchesPeer) {
+                                    Text("recording…")
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.accentColor)
+                                } else if directMessageService.typingNames.contains(where: matchesPeer) {
                                     Text("typing…")
                                         .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.accentColor)

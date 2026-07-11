@@ -54,6 +54,7 @@ extension DirectMessageView {
                 onTyping: { directMessageService.sendTyping() },
                 onSendText: { Task { await sendMessage() } },
                 onSendAudio: { url in Task { await sendAudio(url) } },
+                onRecordingActivity: { directMessageService.sendRecording() },
                 disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey)),
                 showsSubject: showSubjectField
             ),

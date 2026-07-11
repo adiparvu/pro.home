@@ -44,11 +44,29 @@ private struct DetailRow: View {
     }
 }
 
+/// Per-member receipts for a GROUP message — who has seen it and who only
+/// received it (IMG_8301). DMs pass nil: with one peer, the aggregate
+/// Read/Delivered rows already say everything.
+private struct PerMemberReceipts {
+    let readers: [MessageRead]
+    let deliverers: [MessageDelivery]
+    let members: [FamilyMember]
+
+    /// Members who received the message but have not read it yet.
+    var deliveredOnly: [MessageDelivery] {
+        let readerNames = Set(readers.map { $0.readerName })
+        return deliverers
+            .filter { !readerNames.contains($0.delivererName) }
+            .sorted { $0.deliveredAt > $1.deliveredAt }
+    }
+}
+
 private struct DetailsCard<Header: View>: View {
     let themeID: String
     let createdAt: String
     let readTime: String?
     var deliveredTime: String?
+    var perMember: PerMemberReceipts? = nil
     @ViewBuilder let header: () -> Header
     @Environment(\.dismiss) private var dismiss
 
@@ -72,16 +90,26 @@ private struct DetailsCard<Header: View>: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
 
-                VStack(spacing: 0) {
-                    DetailRow(read: true, label: "Read", dateTime: readTime)
-                    Divider().padding(.leading, 50)
-                    DetailRow(read: false, label: "Delivered", dateTime: deliveredTime)
-                }
-                .background(Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-                .padding(AppSpacing.lg)
+                // Scrolls: with per-member receipts a large household's list
+                // outgrows the sheet, and the summary rows must never clip.
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        VStack(spacing: 0) {
+                            DetailRow(read: true, label: "Read", dateTime: readTime)
+                            Divider().padding(.leading, 50)
+                            DetailRow(read: false, label: "Delivered", dateTime: deliveredTime)
+                        }
+                        .background(Color(.secondarySystemGroupedBackground),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                        .padding(AppSpacing.lg)
 
-                Spacer()
+                        if let perMember, !(perMember.readers.isEmpty && perMember.deliveredOnly.isEmpty) {
+                            seenBySection(perMember)
+                                .padding(.horizontal, AppSpacing.lg)
+                                .padding(.bottom, AppSpacing.lg)
+                        }
+                    }
+                }
             }
             .navigationTitle("Message details")
             .navigationBarTitleDisplayMode(.inline)
@@ -90,6 +118,65 @@ private struct DetailsCard<Header: View>: View {
             }
         }
         .presentationBackground(.thinMaterial)
+    }
+
+    // MARK: Per-member receipts (group messages)
+
+    private func seenBySection(_ receipts: PerMemberReceipts) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("message_seen_by")
+                .font(AppFont.captionStrong)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                .padding(.leading, AppSpacing.xs)
+            VStack(spacing: 0) {
+                ForEach(Array(receipts.readers.sorted { $0.readAt > $1.readAt }.enumerated()),
+                        id: \.element.id) { idx, read in
+                    if idx > 0 { Divider().padding(.leading, 62) }
+                    receiptRow(name: read.readerName,
+                               detail: String(format: String(localized: "Seen %@"), read.readTimeDisplay),
+                               read: true,
+                               member: receipts.members.first { $0.name == read.readerName })
+                }
+                if !receipts.deliveredOnly.isEmpty {
+                    if !receipts.readers.isEmpty { Divider().padding(.leading, 62) }
+                    ForEach(Array(receipts.deliveredOnly.enumerated()), id: \.element.id) { idx, d in
+                        if idx > 0 { Divider().padding(.leading, 62) }
+                        receiptRow(name: d.delivererName,
+                                   detail: String(localized: "Delivered"),
+                                   read: false,
+                                   member: receipts.members.first { $0.name == d.delivererName })
+                    }
+                }
+            }
+            .background(Color(.secondarySystemGroupedBackground),
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        }
+    }
+
+    private func receiptRow(name: String, detail: String, read: Bool,
+                            member: FamilyMember?) -> some View {
+        HStack(spacing: 12) {
+            let color = member?.swiftColor ?? .blue
+            ZStack {
+                Circle().fill(color.opacity(0.2))
+                Text(member?.initials ?? String(name.prefix(1)).uppercased())
+                    .font(AppFont.scaled(13, weight: .bold))
+                    .foregroundStyle(color)
+            }
+            .frame(width: 38, height: 38)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name.isEmpty ? String(localized: "Member") : name)
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            }
+            Spacer()
+            DeliveryCheck(read: read)
+        }
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -101,6 +188,8 @@ struct MessageDetailsView: View {
     /// Real per-member delivery receipts (same data the SeenBySheet uses). The
     /// Delivered row is derived from these — never fabricated from the send time.
     var deliverers: [MessageDelivery] = []
+    /// Roster snapshot for avatars/colors in the per-member "Seen by" list.
+    var members: [FamilyMember] = []
     @AppStorage("prvio.chatTheme") private var themeID = "appDefault"
 
     private var theme: ChatTheme { .theme(for: themeID) }
@@ -133,7 +222,9 @@ struct MessageDetailsView: View {
 
     var body: some View {
         DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
-                    deliveredTime: deliveredTime) {
+                    deliveredTime: deliveredTime,
+                    perMember: PerMemberReceipts(readers: readers, deliverers: deliverers,
+                                                 members: members)) {
             HStack {
                 Spacer(minLength: 50)
                 VStack(alignment: .trailing, spacing: 3) {

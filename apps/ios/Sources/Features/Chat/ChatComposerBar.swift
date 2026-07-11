@@ -31,6 +31,10 @@ struct ChatComposerConfig {
     /// Sends a finished voice clip. nil hides the mic — the surface has no
     /// voice messages.
     var onSendAudio: ((URL) -> Void)? = nil
+    /// Fired every few seconds while the voice recorder is live — wired to the
+    /// surface's realtime broadcast so peers see the mic activity bubble
+    /// (the recording counterpart of `onTyping`).
+    var onRecordingActivity: (() -> Void)? = nil
     /// Formatted disappearing-messages duration ("24 hr") when the surface
     /// has an active timer — shows the small timer chip above the field.
     var disappearingLabel: String? = nil
@@ -94,6 +98,9 @@ struct ChatComposerBar<Accessory: View>: View {
     /// surfaces only receive the finished clip via `onSendAudio`.
     @State private var audioRecorder = ChatAudioRecorder()
     @State private var lastTypingSent = Date.distantPast
+    /// Re-broadcasts the recording signal while the recorder is live (receivers
+    /// expire it 4s after the last event, so a 3s cadence keeps it steady).
+    @State private var recordingSignalTask: Task<Void, Never>?
     /// Focus for the subject line — return there hands focus to the message
     /// field (iMessage's behaviour), and the bar's keyboard geometry below
     /// must treat "subject focused" exactly like "message focused".
@@ -190,6 +197,21 @@ struct ChatComposerBar<Accessory: View>: View {
         .animation(.spring(duration: 0.3), value: edit?.snippet)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
         .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
+        .onChange(of: audioRecorder.isRecording) { _, recording in
+            recordingSignalTask?.cancel()
+            recordingSignalTask = nil
+            guard recording, let signal = config.onRecordingActivity else { return }
+            recordingSignalTask = Task {
+                while !Task.isCancelled {
+                    signal()
+                    try? await Task.sleep(for: .seconds(3))
+                }
+            }
+        }
+        .onDisappear {
+            recordingSignalTask?.cancel()
+            recordingSignalTask = nil
+        }
     }
 
     // MARK: Compose row (the iMessage bar)

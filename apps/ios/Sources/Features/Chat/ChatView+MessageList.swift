@@ -6,6 +6,19 @@ import Supabase
 // unchanged).
 
 extension ChatView {
+    /// What other members are doing right now (nil = idle). Recording wins
+    /// over typing; the label carries who, since a group bubble alone is
+    /// ambiguous with several senders.
+    private var groupActivity: (kind: ChatActivityKind, label: String?)? {
+        if !messageService.recordingNames.isEmpty {
+            return (.recording, messageService.recordingNames.sorted().joined(separator: ", "))
+        }
+        if !messageService.typingNames.isEmpty {
+            return (.typing, messageService.typingNames.sorted().joined(separator: ", "))
+        }
+        return nil
+    }
+
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
         let dA = a.date ?? Date()
         let dB = b.date ?? Date()
@@ -299,6 +312,18 @@ extension ChatView {
                             }
                         }
                     }
+                    // Live peer activity (typing / recording a voice message)
+                    // as an incoming-side bubble, WhatsApp style — labelled
+                    // with who, since a group bubble alone is ambiguous.
+                    if let activity = groupActivity {
+                        HStack {
+                            ChatActivityBubble(kind: activity.kind, label: activity.label)
+                            Spacer(minLength: 60)
+                        }
+                        .padding(.top, 6)
+                        .transition(.scale(scale: 0.85, anchor: .bottomLeading)
+                            .combined(with: .opacity))
+                    }
                     // Jump-button + at-bottom sentinel. The compose bar now
                     // rides in the safe-area inset (like the DM thread), so the
                     // scroll view gains the matching bottom inset automatically
@@ -349,6 +374,17 @@ extension ChatView {
                 if atBottom != isAtBottom { isAtBottom = atBottom }
                 if showJumpToLatest != !atBottom {
                     withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
+                }
+            }
+            .animation(.snappy(duration: 0.25), value: groupActivity?.kind)
+            .onChange(of: groupActivity?.kind) { _, kind in
+                // The bubble grows the content below the viewport — a reader
+                // sitting at the bottom should see it appear, never have to
+                // chase it. Up-thread readers are left alone (same contract
+                // as message auto-follow).
+                guard kind != nil, isAtBottom else { return }
+                withAnimation(.snappy(duration: 0.25)) {
+                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 }
             }
             .onChange(of: isAtBottom) { _, atBottom in

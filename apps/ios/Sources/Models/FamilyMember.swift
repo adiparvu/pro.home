@@ -96,6 +96,15 @@ struct FamilyMember: Identifiable, Codable, Hashable {
         return String(name.prefix(2)).uppercased()
     }
 
+    /// The family core — the roster roles that belong to the property-wide
+    /// family chat. Outsiders (tenants, guests, service providers, plain
+    /// contacts) keep to their own DMs and groups; the server's
+    /// has_family_access() gate mirrors this, so the group-info roster must
+    /// never show anyone the chat itself excludes.
+    var isFamilyCore: Bool {
+        ["owner", "partner", "member", "teen", "child"].contains(role)
+    }
+
     var swiftColor: Color { Color(hex: color) ?? .blue }
 
     var roleLabel: String {

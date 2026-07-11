@@ -155,7 +155,8 @@ struct MessageBubble: View {
             VideoPlayerSheet(url: item.url)
         }
         .sheet(isPresented: $showDetails) {
-            MessageDetailsView(message: message, readers: readers, deliverers: deliverers)
+            MessageDetailsView(message: message, readers: readers, deliverers: deliverers,
+                               members: members)
         }
     }
 

@@ -28,6 +28,7 @@ extension ChatView {
                     Task { await sendText() }
                 },
                 onSendAudio: { url in Task { await sendAudio(url: url) } },
+                onRecordingActivity: { messageService.sendRecording() },
                 disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl("group")),
                 showsSubject: showSubjectField
             ),

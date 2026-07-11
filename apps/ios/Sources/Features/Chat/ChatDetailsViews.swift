@@ -275,8 +275,13 @@ struct GroupDetailsView: View {
     var propertyId: UUID? = nil
     var exportText: String = ""
     @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
+    @State private var invitationService = InvitationService()
+    @State private var removeCandidate: FamilyMember?
+    @State private var removedIds: Set<UUID> = []
+    @State private var removeError: String?
     @State private var photoItem: PhotosPickerItem?
     @State private var description = ""
     @State private var showEditDescription = false
@@ -288,6 +293,19 @@ struct GroupDetailsView: View {
     /// timer they can no longer reach.
     @State private var disappearTTL: TimeInterval = 0
     @State private var showDisappearOffConfirm = false
+
+    /// Who is actually IN the family chat: the family core minus anyone just
+    /// removed. The raw roster also carries tenants/guests/contacts, which the
+    /// chat itself (server-side has_family_access) never admits — listing them
+    /// here as "members" was dishonest (IMG_8300).
+    private var chatMembers: [FamilyMember] {
+        members.filter { $0.isFamilyCore && !removedIds.contains($0.id) }
+    }
+
+    /// Roster admin is landlord-class, same gate as the Members hub.
+    private var canRemoveMembers: Bool {
+        propertyService.role?.canManageMembers ?? false
+    }
 
     var body: some View {
             ScrollView(showsIndicators: false) {
@@ -302,9 +320,9 @@ struct GroupDetailsView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg)
 
-                    InfoSection(title: "\(members.count + 1) members") {
+                    InfoSection(title: "\(chatMembers.count + 1) members") {
                         memberRow(name: String(localized: "You"), member: nil, admin: true)
-                        ForEach(members) { m in
+                        ForEach(chatMembers) { m in
                             Divider().padding(.leading, 64)
                             memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
                         }
@@ -339,7 +357,7 @@ struct GroupDetailsView: View {
                     InfoSection(title: "Settings") {
                         NavigationLink {
                             GroupPermissionsView(
-                                adminNames: ["You"] + members.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
+                                adminNames: ["You"] + chatMembers.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
                             )
                         } label: {
                             InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions", adminBadge: true)
@@ -426,7 +444,7 @@ struct GroupDetailsView: View {
             }
             .sheet(isPresented: $showEditDetails) {
                 EditGroupDetailsSheet(currentName: groupName, photoUrl: photoUrl,
-                                      members: members, propertyId: propertyId)
+                                      members: chatMembers, propertyId: propertyId)
                     .environment(propertyService)
             }
             .onAppear {
@@ -441,6 +459,28 @@ struct GroupDetailsView: View {
                 }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted("group", m) }
+            .confirmationDialog(
+                Text(String(format: String(localized: "group_remove_member_confirm"),
+                            removeCandidate?.name ?? "")),
+                isPresented: Binding(get: { removeCandidate != nil },
+                                     set: { if !$0 { removeCandidate = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("group_remove_member", role: .destructive) {
+                    if let m = removeCandidate { Task { await remove(m) } }
+                    removeCandidate = nil
+                }
+                Button("Cancel", role: .cancel) { removeCandidate = nil }
+            } message: {
+                Text("group_remove_member_note")
+            }
+            .alert("Couldn't remove member.",
+                   isPresented: Binding(get: { removeError != nil },
+                                        set: { if !$0 { removeError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(removeError ?? "")
+            }
             .confirmationDialog("Turn off disappearing messages?",
                                 isPresented: $showDisappearOffConfirm, titleVisibility: .visible) {
                 Button("Turn off", role: .destructive) {
@@ -477,17 +517,33 @@ struct GroupDetailsView: View {
             }
     }
 
+    /// Removal here mirrors the Members hub exactly (same service call):
+    /// the roster row goes away server-side, so the member drops out of the
+    /// family chat, their access included. The optimistic `removedIds` keeps
+    /// the pushed page honest while the roster reload propagates.
+    private func remove(_ m: FamilyMember) async {
+        do {
+            try await invitationService.removeMember(familyMemberId: m.id)
+            removedIds.insert(m.id)
+            await familyService.load()
+            HapticFeedback.success()
+        } catch {
+            removeError = error.localizedDescription
+            HapticFeedback.warning()
+        }
+    }
+
     // MARK: - Hero (group photo, name, member count, description)
 
     private var hero: some View {
         VStack(spacing: 10) {
             VStack(spacing: 10) {
-                GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                GroupChatAvatarLarge(members: chatMembers, photoUrl: photoUrl)
                     .frame(width: 96, height: 96)
                 Text(groupName)
                     .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
-                Text("Group · \(members.count + 1) members")
+                Text("Group · \(chatMembers.count + 1) members")
                     .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
@@ -514,6 +570,23 @@ struct GroupDetailsView: View {
 
     @ViewBuilder
     private func memberRow(name: String, member: FamilyMember?, admin: Bool) -> some View {
+        // Landlord-class users manage the roster right here (WhatsApp's
+        // long-press): removable = a real roster row that isn't an admin.
+        if let m = member, canRemoveMembers, !admin {
+            memberRowContent(name: name, member: member, admin: admin)
+                .contentShape(Rectangle())
+                .contextMenu {
+                    Button(role: .destructive) { removeCandidate = m } label: {
+                        Label("group_remove_member", systemImage: "person.badge.minus")
+                    }
+                }
+        } else {
+            memberRowContent(name: name, member: member, admin: admin)
+        }
+    }
+
+    @ViewBuilder
+    private func memberRowContent(name: String, member: FamilyMember?, admin: Bool) -> some View {
         HStack(spacing: 12) {
             if let m = member {
                 MemberPhotoAvatar(color: m.swiftColor,

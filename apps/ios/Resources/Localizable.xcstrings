@@ -11113,6 +11113,23 @@
         }
       }
     },
+    "Couldn't remove member.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't remove member."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu am putut elimina membrul."
+          }
+        }
+      }
+    },
     "Couldn't save changes.": {
       "localizations": {
         "de": {
@@ -46233,6 +46250,40 @@
         }
       }
     },
+    "chat_activity_recording_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording a voice message…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Înregistrează un mesaj vocal…"
+          }
+        }
+      }
+    },
+    "chat_activity_typing_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typing…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrie…"
+          }
+        }
+      }
+    },
     "chat_file_fallback_name": {
       "localizations": {
         "en": {
@@ -55406,6 +55457,57 @@
         }
       }
     },
+    "group_remove_member": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from group"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină din grup"
+          }
+        }
+      }
+    },
+    "group_remove_member_confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@ from the group?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimini pe %@ din grup?"
+          }
+        }
+      }
+    },
+    "group_remove_member_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They lose access to this home, its chat and shared data."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Va pierde accesul la această locuință, la chat și la datele partajate."
+          }
+        }
+      }
+    },
     "guest_call_host": {
       "localizations": {
         "de": {
@@ -59538,6 +59640,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "amintiri"
+          }
+        }
+      }
+    },
+    "message_seen_by": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seen by"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Văzut de"
           }
         }
       }
@@ -66827,6 +66946,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Total"
+          }
+        }
+      }
+    },
+    "recording…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recording…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "înregistrează…"
           }
         }
       }

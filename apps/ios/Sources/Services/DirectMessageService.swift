@@ -174,6 +174,9 @@ final class DirectMessageService {
 
     // MARK: - Typing indicator
     var typingNames: Set<String> = []
+    /// Subset of `typingNames` whose latest signal was "recording" — drives
+    /// the mic variant of the in-thread activity bubble (WhatsApp-style).
+    var recordingNames: Set<String> = []
     var myName: String = ""
     /// The signed-in user's auth id — the stable half of "is this mine".
     /// Set on load; nil only before the first load (name fallback covers it).
@@ -196,7 +199,14 @@ final class DirectMessageService {
         }
     }
 
-    func sendTyping() {
+    func sendTyping() { sendActivity(kind: "typing") }
+
+    /// Periodic signal while the voice recorder is live — same broadcast as
+    /// typing with `kind: "recording"`, so old clients (which ignore the extra
+    /// field) still show their plain typing indicator.
+    func sendRecording() { sendActivity(kind: "recording") }
+
+    private func sendActivity(kind: String) {
         guard let ch = channel, !myName.isEmpty else { return }
         // Called on every keystroke — throttle to one broadcast per 2.5s
         // (receivers keep the indicator alive 4s per event, so it stays smooth).
@@ -206,16 +216,22 @@ final class DirectMessageService {
         // Capture the name by value: Task's implicit self capture would
         // otherwise retain the service for the broadcast's lifetime.
         let name = myName
-        Task { await ch.broadcast(event: "typing", message: ["name": .string(name)]) }
+        Task { await ch.broadcast(event: "typing",
+                                  message: ["name": .string(name), "kind": .string(kind)]) }
     }
 
-    private func handleTyping(_ name: String) {
+    private func handleTyping(_ name: String, kind: String) {
         guard !name.isEmpty, name != myName else { return }
         typingNames.insert(name)
+        // The latest signal wins: a peer who stops recording and starts
+        // typing flips back to the dots without waiting out the expiry.
+        if kind == "recording" { recordingNames.insert(name) }
+        else { recordingNames.remove(name) }
         typingTasks[name]?.cancel()
         typingTasks[name] = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 4_000_000_000)
             self?.typingNames.remove(name)
+            self?.recordingNames.remove(name)
         }
     }
 
@@ -638,7 +654,9 @@ final class DirectMessageService {
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
-                Task { @MainActor [weak self] in self?.handleTyping(name) }
+                // Older clients broadcast no kind — treat them as typing.
+                let kind: String = if case let .string(k)? = json["kind"] { k } else { "typing" }
+                Task { @MainActor [weak self] in self?.handleTyping(name, kind: kind) }
             }
         }
         try? await ch.subscribeWithError()
@@ -678,6 +696,7 @@ final class DirectMessageService {
         typingTasks.values.forEach { $0.cancel() }
         typingTasks.removeAll()
         typingNames.removeAll()
+        recordingNames.removeAll()
         reloadTask?.cancel()
         reloadTask = nil
         headsTask?.cancel()
