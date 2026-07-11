@@ -61,7 +61,7 @@ struct ChatActivityBubble: View {
         }
     }
 
-    private func dots(_ style: (Int) -> (scale: CGFloat, opacity: Double)) -> some View {
+    private func dots(_ style: @escaping (Int) -> (scale: CGFloat, opacity: Double)) -> some View {
         HStack(spacing: 4) {
             ForEach(0..<3) { i in
                 let s = style(i)

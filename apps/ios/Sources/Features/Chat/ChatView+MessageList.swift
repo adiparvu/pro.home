@@ -185,6 +185,28 @@ extension ChatView {
             let messagesById = Dictionary(messageService.messages.map { ($0.id, $0) },
                                           uniquingKeysWith: { a, _ in a })
             ScrollView(showsIndicators: false) {
+                // The family chat used to render a silent black void both
+                // while the first load was still in flight (slow network) and
+                // when the conversation was genuinely empty/cleared — no
+                // spinner, no words. Honest states for both (the DM thread
+                // already had them).
+                if msgs.isEmpty, !showSearch || searchText.isEmpty {
+                    if messageService.isLoading && messageService.messages.isEmpty {
+                        VStack(spacing: AppSpacing.md) {
+                            ProgressView()
+                            Text("Loading conversation…")
+                                .font(AppFont.scaled(13))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 120)
+                    } else {
+                        EmptyStateView(icon: "bubble.left.and.bubble.right",
+                                       title: "chat_empty_title",
+                                       message: "chat_empty_subtitle")
+                            .padding(.top, 80)
+                    }
+                }
                 LazyVStack(spacing: 2) {
                     if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
                         Button {

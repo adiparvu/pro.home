@@ -22100,6 +22100,23 @@
         }
       }
     },
+    "Loading conversation…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading conversation…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se încarcă conversația…"
+          }
+        }
+      }
+    },
     "Loading map...": {
       "localizations": {
         "en": {
@@ -46280,6 +46297,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scrie…"
+          }
+        }
+      }
+    },
+    "chat_empty_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say hello — messages here reach the whole household."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spune salut — mesajele de aici ajung la toată casa."
+          }
+        }
+      }
+    },
+    "chat_empty_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No messages yet"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niciun mesaj încă"
           }
         }
       }
