@@ -18,6 +18,39 @@ enum ChatNotificationTarget {
     }
 }
 
+/// The conversation currently on screen, so a foreground push for the chat you
+/// are already reading is suppressed (WhatsApp behavior) — the message is
+/// inserted live instead. Set by the chat views on appear/disappear; read by
+/// `willPresent`. Keys are normalized (lowercased uuids): "group",
+/// "dm:<peer_user_id>", "grp:<community_group_id>".
+@MainActor
+enum ActiveChat {
+    private static var _current: String?
+    static var current: String? { _current }
+    static func set(_ key: String) { _current = key }
+    /// Clear only if still ours — a push/pop can fire the old view's
+    /// onDisappear AFTER the new view's onAppear, which would otherwise wipe
+    /// the conversation just opened.
+    static func clear(ifCurrent key: String) { if _current == key { _current = nil } }
+
+    static func dmKey(_ peerUserId: UUID) -> String { "dm:\(peerUserId.uuidString.lowercased())" }
+    static func groupKey(_ groupId: UUID?) -> String {
+        groupId.map { "grp:\($0.uuidString.lowercased())" } ?? "group"
+    }
+
+    /// The normalized key a chat push refers to (nil = not a chat push).
+    nonisolated static func key(forPayload chat: [String: Any]) -> String {
+        let kind = chat["kind"] as? String
+        if kind == "dm", let peer = chat["peer_user_id"] as? String {
+            return "dm:\(peer.lowercased())"
+        }
+        if kind == "community", let gid = chat["group_id"] as? String {
+            return "grp:\(gid.lowercased())"
+        }
+        return "group"
+    }
+}
+
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationDelegate()
     private override init() {}
@@ -164,6 +197,14 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .badge, .sound]
+        // WhatsApp behavior: never banner a message for the conversation you're
+        // already reading — it's inserted live instead. Only chat pushes carry
+        // a `chat` dict; everything else always presents.
+        let info = notification.request.content.userInfo
+        if let chat = info["chat"] as? [String: Any] {
+            let key = ActiveChat.key(forPayload: chat)
+            if await ActiveChat.current == key { return [] }
+        }
+        return [.banner, .badge, .sound]
     }
 }

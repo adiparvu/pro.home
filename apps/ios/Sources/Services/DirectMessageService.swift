@@ -187,6 +187,9 @@ final class DirectMessageService {
     /// Set on load; nil only before the first load (name fallback covers it).
     var myUserId: UUID?
     @ObservationIgnored private var typingSub: RealtimeSubscription?
+    /// RLS-free "a new DM landed" broadcast — the reliable delivery path when
+    /// postgres_changes is withheld by the SELECT policy (see send()).
+    @ObservationIgnored private var newMsgSub: RealtimeSubscription?
     @ObservationIgnored private var typingTasks: [String: Task<Void, Never>] = [:]
 
     @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
@@ -299,6 +302,17 @@ final class DirectMessageService {
             if let i = dms.firstIndex(where: { $0.id == sent.id }) { dms[i] = sent }
             else { dms.append(sent) }
             scheduleHeadsRefresh()
+            // Reliable delivery ping. postgres_changes INSERTs can be withheld
+            // from the recipient by Realtime's per-subscriber RLS evaluation of
+            // the direct_messages SELECT policy (its is_my_family_member()
+            // clause), so the peer's client never sees the new row until it
+            // reloads. A broadcast is RLS-free — the same path the typing
+            // signal already uses — so it guarantees the peer learns of the new
+            // message and fetches it immediately (WhatsApp-grade live delivery).
+            if let ch = channel {
+                let from = senderId?.uuidString ?? ""
+                Task { await ch.broadcast(event: "dm_new", message: ["from": .string(from)]) }
+            }
             return sent
         } catch {
             dms.removeAll { $0.id == clientId }
@@ -665,6 +679,17 @@ final class DirectMessageService {
                 Task { @MainActor [weak self] in self?.handleTyping(name, kind: kind) }
             }
         }
+        // Reliable delivery: a peer's send broadcasts "dm_new"; fetch the newer
+        // rows so the message appears live even when postgres_changes was
+        // withheld by RLS. Skip my own echo — I already have the row.
+        newMsgSub = ch.onBroadcast(event: "dm_new") { [weak self] json in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if case let .string(from)? = json["from"],
+                   from == supabase.auth.currentSession?.user.id?.uuidString { return }
+                self.scheduleReload(propertyId: propertyId, myName: myName)
+            }
+        }
         try? await ch.subscribeWithError()
         channel = ch
         subscribedPropertyId = propertyId
@@ -699,6 +724,7 @@ final class DirectMessageService {
     func unsubscribe() async {
         postgresSubs.removeAll()
         typingSub = nil
+        newMsgSub = nil
         typingTasks.values.forEach { $0.cancel() }
         typingTasks.removeAll()
         typingNames.removeAll()

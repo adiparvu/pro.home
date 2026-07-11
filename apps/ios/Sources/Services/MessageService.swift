@@ -42,6 +42,9 @@ final class MessageService {
     var recordingNames: Set<String> = []
     var myName: String = ""
     private var typingSub: RealtimeSubscription?
+    /// RLS-free "a new message landed" broadcast — the reliable delivery path
+    /// when postgres_changes is withheld by RLS (see subscribeRealtime/send).
+    private var newMsgSub: RealtimeSubscription?
     private var typingTasks: [String: Task<Void, Never>] = [:]
     /// Coalesces bursts of realtime events so a flurry of changes triggers a
     /// single reload per quiet window instead of one reload per event (C2). Same
@@ -220,21 +223,7 @@ final class MessageService {
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                let added = await self.loadNewer(propertyId: propertyId)
-                guard added > 0 else { return }
-                // Count only messages from others as unread — not my own echoes, and
-                // not a forced +1 when loadNewer found nothing new (the old drift bug).
-                let myId = supabase.auth.currentSession?.user.id
-                let fromOthers = self.messages.suffix(added).filter { $0.senderId != myId }.count
-                self.unreadCount += fromOthers
-                // The per-conversation alert tone is a real setting, not
-                // decoration: play it for messages from others while the
-                // app is in the foreground. Group threads key by group id —
-                // the same key their disappearing-message TTL already uses.
-                if fromOthers > 0 {
-                    ChatToneStore.playIncoming(self.currentGroupId?.uuidString ?? "group")
-                }
+                await self?.onNewMessagesSignal(propertyId: propertyId)
             }
         })
         // UPDATE: reconcile the changed row in place by id so edits, pin/mark,
@@ -277,9 +266,37 @@ final class MessageService {
                 Task { @MainActor [weak self] in self?.handleTyping(name, kind: kind) }
             }
         }
+        // Reliable delivery: a sender broadcasts "msg_new"; fetch newer rows so
+        // the message appears live even when postgres_changes was withheld by
+        // RLS. Skip my own echo. loadNewer's cursor dedupes against the
+        // postgres_changes path, so a message that arrives via BOTH is added once.
+        newMsgSub = channel.onBroadcast(event: "msg_new") { [weak self] json in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if case let .string(from)? = json["from"],
+                   from == supabase.auth.currentSession?.user.id?.uuidString { return }
+                await self.onNewMessagesSignal(propertyId: propertyId)
+            }
+        }
         try? await channel.subscribeWithError()
         realtimeChannel = channel
         subscribedPropertyId = propertyId
+    }
+
+    /// Fetch messages newer than the sync cursor and fold them in: count the
+    /// ones from others as unread and play the incoming tone. Shared by the
+    /// postgres_changes INSERT handler and the "msg_new" broadcast, both of
+    /// which may fire for the same message — loadNewer's cursor makes the
+    /// second a no-op, so nothing double-counts.
+    private func onNewMessagesSignal(propertyId: UUID) async {
+        let added = await loadNewer(propertyId: propertyId)
+        guard added > 0 else { return }
+        let myId = supabase.auth.currentSession?.user.id
+        let fromOthers = messages.suffix(added).filter { $0.senderId != myId }.count
+        unreadCount += fromOthers
+        if fromOthers > 0 {
+            ChatToneStore.playIncoming(currentGroupId?.uuidString ?? "group")
+        }
     }
 
     func unsubscribe() async {
@@ -444,6 +461,13 @@ final class MessageService {
             // Advance the sync cursor to the server-stamped time of what we just
             // inserted, so loadNewer never rides an optimistic client stamp.
             lastSyncedCreatedAt = sent.createdAt
+            // Reliable delivery ping (see subscribeRealtime): RLS-free broadcast
+            // so every member's client fetches the new message even if
+            // postgres_changes was withheld.
+            if let ch = realtimeChannel {
+                let from = supabase.auth.currentSession?.user.id?.uuidString ?? ""
+                Task { await ch.broadcast(event: "msg_new", message: ["from": .string(from)]) }
+            }
         } catch {
             messages.removeAll { $0.id == optimistic.id }
             throw error
@@ -859,6 +883,7 @@ final class MessageService {
         typingNames.removeAll()
         recordingNames.removeAll()
         typingSub = nil
+        newMsgSub = nil
         await unsubscribe()
         await unsubscribeReads()
         await unsubscribeDeliveries()

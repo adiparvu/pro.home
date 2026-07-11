@@ -469,6 +469,9 @@ struct DirectMessageView: View {
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
         }
         .onAppear {
+            // Mark this DM as the active chat so a foreground push for it is
+            // suppressed (the message arrives live instead) — WhatsApp behavior.
+            if let peer = thread.peerUserId { ActiveChat.set(ActiveChat.dmKey(peer)) }
             themeRefresh &+= 1
             newestMessageId = conversationMessages.last?.id
             if !conversationMessages.isEmpty { startLoadGraceIfNeeded() }
@@ -492,6 +495,7 @@ struct DirectMessageView: View {
             if subject.isEmpty, let s = UserDefaults.standard.string(forKey: subjectDraftKey), !s.isEmpty { subject = s }
         }
         .onDisappear {
+            if let peer = thread.peerUserId { ActiveChat.clear(ifCurrent: ActiveChat.dmKey(peer)) }
             chatLoadGraceTask?.cancel()
             chatLoadGraceTask = nil
             jumpToggleTask?.cancel()

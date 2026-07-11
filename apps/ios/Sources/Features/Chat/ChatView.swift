@@ -397,12 +397,16 @@ struct ChatView: View {
             if online { Task { await flushOutbox() } }
         }
         .onAppear {
+            // Active chat → suppress a foreground push for this exact group (the
+            // household chat, or a community sub-group) — WhatsApp behavior.
+            ActiveChat.set(ActiveChat.groupKey(groupId))
             themeRefresh &+= 1
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
             if subject.isEmpty, let s = UserDefaults.standard.string(forKey: subjectDraftKey), !s.isEmpty { subject = s }
         }
         .onDisappear {
+            ActiveChat.clear(ifCurrent: ActiveChat.groupKey(groupId))
             chatLoadGraceTask?.cancel()
             chatLoadGraceTask = nil
             // Persist the unsent composer draft once, on the way out.
