@@ -150,7 +150,23 @@ struct Delivery: Identifiable, Codable, Hashable {
         ("returned",         String(localized: "Returned")),
     ]}
 
-    static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Altul"]
+    static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Poșta Română","Altul"]
+
+    /// Best-effort carrier from a tracking number's format — but only when the
+    /// format is DISTINCTIVE enough to be sure. Ambiguous all-numeric codes
+    /// (most Romanian couriers) return nil rather than a wrong guess, so the
+    /// prefill never misleads.
+    static func detectCarrier(from raw: String) -> String? {
+        let t = raw.uppercased().filter { !$0.isWhitespace }
+        guard t.count >= 8 else { return nil }
+        // UPS: "1Z" + 16 alphanumerics.
+        if t.range(of: "^1Z[0-9A-Z]{16}$", options: .regularExpression) != nil { return "UPS" }
+        // DHL express / eCommerce prefixes.
+        if t.hasPrefix("JJD") || t.hasPrefix("JD") || t.hasPrefix("GM") { return "DHL" }
+        // Universal Postal Union S10 ending in RO → Poșta Română.
+        if t.range(of: "^[A-Z]{2}[0-9]{9}RO$", options: .regularExpression) != nil { return "Poșta Română" }
+        return nil
+    }
 }
 
 /// One normalized event in a parcel's tracking history. Shape matches the JSON

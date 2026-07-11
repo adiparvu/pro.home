@@ -16,6 +16,10 @@ struct DeliveryFormSheet: View {
     @State private var expectedDate: Date
     @State private var notes: String
     @State private var isSaving = false
+    /// Once the user picks a carrier chip themselves, auto-detection stops
+    /// overriding it. Editing an existing delivery that already has a carrier
+    /// starts "touched" so its choice is never silently replaced.
+    @State private var carrierTouched: Bool
 
     private var isEditing: Bool { editingDelivery != nil }
 
@@ -29,6 +33,7 @@ struct DeliveryFormSheet: View {
         if let d = editingDelivery {
             _description    = State(initialValue: d.description)
             _carrier        = State(initialValue: d.carrier ?? Delivery.carrierOptions.first ?? "DHL")
+            _carrierTouched = State(initialValue: d.carrier != nil)
             _trackingNumber = State(initialValue: d.trackingNumber ?? "")
             _status         = State(initialValue: d.status)
             _notes          = State(initialValue: d.notes ?? "")
@@ -44,6 +49,7 @@ struct DeliveryFormSheet: View {
         } else {
             _description    = State(initialValue: "")
             _carrier        = State(initialValue: Delivery.carrierOptions.first ?? "DHL")
+            _carrierTouched = State(initialValue: false)
             _trackingNumber = State(initialValue: "")
             _status         = State(initialValue: "expected")
             _hasExpectedDate = State(initialValue: false)
@@ -103,7 +109,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("TRACKING CODE")
             TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
-                .font(AppFont.scaled(15))
+                .font(AppFont.scaled(15, design: .monospaced))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()
@@ -113,6 +119,20 @@ struct DeliveryFormSheet: View {
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
+                // Recognize the courier from the code's format and pre-select it,
+                // until the user picks one themselves.
+                .onChange(of: trackingNumber) { _, new in
+                    guard !carrierTouched, let detected = Delivery.detectCarrier(from: new),
+                          detected != carrier else { return }
+                    withAnimation(.snappy) { carrier = detected }
+                }
+            if !carrierTouched, let detected = Delivery.detectCarrier(from: trackingNumber) {
+                Label(String(format: String(localized: "deliv_carrier_detected"), detected),
+                      systemImage: "wand.and.stars")
+                    .font(AppFont.scaled(11))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.leading, AppSpacing.xxs)
+            }
         }
     }
 
@@ -142,6 +162,7 @@ struct DeliveryFormSheet: View {
                     ForEach(Delivery.carrierOptions, id: \.self) { c in
                         Button {
                             carrier = c
+                            carrierTouched = true
                             HapticFeedback.selection()
                         } label: {
                             Text(c)

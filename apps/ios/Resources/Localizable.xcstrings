@@ -75998,6 +75998,23 @@
           }
         }
       }
+    },
+    "deliv_carrier_detected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectat: %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
