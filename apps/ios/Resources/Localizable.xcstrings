@@ -71310,6 +71310,57 @@
         }
       }
     },
+    "task_progress_completed_pct": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "completed"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "completat"
+          }
+        }
+      }
+    },
+    "task_progress_count_format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d din %2$d"
+          }
+        }
+      }
+    },
+    "task_progress_finalized_sub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "done"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "finalizate"
+          }
+        }
+      }
+    },
     "task_progress_today %lld %lld": {
       "localizations": {
         "en": {
@@ -71322,6 +71373,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld din %2$lld azi"
+          }
+        }
+      }
+    },
+    "task_progress_today_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Astăzi"
           }
         }
       }

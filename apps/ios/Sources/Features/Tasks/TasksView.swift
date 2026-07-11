@@ -243,9 +243,7 @@ struct TasksView: View {
 
         return LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
             Section {
-                header
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
+                header   // PageHeader carries its own horizontal + top padding
                 // The progress line is the page's filter system, so it stays
                 // whenever there is (or was) work to filter — but on a fully
                 // quiet day with no filter engaged it is pure noise and hides.
@@ -346,17 +344,16 @@ struct TasksView: View {
 
     // MARK: - Header
 
+    // The one sanctioned page header (Components/PageHeader): 34pt rounded
+    // title with a short uppercase eyebrow and the actions trailing — the same
+    // principle every other hub uses (Property Map, etc.). This page used a
+    // one-off smaller title + long sentence + heavy 44pt shadowed buttons
+    // (IMG_8310); it now matches.
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("task_screen_title")
-                    .font(AppFont.title)
-                    .foregroundStyle(.primary)
-                Text("task_subtitle")
-                    .font(AppFont.footnote)
-                    .foregroundStyle(Color.secondaryTextColor)
-            }
-            Spacer()
+        PageHeader(title: String(localized: "task_screen_title"),
+                   subtitle: propertyService.primary?.name) {
+            EmptyView()
+        } trailing: {
             HStack(spacing: 10) {
                 headerButton("plus", label: "task_new") { showAdd = true }
                 Menu {
@@ -378,7 +375,6 @@ struct TasksView: View {
 
                 headerButton("calendar", label: "Calendar") { showCalendar = true }
             }
-            .padding(.top, 6)
         }
     }
 
@@ -393,13 +389,14 @@ struct TasksView: View {
         .accessibilityLabel(label)
     }
 
+    // A lighter glass circle than before — 38pt, no heavy drop shadow — so the
+    // actions read as a set of native toolbar controls, not floating pucks.
     private func headerButtonLabel(_ icon: String) -> some View {
         Image(systemName: icon)
-            .font(AppFont.scaled(17, weight: .semibold))
+            .font(AppFont.scaled(16, weight: .semibold))
             .foregroundStyle(Color.primary.opacity(0.8))
-            .frame(width: 44, height: 44)
+            .frame(width: 38, height: 38)
             .glassCircle()
-            .shadow(color: Color.primary.opacity(0.05), radius: 8, y: 3)
     }
 
 
