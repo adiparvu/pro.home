@@ -180,7 +180,8 @@ struct MainTabView: View {
                 // reconciles into the PRVIO calendar on foreground, without the
                 // user having to open the in-app calendar first.
                 if HouseCalendarMirror.isEnabled {
-                    Task { await HouseCalendarMirror.sync(houseAgendaSnapshot()) }
+                    let snapshot = houseAgendaSnapshot()
+                    Task { await HouseCalendarMirror.sync(snapshot) }
                 }
             }
             else if phase == .background {

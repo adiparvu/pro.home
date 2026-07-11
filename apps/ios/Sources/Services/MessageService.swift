@@ -274,7 +274,7 @@ final class MessageService {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if case let .string(from)? = json["from"],
-                   from == supabase.auth.currentSession?.user.id?.uuidString { return }
+                   from == supabase.auth.currentSession?.user.id.uuidString { return }
                 await self.onNewMessagesSignal(propertyId: propertyId)
             }
         }
@@ -465,7 +465,7 @@ final class MessageService {
             // so every member's client fetches the new message even if
             // postgres_changes was withheld.
             if let ch = realtimeChannel {
-                let from = supabase.auth.currentSession?.user.id?.uuidString ?? ""
+                let from = supabase.auth.currentSession?.user.id.uuidString ?? ""
                 Task { await ch.broadcast(event: "msg_new", message: ["from": .string(from)]) }
             }
         } catch {

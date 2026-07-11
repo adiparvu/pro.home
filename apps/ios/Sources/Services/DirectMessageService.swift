@@ -686,7 +686,7 @@ final class DirectMessageService {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if case let .string(from)? = json["from"],
-                   from == supabase.auth.currentSession?.user.id?.uuidString { return }
+                   from == supabase.auth.currentSession?.user.id.uuidString { return }
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
         }
