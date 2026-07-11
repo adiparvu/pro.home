@@ -189,28 +189,32 @@ struct DirectMessageView: View {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
-    /// "online" / "last seen {relative}" under the partner's name, shown only
-    /// when they're sharing presence. Looked up by the peer's AUTH USER ID —
-    /// display names drift and carry stray whitespace ("Adi " in production),
-    /// so a name-keyed lookup silently missed. The ticker re-evaluates the
-    /// status every 30s so the relative time never freezes and a stopped
-    /// heartbeat decays from "online" without needing a new event.
-    @ViewBuilder private var presenceSubtitle: some View {
-        PresenceTicker { now in
-            switch presenceService.status(userId: thread.peerUserId,
-                                          name: member?.name ?? peerName, at: now) {
-            case .online:
-                Text("online")
-                    .font(AppFont.scaled(11))
-                    .foregroundStyle(Color.brandSuccess)
-            case .lastSeen(let date):
-                Text("last seen \(date, format: .relative(presentation: .named))")
-                    .font(AppFont.scaled(11))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            case .hidden:
-                EmptyView()
+    /// Live presence only: a green dot on the avatar while the partner is
+    /// online (and sharing presence). A stale "last seen 10 hours ago" line
+    /// is history, not status — it pushed the name off-center all day
+    /// (IMG_8287); the full last-seen detail keeps living on the contact
+    /// details page. Presence is looked up by the peer's AUTH USER ID —
+    /// display names drift and carry stray whitespace ("Adi " in
+    /// production), so a name-keyed lookup silently missed. The ticker
+    /// re-evaluates every 30s so a stopped heartbeat decays from online
+    /// without needing a new event.
+    @ViewBuilder private func headerAvatar(at now: Date) -> some View {
+        let status = presenceService.status(userId: thread.peerUserId,
+                                            name: member?.name ?? peerName, at: now)
+        PeerCircleAvatar(name: peerName, color: peerColor,
+                         avatarUrl: peer?.avatarUrl ?? member?.avatarUrl,
+                         size: 30)
+            .overlay(alignment: .bottomTrailing) {
+                if case .online = status {
+                    Circle()
+                        .fill(Color.brandSuccess)
+                        .frame(width: 9, height: 9)
+                        .overlay(Circle().strokeBorder(.background, lineWidth: 1.5))
+                        .offset(x: 1, y: 1)
+                        .transition(.scale.combined(with: .opacity))
+                        .accessibilityLabel("online")
+                }
             }
-        }
     }
 
     var body: some View {
@@ -264,21 +268,18 @@ struct DirectMessageView: View {
                 Button { if member != nil { showProfile = true } } label: {
                     ChatHeaderPill {
                         HStack(spacing: 8) {
-                            PeerCircleAvatar(name: peerName, color: peerColor,
-                                             avatarUrl: peer?.avatarUrl ?? member?.avatarUrl,
-                                             size: 30)
+                            PresenceTicker { now in headerAvatar(at: now) }
                             VStack(alignment: .leading, spacing: 0) {
                                 Text(peerName)
                                     .font(AppFont.subheadline)
                                     .foregroundStyle(.primary)
-                                // Transient typing status wins; otherwise show presence
-                                // (online / last seen) when the partner shares it.
+                                // The only text under the name is the
+                                // transient typing signal — everything else
+                                // leaves the name vertically centered.
                                 if directMessageService.typingNames.contains(where: matchesPeer) {
                                     Text("typing…")
                                         .font(AppFont.scaled(11))
                                         .foregroundStyle(Color.accentColor)
-                                } else {
-                                    presenceSubtitle
                                 }
                             }
                         }
