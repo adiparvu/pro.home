@@ -75,17 +75,27 @@ struct AddTaskView: View {
         .task { await familyService.load() }
     }
 
-    // MARK: - Save button (purple check)
+    // MARK: - Save button (native toolbar confirm)
 
+    // A bare, accent-tinted checkmark — NOT GlassProminentIconButton here. In a
+    // `.confirmationAction` item iOS 26 already wraps the control in its own
+    // glass circle, so a button that also draws glass produced two overlapping
+    // circles (IMG_8308). The toolbar supplies the single glass; the tint and
+    // the disabled dimming come from the system, exactly like Apple's own icon
+    // confirm buttons.
     private var saveButton: some View {
-        GlassProminentIconButton(
-            systemImage: "checkmark",
-            isEnabled: canSave,
-            isBusy: isSaving,
-            accessibilityLabel: editing != nil ? "Save Changes" : "Add Task"
-        ) {
+        Button {
             save()
+        } label: {
+            if isSaving {
+                ProgressView()
+            } else {
+                Image(systemName: "checkmark").fontWeight(.bold)
+            }
         }
+        .tint(.accentColor)
+        .disabled(!canSave || isSaving)
+        .accessibilityLabel(Text(editing != nil ? "Save Changes" : "Add Task"))
     }
 
     // MARK: - Layout pieces
