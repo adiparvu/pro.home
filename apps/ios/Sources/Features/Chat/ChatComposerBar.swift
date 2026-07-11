@@ -101,13 +101,22 @@ struct ChatComposerBar<Accessory: View>: View {
     /// Re-broadcasts the recording signal while the recorder is live (receivers
     /// expire it 4s after the last event, so a 3s cadence keeps it steady).
     @State private var recordingSignalTask: Task<Void, Never>?
+    /// Local echo of the surface's `text`/`subject` bindings. The fields bind
+    /// HERE so a keystroke invalidates only this bar — writing straight
+    /// through the binding re-rendered the entire conversation (message list
+    /// included) on every character, which was the typing lag. The echo syncs
+    /// back debounced (drafts, the group chat's "@" mention detection) and
+    /// immediately at every hand-off point: send, edit confirm, bar dismissal.
+    @State private var draft = ""
+    @State private var subjectDraft = ""
+    @State private var writeBackTask: Task<Void, Never>?
     /// Focus for the subject line — return there hands focus to the message
     /// field (iMessage's behaviour), and the bar's keyboard geometry below
     /// must treat "subject focused" exactly like "message focused".
     @FocusState private var subjectFocused: Bool
 
     private var isTextEmpty: Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// The subject row shows only when the surface opted in AND supplied the
@@ -208,9 +217,52 @@ struct ChatComposerBar<Accessory: View>: View {
                 }
             }
         }
+        // Binding ↔ echo sync. Inbound: any external write (send-path clear,
+        // edit swap-in/out, dictation, draft restore, mention interception)
+        // lands in the local echo. Outbound happens in scheduleWriteBack/
+        // flushDraft only — never per keystroke.
+        .onAppear {
+            draft = text
+            subjectDraft = subject?.wrappedValue ?? ""
+        }
+        .onChange(of: text) { _, v in
+            if v != draft { draft = v }
+        }
+        .onChange(of: subject?.wrappedValue) { _, v in
+            if let v, v != subjectDraft { subjectDraft = v }
+        }
         .onDisappear {
+            flushDraft()
             recordingSignalTask?.cancel()
             recordingSignalTask = nil
+        }
+    }
+
+    /// Debounced echo → binding push: the surface sees the text a beat after
+    /// the last keystroke instead of on every character, so drafts and the
+    /// "@" mention trigger still work without per-keystroke re-renders.
+    private func scheduleWriteBack() {
+        writeBackTask?.cancel()
+        writeBackTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            commitDraft()
+        }
+    }
+
+    /// Pushes the echo into the surface bindings NOW — before any closure
+    /// that reads them (send, edit confirm) and when the bar leaves the
+    /// screen (draft persistence on the surface's onDisappear).
+    private func flushDraft() {
+        writeBackTask?.cancel()
+        writeBackTask = nil
+        commitDraft()
+    }
+
+    private func commitDraft() {
+        if text != draft { text = draft }
+        if let subject, subject.wrappedValue != subjectDraft {
+            subject.wrappedValue = subjectDraft
         }
     }
 
@@ -231,14 +283,14 @@ struct ChatComposerBar<Accessory: View>: View {
                 }
 
                 HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    TextField(config.placeholder, text: $text, axis: .vertical)
+                    TextField(config.placeholder, text: $draft, axis: .vertical)
                         .font(AppFont.scaled(16))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .lineLimit(1...6)
                         .focused(focused)
                         .padding(.vertical, 7)
-                        .onChange(of: text) { _, val in
+                        .onChange(of: draft) { _, val in
                             // The keyboard's return key must be inert while the
                             // pill is empty (IMG_8285): on a vertical-axis field
                             // it would otherwise stack invisible blank lines.
@@ -247,7 +299,7 @@ struct ChatComposerBar<Accessory: View>: View {
                             // enablesReturnKeyAutomatically.
                             if !val.isEmpty,
                                val.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                text = ""
+                                draft = ""
                                 return
                             }
                             let now = Date()
@@ -258,6 +310,7 @@ struct ChatComposerBar<Accessory: View>: View {
                             }
                             // Draft persistence is the surface's job (on disappear) —
                             // a per-keystroke UserDefaults write is typing lag.
+                            scheduleWriteBack()
                         }
 
                     trailingControl
@@ -279,13 +332,14 @@ struct ChatComposerBar<Accessory: View>: View {
     /// iMessage's "Subject" line: one semibold row inside the same pill,
     /// above the hairline. Return moves the caret down to the message field.
     private func subjectField(_ subject: Binding<String>) -> some View {
-        TextField("composer_subject_placeholder", text: subject)
+        TextField("composer_subject_placeholder", text: $subjectDraft)
             .font(AppFont.scaled(16, weight: .semibold))
             .foregroundStyle(.primary)
             .tint(.accentColor)
             .focused($subjectFocused)
             .submitLabel(.next)
             .onSubmit { focused.wrappedValue = true }
+            .onChange(of: subjectDraft) { _, _ in scheduleWriteBack() }
             .padding(.vertical, 7)
             // The trailing control lives on the MESSAGE row below, so the
             // subject line spans the pill's full width — like iMessage.
@@ -297,6 +351,7 @@ struct ChatComposerBar<Accessory: View>: View {
     @ViewBuilder private var trailingControl: some View {
         if let edit {
             Button {
+                flushDraft()
                 edit.onConfirm()
             } label: {
                 Image(systemName: "checkmark.circle.fill")
@@ -365,6 +420,9 @@ struct ChatComposerBar<Accessory: View>: View {
     private var sendButton: some View {
         Button {
             guard !isTextEmpty else { return }
+            // The surface's send closure reads its own bindings — hand the
+            // echo over synchronously first, never through the debounce.
+            flushDraft()
             config.onSendText()
         } label: {
             if isSending {

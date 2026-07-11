@@ -43,8 +43,19 @@ extension ChatView {
     /// rules, before any search filter. Shared by the list, pins and counts so
     /// none of them show messages the user has cleared or that have expired.
     private var visibleMessages: [Message] {
-        let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
-        return ChatDisappearStore.filter(kept, convId: "group") { $0.date }
+        // Memoized on the data revision + the two cutoff settings — the body
+        // re-runs on every keystroke, and re-filtering the whole chat each
+        // pass was the typing lag. The 30s bucket bounds staleness of the
+        // time-relative disappearing cutoff between data changes.
+        var hasher = Hasher()
+        hasher.combine(messageService.revision)
+        hasher.combine(ConversationClearStore.clearedAt("group"))
+        hasher.combine(ChatDisappearStore.ttl("group"))
+        hasher.combine(Int(Date().timeIntervalSince1970 / 30))
+        return visibleCache.value(for: hasher.finalize()) {
+            let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
+            return ChatDisappearStore.filter(kept, convId: "group") { $0.date }
+        }
     }
     private var filteredMessages: [Message] {
         guard showSearch && !searchText.isEmpty else { return visibleMessages }
@@ -182,8 +193,10 @@ extension ChatView {
             // reply lookup gets the same treatment (dictionary instead of a
             // linear scan per bubble).
             let msgs = filteredMessages
-            let messagesById = Dictionary(messageService.messages.map { ($0.id, $0) },
-                                          uniquingKeysWith: { a, _ in a })
+            let messagesById = messagesByIdCache.value(for: messageService.revision) {
+                Dictionary(messageService.messages.map { ($0.id, $0) },
+                           uniquingKeysWith: { a, _ in a })
+            }
             ScrollView(showsIndicators: false) {
                 // The family chat used to render a silent black void both
                 // while the first load was still in flight (slow network) and

@@ -19,6 +19,10 @@ struct ChatView: View {
     @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
     @State var text = ""
+    /// One-slot memos behind `visibleMessages` / the reply lookup index (see
+    /// DerivedCache) — internal because the message-list extension reads them.
+    @State var visibleCache = DerivedCache<[Message]>()
+    @State var messagesByIdCache = DerivedCache<[UUID: Message]>()
     /// The composer's optional subject line (iMessage's "Show Subject Field").
     /// Encoded into the body at send time (see MessageSubject), so the send
     /// pipeline, outbox and realtime stay untouched.

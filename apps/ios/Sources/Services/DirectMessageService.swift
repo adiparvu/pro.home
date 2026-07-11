@@ -153,7 +153,12 @@ extension DirectMessage {
 @MainActor
 @Observable
 final class DirectMessageService {
-    var dms: [DirectMessage] = []
+    /// Bumped on every mutation of `dms` — views memoize their derived,
+    /// filtered lists on (revision, localRevision) so a body pass that didn't
+    /// change the data (every keystroke!) costs O(1) instead of re-filtering
+    /// the whole conversation.
+    private(set) var revision = 0
+    var dms: [DirectMessage] = [] { didSet { revision &+= 1 } }
     var isLoading = false
 
     /// Bumped whenever UserDefaults-backed local state (last-seen timestamps,
@@ -535,6 +540,7 @@ final class DirectMessageService {
     func markRead(thread: DMThread) {
         UserDefaults.standard.set(Date(), forKey: "dm.lastseen.id.\(thread.storeKey.uuidString)")
         localRevision &+= 1
+        revision &+= 1
     }
 
     func markRead(member: FamilyMember) { markRead(thread: DMThread(member: member)) }
@@ -745,6 +751,7 @@ final class DirectMessageService {
         h.insert(id)
         UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
         localRevision &+= 1
+        revision &+= 1
     }
 
     func togglePin(_ msg: DirectMessage) async {

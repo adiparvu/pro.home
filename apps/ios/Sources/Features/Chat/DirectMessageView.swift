@@ -87,6 +87,8 @@ struct DirectMessageView: View {
     @State private var unreadResolved = false
     @State var highlightedId: UUID? = nil
     @State var input = ""
+    /// One-slot memo behind `conversationMessages` (see DerivedCache).
+    @State private var conversationCache = DerivedCache<[DirectMessage]>()
     /// The composer's optional subject line (iMessage's "Show Subject Field").
     /// Encoded into the body at send time (see MessageSubject), so the DM
     /// send path, outbox and realtime stay untouched.
@@ -172,12 +174,24 @@ struct DirectMessageView: View {
     }
 
     var conversationMessages: [DirectMessage] {
-        let all = directMessageService.messages(in: thread, myName: myName)
-        let kept = ConversationClearStore.filter(all, convId: convId) { $0.date }
-        // Keyed by peer NAME — the same key the send path stamps with and the
-        // server sync writes to (it used to be member.id, so the setting and
-        // the stamp never met).
-        return ChatDisappearStore.filter(kept, convId: disappearKey) { $0.date }
+        // Memoized on the data revision + the two cutoff settings: a body
+        // pass accesses this ~19 times, and the body re-runs on every
+        // keystroke — re-filtering the whole conversation each time was the
+        // typing lag. The 30s time bucket bounds staleness of the
+        // time-relative disappearing cutoff between data changes.
+        var hasher = Hasher()
+        hasher.combine(directMessageService.revision)
+        hasher.combine(ConversationClearStore.clearedAt(convId))
+        hasher.combine(ChatDisappearStore.ttl(disappearKey))
+        hasher.combine(Int(Date().timeIntervalSince1970 / 30))
+        return conversationCache.value(for: hasher.finalize()) {
+            let all = directMessageService.messages(in: thread, myName: myName)
+            let kept = ConversationClearStore.filter(all, convId: convId) { $0.date }
+            // Keyed by peer NAME — the same key the send path stamps with and the
+            // server sync writes to (it used to be member.id, so the setting and
+            // the stamp never met).
+            return ChatDisappearStore.filter(kept, convId: disappearKey) { $0.date }
+        }
     }
 
     // This DM's theme scope; a per-conversation override wins over the global default.

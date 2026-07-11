@@ -5,7 +5,11 @@ import Supabase
 @MainActor
 @Observable
 final class MessageService {
-    var messages: [Message] = []
+    /// Bumped on every mutation of `messages` — views memoize their derived,
+    /// filtered lists on it so a body pass that didn't change the data
+    /// (every keystroke!) costs O(1) instead of re-filtering the whole chat.
+    private(set) var revision = 0
+    var messages: [Message] = [] { didSet { revision &+= 1 } }
     var isLoading = false
     var error: String?
     var unreadCount = 0
