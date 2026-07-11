@@ -45,7 +45,7 @@ final class PlantService {
     }
 
     func update(_ plant: Plant) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = PlantUpdate(
             name: plant.name, species: plant.species, location: plant.location,
             wateringIntervalDays: plant.wateringIntervalDays,
@@ -66,7 +66,7 @@ final class PlantService {
     /// encyclopedia entry. Mirrors `markWatered`: a focused single-column
     /// update that leaves every other field untouched.
     func linkSpecies(_ speciesId: UUID?, for plant: Plant) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = PlantSpeciesLink(speciesId: speciesId, updatedAt: now)
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {
             plants[i].speciesId = speciesId
@@ -81,7 +81,7 @@ final class PlantService {
 
     func markWatered(_ plant: Plant) async {
         let neededWater = plant.needsWatering
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = PlantWateringUpdate(lastWateredAt: now, updatedAt: now)
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {
             plants[i].lastWateredAt = now
@@ -106,7 +106,7 @@ final class PlantService {
     /// A no-op when the score is unchanged, to avoid needless writes on re-open.
     func saveHealthScore(_ score: Int, for plant: Plant) async {
         guard plant.healthScore != score else { return }
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {
             plants[i].healthScore = score
             plants[i].healthScoreAt = now

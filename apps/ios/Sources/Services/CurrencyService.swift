@@ -116,6 +116,18 @@ final class CurrencyService {
         )
     }
 
+    /// Locale-grouped plain amount with no symbol or code ("1.200" /
+    /// "1.234,56") — for call sites that place the currency code themselves
+    /// (e.g. the lease's "1.200 EUR / month"). Whole amounts drop the
+    /// fraction entirely; amounts with cents show up to two digits —
+    /// matching the previous per-call `NumberFormatter` output exactly.
+    nonisolated static func amount(_ value: Double) -> String {
+        let f = value.truncatingRemainder(dividingBy: 1) == 0
+            ? BareAmountFormat.whole
+            : BareAmountFormat.cents
+        return f.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
     nonisolated static func symbol(for code: String) -> String {
         supported.first { $0.code == code }?.symbol ?? code
     }
@@ -166,6 +178,31 @@ final class CurrencyService {
         UserDefaults.standard.set(try? JSONEncoder().encode(r), forKey: ratesKey)
         UserDefaults.standard.set(Date(), forKey: dateKey)
     }
+}
+
+// MARK: - Cached bare-amount formatters
+
+/// `NumberFormatter` is expensive to create and not thread-safe to mutate,
+/// but concurrent reads after configuration are safe — both instances are
+/// fully configured in their static initializers and never touched again.
+/// File-scope (outside the `@MainActor` class) so `CurrencyService.amount`
+/// stays nonisolated for models and background contexts.
+private enum BareAmountFormat {
+    /// Whole amounts ("1.200") — no fraction shown.
+    static let whole: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
+    /// Fractional amounts ("1.234,56") — up to two digits.
+    static let cents: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 2
+        return f
+    }()
 }
 
 // MARK: - BNR XML parser

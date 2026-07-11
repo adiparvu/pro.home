@@ -915,6 +915,31 @@ final class DirectMessageService {
     }
 }
 
+// MARK: - Forwarding
+
+extension DirectMessageService {
+    /// Forwards a group-chat message into a 1:1 thread. A plain insert, not
+    /// `send`: forwarding happens from the group chat, where the DM window
+    /// isn't loaded, so there is no optimistic bubble to place and no outbox
+    /// hand-off — the caller surfaces the error directly. Columns are the
+    /// ones direct_messages RLS requires: sender_id must equal the caller
+    /// and recipient_member_id lets the recipient read it.
+    static func forward(body: String, senderName: String,
+                        to member: FamilyMember, propertyId: UUID) async throws {
+        struct DMForward: Encodable {
+            let sender_name: String; let recipient_name: String
+            let body: String; let property_id: String?
+            let sender_id: String?; let recipient_member_id: String
+        }
+        try await supabase.from("direct_messages").insert(
+            DMForward(sender_name: senderName, recipient_name: member.name,
+                      body: body, property_id: propertyId.uuidString,
+                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                      recipient_member_id: member.id.uuidString)
+        ).execute()
+    }
+}
+
 // MARK: - Server-side search
 
 extension DirectMessageService {

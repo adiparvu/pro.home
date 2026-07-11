@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 extension PropertyElementDetailView {
 
@@ -185,14 +184,11 @@ extension PropertyElementDetailView {
         isUploading = true
         defer { isUploading = false }
         var urls = localElement.photos
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            let path = "\(uid)/elements/\(localElement.id.uuidString)/\(UUID().uuidString).jpg"
-            _ = try? await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            if let url = try? supabase.storage.from("documents").getPublicURL(path: path) {
-                urls.append(url.absoluteString)
+            if let url = try? await SignedStorage.uploadPublicImage(
+                data, folder: "elements/\(localElement.id.uuidString)") {
+                urls.append(url)
             }
         }
         await elementService.updatePhotos(elementId: localElement.id, urls: urls)

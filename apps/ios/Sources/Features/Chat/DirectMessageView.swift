@@ -10,7 +10,7 @@ struct DirectMessageView: View {
     /// Roster row when the peer is on the family_members roster; nil for a
     /// peer known only by identity (e.g. the property owner on a non-owner
     /// device — the production case this phase fixes).
-    private let member: FamilyMember?
+    let member: FamilyMember?
     /// Peer identity handed in by the conversation list; nil when this view
     /// was opened through the legacy member-based initializer (the identity
     /// then resolves from member.user_id + the profiles directory).
@@ -27,20 +27,20 @@ struct DirectMessageView: View {
         self.initialPeer = peer
     }
 
-    @Environment(DirectMessageService.self) private var directMessageService
-    @Environment(ProfileService.self) private var profileService
-    @Environment(PropertyService.self) private var propertyService
-    @Environment(FamilyService.self) private var familyService
-    @Environment(MessageService.self) private var messageService
+    @Environment(DirectMessageService.self) var directMessageService
+    @Environment(ProfileService.self) var profileService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(FamilyService.self) var familyService
+    @Environment(MessageService.self) var messageService
     @Environment(PresenceService.self) private var presenceService
     @Environment(NotificationService.self) private var notificationService
 
-    @State private var replyingTo: DirectMessage? = nil
-    @State private var forwarding: DirectMessage? = nil
+    @State var replyingTo: DirectMessage? = nil
+    @State var forwarding: DirectMessage? = nil
     @State private var showSearch = false
-    @State private var searchText = ""
+    @State var searchText = ""
     @State private var showStarred = false
-    @State private var scrollTarget: UUID? = nil
+    @State var scrollTarget: UUID? = nil
     // Global defaults from Chat Settings.
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
@@ -50,53 +50,53 @@ struct DirectMessageView: View {
     /// asynchronously and a server refresh can replace it moments later —
     /// BOTH batches must land unanimated, so this flips only after a short
     /// grace window, not on the first count change.
-    @State private var chatDidLoad = false
+    @State var chatDidLoad = false
     /// Grace timer that flips `chatDidLoad`; started once the list is non-empty.
     @State private var chatLoadGraceTask: Task<Void, Never>? = nil
     /// Per-change animation gate, decided in `onChange` (which runs ahead of
     /// the body pass that renders the change): spring only for small deltas
     /// (send/receive), never for bulk merges (refresh, older-page loads).
-    @State private var animateMessageDelta = false
+    @State var animateMessageDelta = false
     /// Newest message id — distinguishes appends (auto-scroll) from prepends
     /// like "load older" (keep the reading position).
-    @State private var newestMessageId: UUID? = nil
+    @State var newestMessageId: UUID? = nil
     /// Guards the jump-to-latest button against rapid re-taps mid-flight.
-    @State private var isJumpingToLatest = false
+    @State var isJumpingToLatest = false
     /// Debounce for the bottom-sentinel toggle (see `setJumpToLatest`).
-    @State private var jumpToggleTask: Task<Void, Never>? = nil
-    @State private var editingMessage: DirectMessage? = nil
-    @State private var editText = ""
-    @State private var menuMessage: DirectMessage? = nil
-    @State private var deleteCandidate: DirectMessage? = nil
-    @State private var showJumpToLatest = false
+    @State var jumpToggleTask: Task<Void, Never>? = nil
+    @State var editingMessage: DirectMessage? = nil
+    @State var editText = ""
+    @State var menuMessage: DirectMessage? = nil
+    @State var deleteCandidate: DirectMessage? = nil
+    @State var showJumpToLatest = false
     /// Whether the reader is at (or within a bubble of) the bottom — the gate
     /// for auto-following incoming messages and for honest read receipts.
     /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
     /// the bottom sentinel keeps it updated on older systems.
-    @State private var isAtBottom = true
+    @State var isAtBottom = true
     /// How many of the most-recent messages to render. The service holds the
     /// full conversation in memory; the list only builds this trailing window
     /// so opening a long chat stays cheap, growing a page at a time as the user
     /// scrolls back. Searching bypasses the window (it scans everything).
-    @State private var visibleCount = DirectMessageView.pageSize
-    private static let pageSize = 50
+    @State var visibleCount = DirectMessageView.pageSize
+    static let pageSize = 50
     /// Where the reader left off, frozen on open before markRead runs, and the
     /// resulting first-unread message id that anchors the "unread" divider.
     @State private var unreadSince: Date? = nil
-    @State private var unreadDividerId: UUID? = nil
+    @State var unreadDividerId: UUID? = nil
     @State private var unreadResolved = false
-    @State private var highlightedId: UUID? = nil
-    @State private var input = ""
+    @State var highlightedId: UUID? = nil
+    @State var input = ""
     /// The composer's optional subject line (iMessage's "Show Subject Field").
     /// Encoded into the body at send time (see MessageSubject), so the DM
     /// send path, outbox and realtime stay untouched.
-    @State private var subject = ""
+    @State var subject = ""
     /// Chat Settings → "Show Subject Field". OFF by default.
-    @AppStorage(MessageSubject.showFieldDefaultsKey) private var showSubjectField = false
-    @State private var photoPickerItems: [PhotosPickerItem] = []
-    @State private var showPhotoPicker = false
+    @AppStorage(MessageSubject.showFieldDefaultsKey) var showSubjectField = false
+    @State var photoPickerItems: [PhotosPickerItem] = []
+    @State var showPhotoPicker = false
     @State private var showCameraPicker = false
-    @State private var showAttachmentSheet = false
+    @State var showAttachmentSheet = false
     @State private var showContactPicker = false
     @State private var showSendLater = false
     @State private var showLocationSheet = false
@@ -109,13 +109,13 @@ struct DirectMessageView: View {
     /// renders NO call buttons at all (never a dead control).
     @State private var faceTimeHandle: String? = nil
     @State private var showProfile = false
-    @State private var sendError: String? = nil
-    @FocusState private var focused: Bool
-    @State private var isSending = false
-    @State private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
-    @State private var blockRefresh = false
+    @State var sendError: String? = nil
+    @FocusState var focused: Bool
+    @State var isSending = false
+    @State var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
+    @State var blockRefresh = false
 
-    private var myName: String {
+    var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
 
@@ -135,7 +135,7 @@ struct DirectMessageView: View {
         return member.flatMap { ChatPeer(member: $0) }
     }
 
-    private var thread: DMThread {
+    var thread: DMThread {
         if let member { return DMThread(member: member) }
         if let peer { return DMThread(peer: peer) }
         // Unreachable: both initializers guarantee a member or a peer.
@@ -143,19 +143,19 @@ struct DirectMessageView: View {
     }
 
     /// Trimmed display name for the header/title/empty state.
-    private var peerName: String { thread.displayName }
-    private var peerInitials: String { peer?.initials ?? member?.initials ?? "?" }
-    private var peerColor: Color { member?.swiftColor ?? peer?.swiftColor ?? .blue }
-    private var peerAvatarURL: URL? {
+    var peerName: String { thread.displayName }
+    var peerInitials: String { peer?.initials ?? member?.initials ?? "?" }
+    var peerColor: Color { member?.swiftColor ?? peer?.swiftColor ?? .blue }
+    var peerAvatarURL: URL? {
         (peer?.avatarUrl ?? member?.avatarUrl).flatMap(URL.init)
     }
     /// Device-local conversation scope (theme, clear, block, draft stores) —
     /// the member id for roster threads (preserving existing keys), else the
     /// peer's user id.
-    private var convId: String { thread.storeKey.uuidString }
+    var convId: String { thread.storeKey.uuidString }
     /// Key the disappearing-message TTL store uses (historically the roster
     /// name; the trimmed profile name for identity-only peers).
-    private var disappearKey: String { member?.name ?? peerName }
+    var disappearKey: String { member?.name ?? peerName }
     /// Name-keyed live signals (typing, presence) may carry either the roster
     /// snapshot or the (possibly untrimmed) profile name — match both.
     private func matchesPeer(_ name: String) -> Bool {
@@ -165,12 +165,12 @@ struct DirectMessageView: View {
 
     /// Disappearing-message expiry for this conversation (nil = off). Stamped on
     /// outgoing DMs so the server sweep deletes them; keyed by the partner name.
-    private var dmExpiresAt: String? {
+    var dmExpiresAt: String? {
         let ttl = ChatDisappearStore.ttl(disappearKey)
         return ttl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl)) : nil
     }
 
-    private var conversationMessages: [DirectMessage] {
+    var conversationMessages: [DirectMessage] {
         let all = directMessageService.messages(in: thread, myName: myName)
         let kept = ConversationClearStore.filter(all, convId: convId) { $0.date }
         // Keyed by peer NAME — the same key the send path stamps with and the
@@ -181,7 +181,7 @@ struct DirectMessageView: View {
 
     // This DM's theme scope; a per-conversation override wins over the global default.
     private var themeScope: String { convId }
-    private var chatTheme: ChatTheme {
+    var chatTheme: ChatTheme {
         _ = themeRefresh
         // The @AppStorage globals establish observation so a live global
         // change re-renders; resolution itself is centralized in effective().
@@ -190,7 +190,7 @@ struct DirectMessageView: View {
     }
     private var draftKey: String { "draft.dm.\(convId)" }
     private var subjectDraftKey: String { draftKey + ".subject" }
-    private var pendingOutbox: [PendingMessage] {
+    var pendingOutbox: [PendingMessage] {
         outbox.pending
             .filter { ($0.recipientName.map(matchesPeer) ?? false) && $0.propertyId == propertyService.primary?.id }
             .sorted { $0.createdAt < $1.createdAt }
@@ -552,26 +552,6 @@ struct DirectMessageView: View {
         }
     }
 
-    private var displayedMessages: [DirectMessage] {
-        let all = conversationMessages
-        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Searching scans the whole conversation; browsing renders only the
-        // most-recent window so a long history doesn't build thousands of rows.
-        guard !q.isEmpty else { return Array(all.suffix(visibleCount)) }
-        return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
-    }
-
-    /// Flash a message briefly after jumping to it from a reply.
-    private func flashHighlight(_ id: UUID) {
-        HapticFeedback.impact(.light)
-        withAnimation(.easeInOut(duration: 0.25)) { highlightedId = id }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            withAnimation(.easeInOut(duration: 0.4)) {
-                if highlightedId == id { highlightedId = nil }
-            }
-        }
-    }
-
     /// Resolve the unread-divider anchor exactly once, from the frozen
     /// last-seen date, as soon as the conversation has loaded.
     private func resolveUnreadDivider() {
@@ -584,7 +564,7 @@ struct DirectMessageView: View {
     /// Arms the entry grace window once. `chatDidLoad` may only flip after the
     /// server refresh has had time to land; flipping it on the first count
     /// change let the refresh batch animate — the visible settle on entry.
-    private func startLoadGraceIfNeeded() {
+    func startLoadGraceIfNeeded() {
         guard chatLoadGraceTask == nil else { return }
         chatLoadGraceTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.8))
@@ -593,754 +573,7 @@ struct DirectMessageView: View {
         }
     }
 
-    /// Debounced sentinel toggle: at the bottom rest the 1pt marker can flip
-    /// in/out on sub-point settles, flickering the jump button and stealing
-    /// its first tap. Only a state that survives 150ms is committed.
-    private func setJumpToLatest(_ show: Bool) {
-        jumpToggleTask?.cancel()
-        guard show != showJumpToLatest else { return }
-        jumpToggleTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = show }
-        }
-    }
-
-    /// True when older messages exist beyond the current render window —
-    /// either already in memory or still on the server.
-    private var hasMoreOlder: Bool {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && (conversationMessages.count > visibleCount
-                || (!conversationMessages.isEmpty
-                    && !directMessageService.exhaustedOlder.contains(thread.storeKey)))
-    }
-
-    private var pinnedMessages: [DirectMessage] {
-        conversationMessages.filter { $0.pinned == true && $0.deletedForAll != true }
-    }
     private var markedMessages: [DirectMessage] {
         conversationMessages.filter { $0.isMarked == true && $0.deletedForAll != true }
-    }
-
-    private func dmSnippet(_ m: DirectMessage) -> String {
-        if let rich = DMRich.snippet(for: m.body) { return rich }
-        if m.isContactShare { return "👤 Contact" }
-        switch ChatMedia.dmBodyKind(m.body) {
-        case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
-        case .video: return String(localized: "dm_prev_video")
-        // One line, marker-free — a subject-bearing body reads "subject — text".
-        case .text:  return MessageSubject.strip(m.body)
-        }
-    }
-
-    @ViewBuilder
-    private func dmActionOverlay(_ m: DirectMessage) -> some View {
-        let own = m.isMine(myUserId: directMessageService.myUserId, myName: myName)
-        let isImage = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .image
-        let isAudio = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .audio
-        ChatActionOverlay(
-            previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
-            isOwn: own,
-            bubbleColor: chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
-            myReaction: m.myReaction(myUserId: directMessageService.myUserId, myName: myName),
-            onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
-            actions: dmMessageActions(m, own: own),
-            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
-            imageStored: isImage ? m.body : nil,
-            audioStored: isAudio ? m.body : nil,
-            reactionsDisabled: m.deletedForAll == true
-        )
-        .transition(.opacity)
-    }
-
-    private func dmMessageActions(_ m: DirectMessage, own: Bool) -> [ChatActionItem] {
-        // Deleted messages keep only "Delete" (remove the tombstone for me).
-        if m.deletedForAll == true {
-            return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
-        }
-        // Structured bodies (media, contact card, or a marker-encoded
-        // location/sticker/event/file) must not be editable as raw text.
-        let isStructured = ChatMedia.dmBodyKind(m.body) != .text
-            || m.isContactShare || DMRich.decode(m.body) != nil
-        var items: [ChatActionItem] = [
-            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
-            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
-            ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = MessageSubject.strip(m.body) },
-            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } }
-        ]
-        if own, m.deletedForAll != true, !isStructured {
-            // Edit the TEXT only — a subject stays untouched (re-encoded on
-            // save), and the marker never enters the field.
-            items.append(ChatActionItem("Edit", "pencil") {
-                editingMessage = m; editText = MessageSubject.parse(m.body).text
-            })
-        }
-        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
-        return items
-    }
-
-    // MARK: - Message List
-
-    private var messageList: some View {
-        VStack(spacing: 0) {
-        if let pinned = pinnedMessages.last {
-            Button {
-                scrollTarget = pinned.id
-                HapticFeedback.impact(.light)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "pin.fill")
-                        .font(AppFont.scaled(12))
-                        .foregroundStyle(Color.accentColor)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(pinnedMessages.count > 1
-                             ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
-                             : String(localized: "Pinned message"))
-                            .font(AppFont.label)
-                            .foregroundStyle(Color.accentColor)
-                        Text(dmSnippet(pinned))
-                            .font(AppFont.scaled(12))
-                            .foregroundStyle(Color.primary.opacity(0.6))
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Button {
-                        Task { await directMessageService.togglePin(pinned) }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(AppFont.scaled(11, weight: .bold))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                            .frame(width: 26, height: 26)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Unpin message"))
-                }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                .liquidGlass(cornerRadius: 14)
-                .padding(.horizontal, AppSpacing.md).padding(.top, AppSpacing.sm)
-            }
-            .buttonStyle(.plain)
-        }
-        ScrollViewReader { proxy in
-            Group {
-                if conversationMessages.isEmpty {
-                    emptyState
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    let shown = displayedMessages
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(spacing: 2) {
-                            if hasMoreOlder {
-                                Button {
-                                    // Anchor the current top message so inserting
-                                    // an older page above it doesn't jump the view.
-                                    let anchor = shown.first?.id
-                                    let target = visibleCount + Self.pageSize
-                                    if target > conversationMessages.count,
-                                       let pid = propertyService.primary?.id {
-                                        // The window outgrew memory — pull the
-                                        // next older page from the server first.
-                                        Task {
-                                            await directMessageService.loadOlder(
-                                                propertyId: pid, myName: myName, thread: thread)
-                                            visibleCount = target
-                                            if let anchor { proxy.scrollTo(anchor, anchor: .top) }
-                                        }
-                                    } else {
-                                        visibleCount = target
-                                        if let anchor {
-                                            DispatchQueue.main.async {
-                                                proxy.scrollTo(anchor, anchor: .top)
-                                            }
-                                        }
-                                    }
-                                } label: {
-                                    if directMessageService.isLoadingOlder {
-                                        ProgressView().controlSize(.small)
-                                    } else {
-                                        Text("Load older messages")
-                                            .font(AppFont.scaled(13, weight: .medium))
-                                            .foregroundStyle(Color.accentColor)
-                                    }
-                                } 
-                                .buttonStyle(.plain)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, AppSpacing.sm)
-                                .disabled(directMessageService.isLoadingOlder)
-                            }
-                            if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                               shown.isEmpty {
-                                EmptyStateView(icon: "magnifyingglass", title: "No results")
-                                    .padding(.top, AppSpacing.xxl)
-                            }
-                            ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
-                                let isOwn = msg.isMine(myUserId: directMessageService.myUserId, myName: myName)
-                                // While searching, `shown` is a sparse subset, so adjacency-based
-                                // grouping is meaningless — show each result as a standalone bubble.
-                                let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                // Tail on the last bubble of a same-sender run (or when the
-                                // next message starts a new day) — matches the group chat.
-                                let nextSameSender = !isSearching && idx < shown.count - 1
-                                    && shown[idx + 1].senderName == msg.senderName
-                                    && sameDay(msg, shown[idx + 1])
-                                let showDate = idx == 0 || !sameDay(shown[idx - 1], msg)
-
-                                if showDate {
-                                    ChatDateSeparator(dateStr: msg.createdAt)
-                                        .padding(.top, idx == 0 ? 8 : 16)
-                                }
-                                if !isSearching, msg.id == unreadDividerId {
-                                    UnreadDivider().id("UNREAD_DIVIDER")
-                                }
-
-                                DMBubble(
-                                    message: msg,
-                                    isOwn: isOwn,
-                                    hasTail: !nextSameSender,
-                                    myName: myName,
-                                    myUserId: directMessageService.myUserId,
-                                    partner: member,
-                                    partnerAvatarURL: peerAvatarURL,
-                                    partnerInitials: peerInitials,
-                                    partnerColor: peerColor,
-                                    members: familyService.members,
-                                    myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
-                                    outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
-                                    repliedMessage: msg.replyTo.flatMap { rid in
-                                        conversationMessages.first { $0.id == rid }
-                                    },
-                                    onReact: { emoji in
-                                        Task { await directMessageService.toggleReaction(msg, emoji: emoji, myName: myName) }
-                                    },
-                                    onReply: { withAnimation { replyingTo = msg } },
-                                    onForward: { forwarding = msg },
-                                    onEdit: isOwn ? { editingMessage = msg; editText = MessageSubject.parse(msg.body).text } : nil,
-                                    onPin: { Task { await directMessageService.togglePin(msg) } },
-                                    onMark: { Task { await directMessageService.toggleMark(msg) } },
-                                    onDeleteForEveryone: { Task { await directMessageService.deleteForEveryone(id: msg.id) } },
-                                    onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) },
-                                    onLongPress: { menuMessage = msg },
-                                    onQuotedTap: {
-                                        guard let rid = msg.replyTo,
-                                              displayedMessages.contains(where: { $0.id == rid }) else { return }
-                                        withAnimation { proxy.scrollTo(rid, anchor: .center) }
-                                        flashHighlight(rid)
-                                    },
-                                    isHighlighted: highlightedId == msg.id
-                                )
-                                .id(msg.id)
-                            }
-                            ForEach(pendingOutbox) { pm in
-                                let pendingFill = chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
-                                let failed = pm.state == .failed || !outbox.isOnline
-                                VStack(alignment: .trailing, spacing: 2) {
-                                    HStack {
-                                        Spacer(minLength: 72)
-                                        HStack(spacing: 6) {
-                                            Text(pm.previewText)
-                                                .font(AppFont.scaled(15))
-                                                .foregroundStyle(pendingFill.readableText)
-                                            Image(systemName: failed ? "exclamationmark.circle" : "clock")
-                                                .font(AppFont.scaled(10))
-                                                .foregroundStyle(failed ? Color.brandDanger : pendingFill.readableText.opacity(0.75))
-                                        }
-                                        .padding(.horizontal, 13).padding(.vertical, 9)
-                                        .background(pendingFill,
-                                                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                        .opacity(0.85)
-                                        .onTapGesture { Task { await flushOutbox() } }
-                                        .contextMenu {
-                                            Button { Task { await flushOutbox() } } label: {
-                                                Label("Retry", systemImage: "arrow.clockwise")
-                                            }
-                                            Button(role: .destructive) { outbox.remove(pm.id) } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-                                    }
-                                    if failed {
-                                        Text("Not delivered · tap to retry")
-                                            .font(AppFont.scaled(10))
-                                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                            .padding(.trailing, AppSpacing.xxs)
-                                    }
-                                }
-                            }
-                            // Jump-button + at-bottom sentinel. On iOS 18+ the
-                            // live scroll geometry (chatAtBottomTracking below)
-                            // owns both signals — the sentinel's lazy-window
-                            // appearance is NOT viewport visibility and went
-                            // stale (keyboard presentation or a tall incoming
-                            // bubble culled it while the reader sat at the
-                            // bottom, which blocked auto-follow until a manual
-                            // scroll). It survives purely as the pre-iOS-18
-                            // fallback, debounced via setJumpToLatest.
-                            Color.clear.frame(height: 1).id("DM_BOTTOM")
-                                .onAppear {
-                                    // A mounting sentinel is honest in one
-                                    // direction only: lazy pre-mount can fire
-                                    // this near (not at) the bottom, never
-                                    // up-thread — so hiding the jump button
-                                    // here is safe on every OS and corrects
-                                    // any stale geometry emission. isAtBottom
-                                    // stays geometry-owned (pre-mount is not
-                                    // visibility; auto-follow must never yank
-                                    // an up-thread reader).
-                                    setJumpToLatest(false)
-                                    guard !ChatAtBottomModifier.isGeometryDriven else { return }
-                                    isAtBottom = true
-                                }
-                                .onDisappear {
-                                    guard !ChatAtBottomModifier.isGeometryDriven else { return }
-                                    isAtBottom = false
-                                    setJumpToLatest(true)
-                                }
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.bottom, AppSpacing.lg)
-                        .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: conversationMessages.count)
-                    }
-                    .defaultScrollAnchor(.bottom)
-                    .scrollDismissesKeyboard(.immediately)
-                    // Live at-bottom detection (iOS 18+): drives auto-follow
-                    // and the jump button from real viewport geometry instead
-                    // of the lazy-culled sentinel.
-                    .chatAtBottomTracking { atBottom in
-                        isAtBottom = atBottom
-                        setJumpToLatest(!atBottom)
-                    }
-                    .onAppear {
-                        // The empty state replaces this ScrollView, so it mounts
-                        // only once messages already exist and its count-based
-                        // onChange never sees the 0→N load. Without an explicit
-                        // assert, a non-sender opened mid-thread instead of on the
-                        // newest message. Snap to the bottom on first mount (the
-                        // grace flag keeps later re-appears from yanking a reader
-                        // who has scrolled up). Deferred so the lazy rows lay out
-                        // first. Mirrors the group chat's `!chatDidLoad` snap.
-                        guard !chatDidLoad else { return }
-                        DispatchQueue.main.async {
-                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                        }
-                        // LazyVStack estimates row heights on the first pass,
-                        // so the entry snap can land with the newest bubble
-                        // half-hidden behind the composer (IMG_8284). Once
-                        // real layout settles, re-assert the anchor — a no-op
-                        // when the first pass already landed; skipped if the
-                        // reader has already scrolled up-thread.
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.45))
-                            if !chatDidLoad || isAtBottom {
-                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            }
-                        }
-                    }
-                    .onChange(of: conversationMessages.count) { old, new in
-                        guard new > 0 else { return }
-                        // Decide the animation for THIS change — onChange runs
-                        // ahead of the body pass that renders it. Spring only
-                        // small deltas once entry has settled; bulk merges
-                        // (server refresh, older pages) must land unanimated
-                        // (a springing merge reads as the whole chat settling).
-                        animateMessageDelta = chatDidLoad && abs(new - old) <= 3
-                        startLoadGraceIfNeeded()
-                        let newest = conversationMessages.last?.id
-                        let appended = newest != newestMessageId
-                        newestMessageId = newest
-                        // Prepends (older pages) keep the reading position;
-                        // only appends may move the viewport.
-                        guard appended else { return }
-                        let isOwnLatest = conversationMessages.last?.isMine(myUserId: directMessageService.myUserId, myName: myName) == true
-                        if !chatDidLoad {
-                            // Entry batches: snap straight to the bottom rest,
-                            // then re-assert once the lazy rows take their real
-                            // heights — the estimated first pass lands short.
-                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            Task { @MainActor in
-                                try? await Task.sleep(for: .seconds(0.45))
-                                if !chatDidLoad || isAtBottom {
-                                    proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                                }
-                            }
-                        } else if isAtBottom || isOwnLatest {
-                            // Follow new messages only when already at the
-                            // bottom or when we sent it ourselves — never yank
-                            // a reader up-thread. Gated on the geometry-backed
-                            // at-bottom state, NOT the debounced jump-button
-                            // flag, whose staleness used to strand the newest
-                            // message below the fold.
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            }
-                        } else {
-                            // Reading up-thread: leave the viewport alone and
-                            // don't mark the (unseen) message read.
-                            return
-                        }
-                        directMessageService.markRead(thread: thread)
-                        Task { await directMessageService.markReadRemote(thread: thread, myName: myName) }
-                    }
-                    .onChange(of: scrollTarget) { _, target in
-                        guard let t = target else { return }
-                        withAnimation { proxy.scrollTo(t, anchor: .center) }
-                        scrollTarget = nil
-                    }
-                }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if showJumpToLatest {
-                    Button {
-                        // Idempotent: re-taps mid-flight are ignored instead of
-                        // restarting the spring (each restart read as a nudge).
-                        guard !isJumpingToLatest else { return }
-                        isJumpingToLatest = true
-                        HapticFeedback.impact(.light)
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                        }
-                        // LazyVStack estimates offsets for distant targets, so
-                        // one animated pass can land short of the true bottom —
-                        // which used to demand a second or third press. Once
-                        // the spring settles, re-assert the anchor; a no-op if
-                        // the first pass already landed.
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.45))
-                            if showJumpToLatest {
-                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            }
-                            isJumpingToLatest = false
-                        }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(AppFont.scaled(13, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Jump to latest message"))
-                    .glassCircle()
-                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
-                    .padding(.trailing, AppSpacing.lg).padding(.bottom, AppSpacing.md)
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
-        }
-        }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .fill(peerColor.opacity(0.12))
-                    .frame(width: 80, height: 80)
-                Text(peerInitials)
-                    .font(AppFont.scaled(28, weight: .bold))
-                    .foregroundStyle(peerColor)
-            }
-            Text(peerName)
-                .font(AppFont.scaled(18, weight: .bold))
-            Text("Start the private conversation")
-                .font(AppFont.scaled(14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-            Spacer()
-        }
-    }
-
-    // MARK: - Input Bar
-
-    private var sharedMediaURLs: [URL] {
-        conversationMessages.compactMap { m in
-            guard ChatMedia.dmBodyKind(m.body) == .image else { return nil }
-            return URL(string: m.body)
-        }
-    }
-
-    private var exportTranscript: String {
-        ChatExport.transcript(title: peerName, lines: conversationMessages.map {
-            (sender: $0.senderName, time: $0.timeDisplay,
-             body: MessageSubject.strip($0.body))
-        })
-    }
-
-    private var blockedBanner: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "hand.raised.fill").font(AppFont.scaled(13))
-            Text("You blocked this contact.")
-                .font(AppFont.scaled(14))
-            Button("Unblock") {
-                ChatBlockStore.setBlocked(convId, false)
-                blockRefresh.toggle()
-            }
-            .font(AppFont.footnoteEmphasis)
-        }
-        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.base)
-        .background(.regularMaterial)
-    }
-
-    // The shared iMessage composer (ChatComposerBar) — same component as the
-    // group chat, configured with this thread's capabilities.
-    private var inputBar: some View {
-        ChatComposerBar(
-            text: $input,
-            focused: $focused,
-            isSending: isSending,
-            config: ChatComposerConfig(
-                onPlus: { showAttachmentSheet = true },
-                onTyping: { directMessageService.sendTyping() },
-                onSendText: { Task { await sendMessage() } },
-                onSendAudio: { url in Task { await sendAudio(url) } },
-                disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey)),
-                showsSubject: showSubjectField
-            ),
-            reply: replyingTo.map { m in
-                ChatComposerReply(sender: m.senderName, snippet: dmSnippet(m)) {
-                    withAnimation { replyingTo = nil }
-                }
-            },
-            subject: showSubjectField ? $subject : nil
-        )
-        .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
-                      maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
-        .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
-    }
-
-    // MARK: - Send
-
-    /// The single persistent send path for EVERY DM kind. It routes through
-    /// `DirectMessageService.send` (optimistic bubble + bounded, timed insert);
-    /// on ANY failure — offline, RLS or a hung/timed-out call — it enqueues to
-    /// the offline outbox so the message survives and retries automatically,
-    /// instead of silently vanishing. Media callers upload first and pass the
-    /// resulting storage path as `body` (the bubble classifies it by prefix).
-    @discardableResult
-    private func performDMSend(body: String, kind: PendingKind, replyTo: UUID? = nil) async -> Bool {
-        do {
-            try await directMessageService.send(
-                propertyId: propertyService.primary?.id, senderName: myName,
-                to: thread, body: body, replyTo: replyTo, expiresAt: dmExpiresAt)
-            return true
-        } catch {
-            if let pid = propertyService.primary?.id {
-                outbox.enqueue(PendingMessage(
-                    propertyId: pid, senderName: myName,
-                    recipientName: member?.name ?? peerName,
-                    recipientMemberId: member?.id,
-                    recipientUserId: thread.peerUserId,
-                    body: body, kind: kind, replyTo: replyTo))
-            }
-            HapticFeedback.warning()
-            return false
-        }
-    }
-
-    @MainActor
-    private func sendMessage() async {
-        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isSending else { return }
-        // Fold the subject into the body (see MessageSubject) so the whole
-        // persistence path — send, outbox, realtime — carries one opaque
-        // string. An empty subject encodes to the text unchanged.
-        let body = MessageSubject.encode(subject: showSubjectField ? subject : "", text: text)
-        input = ""
-        subject = ""
-        isSending = true
-        defer { isSending = false }
-        let replyUUID = replyingTo?.id
-        withAnimation { replyingTo = nil }
-        HapticFeedback.impact(.light)
-        MessageSounds.sent()
-        await performDMSend(body: body, kind: .text, replyTo: replyUUID)
-    }
-
-    private func flushOutbox() async {
-        guard let pid = propertyService.primary?.id else { return }
-        await outbox.flush { pm in
-            guard pm.propertyId == pid, let recipient = pm.recipientName else { return false }
-            struct P: Encodable {
-                let sender_name, recipient_name, body, property_id: String
-                let reply_to: String?
-                let sender_id, recipient_id, recipient_member_id, expires_at: String?
-            }
-            let obTtl = ChatDisappearStore.ttl(recipient)
-            let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
-            let payload = P(sender_name: pm.senderName, recipient_name: recipient,
-                            body: pm.body ?? "", property_id: pid.uuidString,
-                            reply_to: pm.replyTo?.uuidString,
-                            sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                            recipient_id: pm.recipientUserId?.uuidString,
-                            recipient_member_id: pm.recipientMemberId?.uuidString,
-                            expires_at: obExpires)
-            do {
-                let sent: DirectMessage = try await withChatTimeout {
-                    try await supabase
-                        .from("direct_messages")
-                        .insert(payload)
-                        .select().single().execute().value
-                }
-                directMessageService.dms.append(sent)
-                return true
-            } catch {
-                return false
-            }
-        }
-    }
-
-    @MainActor
-    private func forward(_ message: DirectMessage, to dest: ForwardDestination) async {
-        guard let propId = propertyService.primary?.id else { return }
-
-        do {
-            switch dest {
-            case .group:
-                // The group table stores media in attachment columns; map the
-                // DM body kind onto the matching attachment type.
-                switch ChatMedia.dmBodyKind(message.body) {
-                case .image:
-                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
-                                                  attachmentUrl: message.body, attachmentType: "image")
-                case .audio:
-                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
-                                                  attachmentUrl: message.body, attachmentType: "audio")
-                case .video:
-                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
-                                                  attachmentUrl: message.body, attachmentType: "video")
-                case .text:
-                    try await messageService.send(propertyId: propId, senderName: myName, body: message.body)
-                }
-            case .member(let m):
-                let fwdTtl = ChatDisappearStore.ttl(m.name)
-                let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
-                try await directMessageService.send(
-                    propertyId: propId, senderName: myName, to: DMThread(member: m),
-                    body: message.body, expiresAt: fwdExpires)
-            }
-            HapticFeedback.success()
-        } catch {
-            sendError = error.localizedDescription
-            HapticFeedback.warning()
-        }
-    }
-
-    @MainActor
-    private func sendDMContacts(_ payloads: [SharedContactPayload]) async {
-        guard !payloads.isEmpty,
-              let body = SharedContactPayload.encodeDM(payloads) else { return }
-        await sendDMContact(body)
-    }
-
-    private func sendDMContact(_ formatted: String) async {
-        MessageSounds.sent()
-        let body = formatted.hasPrefix(SharedContactPayload.dmMarker) ? formatted : "👤 \(formatted)"
-        if await performDMSend(body: body, kind: .contact) { HapticFeedback.success() }
-    }
-
-    // MARK: Rich attachments (marker-encoded in the body — parity with group chat)
-
-    @MainActor
-    private func sendDMLocation(lat: Double, lon: Double) async {
-        MessageSounds.sent()
-        if await performDMSend(body: DMRich.encodeLocation(lat: lat, lon: lon), kind: .location) {
-            HapticFeedback.success()
-        }
-    }
-
-    @MainActor
-    private func sendDMEvent(title: String, details: String, date: Date, location: String) async {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
-        let event = ChatEvent(t: title, d: details.isEmpty ? nil : details,
-                              date: f.string(from: date), loc: location.isEmpty ? nil : location)
-        guard let body = DMRich.encodeEvent(event) else { return }
-        MessageSounds.sent()
-        if await performDMSend(body: body, kind: .event) { HapticFeedback.success() }
-    }
-
-    @MainActor
-    private func sendDMFile(url: URL) async {
-        guard let propId = propertyService.primary?.id else { return }
-        let accessed = url.startAccessingSecurityScopedResource()
-        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-        guard let data = try? Data(contentsOf: url) else { return }
-        MessageSounds.sent()
-        let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
-        let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
-        let filename = url.lastPathComponent
-        // Private bucket + signed URL at preview (via ChatMedia), mirroring the
-        // group file path; the stored path rides inside the marker-encoded body.
-        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-files",
-                                                ext: ext, contentType: mime) else {
-            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
-        }
-        guard let body = DMRich.encodeFile(name: filename, path: path) else { return }
-        if await performDMSend(body: body, kind: .file) { HapticFeedback.impact(.light) }
-    }
-
-    @MainActor
-    private func sendPhoto(_ items: [PhotosPickerItem]) async {
-        guard !items.isEmpty else { return }
-        photoPickerItems = []
-        // Send each selected item as its own message (preserves order). The
-        // picker offers images and videos; branch on the item's content type.
-        for item in items {
-            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
-                let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
-                await uploadAndSendMedia(data: data, subdir: "dm-video",
-                                         ext: isQuickTime ? "mov" : "mp4",
-                                         contentType: isQuickTime ? "video/quicktime" : "video/mp4",
-                                         kind: .video)
-            } else {
-                await uploadAndSendMedia(data: data, subdir: "dm",
-                                         ext: "jpg", contentType: "image/jpeg", kind: .image)
-            }
-        }
-    }
-
-    @MainActor
-    private func sendCameraImage(_ image: UIImage) async {
-        guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2048) else { return }
-        await uploadAndSendMedia(data: data, subdir: "dm", ext: "jpg", contentType: "image/jpeg", kind: .image)
-    }
-
-    @MainActor
-    private func uploadAndSendMedia(data: Data, subdir: String, ext: String, contentType: String, kind: PendingKind) async {
-        guard let propId = propertyService.primary?.id else { return }
-        MessageSounds.sent()
-        // Private bucket + signed URL at display (via ChatMedia; the subdir in
-        // the stored path is what dmBodyKind classifies bubbles by). Once the
-        // media lives in the bucket, the insert goes through the unified send so
-        // a failed insert queues the (already-uploaded) path instead of orphaning it.
-        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: subdir,
-                                                ext: ext, contentType: contentType) else {
-            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
-        }
-        if await performDMSend(body: path, kind: kind) { HapticFeedback.impact(.light) }
-    }
-
-    @MainActor
-    private func sendAudio(_ fileURL: URL) async {
-        guard let data = try? Data(contentsOf: fileURL),
-              let propId = propertyService.primary?.id else { return }
-        MessageSounds.sent()
-        // Private bucket + signed URL at playback (via ChatMedia / AudioBubble).
-        guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-audio",
-                                                ext: "m4a", contentType: "audio/mp4") else {
-            sendError = String(localized: "chat_upload_failed"); HapticFeedback.warning(); return
-        }
-        if await performDMSend(body: path, kind: .audio) { HapticFeedback.impact(.light) }
-    }
-
-    // MARK: - Helpers
-
-    private func sameDay(_ a: DirectMessage, _ b: DirectMessage) -> Bool {
-        guard let da = a.date, let db = b.date else { return false }
-        return Calendar.current.isDate(da, inSameDayAs: db)
     }
 }

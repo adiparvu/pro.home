@@ -117,8 +117,7 @@ struct MessageRead: Identifiable, Codable, Hashable {
 
     var readTimeDisplay: String {
         let d = ISODate.date(from: readAt) ?? Date()
-        let out = DateFormatter()
-        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        let out = Calendar.current.isDateInToday(d) ? ISODate.timeOnly : AppDateDisplay.dayMonthTime
         return out.string(from: d)
     }
 }

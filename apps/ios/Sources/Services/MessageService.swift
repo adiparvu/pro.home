@@ -326,7 +326,7 @@ final class MessageService {
 
     func editMessage(id: UUID, newBody: String) async {
         struct E: Encodable { let body: String; let edited_at: String }
-        let nowISO = ISO8601DateFormatter().string(from: Date())
+        let nowISO = ISODate.string(from: Date())
         do {
             try await supabase.from("messages").update(E(body: newBody, edited_at: nowISO))
                 .eq("id", value: id.uuidString).execute()
@@ -358,7 +358,7 @@ final class MessageService {
         let convKey = currentGroupId?.uuidString ?? "group"
         let ttl = ChatDisappearStore.ttl(convKey)
         let expiresAt: String? = ttl > 0
-            ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl))
+            ? ISODate.string(from: Date().addingTimeInterval(ttl))
             : nil
 
         let payload = NewMessage(
@@ -397,7 +397,7 @@ final class MessageService {
             pinned: nil, isMarked: nil, editedAt: nil, deletedForAll: nil,
             groupId: currentGroupId,
             expiresAt: expiresAt,
-            createdAt: ISO8601DateFormatter().string(from: Date())
+            createdAt: ISODate.string(from: Date())
         )
         messages.append(optimistic)
 
@@ -679,7 +679,7 @@ final class MessageService {
                 userId: uid,
                 reactorName: reactorName,
                 emoji: emoji,
-                createdAt: ISO8601DateFormatter().string(from: Date())
+                createdAt: ISODate.string(from: Date())
             )
             reactions[messageId, default: []].append(local)
         }

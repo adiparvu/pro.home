@@ -35,9 +35,7 @@ final class ReceiptService {
 
     func monthDisplayName(_ key: String) -> String {
         guard let date = monthFormatter.date(from: key) else { return key }
-        let f = DateFormatter()
-        f.dateFormat = "LLLL yyyy"
-        return f.string(from: date).capitalized
+        return AppDateDisplay.fullMonthYear.string(from: date).capitalized
     }
 
     func receiptsForMonth(_ monthKey: String) -> [Receipt] {
@@ -269,7 +267,7 @@ final class ReceiptService {
     }
 
     func updateReceipt(_ receipt: Receipt) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewReceiptPayload(
             propertyId: receipt.propertyId,
             storeName: receipt.storeName,
@@ -302,7 +300,7 @@ final class ReceiptService {
     // MARK: - Budgets
 
     func upsertBudget(propertyId: UUID, category: String, monthlyLimit: Double) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = BudgetUpsertPayload(
             propertyId: propertyId, category: category,
             monthlyLimit: monthlyLimit, month: currentMonthKey,

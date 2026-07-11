@@ -73,6 +73,34 @@ enum SignedStorage {
     static func clearCache() {
         cache.removeAll()
     }
+
+    // MARK: - Uploads into the public `documents` bucket
+
+    /// The single upload path for property imagery (element photos, note
+    /// photos, paint swatches, …): writes the object under the canonical
+    /// "{auth-uid}/{folder}/{uuid}.{ext}" layout and returns the public-form
+    /// URL that database rows persist (display goes back through `resolve`,
+    /// which signs it).
+    static func uploadPublicImage(_ data: Data, folder: String,
+                                  ext: String = "jpg") async throws -> String {
+        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
+        return try await uploadPublicImage(
+            data, path: "\(uid)/\(folder)/\(UUID().uuidString).\(ext)")
+    }
+
+    /// Path-explicit variant for objects that predate the
+    /// "{auth-uid}/{folder}/{uuid}" convention (zone covers at a fixed,
+    /// upserted path; lowercased legacy layouts) — same bucket, same
+    /// public-URL contract, caller-controlled object path.
+    static func uploadPublicImage(_ data: Data, path: String,
+                                  contentType: String = "image/jpeg",
+                                  upsert: Bool = false) async throws -> String {
+        try await supabase.storage.from("documents")
+            .upload(path, data: data,
+                    options: FileOptions(contentType: contentType, upsert: upsert))
+        return try supabase.storage.from("documents")
+            .getPublicURL(path: path).absoluteString
+    }
 }
 
 // MARK: - Decoded-image cache

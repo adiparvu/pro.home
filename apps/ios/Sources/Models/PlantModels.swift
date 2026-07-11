@@ -89,16 +89,9 @@ struct Plant: Identifiable, Codable, Hashable {
 
     // MARK: Computed
 
-    private static let isoFull: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
-    }()
-    private static let isoShort: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]; return f
-    }()
-
     private func parseDate(_ str: String?) -> Date? {
         guard let str else { return nil }
-        return Plant.isoFull.date(from: str) ?? Plant.isoShort.date(from: str)
+        return ISODate.date(from: str)
     }
 
     /// Public parsed last-watered instant (used by the Health Score's watering
@@ -151,8 +144,7 @@ struct Plant: Identifiable, Codable, Hashable {
         let cal = Calendar.current
         if cal.isDateInToday(d) { return String(localized: "Today") }
         if cal.isDateInYesterday(d) { return String(localized: "Yesterday") }
-        let fmt = DateFormatter(); fmt.dateFormat = "d MMM"
-        return fmt.string(from: d)
+        return AppDateDisplay.dayMonth.string(from: d)
     }
 
     static let emojiOptions = ["🌿","🌱","🌸","🌺","🌻","🌹","🌷","🌵","🪴","🌾","🍀","🍃","🌳","🌲","🌊","🪸"]
@@ -307,8 +299,7 @@ struct PlantPhoto: Identifiable, Codable, Hashable {
 
     var takenDisplay: String {
         guard let d = ISODate.date(from: takenAt) else { return "" }
-        let fmt = DateFormatter(); fmt.dateFormat = "d MMM yyyy"
-        return fmt.string(from: d)
+        return AppDateDisplay.dayMonthYear.string(from: d)
     }
 }
 

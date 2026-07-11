@@ -193,7 +193,7 @@ final class AppSettings {
             }
             _ = try? await supabase
                 .from("profiles")
-                .update(Prefs(locale: locale, theme: theme, updatedAt: ISO8601DateFormatter().string(from: Date())))
+                .update(Prefs(locale: locale, theme: theme, updatedAt: ISODate.string(from: Date())))
                 .eq("id", value: userId.uuidString)
                 .execute()
         }

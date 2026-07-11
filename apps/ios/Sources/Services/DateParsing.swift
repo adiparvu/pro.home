@@ -30,6 +30,15 @@ enum ISODate {
         return c
     }()
 
+    /// Serializes a server timestamp for Supabase writes
+    /// ("2026-07-11T10:00:00Z"). Uses `plain` — byte-identical to the bare
+    /// `ISO8601DateFormatter()` (default `[.withInternetDateTime]`) that
+    /// every write path allocated inline before; Postgres `timestamptz`
+    /// accepts it directly.
+    static func string(from date: Date) -> String {
+        plain.string(from: date)
+    }
+
     static func date(from s: String) -> Date? {
         if let hit = parseCache.object(forKey: s as NSString) { return hit as Date }
         guard let d = fractional.date(from: s)
@@ -151,6 +160,64 @@ enum AppDate {
         f.locale = Locale.autoupdatingCurrent
         f.dateStyle = .medium
         f.timeStyle = .none
+        return f
+    }()
+}
+
+/// Cached `DateFormatter`s for the fixed patterns that models and services
+/// previously allocated per call (every row render paid a fresh
+/// `DateFormatter()` — one of the most expensive Foundation inits).
+///
+/// Each formatter keeps the exact configuration of the call site it replaced
+/// (same `dateFormat`, default `autoupdatingCurrent` locale) so output stays
+/// byte-identical. `DateFormatter` is not thread-safe to mutate, but
+/// concurrent reads after configuration are safe: every instance is fully
+/// configured inside its static initializer and never mutated again.
+enum AppDateDisplay {
+    /// "6 Jul" — plant last-watered rows.
+    static let dayMonth: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
+    /// "6 Jul 2026" — plant photo timeline.
+    static let dayMonthYear: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
+
+    /// "06 Jul 14:30" — message read receipts on non-today dates.
+    static let dayMonthTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd MMM HH:mm"
+        return f
+    }()
+
+    /// "6 Jul, 14:30" — invitation sent stamp.
+    static let dayMonthCommaTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM, HH:mm"
+        return f
+    }()
+
+    /// "July 2026" / "iulie 2026" — receipts month header (call site
+    /// capitalizes for Romanian).
+    static let fullMonthYear: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "LLLL yyyy"
+        return f
+    }()
+
+    /// UTC-anchored "yyyy-MM-dd" parser for birthday day-strings. Not a
+    /// display formatter, but it lives here because it must keep the legacy
+    /// configuration (device locale + UTC) byte-for-byte rather than adopt
+    /// `AppDate`'s POSIX wire formatters.
+    static let dayUTC: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
         return f
     }()
 }

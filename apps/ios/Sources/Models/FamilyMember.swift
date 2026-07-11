@@ -113,9 +113,6 @@ struct FamilyMember: Identifiable, Codable, Hashable {
 
     var birthdayDate: Date? {
         guard let b = birthday else { return nil }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        fmt.timeZone = TimeZone(identifier: "UTC")
-        return fmt.date(from: b)
+        return AppDateDisplay.dayUTC.date(from: b)
     }
 }

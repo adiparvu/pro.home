@@ -46,7 +46,7 @@ final class ApplianceService {
     }
 
     func update(_ appliance: Appliance) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = ApplianceUpdate(
             name: appliance.name,
             brand: appliance.brand,

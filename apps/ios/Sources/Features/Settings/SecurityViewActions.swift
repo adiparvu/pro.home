@@ -67,19 +67,7 @@ extension SecurityView {
         isExporting = true
         Task {
             do {
-                let userId = try await supabase.auth.session.user.id
-                let tasksData   = (try? await supabase.from("maintenance_tasks").select().execute().data)   ?? Data()
-                let recordsData = (try? await supabase.from("financial_records").select().execute().data)   ?? Data()
-                let docsData    = (try? await supabase.from("documents").select().execute().data)            ?? Data()
-                let tasks     = (try? JSONSerialization.jsonObject(with: tasksData))   as? [[String: Any]] ?? []
-                let records   = (try? JSONSerialization.jsonObject(with: recordsData)) as? [[String: Any]] ?? []
-                let docs      = (try? JSONSerialization.jsonObject(with: docsData))    as? [[String: Any]] ?? []
-                let export: [String: Any] = [
-                    "exported_at": ISO8601DateFormatter().string(from: Date()),
-                    "user_id": userId.uuidString,
-                    "tasks": tasks, "financial_records": records, "documents": docs
-                ]
-                let data = try JSONSerialization.data(withJSONObject: export, options: .prettyPrinted)
+                let data = try await AccountDeletionService.exportJSON()
                 let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("prvio_export.json")
                 try data.write(to: tmp)
                 await MainActor.run { isExporting = false; exportItem = ExportItem(url: tmp) }
@@ -97,19 +85,8 @@ extension SecurityView {
 
     func deleteAccount() async {
         isDeletingAccount = true
-        // Revoke MFA factors first — the RPC may remove the auth user too.
-        if let factors = try? await supabase.auth.mfa.listFactors() {
-            for factor in factors.totp {
-                _ = try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factor.id))
-            }
-        }
-        // One atomic server-side transaction (delete_my_account RPC), keyed
-        // on auth.uid(). It replaced a client-side cascade that silently
-        // no-oped on wrong column names. All or nothing: on failure the
-        // data is intact and the user stays signed in to retry.
         do {
-            try await supabase.rpc("delete_my_account").execute()
-            try? await supabase.auth.signOut()
+            try await AccountDeletionService.deleteAccount()
         } catch {
             alertMessage = String(format: String(localized: "delete_account_failed_fmt"),
                                   error.localizedDescription)

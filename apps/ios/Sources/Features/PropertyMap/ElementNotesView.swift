@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 // Notes section embedded in the element detail. Notes can be locked; locked
 // notes are encrypted and revealed only after Face ID / PIN unlock.
@@ -341,13 +340,8 @@ struct ElementNoteEditorSheet: View {
 
     private func uploadNotePhoto(_ image: UIImage) async -> String? {
         guard let data = image.uploadJPEG(quality: 0.8) else { return nil }
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
-        let path = "\(uid)/notes/\(element.id.uuidString)/\(UUID().uuidString).jpg"
-        do {
-            try await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            return try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
-        } catch { return nil }
+        return try? await SignedStorage.uploadPublicImage(
+            data, folder: "notes/\(element.id.uuidString)")
     }
 
     private func save() async {

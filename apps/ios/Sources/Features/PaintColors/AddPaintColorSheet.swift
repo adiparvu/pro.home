@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 // MARK: - "New color" sheet
 //
@@ -521,13 +520,9 @@ struct AddPaintColorSheet: View {
         var photoUrl: String? = nil
         if let image = photoImage, let data = image.uploadJPEG(quality: 0.8) {
             do {
+                // Legacy fully-lowercased layout — path stays byte-identical.
                 let path = "\(ownerId.uuidString.lowercased())/paint/\(propertyId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
-                try await supabase.storage
-                    .from("documents")
-                    .upload(path, data: data,
-                            options: FileOptions(contentType: "image/jpeg", upsert: false))
-                photoUrl = try supabase.storage.from("documents")
-                    .getPublicURL(path: path).absoluteString
+                photoUrl = try await SignedStorage.uploadPublicImage(data, path: path)
             } catch {
                 saveError = String(format: String(localized: "Upload failed: %@"),
                                    error.localizedDescription)

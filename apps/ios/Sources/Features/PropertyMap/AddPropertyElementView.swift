@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 import UniformTypeIdentifiers
 
 struct AddPropertyElementView: View {
@@ -439,12 +438,9 @@ struct AddPropertyElementView: View {
               let data = image.uploadJPEG(quality: 0.82) else { return }
         isUploadingMedia = true
         defer { isUploadingMedia = false }
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
-        let path = "\(uid)/elements/\(pid.uuidString)/\(UUID().uuidString).jpg"
         do {
-            try await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            let url = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
+            let url = try await SignedStorage.uploadPublicImage(
+                data, folder: "elements/\(pid.uuidString)")
             await MainActor.run {
                 switch mediaTarget {
                 case .cover: coverURL = url

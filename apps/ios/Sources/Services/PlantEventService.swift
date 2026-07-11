@@ -44,7 +44,7 @@ final class PlantEventService {
             property_id: propertyId.uuidString,
             kind: kind.rawValue,
             details: details,
-            at: ISO8601DateFormatter().string(from: at)
+            at: ISODate.string(from: at)
         )
         do {
             let row: PlantEvent = try await supabase.from("plant_events")

@@ -68,7 +68,7 @@ final class SupplyService {
     }
 
     func updateList(_ list: SupplyList) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = SupplyListUpdate(name: list.name, icon: list.icon,
                                    color: list.color, note: list.note, updatedAt: now)
         do {
@@ -103,7 +103,7 @@ final class SupplyService {
     }
 
     func updateItem(_ item: SupplyItem) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = SupplyItemUpdate(name: item.name, quantity: item.quantity,
                                    category: item.category, priority: item.priority,
                                    notes: item.notes, isCompleted: item.isCompleted,
@@ -119,7 +119,7 @@ final class SupplyService {
     func toggleComplete(_ item: SupplyItem) async {
         var updated = item
         updated.isCompleted.toggle()
-        updated.updatedAt = ISO8601DateFormatter().string(from: Date())
+        updated.updatedAt = ISODate.string(from: Date())
         await updateItem(updated)
         // Keep the shopping Live Activity in sync with this list's progress.
         let listId = item.listId

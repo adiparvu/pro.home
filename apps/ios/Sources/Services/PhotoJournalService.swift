@@ -54,7 +54,7 @@ final class PhotoJournalService {
             .upload(path, data: compressed,
                     options: FileOptions(contentType: "image/jpeg", upsert: false))
         let publicURL = try supabase.storage.from("documents").getPublicURL(path: path)
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         return try await add(NewPhotoJournalPayload(
             propertyId: propertyId,
             ownerId: ownerId,

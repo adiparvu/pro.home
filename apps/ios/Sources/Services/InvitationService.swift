@@ -33,9 +33,7 @@ struct MemberInvitation: Identifiable, Codable, Hashable {
 
     var sentDisplay: String {
         guard let d = createdDate else { return "" }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "d MMM, HH:mm"
-        return fmt.string(from: d)
+        return AppDateDisplay.dayMonthCommaTime.string(from: d)
     }
 }
 

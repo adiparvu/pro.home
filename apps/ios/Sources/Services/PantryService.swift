@@ -54,7 +54,7 @@ final class PantryService {
     }
 
     func updateItem(_ item: PantryItem) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         var updated = item
         updated.updatedAt = now
         if let i = items.firstIndex(where: { $0.id == item.id }) { items[i] = updated }

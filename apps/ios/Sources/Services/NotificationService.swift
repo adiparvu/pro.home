@@ -49,13 +49,6 @@ struct AppNotification: Identifiable, Codable, Hashable {
         return f
     }()
 
-    private static let olderFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
-
     var timeDisplay: String {
         guard let date else { return "" }
         let diff = Date().timeIntervalSince(date)
@@ -65,7 +58,7 @@ struct AppNotification: Identifiable, Codable, Hashable {
         if diff < 6 * 86400 {
             return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
         }
-        return Self.olderFormatter.string(from: date)
+        return AppDate.medium.string(from: date)
     }
 }
 

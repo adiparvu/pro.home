@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 /// Edit a zone's metadata — name, colour, icon, layer and cover photo.
 struct ZoneEditSheet: View {
@@ -293,14 +292,8 @@ struct ZoneEditSheet: View {
                 UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
             }.value
             do {
-                try await supabase.storage
-                    .from("documents")
-                    .upload(path, data: compressed,
-                            options: FileOptions(contentType: "image/jpeg", upsert: true))
-                updated.photoUrl = try supabase.storage
-                    .from("documents")
-                    .getPublicURL(path: path)
-                    .absoluteString
+                updated.photoUrl = try await SignedStorage.uploadPublicImage(
+                    compressed, path: path, upsert: true)
             } catch {
                 #if DEBUG
                 debugLog("[ZoneEditSheet] photo upload error: \(error)")

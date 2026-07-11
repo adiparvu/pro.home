@@ -254,22 +254,11 @@ private struct AddServiceInterventionSheet: View {
         isSaving = true
         defer { isSaving = false }
 
-        struct NewRecord: Encodable {
-            let property_id: String
-            let title: String
-            let amount: Double
-            let currency: String
-            let type: String
-            let category: String
-            let date: String
-            let description: String?
-            let tags: [String]
-        }
         let details = [contractorName, notes.isEmpty ? nil : notes]
             .compactMap { $0 }.joined(separator: " · ")
         do {
-            try await supabase.from("financial_records").insert(NewRecord(
-                property_id: appliance.propertyId.uuidString,
+            try await financialService.add(FinancialService.NewFinancialRecord(
+                propertyId: appliance.propertyId.uuidString,
                 title: title.trimmingCharacters(in: .whitespaces),
                 amount: amount,
                 currency: appSettings.preferredCurrency,
@@ -278,8 +267,7 @@ private struct AddServiceInterventionSheet: View {
                 date: AppDate.dayString(from: date),
                 description: details.isEmpty ? nil : details,
                 tags: [ApplianceServiceLog.serviceTag, ApplianceServiceLog.tag(for: appliance.id)]
-            )).execute()
-            await financialService.load()
+            ))
             HapticFeedback.success()
             dismiss()
         } catch {

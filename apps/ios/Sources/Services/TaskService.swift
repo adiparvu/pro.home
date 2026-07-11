@@ -117,7 +117,7 @@ final class TaskService {
             try await supabase
                 .from("maintenance_tasks")
                 .update(ElementLink(element_id: elementId?.uuidString,
-                                    updated_at: ISO8601DateFormatter().string(from: Date())))
+                                    updated_at: ISODate.string(from: Date())))
                 .eq("id", value: task.id.uuidString)
                 .execute()
             if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
@@ -132,7 +132,7 @@ final class TaskService {
         let newStatus = task.isCompleted ? "pending" : "completed"
         let update = TaskStatusUpdate(
             status: newStatus,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISODate.string(from: Date())
         )
         do {
             try await supabase
@@ -223,7 +223,7 @@ final class TaskService {
             title: title, description: description,
             dueDate: dueDate, priority: priority, category: category,
             assigneeIds: assigneeIds, assigneeNames: assigneeNames,
-            updatedAt: ISO8601DateFormatter().string(from: Date()),
+            updatedAt: ISODate.string(from: Date()),
             photoUrls: photoUrls ?? task.photoUrls,
             locationName: locationName ?? task.locationName,
             locationLat: locationLat ?? task.locationLat,

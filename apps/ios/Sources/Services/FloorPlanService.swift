@@ -18,8 +18,6 @@ final class FloorPlanService {
     var error: String?
     private(set) var propertyId: UUID?
 
-    private static let iso = ISO8601DateFormatter()
-
     // MARK: Load
 
     func load(propertyId: UUID) async {
@@ -75,7 +73,7 @@ final class FloorPlanService {
             let created_at: String
             let updated_at: String
         }
-        let now = Self.iso.string(from: Date())
+        let now = ISODate.string(from: Date())
         do {
             let created: FloorPlanRecord = try await supabase
                 .from("floor_plans")
@@ -98,7 +96,7 @@ final class FloorPlanService {
         do {
             try await supabase
                 .from("floor_plans")
-                .update(Patch(name: name, updated_at: Self.iso.string(from: Date())))
+                .update(Patch(name: name, updated_at: ISODate.string(from: Date())))
                 .eq("id", value: floor.id.uuidString)
                 .execute()
             if let idx = floors.firstIndex(where: { $0.id == floor.id }) {
@@ -150,7 +148,7 @@ final class FloorPlanService {
             let created_at: String
             let updated_at: String
         }
-        let now = Self.iso.string(from: Date())
+        let now = ISODate.string(from: Date())
         do {
             let created: RoomRecord = try await supabase
                 .from("rooms")
@@ -203,7 +201,7 @@ final class FloorPlanService {
                 .from("rooms")
                 .update(Patch(x_pct: xPct, y_pct: yPct,
                               width_pct: widthPct, height_pct: heightPct,
-                              updated_at: Self.iso.string(from: Date())))
+                              updated_at: ISODate.string(from: Date())))
                 .eq("id", value: room.id.uuidString)
                 .execute()
             if let idx = rooms.firstIndex(where: { $0.id == room.id }) {
@@ -233,7 +231,7 @@ final class FloorPlanService {
             struct Patch: Encodable { let scan_path: String; let updated_at: String }
             try await supabase
                 .from("rooms")
-                .update(Patch(scan_path: path, updated_at: Self.iso.string(from: Date())))
+                .update(Patch(scan_path: path, updated_at: ISODate.string(from: Date())))
                 .eq("id", value: room.id.uuidString)
                 .execute()
             if let idx = rooms.firstIndex(where: { $0.id == room.id }) {

@@ -28,11 +28,7 @@ struct TenantLease: Codable, Identifiable, Hashable {
     /// "1.200 EUR / month" style summary, or nil when no rent captured.
     var rentDisplay: String? {
         guard let rent = monthlyRent else { return nil }
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = rent.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
-        let amount = f.string(from: NSNumber(value: rent)) ?? "\(rent)"
-        return "\(amount) \(currency)"
+        return "\(CurrencyService.amount(rent)) \(currency)"
     }
 
     var endDisplay: String? {

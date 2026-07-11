@@ -62,7 +62,7 @@ enum ChatPrefsSync {
         }
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
-                        cleared_at: ISO8601DateFormatter().string(from: Date()))
+                        cleared_at: ISODate.string(from: Date()))
         _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }

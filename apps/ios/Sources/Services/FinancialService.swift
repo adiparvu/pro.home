@@ -118,6 +118,35 @@ final class FinancialService {
         }
     }
 
+    /// Insert payload for a new financial record.
+    struct NewFinancialRecord: Encodable {
+        let propertyId: String
+        let title: String
+        let amount: Double
+        let currency: String
+        let type: String
+        let category: String
+        let date: String
+        let description: String?
+        let tags: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case propertyId = "property_id"
+            case title, amount, currency, type, category, date, description, tags
+        }
+    }
+
+    /// Inserts a record, then reloads so every screen sees it immediately.
+    /// Rethrows the insert error so callers can surface it inline (the
+    /// reload itself never throws — it reports through `self.error`).
+    func add(_ record: NewFinancialRecord) async throws {
+        try await supabase
+            .from("financial_records")
+            .insert(record)
+            .execute()
+        await load()
+    }
+
     func delete(_ record: FinancialRecord) async {
         do {
             try await supabase

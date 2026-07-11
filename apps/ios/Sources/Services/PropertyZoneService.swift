@@ -58,7 +58,7 @@ final class PropertyZoneService {
             photoUrl: zone.photoUrl,
             sortOrder: zone.sortOrder,
             createdAt: zone.createdAt,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISODate.string(from: Date())
         )
         do {
             let updated: PropertyZone = try await supabase
@@ -101,7 +101,7 @@ final class PropertyZoneService {
         icon: String = "square.dashed",
         layer: PropertyLayer = .property
     ) async -> PropertyZone? {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewPropertyZone(
             propertyId: propertyId,
             name: name,
@@ -130,7 +130,7 @@ final class PropertyZoneService {
         icon: String = "square.dashed",
         layer: PropertyLayer = .property
     ) async -> PropertyZone? {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewPropertyZone(
             propertyId: propertyId,
             name: name,
