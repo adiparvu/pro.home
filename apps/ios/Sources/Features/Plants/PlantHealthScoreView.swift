@@ -101,16 +101,19 @@ struct PlantHealthScoreCard: View {
                     .foregroundStyle(tint)
                     .monospacedDigit()
             }
-            // Contribution bar (earned / max points for this factor).
-            GeometryReader { geo in
-                let frac = factor.maxPoints > 0 ? factor.earnedPoints / factor.maxPoints : 0
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.primary.opacity(AppOpacity.hairline))
-                    Capsule().fill(tint).frame(width: max(0, geo.size.width * frac))
+            // Contribution bar (earned / max points for this factor),
+            // without GeometryReader: scale a full-width fill.
+            let frac = factor.maxPoints > 0 ? factor.earnedPoints / factor.maxPoints : 0
+            Capsule()
+                .fill(Color.primary.opacity(AppOpacity.hairline))
+                .frame(height: 4)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(tint)
+                        .scaleEffect(x: max(0, frac), y: 1, anchor: .leading)
                 }
-            }
-            .frame(height: 4)
-            .padding(.leading, 42)
+                .clipShape(Capsule())
+                .padding(.leading, 42)
 
             Text(factor.recommendation)
                 .font(AppFont.caption)

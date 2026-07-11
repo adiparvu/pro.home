@@ -39,34 +39,6 @@ func documentCategoryColor(_ category: String) -> Color {
     }
 }
 
-// MARK: - Long-press preview card
-
-struct DocumentRowPreview: View {
-    let doc: DocumentModel
-    private var tint: Color { documentCategoryColor(doc.category) }
-
-    var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: doc.categoryIcon)
-                .font(AppFont.scaled(30, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 76, height: 76)
-                .glassCircle()
-            VStack(spacing: 4) {
-                Text(doc.name).font(AppFont.scaled(17, weight: .semibold))
-                    .foregroundStyle(.primary).multilineTextAlignment(.center).lineLimit(2)
-                Text(DocumentTypeDisplay.name(doc.category))
-                    .font(AppFont.scaled(12)).foregroundStyle(tint)
-                if !doc.fileSizeDisplay.isEmpty {
-                    Text(doc.fileSizeDisplay).font(AppFont.scaled(11)).foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(28)
-        .frame(width: 260)
-    }
-}
-
 // MARK: - Document detail page (pushed, not a sheet)
 
 struct DocumentDetailView: View {

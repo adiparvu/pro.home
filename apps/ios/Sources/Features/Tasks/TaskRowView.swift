@@ -50,7 +50,7 @@ struct TaskRowView: View {
             .contextMenu {
                 menuItems
             } preview: {
-                TaskGradientCard(task: task)
+                TaskGradientCard(task: task, prominentShadow: true)
                     .frame(width: 340)
             }
             .sheet(isPresented: $showEdit) {

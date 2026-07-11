@@ -77,7 +77,7 @@ struct PantryView: View {
             EmptyStateView(icon: "magnifyingglass", title: "No results")
         } else {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                LazyVStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if !low.isEmpty {
                         section(title: Text("pantry_low_section"), items: low, tint: .red)
                     }

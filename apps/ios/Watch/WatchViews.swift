@@ -486,9 +486,16 @@ private struct TodayGlance: View {
                         Text(session.title)
                             .font(.system(size: 11, weight: .medium))
                             .lineLimit(1)
-                        Text(session.startedAt, style: .timer)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .monospacedDigit()
+                        // Computed elapsed (not Text(style: .timer), which
+                        // counts wall-clock from startedAt) so paused time is
+                        // excluded and a pause truly freezes the readout —
+                        // the same clock WorkSessionView shows.
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Text(verbatim: session.elapsed(at: context.date).watchSessionClock)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(session.isPaused ? .orange : .primary)
+                        }
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.right")
@@ -505,13 +512,15 @@ private struct TodayGlance: View {
 
     /// Trust is knowing how old the data is — stale info must say so.
     private var freshnessFooter: some View {
+        // .caption2, never a fixed 8–9pt: that was below any legible minimum
+        // on the wrist and ignored Dynamic Type.
         HStack(spacing: 4) {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 8))
+                .font(.caption2)
             Text("watch_updated")
-                .font(.system(size: 9))
+                .font(.caption2)
             Text(snapshot.updatedAt, format: .relative(presentation: .named))
-                .font(.system(size: 9))
+                .font(.caption2)
         }
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, alignment: .center)
@@ -615,8 +624,10 @@ private struct TodayGlance: View {
                     }
                     .foregroundStyle(.orange)
                 }
+                // Required by the WeatherKit terms — must stay visible, and
+                // .caption2 keeps it actually legible (8pt wasn't).
                 Text(verbatim: " Apple Weather")
-                    .font(.system(size: 8))
+                    .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -663,6 +674,9 @@ private struct TodayGlance: View {
                 Spacer(minLength: 0)
             }
         }
+        // Redacted on the Always-On dim state — the household's private
+        // intelligence isn't for whoever glances at a resting wrist.
+        .privacySensitive()
     }
 
     private func focusCard(icon: String, tint: Color, title: String, sub: String?) -> some View {

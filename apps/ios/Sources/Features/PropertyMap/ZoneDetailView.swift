@@ -58,9 +58,13 @@ struct ZoneDetailView: View {
     @Environment(AppRouter.self) var router
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var editingZone: PropertyZone? = nil
     @State private var showDeleteConfirm = false
+    /// Drives the water-ripple TimelineView: animate only while this view is
+    /// actually on screen, so the Canvas stops redrawing once we navigate away.
+    @State private var isRippleActive = false
 
     @State private var selectedElement: PropertyElement?
 
@@ -97,6 +101,8 @@ struct ZoneDetailView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(zone.name)
         .navigationBarTitleDisplayMode(.large)
+        .onAppear { isRippleActive = true }
+        .onDisappear { isRippleActive = false }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {
@@ -105,6 +111,7 @@ struct ZoneDetailView: View {
                             .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Share")
                     Menu {
                         Button { editingZone = zone } label: {
                             Label("Edit Zone", systemImage: "pencil")
@@ -117,6 +124,7 @@ struct ZoneDetailView: View {
                             .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("More")
                 }
             }
         }
@@ -162,8 +170,8 @@ struct ZoneDetailView: View {
                 heroGradient
             }
 
-            if zoneType == .water {
-                TimelineView(.animation) { timeline in
+            if zoneType == .water && !reduceMotion {
+                TimelineView(.animation(minimumInterval: nil, paused: !isRippleActive)) { timeline in
                     Canvas { context, size in
                         let t = timeline.date.timeIntervalSinceReferenceDate
                         let cx = size.width / 2

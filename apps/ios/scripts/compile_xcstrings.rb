@@ -18,22 +18,42 @@ project_dir = ENV["PROJECT_DIR"] || File.expand_path("..", __dir__)
 dest_root = ARGV[0] || File.join(ENV.fetch("TARGET_BUILD_DIR"),
                                  ENV.fetch("UNLOCALIZED_RESOURCES_FOLDER_PATH"))
 
-catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings")))
+catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings"),
+                               encoding: "UTF-8"))
+
+# A catalog entry is either a plain stringUnit or a plural `variations`
+# block. .strings tables can't express plurals, so the best honest
+# projection is the `other` form (falling back through the plural cases) —
+# without this, plural keys silently vanished from every compiled table.
+def unit_value(localization)
+  return nil unless localization
+  direct = localization.dig("stringUnit", "value")
+  return direct if direct
+  plural = localization.dig("variations", "plural")
+  return nil unless plural
+  %w[other many few two one zero].each do |form|
+    v = plural.dig(form, "stringUnit", "value")
+    return v if v
+  end
+  nil
+end
 
 %w[en ro fr nl de].each do |lang|
   merged = {}
 
   legacy = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
   if File.exist?(legacy)
-    File.read(legacy).scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
+    # Explicit UTF-8: under a C/ASCII locale (CI runners) the default
+    # external encoding made diacritics in the legacy tables a hard crash.
+    File.read(legacy, encoding: "UTF-8").scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
       un = ->(s) { s.gsub('\\n', "\n").gsub('\\"', '"').gsub('\\\\', '\\') }
       merged[un.call(k)] = un.call(v)
     end
   end
 
   catalog["strings"].each do |key, info|
-    value = info.dig("localizations", lang, "stringUnit", "value")
-    value ||= info.dig("localizations", "en", "stringUnit", "value")
+    value = unit_value(info.dig("localizations", lang))
+    value ||= unit_value(info.dig("localizations", "en"))
     merged[key] = value if value
   end
 

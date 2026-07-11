@@ -178,7 +178,9 @@ struct DocumentsView: View {
                 }
             }
         }
-        .task { await documentService.load() }
+        // Fetch only after a cold cache — re-appearances (navigation pops,
+        // sheet dismissals) shouldn't refire the network round-trip.
+        .task { if documentService.documents.isEmpty { await documentService.load() } }
         .sheet(isPresented: $showAdd, onDismiss: { pendingScan = nil }) {
             if let propertyId = propertyService.primary?.id {
                 AddDocumentSheet(propertyId: propertyId, initialScan: pendingScan) {

@@ -31,7 +31,7 @@ struct TenantManagementView: View {
                     emptyState
                 } else {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 12) {
+                        LazyVStack(spacing: 12) {
                             statsStrip
                             leaseAlerts
                             ForEach(tenants) { tenant in

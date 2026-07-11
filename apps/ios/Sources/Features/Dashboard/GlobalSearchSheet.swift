@@ -357,7 +357,7 @@ struct GlobalSearchSheet: View {
 
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 accountSectionView
                 shortcutsSectionView
                 peopleSectionView

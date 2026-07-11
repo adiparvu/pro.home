@@ -155,25 +155,3 @@ struct PropertySettingsView: View {
         }
     }
 }
-
-// MARK: - Detail row (shared with PropertyDetailView)
-
-struct PropDetailRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(AppFont.scaled(14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Spacer()
-            Text(value)
-                .font(AppFont.footnote)
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, AppSpacing.md)
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
-    }
-}

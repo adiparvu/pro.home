@@ -1,5 +1,7 @@
 import SwiftUI
 import Supabase
+import ImageIO
+import UIKit
 
 // MARK: - Signed access to the `documents` bucket
 //
@@ -73,33 +75,141 @@ enum SignedStorage {
     }
 }
 
+// MARK: - Decoded-image cache
+
+/// Fully-decoded (and, when requested, downsampled) `UIImage`s, keyed by the
+/// canonical *source* string plus the requested pixel size — signed URLs
+/// rotate every 50 minutes, so the resolved URL would defeat the cache.
+/// Costs are the decoded bitmap size; the cache stays under ~60 MB.
+private enum StorageImageCache {
+    static let images: NSCache<NSURL, UIImage> = {
+        let cache = NSCache<NSURL, UIImage>()
+        cache.totalCostLimit = 60 * 1024 * 1024
+        return cache
+    }()
+
+    /// Cache key: the source with the target pixel size appended as a
+    /// fragment, so the same object at different sizes never collides.
+    static func key(source: String, maxPixel: CGFloat) -> NSURL {
+        NSURL(string: "\(source)#maxpx=\(Int(maxPixel))")
+            ?? NSURL(fileURLWithPath: "\(source.hashValue)-\(Int(maxPixel))")
+    }
+
+    static func cost(of image: UIImage) -> Int {
+        guard let cg = image.cgImage else { return 1 }
+        return cg.bytesPerRow * cg.height
+    }
+}
+
 // MARK: - StorageImage — AsyncImage over signed storage
 
 /// Drop-in replacement for `AsyncImage` wherever the source may be a
 /// `documents`-bucket object. Resolves the signed URL first, then renders
 /// through `AsyncImage`, so call sites keep their phase-based styling.
+///
+/// Pass `targetSize` (the view's larger dimension, in points) to opt into the
+/// fast path: the bytes are fetched through `URLSession`, downsampled with
+/// `CGImageSourceCreateThumbnailAtIndex` off the main actor, and the decoded
+/// result is kept in an app-wide `NSCache` — so a thumbnail grid never holds
+/// full-size decodes and never re-decodes on scroll. Without `targetSize` the
+/// behavior is exactly the previous `AsyncImage` pipeline.
 struct StorageImage<Content: View>: View {
     let source: String?
+    /// Larger display dimension in points; nil = legacy AsyncImage path.
+    var targetSize: CGFloat? = nil
     @ViewBuilder let content: (AsyncImagePhase) -> Content
 
+    @Environment(\.displayScale) private var displayScale
     @State private var resolved: URL?
+    @State private var phase: AsyncImagePhase = .empty
 
-    init(source: String?, @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
+    init(source: String?, targetSize: CGFloat? = nil,
+         @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
         self.source = source
+        self.targetSize = targetSize
         self.content = content
     }
 
-    init(url: URL?, @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
+    init(url: URL?, targetSize: CGFloat? = nil,
+         @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
         self.source = url?.absoluteString
+        self.targetSize = targetSize
         self.content = content
     }
 
     var body: some View {
-        AsyncImage(url: resolved) { phase in
-            content(phase)
+        if let targetSize {
+            content(currentPhase(maxPixel: targetSize * displayScale))
+                .task(id: source) {
+                    await loadDownsampled(maxPixel: targetSize * displayScale)
+                }
+        } else {
+            AsyncImage(url: resolved) { phase in
+                content(phase)
+            }
+            .task(id: source) {
+                resolved = await SignedStorage.resolve(source)
+            }
         }
-        .task(id: source) {
-            resolved = await SignedStorage.resolve(source)
+    }
+
+    /// A synchronous cache hit renders on the very first body pass — no
+    /// placeholder flash when a cell scrolls back on screen.
+    private func currentPhase(maxPixel: CGFloat) -> AsyncImagePhase {
+        if case .empty = phase, let source,
+           let hit = StorageImageCache.images.object(
+               forKey: StorageImageCache.key(source: source, maxPixel: maxPixel)) {
+            return .success(Image(uiImage: hit))
+        }
+        return phase
+    }
+
+    private func loadDownsampled(maxPixel: CGFloat) async {
+        guard let source, !source.isEmpty else {
+            phase = .empty
+            return
+        }
+        let key = StorageImageCache.key(source: source, maxPixel: maxPixel)
+        if let hit = StorageImageCache.images.object(forKey: key) {
+            phase = .success(Image(uiImage: hit))
+            return
+        }
+        // Cold load (or the reused view got a new source): show the
+        // placeholder while fetching, mirroring AsyncImage's semantics.
+        phase = .empty
+        guard let url = await SignedStorage.resolve(source) else {
+            phase = .failure(URLError(.badURL))
+            return
+        }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            try Task.checkCancellation()
+            // Decode + downsample off the main actor; only publish comes back.
+            let image = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+                let options: [CFString: Any] = [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceShouldCacheImmediately: true,
+                    kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+                ]
+                guard let src = CGImageSourceCreateWithData(data as CFData, nil),
+                      let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, options as CFDictionary)
+                else { return nil }
+                return UIImage(cgImage: cg)
+            }.value
+            guard !Task.isCancelled else { return }
+            if let image {
+                StorageImageCache.images.setObject(image, forKey: key,
+                                                   cost: StorageImageCache.cost(of: image))
+                phase = .success(Image(uiImage: image))
+            } else {
+                phase = .failure(URLError(.cannotDecodeContentData))
+            }
+        } catch is CancellationError {
+            // View went away mid-flight — leave the phase alone.
+        } catch {
+            guard !Task.isCancelled else { return }
+            phase = .failure(error)
         }
     }
 }

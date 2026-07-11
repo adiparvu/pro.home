@@ -63,17 +63,18 @@ extension MortgageView {
                         .font(AppFont.scaled(14, weight: .bold))
                         .foregroundStyle(.primary)
                 }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
+                // Progress bar without GeometryReader: scale a full-width fill.
+                Capsule()
+                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    .frame(height: 10)
+                    .overlay(alignment: .leading) {
                         Capsule()
                             .fill(LinearGradient(colors: [.blue, Color.brandSuccess],
                                                  startPoint: .leading, endPoint: .trailing))
-                            .frame(width: geo.size.width * paidProgress, height: 10)
+                            .scaleEffect(x: paidProgress, y: 1, anchor: .leading)
                             .animation(.spring(response: 0.6), value: paidProgress)
                     }
-                }
-                .frame(height: 10)
+                    .clipShape(Capsule())
 
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
@@ -136,16 +137,16 @@ extension MortgageView {
                         .foregroundStyle(Color.brandSuccess)
                 }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
+                Capsule()
+                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    .frame(height: 10)
+                    .overlay(alignment: .leading) {
                         Capsule()
                             .fill(Color.brandSuccess)
-                            .frame(width: geo.size.width * equityPercent, height: 10)
+                            .scaleEffect(x: equityPercent, y: 1, anchor: .leading)
                             .animation(.spring(response: 0.6), value: equityPercent)
                     }
-                }
-                .frame(height: 10)
+                    .clipShape(Capsule())
 
                 HStack {
                     MortgageStat(label: "Property Value", value: CurrencyService.money(propertyValue, code: "EUR", whole: true))
@@ -215,12 +216,15 @@ struct BreakdownRow: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
             }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 6)
-                    Capsule().fill(color.opacity(0.7)).frame(width: geo.size.width * percent, height: 6)
+            Capsule()
+                .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                .frame(height: 6)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(color.opacity(0.7))
+                        .scaleEffect(x: percent, y: 1, anchor: .leading)
                 }
-            }.frame(height: 6)
+                .clipShape(Capsule())
         }
     }
 }

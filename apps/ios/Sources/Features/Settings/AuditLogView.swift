@@ -16,7 +16,9 @@ struct AuditLogView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
+            // The log is unbounded — a lazy stack keeps offscreen days
+            // unmaterialized instead of building every row up front.
+            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
                 if events.isEmpty {
                     emptyState
                 } else {
@@ -81,13 +83,7 @@ struct AuditLogView: View {
     // MARK: - Day section
 
     private func daySection(day: String, events: [AuditLogService.AuditEvent]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(day)
-                .textCase(.uppercase)
-                .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, AppSpacing.sm)
-
+        Section {
             VStack(spacing: 0) {
                 ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
@@ -100,6 +96,17 @@ struct AuditLogView: View {
                 }
             }
             .liquidGlass(cornerRadius: AppRadius.xl)
+        } header: {
+            // Same construction as the activity feed's pinned day headers:
+            // an opaque backing so rows never scroll visibly beneath it.
+            Text(day)
+                .textCase(.uppercase)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xs)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(appBackground)
         }
     }
 

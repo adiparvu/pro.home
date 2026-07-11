@@ -58,6 +58,7 @@ struct LinkedDocumentRow: View {
                         .font(AppFont.scaled(16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open")
             }
         }
         .swipeActions(edge: .trailing) {

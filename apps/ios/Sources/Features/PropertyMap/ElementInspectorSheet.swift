@@ -110,6 +110,7 @@ struct ElementInspectorSheet: View {
                             .frame(width: 30, height: 30)
                             .background(Color.primary.opacity(0.06), in: Circle())
                     }
+                    .accessibilityLabel("More")
                 }
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

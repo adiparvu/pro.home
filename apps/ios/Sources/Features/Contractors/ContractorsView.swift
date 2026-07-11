@@ -295,10 +295,16 @@ struct ContractorsView: View {
         }
         .task {
             // Members power the PRVIO-account matching; they are loaded at
-            // startup, so this only refetches after a cold cache.
-            async let contractorsLoad: Void = service.load()
-            if familyService.members.isEmpty { await familyService.load() }
-            await contractorsLoad
+            // startup, so this only refetches after a cold cache. Contractors
+            // follow the same rule: fetch once, then rely on the service's
+            // in-memory state (pull-to-refresh re-fetches explicitly).
+            if service.contractors.isEmpty {
+                async let contractorsLoad: Void = service.load()
+                if familyService.members.isEmpty { await familyService.load() }
+                await contractorsLoad
+            } else if familyService.members.isEmpty {
+                await familyService.load()
+            }
         }
         .sheet(isPresented: $showAdd) {
             AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)

@@ -50,7 +50,10 @@ final class MessageService {
         let now = Date()
         guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
         lastTypingSentAt = now
-        Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
+        // Capture the name by value: Task's implicit self capture would
+        // otherwise retain the service for the broadcast's lifetime.
+        let name = myName
+        Task { await ch.broadcast(event: "typing", message: ["name": .string(name)]) }
     }
 
     private func handleTyping(_ name: String) {
@@ -196,7 +199,7 @@ final class MessageService {
             table: "messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 let added = await self.loadNewer(propertyId: propertyId)
                 guard added > 0 else { return }
@@ -223,7 +226,7 @@ final class MessageService {
             table: "messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] action in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self,
                       let updated = try? action.decodeRecord(decoder: JSONDecoder()) as Message
                 else { return }
@@ -240,7 +243,7 @@ final class MessageService {
             schema: "public",
             table: "messages"
         ) { [weak self] action in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self,
                       let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
                 else { return }
@@ -249,7 +252,7 @@ final class MessageService {
         })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
-                Task { @MainActor in self?.handleTyping(name) }
+                Task { @MainActor [weak self] in self?.handleTyping(name) }
             }
         }
         try? await channel.subscribeWithError()
@@ -553,7 +556,7 @@ final class MessageService {
             table: "message_reads",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.reloadTasks["reads"]?.cancel()
                 self.reloadTasks["reads"] = Task { @MainActor [weak self] in
@@ -626,7 +629,7 @@ final class MessageService {
             table: "message_deliveries",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.reloadTasks["deliveries"]?.cancel()
                 self.reloadTasks["deliveries"] = Task { @MainActor [weak self] in
@@ -729,7 +732,7 @@ final class MessageService {
             table: "message_reactions",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.reloadTasks["reactions"]?.cancel()
                 self.reloadTasks["reactions"] = Task { @MainActor [weak self] in
@@ -804,7 +807,7 @@ final class MessageService {
             table: "message_poll_votes",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.reloadTasks["pollVotes"]?.cancel()
                 self.reloadTasks["pollVotes"] = Task { @MainActor [weak self] in

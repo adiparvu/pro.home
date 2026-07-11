@@ -56,15 +56,13 @@ struct WatchPayload: Codable {
     /// The auth user id this payload belongs to. `nil` means a cleared /
     /// signed-out state — the watch wipes its cache when it receives it, so a
     /// logged-out or switched account never keeps showing the previous owner's
-    /// data. Optional-by-default so payloads cached by older watch apps still
-    /// decode.
+    /// data.
     var accountId: String? = nil
     /// `false` when the payload was scoped for an outsider (tenant/guest/worker)
     /// — the watch then keeps itself to the person's own surfaces only.
     var isFamilyScope: Bool = true
     var tasks: [TaskCatalogEntry] = []
     var plants: [PlantCatalogEntry] = []
-    // Optional-by-default so payloads cached by the V1 watch app still decode.
     var supplies: [SupplyCatalogEntry] = []
     var deliveries: [DeliveryCatalogEntry] = []
     /// Pantry stock for the wrist — consume-one taps ride the action queue.
@@ -96,7 +94,7 @@ struct WatchPayload: Codable {
     /// nil means the default set — Today is always first and never listed.
     var pageOrder: [String]? = nil
     /// Live smart-home state for the wrist (empty until the user adds IoT
-    /// devices). Optional-by-default so older cached payloads still decode.
+    /// devices).
     var sensors: [SensorCatalogEntry] = []
     var actuators: [ActuatorCatalogEntry] = []
     /// The property's emergency plan — shutoff steps + contacts — mirrored to
@@ -108,6 +106,57 @@ struct WatchPayload: Codable {
     /// mail, not a family surface — it rides outsider payloads too (it is
     /// THEIR mail). Empty until the phone's conversation heads load.
     var dmConversations: [DMConversationEntry] = []
+}
+
+// MARK: Tolerant decoding
+//
+// Property defaults do NOT make synthesized Codable lenient: a key missing
+// from an already-cached payload throws keyNotFound and the WHOLE payload is
+// discarded — so every field added to WatchPayload used to wipe the wrist's
+// offline cache (and the watch-face complications) until the next phone push.
+// This custom decoder defaults every absent key instead (the same guarantee
+// PRVIOWidgetSnapshot already makes), so old caches keep decoding as fields
+// are added. Declared in an extension so the memberwise initializer survives;
+// encoding stays synthesized (`Keys` mirrors the property names 1:1).
+extension WatchPayload {
+    private enum Keys: String, CodingKey {
+        case snapshot, accountId, isFamilyScope, tasks, plants, supplies
+        case deliveries, pantry, latitude, longitude, insightTitle, insightBody
+        case weatherTemp, weatherSymbol, weatherLo, weatherHi, weatherAdvisory
+        case streakDays, budgetSpent, budgetLimit, budgetCurrency, pageOrder
+        case sensors, actuators, emergencyContacts, emergencySteps, dmConversations
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        snapshot          = try c.decodeIfPresent(PRVIOWidgetSnapshot.self,   forKey: .snapshot) ?? PRVIOWidgetSnapshot()
+        accountId         = try c.decodeIfPresent(String.self,                forKey: .accountId)
+        isFamilyScope     = try c.decodeIfPresent(Bool.self,                  forKey: .isFamilyScope) ?? true
+        tasks             = try c.decodeIfPresent([TaskCatalogEntry].self,    forKey: .tasks) ?? []
+        plants            = try c.decodeIfPresent([PlantCatalogEntry].self,   forKey: .plants) ?? []
+        supplies          = try c.decodeIfPresent([SupplyCatalogEntry].self,  forKey: .supplies) ?? []
+        deliveries        = try c.decodeIfPresent([DeliveryCatalogEntry].self, forKey: .deliveries) ?? []
+        pantry            = try c.decodeIfPresent([PantryCatalogEntry].self,  forKey: .pantry) ?? []
+        latitude          = try c.decodeIfPresent(Double.self,                forKey: .latitude)
+        longitude         = try c.decodeIfPresent(Double.self,                forKey: .longitude)
+        insightTitle      = try c.decodeIfPresent(String.self,                forKey: .insightTitle)
+        insightBody       = try c.decodeIfPresent(String.self,                forKey: .insightBody)
+        weatherTemp       = try c.decodeIfPresent(Double.self,                forKey: .weatherTemp)
+        weatherSymbol     = try c.decodeIfPresent(String.self,                forKey: .weatherSymbol)
+        weatherLo         = try c.decodeIfPresent(Double.self,                forKey: .weatherLo)
+        weatherHi         = try c.decodeIfPresent(Double.self,                forKey: .weatherHi)
+        weatherAdvisory   = try c.decodeIfPresent(String.self,                forKey: .weatherAdvisory)
+        streakDays        = try c.decodeIfPresent(Int.self,                   forKey: .streakDays)
+        budgetSpent       = try c.decodeIfPresent(Double.self,                forKey: .budgetSpent)
+        budgetLimit       = try c.decodeIfPresent(Double.self,                forKey: .budgetLimit)
+        budgetCurrency    = try c.decodeIfPresent(String.self,                forKey: .budgetCurrency)
+        pageOrder         = try c.decodeIfPresent([String].self,              forKey: .pageOrder)
+        sensors           = try c.decodeIfPresent([SensorCatalogEntry].self,  forKey: .sensors) ?? []
+        actuators         = try c.decodeIfPresent([ActuatorCatalogEntry].self, forKey: .actuators) ?? []
+        emergencyContacts = try c.decodeIfPresent([EmergencyContactEntry].self, forKey: .emergencyContacts) ?? []
+        emergencySteps    = try c.decodeIfPresent([EmergencyStepEntry].self,  forKey: .emergencySteps) ?? []
+        dmConversations   = try c.decodeIfPresent([DMConversationEntry].self, forKey: .dmConversations) ?? []
+    }
 }
 
 extension WatchPayload {
@@ -490,6 +539,35 @@ enum SharedDataStore {
         } ?? []
     }
 
+    // MARK: Watch action idempotency (wrist → phone)
+    //
+    // `transferUserInfo` guarantees delivery but not exactly-once processing:
+    // a transfer can be handed to the delegate again after an ambiguous
+    // hand-off (relaunch mid-callback, session re-activation), and for the
+    // non-idempotent actions — alertFamily, sendMessage/sendDM, createTask,
+    // consumePantry — a replay means a duplicate family alert, chat message,
+    // task or pantry decrement. The watch stamps each transfer with a fresh
+    // `actionId`; this ledger (a capped, NSFileCoordinator-serialized queue
+    // file like every other pending queue) remembers the processed ids so a
+    // re-delivered transfer is recognized and dropped. Payloads from older
+    // watch builds carry no id and process exactly as before.
+
+    private static let processedWatchActionsCap = 200
+
+    /// Records a wrist-generated action id. Returns `false` when the id was
+    /// already processed (duplicate delivery — the caller must ignore it).
+    /// Unavailable container (no App Group) degrades to processing normally.
+    static func registerProcessedWatchAction(_ actionId: String) -> Bool {
+        coordinateQueue("processedWatchActions", legacyKey: nil) { queue -> Bool in
+            guard !queue.contains(actionId) else { return false }
+            queue.append(actionId)
+            if queue.count > processedWatchActionsCap {
+                queue.removeFirst(queue.count - processedWatchActionsCap)
+            }
+            return true
+        } ?? true
+    }
+
     static func appendPendingWatering(_ plantId: UUID) {
         coordinatedAppendUnique("waterings", legacyKey: pendingWateringsKey, plantId.uuidString)
     }
@@ -612,17 +690,17 @@ enum SharedDataStore {
     /// next active beat. `transferUserInfo` already guaranteed delivery to the
     /// phone; this survives the phone being backgrounded when it arrives, so
     /// nothing is lost if the garage command lands while the app is closed.
+    /// Rides the same NSFileCoordinator-serialized queue file as every other
+    /// pending queue — the raw UserDefaults read-modify-write it used before
+    /// could drop a command when two processes raced. Repeated commands are
+    /// meaningful (open, stop, open again), so this appends unconditionally.
     static func appendPendingIoTCommand(actuatorId: UUID, command: String) {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return }
-        var q = ud.stringArray(forKey: pendingIoTKey) ?? []
-        q.append("\(actuatorId.uuidString)|\(command)")
-        ud.set(q, forKey: pendingIoTKey)
+        coordinateQueue("iotCommands", legacyKey: pendingIoTKey) { queue in
+            queue.append("\(actuatorId.uuidString)|\(command)")
+        }
     }
     static func drainPendingIoTCommands() -> [(actuatorId: UUID, command: String)] {
-        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
-        let q = ud.stringArray(forKey: pendingIoTKey) ?? []
-        ud.removeObject(forKey: pendingIoTKey)
-        return q.compactMap { entry in
+        coordinatedPop("iotCommands", legacyKey: pendingIoTKey).compactMap { entry in
             let parts = entry.split(separator: "|", maxSplits: 1).map(String.init)
             guard parts.count == 2, let id = UUID(uuidString: parts[0]) else { return nil }
             return (id, parts[1])

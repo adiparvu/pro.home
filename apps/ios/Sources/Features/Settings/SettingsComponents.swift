@@ -170,38 +170,3 @@ struct ColoredIconBadge: View {
         }
     }
 }
-
-// MARK: - Settings Placeholder
-
-struct SettingsPlaceholder: View {
-    let icon: String
-    let title: LocalizedStringKey
-    let description: LocalizedStringKey
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: icon)
-                .font(AppFont.scaled(52))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text(title)
-                .font(AppFont.scaled(22, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(description)
-                .font(AppFont.scaled(15))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Text("Coming soon")
-                .font(AppFont.scaled(13, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-            Spacer()
-        }
-        .background(appBackground.ignoresSafeArea())
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}

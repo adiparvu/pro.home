@@ -203,7 +203,10 @@ final class DirectMessageService {
         let now = Date()
         guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
         lastTypingSentAt = now
-        Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
+        // Capture the name by value: Task's implicit self capture would
+        // otherwise retain the service for the broadcast's lifetime.
+        let name = myName
+        Task { await ch.broadcast(event: "typing", message: ["name": .string(name)]) }
     }
 
     private func handleTyping(_ name: String) {
@@ -592,7 +595,7 @@ final class DirectMessageService {
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] action in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
                     self.applyRealtimeInsert(row, myName: myName)
@@ -607,7 +610,7 @@ final class DirectMessageService {
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] action in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
                     self.applyRealtimeUpdate(row)
@@ -625,7 +628,7 @@ final class DirectMessageService {
             schema: "public",
             table: "direct_messages"
         ) { [weak self] action in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self,
                       let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
                 else { return }
@@ -635,7 +638,7 @@ final class DirectMessageService {
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
-                Task { @MainActor in self?.handleTyping(name) }
+                Task { @MainActor [weak self] in self?.handleTyping(name) }
             }
         }
         try? await ch.subscribeWithError()
@@ -656,7 +659,7 @@ final class DirectMessageService {
         }
         dms.append(row)
         if !row.isMine(myUserId: myUserId, myName: myName) {
-            Task { await markDelivered(myName: myName) }
+            Task { [weak self] in await self?.markDelivered(myName: myName) }
         }
     }
 

@@ -298,16 +298,16 @@ struct BudgetManagementView: View {
         let fill: Color = ratio > 1.0 ? .brandDanger
                         : ratio > 0.8 ? .brandWarning
                         : .accentColor
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.primary.opacity(0.08)).frame(height: height)
+        // Progress bar without GeometryReader: scale a full-width fill.
+        return RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(Color.primary.opacity(0.08))
+            .frame(height: height)
+            .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(fill)
-                    .frame(width: geo.size.width * min(ratio, 1.0), height: height)
+                    .scaleEffect(x: min(ratio, 1.0), y: 1, anchor: .leading)
             }
-        }
-        .frame(height: height)
-        .animation(.snappy(duration: 0.25), value: spent)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .animation(.snappy(duration: 0.25), value: spent)
     }
 }

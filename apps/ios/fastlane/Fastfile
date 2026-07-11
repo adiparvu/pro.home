@@ -619,14 +619,14 @@ platform :ios do
     # the widget extension — the widgets previously shipped with no
     # localisation at all and rendered raw keys in the gallery.
     require "json"
-    catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings")))
+    catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings"), encoding: "UTF-8"))
     strings_targets = [archive_app, File.join(archive_app, "PlugIns", "PRVIOWidgets.appex")]
     %w[en ro fr nl de].each do |lang|
       merged = {}
 
       legacy = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
       if File.exist?(legacy)
-        File.read(legacy).scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
+        File.read(legacy, encoding: "UTF-8").scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
           un = ->(s) { s.gsub('\\n', "\n").gsub('\\"', '"').gsub('\\\\', '\\') }
           merged[un.call(k)] = un.call(v)
         end

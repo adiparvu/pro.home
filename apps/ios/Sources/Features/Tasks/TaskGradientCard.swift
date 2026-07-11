@@ -19,6 +19,11 @@ struct TaskGradientCard: View {
     var showsCalendarChip: Bool = false
     var showsRemindersChip: Bool = false
     var minHeight: CGFloat = 300
+    /// Shadow treatment. The default is a discreet elevation shadow — large
+    /// colored blurs are a real compositor cost when cards sit in scrolling
+    /// content. The long-press context-menu preview opts into the rich
+    /// priority-tinted shadow, where exactly one card is on screen.
+    var prominentShadow: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -71,7 +76,9 @@ struct TaskGradientCard: View {
             RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
                 .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
         )
-        .shadow(color: priorityStyle.color.opacity(0.28), radius: 24, y: 12)
+        .shadow(color: priorityStyle.color.opacity(prominentShadow ? 0.28 : 0.12),
+                radius: prominentShadow ? 24 : 8,
+                y: prominentShadow ? 12 : 3)
     }
 
     // MARK: - Pieces
@@ -135,7 +142,7 @@ struct TaskGradientCard: View {
 // MARK: - Task-fed convenience (context-menu preview, detail header)
 
 extension TaskGradientCard {
-    init(task: MaintenanceTask, minHeight: CGFloat = 300) {
+    init(task: MaintenanceTask, minHeight: CGFloat = 300, prominentShadow: Bool = false) {
         self.init(
             title: task.title,
             description: task.description?.trimmingCharacters(in: .whitespaces),
@@ -145,7 +152,8 @@ extension TaskGradientCard {
             assigneeText: task.assigneeNames.isEmpty
                 ? String(localized: "Unassigned")
                 : task.assigneeNames.joined(separator: ", "),
-            minHeight: minHeight
+            minHeight: minHeight,
+            prominentShadow: prominentShadow
         )
     }
 }

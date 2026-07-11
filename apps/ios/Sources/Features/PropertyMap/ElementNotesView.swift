@@ -13,6 +13,7 @@ struct ElementNotesSection: View {
     private let lock = NoteLockManager.shared
 
     @State private var editorNote: ElementNote?      // existing note being edited
+    @State private var noteToDelete: ElementNote?    // pending delete confirmation
     @State private var showNewEditor = false
     @State private var showPINSheet = false
     @State private var pinPurpose: PINPurpose = .unlock
@@ -61,6 +62,20 @@ struct ElementNotesSection: View {
                 showPINSheet = false
             }
         }
+        .confirmationDialog("Delete this note?",
+                            isPresented: Binding(
+                                get: { noteToDelete != nil },
+                                set: { if !$0 { noteToDelete = nil } }
+                            ),
+                            titleVisibility: .visible,
+                            presenting: noteToDelete) { note in
+            Button("Delete", role: .destructive) {
+                Task { await noteService.delete(note) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("This action cannot be undone.")
+        }
     }
 
     @ViewBuilder
@@ -89,19 +104,23 @@ struct ElementNotesSection: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Menu {
                         Button { editorNote = note } label: { Label("Edit", systemImage: "pencil") }
-                        Button(role: .destructive) { Task { await noteService.delete(note) } } label: {
+                        Button(role: .destructive) { noteToDelete = note } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                     }
+                    .accessibilityLabel("More")
                 }
 
                 // Checklist
                 if !note.checklist.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         ForEach(note.checklist) { item in
-                            Button { Task { await noteService.toggleChecklistItem(note, itemId: item.id) } } label: {
+                            Button {
+                                HapticFeedback.selection()
+                                Task { await noteService.toggleChecklistItem(note, itemId: item.id) }
+                            } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                         .foregroundStyle(item.done ? Color.green : .secondary)
@@ -247,14 +266,21 @@ struct ElementNoteEditorSheet: View {
                 Label("Checklist", systemImage: "checklist").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 ForEach($checklist) { $item in
                     HStack(spacing: 8) {
-                        Button { item.done.toggle() } label: {
+                        Button {
+                            HapticFeedback.selection()
+                            item.done.toggle()
+                        } label: {
                             Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(item.done ? Color.green : .secondary)
-                        }.buttonStyle(.plain)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(item.done ? "Mark as incomplete" : "Mark as complete")
                         TextField("Item", text: $item.text).font(AppFont.scaled(14))
                         Button { checklist.removeAll { $0.id == item.id } } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
-                        }.buttonStyle(.plain)
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color.secondaryTextColor)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove")
                     }
                 }
                 HStack(spacing: 8) {
@@ -262,7 +288,10 @@ struct ElementNoteEditorSheet: View {
                         .onSubmit(addChecklistItem)
                     Button(action: addChecklistItem) {
                         Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
-                    }.buttonStyle(.plain).disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Add item")
                 }
             }
         }
@@ -278,6 +307,7 @@ struct ElementNoteEditorSheet: View {
                     PhotosPicker(selection: $photoItem, matching: .images) {
                         Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add photo")
                 }
                 if !photoURLs.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {

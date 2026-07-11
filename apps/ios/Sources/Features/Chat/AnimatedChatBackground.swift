@@ -73,12 +73,16 @@ struct AnimatedBackgroundPreset: Identifiable {
 struct AnimatedChatBackground: View {
     let preset: AnimatedBackgroundPreset
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         if reduceMotion {
             frame(at: 0)
         } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+            // Pause the timeline (not just the drawing) when the scene leaves
+            // the foreground so the mesh stops re-rendering in the background.
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0,
+                                    paused: scenePhase != .active)) { context in
                 frame(at: context.date.timeIntervalSinceReferenceDate)
             }
         }

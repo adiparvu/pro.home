@@ -405,6 +405,7 @@ extension PlantDetailSheet {
                             Image(systemName: "ellipsis.circle")
                                 .font(AppFont.scaled(18)).foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("More")
                     }
                 }
 
@@ -527,6 +528,7 @@ extension PlantDetailSheet {
                     } label: {
                         Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add photo")
                 }
                 if photoService.photos.isEmpty {
                     Text("plant_album_empty")
@@ -621,6 +623,7 @@ private struct PlantAlbumThumb: View {
                         .font(AppFont.scaled(16)).foregroundStyle(.white, .black.opacity(0.4))
                 }
                 .padding(4)
+                .accessibilityLabel("Delete photo")
             }
             Text(photo.takenDisplay).font(AppFont.scaled(10)).foregroundStyle(.secondary)
         }

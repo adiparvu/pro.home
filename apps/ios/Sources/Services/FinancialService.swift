@@ -102,7 +102,7 @@ final class FinancialService {
             table: "financial_records",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in self?.scheduleRealtimeReload() }
+            Task { @MainActor [weak self] in self?.scheduleRealtimeReload() }
         })
         try? await channel.subscribeWithError()
         realtimeChannel = channel

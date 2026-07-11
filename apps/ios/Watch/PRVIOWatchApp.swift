@@ -230,7 +230,8 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         }
         WKInterfaceDevice.current().play(.success)
         guard WCSession.isSupported() else { return }
-        WCSession.default.transferUserInfo(["action": "createTask", "title": trimmed])
+        WCSession.default.transferUserInfo(["action": "createTask", "title": trimmed,
+                                            "actionId": UUID().uuidString])
     }
 
     /// One tap, every thirsty plant — each watering still syncs individually.
@@ -370,7 +371,8 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         guard !trimmed.isEmpty else { return }
         WKInterfaceDevice.current().play(.success)
         guard WCSession.isSupported() else { return }
-        WCSession.default.transferUserInfo(["action": "sendMessage", "text": trimmed])
+        WCSession.default.transferUserInfo(["action": "sendMessage", "text": trimmed,
+                                            "actionId": UUID().uuidString])
     }
 
     /// Dictated reply to a direct thread. Rides the same guaranteed queue as
@@ -392,7 +394,8 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         guard WCSession.isSupported() else { return }
         WCSession.default.transferUserInfo(["action": "sendMessage",
                                             "text": trimmed,
-                                            "target": "dm:\(peerId.uuidString)"])
+                                            "target": "dm:\(peerId.uuidString)",
+                                            "actionId": UUID().uuidString])
     }
 
     /// "Alert the family" — the phone sends the exact emergency message the
@@ -402,7 +405,8 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
     func alertFamily() {
         WKInterfaceDevice.current().play(.notification)
         guard WCSession.isSupported() else { return }
-        WCSession.default.transferUserInfo(["action": "alertFamily"])
+        WCSession.default.transferUserInfo(["action": "alertFamily",
+                                            "actionId": UUID().uuidString])
     }
 
     /// Package received, confirmed from the wrist. The parcel flips locally,
@@ -439,10 +443,16 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
 
     /// Each action speaks its own haptic dialect — completing lands with
     /// success, watering lifts, checking off clicks.
+    ///
+    /// Every transfer carries a fresh `actionId` so the phone can drop a
+    /// re-delivered duplicate. This matters most for consumePantry, whose
+    /// pending queue treats repeats as meaningful; two intentional taps get
+    /// two different ids and both count, while one replayed transfer doesn't.
     private func queue(action: String, id: UUID, haptic: WKHapticType) {
         WKInterfaceDevice.current().play(haptic)
         guard WCSession.isSupported() else { return }
-        WCSession.default.transferUserInfo(["action": action, "id": id.uuidString])
+        WCSession.default.transferUserInfo(["action": action, "id": id.uuidString,
+                                            "actionId": UUID().uuidString])
     }
 
     // MARK: WCSessionDelegate

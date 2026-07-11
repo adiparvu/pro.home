@@ -66,16 +66,17 @@ struct BudgetView: View {
                         .padding(.bottom, AppSpacing.xxs)
                 }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 8)
+                // Progress bar without GeometryReader: scale a full-width fill.
+                Capsule()
+                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    .frame(height: 8)
+                    .overlay(alignment: .leading) {
                         Capsule()
                             .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : Color.blue)
-                            .frame(width: geo.size.width * progress, height: 8)
+                            .scaleEffect(x: progress, y: 1, anchor: .leading)
                             .animation(.spring(response: 0.5), value: progress)
                     }
-                }
-                .frame(height: 8)
+                    .clipShape(Capsule())
 
                 HStack {
                     Label(remaining >= 0
@@ -136,16 +137,16 @@ struct BudgetView: View {
                                 }
 
                                 if budget > 0 {
-                                    GeometryReader { geo in
-                                        ZStack(alignment: .leading) {
-                                            Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
+                                    Capsule()
+                                        .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                                        .frame(height: 5)
+                                        .overlay(alignment: .leading) {
                                             Capsule()
                                                 .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : categoryColor(cat))
-                                                .frame(width: geo.size.width * progress, height: 5)
+                                                .scaleEffect(x: progress, y: 1, anchor: .leading)
                                                 .animation(.spring(response: 0.5), value: progress)
                                         }
-                                    }
-                                    .frame(height: 5)
+                                        .clipShape(Capsule())
                                 }
                             }
                         }

@@ -593,22 +593,6 @@
         }
       }
     },
-    "%@, you have a new task: \"%@\" Â· Due: %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, you have a new task: \"%@\" · Due: %@"
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, ai o sarcină nouă: \"%@\" · Termen: %@"
-          }
-        }
-      }
-    },
     "%d alerts": {
       "localizations": {
         "en": {
@@ -3039,22 +3023,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adaugă membri"
-          }
-        }
-      }
-    },
-    "AdaugÄ membri familiei pentru a Ã®ncepe.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add family members to get started."
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adaugă membri familiei pentru a începe."
           }
         }
       }
@@ -10712,22 +10680,6 @@
         }
       }
     },
-    "ConversaÈiile inter-aplicaÈii Ã®Èi permit sÄ primeÈti Èi sÄ trimiÈi mesaje cÄtre persoane care folosesc alte aplicaÈii de mesagerie compatibile, fÄrÄ sÄ pÄrÄseÈti PRV HOUSE.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cross-app chats let you receive and send messages to people using other compatible messaging apps, without leaving PRV HOUSE."
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversațiile inter-aplicații îți permit să primești și să trimiți mesaje către persoane care folosesc alte aplicații de mesagerie compatibile, fără să părăsești PRV HOUSE."
-          }
-        }
-      }
-    },
     "Conversația va fi golită și arhivată pe acest dispozitiv.": {
       "localizations": {
         "en": {
@@ -10804,6 +10756,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Conversații arhivate"
+          }
+        }
+      }
+    },
+    "Conversațiile inter-aplicații îți permit să primești și să trimiți mesaje către persoane care folosesc alte aplicații de mesagerie compatibile, fără să părăsești PRV HOUSE.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cross-app chats let you receive and send messages to people using other compatible messaging apps, without leaving PRV HOUSE."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversațiile inter-aplicații îți permit să primești și să trimiți mesaje către persoane care folosesc alte aplicații de mesagerie compatibile, fără să părăsești PRV HOUSE."
           }
         }
       }
@@ -12508,6 +12476,40 @@
         }
       }
     },
+    "Delete this note?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Notiz löschen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this note?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer cette note ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze notitie verwijderen?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ștergi această notiță?"
+          }
+        }
+      }
+    },
     "Delete this photo?": {
       "localizations": {
         "en": {
@@ -13231,7 +13233,7 @@
         }
       }
     },
-    "Distribuie locaÈia Ã®n timp real": {
+    "Distribuie locația în timp real": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -21057,6 +21059,22 @@
         }
       }
     },
+    "Lakeside House · DHL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lakeside House · DHL"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Casa de la lac · DHL"
+          }
+        }
+      }
+    },
     "Lakeside House · PRVIO": {
       "localizations": {
         "en": {
@@ -21069,22 +21087,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Casa de la lac · PRVIO"
-          }
-        }
-      }
-    },
-    "Lakeside House Â· DHL": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lakeside House · DHL"
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Casa de la lac · DHL"
           }
         }
       }
@@ -23651,7 +23653,7 @@
         }
       }
     },
-    "Mesageria Ã®ntre aplicaÈii este Ã®n pregÄtire â necesitÄ un serviciu de interoperabilitate. PreferinÈele tale sunt salvate de pe acum.": {
+    "Mesageria între aplicații este în pregătire — necesită un serviciu de interoperabilitate. Preferințele tale sunt salvate de pe acum.": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -26712,7 +26714,7 @@
         }
       }
     },
-    "Not delivered Â· tap to retry": {
+    "Not delivered · tap to retry": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -30493,7 +30495,7 @@
         }
       }
     },
-    "PrimeÈti notificare cÃ¢nd cineva vrea sÄ-Èi trimitÄ mesaj din altÄ aplicaÈie.": {
+    "Primești notificare când cineva vrea să-ți trimită mesaj din altă aplicație.": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -74299,38 +74301,6 @@
         }
       }
     },
-    "Â· edited": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "· edited"
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "· editat"
-          }
-        }
-      }
-    },
-    "Ãncepe conversaÈia privatÄ": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start the private conversation"
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Începe conversația privată"
-          }
-        }
-      }
-    },
     "Èterge conversaÈia": {
       "localizations": {
         "en": {
@@ -74359,6 +74329,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Șterge grupul"
+          }
+        }
+      }
+    },
+    "Începe conversația privată": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start the private conversation"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Începe conversația privată"
           }
         }
       }

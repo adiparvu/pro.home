@@ -34,22 +34,36 @@ struct FloatingSpeedDial: View {
                         .accessibilityHidden(true)
                 }
 
-                VStack(alignment: .trailing, spacing: 12) {
-                    if expanded && isMenu {
-                        ForEach(actions) { action in
-                            actionRow(action)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                                    removal: .opacity
-                                ))
-                        }
+                // On iOS 26 the dial's glass shapes (FAB, action pills and
+                // circles) render as ONE Liquid Glass group: a single blended
+                // pass instead of a separate material layer per element, and
+                // the shapes can morph into each other while expanding.
+                Group {
+                    if #available(iOS 26.0, *) {
+                        GlassEffectContainer { dialStack }
+                    } else {
+                        dialStack
                     }
-                    mainButton
                 }
                 .padding(.trailing, trailingPadding)
                 .padding(.bottom, bottomPadding)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        }
+    }
+
+    private var dialStack: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            if expanded && isMenu {
+                ForEach(actions) { action in
+                    actionRow(action)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                }
+            }
+            mainButton
         }
     }
 

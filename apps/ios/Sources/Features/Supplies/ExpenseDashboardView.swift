@@ -17,8 +17,6 @@ struct ExpenseDashboardView: View {
 
     @State private var selectedMonth: String = ""
     @State private var selectedReceipt: Receipt? = nil
-    @State private var showReceiptDetail = false
-    @State private var chartSelection: String? = nil
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -394,17 +392,16 @@ struct ExpenseDashboardView: View {
                                 .foregroundStyle(isOver ? .red : .secondary)
                         }
 
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(Color.primary.opacity(0.08))
-                                    .frame(height: 6)
+                        // Progress bar without GeometryReader: scale a full-width fill.
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(Color.primary.opacity(0.08))
+                            .frame(height: 6)
+                            .overlay(alignment: .leading) {
                                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                                     .fill(isOver ? Color.red : ReceiptCategory.color(for: budget.category))
-                                    .frame(width: geo.size.width * pct, height: 6)
+                                    .scaleEffect(x: pct, y: 1, anchor: .leading)
                             }
-                        }
-                        .frame(height: 6)
+                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                     }
                 }
             }

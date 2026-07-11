@@ -287,7 +287,11 @@ struct ZoneEditSheet: View {
             // The `photos` bucket never existed — zone covers live in the public
             // `documents` bucket like other property imagery.
             let path = "zones/\(zone.id.uuidString.lowercased())/cover.jpg"
-            let compressed = UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
+            // Decode + recompress off the main actor — the sheet stays
+            // responsive while a multi-megapixel cover is squeezed down.
+            let compressed = await Task.detached(priority: .userInitiated) {
+                UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
+            }.value
             do {
                 try await supabase.storage
                     .from("documents")

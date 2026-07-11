@@ -111,12 +111,12 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
         mgr.allowsBackgroundLocationUpdates = false
         mgr.stopUpdatingLocation()
         guard let pid = propertyId, let uid else { return }
-        Task {
+        Task { [weak self] in
             _ = try? await supabase.from("live_locations").delete()
                 .eq("property_id", value: pid.uuidString)
                 .eq("user_id", value: uid.uuidString)
                 .execute()
-            await load(propertyId: pid)
+            await self?.load(propertyId: pid)
         }
     }
 
@@ -150,13 +150,14 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
         guard let last = locations.last else { return }
         let lat = last.coordinate.latitude
         let lon = last.coordinate.longitude
-        Task { @MainActor in await self.push(lat: lat, lon: lon) }
+        Task { @MainActor [weak self] in await self?.push(lat: lat, lon: lon) }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             self.configureBackgroundUpdates()
             if self.isSharing { self.mgr.startUpdatingLocation() }
         }

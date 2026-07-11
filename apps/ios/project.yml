@@ -76,13 +76,18 @@ targets:
         # ticked on com.prvio.app + the notification-service App ID, and the
         # app group associated there, same as the watch ids).
         com.apple.developer.usernotifications.communication: true
-        # NFC / HomeKit / WeatherKit are deliberately NOT restored here yet.
-        # They were being silently stripped by the widget-clobber bug, so they
-        # were already non-functional. Restoring NFC as-is fails App Store upload
-        # validation on SDK 26.5 (ITMS-90778 "NDEF is disallowed"), which blocked
-        # the whole push deploy. They will be restored in a follow-up once each is
-        # verified to pass validation — kept out here so the push fix ships on a
-        # guaranteed-green minimal entitlement set (app group + aps-environment).
+        # WeatherKit restored: the dashboard weather card calls
+        # WeatherService unconditionally, so without this key every fetch
+        # died on a JWT auth error and the card sat silently dead. The
+        # Fastfile already enables the WEATHERKIT capability portal-side on
+        # every run, so the regenerated profile carries it.
+        com.apple.developer.weatherkit: true
+        # NFC / HomeKit are deliberately NOT restored here yet. Restoring NFC
+        # as-is fails App Store upload validation on SDK 26.5 (ITMS-90778
+        # "NDEF is disallowed"); both are guarded in code (NFCScanService
+        # checks readingAvailable, HomeKitService is lazy) so nothing crashes
+        # without them. They return in a follow-up once each is verified to
+        # pass validation.
     postBuildScripts:
       # The .xcstrings catalog is copied raw by this project, not compiled —
       # this phase generates the per-language .lproj tables into the product

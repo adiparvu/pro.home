@@ -520,7 +520,7 @@ struct AddPlantSheet: View {
             do {
                 let plant = try await plantService.add(payload)
                 if let data = selectedImageData {
-                    PlantImageStore.save(data, for: plant.id)
+                    await PlantImageStore.save(data, for: plant.id)
                 }
                 HapticFeedback.success()
                 dismiss()
@@ -540,14 +540,19 @@ enum PlantImageStore {
             .appendingPathComponent("plant_\(id.uuidString).jpg")
     }
 
-    static func save(_ data: Data, for id: UUID) {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
-        try? compressed.write(to: url(for: id))
+    /// Recompression is a full decode + JPEG encode — real CPU time that has
+    /// no business on the main actor. Same bytes end up on disk as before.
+    static func save(_ data: Data, for id: UUID) async {
+        let dest = url(for: id)
+        await Task.detached(priority: .utility) {
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            try? compressed.write(to: dest)
+        }.value
     }
 
     static func load(for id: UUID) -> UIImage? {

@@ -58,7 +58,7 @@ struct InventoryPhotosCard: View {
             Task {
                 for item in newItems {
                     if let data = try? await item.loadTransferable(type: Data.self) {
-                        InventoryImageStore.addGalleryImage(data, for: itemId)
+                        await InventoryImageStore.addGalleryImage(data, for: itemId)
                     }
                 }
                 pickerItems = []
@@ -68,25 +68,20 @@ struct InventoryPhotosCard: View {
         }
     }
 
-    @ViewBuilder
     private func thumb(_ photo: GalleryPhoto) -> some View {
-        if let img = UIImage(contentsOfFile: photo.url.path) {
-            Button { fullscreen = photo } label: {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFill()
-                                        .frame(width: 84, height: 84)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .contextMenu {
-                Button(role: .destructive) {
-                    InventoryImageStore.removeGalleryImage(at: photo.url)
-                    refresh += 1
-                    HapticFeedback.warning()
-                } label: {
-                    Label("Delete Photo", systemImage: "trash")
-                }
+        Button { fullscreen = photo } label: {
+            GalleryAsyncImage(url: photo.url, contentMode: .fill)
+                .frame(width: 84, height: 84)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                InventoryImageStore.removeGalleryImage(at: photo.url)
+                refresh += 1
+                HapticFeedback.warning()
+            } label: {
+                Label("Delete Photo", systemImage: "trash")
             }
         }
     }
@@ -121,6 +116,48 @@ struct InventoryPhotosCard: View {
         ) { fullscreen = nil }
     }
 
+    // MARK: Async gallery image
+    //
+    // The strip and the pager used to hit `UIImage(contentsOfFile:)` — a
+    // synchronous main-thread JPEG decode — on every body pass. Decodes now
+    // happen once, off the main actor, and are memoized per file path.
+
+    private static let decodeCache = NSCache<NSString, UIImage>()
+
+    private struct GalleryAsyncImage: View {
+        let url: URL
+        let contentMode: ContentMode
+        @State private var loaded: UIImage?
+
+        private var cached: UIImage? {
+            InventoryPhotosCard.decodeCache.object(forKey: url.path as NSString)
+        }
+
+        var body: some View {
+            Group {
+                if let img = loaded ?? cached {
+                    Image(uiImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: contentMode)
+                } else {
+                    Color.primary.opacity(AppOpacity.subtleFill)
+                }
+            }
+            .task(id: url) {
+                guard cached == nil else { return }
+                loaded = nil
+                let path = url.path
+                let img = await Task.detached(priority: .userInitiated) {
+                    UIImage(contentsOfFile: path)
+                }.value
+                if let img {
+                    InventoryPhotosCard.decodeCache.setObject(img, forKey: path as NSString)
+                    loaded = img
+                }
+            }
+        }
+    }
+
     // MARK: Fullscreen pager
 
     private struct GalleryPager: View {
@@ -139,14 +176,8 @@ struct InventoryPhotosCard: View {
                 Color.black.ignoresSafeArea()
                 TabView(selection: $selection) {
                     ForEach(photos) { photo in
-                        Group {
-                            if let img = UIImage(contentsOfFile: photo.url.path) {
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFit()
-                            }
-                        }
-                        .tag(photo.id)
+                        GalleryAsyncImage(url: photo.url, contentMode: .fit)
+                            .tag(photo.id)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .automatic : .never))

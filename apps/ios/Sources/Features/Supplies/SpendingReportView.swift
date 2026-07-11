@@ -304,14 +304,17 @@ struct SpendingReportView: View {
                                 .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                                 .frame(width: 35, alignment: .trailing)
                         }
-                        GeometryReader { geo in
-                            let pct = total > 0 ? cat.total / total : 0
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(cat.color).frame(width: geo.size.width * pct, height: 5)
+                        // Share bar without GeometryReader: scale a full-width fill.
+                        let frac = total > 0 ? cat.total / total : 0
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                            .frame(height: 5)
+                            .overlay(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(cat.color)
+                                    .scaleEffect(x: frac, y: 1, anchor: .leading)
                             }
-                        }
-                        .frame(height: 5)
+                            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                     }
                 }
             }

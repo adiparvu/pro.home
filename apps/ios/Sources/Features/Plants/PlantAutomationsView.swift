@@ -117,6 +117,7 @@ struct PlantAutomationsCard: View {
             } label: {
                 Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 2)
             }
+            .accessibilityLabel("More")
         }
         .padding(.vertical, AppSpacing.xxs)
         .opacity(a.isActive ? 1 : 0.65)

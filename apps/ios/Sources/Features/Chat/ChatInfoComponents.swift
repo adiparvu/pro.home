@@ -135,7 +135,7 @@ struct MemberPhotoAvatar: View {
 
     private var initialsText: some View {
         Text(initials)
-            .font(.system(size: size * 0.36, weight: .bold))
+            .font(AppFont.scaled(size * 0.36, weight: .bold))
             .foregroundStyle(color)
     }
 }
@@ -240,20 +240,6 @@ struct SecureChatToggle: View {
 }
 
 // MARK: - Large avatars
-
-struct MemberCircleAvatarLarge: View {
-    let member: FamilyMember
-    var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Circle().fill(member.swiftColor.opacity(0.18))
-                Text(member.initials)
-                    .font(.system(size: geo.size.width * 0.38, weight: .bold))
-                    .foregroundStyle(member.swiftColor)
-            }
-        }
-    }
-}
 
 struct GroupChatAvatarLarge: View {
     let members: [FamilyMember]

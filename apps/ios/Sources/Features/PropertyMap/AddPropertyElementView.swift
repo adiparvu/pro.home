@@ -40,6 +40,7 @@ struct AddPropertyElementView: View {
     @State private var isUploadingMedia = false
     @State private var mediaTarget: MediaTarget = .gallery
     @State private var showSourceDialog = false
+    @State private var showRemoveCoverConfirm = false
     @State private var showCamera = false
     @State private var showLibrary = false
     @State private var showFiles = false
@@ -342,9 +343,14 @@ struct AddPropertyElementView: View {
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Cover photo")
                 if coverURL != nil {
-                    Button(role: .destructive) { coverURL = nil } label: {
+                    Button(role: .destructive) { showRemoveCoverConfirm = true } label: {
                         Label("Remove cover", systemImage: "trash").font(.caption)
+                    }
+                    .confirmationDialog("Remove cover", isPresented: $showRemoveCoverConfirm, titleVisibility: .visible) {
+                        Button("Remove", role: .destructive) { coverURL = nil }
+                        Button("Cancel", role: .cancel) {}
                     }
                 }
 
@@ -375,6 +381,7 @@ struct AddPropertyElementView: View {
                                 .overlay(Image(systemName: "plus").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Add photo")
                     }
                 }
             }

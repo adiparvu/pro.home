@@ -31,7 +31,6 @@ struct AddTaskView: View {
     @State private var existingPhotoUrls: [String] = []
     @State private var pendingPhotos: [UIImage] = []
     @State private var location: TaskLocationValue? = nil
-    @Namespace private var chipNS
 
     let priorities  = TaskPriorityStyle.order
     let categories  = ["maintenance", "repair", "inspection", "cleaning", "upgrade", "administrative", "other"]

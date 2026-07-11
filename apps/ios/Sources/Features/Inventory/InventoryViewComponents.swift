@@ -323,12 +323,12 @@ struct AddInventorySheet: View {
         item.warrantyExpiresAt = hasWarranty ? warrantyDate : nil
         item.notes = notes
         if let data = selectedImageData {
-            InventoryImageStore.save(data, for: item.id)
+            await InventoryImageStore.save(data, for: item.id)
         } else if editing != nil {
             InventoryImageStore.delete(for: item.id)
         }
         if let data = receiptImageData {
-            InventoryImageStore.saveReceipt(data, for: item.id)
+            await InventoryImageStore.saveReceipt(data, for: item.id)
         } else if editing != nil {
             InventoryImageStore.deleteReceipt(for: item.id)
         }
@@ -582,14 +582,19 @@ enum InventoryImageStore {
             .appendingPathComponent("inventory_\(id.uuidString).jpg")
     }
 
-    static func save(_ data: Data, for id: UUID) {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
-        try? compressed.write(to: url(for: id))
+    /// Recompression is a full decode + JPEG encode — real CPU time that has
+    /// no business on the main actor. Same bytes end up on disk as before.
+    static func save(_ data: Data, for id: UUID) async {
+        let dest = url(for: id)
+        await Task.detached(priority: .utility) {
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            try? compressed.write(to: dest)
+        }.value
     }
 
     static func load(for id: UUID) -> UIImage? {
@@ -627,14 +632,17 @@ enum InventoryImageStore {
             .appendingPathComponent("inventory_receipt_\(id.uuidString).jpg")
     }
 
-    static func saveReceipt(_ data: Data, for id: UUID) {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
-        try? compressed.write(to: receiptURL(for: id))
+    static func saveReceipt(_ data: Data, for id: UUID) async {
+        let dest = receiptURL(for: id)
+        await Task.detached(priority: .utility) {
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            try? compressed.write(to: dest)
+        }.value
     }
 
     static func loadReceipt(for id: UUID) -> UIImage? {
@@ -668,22 +676,24 @@ enum InventoryImageStore {
     }
 
     @discardableResult
-    static func addGalleryImage(_ data: Data, for id: UUID) -> URL? {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
+    static func addGalleryImage(_ data: Data, for id: UUID) async -> URL? {
         let stamp = String(format: "%013.0f", Date().timeIntervalSince1970 * 1000)
         let dest = galleryDir(for: id)
             .appendingPathComponent("\(stamp)-\(UUID().uuidString.lowercased()).jpg")
-        do {
-            try compressed.write(to: dest)
-            return dest
-        } catch {
-            return nil
-        }
+        return await Task.detached(priority: .utility) { () -> URL? in
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            do {
+                try compressed.write(to: dest)
+                return dest
+            } catch {
+                return nil
+            }
+        }.value
     }
 
     static func removeGalleryImage(at url: URL) {

@@ -32,6 +32,31 @@ enum ChatBackgroundStore {
         return img
     }
 
+    /// Cache-only lookup — never touches disk, safe on the hot render path.
+    static func cachedImage(named fileName: String) -> UIImage? {
+        decoded.object(forKey: fileName as NSString)
+    }
+
+    /// Cheap existence check (a stat, no decode) so the background chooser
+    /// can keep its fallback chain without paying for a synchronous decode.
+    static func imageExists(named fileName: String) -> Bool {
+        guard let url = url(for: fileName) else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// The wallpaper decoded off the main actor; the cache is filled so every
+    /// later body pass is a synchronous hit.
+    static func loadImage(named fileName: String) async -> UIImage? {
+        if let hit = cachedImage(named: fileName) { return hit }
+        guard let url = url(for: fileName) else { return nil }
+        let path = url.path
+        let img = await Task.detached(priority: .userInitiated) {
+            UIImage(contentsOfFile: path)
+        }.value
+        if let img { decoded.setObject(img, forKey: fileName as NSString) }
+        return img
+    }
+
     /// Persist an image for the given scope and return the stored file name.
     static func save(_ image: UIImage, scope: String?) -> String? {
         let safe = (scope ?? "global").replacingOccurrences(of: "/", with: "_")
@@ -170,24 +195,14 @@ struct ChatTheme: Identifiable {
     // (keyboard avoidance, composer growth, reply/edit strips), a fixed frame
     // cannot rescale, so `scaledToFill` can never zoom or pan the photo.
     @ViewBuilder var background: some View {
+        // Cache hit short-circuits the file-system stat — the chat re-evaluates
+        // its body constantly, so the steady-state path must stay allocation-
+        // and syscall-free.
         if let name = backgroundImage,
-           let img = ChatBackgroundStore.image(named: name) {
+           ChatBackgroundStore.cachedImage(named: name) != nil
+            || ChatBackgroundStore.imageExists(named: name) {
             ChatWallpaperAnchor {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFill()
-                    // Photos arrive raw; the stock themes are designed
-                    // gradients. A vertical scrim makes wallpapers read like
-                    // part of the set: stronger where the header and compose
-                    // bar live, lighter where bubbles carry their own contrast.
-                    .overlay(
-                        LinearGradient(stops: [
-                            .init(color: .black.opacity(0.28), location: 0),
-                            .init(color: .black.opacity(0.10), location: 0.25),
-                            .init(color: .black.opacity(0.10), location: 0.72),
-                            .init(color: .black.opacity(0.30), location: 1),
-                        ], startPoint: .top, endPoint: .bottom)
-                    )
+                ChatWallpaperImage(name: name)
             }
         } else if let animID = backgroundAnimation,
                   let preset = AnimatedBackgroundPreset.preset(for: animID) {
@@ -225,6 +240,46 @@ struct ChatTheme: Identifiable {
         Color(red: 0.84, green: 0.30, blue: 0.20), Color(red: 0.95, green: 0.85, blue: 0.80),
         Color(red: 0.82, green: 0.66, blue: 0.18), Color(red: 0.97, green: 0.93, blue: 0.78),
     ]
+}
+
+// MARK: - Async wallpaper layer
+
+/// Renders a stored chat wallpaper without ever decoding JPEG bytes on the
+/// main actor. A cached decode paints on the very first body pass; a cold
+/// start shows the app background for the decode's few milliseconds, then
+/// settles on the exact same render as before.
+private struct ChatWallpaperImage: View {
+    let name: String
+    @State private var loaded: UIImage?
+
+    var body: some View {
+        Group {
+            if let img = loaded ?? ChatBackgroundStore.cachedImage(named: name) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    // Photos arrive raw; the stock themes are designed
+                    // gradients. A vertical scrim makes wallpapers read like
+                    // part of the set: stronger where the header and compose
+                    // bar live, lighter where bubbles carry their own contrast.
+                    .overlay(
+                        LinearGradient(stops: [
+                            .init(color: .black.opacity(0.28), location: 0),
+                            .init(color: .black.opacity(0.10), location: 0.25),
+                            .init(color: .black.opacity(0.10), location: 0.72),
+                            .init(color: .black.opacity(0.30), location: 1),
+                        ], startPoint: .top, endPoint: .bottom)
+                    )
+            } else {
+                appBackground
+            }
+        }
+        .task(id: name) {
+            guard ChatBackgroundStore.cachedImage(named: name) == nil else { return }
+            loaded = nil   // a reused view got a new wallpaper — drop the old one
+            loaded = await ChatBackgroundStore.loadImage(named: name)
+        }
+    }
 }
 
 // MARK: - Conversation theme picker (WhatsApp-style)

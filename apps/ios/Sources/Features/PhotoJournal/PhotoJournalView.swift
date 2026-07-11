@@ -386,6 +386,7 @@ private struct PhotoEntryDetailSheet: View {
                             Image(systemName: "square.and.arrow.up")
                                 .foregroundStyle(.white)
                         }
+                        .accessibilityLabel("Share")
                     }
                 }
             }

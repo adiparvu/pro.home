@@ -239,14 +239,16 @@ struct ObjectListRow: View {
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
+            // Opaque surface instead of a per-row material: blur + a soft
+            // shadow on every row is pure compositor cost in a long list,
+            // and the rows sit on an opaque screen background anyway.
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.regularMaterial)
+                .fill(Color(.secondarySystemBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
         }
-        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 }
 

@@ -119,6 +119,16 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         guard let action = userInfo["action"] as? String else { return }
+        // Idempotency: transferUserInfo can re-deliver a transfer after an
+        // ambiguous hand-off, and actions like alertFamily or sendMessage are
+        // not idempotent downstream. The watch stamps each transfer with a
+        // fresh actionId; a previously processed id is a replay and is
+        // dropped. Transfers from older watch builds carry no actionId and
+        // process exactly as before.
+        if let actionId = userInfo["actionId"] as? String,
+           !SharedDataStore.registerProcessedWatchAction(actionId) {
+            return
+        }
         // Dictated from the wrist: park the title; the app creates the real
         // task through TaskService on its next foreground beat.
         if action == "createTask", let title = userInfo["title"] as? String,

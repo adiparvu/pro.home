@@ -118,19 +118,19 @@ final class PresenceService {
         presenceSub = ch.onPresenceChange { [weak self] action in
             let joins = action.joins.keys.compactMap(UUID.init(uuidString:))
             let leaves = action.leaves.keys.compactMap(UUID.init(uuidString:))
-            Task { @MainActor in self?.applyPresenceDiff(joins: joins, leaves: leaves) }
+            Task { @MainActor [weak self] in self?.applyPresenceDiff(joins: joins, leaves: leaves) }
         }
         postgresSubs.append(ch.onPostgresChange(
             InsertAction.self, schema: "public", table: "presence",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in await self?.load(propertyId: propertyId) }
+            Task { @MainActor [weak self] in await self?.load(propertyId: propertyId) }
         })
         postgresSubs.append(ch.onPostgresChange(
             UpdateAction.self, schema: "public", table: "presence",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in await self?.load(propertyId: propertyId) }
+            Task { @MainActor [weak self] in await self?.load(propertyId: propertyId) }
         })
         try? await ch.subscribeWithError()
         channel = ch
