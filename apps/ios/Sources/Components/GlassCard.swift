@@ -156,6 +156,9 @@ struct GlassWideButton: View {
     let label: LocalizedStringKey
     /// Shows a spinner and disables the button (e.g. while exporting).
     var isBusy: Bool = false
+    /// Disabled keeps the glass and drops the label to secondary — callers
+    /// must never fake the state with `.opacity` over the whole button.
+    var isEnabled: Bool = true
     var action: () -> Void
 
     var body: some View {
@@ -175,15 +178,81 @@ struct GlassWideButton: View {
                         .font(AppFont.headline)
                 }
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(isEnabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .mediaGlass(in: Capsule(), interactive: true)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(isBusy)
+        .disabled(isBusy || !isEnabled)
         .accessibilityLabel(Text(label))
+    }
+}
+
+// MARK: - GlassProminentIconButton
+//
+// The ONE sanctioned CONFIRM control for toolbars and sheet headers — the
+// Save/checkmark circle. Enabled: accent-tinted interactive Liquid Glass
+// with a white glyph. Disabled: the glass stays glass and only the glyph
+// drops to secondary — never `.opacity` over a colored fill (the washed
+// lavender disc of IMG_8288).
+struct GlassProminentIconButton: View {
+    let systemImage: String
+    var size: CGFloat = 38
+    var isEnabled: Bool = true
+    /// Shows a spinner and disables the button (e.g. while saving).
+    var isBusy: Bool = false
+    let accessibilityLabel: LocalizedStringKey
+    var action: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            Group {
+                if isBusy {
+                    ProgressView()
+                } else {
+                    Image(systemName: systemImage)
+                        .font(AppFont.scaled(16, weight: .bold))
+                        .foregroundStyle(isEnabled ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                }
+            }
+            .frame(width: size, height: size)
+            .glassProminent(in: Circle(), enabled: isEnabled && !isBusy)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled || isBusy)
+        .accessibilityLabel(Text(accessibilityLabel))
+    }
+}
+
+extension View {
+    /// Accent-tinted interactive Liquid Glass behind a PRIMARY action
+    /// (Save, Sign In, Schedule…). Disabled keeps plain glass — state is
+    /// carried by the label color, exactly like system buttons, never by
+    /// dimming a colored fill. Pre-26 falls back to an accent gradient /
+    /// hairline material pair with the same contract.
+    @ViewBuilder
+    func glassProminent<S: InsettableShape>(in shape: S, enabled: Bool = true) -> some View {
+        if #available(iOS 26, *) {
+            if enabled {
+                self.glassEffect(Glass.regular.tint(Color.accentColor.opacity(0.85)).interactive(),
+                                 in: shape)
+                    .contentShape(shape)
+            } else {
+                self.glassEffect(.regular, in: shape)
+                    .contentShape(shape)
+            }
+        } else {
+            self.background(enabled ? AnyShapeStyle(Color.accentColor.gradient)
+                                    : AnyShapeStyle(.ultraThinMaterial),
+                            in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(enabled ? 0 : 0.1), lineWidth: 0.5))
+                .contentShape(shape)
+        }
     }
 }
 

@@ -79,30 +79,13 @@ struct AddTaskView: View {
     // MARK: - Save button (purple check)
 
     private var saveButton: some View {
-        Group {
-            if isSaving {
-                ProgressView()
-            } else {
-                Button {
-                    HapticFeedback.impact(.light)
-                    save()
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(AppFont.scaled(16, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .background(
-                            LinearGradient(colors: [Color.brandPurple, Color.brandPurple.opacity(0.82)],
-                                           startPoint: .top, endPoint: .bottom),
-                            in: Circle()
-                        )
-                        .opacity(canSave ? 1 : 0.4)
-                        .shadow(color: Color.brandPurple.opacity(canSave ? 0.4 : 0), radius: 8, y: 3)
-                }
-                .buttonStyle(.plain)
-                .disabled(!canSave)
-                .accessibilityLabel(editing != nil ? "Save Changes" : "Add Task")
-            }
+        GlassProminentIconButton(
+            systemImage: "checkmark",
+            isEnabled: canSave,
+            isBusy: isSaving,
+            accessibilityLabel: editing != nil ? "Save Changes" : "Add Task"
+        ) {
+            save()
         }
     }
 
