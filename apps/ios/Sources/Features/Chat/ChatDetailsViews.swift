@@ -576,8 +576,8 @@ struct EditGroupDetailsSheet: View {
                             .frame(width: 120, height: 120)
                             .clipShape(Circle())
                             Image(systemName: "camera.fill")
-                                .font(AppFont.scaled(13)).foregroundStyle(.white)
-                                .padding(AppSpacing.sm).background(Circle().fill(Color.accentColor))
+                                .font(AppFont.scaled(13)).foregroundStyle(.primary)
+                                .padding(AppSpacing.sm).glassCircle()
                         }
                     }
                     .buttonStyle(.plain)

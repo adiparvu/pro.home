@@ -292,7 +292,7 @@ struct AddPhotoJournalSheet: View {
         Button { Task { await save() } } label: {
             HStack(spacing: 8) {
                 if isUploading {
-                    ProgressView().tint(.white).controlSize(.small)
+                    ProgressView().controlSize(.small)
                     Text(String(format: String(localized: "Uploading %1$d of %2$d…"),
                                 min(uploadProgress + 1, photos.count), photos.count))
                 } else {
@@ -301,17 +301,12 @@ struct AddPhotoJournalSheet: View {
                 }
             }
             .font(AppFont.subheadline)
-            .foregroundStyle(.white)
+            .foregroundStyle(photos.isEmpty || isUploading
+                             ? AnyShapeStyle(.secondary)
+                             : AnyShapeStyle(.white))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(photos.isEmpty || isUploading
-                          ? AnyShapeStyle(Color.primary.opacity(0.18))
-                          : AnyShapeStyle(LinearGradient(colors: [Color.accentColor,
-                                                                  Color.accentColor.opacity(0.75)],
-                                                         startPoint: .top, endPoint: .bottom)))
-            )
+            .glassProminent(in: Capsule(), enabled: !photos.isEmpty && !isUploading)
         }
         .buttonStyle(.plain)
         .disabled(photos.isEmpty || isUploading)

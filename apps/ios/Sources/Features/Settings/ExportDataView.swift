@@ -50,27 +50,23 @@ struct ExportDataView: View {
 
                 if let exportURL {
                     ShareLink(item: exportURL) {
-                        Label("export_share", systemImage: "square.and.arrow.up")
-                            .font(AppFont.footnoteEmphasis)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    Button(action: export) {
-                        Group {
-                            if isExporting {
-                                ProgressView()
-                            } else {
-                                Label("export_generate", systemImage: "doc.badge.gearshape")
-                                    .font(AppFont.footnoteEmphasis)
-                            }
+                        HStack(spacing: 10) {
+                            Label("export_share", systemImage: "square.and.arrow.up")
+                                .font(AppFont.headline)
                         }
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(height: 52)
+                        .glassProminent(in: Capsule())
+                        .contentShape(Capsule())
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isExporting)
+                    .buttonStyle(.plain)
+                } else {
+                    GlassWideButton(icon: "doc.badge.gearshape",
+                                    label: "export_generate",
+                                    isBusy: isExporting) {
+                        export()
+                    }
                 }
 
                 Spacer(minLength: 100)

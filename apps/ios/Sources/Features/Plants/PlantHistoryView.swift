@@ -331,10 +331,9 @@ private struct SwipeToDeleteRow<Content: View>: View {
             } label: {
                 Image(systemName: "trash.fill")
                     .font(AppFont.scaled(15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.red)
                     .frame(width: 56, height: 40)
-                    .background(Color.brandDanger,
-                               in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .glassCircle()
             }
             .buttonStyle(.plain)
             .opacity(offset < -8 ? 1 : 0)

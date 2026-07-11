@@ -179,7 +179,7 @@ struct LiveActivitySimulatorView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(kind.title)
                         .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(canUseActivities ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                     Text(verbatim: scenario.sample)
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.secondaryTextColor)
@@ -199,7 +199,6 @@ struct LiveActivitySimulatorView: View {
                 }
             }
         }
-        .opacity(canUseActivities ? 1 : 0.55)
     }
 
     private var runningBadge: some View {

@@ -144,30 +144,10 @@ struct SendLaterSheet: View {
     }
 
     private var saveButton: some View {
-        Button { Task { await save() } } label: {
-            HStack(spacing: AppSpacing.sm) {
-                if isSaving {
-                    ProgressView().tint(.white)
-                } else {
-                    Image(systemName: "paperplane.fill")
-                        .font(AppFont.footnoteEmphasis)
-                }
-                Text("Schedule").font(AppFont.headline)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                    .fill(canSave
-                          ? AnyShapeStyle(LinearGradient(colors: [Color.accentColor,
-                                                                  Color.accentColor.opacity(0.75)],
-                                                         startPoint: .top, endPoint: .bottom))
-                          : AnyShapeStyle(Color.primary.opacity(0.18)))
-            )
+        GlassWideButton(icon: "paperplane.fill", label: "Schedule",
+                        isBusy: isSaving, isEnabled: canSave) {
+            Task { await save() }
         }
-        .buttonStyle(.plain)
-        .disabled(!canSave)
     }
 
     // MARK: - Scheduled list

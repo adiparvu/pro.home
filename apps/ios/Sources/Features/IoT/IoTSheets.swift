@@ -380,9 +380,12 @@ struct DeviceDetailSheet: View {
                                     } label: {
                                         Label(command.label, systemImage: command.icon)
                                             .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.accentColor)
                                             .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 7)
+                                            .glassCapsule()
                                     }
-                                    .buttonStyle(.bordered)
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }

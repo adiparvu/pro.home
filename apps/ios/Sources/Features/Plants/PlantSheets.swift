@@ -473,11 +473,9 @@ struct AddPlantSheet: View {
     // MARK: Save button
 
     private var saveButton: some View {
-        GlassWideButton(label: "Add plant", isBusy: isSaving) {
+        GlassWideButton(label: "Add plant", isBusy: isSaving, isEnabled: canSave) {
             save()
         }
-        .disabled(!canSave)
-        .opacity(canSave ? 1 : 0.5)
     }
 
     // MARK: Helpers

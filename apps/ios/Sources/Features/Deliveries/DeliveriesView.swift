@@ -258,10 +258,7 @@ struct DeliveriesView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
-                    .background(
-                        Color.accentColor,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
+                    .glassProminent(in: Capsule())
             }
             .buttonStyle(.plain)
             Spacer()

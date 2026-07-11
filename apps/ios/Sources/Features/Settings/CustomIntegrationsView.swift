@@ -102,22 +102,9 @@ struct CustomIntegrationsView: View {
     }
 
     private var addButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
+        GlassWideButton(icon: "plus", label: "Add integration") {
             showAdd = true
-        } label: {
-            Label("Add integration", systemImage: "plus")
-                .font(AppFont.subheadline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .foregroundStyle(.white)
-                .background(
-                    LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                                   startPoint: .leading, endPoint: .trailing),
-                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                )
         }
-        .buttonStyle(.plain)
     }
 }
 
@@ -469,7 +456,7 @@ private struct IntegrationDetailSheet: View {
         } label: {
             HStack(spacing: 8) {
                 switch testState {
-                case .running: ProgressView().tint(.white)
+                case .running: ProgressView()
                 case .ok:      Image(systemName: "checkmark.circle.fill")
                 case .failed:  Image(systemName: "xmark.circle.fill")
                 case .idle:    Image(systemName: "paperplane.fill")
@@ -479,12 +466,8 @@ private struct IntegrationDetailSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(
-                LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                               startPoint: .leading, endPoint: .trailing),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
+            .foregroundStyle(testState == .running ? AnyShapeStyle(.secondary) : AnyShapeStyle(.white))
+            .glassProminent(in: Capsule(), enabled: testState != .running)
         }
         .buttonStyle(.plain)
         .disabled(testState == .running)

@@ -92,9 +92,9 @@ struct ElementInspectorSheet: View {
                     } label: {
                         Text("View")
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
-                            .background(Color.brandPurple, in: Capsule())
+                            .glassCapsule()
                     }
                     .buttonStyle(.plain)
                     Menu {

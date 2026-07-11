@@ -127,23 +127,9 @@ struct LoginView: View {
     // MARK: - Sign in button
 
     private var signInButton: some View {
-        Button(action: signIn) {
-            ZStack {
-                if isLoading {
-                    ProgressView().tint(.white)
-                } else {
-                    Text("Sign In")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        GlassWideButton(label: "Sign In", isBusy: isLoading, isEnabled: canSubmit) {
+            signIn()
         }
-        .buttonStyle(.plain)
-        .disabled(isLoading || !canSubmit)
-        .opacity(canSubmit ? 1 : 0.5)
         .animation(.snappy, value: canSubmit)
     }
 

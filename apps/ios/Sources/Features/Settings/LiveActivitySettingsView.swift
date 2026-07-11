@@ -179,14 +179,14 @@ struct LiveActivitySettingsView: View {
                     Text("Customize")
                 }
                 .font(AppFont.captionEmphasis)
-                .foregroundStyle(.primary)
+                .foregroundStyle(enabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
                 .mediaGlass(in: Capsule(), interactive: true)
             }
             .buttonStyle(.plain)
+            .disabled(!enabled)
         }
         .animation(.snappy(duration: 0.3), value: previewKind)
-        .opacity(enabled ? 1 : 0.4)
         .animation(.easeInOut(duration: 0.2), value: enabled)
     }
 

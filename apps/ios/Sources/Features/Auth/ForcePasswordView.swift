@@ -102,29 +102,9 @@ struct ForcePasswordView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    Button {
+                    GlassWideButton(label: "Set password", isBusy: isSaving, isEnabled: canSave) {
                         Task { await save() }
-                    } label: {
-                        Group {
-                            if isSaving { ProgressView().tint(.white) }
-                            else {
-                                Text("Set password")
-                                    .font(AppFont.subheadline)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .foregroundStyle(.white)
-                        .background(
-                            canSave
-                                ? AnyShapeStyle(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                                                               startPoint: .leading, endPoint: .trailing))
-                                : AnyShapeStyle(Color.primary.opacity(0.15)),
-                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!canSave)
 
                     Spacer(minLength: 30)
                 }

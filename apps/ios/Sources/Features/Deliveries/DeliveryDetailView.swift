@@ -180,16 +180,10 @@ struct DeliveryDetailView: View {
     private var actions: some View {
         VStack(spacing: AppSpacing.sm) {
             if delivery.isActive {
-                Button {
+                GlassWideButton(icon: "checkmark.circle.fill", label: "Mark as delivered") {
                     HapticFeedback.success()
                     Task { await deliveryService.markDelivered(delivery) }
-                } label: {
-                    Label("Mark as delivered", systemImage: "checkmark.seal.fill")
-                        .font(AppFont.headline).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                        .background(Color.brandSuccess, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 }
-                .buttonStyle(.plain)
             }
             Button(role: .destructive) {
                 HapticFeedback.warning()

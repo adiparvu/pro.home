@@ -262,12 +262,11 @@ struct DeliveryFormSheet: View {
     private var saveButton: some View {
         GlassWideButton(
             label: LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"),
-            isBusy: isSaving
+            isBusy: isSaving,
+            isEnabled: canSave
         ) {
             Task { await save() }
         }
-        .disabled(!canSave)
-        .opacity(canSave ? 1 : 0.5)
     }
 
     // MARK: Helpers

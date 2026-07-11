@@ -587,13 +587,9 @@ struct AutomationBuilderView: View {
                     Text(isDeployed ? "Deployed ✓" : "Deploy")
                         .font(AppFont.captionEmphasis)
                 }
-                .foregroundStyle(isDeployed ? Color.brandSuccess : Color.brandPurple)
+                .foregroundStyle(isDeployed ? AnyShapeStyle(Color.brandSuccess) : AnyShapeStyle(.white))
                 .frame(maxWidth: .infinity).frame(height: 44)
-                .background(
-                    (isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder((isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.30), lineWidth: 1))
+                .glassProminent(in: Capsule(), enabled: !isDeployed)
                 .animation(.spring(response: 0.35), value: isDeployed)
             }
             .buttonStyle(.plain)

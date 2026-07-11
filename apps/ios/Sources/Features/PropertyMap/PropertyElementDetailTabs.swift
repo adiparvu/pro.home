@@ -171,9 +171,9 @@ extension PropertyElementDetailView {
                 Spacer()
                 Button { showLocationPicker = true } label: {
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Place" : "Change"))
-                        .font(.caption.weight(.semibold)).foregroundStyle(.white)
+                        .font(.caption.weight(.semibold)).foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
-                        .background(Capsule().fill(Color.accentColor))
+                        .glassCapsule()
                 }
                 .buttonStyle(.plain)
             }
@@ -219,10 +219,10 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Add", systemImage: "plus")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
 
@@ -270,9 +270,9 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
             if linked.isEmpty {
@@ -316,9 +316,9 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
             if linked.isEmpty {
