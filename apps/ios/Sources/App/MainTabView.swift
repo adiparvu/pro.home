@@ -175,6 +175,13 @@ struct MainTabView: View {
                 // Any household member who changed their photo while we were
                 // away shows their new avatar the moment we return.
                 MemberDirectory.shared.refreshSoon()
+                // Keep the Apple Calendar mirror current: a deadline that
+                // changed on another device (or a due date that simply passed)
+                // reconciles into the PRVIO calendar on foreground, without the
+                // user having to open the in-app calendar first.
+                if HouseCalendarMirror.isEnabled {
+                    Task { await HouseCalendarMirror.sync(houseAgendaSnapshot()) }
+                }
             }
             else if phase == .background {
                 Task { await presenceService.unsubscribe() }
@@ -476,6 +483,23 @@ struct MainTabView: View {
         await presenceService.subscribe(propertyId: pid)
         await presenceService.heartbeat(propertyId: pid, userId: uid, userName: name)
         await presenceService.load(propertyId: pid)
+    }
+
+    /// The full house agenda (−1…+12 months) built from every in-memory
+    /// service — the single source the Apple Calendar mirror reconciles
+    /// against on foreground, matching the in-app calendar's own window.
+    @MainActor
+    private func houseAgendaSnapshot() -> [AgendaItem] {
+        let now = Date()
+        let cal = Calendar.current
+        let start = cal.date(byAdding: .month, value: -1, to: now) ?? now
+        let end = cal.date(byAdding: .month, value: 12, to: now) ?? now
+        return HouseAgenda.items(
+            in: start...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values))
     }
 
     private func loadProfileAndSettings() async {

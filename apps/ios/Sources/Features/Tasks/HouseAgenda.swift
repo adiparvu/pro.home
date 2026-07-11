@@ -9,7 +9,7 @@ import SwiftUI
 // yearly birthday or a monthly bill shows on every occurrence in view.
 
 enum AgendaCategory: String, CaseIterable, Identifiable {
-    case task, document, warranty, birthday, financial, plant
+    case task, document, warranty, birthday, financial, plant, lease
     var id: String { rawValue }
 
     var titleKey: LocalizedStringKey {
@@ -20,6 +20,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .birthday:  return "agenda_cat_birthdays"
         case .financial: return "agenda_cat_financial"
         case .plant:     return "agenda_cat_plants"
+        case .lease:     return "agenda_cat_leases"
         }
     }
 
@@ -31,6 +32,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .birthday:  return "gift.fill"
         case .financial: return "creditcard.fill"
         case .plant:     return "leaf.fill"
+        case .lease:     return "key.fill"
         }
     }
 
@@ -42,6 +44,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .birthday:  return .pink
         case .financial: return .brandPurple
         case .plant:     return .green
+        case .lease:     return .brandSkyBlue
         }
     }
 }
@@ -81,7 +84,8 @@ enum HouseAgenda {
         appliances: [Appliance],
         members: [FamilyMember],
         financial: [FinancialRecord],
-        plants: [Plant]
+        plants: [Plant],
+        leases: [TenantLease] = []
     ) -> [AgendaItem] {
         let cal = Calendar.current
         let lo = cal.startOfDay(for: range.lowerBound)
@@ -185,6 +189,39 @@ enum HouseAgenda {
                 title: p.name, subtitle: String(localized: "agenda_plant_water"),
                 sourceId: p.id.uuidString, isCompleted: false,
                 deepLink: "prvio://plants/\(p.id.uuidString)"))
+        }
+
+        // Leases — the contract END (one-shot) and RENT DUE (recurring monthly
+        // on the payment day). Titled with the tenant's name.
+        let nameById = Dictionary(members.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+        for lease in leases {
+            let tenant = nameById[lease.memberId] ?? String(localized: "agenda_lease_tenant")
+            if let raw = lease.leaseEnd, let d = AppDate.day(from: raw), inRange(d) {
+                out.append(AgendaItem(
+                    category: .lease, date: d, hasTime: false,
+                    title: String(format: String(localized: "agenda_lease_ends"), tenant),
+                    subtitle: lease.endDisplay ?? "",
+                    sourceId: "\(lease.id.uuidString):end", isCompleted: false,
+                    deepLink: "prvio://members/\(lease.memberId.uuidString)"))
+            }
+            if let dom = lease.paymentDay, dom >= 1, dom <= 31 {
+                let rent = lease.rentDisplay ?? ""
+                let startBound = lease.leaseStart.flatMap { AppDate.day(from: $0) } ?? lo
+                for y in years {
+                    for month in 1...12 {
+                        var comps = DateComponents(); comps.year = y; comps.month = month; comps.day = dom
+                        guard let d = cal.date(from: comps), inRange(d), d >= startBound else { continue }
+                        // Stop projecting rent once the lease has ended.
+                        if let end = lease.leaseEnd, let ed = AppDate.day(from: end), d > ed { continue }
+                        out.append(AgendaItem(
+                            category: .lease, date: d, hasTime: false,
+                            title: String(format: String(localized: "agenda_lease_rent"), tenant),
+                            subtitle: rent,
+                            sourceId: "\(lease.id.uuidString):rent", isCompleted: false,
+                            deepLink: "prvio://members/\(lease.memberId.uuidString)"))
+                    }
+                }
+            }
         }
 
         return out.sorted {

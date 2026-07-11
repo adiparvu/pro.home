@@ -44344,6 +44344,23 @@
         }
       }
     },
+    "agenda_cat_leases": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leases"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chirii"
+          }
+        }
+      }
+    },
     "agenda_cat_plants": {
       "extractionState": "manual",
       "localizations": {
@@ -44357,6 +44374,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plante"
+          }
+        }
+      }
+    },
+    "agenda_lease_ends": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lease %@ ends"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract %@ expiră"
+          }
+        }
+      }
+    },
+    "agenda_lease_rent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rent %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chirie %@"
+          }
+        }
+      }
+    },
+    "agenda_lease_tenant": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenant"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiriaș"
           }
         }
       }

@@ -32,7 +32,8 @@ struct CalendarView: View {
             in: start...end,
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
-            financial: financialService.records, plants: plantService.plants)
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values))
     }
 
     var body: some View {
@@ -112,7 +113,8 @@ struct CalendarView: View {
             in: range,
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
-            financial: financialService.records, plants: plantService.plants
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values)
         ).filter { active.contains($0.category) }
         return Dictionary(grouping: all) { AppDate.dayString(from: $0.date) }
     }
@@ -188,6 +190,7 @@ struct CalendarView: View {
         case .birthday:  return String(localized: "agenda_cat_birthdays")
         case .financial: return String(localized: "agenda_cat_financial")
         case .plant:     return String(localized: "agenda_cat_plants")
+        case .lease:     return String(localized: "agenda_cat_leases")
         }
     }
 
