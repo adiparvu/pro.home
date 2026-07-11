@@ -862,7 +862,7 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
+                .padding(.bottom, AppSpacing.lg)
                 .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
@@ -908,8 +908,18 @@ struct ChatView: View {
                     == supabase.auth.currentSession?.user.id
                 if appended {
                     if !chatDidLoad {
-                        // Entry batches: snap straight to the bottom rest.
+                        // Entry batches: snap straight to the bottom rest,
+                        // then re-assert once the lazy rows take their real
+                        // heights — the estimated first pass can leave the
+                        // newest bubble half-hidden behind the composer
+                        // (IMG_8284).
                         proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.45))
+                            if !chatDidLoad || isAtBottom {
+                                proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                            }
+                        }
                     } else if isAtBottom || ownLatest {
                         // Follow new messages only when already at the bottom
                         // or when we sent it — never yank a reader up-thread.
