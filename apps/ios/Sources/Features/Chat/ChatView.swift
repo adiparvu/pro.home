@@ -75,6 +75,12 @@ struct ChatView: View {
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
+    // A background can be a gradient (chatBgID), a PHOTO (chatBgImage) or an
+    // ANIMATED preset (chatBgAnim). All three must be observed, or picking a
+    // photo/animated wallpaper in Chat Settings left every open chat on its
+    // stale background — the keys changed but nothing re-rendered.
+    @AppStorage("prvio.chatBgImage") private var chatBgImage = ""
+    @AppStorage("prvio.chatBgAnim") private var chatBgAnim = ""
     @State private var themeRefresh = 0
     /// False until entry settles. Messages arrive in two batches — the page
     /// already in memory from ConversationsView, then the network refresh that
@@ -127,7 +133,7 @@ struct ChatView: View {
         _ = themeRefresh
         // The @AppStorage globals establish observation so a live global
         // change re-renders; resolution itself is centralized in effective().
-        _ = (chatThemeID, chatBubbleHex, chatBgID)
+        _ = (chatThemeID, chatBubbleHex, chatBgID, chatBgImage, chatBgAnim)
         return .effective(scope: themeScope)
     }
     var pendingOutbox: [PendingMessage] {

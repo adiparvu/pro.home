@@ -45,6 +45,12 @@ struct DirectMessageView: View {
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
+    // A background can be a gradient (chatBgID), a PHOTO (chatBgImage) or an
+    // ANIMATED preset (chatBgAnim). All three must be observed, or picking a
+    // photo/animated wallpaper in Chat Settings left every open chat on its
+    // stale background — the keys changed but nothing re-rendered.
+    @AppStorage("prvio.chatBgImage") private var chatBgImage = ""
+    @AppStorage("prvio.chatBgAnim") private var chatBgAnim = ""
     @State private var themeRefresh = 0
     /// False until entry settles. The parent loads the conversation
     /// asynchronously and a server refresh can replace it moments later —
@@ -200,7 +206,7 @@ struct DirectMessageView: View {
         _ = themeRefresh
         // The @AppStorage globals establish observation so a live global
         // change re-renders; resolution itself is centralized in effective().
-        _ = (chatThemeID, chatBubbleHex, chatBgID)
+        _ = (chatThemeID, chatBubbleHex, chatBgID, chatBgImage, chatBgAnim)
         return .effective(scope: themeScope)
     }
     private var draftKey: String { "draft.dm.\(convId)" }
