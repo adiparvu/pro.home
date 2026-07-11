@@ -45614,6 +45614,40 @@
         }
       }
     },
+    "cal_sync_apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync with Apple Calendar"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizează cu Apple Calendar"
+          }
+        }
+      }
+    },
+    "cal_sync_now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizează acum"
+          }
+        }
+      }
+    },
     "cal_warranty_ends": {
       "localizations": {
         "en": {

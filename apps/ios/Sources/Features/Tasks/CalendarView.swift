@@ -17,8 +17,23 @@ struct CalendarView: View {
     @State private var icsURL: URL? = nil
     /// Which categories are shown. All on by default; chips toggle them.
     @State private var active: Set<AgendaCategory> = Set(AgendaCategory.allCases)
+    /// Mirror-to-Apple-Calendar toggle (mirrors the persisted flag).
+    @State private var mirrorOn = HouseCalendarMirror.isEnabled
 
     private var calendar: Calendar { Calendar.current }
+
+    /// The full mirror window (−1…+12 months), ALL categories — what the Apple
+    /// Calendar mirror reconciles against, independent of the on-screen filter.
+    private func fullAgenda() -> [AgendaItem] {
+        let now = Date()
+        let start = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        let end = calendar.date(byAdding: .month, value: 12, to: now) ?? now
+        return HouseAgenda.items(
+            in: start...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants)
+    }
 
     var body: some View {
         ZStack {
@@ -36,15 +51,46 @@ struct CalendarView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                if let icsURL {
-                    ShareLink(item: icsURL) {
-                        Image(systemName: "square.and.arrow.up").font(AppFont.headline)
+                Menu {
+                    Toggle(isOn: $mirrorOn) {
+                        Label("cal_sync_apple", systemImage: "calendar")
                     }
-                    .accessibilityLabel(Text("cal_export_ics"))
+                    if mirrorOn {
+                        Button {
+                            Task { await HouseCalendarMirror.sync(fullAgenda()) }
+                        } label: {
+                            Label("cal_sync_now", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                    }
+                    if let icsURL {
+                        ShareLink(item: icsURL) {
+                            Label("cal_export_ics", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle").font(AppFont.headline)
+                }
+                .accessibilityLabel(Text("Calendar options"))
+            }
+        }
+        .onAppear {
+            buildICS()
+            // Keep the mirror fresh whenever the calendar is opened.
+            if HouseCalendarMirror.isEnabled {
+                Task { await HouseCalendarMirror.sync(fullAgenda()) }
+            }
+        }
+        .onChange(of: mirrorOn) { _, on in
+            Task {
+                if on {
+                    // Ask for access + do the first sync; revert if denied.
+                    let ok = await HouseCalendarMirror.enable(with: fullAgenda())
+                    if !ok { mirrorOn = false }
+                } else {
+                    HouseCalendarMirror.disableAndRemove()
                 }
             }
         }
-        .onAppear(perform: buildICS)
     }
 
     // MARK: - Agenda for the displayed month
