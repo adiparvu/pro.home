@@ -16,6 +16,7 @@ struct AddReceiptSheet: View {
     @State private var items: [EditableReceiptItem] = []
     @State private var isSaving = false
     @State private var error: String?
+    @State private var showScanner = false
 
     var body: some View {
         FormScaffold(title: "add_receipt_title",
@@ -24,6 +25,7 @@ struct AddReceiptSheet: View {
                      isSaving: isSaving,
                      error: $error,
                      onSave: { Task { await save() } }) {
+            scanHero
             storeField
             dateField
             categoryField
@@ -31,6 +33,52 @@ struct AddReceiptSheet: View {
             totalField
             notesField
         }
+        .sheet(isPresented: $showScanner) {
+            // The scanner runs the full scan → parse → save; when it saves, it
+            // dismisses this manual form too, so the user isn't dropped back on
+            // an empty sheet.
+            ReceiptScannerView(onSaved: { dismiss() })
+                .environment(receiptService)
+                .environment(propertyService)
+        }
+    }
+
+    // MARK: - Scan hero
+    //
+    // A receipt screen's fastest path is the camera — point it at the receipt
+    // and store, date, total and line items fill themselves. Manual entry
+    // stays right below for when there's nothing to scan.
+    private var scanHero: some View {
+        Button {
+            showScanner = true
+            HapticFeedback.impact(.medium)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.viewfinder.fill")
+                    .font(AppFont.scaled(20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("add_receipt_scan_title")
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(.primary)
+                    Text("add_receipt_scan_sub")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+            .padding(AppSpacing.base)
+            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Fields
@@ -120,16 +168,24 @@ struct AddReceiptSheet: View {
                     }
                 }
 
-                // Auto-compute total from items
-                let computed = items.compactMap { Double($0.priceText) }.reduce(0, +)
-                if computed > 0 && total.isEmpty {
+                // The items' sum, offered whenever it differs from the entered
+                // total — so an empty total fills in one tap and a mismatch
+                // (items say 50, total says 45) surfaces instead of hiding.
+                let computed = items.compactMap { Double($0.priceText.replacingOccurrences(of: ",", with: ".")) }.reduce(0, +)
+                let computedStr = String(format: "%.2f", computed)
+                if computed > 0, total != computedStr {
                     Button {
-                        total = String(format: "%.2f", computed)
+                        total = computedStr
+                        HapticFeedback.selection()
                     } label: {
-                        Text(String(format: String(localized: "add_receipt_use_computed"),
-                                    CurrencyService.money(computed, code: appSettings.preferredCurrency)))
-                            .font(AppFont.scaled(12))
-                            .foregroundStyle(Color.accentColor)
+                        HStack(spacing: 4) {
+                            Image(systemName: "equal.circle")
+                                .font(AppFont.scaled(11, weight: .semibold))
+                            Text(String(format: String(localized: "add_receipt_use_computed"),
+                                        CurrencyService.money(computed, code: appSettings.preferredCurrency)))
+                                .font(AppFont.scaled(12))
+                        }
+                        .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, AppSpacing.xxs)

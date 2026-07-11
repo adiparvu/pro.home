@@ -75964,6 +75964,40 @@
           }
         }
       }
+    },
+    "add_receipt_scan_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan receipt"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanează bonul"
+          }
+        }
+      }
+    },
+    "add_receipt_scan_sub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-fills store, date, total and items"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completează automat magazin, dată, total și articole"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

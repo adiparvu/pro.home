@@ -12,6 +12,11 @@ import UniformTypeIdentifiers
 // saves everything. Zero manual typing after the photo.
 
 struct ReceiptScannerView: View {
+    /// Called after a scanned receipt is saved, so a presenting sheet (e.g. the
+    /// manual "New receipt" form) can dismiss itself instead of leaving the
+    /// user on an empty form behind the scanner.
+    var onSaved: (() -> Void)? = nil
+
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
     @Environment(SupplyService.self) private var supplyService: SupplyService?
@@ -297,6 +302,7 @@ struct ReceiptScannerView: View {
         do {
             try await receiptService.addReceipt(payload, items: items)
             HapticFeedback.success()
+            onSaved?()
             dismiss()
         } catch {
             HapticFeedback.error()
