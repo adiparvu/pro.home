@@ -44,7 +44,7 @@ struct AddSupplyItemSheet: View {
 
     var body: some View {
         FormScaffold(title: editingItem == nil ? "New Item" : "Edit Item",
-                     saveLabel: editingItem == nil ? "Add item" : "Save changes",
+                     saveLabel: editingItem == nil ? "Add" : "Save",
                      canSave: !name.trimmingCharacters(in: .whitespaces).isEmpty,
                      isSaving: isSaving,
                      error: $error,
@@ -68,13 +68,13 @@ struct AddSupplyItemSheet: View {
         }
     }
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(AppFont.label).foregroundStyle(.secondary)
+    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key).font(AppFont.label).foregroundStyle(.secondary).textCase(.uppercase)
     }
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NAME")
+            fieldLabel("sup_field_name")
             TextField("What needs to be bought?", text: $name)
                 .font(AppFont.scaled(16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -84,7 +84,7 @@ struct AddSupplyItemSheet: View {
 
     private var quantityField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("QUANTITY (OPTIONAL)")
+            fieldLabel("sup_field_quantity")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
                 .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -133,7 +133,7 @@ struct AddSupplyItemSheet: View {
                 Image(systemName: "mappin")
                     .font(AppFont.scaled(10, weight: .semibold))
                     .foregroundStyle(.secondary)
-                fieldLabel("LOCATION (OPTIONAL)")
+                fieldLabel("sup_field_location")
             }
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
@@ -144,7 +144,7 @@ struct AddSupplyItemSheet: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NOTES (OPTIONAL)")
+            fieldLabel("sup_field_notes")
             TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...5).padding(AppSpacing.base)
@@ -154,7 +154,7 @@ struct AddSupplyItemSheet: View {
 
     private var listPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LIST")
+            fieldLabel("sup_field_list")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyService.lists) { l in
@@ -177,12 +177,12 @@ struct AddSupplyItemSheet: View {
 
     private var categoryPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("CATEGORY")
+            fieldLabel("sup_field_category")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyCategories, id: \.id) { cat in
                         Button { category = cat.id; HapticFeedback.selection() } label: {
-                            Text(cat.label)
+                            Text(LocalizedStringKey(cat.label))
                                 .font(AppFont.scaled(13, weight: category == cat.id ? .semibold : .regular))
                                 .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, 13).padding(.vertical, 7)
@@ -199,14 +199,14 @@ struct AddSupplyItemSheet: View {
 
     private var priorityPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("PRIORITY")
+            fieldLabel("sup_field_priority")
             HStack(spacing: 8) {
                 ForEach(supplyPriorities, id: \.id) { p in
                     let item = SupplyItem(id: UUID(), listId: UUID(), propertyId: UUID(),
                                          name: "", category: "other", priority: p.id,
                                          isCompleted: false, createdAt: "", updatedAt: "")
                     Button { priority = p.id; HapticFeedback.selection() } label: {
-                        Text(p.label)
+                        Text(LocalizedStringKey(p.label))
                             .font(AppFont.scaled(13, weight: priority == p.id ? .semibold : .regular))
                             .foregroundStyle(priority == p.id ? .white : Color.primary.opacity(0.65))
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)

@@ -19,7 +19,7 @@ struct AddReceiptSheet: View {
 
     var body: some View {
         FormScaffold(title: "add_receipt_title",
-                     saveLabel: "add_receipt_save",
+                     saveLabel: "Save",
                      canSave: canSave,
                      isSaving: isSaving,
                      error: $error,

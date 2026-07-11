@@ -18,7 +18,7 @@ struct EditProfileView: View {
     private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "other"]
 
     var body: some View {
-        FormScaffold(title: "Edit Profile", saveLabel: "Save Changes",
+        FormScaffold(title: "Edit Profile", saveLabel: "Save",
                      isSaving: profileService.isSaving,
                      error: $error, onSave: { save() }) {
             field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)

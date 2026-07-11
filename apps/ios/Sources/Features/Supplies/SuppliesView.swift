@@ -2,22 +2,25 @@ import SwiftUI
 
 // MARK: - Category / priority helpers (used by AddSupplyItemSheet, SupplyListDetailView)
 
+// `label` holds a LOCALIZATION KEY, not display text — render sites resolve it
+// (Text(LocalizedStringKey:) / String(localized:)) so the shopping form reads
+// in the user's language, not English.
 let supplyCategories: [(id: String, label: String)] = [
-    ("food",        "Food"),
-    ("cleaning",    "Cleaning"),
-    ("bathroom",    "Bathroom"),
-    ("garden",      "Garden"),
-    ("diy",         "DIY"),
-    ("electronics", "Electronics"),
-    ("pet",         "Pets"),
-    ("other",       "Other"),
+    ("food",        "sup_cat_food"),
+    ("cleaning",    "sup_cat_cleaning"),
+    ("bathroom",    "sup_cat_bathroom"),
+    ("garden",      "sup_cat_garden"),
+    ("diy",         "sup_cat_diy"),
+    ("electronics", "sup_cat_electronics"),
+    ("pet",         "sup_cat_pet"),
+    ("other",       "sup_cat_other"),
 ]
 
 let supplyPriorities: [(id: String, label: String)] = [
-    ("low",      "Low"),
-    ("medium",   "Medium"),
-    ("high",     "High"),
-    ("critical", "Critical"),
+    ("low",      "sup_prio_low"),
+    ("medium",   "sup_prio_medium"),
+    ("high",     "sup_prio_high"),
+    ("critical", "sup_prio_critical"),
 ]
 
 // MARK: - Supplies / Expense Hub
