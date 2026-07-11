@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -60,14 +61,73 @@ final class DeliveryService {
         }
         currentPropertyId = propertyId
         do {
-            deliveries = try await PropertyRepo.fetch(table: "packages", propertyId: propertyId,
-                                                      scope: .strict, limit: 500)
+            let fresh: [Delivery] = try await PropertyRepo.fetch(table: "packages", propertyId: propertyId,
+                                                                 scope: .strict, limit: 500)
+            // Fire a local notification for any parcel that ADVANCED since we
+            // last saw it — the "push on status change" half of tracking, which
+            // works for manual edits, the email import and (once configured) the
+            // courier aggregator alike, with no external key needed.
+            notifyStatusChanges(fresh)
+            deliveries = fresh
             ServiceCache.save(deliveries, entity: "deliveries", propertyId: propertyId)
         } catch {
             #if DEBUG
             debugLog("DeliveryService.load error:", error)
             #endif
         }
+    }
+
+    // MARK: - Status-change notifications
+    //
+    // Remembers each parcel's last-seen journey stage (App-independent, in
+    // UserDefaults) and notifies when it moves FORWARD to a milestone the user
+    // cares about — out for delivery, or delivered. A parcel seen for the first
+    // time only records its baseline (no notification), so opening the app never
+    // spams alerts for packages that were already on their way.
+    private static let lastStageKey = "prvio.deliveries.lastStage"
+
+    private func notifyStatusChanges(_ fresh: [Delivery]) {
+        let defaults = UserDefaults.standard
+        var map = (defaults.dictionary(forKey: Self.lastStageKey) as? [String: Int]) ?? [:]
+        var dirty = false
+
+        for d in fresh {
+            let id = d.id.uuidString
+            let stage = d.progressStage
+            let previous = map[id]
+            if let previous, stage > previous {
+                switch stage {
+                case 2: scheduleDeliveryNotification(d, kind: .outForDelivery)
+                case 3: scheduleDeliveryNotification(d, kind: .delivered)
+                default: break
+                }
+            }
+            if previous != stage { map[id] = stage; dirty = true }
+        }
+        // Forget parcels that no longer exist so the map can't grow unbounded.
+        let liveIds = Set(fresh.map { $0.id.uuidString })
+        for key in map.keys where !liveIds.contains(key) { map.removeValue(forKey: key); dirty = true }
+
+        if dirty { defaults.set(map, forKey: Self.lastStageKey) }
+    }
+
+    private enum DeliveryNotificationKind { case outForDelivery, delivered }
+
+    private func scheduleDeliveryNotification(_ delivery: Delivery, kind: DeliveryNotificationKind) {
+        let content = UNMutableNotificationContent()
+        content.title = delivery.description
+        switch kind {
+        case .outForDelivery: content.body = String(localized: "deliv_notif_ofd")
+        case .delivered:      content.body = String(localized: "deliv_notif_delivered")
+        }
+        content.sound = .default
+        content.categoryIdentifier = "PROACTIVE"
+        content.userInfo = ["deepLink": "prvio://deliveries"]
+        let request = UNNotificationRequest(
+            identifier: "delivery.\(delivery.id.uuidString).\(kind == .delivered ? "d" : "o")",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false))
+        UNUserNotificationCenter.current().add(request)
     }
 
     func add(_ new: NewDelivery) async {

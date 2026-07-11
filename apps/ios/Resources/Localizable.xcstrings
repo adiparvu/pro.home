@@ -76015,6 +76015,40 @@
           }
         }
       }
+    },
+    "deliv_notif_ofd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out for delivery today"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În livrare astăzi"
+          }
+        }
+      }
+    },
+    "deliv_notif_delivered": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delivered ✓"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Livrat ✓"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
