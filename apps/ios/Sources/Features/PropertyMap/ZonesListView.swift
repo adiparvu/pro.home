@@ -105,13 +105,14 @@ struct ZonesListView: View {
                         HapticFeedback.impact(.light)
                         router.selectedTab = .digitalTwin
                     } label: {
+                        // No .glassCircle() in a toolbar — iOS 26 wraps the
+                        // control in its own glass, so a custom circle doubled
+                        // it (IMG_8315 class).
                         Image(systemName: "map.fill")
                             .font(AppFont.subheadline)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 34, height: 34)
                     }
                     .buttonStyle(.plain)
-                    .glassCircle()
                     .accessibilityLabel("Open Digital Twin")
                 }
             }

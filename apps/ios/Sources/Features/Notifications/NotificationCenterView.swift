@@ -84,11 +84,12 @@ struct NotificationCenterView: View {
                         guard let uid = userId else { return }
                         Task { await service.markAllRead(userId: uid) }
                     } label: {
+                        // No .glassCircle() here — iOS 26 already wraps a
+                        // toolbar control in its own glass, so adding one drew
+                        // a second overlapping circle (IMG_8315).
                         Image(systemName: "checkmark.circle")
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
-                            .frame(width: 34, height: 34)
-                            .glassCircle()
                     }
                     .accessibilityLabel("Mark all read")
                 }
@@ -103,11 +104,10 @@ struct NotificationCenterView: View {
                             Label("Clear all", systemImage: "trash")
                         }
                     } label: {
+                        // The toolbar supplies the glass; no custom circle.
                         Image(systemName: "ellipsis")
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
-                            .frame(width: 34, height: 34)
-                            .glassCircle()
                     }
                 }
             }
