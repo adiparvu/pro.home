@@ -15,8 +15,9 @@ import UIKit
 
 /// Capability flags/actions for a chat surface. nil hides the control.
 struct ChatComposerConfig {
-    /// Placeholder inside the text field ("Message…").
-    var placeholder: LocalizedStringKey = "Message…"
+    /// Placeholder inside the text field. iMessage's field says "Mesaj" with
+    /// no trailing ellipsis — matching it exactly is a standing requirement.
+    var placeholder: LocalizedStringKey = "Message"
     /// Opens the "+" attachment menu (the surface presents its own
     /// ChatAttachmentSheet overlay so the dim can cover the whole screen).
     /// nil hides the + button.
