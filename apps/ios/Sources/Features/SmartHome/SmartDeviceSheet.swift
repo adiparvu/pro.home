@@ -15,7 +15,7 @@ import SwiftUI
 // open sheet with no mirroring layer.
 //
 // Write discipline:
-// - Power: optimistic hold (same pattern as SmartHomeKindCard) — the toggle
+// - Power: optimistic hold (same pattern as SmartDeviceHeroCard) — the toggle
 //   holds the commanded state until the provider round-trip finishes.
 // - Brightness/hue: written on drag END only (never spammed mid-drag);
 //   VoiceOver/keyboard adjustments — which never emit editing events — are
@@ -382,14 +382,17 @@ struct SmartDeviceSheet: View {
     }
 }
 
-// MARK: - Kind device-list sheet
+// MARK: - Device-list sheet
 //
-// Presented when a dashboard kind card groups MORE than one device: a simple
-// row list (name, room, honest state text) that drills into the hero sheet.
-// Devices re-resolve from the service on every render, so rows stay live.
+// Presented from the dashboard's "See all" row (kind == nil → every device
+// in the filtered room) — and reusable as the per-kind list it originally
+// was: a simple row list (name, room, honest state text) that drills into
+// the hero sheet. Devices re-resolve from the service on every render, so
+// rows stay live.
 
-struct SmartHomeKindDevicesSheet: View {
-    let kind: SmartDeviceKind
+struct SmartHomeDeviceListSheet: View {
+    /// Restricts the list to one kind; nil shows every device in the room.
+    let kind: SmartDeviceKind?
     /// The dashboard's room filter at tap time; nil = all rooms.
     let room: String?
 
@@ -399,7 +402,13 @@ struct SmartHomeKindDevicesSheet: View {
     private let smartHome = SmartHomeService.shared
 
     private var devices: [SmartDevice] {
-        smartHome.devices(in: room).filter { $0.kind == kind }
+        let scoped = smartHome.devices(in: room)
+        guard let kind else { return scoped }
+        return scoped.filter { $0.kind == kind }
+    }
+
+    private var title: Text {
+        if let kind { Text(LocalizedStringKey(kind.titleKey)) } else { Text("sh_all_devices") }
     }
 
     var body: some View {
@@ -424,7 +433,7 @@ struct SmartHomeKindDevicesSheet: View {
                 .padding(.top, AppSpacing.md)
             }
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle(Text(LocalizedStringKey(kind.titleKey)))
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -506,8 +515,8 @@ struct SmartHomeKindDevicesSheet: View {
 }
 
 /// "21.5 °C" — at most one decimal, unit appended only when present.
-/// Deliberately mirrors `SmartHomeKindCard.readingText` (private to the S2
-/// file) so this sheet doesn't force visibility changes on the dashboard.
+/// Deliberately mirrors `SmartDeviceHeroCard.readingText` (private to the
+/// S2 file) so this sheet doesn't force visibility changes on the dashboard.
 private func smartReadingText(_ value: Double, unit: String?) -> String {
     let number = value.formatted(.number.precision(.fractionLength(0...1)))
     guard let unit, !unit.isEmpty else { return number }

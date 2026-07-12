@@ -64,7 +64,18 @@ struct DashboardView: View {
                 SmartHomeSection()
                     .padding(.horizontal, AppSpacing.lg)
 
-                Spacer().frame(height: 14)
+                Spacer().frame(height: 22)
+
+                // ── Everything below the smart-home page: the classic
+                //    dashboard, under its own mini-header ─────────────────
+                Text("sh_section_life")
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.leading, AppSpacing.xxs)
+
+                Spacer().frame(height: 8)
 
                 // ── Aerial Hero Card ─────────────────────────────────────
                 aerialHero
@@ -180,67 +191,80 @@ struct DashboardView: View {
 
     // MARK: - Header
 
+    /// The reference's airy smart-home header: a utility row (date +
+    /// search / notifications / avatar — same functionality as before,
+    /// restyled) above a LARGE two-line greeting block.
     private var dashHeader: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: AppSpacing.base) {
+            HStack(alignment: .center, spacing: 10) {
                 Text(dateString)
                     .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
+
+                Button { HapticFeedback.impact(.light); activeSheet = .search } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(AppFont.headline)
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.plain)
+                .glassCircle()
+                .accessibilityLabel(Text("Search"))
+
+                Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
+                    Image(systemName: "bell.fill")
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .frame(width: 40, height: 40)
+                        .overlay(alignment: .topTrailing) {
+                            // Numeric badge ONLY while there are unread
+                            // notifications — no static status dots.
+                            if notificationService.unreadCount > 0 {
+                                Text(notificationService.unreadCount > 99
+                                     ? "99+" : "\(notificationService.unreadCount)")
+                                    .font(AppFont.scaled(10, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 4.5).padding(.vertical, 1.5)
+                                    .background(Color.red, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
+                                    .offset(x: -2, y: 4)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .glassCircle()
+                .accessibilityLabel(Text("Notifications"))
+                .accessibilityValue(Text(verbatim: notificationService.unreadCount > 0
+                                         ? "\(notificationService.unreadCount)" : ""))
+
+                // The avatar goes straight to the Profile page itself — pushed,
+                // so the dashboard stays underneath.
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.push(.profile)
+                } label: {
+                    avatarCircle
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Profile"))
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 // Composed from Texts so both parts resolve through the
                 // in-app locale — never the device language.
                 greetingTitle
-                    .font(AppFont.scaled(26, weight: .bold))
+                    .font(AppFont.scaled(34, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
+                Text("sh_greeting_subtitle")
+                    .font(AppFont.scaled(17, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
-
-            Spacer(minLength: 8)
-
-            Button { HapticFeedback.impact(.light); activeSheet = .search } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(AppFont.headline)
-                    .foregroundStyle(Color.primary.opacity(0.75))
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel("Search")
-
-            Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
-                Image(systemName: "bell.fill")
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(Color.primary.opacity(0.75))
-                    .frame(width: 40, height: 40)
-                    .overlay(alignment: .topTrailing) {
-                        // Numeric badge ONLY while there are unread
-                        // notifications — no static status dots.
-                        if notificationService.unreadCount > 0 {
-                            Text(notificationService.unreadCount > 99
-                                 ? "99+" : "\(notificationService.unreadCount)")
-                                .font(AppFont.scaled(10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4.5).padding(.vertical, 1.5)
-                                .background(Color.red, in: Capsule())
-                                .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
-                                .offset(x: -2, y: 4)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(notificationService.unreadCount > 0
-                                ? "Notifications, new" : "Notifications")
-
-            // The avatar goes straight to the Profile page itself — pushed,
-            // so the dashboard stays underneath.
-            Button {
-                HapticFeedback.impact(.light)
-                router.push(.profile)
-            } label: {
-                avatarCircle
-            }
-            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
         }
     }
 
