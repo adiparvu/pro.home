@@ -355,6 +355,7 @@ struct DocFieldRow: View {
     let field: DocField
     let tint: Color
     @Bindable var state: DocumentFieldState
+    @State private var showBarcodeScanner = false
 
     private var textBinding: Binding<String> {
         Binding(get: { state.text[field] ?? "" }, set: { state.text[field] = $0 })
@@ -378,6 +379,27 @@ struct DocFieldRow: View {
                     .autocorrectionDisabled()
                     .keyboardType(keyboard(field))
                     .textContentType(contentType(field))
+                // Camera capture for the barcode field — the field always had
+                // keyboard/OCR entry; the button exists only where the device
+                // can actually scan (no dead control on unsupported hardware).
+                if field == .barcode, DocumentBarcodeScanner.isSupported {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showBarcodeScanner = true
+                    } label: {
+                        Image(systemName: "barcode.viewfinder")
+                            .font(AppFont.scaled(17))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("doc_scan_barcode"))
+                }
+            }
+            .sheet(isPresented: $showBarcodeScanner) {
+                DocumentBarcodeScanner { payload in
+                    state.text[field] = payload
+                }
+                .ignoresSafeArea()
             }
         case .multiline:
             FormRow(icon: "text.alignleft", tint: tint) {

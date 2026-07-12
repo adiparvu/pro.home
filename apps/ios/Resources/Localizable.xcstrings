@@ -76196,6 +76196,22 @@
           }
         }
       }
+    },
+    "doc_scan_barcode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan barcode"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanează codul de bare"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
