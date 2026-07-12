@@ -24,8 +24,8 @@ struct MemberProfileSheet: View {
                         if resolvedMember.email != nil || resolvedMember.phone != nil || resolvedMember.birthday != nil {
                             contactSection
                         }
-                        if let links = resolvedMember.socialLinks, !links.isEmpty {
-                            socialSection(links)
+                        if !SocialLinksRow.displayable(resolvedMember.socialLinks).isEmpty {
+                            socialSection
                         }
                         Spacer(minLength: 40)
                     }
@@ -164,27 +164,10 @@ struct MemberProfileSheet: View {
         }
     }
 
-    private func socialSection(_ links: [SocialLink]) -> some View {
+    private var socialSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("SOCIAL NETWORKS")
-            HStack(spacing: 12) {
-                ForEach(links) { link in
-                    Button {
-                        if let url = link.openURL { UIApplication.shared.open(url) }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(link.platformColor.opacity(0.13))
-                                .frame(width: 46, height: 46)
-                            Image(systemName: link.platformIcon)
-                                .font(AppFont.scaled(17, weight: .semibold))
-                                .foregroundStyle(link.platformColor)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(link.platformLabel) profile")
-                }
-            }
+            sectionLabel(String(localized: "soc_section_title"))
+            SocialLinksRow(links: resolvedMember.socialLinks ?? [])
         }
     }
 
@@ -203,6 +186,7 @@ struct MemberProfileSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
+            .textCase(.uppercase)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .padding(.leading, AppSpacing.xxs)

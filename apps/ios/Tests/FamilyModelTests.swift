@@ -61,6 +61,27 @@ final class FamilyModelTests: XCTestCase {
                        "https://example.com/me")
     }
 
+    // Honesty: wa.me only resolves phone numbers — a username must yield no
+    // URL at all (rendered as an inert chip), never a fabricated link.
+    func testOpenURLWhatsAppUsernameHasNoLink() {
+        XCTAssertNil(link("whatsapp", "johnny").openURL)
+        XCTAssertNil(link("whatsapp", "@johnny92").openURL)
+    }
+
+    func testOpenURLEmptyHandleHasNoLink() {
+        XCTAssertNil(link("instagram", "   ").openURL)
+        XCTAssertNil(link("instagram", "@").openURL)
+    }
+
+    func testOpenURLUnknownPlatformBareNameHasNoLink() {
+        XCTAssertNil(link("custom", "just a name").openURL)
+    }
+
+    func testSanitizedHandleStripsOnlyLeadingAt() {
+        XCTAssertEqual(link("instagram", " @john ").sanitizedHandle, "john")
+        XCTAssertEqual(link("instagram", "jo@hn").sanitizedHandle, "jo@hn")
+    }
+
     // MARK: - FamilyMember.initials
 
     func testInitialsTwoWords() {

@@ -78514,6 +78514,310 @@
           }
         }
       }
+    },
+    "rep_sec_plants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plants & Care"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plante & îngrijire"
+          }
+        }
+      }
+    },
+    "rep_sec_appliances": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appliances & Warranties"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electrocasnice & garanții"
+          }
+        }
+      }
+    },
+    "rep_sec_inventory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inventory"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inventar"
+          }
+        }
+      }
+    },
+    "rep_sec_tenants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenants & Rent"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiriași & încasări"
+          }
+        }
+      }
+    },
+    "rep_sec_journal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo Journal"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jurnal foto"
+          }
+        }
+      }
+    },
+    "rep_pdf_plants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTS & CARE"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTE ȘI ÎNGRIJIRE"
+          }
+        }
+      }
+    },
+    "rep_pdf_plants_line %lld %lld %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plants: %1$lld   Need watering: %2$lld   Critical: %3$lld"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plante: %1$lld   Necesită udare: %2$lld   Critice: %3$lld"
+          }
+        }
+      }
+    },
+    "rep_pdf_plant_water %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — needs watering"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — necesită udare"
+          }
+        }
+      }
+    },
+    "rep_pdf_appliances": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APPLIANCES & WARRANTIES"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ELECTROCASNICE ȘI GARANȚII"
+          }
+        }
+      }
+    },
+    "rep_pdf_appliances_line %lld %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appliances: %1$lld   Warranties expiring soon: %2$lld"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electrocasnice: %1$lld   Garanții care expiră curând: %2$lld"
+          }
+        }
+      }
+    },
+    "rep_pdf_appliance_warranty %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — warranty until %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — garanție până la %2$@"
+          }
+        }
+      }
+    },
+    "rep_pdf_inventory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "INVENTORY"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "INVENTAR"
+          }
+        }
+      }
+    },
+    "rep_pdf_inventory_line %lld %@ %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items: %1$lld   Total value: %2$@   On loan: %3$lld"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obiecte: %1$lld   Valoare totală: %2$@   Împrumutate: %3$lld"
+          }
+        }
+      }
+    },
+    "rep_pdf_inv_loan %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — loaned to %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — împrumutat lui %2$@"
+          }
+        }
+      }
+    },
+    "rep_pdf_tenants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TENANTS & RENT"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CHIRIAȘI ȘI ÎNCASĂRI"
+          }
+        }
+      }
+    },
+    "rep_pdf_tenants_line %lld %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenants: %1$lld   Expected monthly rent: %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiriași: %1$lld   Chirie lunară estimată: %2$@"
+          }
+        }
+      }
+    },
+    "rep_pdf_until %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "until %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "până la %@"
+          }
+        }
+      }
+    },
+    "rep_pdf_journal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PHOTO JOURNAL"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JURNAL FOTO"
+          }
+        }
+      }
+    },
+    "rep_pdf_journal_line %lld %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries: %1$lld   Latest: %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capturi: %1$lld   Ultima: %2$@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

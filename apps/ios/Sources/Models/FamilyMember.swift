@@ -44,18 +44,51 @@ struct SocialLink: Codable, Identifiable, Hashable {
         }
     }
 
+    /// The stored handle trimmed and with a leading "@" stripped — the form
+    /// every profile URL is built from (and the honest thing to display).
+    var sanitizedHandle: String {
+        var h = handle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if h.hasPrefix("@") { h.removeFirst() }
+        return h
+    }
+
+    /// wa.me only resolves phone numbers, never usernames — a link built
+    /// from anything else would be a lie. Digits plus common phone
+    /// punctuation, with enough digits to plausibly dial.
+    var isPhoneLikeHandle: Bool {
+        let h = sanitizedHandle
+        guard h.filter(\.isNumber).count >= 6 else { return false }
+        return h.allSatisfy { $0.isNumber || "+ ()-.".contains($0) }
+    }
+
+    /// Web profile URL for the saved handle. Deliberately https (not the
+    /// app's custom scheme): universal links route into the installed app
+    /// anyway, and the browser is an honest fallback when it isn't there.
+    /// nil when no truthful destination exists — an empty handle, or a
+    /// WhatsApp value that isn't a phone number — so callers must render
+    /// those entries as non-tappable.
     var openURL: URL? {
-        let h = handle.trimmingCharacters(in: .whitespacesAndNewlines)
-                      .replacingOccurrences(of: "@", with: "")
+        let h = sanitizedHandle
+        guard !h.isEmpty,
+              let enc = h.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        else { return nil }
         switch platform {
-        case "instagram": return URL(string: "https://instagram.com/\(h)")
-        case "facebook":  return URL(string: "https://facebook.com/\(h)")
-        case "whatsapp":  return URL(string: "https://wa.me/\(h.filter { $0.isNumber })")
-        case "linkedin":  return URL(string: "https://linkedin.com/in/\(h)")
-        case "tiktok":    return URL(string: "https://tiktok.com/@\(h)")
-        case "twitter":   return URL(string: "https://x.com/\(h)")
-        case "telegram":  return URL(string: "https://t.me/\(h)")
-        default:          return URL(string: h)
+        case "instagram": return URL(string: "https://instagram.com/\(enc)")
+        case "facebook":  return URL(string: "https://facebook.com/\(enc)")
+        case "whatsapp":
+            guard isPhoneLikeHandle else { return nil }
+            return URL(string: "https://wa.me/\(h.filter { $0.isNumber })")
+        case "linkedin":  return URL(string: "https://linkedin.com/in/\(enc)")
+        case "tiktok":    return URL(string: "https://tiktok.com/@\(enc)")
+        case "twitter":   return URL(string: "https://x.com/\(enc)")
+        case "telegram":  return URL(string: "https://t.me/\(enc)")
+        default:
+            // "other" platforms: only a value that is (or clearly wants to
+            // be) a web address earns a link.
+            let lower = h.lowercased()
+            if lower.hasPrefix("https://") || lower.hasPrefix("http://") { return URL(string: h) }
+            if h.contains("."), !h.contains(" ") { return URL(string: "https://\(h)") }
+            return nil
         }
     }
 }

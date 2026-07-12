@@ -269,32 +269,49 @@ struct TenantManagementView: View {
                     }
                 }
 
-                // WhatsApp + social links row (if available)
-                if let links = tenant.socialLinks, !links.isEmpty {
+                // WhatsApp + social links row (if available). Entries without
+                // a truthful URL (a WhatsApp value that isn't a phone number)
+                // stay visible but inert — never a dead button.
+                let links = SocialLinksRow.displayable(tenant.socialLinks)
+                if !links.isEmpty {
                     Divider().opacity(0.4)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(links) { link in
-                                Button {
-                                    if let url = link.openURL { UIApplication.shared.open(url) }
-                                } label: {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: link.platformIcon)
-                                            .font(AppFont.label)
-                                        Text(link.platformLabel)
-                                            .font(AppFont.caption)
+                                if let url = link.openURL {
+                                    Button {
+                                        UIApplication.shared.open(url)
+                                    } label: {
+                                        socialChip(link)
                                     }
-                                    .foregroundStyle(link.platformColor)
-                                    .padding(.horizontal, 10).padding(.vertical, 5)
-                                    .background(link.platformColor.opacity(0.1), in: Capsule())
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(
+                                        String(format: String(localized: "soc_open_profile_fmt"),
+                                               link.platformLabel))
+                                } else {
+                                    socialChip(link)
+                                        .accessibilityLabel(
+                                            String(format: String(localized: "soc_no_link_fmt"),
+                                                   link.platformLabel, link.sanitizedHandle))
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private func socialChip(_ link: SocialLink) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: link.platformIcon)
+                .font(AppFont.label)
+            Text(link.platformLabel)
+                .font(AppFont.caption)
+        }
+        .foregroundStyle(link.platformColor)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background(link.platformColor.opacity(0.1), in: Capsule())
     }
 
     private func quickActionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {

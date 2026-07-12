@@ -35,6 +35,7 @@ struct ProfileView: View {
             VStack(spacing: 24) {
                 avatarSection
                 infoCard
+                socialCard
                 chatCard
                 accountSection
                 Spacer(minLength: 110)
@@ -288,6 +289,30 @@ struct ProfileView: View {
 
     private var div: some View {
         Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, AppSpacing.lg)
+    }
+
+    // MARK: - Social profiles
+    //
+    // The user's own saved networks, previewed exactly as contacts see them:
+    // tappable platform icons. Managed from Edit profile — this card never
+    // grows a second editor.
+
+    @ViewBuilder
+    private var socialCard: some View {
+        let links = SocialLinksRow.displayable(profileService.profile?.socialLinks)
+        if !links.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("soc_section_title")
+                    .textCase(.uppercase)
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, AppSpacing.sm)
+                GlassCard(padding: 14) {
+                    SocialLinksRow(links: links)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
     }
 
     // MARK: - Live chat card
