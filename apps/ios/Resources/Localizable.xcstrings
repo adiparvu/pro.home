@@ -77621,6 +77621,214 @@
           }
         }
       }
+    },
+    "sl_chip_in_1h": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In 1 hour"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În 1 oră"
+          }
+        }
+      }
+    },
+    "sl_chip_tonight %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tonight %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diseară %@"
+          }
+        }
+      }
+    },
+    "sl_chip_tomorrow %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mâine %@"
+          }
+        }
+      }
+    },
+    "sl_date_time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date & time"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data și ora"
+          }
+        }
+      }
+    },
+    "sl_repeat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repetare"
+          }
+        }
+      }
+    },
+    "sl_time_past": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The chosen time is in the past — pick a moment in the future."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora aleasă este în trecut — alege un moment din viitor."
+          }
+        }
+      }
+    },
+    "sl_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing scheduled"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimic programat"
+          }
+        }
+      }
+    },
+    "sl_empty_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages you schedule will appear here."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesajele pe care le programezi vor apărea aici."
+          }
+        }
+      }
+    },
+    "sl_editing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editing scheduled message"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editezi un mesaj programat"
+          }
+        }
+      }
+    },
+    "sl_cancel_edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel editing"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renunță la editare"
+          }
+        }
+      }
+    },
+    "sl_to %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Către %@"
+          }
+        }
+      }
+    },
+    "sl_until %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Until %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Până la %@"
+          }
+        }
+      }
+    },
+    "sl_edit_cleanup_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new message was scheduled, but the old one couldn't be removed. Delete it from the list."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noul mesaj a fost programat, dar cel vechi nu a putut fi șters. Șterge-l din listă."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
