@@ -15,8 +15,23 @@ struct CalendarView: View {
     @State private var displayedMonth = Date()
     @State private var selectedDay: Date? = nil
     @State private var icsURL: URL? = nil
-    /// Which categories are shown. All on by default; chips toggle them.
-    @State private var active: Set<AgendaCategory> = Set(AgendaCategory.allCases)
+    /// Which categories are shown. All on by default; chips toggle them and
+    /// the choice persists across launches.
+    @State private var active: Set<AgendaCategory> = Self.storedActiveCategories()
+
+    private static let activeCategoriesKey = "houseCalendar.activeCategories"
+
+    private static func storedActiveCategories() -> Set<AgendaCategory> {
+        guard let raw = UserDefaults.standard.stringArray(forKey: activeCategoriesKey) else {
+            return Set(AgendaCategory.allCases)
+        }
+        return Set(raw.compactMap(AgendaCategory.init(rawValue:)))
+    }
+
+    private func persistActiveCategories() {
+        UserDefaults.standard.set(active.map(\.rawValue).sorted(),
+                                  forKey: Self.activeCategoriesKey)
+    }
     /// Mirror-to-Apple-Calendar toggle (mirrors the persisted flag).
     @State private var mirrorOn = HouseCalendarMirror.isEnabled
 
@@ -170,6 +185,7 @@ struct CalendarView: View {
                         withAnimation(.snappy(duration: 0.2)) {
                             if active.contains(cat) { active.remove(cat) } else { active.insert(cat) }
                         }
+                        persistActiveCategories()
                     }
                 }
             }
