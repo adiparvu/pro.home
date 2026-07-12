@@ -220,7 +220,6 @@ struct MessageBubble: View {
         }
         .frame(width: 32, height: 32)
         .clipShape(Circle())
-        .overlay(Circle().strokeBorder(color, lineWidth: 2))
     }
 
     /// Initials for an arbitrary sender name (used when the sender isn't a
@@ -382,15 +381,35 @@ private struct SeenBySheet: View {
 
     @ViewBuilder
     private func avatar(for read: MessageRead) -> some View {
+        // The read receipt carries the reader's AUTH USER id — resolve the
+        // live profile photo through the directory (roster snapshot as
+        // fallback) instead of leaving account holders on initials.
         let m = member(for: read.readerName)
+        let urlStr = MemberDirectory.shared.avatarString(userId: read.userId ?? m?.userId,
+                                                         fallback: m?.avatarUrl)
+        if let urlStr, !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    readerInitials(m, read.readerName)
+                }
+            }
+            .frame(width: 38, height: 38)
+            .clipShape(Circle())
+        } else {
+            readerInitials(m, read.readerName)
+        }
+    }
+
+    private func readerInitials(_ m: FamilyMember?, _ name: String) -> some View {
         let color = m?.swiftColor ?? .blue
-        ZStack {
+        return ZStack {
             Circle().fill(color.opacity(0.2))
-            Text(m?.initials ?? String(read.readerName.prefix(1)).uppercased())
+            Text(m?.initials ?? String(name.prefix(1)).uppercased())
                 .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(color)
         }
         .frame(width: 38, height: 38)
-        .overlay(Circle().strokeBorder(color, lineWidth: 1.5))
     }
 }

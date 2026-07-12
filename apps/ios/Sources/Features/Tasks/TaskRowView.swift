@@ -347,8 +347,10 @@ struct TaskMetaLine: View {
 
 // MARK: - Assignee avatars
 
-/// A compact overlapping stack of the task's assignees. Account-holding family
-/// members render their live avatar; everyone else gets a coloured initial.
+/// A compact overlapping stack of the task's assignees. Every identity form
+/// resolves through `AssigneeAvatarView` (roster row → live profiles
+/// directory → initials), so an account holder — the owner included — shows
+/// their real photo even without a `family_members.avatar_url` snapshot.
 struct TaskAssigneeAvatars: View {
     @Environment(FamilyService.self) private var familyService
     let task: MaintenanceTask
@@ -358,12 +360,16 @@ struct TaskAssigneeAvatars: View {
 
     var body: some View {
         let names = task.assigneeNames
+        let ids = task.assigneeIds
         if !names.isEmpty {
             let shown = Array(names.prefix(3))
             let extra = names.count - shown.count
             HStack(spacing: -overlap) {
-                ForEach(Array(shown.enumerated()), id: \.offset) { _, name in
-                    avatar(for: name)
+                ForEach(Array(shown.enumerated()), id: \.offset) { index, name in
+                    AssigneeAvatarView(assigneeId: index < ids.count ? ids[index] : nil,
+                                       name: name,
+                                       members: familyService.members,
+                                       size: size)
                         .overlay(Circle().strokeBorder(Color(uiColor: .systemBackground), lineWidth: 2))
                 }
                 if extra > 0 {
@@ -377,21 +383,6 @@ struct TaskAssigneeAvatars: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: names.joined(separator: ", ")))
-        }
-    }
-
-    @ViewBuilder
-    private func avatar(for name: String) -> some View {
-        if let member = familyService.members.first(where: { $0.name == name }) {
-            MemberAvatar(member: member, size: size)
-        } else {
-            ZStack {
-                Circle().fill(Color.brandPrimaryBlue.opacity(0.22))
-                Text(verbatim: String(name.prefix(1)).uppercased())
-                    .font(AppFont.scaled(size * 0.4, weight: .bold))
-                    .foregroundStyle(Color.brandPrimaryBlue)
-            }
-            .frame(width: size, height: size)
         }
     }
 }

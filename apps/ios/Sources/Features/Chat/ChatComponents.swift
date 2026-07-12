@@ -126,7 +126,6 @@ private struct MemberCallRow: View {
                             .foregroundStyle(member.swiftColor)
                     }
                     .frame(width: 38, height: 38)
-                    .overlay(Circle().strokeBorder(member.swiftColor, lineWidth: 1.5))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)

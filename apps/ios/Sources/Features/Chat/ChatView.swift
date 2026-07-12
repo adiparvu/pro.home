@@ -6,9 +6,6 @@ import UserNotifications
 import UniformTypeIdentifiers
 import Supabase
 
-private let kAvatarRingColorKey = "prvio.avatarRingColorName"
-
-
 struct ChatView: View {
     @Environment(MessageService.self) var messageService
     @Environment(FamilyService.self) var familyService
@@ -71,7 +68,6 @@ struct ChatView: View {
     @State private var showFileImporter = false
     @State var sendError: String? = nil
     @FocusState var focused: Bool
-    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     // Global defaults from Chat Settings (kept for live reactivity to global changes).
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
@@ -258,8 +254,7 @@ struct ChatView: View {
                                 members: familyService.members,
                                 photoUrl: propertyService.primary?.photoUrl,
                                 ownerAvatarUrl: profileService.profile?.avatarUrl,
-                                ownerInitial: ownerInitial,
-                                ringColor: avatarRingColor(for: avatarRingColorName)
+                                ownerInitial: ownerInitial
                             ) {
                                 showGroupInfo = true
                             }

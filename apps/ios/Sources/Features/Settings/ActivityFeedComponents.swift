@@ -26,20 +26,36 @@ struct ActivityTimeText: View {
 
 /// The feed's member avatar: the real photo whenever one exists —
 /// `MemberAvatar` for family members (live `MemberDirectory` photo, then the
-/// row snapshot), the signed-in user's own profile photo for "You" — with
-/// colored initials as the only fallback.
+/// row snapshot), the signed-in user's own profile photo for "You", the
+/// profiles directory for account holders without a roster row (a
+/// "user_<uuid>" event id, or an unambiguous name match) — with colored
+/// initials as the only fallback.
 struct ActivityAvatarView: View {
     let member: FamilyMember?
     /// Already display-resolved (localized "You" or the member's name).
     let fallbackName: String
     let isCurrentUser: Bool
+    /// The event's raw member id (task assignees carry "user_<uuid>" for
+    /// account holders without a roster row) — the strongest directory key.
+    var memberId: String? = nil
     var size: CGFloat = 18
+
+    private var accountAvatarURL: URL? {
+        if isCurrentUser {
+            if let url = MemberDirectory.shared.avatarURL(for: supabase.auth.currentSession?.user.id) {
+                return url
+            }
+            // "You" is a localized label, never a directory name — don't
+            // let a stray name match resolve someone else's photo.
+            return nil
+        }
+        return AssigneeAvatarView.directoryAvatarURL(assigneeId: memberId, name: fallbackName)
+    }
 
     var body: some View {
         if let member {
             MemberAvatar(member: member, size: size)
-        } else if isCurrentUser,
-                  let url = MemberDirectory.shared.avatarURL(for: supabase.auth.currentSession?.user.id) {
+        } else if let url = accountAvatarURL {
             StorageImage(url: url) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
@@ -151,6 +167,7 @@ struct ActivityEventRow: View {
                         ActivityAvatarView(member: member,
                                            fallbackName: memberDisplayName,
                                            isCurrentUser: isCurrentUser,
+                                           memberId: event.memberId,
                                            size: 18)
                     }
 
@@ -221,6 +238,7 @@ struct ActivityAggregateRow: View {
                             ActivityAvatarView(member: member,
                                                fallbackName: memberDisplayName,
                                                isCurrentUser: isCurrentUser,
+                                               memberId: aggregate.memberId,
                                                size: 18)
                             Image(systemName: "chevron.down")
                                 .font(AppFont.caption2)

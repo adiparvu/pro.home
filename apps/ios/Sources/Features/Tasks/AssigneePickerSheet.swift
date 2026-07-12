@@ -365,7 +365,12 @@ struct AssigneePickerSheet: View {
     private func avatarContent(_ p: PickPerson, size: CGFloat) -> some View {
         if let member = p.member {
             MemberAvatar(member: member, size: size)
-        } else if let urlStr = p.profile?.avatarUrl, let url = URL(string: urlStr) {
+        } else if let urlStr = MemberDirectory.shared.avatarString(
+                      userId: p.account?.userId, fallback: p.profile?.avatarUrl),
+                  !urlStr.isEmpty, let url = URL(string: urlStr) {
+            // Account-only people (the owner has no roster row on a partner's
+            // device): the live, cached profiles directory wins over the
+            // snapshot loaded with the account list.
             StorageImage(url: url) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
@@ -380,12 +385,23 @@ struct AssigneePickerSheet: View {
         }
     }
 
-    /// Strip avatars resolve through the person list; custom entries and
-    /// people who left the household fall back to initials.
+    /// Strip avatars resolve through the person list, then — for "user_<uuid>"
+    /// entries whose person is gone — through the profiles directory; custom
+    /// entries and everyone unresolved fall back to initials.
     @ViewBuilder
     private func avatarFor(id: String, name: String, size: CGFloat) -> some View {
         if let p = people.first(where: { $0.pickId == id }) {
             avatarContent(p, size: size)
+        } else if let url = AssigneeAvatarView.directoryAvatarURL(assigneeId: id, name: name) {
+            StorageImage(url: url) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    initialsCircle(name: name, size: size)
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
         } else {
             initialsCircle(name: name, size: size)
         }

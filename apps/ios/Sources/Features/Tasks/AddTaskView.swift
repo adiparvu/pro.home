@@ -332,12 +332,12 @@ struct AddTaskView: View {
                             .font(AppFont.scaled(15))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     } else {
-                        ForEach(Array(zip(assigneeIds, assigneeNames)), id: \.0) { _, name in
-                            if let member = familyService.members.first(where: { $0.name == name }) {
-                                MemberAvatar(member: member, size: 30)
-                            } else {
-                                personIcon(name: name)
-                            }
+                        // Resolved through AssigneeAvatarView (roster row →
+                        // live profiles directory → initials) so the owner's
+                        // account photo shows even without a roster snapshot.
+                        ForEach(Array(zip(assigneeIds, assigneeNames)), id: \.0) { id, name in
+                            AssigneeAvatarView(assigneeId: id, name: name,
+                                               members: familyService.members, size: 30)
                         }
                         Text(assigneeNames.joined(separator: ", "))
                             .font(AppFont.scaled(13))
@@ -355,16 +355,6 @@ struct AddTaskView: View {
             }
             .buttonStyle(.plain)
         }
-    }
-
-    private func personIcon(name: String) -> some View {
-        ZStack {
-            Circle().fill(Color.brandPrimaryBlue.opacity(0.22))
-            Text(String(name.prefix(1)).uppercased())
-                .font(AppFont.scaled(11, weight: .bold))
-                .foregroundStyle(Color.brandPrimaryBlue)
-        }
-        .frame(width: 30, height: 30)
     }
 
     // MARK: - Sync (Calendar + Reminders)

@@ -11,7 +11,10 @@ import AVFoundation
 /// the same resolution order the chat thread uses for sender avatars.
 @MainActor
 private func memberAvatarURL(_ member: FamilyMember) -> URL? {
-    MemberDirectory.shared.avatarURL(for: member.id)
+    // The directory is keyed by AUTH USER id — the roster row's linked
+    // `userId`, never the `family_members` row id (which always missed and
+    // left account holders on their stale snapshot or initials).
+    MemberDirectory.shared.avatarURL(for: member.userId)
         ?? member.avatarUrl.flatMap { URL(string: $0) }
 }
 
@@ -49,6 +52,15 @@ struct ContactDetailsView: View {
     @State private var showClearConfirm = false
 
     private var convId: String { member.id.uuidString }
+
+    /// Saved social profiles from the freshest roster copy (the edit sheet
+    /// reachable from this page may have just changed them), filtered to
+    /// networks that actually carry a handle — no dead icons.
+    private var socialProfiles: [SocialLink] {
+        let current = familyService.members.first(where: { $0.id == member.id }) ?? member
+        return SocialLinksRow.displayable(current.socialLinks)
+    }
+
     private var myDisplayName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
@@ -64,6 +76,14 @@ struct ContactDetailsView: View {
                         InfoActionCard(label: "Search", icon: "magnifyingglass") { dismiss(); onSearch() }
                     }
                     .padding(.horizontal, AppSpacing.lg)
+
+                    if !socialProfiles.isEmpty {
+                        InfoSection(title: "soc_section_title") {
+                            SocialLinksRow(links: socialProfiles)
+                                .padding(.horizontal, AppSpacing.base)
+                                .padding(.vertical, AppSpacing.md)
+                        }
+                    }
 
                     InfoSection(title: "General") {
                         NavigationLink {
