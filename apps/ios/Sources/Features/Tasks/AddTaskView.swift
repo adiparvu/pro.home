@@ -15,7 +15,7 @@ struct AddTaskView: View {
     @State private var priority = "medium"
     @State private var category = "maintenance"
     @State private var hasDueDate = false
-    @State private var dueDate = Date().addingTimeInterval(86400 * 3)
+    @State private var dueDate = Date()
     @State private var hasDueTime = false
     @State private var dueTime = Date()
     @State private var isSaving = false
