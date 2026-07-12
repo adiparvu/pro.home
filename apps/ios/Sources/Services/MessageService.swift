@@ -177,9 +177,14 @@ final class MessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, groupId: UUID? = nil) async {
-        // Idempotent: keep a single live channel for the chat session so opening
-        // a thread never tears down the tab-level subscription (and vice-versa).
-        if realtimeChannel != nil, subscribedPropertyId == propertyId { return }
+        // Idempotent ONLY for the same conversation scope on a genuinely live
+        // channel. Two real-world failures hid behind the old `!= nil` check:
+        // a community thread opened after the main chat kept coasting on the
+        // MAIN topic (same property, different group — no messages, no typing),
+        // and a channel whose initial subscribe failed at launch was kept as
+        // if live, silencing the whole session.
+        if let ch = realtimeChannel, subscribedPropertyId == propertyId,
+           currentGroupId == groupId, ch.status == .subscribed { return }
         if realtimeChannel != nil { await unsubscribe() }
         // The group scope arrives EXPLICITLY: this races load() (separate .task),
         // and deriving the topic from a not-yet-set currentGroupId subscribed a
@@ -258,9 +263,31 @@ final class MessageService {
                 await self.onNewMessagesSignal(propertyId: propertyId)
             }
         }
-        try? await channel.subscribeWithError()
+        do {
+            try await channel.subscribeWithError()
+        } catch {
+            // A failed subscribe must leave NO trace: keeping the dead channel
+            // made the idempotent guard treat the whole session as live.
+            debugLog("Group chat realtime subscribe failed:", error)
+            postgresSubs.removeAll()
+            typingSub = nil
+            newMsgSub = nil
+            await supabase.realtimeV2.removeChannel(channel)
+            return
+        }
         realtimeChannel = channel
         subscribedPropertyId = propertyId
+    }
+
+    /// Delivery safety net for an OPEN conversation: verifies the channel is
+    /// genuinely subscribed to THIS scope and, when it isn't (failed initial
+    /// subscribe, dropped socket), rebuilds it and refetches — so a thread
+    /// the user is looking at can never sit silent. Free when healthy.
+    func ensureLiveDelivery(propertyId: UUID, groupId: UUID? = nil) async {
+        if let ch = realtimeChannel, subscribedPropertyId == propertyId,
+           currentGroupId == groupId, ch.status == .subscribed { return }
+        await subscribeRealtime(propertyId: propertyId, groupId: groupId)
+        await onNewMessagesSignal(propertyId: propertyId)
     }
 
     /// Fetch messages newer than the sync cursor and fold them in: count the

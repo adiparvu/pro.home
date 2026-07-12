@@ -591,9 +591,13 @@ final class DirectMessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
-        // Idempotent: already live for this property → keep it (don't let a
-        // navigation push/pop tear down the channel while a thread is open).
-        if channel != nil, subscribedPropertyId == propertyId { return }
+        // Idempotent: already GENUINELY live for this property → keep it
+        // (don't let a navigation push/pop tear down the channel while a
+        // thread is open). The status check matters: a channel whose initial
+        // subscribe failed at launch used to satisfy `!= nil` and silence the
+        // whole session — no live messages, no typing indicator.
+        if let ch = channel, subscribedPropertyId == propertyId,
+           ch.status == .subscribed { return }
         if channel != nil { await unsubscribe() }
         let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
         // Incremental reconciliation: append/patch/remove the single changed row
@@ -670,9 +674,31 @@ final class DirectMessageService {
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
         }
-        try? await ch.subscribeWithError()
+        do {
+            try await ch.subscribeWithError()
+        } catch {
+            // A failed subscribe must leave NO trace: keeping the dead channel
+            // made the idempotent guard treat the whole session as live.
+            debugLog("DM realtime subscribe failed:", error)
+            postgresSubs.removeAll()
+            typingSub = nil
+            newMsgSub = nil
+            await supabase.realtimeV2.removeChannel(ch)
+            return
+        }
         channel = ch
         subscribedPropertyId = propertyId
+    }
+
+    /// Delivery safety net for an OPEN thread: verifies the channel is
+    /// genuinely subscribed and, when it isn't (failed initial subscribe,
+    /// dropped socket), rebuilds it and refetches — so a conversation the
+    /// user is looking at can never sit silent. Free when healthy.
+    func ensureLiveDelivery(propertyId: UUID, myName: String) async {
+        if let ch = channel, subscribedPropertyId == propertyId,
+           ch.status == .subscribed { return }
+        await subscribeRealtime(propertyId: propertyId, myName: myName)
+        await load(propertyId: propertyId, myName: myName)
     }
 
     /// Applies a realtime INSERT incrementally. Our own echo (or the optimistic

@@ -404,11 +404,14 @@ struct ChatAtBottomModifier: ViewModifier {
             // button visible at the bottom rest. Buckets re-emit every ~40pt
             // of real movement, so the state self-corrects on the next tick.
             content.onScrollGeometryChange(for: CGFloat.self) { geometry in
-                // Distance from the visible rect's bottom edge to the end of
-                // the content (bottom inset included — the compose bar rides
-                // in the safe area). ≤ 0 at rest on the newest message.
-                let distance = geometry.contentSize.height + geometry.contentInsets.bottom
-                    - (geometry.contentOffset.y + geometry.containerSize.height)
+                // How much content lies below the visible span. visibleRect
+                // already accounts for every inset, so this stays ≤ 0 at rest
+                // on the newest message. The previous form re-added
+                // contentInsets.bottom on top of an offset that already spans
+                // it — in the group chat (compose bar + tab bar ≈ 150pt) the
+                // at-rest distance never dropped under the 120pt threshold,
+                // so the jump button burned permanently.
+                let distance = geometry.contentSize.height - geometry.visibleRect.maxY
                 return (distance / 40).rounded(.down)
             } action: { _, bucket in
                 update(bucket * 40 < threshold)

@@ -456,10 +456,14 @@ struct DirectMessageView: View {
         }
         .task {
             // Keep any live-location bubble in this thread following the sharer
-            // while it's open — mirrors the group chat's refresh loop.
+            // while it's open — mirrors the group chat's refresh loop. The same
+            // tick doubles as the delivery safety net: if the realtime channel
+            // isn't genuinely subscribed, rebuild it and refetch, so an open
+            // thread can never sit silent (free when the channel is healthy).
             guard let pid = propertyService.primary?.id else { return }
             while !Task.isCancelled {
                 await LiveLocationService.shared.load(propertyId: pid)
+                await directMessageService.ensureLiveDelivery(propertyId: pid, myName: myName)
                 try? await Task.sleep(nanoseconds: 7_000_000_000)
             }
         }

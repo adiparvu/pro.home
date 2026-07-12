@@ -39,17 +39,22 @@ final class TaskService {
             tasks = cached
         }
         isLoading = true
-        defer { isLoading = false }
         do {
             tasks = try await PropertyRepo.fetch(table: "maintenance_tasks", propertyId: pid, limit: 500)
             ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
+            isLoading = false
             if error is CancellationError { return }
             // A transient refresh failure must not throw a blocking alert
             // over already-displayed cached data — only report when there
             // is nothing on screen to stand behind.
             if tasks.isEmpty { self.error = error.localizedDescription }
         }
+        // The spinner ends with the FETCH — the realtime subscribe below can
+        // stall on a flaky websocket handshake, and while it hung inside the
+        // old `defer` window a member with an empty list stared at an
+        // infinite spinner (the "page never loads" report).
+        isLoading = false
         if let pid { await subscribeRealtime(propertyId: pid) }
     }
 
