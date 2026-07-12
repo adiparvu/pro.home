@@ -285,6 +285,13 @@ extension DashboardView {
                     center: coord,
                     span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
                 ))
+                // This branch only runs when the property row has NO stored
+                // coordinates — the case MainTabView's launch refresh can't
+                // cover. Feed the geocoded point to Apple Weather so the
+                // smart-home temperature dial gets a real reading; the 1h
+                // cache in `refreshIfStale` makes repeat calls free.
+                await PropertyWeather.refreshIfStale(latitude: coord.latitude,
+                                                     longitude: coord.longitude)
             }
         } catch {
             // geocoding failed — map keeps last known position

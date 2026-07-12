@@ -223,6 +223,27 @@ struct SmartHomeSection: View {
             case .network:            "network"
             }
         }
+
+        /// Honest height estimate at the default content size, measured from
+        /// each card's actual paddings/frames (card padding 14×2 everywhere):
+        /// - tall device (thermostat/light): 90pt visual + 12 + 52pt toggle
+        ///   row ≈ 185; compact device: 40pt visual + 12 + 52 ≈ 135
+        /// - connect hero: 90pt glow + 12 + ~35pt title block ≈ 165
+        /// - temperature: 90pt dial + 12 + title block/toggle row ≈ 185
+        /// - next up (cream): header ~16 + 8 + 42pt big line + 8 + 13 ≈ 125
+        /// - network: 48pt visual + 12 + ~37pt title block ≈ 130
+        /// Only the RELATIVE weights matter — they steer which column each
+        /// card lands in; the cards still take their natural heights.
+        var estimatedHeight: CGFloat {
+            switch self {
+            case .device(let device):
+                (device.kind == .thermostat || device.kind == .light) ? 185 : 135
+            case .connectHomeKit: 165
+            case .nextUp:         125
+            case .temperature:    185
+            case .network:        130
+            }
+        }
     }
 
     /// The reference's fixed rhythm: device tiles first (or, with zero
@@ -236,14 +257,27 @@ struct SmartHomeSection: View {
         return entries
     }
 
-    /// Two top-aligned columns filled alternately — cards keep their natural
-    /// (deliberately varied) heights, which is what produces the reference's
-    /// staggered rhythm without a GeometryReader. At most ~9 cards render,
-    /// so plain VStacks stay cheaper than a lazy grid here.
+    /// Two top-aligned columns, height-balanced greedily: each entry (in
+    /// stable order) lands in whichever column is currently shorter by the
+    /// cards' honest height estimates — so mixed tall/short line-ups never
+    /// leave a dead hole under one column. Cards keep their natural
+    /// (deliberately varied) heights; no GeometryReader, no measurement
+    /// passes. At most ~9 cards render, so plain VStacks stay cheaper than
+    /// a lazy grid here.
     private var heroGrid: some View {
-        let entries = gridEntries
-        let left = stride(from: 0, to: entries.count, by: 2).map { entries[$0] }
-        let right = stride(from: 1, to: entries.count, by: 2).map { entries[$0] }
+        var left: [GridEntry] = []
+        var right: [GridEntry] = []
+        var leftHeight: CGFloat = 0
+        var rightHeight: CGFloat = 0
+        for entry in gridEntries {
+            if leftHeight <= rightHeight {
+                left.append(entry)
+                leftHeight += entry.estimatedHeight
+            } else {
+                right.append(entry)
+                rightHeight += entry.estimatedHeight
+            }
+        }
         return HStack(alignment: .top, spacing: AppSpacing.md) {
             gridColumn(left)
             gridColumn(right)

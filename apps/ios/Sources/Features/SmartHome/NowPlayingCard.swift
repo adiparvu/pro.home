@@ -203,8 +203,10 @@ struct NowPlayingCard: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .frame(width: SmartHomeTheme.mediaArtSize,
+                           height: SmartHomeTheme.mediaArtSize)
+                    .clipShape(RoundedRectangle(cornerRadius: SmartHomeTheme.mediaArtRadius,
+                                                style: .continuous))
             } else {
                 ZStack {
                     SmartRadialGlow(diameter: 64)
@@ -212,11 +214,16 @@ struct NowPlayingCard: View {
                         .font(AppFont.scaled(22, weight: .semibold))
                         .foregroundStyle(Color.smartAmber)
                 }
-                .frame(width: 56, height: 56)
+                .frame(width: SmartHomeTheme.mediaArtSize,
+                       height: SmartHomeTheme.mediaArtSize)
                 .background(Color.smartGlassFill,
-                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: SmartHomeTheme.mediaArtRadius,
+                                                 style: .continuous))
             }
         }
+        .shadow(color: .black.opacity(SmartHomeTheme.mediaArtShadowOpacity),
+                radius: SmartHomeTheme.mediaArtShadowRadius,
+                y: SmartHomeTheme.mediaArtShadowY)
         .accessibilityHidden(true)
     }
 
@@ -265,28 +272,48 @@ struct NowPlayingCard: View {
 
     // MARK: Progress (live, only meaningful with a real item)
 
-    /// The reference's thin 3pt bar with the elapsed count at its right.
+    /// The reference's thin 3pt capsule with an amber→cream fill; elapsed
+    /// time sits left-aligned under the bar, the real total (when the player
+    /// reports one) right-aligned.
     private var progressBar: some View {
-        HStack(spacing: AppSpacing.sm) {
+        VStack(spacing: AppSpacing.xxs) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.15))
                     Capsule()
-                        .fill(Color.smartAmber)
+                        .fill(SmartHomeTheme.mediaProgressGradient)
                         .frame(width: max(3, geo.size.width * model.progress))
                 }
             }
             .frame(height: 3)
             .animation(reduceMotion ? nil : .linear(duration: 0.5), value: model.progress)
 
-            Text(verbatim: Self.elapsedText(model.elapsed))
-                .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
-                .monospacedDigit()
+            HStack {
+                Text(verbatim: Self.elapsedText(model.elapsed))
+                    .font(AppFont.caption2)
+                    .foregroundStyle(Color.smartTextSecondary)
+                    .monospacedDigit()
+                Spacer(minLength: AppSpacing.sm)
+                if let duration = model.nowPlaying?.duration,
+                   duration > 0, duration.isFinite {
+                    Text(verbatim: Self.elapsedText(duration))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.smartTextSecondary)
+                        .monospacedDigit()
+                }
+            }
         }
         .accessibilityElement()
         .accessibilityLabel(Text("media_progress"))
-        .accessibilityValue(Text(verbatim: Self.elapsedText(model.elapsed)))
+        .accessibilityValue(Text(verbatim: accessibilityProgressText))
+    }
+
+    /// "3:07" alone, or "3:07 / 4:12" when the player reports a duration.
+    private var accessibilityProgressText: String {
+        let elapsed = Self.elapsedText(model.elapsed)
+        guard let duration = model.nowPlaying?.duration,
+              duration > 0, duration.isFinite else { return elapsed }
+        return "\(elapsed) / \(Self.elapsedText(duration))"
     }
 
     /// "3:07" — minutes:seconds of real playback time.
@@ -327,9 +354,9 @@ struct NowPlayingCard: View {
             model.togglePlayPause()
         } label: {
             Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                .font(AppFont.scaled(24, weight: .semibold))
+                .font(AppFont.scaled(26, weight: .semibold))
                 .foregroundStyle(Color.smartTextPrimary)
-                .frame(width: 46, height: 46)
+                .frame(width: 48, height: 48)
                 .contentShape(Circle())
                 .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
         }

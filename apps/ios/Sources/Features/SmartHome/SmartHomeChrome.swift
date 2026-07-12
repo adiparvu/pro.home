@@ -41,6 +41,23 @@ struct SmartHomeBackdrop: View {
                 }
                 SmartHomeTheme.overlayGradient
             }
+            // Static ambient light over the photo/fallback, under content:
+            // an amber pool top-leading (behind the greeting) and a deeper
+            // ember warmth bottom-trailing. Two plain RadialGradients — no
+            // blur views, no animation — so the backdrop stops reading as a
+            // flat brown wash while text contrast on top stays intact.
+            RadialGradient(
+                colors: [Color.smartAmber.opacity(SmartHomeTheme.ambientTopGlowOpacity),
+                         .clear],
+                center: .topLeading,
+                startRadius: 0,
+                endRadius: SmartHomeTheme.ambientTopGlowRadius)
+            RadialGradient(
+                colors: [SmartHomeTheme.ambientEmber.opacity(SmartHomeTheme.ambientBottomGlowOpacity),
+                         .clear],
+                center: .bottomTrailing,
+                startRadius: 0,
+                endRadius: SmartHomeTheme.ambientBottomGlowRadius)
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
@@ -49,9 +66,10 @@ struct SmartHomeBackdrop: View {
 
 // MARK: - Glass card
 
-/// The reference card: ~26pt continuous corners, `.ultraThinMaterial` plus
-/// the 8%-white glass fill over the photo, and deliberately NO border —
-/// depth comes from the material, not a stroke.
+/// The reference card: ~26pt continuous corners, `.ultraThinMaterial` under
+/// a subtle white fill GRADIENT (brighter at the top), a 1pt hairline that
+/// catches the light on the top-leading edge and fades away, and a soft
+/// lift shadow — the depth every smart-home surface inherits from here.
 struct SmartGlassCard<Content: View>: View {
     var padding: CGFloat = AppSpacing.lg
     @ViewBuilder let content: () -> Content
@@ -65,9 +83,15 @@ struct SmartGlassCard<Content: View>: View {
             .padding(padding)
             .background {
                 shape.fill(.ultraThinMaterial)
-                shape.fill(Color.smartGlassFill)
+                shape.fill(SmartHomeTheme.glassFillGradient)
             }
             .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                    radius: SmartHomeTheme.cardShadowRadius,
+                    y: SmartHomeTheme.cardShadowY)
     }
 }
 

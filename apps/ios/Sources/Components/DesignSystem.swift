@@ -180,6 +180,81 @@ enum SmartHomeTheme {
     /// The vertical pill toggle's fixed footprint.
     static let pillToggleSize = CGSize(width: 30, height: 52)
 
+    // MARK: Backdrop ambient light (static, two RadialGradients — no blur)
+
+    /// The warm lamp-light pooling top-leading behind the greeting.
+    static let ambientTopGlowOpacity: Double = 0.18
+    /// The deeper ember warmth bottom-trailing, balancing the page.
+    static let ambientBottomGlowOpacity: Double = 0.14
+    /// Deep ember red-brown — the bottom ambient glow's hue (warmer and
+    /// darker than `smartAmber`, so the two glows read as different lights).
+    static let ambientEmber = Color(red: 0.55, green: 0.28, blue: 0.12)
+    /// Radius of the top-leading amber pool, in points.
+    static let ambientTopGlowRadius: CGFloat = 420
+    /// Radius of the bottom-trailing ember pool, in points.
+    static let ambientBottomGlowRadius: CGFloat = 460
+
+    // MARK: Glass card depth (fill gradient, hairline, lift shadow)
+
+    /// Glass fill gradient, top edge — laid over `.ultraThinMaterial`.
+    static let glassFillTopOpacity: Double = 0.10
+    /// Glass fill gradient, bottom edge.
+    static let glassFillBottomOpacity: Double = 0.04
+    /// Hairline stroke where light catches the card's top-leading edge.
+    static let glassStrokeTopOpacity: Double = 0.22
+    /// Hairline stroke fading out toward the bottom-trailing edge.
+    static let glassStrokeBottomOpacity: Double = 0.03
+    /// Soft lift shadow under every glass card.
+    static let cardShadowOpacity: Double = 0.15
+    static let cardShadowRadius: CGFloat = 10
+    static let cardShadowY: CGFloat = 4
+
+    /// The glass card's fill: a subtle white gradient (brighter at the top,
+    /// like light entering the pane) instead of a flat wash.
+    static var glassFillGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.white.opacity(glassFillTopOpacity),
+                     Color.white.opacity(glassFillBottomOpacity)],
+            startPoint: .top, endPoint: .bottom)
+    }
+
+    /// The 1pt hairline around glass cards — light catching the top edge,
+    /// vanishing toward the bottom.
+    static var glassStrokeGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.white.opacity(glassStrokeTopOpacity),
+                     Color.white.opacity(glassStrokeBottomOpacity)],
+            startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    // MARK: Empty temperature dial (honest no-reading state)
+
+    /// The empty dial ring: a faint warm gradient instead of dead gray.
+    static let dialEmptyAmberOpacity: Double = 0.30
+    static let dialEmptyFadeOpacity: Double = 0.08
+    static var dialEmptyGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.smartAmber.opacity(dialEmptyAmberOpacity),
+                     Color.white.opacity(dialEmptyFadeOpacity)],
+            startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    // MARK: Now-playing media card
+
+    /// Artwork footprint on the media card.
+    static let mediaArtSize: CGFloat = 64
+    /// Artwork corner radius (continuous).
+    static let mediaArtRadius: CGFloat = 14
+    /// Soft shadow that lifts the artwork off the glass.
+    static let mediaArtShadowOpacity: Double = 0.25
+    static let mediaArtShadowRadius: CGFloat = 6
+    static let mediaArtShadowY: CGFloat = 3
+    /// The 3pt progress capsule's amber→cream fill.
+    static var mediaProgressGradient: LinearGradient {
+        LinearGradient(colors: [.smartAmber, .smartCream],
+                       startPoint: .leading, endPoint: .trailing)
+    }
+
     /// Fallback backdrop when the property has no cover photo yet:
     /// dark bronze, top #3A2E22 → bottom #14100C.
     static var fallbackGradient: LinearGradient {
@@ -189,12 +264,13 @@ enum SmartHomeTheme {
             startPoint: .top, endPoint: .bottom)
     }
 
-    /// Warm-brown darkening laid over the blurred cover photo (~55% overall)
-    /// so cream text and glass cards always clear WCAG contrast on top.
+    /// Warm-brown darkening laid over the blurred cover photo — dark enough
+    /// that warm-white text keeps AA contrast, light enough that the photo's
+    /// texture survives (the ambient glows add the rest of the mood).
     static var overlayGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(red: 0.165, green: 0.122, blue: 0.078).opacity(0.45),
-                     Color(red: 0.078, green: 0.059, blue: 0.039).opacity(0.65)],
+            colors: [Color(red: 0.165, green: 0.122, blue: 0.078).opacity(0.40),
+                     Color(red: 0.078, green: 0.059, blue: 0.039).opacity(0.60)],
             startPoint: .top, endPoint: .bottom)
     }
 }
@@ -205,8 +281,9 @@ extension Color {
     static let smartCream = Color(red: 0.949, green: 0.925, blue: 0.890)
     /// #E1975F — the single amber accent: toggles, dial arcs, glows.
     static let smartAmber = Color(red: 0.882, green: 0.592, blue: 0.373)
-    /// White at 8% — the glass-card fill laid over `.ultraThinMaterial`
-    /// on top of the photo backdrop.
+    /// White at 8% — the flat glass fill laid over `.ultraThinMaterial` on
+    /// chips, slim rows, and small tiles. Full-size cards use
+    /// `SmartHomeTheme.glassFillGradient` instead.
     static let smartGlassFill = Color.white.opacity(0.08)
     /// #F7F3ED — warm-white primary text over the dark backdrop.
     static let smartTextPrimary = Color(red: 0.969, green: 0.953, blue: 0.929)

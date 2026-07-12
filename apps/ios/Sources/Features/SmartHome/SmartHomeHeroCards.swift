@@ -45,8 +45,9 @@ struct ConnectHomeKitHeroCard: View {
                         Text("sh_connect_homekit")
                             .font(AppFont.caption2)
                             .foregroundStyle(Color.smartTextSecondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
                     }
 
                     Spacer(minLength: 0)
@@ -239,27 +240,41 @@ struct TemperatureDialCard: View {
 
     private var dial: some View {
         ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.15),
-                        style: StrokeStyle(lineWidth: 6, lineCap: .round))
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(Color.smartAmber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: fraction)
-            Text(verbatim: temperatureText)
-                .font(AppFont.scaled(22, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.smartTextPrimary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .padding(.horizontal, AppSpacing.sm)
+            if celsius == nil {
+                // Honest empty state, warmly drawn: a faint warm-gradient
+                // ring with a thermometer glyph — the "no reading" caption
+                // below keeps telling the truth.
+                Circle()
+                    .stroke(SmartHomeTheme.dialEmptyGradient,
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                Image(systemName: "thermometer.medium")
+                    .font(AppFont.scaled(22, weight: .semibold))
+                    .foregroundStyle(Color.smartTextSecondary)
+            } else {
+                Circle()
+                    .stroke(Color.white.opacity(0.15),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                Circle()
+                    .trim(from: 0, to: fraction)
+                    .stroke(Color.smartAmber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: fraction)
+                Text(verbatim: temperatureText)
+                    .font(AppFont.scaled(22, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.smartTextPrimary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.horizontal, AppSpacing.sm)
+            }
         }
         .frame(width: 84, height: 84)
         .padding(.vertical, 3)
         .accessibilityElement()
         .accessibilityLabel(Text("sh_home_temperature"))
-        .accessibilityValue(Text(verbatim: temperatureText))
+        .accessibilityValue(celsius == nil
+            ? Text("sh_temp_unavailable")
+            : Text(verbatim: temperatureText))
     }
 
     private var fraction: Double {
@@ -360,13 +375,16 @@ struct NetworkStatusCard: View {
     var body: some View {
         SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
+                // Slightly more presence than the old 40pt disc: a bigger
+                // glow and glyph so the card holds its own in the balanced
+                // grid without inventing extra data.
                 ZStack {
-                    SmartRadialGlow(diameter: 52)
+                    SmartRadialGlow(diameter: 64)
                     Image(systemName: model.status.isOnline ? "wifi" : "wifi.slash")
-                        .font(AppFont.scaled(17, weight: .semibold))
+                        .font(AppFont.scaled(20, weight: .semibold))
                         .foregroundStyle(Color.smartAmber)
                 }
-                .frame(width: 40, height: 40)
+                .frame(width: 48, height: 48)
                 .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {

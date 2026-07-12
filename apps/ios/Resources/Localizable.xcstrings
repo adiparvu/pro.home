@@ -76795,13 +76795,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nothing in the next 30 days"
+            "value": "Nothing in 30 days"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nimic în următoarele 30 de zile"
+            "value": "Nimic în 30 de zile"
           }
         }
       }
@@ -76859,13 +76859,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No reading available"
+            "value": "No reading"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nicio valoare disponibilă"
+            "value": "Nicio valoare"
           }
         }
       }
