@@ -34,6 +34,7 @@ struct DirectMessageView: View {
     @Environment(MessageService.self) var messageService
     @Environment(PresenceService.self) private var presenceService
     @Environment(NotificationService.self) private var notificationService
+    @Environment(\.scenePhase) private var scenePhase
 
     @State var replyingTo: DirectMessage? = nil
     @State var forwarding: DirectMessage? = nil
@@ -466,6 +467,18 @@ struct DirectMessageView: View {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+        }
+        // Foreground catch-up: iOS freezes the realtime socket in the
+        // background and missed events are never replayed on reconnect, so a
+        // message that arrived while suspended (its push already shown) would
+        // sit invisible until some other reload. Refetch the window the moment
+        // the scene is active again; subscribeRealtime is idempotent.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, let pid = propertyService.primary?.id else { return }
+            Task {
+                await directMessageService.load(propertyId: pid, myName: myName)
+                await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+            }
         }
         .onAppear {
             // Mark this DM as the active chat so a foreground push for it is

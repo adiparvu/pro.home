@@ -18,6 +18,7 @@ struct ChatView: View {
     @Environment(PresenceService.self) private var presenceService
     @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
+    @Environment(\.scenePhase) private var scenePhase
     @State var text = ""
     /// One-slot memos behind `visibleMessages` / the reply lookup index (see
     /// DerivedCache) — internal because the message-list extension reads them.
@@ -393,6 +394,20 @@ struct ChatView: View {
         }
         .task { await flushOutbox() }
         .task { await MemberDirectory.shared.loadIfNeeded() }
+        // Foreground catch-up: iOS freezes the realtime socket in the
+        // background and missed events are never replayed on reconnect, so a
+        // message that arrived while suspended (its push already shown) would
+        // sit invisible until some other reload. Refetch the conversation the
+        // moment the scene is active again; subscribeRealtime is idempotent.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, let pid = propertyId else { return }
+            Task {
+                await messageService.load(propertyId: pid, groupId: groupId)
+                await messageService.subscribeRealtime(propertyId: pid, groupId: groupId)
+                await messageService.markDelivered(propertyId: pid, delivererName: senderName)
+                await messageService.markRead(propertyId: pid, readerName: senderName)
+            }
+        }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
         }
