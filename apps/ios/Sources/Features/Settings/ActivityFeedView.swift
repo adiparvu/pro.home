@@ -115,17 +115,17 @@ enum ActivityKind: String {
         }
     }
 
-    /// Where a tap lands. Tasks and plants open the object itself (the
-    /// router carries the deep-link id); finances and documents open their
-    /// module page (the router has no per-record route for them); elements
-    /// and appliances live in the property twin — the closest real
-    /// destination the router has (the same mapping NFC deep links use).
+    /// Where a tap lands. Tasks, plants and documents open the object itself
+    /// (the router carries the deep-link id); finances opens its module page
+    /// (the router has no per-record route for it); elements and appliances
+    /// live in the property twin — the closest real destination the router
+    /// has (the same mapping NFC deep links use).
     func route(objectId: UUID?) -> AppRouter.AppRoute {
         switch self {
         case .taskCompleted, .taskOverdue, .taskAdded: return .tasks(id: objectId)
         case .plantWatered, .plantAdded:               return .plants(id: objectId)
         case .incomeAdded, .expenseRecorded:           return .finances
-        case .documentAdded:                           return .documents
+        case .documentAdded:                           return .documents(id: objectId)
         case .elementAdded, .applianceAdded:           return .twin
         }
     }
