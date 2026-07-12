@@ -60,6 +60,12 @@ struct DashboardView: View {
 
                 Spacer().frame(height: 14)
 
+                // ── Smart Home (S2): rooms, scenes, device cards ─────────
+                SmartHomeSection()
+                    .padding(.horizontal, AppSpacing.lg)
+
+                Spacer().frame(height: 14)
+
                 // ── Aerial Hero Card ─────────────────────────────────────
                 aerialHero
                     .padding(.horizontal, AppSpacing.lg)
