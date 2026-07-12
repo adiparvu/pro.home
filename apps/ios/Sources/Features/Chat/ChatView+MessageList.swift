@@ -116,15 +116,10 @@ extension ChatView {
     }
 
     func pinnedSnippet(_ m: Message) -> String {
-        // Structured types first, so a poll/event never shows its JSON body.
-        if m.isPollMessage { return "📊 Poll" }
-        if m.isEventMessage { return "📅 Event" }
-        if m.isImageMessage { return "📷 Photo" }
-        if m.isVideoMessage { return "🎥 Video" }
-        if m.isAudioMessage { return "🎤 Voice message" }
-        if m.isLocationMessage { return "📍 Location" }
-        if m.isFileMessage { return "📎 File" }
-        if m.isStickerMessage { return "😀 Sticker" }
+        // Normalized kind first, so a poll/event never shows its JSON body and
+        // the label is localized (RO/EN) via the shared ChatMessageKind — not a
+        // hardcoded English string as before.
+        if let label = m.chatKind.previewLabel { return label }
         // One line, marker-free — a subject-bearing body reads "subject — text".
         if let b = m.body, !b.isEmpty { return MessageSubject.strip(b) }
         return String(localized: "Attachment")

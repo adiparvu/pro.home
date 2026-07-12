@@ -84,11 +84,21 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
 - **P1** ✓ — shared `ConversationScrollModel` (jump-to-latest visibility +
   debounced toggle) adopted by both message lists. Shipped, CI green.
 - **P2a** ✓ — normalized `ChatMessageKind` vocabulary: the group bubble's
-  reply/pin preview now resolves through it instead of hardcoded English
-  labels, fixing a localization-law violation (RO users saw "📷 Photo") while
-  keeping EN output identical. Seed of the unified `ChatMessage.kind`.
-- Next: **P2b** — converge the DM reply/preview path (`DMRich` /
-  `ChatMedia.dmBodyKind`) onto `ChatMessageKind`, then grow it toward the full
-  `ChatMessage` model + `ChatEngine` protocol. The deeper engine-protocol swap
-  is runtime-behaviour-sensitive on the core chat path, so each step stays
-  independently shippable and CI-verifiable rather than a big-bang rewrite.
+  reply preview (`MessageBubble.replyPreview`) now resolves through it instead
+  of hardcoded English labels, fixing a localization-law violation (RO users
+  saw "📷 Photo") while keeping EN output identical. Seed of the unified
+  `ChatMessage.kind`.
+- **P2b** ✓ — the group **pinned-banner** snippet (`pinnedSnippet`) was a third
+  copy of the same classification, also hardcoded in English. Routed through
+  `Message.chatKind` too: localized now, and it correctly labels task/contact
+  shares it previously missed. Three group kind-classifiers → one.
+- Deferred (runtime-behaviour-sensitive, needs on-device verification before
+  touching): the **conversation-list** previews and the **DM** reply/preview
+  path intentionally differ from the bubble (the list prefers a caption over a
+  media label; DM's `DMRich` yields richer snippets), so they are *not* a
+  mechanical reroute — converging them can regress captioned-media and
+  structured-payload cases and must be verified live, not just CI-compiled.
+- Next: grow `ChatMessageKind` toward the full `ChatMessage` model +
+  `ChatEngine` protocol. The engine-protocol swap is the deepest, most
+  behaviour-sensitive step on the core chat path, so it stays incremental and
+  CI-verifiable rather than a big-bang rewrite.
