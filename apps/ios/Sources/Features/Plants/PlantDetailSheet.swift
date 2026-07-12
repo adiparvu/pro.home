@@ -41,6 +41,9 @@ struct PlantDetailSheet: View {
     // the existing IoT automation engine (IoTService) so real sensors drive it.
     @State var automationService = PlantAutomationService()
 
+    // Care-sheet PDF export (mirrors PropertyElementDetailView's export flow).
+    @State private var exportURL: ShareURL?
+
     init(plant: Plant) {
         self.plant = plant
         _editedPlant = State(initialValue: plant)
@@ -91,6 +94,9 @@ struct PlantDetailSheet: View {
             .task { await ailmentService.loadAll() }
             .task { await automationService.load(plantId: plant.id) }
             .onChange(of: healthSignature) { _, _ in persistHealthScore() }
+            .sheet(item: $exportURL) { share in
+                ActivityShareView(items: [share.url])
+            }
             .sheet(isPresented: $showSpeciesPicker) {
                 PlantSpeciesPickerView(service: speciesService) { picked in
                     Task { await plantService.linkSpecies(picked.id, for: plant) }
@@ -121,6 +127,18 @@ struct PlantDetailSheet: View {
                         Button("Close") { dismiss() }
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !isEditing {
+                        Button {
+                            exportCareSheet()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(AppFont.scaled(15))
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        .accessibilityLabel(Text("Export PDF"))
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     if isEditing {
                         Button {
@@ -148,6 +166,23 @@ struct PlantDetailSheet: View {
             }
         }
         .presentationBackground(.thinMaterial)
+    }
+
+    /// Renders the care-sheet PDF off the main actor and presents the share
+    /// sheet. Uses the live plant row (so a just-linked species is included),
+    /// the already-loaded encyclopedia entry, and the already-loaded history —
+    /// no new fetches.
+    private func exportCareSheet() {
+        let current = plantService.plants.first(where: { $0.id == plant.id }) ?? plant
+        let entry = speciesService.species(id: current.speciesId)
+        let events = eventService.events
+        Task {
+            if let url = await Task.detached(priority: .userInitiated, operation: {
+                PlantPDFExporter.makePDF(for: current, species: entry, events: events)
+            }).value {
+                exportURL = ShareURL(url: url)
+            }
+        }
     }
 
     func addAlbumPhoto(_ image: UIImage) async {
