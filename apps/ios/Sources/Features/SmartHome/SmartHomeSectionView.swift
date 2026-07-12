@@ -21,6 +21,24 @@ struct SmartHomeSection: View {
 
     @State private var selectedRoom: String? = nil
 
+    /// What the tapped kind card presents (Smart Home S3): the kind's device
+    /// list, or the device hero sheet directly when the group has exactly one
+    /// device. One optional drives `.sheet(item:)`, so the two presentations
+    /// can never stack or race.
+    private enum ActiveSheet: Identifiable {
+        case deviceList(SmartDeviceKind)
+        case device(SmartDevice)
+
+        var id: String {
+            switch self {
+            case .deviceList(let kind): "list-\(kind.id)"
+            case .device(let device):   "device-\(device.id)"
+            }
+        }
+    }
+
+    @State private var activeSheet: ActiveSheet? = nil
+
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
 
@@ -46,6 +64,14 @@ struct SmartHomeSection: View {
                 if !smartHome.homeKitAuthorized { connectHomeKitRow }
             } else {
                 SmartHomeOnboardingCard()
+            }
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .deviceList(let kind):
+                SmartHomeKindDevicesSheet(kind: kind, room: effectiveRoom)
+            case .device(let device):
+                SmartDeviceSheet(device: device)
             }
         }
     }
@@ -156,8 +182,20 @@ struct SmartHomeSection: View {
     private var deviceGrid: some View {
         LazyVGrid(columns: gridColumns, spacing: AppSpacing.md) {
             ForEach(kindGroups) { group in
-                SmartHomeKindCard(kind: group.kind, devices: group.devices)
+                SmartHomeKindCard(kind: group.kind, devices: group.devices) {
+                    open(group)
+                }
             }
+        }
+    }
+
+    /// Card tap → the kind's device list, or straight to the hero sheet
+    /// when there's exactly one device (no pointless one-row list).
+    private func open(_ group: KindGroup) {
+        if group.devices.count == 1, let only = group.devices.first {
+            activeSheet = .device(only)
+        } else {
+            activeSheet = .deviceList(group.kind)
         }
     }
 
@@ -195,9 +233,14 @@ struct SmartHomeSection: View {
 /// title, device count, and — only when the group genuinely supports it —
 /// a power toggle that flips every powered device in the group, or the
 /// first live sensor reading. Nothing else; no dead controls.
+///
+/// Tapping the card BODY opens the kind's devices (S3); the toggle keeps
+/// its own gesture, so flipping power never accidentally navigates.
 private struct SmartHomeKindCard: View {
     let kind: SmartDeviceKind
     let devices: [SmartDevice]
+    /// Invoked on a body tap (and via the VoiceOver activate action).
+    let onOpen: () -> Void
 
     private let smartHome = SmartHomeService.shared
 
@@ -266,8 +309,22 @@ private struct SmartHomeKindCard: View {
                         .font(AppFont.caption2)
                         .foregroundStyle(.secondary)
                 }
+                // VoiceOver path to the tap gesture below (gestures on the
+                // card container aren't reachable as elements): the title
+                // block is a button that opens the same device sheet, while
+                // the toggle stays its own element.
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(Text("sh_card_open_hint"))
+                .accessibilityAction { onOpen() }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // A tap anywhere on the card body opens the devices; the Toggle's
+        // own gesture takes precedence, so the switch never navigates.
+        .onTapGesture {
+            HapticFeedback.impact(.light)
+            onOpen()
         }
     }
 
@@ -319,8 +376,10 @@ private struct SmartHomeOnboardingCard: View {
 // MARK: - Kind accents
 
 /// Per-kind brand accent — presentation-only, so it lives with the S2 view
-/// rather than in the frozen S1 model.
-private extension SmartDeviceKind {
+/// rather than in the frozen S1 model. Internal (not private) on purpose:
+/// the S3 device sheets (`SmartDeviceSheet.swift`) reuse the same mapping,
+/// keeping one source of truth per kind's hue.
+extension SmartDeviceKind {
     var accent: Color {
         switch self {
         case .light:      .brandGold
