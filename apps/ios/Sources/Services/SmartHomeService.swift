@@ -84,6 +84,51 @@ final class SmartHomeService {
         }
     }
 
+    // MARK: Capability controls (Smart Home S3) — each acts only on devices
+    // whose capability set unlocked the control; others no-op harmlessly.
+
+    /// Brightness percent (0–100) when the device reports one.
+    func brightness(of device: SmartDevice) -> Int? {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.brightness) else { return nil }
+        return homeKit.brightness(accessory)
+    }
+
+    func setBrightness(_ device: SmartDevice, percent: Int) async {
+        guard case .homeKit(let accessory) = device.backing else { return }
+        try? await homeKit.setBrightness(accessory, percent: percent)
+    }
+
+    /// Hue in degrees (0–360) for color bulbs.
+    func hue(of device: SmartDevice) -> Double? {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.color) else { return nil }
+        return homeKit.hue(accessory)
+    }
+
+    func setHue(_ device: SmartDevice, degrees: Double) async {
+        guard case .homeKit(let accessory) = device.backing else { return }
+        try? await homeKit.setHue(accessory, degrees: degrees)
+    }
+
+    /// The thermostat's own measured temperature, when it reports one.
+    func currentTemperature(of device: SmartDevice) -> Double? {
+        guard case .homeKit(let accessory) = device.backing else { return nil }
+        return homeKit.currentTemperature(accessory)
+    }
+
+    /// The commanded target temperature, when the device has one.
+    func targetTemperature(of device: SmartDevice) -> Double? {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.targetTemperature) else { return nil }
+        return homeKit.thermostatTarget(accessory)
+    }
+
+    func setTargetTemperature(_ device: SmartDevice, celsius: Double) async {
+        guard case .homeKit(let accessory) = device.backing else { return }
+        try? await homeKit.setTargetTemperature(accessory, celsius: celsius)
+    }
+
     /// Triggers the HomeKit permission flow (first use of the manager).
     func connectHomeKit() { homeKit.requestAccess() }
 
