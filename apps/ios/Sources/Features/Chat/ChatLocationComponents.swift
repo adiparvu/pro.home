@@ -386,6 +386,18 @@ struct LocationShareSheet: View {
     @State private var pendingLiveDuration: TimeInterval? = nil
     /// A place picked from search or the nearby list; nil = share current location.
     @State private var pickedPlace: MKMapItem?
+    /// A coordinate chosen by long-pressing the map — independent from
+    /// `pickedPlace`, rendered as its own red pin with a confirm row.
+    @State private var droppedPin: CLLocationCoordinate2D?
+    /// Best-effort reverse-geocoded name for the dropped pin. Display only —
+    /// sending never waits on it (nil falls back to a generic label).
+    @State private var droppedPinName: String?
+    /// Invalidates in-flight reverse-geocodes when the pin moves or clears.
+    @State private var pinGeneration = 0
+    @State private var isResolvingPropertyAddress = false
+    @State private var propertyAddressFailed = false
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var mapCenter: CLLocationCoordinate2D? {
         pickedPlace?.placemark.coordinate ?? locMgr.location?.coordinate
@@ -398,20 +410,61 @@ struct LocationShareSheet: View {
                 VStack(spacing: 0) {
                     searchField
                     if let center = mapCenter {
-                        Map(initialPosition: .region(MKCoordinateRegion(
-                            center: center,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        ))) {
-                            Marker(pickedPlace?.name ?? "Me", coordinate: center).tint(.blue)
-                            ForEach(live.othersSharing) { s in
-                                Marker(s.userName, systemImage: "dot.radiowaves.left.and.right", coordinate: s.coordinate)
-                                    .tint(.orange)
+                        MapReader { proxy in
+                            Map(initialPosition: .region(MKCoordinateRegion(
+                                center: center,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            ))) {
+                                Marker(pickedPlace?.name ?? String(localized: "Me"), coordinate: center).tint(.blue)
+                                ForEach(live.othersSharing) { s in
+                                    Marker(s.userName, systemImage: "dot.radiowaves.left.and.right", coordinate: s.coordinate)
+                                        .tint(.orange)
+                                }
+                                if let pin = droppedPin {
+                                    Marker(droppedPinName ?? String(localized: "loc_dropped_pin"),
+                                           systemImage: "mappin", coordinate: pin)
+                                        .tint(Color.brandDanger)
+                                }
                             }
+                            // Long-press drops a pin: once the stationary press is
+                            // recognized, the zero-distance drag captures the finger's
+                            // screen point and MapProxy.convert maps it to a coordinate.
+                            // Plain `.gesture` leaves pan/zoom untouched — any movement
+                            // fails the long press and the map's own gestures win.
+                            .gesture(
+                                LongPressGesture(minimumDuration: 0.35)
+                                    .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+                                    .onEnded { value in
+                                        guard case .second(true, let drag?) = value,
+                                              let coordinate = proxy.convert(drag.location, from: .local)
+                                        else { return }
+                                        dropPin(at: coordinate)
+                                    }
+                            )
                         }
                         .frame(maxWidth: .infinity).frame(height: 260)
+                        // Top-aligned so it never covers Apple's attribution (bottom-left).
+                        .overlay(alignment: .top) {
+                            if droppedPin == nil {
+                                Text("loc_long_press_hint")
+                                    .font(AppFont.caption2)
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
+                                    .background(.thinMaterial, in: Capsule())
+                                    .padding(.top, AppSpacing.sm)
+                                    .allowsHitTesting(false)
+                                    .transition(.opacity)
+                            }
+                        }
 
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: 16) {
+                                if let pin = droppedPin {
+                                    droppedPinRow(pin)
+                                        .transition(reduceMotion
+                                                    ? AnyTransition.opacity
+                                                    : .move(edge: .top).combined(with: .opacity))
+                                }
                                 if !completer.results.isEmpty {
                                     searchResultsList
                                 } else {
@@ -441,8 +494,9 @@ struct LocationShareSheet: View {
             .navigationTitle("Trimitere locație").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark").foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
-                        .accessibilityLabel("Cancel")
+                    // Text cancel button, matching the app's other sheets.
+                    Button("Anulează") { dismiss() }
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { locMgr.requestLocation() } label: { Image(systemName: "arrow.clockwise") }
@@ -597,6 +651,11 @@ struct LocationShareSheet: View {
             .buttonStyle(.plain)
             Divider().opacity(0.3)
 
+            if let address = propertyAddress {
+                propertyAddressRow(address)
+                Divider().opacity(0.3)
+            }
+
             ForEach(Array(nearby.places.enumerated()), id: \.offset) { _, item in
                 Button {
                     pickedPlace = item
@@ -619,6 +678,154 @@ struct LocationShareSheet: View {
                 .buttonStyle(.plain)
                 Divider().opacity(0.3)
             }
+        }
+    }
+
+    // MARK: Dropped pin (manual map selection)
+
+    private func dropPin(at coordinate: CLLocationCoordinate2D) {
+        HapticFeedback.impact(.medium)
+        pinGeneration += 1
+        let generation = pinGeneration
+        droppedPinName = nil
+        if reduceMotion {
+            droppedPin = coordinate
+        } else {
+            withAnimation(.snappy) { droppedPin = coordinate }
+        }
+        // Best-effort display name; the confirm row shows a generic label
+        // until (unless) it resolves. Sending never waits on this.
+        Task {
+            let name = await Self.reverseGeocodedName(for: coordinate)
+            guard generation == pinGeneration, droppedPin != nil else { return }
+            droppedPinName = name
+        }
+    }
+
+    private func clearPin() {
+        pinGeneration += 1
+        droppedPinName = nil
+        if reduceMotion {
+            droppedPin = nil
+        } else {
+            withAnimation(.snappy) { droppedPin = nil }
+        }
+    }
+
+    private static func reverseGeocodedName(for coordinate: CLLocationCoordinate2D) async -> String? {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        guard let mark = try? await CLGeocoder().reverseGeocodeLocation(location).first else { return nil }
+        let street = mark.thoroughfare.map { t in
+            mark.subThoroughfare.map { "\(t) \($0)" } ?? t
+        }
+        let parts = [street ?? mark.name, mark.locality].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    private func droppedPinRow(_ pin: CLLocationCoordinate2D) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                // Same send path as "current location" — coordinates only,
+                // so a missing geocoded name can never block the send.
+                onShare(pin.latitude, pin.longitude)
+                dismiss()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(AppFont.scaled(22)).foregroundStyle(Color.brandDanger)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("loc_send_chosen_location").font(AppFont.body).foregroundStyle(.primary)
+                        Text(droppedPinName ?? String(localized: "loc_dropped_pin_generic"))
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Button { clearPin() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(AppFont.scaled(18))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("loc_clear_pin")
+        }
+        .padding(.vertical, 10).padding(.horizontal, AppSpacing.base)
+        .background(Color.brandDanger.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    // MARK: Property address
+
+    /// The primary property's postal address — nil unless a street address is
+    /// actually set, which hides the row entirely (no dead controls).
+    private var propertyAddress: String? {
+        guard let p = propertyService.primary, !p.addressLine1.isEmpty else { return nil }
+        let joined = [p.addressLine1, p.city, p.country]
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+        return joined.isEmpty ? nil : joined
+    }
+
+    private func propertyAddressRow(_ address: String) -> some View {
+        Button {
+            Task { await sendPropertyAddress(address) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "house.circle.fill")
+                    .font(AppFont.scaled(22)).foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("loc_send_property_address").font(AppFont.body).foregroundStyle(.primary)
+                    if isResolvingPropertyAddress {
+                        Text("loc_locating_address")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    } else if propertyAddressFailed {
+                        Text("loc_property_address_error")
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.brandDanger)
+                    } else {
+                        Text(address)
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .lineLimit(1)
+                    }
+                }
+                Spacer()
+                if isResolvingPropertyAddress { ProgressView().controlSize(.small) }
+            }
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isResolvingPropertyAddress)
+    }
+
+    /// Sends the property's location through the same path as every other row:
+    /// stored coordinates when present, otherwise a one-shot geocode of the
+    /// address string (the dashboard map widget's approach). On failure the
+    /// sheet stays open with an inline, retryable error.
+    private func sendPropertyAddress(_ address: String) async {
+        if let lat = propertyService.primary?.latitude,
+           let lon = propertyService.primary?.longitude {
+            onShare(lat, lon)
+            dismiss()
+            return
+        }
+        isResolvingPropertyAddress = true
+        propertyAddressFailed = false
+        defer { isResolvingPropertyAddress = false }
+        let placemarks = (try? await CLGeocoder().geocodeAddressString(address)) ?? []
+        if let loc = placemarks.first?.location {
+            onShare(loc.coordinate.latitude, loc.coordinate.longitude)
+            dismiss()
+        } else {
+            propertyAddressFailed = true
+            HapticFeedback.error()
         }
     }
 
