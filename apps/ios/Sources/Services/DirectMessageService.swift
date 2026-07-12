@@ -177,11 +177,12 @@ final class DirectMessageService {
     /// held for the callback to keep firing; cleared on unsubscribe.
     @ObservationIgnored private var postgresSubs: [RealtimeSubscription] = []
 
-    // MARK: - Typing indicator
-    var typingNames: Set<String> = []
-    /// Subset of `typingNames` whose latest signal was "recording" — drives
-    /// the mic variant of the in-thread activity bubble (WhatsApp-style).
-    var recordingNames: Set<String> = []
+    // MARK: - Typing indicator (shared subsystem — chat unification P3a)
+    /// The shared typing/recording indicator; the engine syncs channel/name
+    /// into it before each use (see `syncActivity`).
+    private let activity = ChatActivityIndicator()
+    var typingNames: Set<String> { activity.typingNames }
+    var recordingNames: Set<String> { activity.recordingNames }
     var myName: String = ""
     /// The signed-in user's auth id — the stable half of "is this mine".
     /// Set on load; nil only before the first load (name fallback covers it).
@@ -190,9 +191,6 @@ final class DirectMessageService {
     /// RLS-free "a new DM landed" broadcast — the reliable delivery path when
     /// postgres_changes is withheld by the SELECT policy (see send()).
     @ObservationIgnored private var newMsgSub: RealtimeSubscription?
-    @ObservationIgnored private var typingTasks: [String: Task<Void, Never>] = [:]
-
-    @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -207,40 +205,18 @@ final class DirectMessageService {
         }
     }
 
-    func sendTyping() { sendActivity(kind: "typing") }
+    func sendTyping() { syncActivity(); activity.sendTyping() }
 
-    /// Periodic signal while the voice recorder is live — same broadcast as
-    /// typing with `kind: "recording"`, so old clients (which ignore the extra
-    /// field) still show their plain typing indicator.
-    func sendRecording() { sendActivity(kind: "recording") }
+    /// Periodic signal while the voice recorder is live — see
+    /// `ChatActivityIndicator.sendRecording`.
+    func sendRecording() { syncActivity(); activity.sendRecording() }
 
-    private func sendActivity(kind: String) {
-        guard let ch = channel, !myName.isEmpty else { return }
-        // Called on every keystroke — throttle to one broadcast per 2.5s
-        // (receivers keep the indicator alive 4s per event, so it stays smooth).
-        let now = Date()
-        guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
-        lastTypingSentAt = now
-        // Capture the name by value: Task's implicit self capture would
-        // otherwise retain the service for the broadcast's lifetime.
-        let name = myName
-        Task { await ch.broadcast(event: "typing",
-                                  message: ["name": .string(name), "kind": .string(kind)]) }
-    }
-
-    private func handleTyping(_ name: String, kind: String) {
-        guard !name.isEmpty, name != myName else { return }
-        typingNames.insert(name)
-        // The latest signal wins: a peer who stops recording and starts
-        // typing flips back to the dots without waiting out the expiry.
-        if kind == "recording" { recordingNames.insert(name) }
-        else { recordingNames.remove(name) }
-        typingTasks[name]?.cancel()
-        typingTasks[name] = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            self?.typingNames.remove(name)
-            self?.recordingNames.remove(name)
-        }
+    /// The indicator never owns realtime lifecycle: the engine hands it the
+    /// current channel + name right before each use, so it is always exactly
+    /// as fresh as the engine's own state was in the pre-extraction code.
+    private func syncActivity() {
+        activity.channel = channel
+        activity.myName = myName
     }
 
     // MARK: - Unified send
@@ -676,7 +652,11 @@ final class DirectMessageService {
             if case let .string(name)? = json["name"] {
                 // Older clients broadcast no kind — treat them as typing.
                 let kind: String = if case let .string(k)? = json["kind"] { k } else { "typing" }
-                Task { @MainActor [weak self] in self?.handleTyping(name, kind: kind) }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.syncActivity()
+                    self.activity.handleTyping(name, kind: kind)
+                }
             }
         }
         // Reliable delivery: a peer's send broadcasts "dm_new"; fetch the newer
@@ -725,10 +705,8 @@ final class DirectMessageService {
         postgresSubs.removeAll()
         typingSub = nil
         newMsgSub = nil
-        typingTasks.values.forEach { $0.cancel() }
-        typingTasks.removeAll()
-        typingNames.removeAll()
-        recordingNames.removeAll()
+        activity.reset()
+        activity.channel = nil
         reloadTask?.cancel()
         reloadTask = nil
         headsTask?.cancel()

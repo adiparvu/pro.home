@@ -35,58 +35,34 @@ final class MessageService {
     /// removeChannel also tears the callbacks down.
     private var postgresSubs: [RealtimeSubscription] = []
 
-    // MARK: - Typing indicator
-    var typingNames: Set<String> = []
-    /// Subset of `typingNames` whose latest signal was "recording" — drives
-    /// the mic variant of the in-thread activity bubble (WhatsApp-style).
-    var recordingNames: Set<String> = []
+    // MARK: - Typing indicator (shared subsystem — chat unification P3a)
+    /// The shared typing/recording indicator; the engine syncs channel/name
+    /// into it before each use (see `syncActivity`).
+    private let activity = ChatActivityIndicator()
+    var typingNames: Set<String> { activity.typingNames }
+    var recordingNames: Set<String> { activity.recordingNames }
     var myName: String = ""
     private var typingSub: RealtimeSubscription?
     /// RLS-free "a new message landed" broadcast — the reliable delivery path
     /// when postgres_changes is withheld by RLS (see subscribeRealtime/send).
     private var newMsgSub: RealtimeSubscription?
-    private var typingTasks: [String: Task<Void, Never>] = [:]
     /// Coalesces bursts of realtime events so a flurry of changes triggers a
     /// single reload per quiet window instead of one reload per event (C2). Same
     /// reload code runs — just debounced — so the displayed data stays correct.
     private var reloadTasks: [String: Task<Void, Never>] = [:]
 
-    @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
+    func sendTyping() { syncActivity(); activity.sendTyping() }
 
-    func sendTyping() { sendActivity(kind: "typing") }
+    /// Periodic signal while the voice recorder is live — see
+    /// `ChatActivityIndicator.sendRecording`.
+    func sendRecording() { syncActivity(); activity.sendRecording() }
 
-    /// Periodic signal while the voice recorder is live — same broadcast as
-    /// typing with `kind: "recording"`, so old clients (which ignore the extra
-    /// field) still show their plain typing indicator.
-    func sendRecording() { sendActivity(kind: "recording") }
-
-    private func sendActivity(kind: String) {
-        guard let ch = realtimeChannel, !myName.isEmpty else { return }
-        // Called on every keystroke — throttle to one broadcast per 2.5s
-        // (receivers keep the indicator alive 4s per event, so it stays smooth).
-        let now = Date()
-        guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
-        lastTypingSentAt = now
-        // Capture the name by value: Task's implicit self capture would
-        // otherwise retain the service for the broadcast's lifetime.
-        let name = myName
-        Task { await ch.broadcast(event: "typing",
-                                  message: ["name": .string(name), "kind": .string(kind)]) }
-    }
-
-    private func handleTyping(_ name: String, kind: String) {
-        guard !name.isEmpty, name != myName else { return }
-        typingNames.insert(name)
-        // The latest signal wins: a peer who stops recording and starts
-        // typing flips back to the dots without waiting out the expiry.
-        if kind == "recording" { recordingNames.insert(name) }
-        else { recordingNames.remove(name) }
-        typingTasks[name]?.cancel()
-        typingTasks[name] = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            self?.typingNames.remove(name)
-            self?.recordingNames.remove(name)
-        }
+    /// The indicator never owns realtime lifecycle: the engine hands it the
+    /// current channel + name right before each use, so it is always exactly
+    /// as fresh as the engine's own state was in the pre-extraction code.
+    private func syncActivity() {
+        activity.channel = realtimeChannel
+        activity.myName = myName
     }
 
     /// Communities: the group this service instance is scoped to. nil = main group.
@@ -263,7 +239,11 @@ final class MessageService {
             if case let .string(name)? = json["name"] {
                 // Older clients broadcast no kind — treat them as typing.
                 let kind: String = if case let .string(k)? = json["kind"] { k } else { "typing" }
-                Task { @MainActor [weak self] in self?.handleTyping(name, kind: kind) }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.syncActivity()
+                    self.activity.handleTyping(name, kind: kind)
+                }
             }
         }
         // Reliable delivery: a sender broadcasts "msg_new"; fetch newer rows so
@@ -878,10 +858,8 @@ final class MessageService {
         reloadTasks.values.forEach { $0.cancel() }
         reloadTasks.removeAll()
         postgresSubs.removeAll()
-        typingTasks.values.forEach { $0.cancel() }
-        typingTasks.removeAll()
-        typingNames.removeAll()
-        recordingNames.removeAll()
+        activity.reset()
+        activity.channel = nil
         typingSub = nil
         newMsgSub = nil
         await unsubscribe()
