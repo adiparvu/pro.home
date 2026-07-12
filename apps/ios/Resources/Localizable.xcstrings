@@ -47265,6 +47265,22 @@
         }
       }
     },
+    "convo_prev_task": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🧰 Task"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🧰 Sarcină"
+          }
+        }
+      }
+    },
     "convo_prev_video": {
       "localizations": {
         "en": {

@@ -80,6 +80,15 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
 
 ## Status
 
-- P0: this document.
-- Next: **P1 — shared `ConversationModel`**, starting from the two
-  `+MessageList` extensions (the most-duplicated, lowest-risk seam).
+- **P0** ✓ — this document.
+- **P1** ✓ — shared `ConversationScrollModel` (jump-to-latest visibility +
+  debounced toggle) adopted by both message lists. Shipped, CI green.
+- **P2a** ✓ — normalized `ChatMessageKind` vocabulary: the group bubble's
+  reply/pin preview now resolves through it instead of hardcoded English
+  labels, fixing a localization-law violation (RO users saw "📷 Photo") while
+  keeping EN output identical. Seed of the unified `ChatMessage.kind`.
+- Next: **P2b** — converge the DM reply/preview path (`DMRich` /
+  `ChatMedia.dmBodyKind`) onto `ChatMessageKind`, then grow it toward the full
+  `ChatMessage` model + `ChatEngine` protocol. The deeper engine-protocol swap
+  is runtime-behaviour-sensitive on the core chat path, so each step stays
+  independently shippable and CI-verifiable rather than a big-bang rewrite.

@@ -160,23 +160,15 @@ struct MessageBubble: View {
         }
     }
 
-    /// A short, human-readable preview for a replied/pinned message — checks
-    /// the structured types (poll/event/attachments) before falling back to the
-    /// raw body so a poll/event never shows its JSON payload.
+    /// A short, human-readable preview for a replied/pinned message. Non-text
+    /// kinds resolve through the normalized `ChatMessageKind` so a poll/event
+    /// never shows its JSON payload and the label is localized (RO/EN) via the
+    /// canonical `convo_prev_*` vocabulary — not a hardcoded English string.
     static func replyPreview(_ m: Message) -> String {
-        if m.isPollMessage { return "📊 Poll" }
-        if m.isEventMessage { return "📅 Event" }
-        if m.isTaskShare { return "🧰 Task" }
-        if m.isContactShare { return "👤 Contact" }
-        if m.isAudioMessage { return "🎤 Voice message" }
-        if m.isImageMessage { return "📷 Photo" }
-        if m.isVideoMessage { return "🎥 Video" }
-        if m.isLocationMessage { return "📍 Location" }
-        if m.isStickerMessage { return "😀 Sticker" }
-        if m.isFileMessage { return "📎 File" }
-        // One line, marker-free — a subject-bearing body reads "subject — text".
+        if let label = m.chatKind.previewLabel { return label }
+        // Text: one line, marker-free — a subject-bearing body reads "subject — text".
         if let b = m.body, !b.isEmpty { return MessageSubject.strip(b) }
-        return "Attachment"
+        return String(localized: "convo_prev_message")
     }
 
     private func toggleLocalReaction(_ emoji: String) {
