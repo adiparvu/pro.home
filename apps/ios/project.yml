@@ -89,6 +89,11 @@ targets:
         # is disallowed") — HomeKit is a plain capability. If an upload ever
         # rejects it, revert THIS key only.
         com.apple.developer.homekit: true
+        # Access WiFi Information — the smart-home network card shows the real
+        # SSID via NEHotspotNetwork.fetchCurrent, which returns nothing without
+        # this entitlement (plus precise-location authorization at runtime).
+        # The Fastfile enables the matching capability portal-side every run.
+        com.apple.developer.networking.wifi-info: true
         # NFC is deliberately NOT restored: restoring it as-is fails App
         # Store upload validation on SDK 26.5 (ITMS-90778 "NDEF is
         # disallowed"); NFCScanService checks readingAvailable so nothing

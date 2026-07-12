@@ -355,6 +355,24 @@ platform :ios do
             puts "  enable HOMEKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
           end
 
+          # The smart-home dashboard's network card shows the real Wi-Fi SSID —
+          # NEHotspotNetwork.fetchCurrent returns nothing unless the profile
+          # carries com.apple.developer.networking.wifi-info, which needs the
+          # capability on the App ID.
+          wifi_cap = caps.find { |c| c.dig("attributes","capabilityType") == "ACCESS_WIFI_INFORMATION" }
+          if wifi_cap
+            puts "  ACCESS_WIFI_INFORMATION already enabled (id=#{wifi_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "ACCESS_WIFI_INFORMATION" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable ACCESS_WIFI_INFORMATION → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
           # The property weather card fetches through WeatherKit — the
           # capability must be on the App ID or the entitlement is stripped
           # from the regenerated profile and every fetch fails with a JWT
