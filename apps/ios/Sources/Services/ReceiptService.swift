@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 import SwiftUI
+import UIKit
+import Supabase
 
 @MainActor
 @Observable
@@ -266,6 +268,38 @@ final class ReceiptService {
         return inserted
     }
 
+    // MARK: - Receipt image (private, property-scoped `receipt-media` bucket)
+
+    private static let mediaBucket = "receipt-media"
+
+    /// Uploads a receipt photo to the private receipt-media bucket and returns
+    /// its storage path (`{propertyId}/{uuid}.jpg`), or nil on failure. The
+    /// path is stored in the receipt's `image_url`; reads resolve short-lived
+    /// signed URLs (the same pattern plant/chat media use).
+    func uploadReceiptImage(_ image: UIImage, propertyId: UUID) async -> String? {
+        guard let data = image.uploadJPEG(quality: 0.8, maxDimension: 2048) else { return nil }
+        let path = "\(propertyId.uuidString)/\(UUID().uuidString).jpg"
+        do {
+            try await supabase.storage.from(Self.mediaBucket)
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            return path
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Resolves a stored receipt-image path to a displayable signed URL (legacy
+    /// full URLs pass through), cached under the signing window.
+    static func resolveImage(_ stored: String) async -> URL? {
+        if stored.hasPrefix("http") { return URL(string: stored) }
+        if let cached = await ReceiptURLCache.shared.get(stored) { return cached }
+        guard let url = try? await supabase.storage.from(mediaBucket)
+            .createSignedURL(path: stored, expiresIn: 3600) else { return nil }
+        await ReceiptURLCache.shared.set(stored, url: url)
+        return url
+    }
+
     func updateReceipt(_ receipt: Receipt) async {
         let now = ISODate.string(from: Date())
         let payload = NewReceiptPayload(
@@ -373,4 +407,20 @@ struct ProductPriceGroup: Identifiable {
     let id: String        // folded normalized name
     let name: String
     let entries: [ProductPriceEntry]
+}
+
+// MARK: - Signed-URL cache for receipt images
+
+private actor ReceiptURLCache {
+    static let shared = ReceiptURLCache()
+    private var entries: [String: (url: URL, expiresAt: Date)] = [:]
+    private let ttl: TimeInterval = 50 * 60
+
+    func get(_ key: String) -> URL? {
+        guard let e = entries[key], e.expiresAt > Date() else { return nil }
+        return e.url
+    }
+    func set(_ key: String, url: URL) {
+        entries[key] = (url, Date().addingTimeInterval(ttl))
+    }
 }

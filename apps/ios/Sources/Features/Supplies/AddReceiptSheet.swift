@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - Add Receipt (manual entry)
 
@@ -17,6 +18,8 @@ struct AddReceiptSheet: View {
     @State private var isSaving = false
     @State private var error: String?
     @State private var showScanner = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var pickedImage: UIImage?
 
     var body: some View {
         FormScaffold(title: "add_receipt_title",
@@ -31,7 +34,17 @@ struct AddReceiptSheet: View {
             categoryField
             itemsSection
             totalField
+            photoField
             notesField
+        }
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    pickedImage = image
+                }
+            }
         }
         .sheet(isPresented: $showScanner) {
             // The scanner runs the full scan → parse → save; when it saves, it
@@ -204,6 +217,50 @@ struct AddReceiptSheet: View {
         }
     }
 
+    private var photoField: some View {
+        formField("add_receipt_photo") {
+            if let pickedImage {
+                HStack(spacing: 12) {
+                    Image(uiImage: pickedImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    Text("add_receipt_photo_attached")
+                        .font(AppFont.scaled(13))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    Spacer()
+                    Button {
+                        self.pickedImage = nil
+                        photoItem = nil
+                        HapticFeedback.selection()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(AppFont.scaled(18))
+                            .foregroundStyle(Color.primary.opacity(0.3))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Remove photo"))
+                }
+            } else {
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(AppFont.scaled(16, weight: .medium))
+                            .foregroundStyle(Color.accentColor)
+                        Text("add_receipt_photo_add")
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.accentColor)
+                        Spacer()
+                    }
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                }
+            }
+        }
+    }
+
     private var notesField: some View {
         formField("NOTES (OPTIONAL)") {
             TextField(String(localized: "add_receipt_notes_placeholder"), text: $notes, axis: .vertical)
@@ -237,13 +294,20 @@ struct AddReceiptSheet: View {
         let now = ISO8601DateFormatter().string(from: Date())
         let dateStr = ReceiptParser.isoDate(date)
 
+        // Upload the attached photo (if any) to the private receipt-media bucket
+        // first, storing only its path on the receipt.
+        var imagePath: String? = nil
+        if let pickedImage {
+            imagePath = await receiptService.uploadReceiptImage(pickedImage, propertyId: propId)
+        }
+
         let payload = NewReceiptPayload(
             propertyId: propId,
             storeName: storeName.trimmingCharacters(in: .whitespaces),
             date: dateStr,
             total: totalDouble,
             category: category,
-            imageUrl: nil,
+            imageUrl: imagePath,
             notes: notes.isEmpty ? nil : notes,
             createdAt: now,
             updatedAt: now

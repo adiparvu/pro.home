@@ -76049,6 +76049,57 @@
           }
         }
       }
+    },
+    "add_receipt_photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poză"
+          }
+        }
+      }
+    },
+    "add_receipt_photo_add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attach a photo of the receipt"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atașează o poză a bonului"
+          }
+        }
+      }
+    },
+    "add_receipt_photo_attached": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo attached"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poză atașată"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

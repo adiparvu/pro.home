@@ -10,6 +10,7 @@ struct ReceiptDetailView: View {
 
     let receipt: Receipt
     @State private var showDeleteConfirm = false
+    @State private var resolvedImageURL: URL?
 
     private var items: [ReceiptItem] { receiptService.items(for: receipt.id) }
 
@@ -22,6 +23,7 @@ struct ReceiptDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
                     heroCard
+                    if let path = receipt.imageUrl, !path.isEmpty { photoSection(path: path) }
                     if !items.isEmpty { itemsSection }
                     notesSection
                     deleteButton
@@ -46,6 +48,41 @@ struct ReceiptDetailView: View {
                 Button(String(localized: "Cancel"), role: .cancel) {}
             }
         }
+    }
+
+    // MARK: - Photo
+
+    /// The attached receipt image, resolved from its private-bucket path to a
+    /// short-lived signed URL when the section appears.
+    private func photoSection(path: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("add_receipt_photo")
+                .font(AppFont.label).foregroundStyle(.secondary)
+                .textCase(.uppercase).padding(.leading, AppSpacing.xxs)
+            GlassCard(padding: 6) {
+                Group {
+                    if let url = resolvedImageURL {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image): image.resizable().scaledToFit()
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .font(AppFont.scaled(28))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity).frame(height: 120)
+                            default:
+                                ProgressView().frame(maxWidth: .infinity).frame(height: 120)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity).frame(height: 120)
+                    }
+                }
+            }
+        }
+        .task(id: path) { resolvedImageURL = await ReceiptService.resolveImage(path) }
     }
 
     // MARK: - Hero
