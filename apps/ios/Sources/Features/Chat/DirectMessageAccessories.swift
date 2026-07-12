@@ -53,12 +53,10 @@ struct DMStarredView: View {
     @Environment(\.dismiss) private var dismiss
 
     private func snippet(_ m: DirectMessage) -> String {
-        switch ChatMedia.dmBodyKind(m.body) {
-        case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
-        case .video: return String(localized: "dm_prev_video")
-        case .text:  return m.body
-        }
+        // The shared DM snippet, so a starred rich payload (location/sticker/
+        // event/file/contact) shows its label instead of the raw marker this
+        // copy used to leak.
+        m.previewSnippet
     }
 
     var body: some View {

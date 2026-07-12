@@ -177,7 +177,7 @@ struct DMBubble: View {
             reactions: reactionCounts,
             myReaction: myReaction,
             replyQuote: repliedMessage.map {
-                ChatReplyQuote(sender: $0.senderName, snippet: Self.replyPreview($0))
+                ChatReplyQuote(sender: $0.senderName, snippet: $0.previewSnippet)
             },
             linkURL: messageType == .text ? firstDetectedURL(in: message.body) : nil,
             hidesStatusRow: messageType == .audio,
@@ -196,21 +196,6 @@ struct DMBubble: View {
             onDetails: { showDetails = true },
             onQuickForward: showsQuickForward ? { onForward?() } : nil
         )
-    }
-
-    /// A short, human-readable preview for the quoted reply — never a raw
-    /// marker/JSON body or a bare storage path.
-    static func replyPreview(_ replied: DirectMessage) -> String {
-        if replied.deletedForAll == true { return String(localized: "This message was deleted") }
-        if let rich = DMRich.snippet(for: replied.body) { return rich }
-        if replied.isContactShare { return String(localized: "convo_prev_contact") }
-        switch ChatMedia.dmBodyKind(replied.body) {
-        case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
-        case .video: return String(localized: "dm_prev_video")
-        // One line, marker-free — a subject-bearing body reads "subject — text".
-        case .text:  return MessageSubject.strip(replied.body)
-        }
     }
 
     var body: some View {

@@ -92,12 +92,19 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
   copy of the same classification, also hardcoded in English. Routed through
   `Message.chatKind` too: localized now, and it correctly labels task/contact
   shares it previously missed. Three group kind-classifiers → one.
+- **P2c** ✓ — one DM snippet authority: `DirectMessage.previewSnippet` (the
+  full deleted → `DMRich` → contact → media → subject-stripped-text chain).
+  Reply quote, composer reply banner, pinned banner, message details and the
+  starred list all route through it. Fixes two real leaks — message details
+  and the starred list skipped the rich/contact checks and showed raw marker
+  payloads for location/sticker/event/file/contact shares — plus two
+  unlocalized strings ("👤 Contact", "This message was deleted" in the
+  action-overlay preview).
 - Deferred (runtime-behaviour-sensitive, needs on-device verification before
-  touching): the **conversation-list** previews and the **DM** reply/preview
-  path intentionally differ from the bubble (the list prefers a caption over a
-  media label; DM's `DMRich` yields richer snippets), so they are *not* a
-  mechanical reroute — converging them can regress captioned-media and
-  structured-payload cases and must be verified live, not just CI-compiled.
+  touching): the **conversation-list** previews intentionally differ from the
+  bubble (the list prefixes the sender and prefers a caption over a media
+  label), so they are *not* a mechanical reroute — converging them can regress
+  captioned-media cases and must be verified live, not just CI-compiled.
 - Next: grow `ChatMessageKind` toward the full `ChatMessage` model +
   `ChatEngine` protocol. The engine-protocol swap is the deepest, most
   behaviour-sensitive step on the core chat path, so it stays incremental and

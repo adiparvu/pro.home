@@ -59,7 +59,7 @@ extension DirectMessageView {
                 showsSubject: showSubjectField
             ),
             reply: replyingTo.map { m in
-                ChatComposerReply(sender: m.senderName, snippet: dmSnippet(m)) {
+                ChatComposerReply(sender: m.senderName, snippet: m.previewSnippet) {
                     withAnimation { replyingTo = nil }
                 }
             },

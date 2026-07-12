@@ -265,12 +265,10 @@ struct DMMessageDetailsView: View {
         message.deliveredAt.map(detailDateTime)
     }
     private var summary: String {
-        switch ChatMedia.dmBodyKind(message.body) {
-        case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
-        case .video: return String(localized: "dm_prev_video")
-        case .text:  return message.body
-        }
+        // The shared DM snippet, so a rich payload (location/sticker/event/
+        // file/contact) shows its label here too instead of the raw marker
+        // this copy used to leak.
+        message.previewSnippet
     }
 
     var body: some View {

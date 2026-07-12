@@ -47,25 +47,13 @@ extension DirectMessageView {
         conversationMessages.filter { $0.pinned == true && $0.deletedForAll != true }
     }
 
-    func dmSnippet(_ m: DirectMessage) -> String {
-        if let rich = DMRich.snippet(for: m.body) { return rich }
-        if m.isContactShare { return "👤 Contact" }
-        switch ChatMedia.dmBodyKind(m.body) {
-        case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
-        case .video: return String(localized: "dm_prev_video")
-        // One line, marker-free — a subject-bearing body reads "subject — text".
-        case .text:  return MessageSubject.strip(m.body)
-        }
-    }
-
     @ViewBuilder
     func dmActionOverlay(_ m: DirectMessage) -> some View {
         let own = m.isMine(myUserId: directMessageService.myUserId, myName: myName)
         let isImage = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .image
         let isAudio = m.deletedForAll != true && ChatMedia.dmBodyKind(m.body) == .audio
         ChatActionOverlay(
-            previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
+            previewText: m.previewSnippet,
             isOwn: own,
             bubbleColor: chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
             myReaction: m.myReaction(myUserId: directMessageService.myUserId, myName: myName),
@@ -125,7 +113,7 @@ extension DirectMessageView {
                              : String(localized: "Pinned message"))
                             .font(AppFont.label)
                             .foregroundStyle(Color.accentColor)
-                        Text(dmSnippet(pinned))
+                        Text(pinned.previewSnippet)
                             .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.6))
                             .lineLimit(1)

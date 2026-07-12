@@ -49,6 +49,30 @@ enum ChatMessageKind: Equatable {
     }
 }
 
+// MARK: - DM snippet authority
+
+extension DirectMessage {
+    /// The one-line, marker-free preview of this DM — reply quotes, the
+    /// composer reply banner, pinned banner, message details and the starred
+    /// list all show this. Rich payloads (location/sticker/event/file) resolve
+    /// through `DMRich` and media markers through `ChatMedia`, so a structured
+    /// body never leaks its raw marker/JSON; a subject-bearing text body reads
+    /// "subject — text". Four per-surface copies of this chain used to drift —
+    /// two of them skipped the rich/contact checks entirely and showed the raw
+    /// payload.
+    var previewSnippet: String {
+        if deletedForAll == true { return String(localized: "This message was deleted") }
+        if let rich = DMRich.snippet(for: body) { return rich }
+        if isContactShare { return String(localized: "convo_prev_contact") }
+        switch ChatMedia.dmBodyKind(body) {
+        case .audio: return String(localized: "dm_prev_audio")
+        case .image: return String(localized: "dm_prev_photo")
+        case .video: return String(localized: "dm_prev_video")
+        case .text:  return MessageSubject.strip(body)
+        }
+    }
+}
+
 // MARK: - Group message classification
 
 extension Message {
