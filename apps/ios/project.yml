@@ -50,6 +50,8 @@ targets:
       - sdk: WeatherKit.framework
       - sdk: CoreNFC.framework
       - sdk: HomeKit.framework
+      - sdk: MediaPlayer.framework
+      - sdk: NetworkExtension.framework
       - sdk: LinkPresentation.framework
       - sdk: PassKit.framework
       - sdk: AuthenticationServices.framework

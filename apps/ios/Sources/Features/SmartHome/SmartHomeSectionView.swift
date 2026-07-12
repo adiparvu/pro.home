@@ -1,27 +1,41 @@
 import SwiftUI
 import HomeKit
+import WeatherKit
 
-// MARK: - Smart Home dashboard section (Smart Home S2.5 — reference fidelity)
+// MARK: - Smart Home dashboard section (Smart Home S2.6 — reference fidelity)
 //
 // The home tab's smart-home-first page, bound entirely to the S1 aggregation
-// layer (`SmartHomeService` + `HomeKitService`): a room filter chip row, a
-// HomeKit scene chip row, and a two-column STAGGERED layout of per-DEVICE
-// hero cards. Every card control writes real provider state (`setPower`);
-// thermostats draw a mini target-temperature dial instead of an icon disc.
+// layer (`SmartHomeService` + `HomeKitService`): a room filter chip row
+// (devices ∪ Digital Twin zones), a HomeKit scene chip row, the now-playing
+// media card, and a two-column STAGGERED hero grid — per-DEVICE cards
+// followed by the always-present agenda/temperature/network cards. Every
+// card control writes real provider state (`setPower`); thermostats draw a
+// mini target-temperature dial instead of an icon disc.
 //
 // Honest states throughout:
-// - No devices at all → ONE onboarding card (never an empty grid, never
-//   mock tiles) whose button triggers the real HomeKit permission flow.
+// - Room chips union the smart-home providers' rooms with the property's
+//   Digital Twin zones, so the row exists even with zero smart devices.
+// - No devices at all → the grid's FIRST slot is a "Connect HomeKit" hero
+//   card styled like a device tile (never an empty grid, never mock tiles)
+//   whose button triggers the real HomeKit permission flow.
 // - IoT devices but HomeKit unauthorized → the cards plus a slim
 //   "Connect HomeKit" row; the row disappears once authorization lands.
 // - A power toggle is drawn only when the device actually has the `.power`
 //   capability; sensor cards show a live reading instead.
+// - The grid is ALWAYS populated: after the device tiles come the "Next up"
+//   agenda card, the home-temperature dial, and the live network card —
+//   each backed by real data (see SmartHomeHeroCards.swift).
 // - More than 6 devices in the selected room → the 6 most relevant
 //   (controllable first, then passive sensors) plus a "See all" glass row
 //   that opens the full device list — never an endless dashboard.
 
 struct SmartHomeSection: View {
+    /// The house agenda's next upcoming item (≥ now, next 30 days), computed
+    /// by the dashboard from the same services the calendar reads.
+    var nextAgendaItem: AgendaItem? = nil
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(PropertyZoneService.self) private var zoneService
 
     @State private var selectedRoom: String? = nil
 
@@ -50,25 +64,40 @@ struct SmartHomeSection: View {
     /// behind the "See all" row.
     private static let maxVisibleDevices = 6
 
+    /// Provider rooms UNIONED with the property's Digital Twin zone names —
+    /// the chip row always reflects the whole home, even before the first
+    /// smart device exists. Device rooms lead (they actually filter the
+    /// grid); zones follow in their stored sort order, deduplicated.
+    private var allRooms: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for room in smartHome.rooms where seen.insert(room).inserted {
+            out.append(room)
+        }
+        for zone in zoneService.zones {
+            let name = zone.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, seen.insert(name).inserted else { continue }
+            out.append(name)
+        }
+        return out
+    }
+
     /// The selection, ignoring a room that no longer exists (its last
-    /// device was removed) — falls back to "All" instead of filtering the
-    /// dashboard down to an empty grid.
+    /// device or zone was removed) — falls back to "All" instead of
+    /// filtering the dashboard down to an empty grid.
     private var effectiveRoom: String? {
-        guard let selectedRoom, smartHome.rooms.contains(selectedRoom) else { return nil }
+        guard let selectedRoom, allRooms.contains(selectedRoom) else { return nil }
         return selectedRoom
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            if smartHome.hasAnyDevice {
-                if !smartHome.rooms.isEmpty { roomChips }
-                if !scenePairs.isEmpty { sceneChips }
-                deviceCards
-                if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
-                if !smartHome.homeKitAuthorized { connectHomeKitRow }
-            } else {
-                SmartHomeOnboardingCard()
-            }
+            if !allRooms.isEmpty { roomChips }
+            if !scenePairs.isEmpty { sceneChips }
+            NowPlayingCard()
+            heroGrid
+            if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
+            if smartHome.hasAnyDevice, !smartHome.homeKitAuthorized { connectHomeKitRow }
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -89,7 +118,7 @@ struct SmartHomeSection: View {
                                 isSelected: effectiveRoom == nil) {
                     select(nil)
                 }
-                ForEach(smartHome.rooms, id: \.self) { room in
+                ForEach(allRooms, id: \.self) { room in
                     GlassFilterChip(label: room, isSelected: effectiveRoom == room) {
                         select(room)
                     }
@@ -162,7 +191,7 @@ struct SmartHomeSection: View {
         .accessibilityLabel(Text(verbatim: actionSet.name))
     }
 
-    // MARK: - Device hero cards (staggered two-column layout)
+    // MARK: - Hero grid (staggered two-column layout, always populated)
 
     /// Devices in the selected room, most relevant first: anything the user
     /// can act on (power, brightness, climate, lock) leads; passive sensors
@@ -179,29 +208,109 @@ struct SmartHomeSection: View {
         return Array(all.prefix(Self.maxVisibleDevices))
     }
 
-    /// Two top-aligned columns filled alternately — cards keep their natural
-    /// (deliberately varied) heights, which is what produces the reference's
-    /// staggered rhythm without a GeometryReader. At most 6 cards render, so
-    /// plain VStacks stay cheaper than a lazy grid here.
-    private var deviceCards: some View {
-        let devices = visibleDevices
-        let left = stride(from: 0, to: devices.count, by: 2).map { devices[$0] }
-        let right = stride(from: 1, to: devices.count, by: 2).map { devices[$0] }
-        return HStack(alignment: .top, spacing: AppSpacing.md) {
-            deviceColumn(left)
-            deviceColumn(right)
+    /// One grid slot: a real device tile, or one of the always-present
+    /// non-device hero cards. Stable string identity keeps SwiftUI diffing
+    /// cheap across aggregation rebuilds.
+    private enum GridEntry: Identifiable {
+        case device(SmartDevice)
+        case connectHomeKit
+        case nextUp
+        case temperature
+        case network
+
+        var id: String {
+            switch self {
+            case .device(let device): "device-\(device.id)"
+            case .connectHomeKit:     "connect-homekit"
+            case .nextUp:             "next-up"
+            case .temperature:        "temperature"
+            case .network:            "network"
+            }
         }
     }
 
-    private func deviceColumn(_ devices: [SmartDevice]) -> some View {
+    /// The reference's fixed rhythm: device tiles first (or, with zero
+    /// devices anywhere, the Connect HomeKit hero in the first slot), then
+    /// the agenda, temperature, and network cards — the grid is NEVER empty.
+    private var gridEntries: [GridEntry] {
+        var entries: [GridEntry] = []
+        if !smartHome.hasAnyDevice { entries.append(.connectHomeKit) }
+        entries += visibleDevices.map(GridEntry.device)
+        entries += [.nextUp, .temperature, .network]
+        return entries
+    }
+
+    /// Two top-aligned columns filled alternately — cards keep their natural
+    /// (deliberately varied) heights, which is what produces the reference's
+    /// staggered rhythm without a GeometryReader. At most ~9 cards render,
+    /// so plain VStacks stay cheaper than a lazy grid here.
+    private var heroGrid: some View {
+        let entries = gridEntries
+        let left = stride(from: 0, to: entries.count, by: 2).map { entries[$0] }
+        let right = stride(from: 1, to: entries.count, by: 2).map { entries[$0] }
+        return HStack(alignment: .top, spacing: AppSpacing.md) {
+            gridColumn(left)
+            gridColumn(right)
+        }
+    }
+
+    private func gridColumn(_ entries: [GridEntry]) -> some View {
         VStack(spacing: AppSpacing.md) {
-            ForEach(devices) { device in
-                SmartDeviceHeroCard(device: device) {
-                    activeSheet = .device(device)
+            ForEach(entries) { entry in
+                switch entry {
+                case .device(let device):
+                    SmartDeviceHeroCard(device: device) {
+                        activeSheet = .device(device)
+                    }
+                case .connectHomeKit:
+                    ConnectHomeKitHeroCard()
+                case .nextUp:
+                    NextUpCard(item: nextAgendaItem)
+                case .temperature:
+                    TemperatureDialCard(celsius: homeTemperature.celsius,
+                                        source: homeTemperature.source,
+                                        thermostat: primaryThermostat)
+                case .network:
+                    NetworkStatusCard()
                 }
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Temperature sources (real, in honesty order)
+
+    /// (1) A real indoor temperature sensor (any provider), else (2) the
+    /// property's Apple Weather current temperature, else an honest nothing.
+    private var homeTemperature: (celsius: Double?, source: HomeTemperatureSource) {
+        if let sensor = indoorTemperatureSensor, let value = sensor.readingValue {
+            // Normalize a Fahrenheit sensor to the app's Celsius display.
+            let celsius = (sensor.readingUnit?.contains("F") == true)
+                ? (value - 32) * 5 / 9 : value
+            return (celsius, .indoor)
+        }
+        if let cached = PropertyWeather.cached() {
+            return (cached.temp, .outdoor)
+        }
+        if let current = WeatherKitService.shared.currentWeather {
+            return (current.temperature.converted(to: .celsius).value, .outdoor)
+        }
+        return (nil, .unavailable)
+    }
+
+    /// A sensor whose live reading is a temperature — identified by its
+    /// degree unit ("°C"/"°F"), the one honest signal the model carries.
+    private var indoorTemperatureSensor: SmartDevice? {
+        smartHome.devices.first {
+            $0.kind == .sensor && $0.readingValue != nil
+                && ($0.readingUnit?.contains("°") == true)
+        }
+    }
+
+    /// The thermostat whose power the dial card's toggle drives — drawn only
+    /// when one genuinely exists with the `.power` capability.
+    private var primaryThermostat: SmartDevice? {
+        smartHome.devices.first { $0.kind == .thermostat && $0.hasPower }
     }
 
     // MARK: - "See all" row (room holds more devices than the dashboard shows)
@@ -469,43 +578,6 @@ private struct SmartDeviceHeroCard: View {
 private extension SmartDevice {
     var isControllable: Bool {
         hasPower || !capabilities.isDisjoint(with: [.brightness, .color, .targetTemperature, .lock])
-    }
-}
-
-// MARK: - Onboarding card (no devices from any provider)
-
-/// The honest empty state: one card inviting the user to connect HomeKit —
-/// never an empty grid, never placeholder devices.
-private struct SmartHomeOnboardingCard: View {
-    private let smartHome = SmartHomeService.shared
-
-    var body: some View {
-        GlassCard(padding: AppSpacing.xl, cornerRadius: AppRadius.xxl) {
-            VStack(spacing: AppSpacing.base) {
-                Image(systemName: "homekit")
-                    .font(AppFont.scaled(30, weight: .semibold))
-                    .foregroundStyle(Color.brandIndigo)
-                    .frame(width: 64, height: 64)
-                    .background(Color.brandIndigo.opacity(AppOpacity.tintedFill), in: Circle())
-
-                VStack(spacing: AppSpacing.xxs) {
-                    Text("sh_onboarding_title")
-                        .font(AppFont.title3)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.center)
-                    Text("sh_onboarding_subtitle")
-                        .font(AppFont.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                GlassWideButton(icon: "homekit", label: "sh_connect_homekit") {
-                    smartHome.connectHomeKit()
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
     }
 }
 

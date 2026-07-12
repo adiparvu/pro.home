@@ -2,7 +2,12 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// MARK: - Dashboard — matches dark mockup exactly
+// MARK: - Dashboard — the smart-home-first home tab (reference fidelity)
+//
+// Top to bottom: header, room/scene chips, the now-playing media card, the
+// staggered device hero grid (always populated), and the user-configurable
+// widgets. The classic dashboard sections (aerial hero, Today, insights)
+// moved off this page by explicit product decision — only widgets survive.
 
 struct DashboardView: View {
     @Environment(AuthService.self) var auth
@@ -25,7 +30,9 @@ struct DashboardView: View {
     @Environment(ContractorService.self) var contractorService
     @Environment(SupplyService.self) var supplyService
     @Environment(PhotoJournalService.self) var photoJournalService
-    @Environment(ProactiveEngine.self) var proactiveEngine
+    // Feeds the hero grid's "Next up" card (warranty deadlines are part of
+    // the house agenda).
+    @Environment(ApplianceService.self) private var applianceService
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -34,7 +41,6 @@ struct DashboardView: View {
         )
     )
     @State var geocodedCoordinate: CLLocationCoordinate2D?
-    @State private var selectedSection: PropertySection? = nil
     @State var pulsing = false
     @State private var notificationService = NotificationService()
     // A single presentation slot. Multiple stacked `.sheet(isPresented:)` on one
@@ -44,12 +50,10 @@ struct DashboardView: View {
     @State private var activeSheet: DashboardSheet?
 
     private enum DashboardSheet: Int, Identifiable {
-        case notifications, editProfile, search, widgetPicker, healthDetail
+        case notifications, editProfile, search, widgetPicker
         var id: Int { rawValue }
     }
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
-
-    private let sections = PropertySection.all
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -60,40 +64,12 @@ struct DashboardView: View {
 
                 Spacer().frame(height: 14)
 
-                // ── Smart Home (S2): rooms, scenes, device cards ─────────
-                SmartHomeSection()
+                // ── Smart Home (S2.6): room/scene chips, the now-playing
+                //    media card, and the always-populated hero grid ────────
+                SmartHomeSection(nextAgendaItem: nextAgendaItem)
                     .padding(.horizontal, AppSpacing.lg)
 
-                Spacer().frame(height: 22)
-
-                // ── Everything below the smart-home page: the classic
-                //    dashboard, under its own mini-header ─────────────────
-                Text("sh_section_life")
-                    .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.leading, AppSpacing.xxs)
-
-                Spacer().frame(height: 8)
-
-                // ── Aerial Hero Card ─────────────────────────────────────
-                aerialHero
-                    .padding(.horizontal, AppSpacing.lg)
-
-                // ── Today: what needs you, actionable in place ───────────
-                Spacer().frame(height: 14)
-                todaySection
-                    .padding(.horizontal, AppSpacing.lg)
-
-                // ── Proactive Insights (fixed after hero) ────────────────
-                if !proactiveEngine.activeInsights.isEmpty {
-                    Spacer().frame(height: 14)
-                    ProactiveInsightsStrip(engine: proactiveEngine)
-                        .padding(.horizontal, AppSpacing.lg)
-                }
-
-                // ── Reorderable sections ──────────────────────────────────
+                // ── Widgets — the classic dashboard's one survivor here ──
                 ForEach(sectionOrder) { section in
                     sectionView(section)
                 }
@@ -119,8 +95,6 @@ struct DashboardView: View {
         .background(appBackground.ignoresSafeArea())
         .floatingSpeedDial(.home)
         .navigationBarHidden(true)
-        .onAppear { startPulse() }
-        .task(id: propertyService.primary?.id) { await resolveMapCoordinate() }
         .task(id: propertyService.primary?.id) {
             if let pid = propertyService.primary?.id {
                 await zoneService.load(propertyId: pid)
@@ -172,19 +146,6 @@ struct DashboardView: View {
                     .environment(router)
             case .widgetPicker:
                 WidgetPickerSheet()
-            case .healthDetail:
-                let score = propertyService.primary?.healthScore ?? 87
-                NavigationStack {
-                    PropertyHealthDetailView(
-                        score: score,
-                        maintenancePct: min(100, max(0, score - 10)),
-                        utilitiesPct: min(100, max(0, score + 5)),
-                        securityPct: min(100, max(0, score - 3)),
-                        tasksPct: taskService.tasks.isEmpty ? 0 :
-                            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100),
-                        narrative: healthNarrative
-                    )
-                }
             }
         }
     }
@@ -313,88 +274,6 @@ struct DashboardView: View {
         .frame(width: 42, height: 42)
     }
 
-    // MARK: - Aerial background (drone photo or canvas illustration)
-
-    @ViewBuilder private var aerialBackground: some View {
-        if let primary = propertyService.primary {
-            AerialCanvasView(
-                property: primary,
-                elements: elementService.elements,
-                elementBadges: heroBadges,
-                showNames: false
-            )
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-        } else {
-            AerialPropertyView(
-                property: propertyService.primary,
-                zones: zoneService.zones,
-                elements: elementService.elements,
-                cornerRadius: 20
-            )
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Aerial Hero Card
-
-    private var aerialHero: some View {
-        ZStack(alignment: .bottomLeading) {
-            aerialBackground
-                // Decorative on the dashboard — never a tap target (and never
-                // again a screen-wide invisible one).
-                .allowsHitTesting(false)
-
-            // The health story in one sentence, living on the photo itself.
-            HeroStatusPill(
-                todayCount: todayItems.count,
-                healthScore: propertyService.primary?.healthScore ?? 87,
-                onTap: { activeSheet = .healthDetail }
-            )
-            .padding(AppSpacing.md)
-
-            Button {
-                HapticFeedback.impact(.light)
-                router.selectedTab = .digitalTwin
-            } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .glassCircle()
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Expand Digital Twin")
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-
-            if let name = propertyService.primary?.name {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(name)
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(.white.opacity(0.9))
-                    if let addr = propertyService.primary?.addressLine1 {
-                        Text(addr)
-                            .font(AppFont.scaled(10))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
-                .padding(.bottom, 2)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
-    }
-
     // MARK: - Widget section header
 
     private var widgetSectionHeader: some View {
@@ -427,9 +306,9 @@ struct DashboardView: View {
     private func sectionView(_ section: HomeSectionType) -> some View {
         switch section {
         case .healthCard, .statsStrip:
-            // Retired from the home screen: health lives in the hero status
-            // pill (tap → full detail) and the counters became the "Today"
-            // card — numbers without actions don't earn dashboard space.
+            // Retired from the home screen (only the widgets section
+            // survived the smart-home redesign); health lives in the
+            // Digital Twin tab, counters in the widgets themselves.
             EmptyView()
 
         case .widgets:
@@ -461,92 +340,23 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Health narrative
+    // MARK: - Next agenda item (feeds the hero grid's "Next up" card)
 
-    /// The score's story in one sentence, from real data — numbers without a
-    /// story are noise; the story makes you act.
-    private var healthNarrative: String? {
-        var factors: [String] = []
-        let overdue = taskService.overdueCount
-        if overdue > 0 {
-            factors.append(String(format: String(localized: "%d overdue tasks"), overdue))
-        }
-        let expiring = documentService.expiringDocs.count
-        if expiring > 0 {
-            factors.append(String(format: String(localized: "%d documents expiring"), expiring))
-        }
-        let poorShape = elementService.elements.filter {
-            $0.technicalCondition == .poor || $0.technicalCondition == .critical
-        }.count
-        if poorShape > 0 {
-            factors.append(String(format: String(localized: "%d elements in poor shape"), poorShape))
-        }
-        guard !factors.isEmpty else { return nil }
-        return String(format: String(localized: "Pulling the score down: %@."),
-                      factors.prefix(2).joined(separator: " · "))
-    }
-
-    // MARK: - Today
-
-    private var todayItems: [TodayItem] {
-        TodayFeed.items(tasks: taskService.tasks,
-                        plants: plantService.plants,
-                        deliveries: deliveryService.deliveries,
-                        members: familyService.members)
-    }
-
-    /// Pulsing badges for today's located tasks — the day happens ON the map.
-    private var heroBadges: [UUID: Color] {
-        var badges: [UUID: Color] = [:]
-        for item in todayItems {
-            guard let elId = item.elementId else { continue }
-            if item.urgent { badges[elId] = Color.brandDanger }
-            else if badges[elId] == nil { badges[elId] = Color.brandWarning }
-        }
-        return badges
-    }
-
-    private var todaySection: some View {
-        let items = todayItems
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("TODAY")
-                .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, AppSpacing.xxs)
-            TodayCard(
-                items: Array(items.prefix(3)),
-                overflowCount: max(0, items.count - 3),
-                onComplete: { complete($0) },
-                onOpen: { open($0) },
-                onOverflow: { activeSheet = .notifications }
-            )
-        }
-    }
-
-    private func complete(_ item: TodayItem) {
-        Task {
-            // Let the checkmark animate before the row leaves the list.
-            try? await Task.sleep(for: .milliseconds(450))
-            switch item.kind {
-            case .task(let t):  await taskService.toggleComplete(t)
-            case .plant(let p): await plantService.markWatered(p)
-            default: break
-            }
-        }
-    }
-
-    private func open(_ item: TodayItem) {
-        HapticFeedback.impact(.light)
-        switch item.kind {
-        case .task(let t):
-            router.selectedTab = .tasks
-            router.deepLinkTaskId = t.id
-        case .plant:
-            router.push(.plants)
-        case .delivery:
-            router.push(.deliveries)
-        case .birthday:
-            router.push(.family)
-        }
+    /// The house agenda's next upcoming entry — at/after now, within the
+    /// next 30 days — built from the exact services the in-app calendar
+    /// reads, skipping completed tasks. Timed items compare against the
+    /// clock; day-precision items count from the start of today.
+    private var nextAgendaItem: AgendaItem? {
+        let cal = Calendar.current
+        let now = Date()
+        guard let end = cal.date(byAdding: .day, value: 30, to: now) else { return nil }
+        let startOfToday = cal.startOfDay(for: now)
+        return HouseAgenda.items(
+            in: now...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values))
+            .first { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
     }
 }
