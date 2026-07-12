@@ -34,19 +34,6 @@ extension DirectMessageView {
         }
     }
 
-    /// Debounced sentinel toggle: at the bottom rest the 1pt marker can flip
-    /// in/out on sub-point settles, flickering the jump button and stealing
-    /// its first tap. Only a state that survives 150ms is committed.
-    private func setJumpToLatest(_ show: Bool) {
-        jumpToggleTask?.cancel()
-        guard show != showJumpToLatest else { return }
-        jumpToggleTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = show }
-        }
-    }
-
     /// True when older messages exist beyond the current render window —
     /// either already in memory or still on the server.
     private var hasMoreOlder: Bool {
@@ -338,14 +325,14 @@ extension DirectMessageView {
                                     // stays geometry-owned (pre-mount is not
                                     // visibility; auto-follow must never yank
                                     // an up-thread reader).
-                                    setJumpToLatest(false)
+                                    scroll.setJumpToLatest(false)
                                     guard !ChatAtBottomModifier.isGeometryDriven else { return }
                                     isAtBottom = true
                                 }
                                 .onDisappear {
                                     guard !ChatAtBottomModifier.isGeometryDriven else { return }
                                     isAtBottom = false
-                                    setJumpToLatest(true)
+                                    scroll.setJumpToLatest(true)
                                 }
                         }
                         .padding(.horizontal, AppSpacing.md)
@@ -359,7 +346,7 @@ extension DirectMessageView {
                     // of the lazy-culled sentinel.
                     .chatAtBottomTracking { atBottom in
                         isAtBottom = atBottom
-                        setJumpToLatest(!atBottom)
+                        scroll.setJumpToLatest(!atBottom)
                     }
                     .animation(.snappy(duration: 0.25), value: peerActivity)
                     .onChange(of: peerActivity) { _, activity in
@@ -419,7 +406,7 @@ extension DirectMessageView {
                             // then re-assert once the lazy rows take their real
                             // heights — the estimated first pass lands short.
                             proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            setJumpToLatest(false)
+                            scroll.setJumpToLatest(false)
                             Task { @MainActor in
                                 try? await Task.sleep(for: .seconds(0.45))
                                 if !chatDidLoad || isAtBottom {
@@ -441,7 +428,7 @@ extension DirectMessageView {
                             // re-emits on a bucket CHANGE and a snap that
                             // doesn't cross one used to leave it stranded
                             // visible (IMG_8303).
-                            setJumpToLatest(false)
+                            scroll.setJumpToLatest(false)
                         } else {
                             // Reading up-thread: leave the viewport alone and
                             // don't mark the (unseen) message read.
@@ -458,7 +445,7 @@ extension DirectMessageView {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                if showJumpToLatest {
+                if scroll.showJumpToLatest {
                     Button {
                         // Idempotent: re-taps mid-flight are ignored instead of
                         // restarting the spring (each restart read as a nudge).
@@ -475,7 +462,7 @@ extension DirectMessageView {
                         // the first pass already landed.
                         Task { @MainActor in
                             try? await Task.sleep(for: .seconds(0.45))
-                            if showJumpToLatest {
+                            if scroll.showJumpToLatest {
                                 proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
                             }
                             isJumpingToLatest = false

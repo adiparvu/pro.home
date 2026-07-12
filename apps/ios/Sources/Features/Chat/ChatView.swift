@@ -33,7 +33,7 @@ struct ChatView: View {
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State var searchText = ""
     @State var showSearch = false
-    @State var showJumpToLatest = false
+    @State var scroll = ConversationScrollModel()
     /// Whether the reader is at (or within a bubble of) the bottom — the gate
     /// for auto-following incoming messages and for honest read receipts.
     /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);

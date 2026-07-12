@@ -25,15 +25,6 @@ extension ChatView {
         return Calendar.current.isDate(dA, inSameDayAs: dB)
     }
 
-    /// Force the jump-to-latest button hidden after a programmatic snap to the
-    /// bottom. `chatAtBottomTracking` re-emits only when the scroll geometry
-    /// crosses a bucket boundary, so a snap that lands without moving 40pt
-    /// could leave the button stranded visible at the bottom (IMG_8303).
-    private func hideJumpButton() {
-        guard showJumpToLatest else { return }
-        withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
-    }
-
     /// Scroll to a message (e.g. from tapping a reply's quote) and flash it. No-op
     /// if it isn't in the loaded window — older pages aren't force-loaded here.
     private func jumpToMessage(_ id: UUID) {
@@ -388,14 +379,14 @@ extension ChatView {
                             // geometry emission. isAtBottom stays geometry-
                             // owned (pre-mount is not visibility; auto-follow
                             // must never yank an up-thread reader).
-                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                            withAnimation(.easeInOut(duration: 0.2)) { scroll.showJumpToLatest = false }
                             guard !ChatAtBottomModifier.isGeometryDriven else { return }
                             isAtBottom = true
                         }
                         .onDisappear {
                             guard !ChatAtBottomModifier.isGeometryDriven else { return }
                             isAtBottom = false
-                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                            withAnimation(.easeInOut(duration: 0.2)) { scroll.showJumpToLatest = true }
                         }
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -416,8 +407,8 @@ extension ChatView {
                 // so a single shared guard would swallow the emission that
                 // should bring the button back.
                 if atBottom != isAtBottom { isAtBottom = atBottom }
-                if showJumpToLatest != !atBottom {
-                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = !atBottom }
+                if scroll.showJumpToLatest != !atBottom {
+                    withAnimation(.easeInOut(duration: 0.2)) { scroll.showJumpToLatest = !atBottom }
                 }
             }
             .animation(.snappy(duration: 0.25), value: groupActivity?.kind)
@@ -463,7 +454,7 @@ extension ChatView {
                         // newest bubble half-hidden behind the composer
                         // (IMG_8284).
                         proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                        hideJumpButton()
+                        scroll.hide()
                         Task { @MainActor in
                             try? await Task.sleep(for: .seconds(0.45))
                             if !chatDidLoad || isAtBottom {
@@ -484,7 +475,7 @@ extension ChatView {
                         // bucket CHANGE, so a programmatic snap that doesn't
                         // cross a bucket boundary used to leave it stranded
                         // visible (IMG_8303).
-                        hideJumpButton()
+                        scroll.hide()
                     }
                 }
                 if let pid = propertyId {
@@ -523,7 +514,7 @@ extension ChatView {
             }
             } // end VStack (search + scroll)
             .overlay(alignment: .bottomTrailing) {
-                if showJumpToLatest {
+                if scroll.showJumpToLatest {
                     Button {
                         // Idempotent: re-taps mid-flight are ignored instead of
                         // restarting the spring (each restart read as a nudge).
@@ -540,7 +531,7 @@ extension ChatView {
                         // the first pass already landed.
                         Task { @MainActor in
                             try? await Task.sleep(for: .seconds(0.45))
-                            if showJumpToLatest {
+                            if scroll.showJumpToLatest {
                                 proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                             }
                             isJumpingToLatest = false

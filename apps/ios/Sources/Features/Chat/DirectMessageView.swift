@@ -68,13 +68,12 @@ struct DirectMessageView: View {
     @State var newestMessageId: UUID? = nil
     /// Guards the jump-to-latest button against rapid re-taps mid-flight.
     @State var isJumpingToLatest = false
-    /// Debounce for the bottom-sentinel toggle (see `setJumpToLatest`).
-    @State var jumpToggleTask: Task<Void, Never>? = nil
+    /// Shared jump-to-latest coordinator (visibility + debounced toggle).
+    @State var scroll = ConversationScrollModel()
     @State var editingMessage: DirectMessage? = nil
     @State var editText = ""
     @State var menuMessage: DirectMessage? = nil
     @State var deleteCandidate: DirectMessage? = nil
-    @State var showJumpToLatest = false
     /// Whether the reader is at (or within a bubble of) the bottom — the gate
     /// for auto-following incoming messages and for honest read receipts.
     /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
@@ -498,8 +497,7 @@ struct DirectMessageView: View {
             if let peer = thread.peerUserId { ActiveChat.clear(ifCurrent: ActiveChat.dmKey(peer)) }
             chatLoadGraceTask?.cancel()
             chatLoadGraceTask = nil
-            jumpToggleTask?.cancel()
-            jumpToggleTask = nil
+            scroll.cancel()
             // Persist the unsent composer draft once, on the way out.
             if input.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(input, forKey: draftKey) }
