@@ -67,6 +67,16 @@ final class HomeKitService: NSObject {
         try await characteristic.writeValue(!current)
     }
 
+    /// Explicit power write — the smart-home dashboard's card toggles set a
+    /// known state rather than flipping whatever happens to be cached.
+    func setPower(_ accessory: HMAccessory, on: Bool) async throws {
+        guard let characteristic = accessory.services
+            .flatMap(\.characteristics)
+            .first(where: { $0.characteristicType == HMCharacteristicTypePowerState })
+        else { return }
+        try await characteristic.writeValue(on)
+    }
+
     func thermostatTarget(_ accessory: HMAccessory) -> Double? {
         accessory.services
             .flatMap(\.characteristics)
