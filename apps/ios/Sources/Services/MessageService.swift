@@ -307,39 +307,22 @@ final class MessageService {
     }
 
     func deleteMessage(id: UUID) async {
-        do {
-            try await supabase
-                .from("messages")
-                .delete()
-                .eq("id", value: id.uuidString)
-                .execute()
+        if await ChatMessageStore.deleteRow(table: "messages", id: id, tag: "Chat") {
             messages.removeAll { $0.id == id }
-        } catch {
-#if DEBUG
-            debugLog("[Chat] delete error: \(error)")
-#endif
         }
     }
 
     /// Delete for everyone — keeps the row but replaces it with a tombstone.
     func deleteForEveryone(id: UUID) async {
-        struct D: Encodable { let deleted_for_all: Bool }
-        do {
-            try await supabase.from("messages").update(D(deleted_for_all: true))
-                .eq("id", value: id.uuidString).execute()
-            if let i = messages.firstIndex(where: { $0.id == id }) { messages[i].deletedForAll = true }
-        } catch {
-#if DEBUG
-            debugLog("[Chat] deleteForEveryone error: \(error)")
-#endif
+        if await ChatMessageStore.tombstoneRow(table: "messages", id: id, tag: "Chat"),
+           let i = messages.firstIndex(where: { $0.id == id }) {
+            messages[i].deletedForAll = true
         }
     }
 
     /// Delete for me — hides the message locally only (persists across reloads).
     func deleteForMe(id: UUID) {
-        var h = hiddenIds()
-        h.insert(id)
-        UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
+        ChatMessageStore.hide(id, key: Self.hiddenKey)
         messages.removeAll { $0.id == id }
     }
 
@@ -362,8 +345,7 @@ final class MessageService {
 
     private static let hiddenKey = "chat.hidden.ids"
     private func hiddenIds() -> Set<UUID> {
-        let arr = UserDefaults.standard.stringArray(forKey: Self.hiddenKey) ?? []
-        return Set(arr.compactMap { UUID(uuidString: $0) })
+        ChatMessageStore.hiddenIds(key: Self.hiddenKey)
     }
 
     func send(propertyId: UUID, senderName: String, body: String?,

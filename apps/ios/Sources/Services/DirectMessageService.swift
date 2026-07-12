@@ -719,41 +719,22 @@ final class DirectMessageService {
     }
 
     func deleteMessage(id: UUID) async {
-        do {
-            try await supabase
-                .from("direct_messages")
-                .delete()
-                .eq("id", value: id.uuidString)
-                .execute()
+        if await ChatMessageStore.deleteRow(table: "direct_messages", id: id, tag: "DM") {
             dms.removeAll { $0.id == id }
-        } catch {
-#if DEBUG
-            debugLog("[DM] delete error: \(error)")
-#endif
         }
     }
 
     /// Delete for everyone — keeps the row but replaces it with a tombstone.
     func deleteForEveryone(id: UUID) async {
-        do {
-            try await supabase
-                .from("direct_messages")
-                .update(["deleted_for_all": true])
-                .eq("id", value: id.uuidString)
-                .execute()
-            if let i = dms.firstIndex(where: { $0.id == id }) { dms[i].deletedForAll = true }
-        } catch {
-#if DEBUG
-            debugLog("[DM] deleteForEveryone error: \(error)")
-#endif
+        if await ChatMessageStore.tombstoneRow(table: "direct_messages", id: id, tag: "DM"),
+           let i = dms.firstIndex(where: { $0.id == id }) {
+            dms[i].deletedForAll = true
         }
     }
 
     /// Delete for me — hides the row locally only.
     func deleteForMe(id: UUID) {
-        var h = hiddenIds()
-        h.insert(id)
-        UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
+        ChatMessageStore.hide(id, key: Self.hiddenKey)
         localRevision &+= 1
         revision &+= 1
     }
@@ -910,8 +891,7 @@ final class DirectMessageService {
     private static let hiddenKey = "dm.hidden.ids"
 
     private func hiddenIds() -> Set<UUID> {
-        let arr = UserDefaults.standard.stringArray(forKey: Self.hiddenKey) ?? []
-        return Set(arr.compactMap { UUID(uuidString: $0) })
+        ChatMessageStore.hiddenIds(key: Self.hiddenKey)
     }
 
     /// Last-seen mark, keyed by the thread's store key (rename-proof; the

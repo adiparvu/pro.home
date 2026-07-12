@@ -105,7 +105,25 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
   bubble (the list prefixes the sender and prefers a caption over a media
   label), so they are *not* a mechanical reroute — converging them can regress
   captioned-media cases and must be verified live, not just CI-compiled.
+- **P3a** ✓ — one typing/recording subsystem (`ChatActivityIndicator`): both
+  engines carried byte-identical copies of the throttled activity broadcast,
+  indicator sets and per-peer expiry. Engines keep the channel lifecycle and
+  sync channel/name in before each use; the service surface is unchanged.
+- **P3b** ✓ — one `LastSeenCursor` for the unread divider's device-local
+  last-seen timestamp, parameterized by each engine's exact existing
+  UserDefaults key (incl. the DM legacy-key migration) so no stored data
+  moves. `firstUnreadId` stays per-engine deliberately — its divergent
+  predicate (DM thread-identity vs group senderId) is the whole function.
+- **P3c** ✓ — one `ChatMessageStore` for the delete/tombstone/hide row
+  mechanics; engines keep their differing local-state patches (DM revision
+  bumps vs group row removal) and their own table/key.
+- Deferred within P3 (needs on-device, two-account verification): the
+  realtime INSERT reconciliation paths (DM's incremental apply vs group's
+  cursor reload — the engines' genuinely different hearts), send's
+  post-success bookkeeping, reactions/pin-mark (different data models), and
+  the pagination queries (identity-clause construction is RLS-sensitive).
 - Next: grow `ChatMessageKind` toward the full `ChatMessage` model +
-  `ChatEngine` protocol. The engine-protocol swap is the deepest, most
+  `ChatEngine` protocol (P2 tail), then P4's single shell once the deferred
+  P3 seams are verified live. The engine-protocol swap is the deepest, most
   behaviour-sensitive step on the core chat path, so it stays incremental and
   CI-verifiable rather than a big-bang rewrite.
