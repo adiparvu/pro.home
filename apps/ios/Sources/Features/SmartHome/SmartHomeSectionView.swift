@@ -2,15 +2,17 @@ import SwiftUI
 import HomeKit
 import WeatherKit
 
-// MARK: - Smart Home dashboard section (Smart Home S2.6 — reference fidelity)
+// MARK: - Smart Home dashboard section (Smart Home S2.6 — warm glass skin)
 //
 // The home tab's smart-home-first page, bound entirely to the S1 aggregation
 // layer (`SmartHomeService` + `HomeKitService`): a room filter chip row
-// (devices ∪ Digital Twin zones), a HomeKit scene chip row, the now-playing
-// media card, and a two-column STAGGERED hero grid — per-DEVICE cards
-// followed by the always-present agenda/temperature/network cards. Every
-// card control writes real provider state (`setPower`); thermostats draw a
-// mini target-temperature dial instead of an icon disc.
+// (devices ∪ Digital Twin zones) ending in the "+" connect chip, a HomeKit
+// scene chip row, the now-playing media card, and a two-column STAGGERED
+// hero grid — per-DEVICE cards followed by the always-present
+// agenda/temperature/network cards. Every card control writes real provider
+// state (`setPower`); thermostats draw a mini target-temperature dial
+// instead of an icon disc. Visuals come exclusively from the SmartHomeTheme
+// tokens (warm glass over the photo backdrop the dashboard renders).
 //
 // Honest states throughout:
 // - Room chips union the smart-home providers' rooms with the property's
@@ -23,8 +25,8 @@ import WeatherKit
 // - A power toggle is drawn only when the device actually has the `.power`
 //   capability; sensor cards show a live reading instead.
 // - The grid is ALWAYS populated: after the device tiles come the "Next up"
-//   agenda card, the home-temperature dial, and the live network card —
-//   each backed by real data (see SmartHomeHeroCards.swift).
+//   agenda card, the home-temperature dial (opens the climate page), and
+//   the live network card — each backed by real data.
 // - More than 6 devices in the selected room → the 6 most relevant
 //   (controllable first, then passive sensors) plus a "See all" glass row
 //   that opens the full device list — never an endless dashboard.
@@ -39,18 +41,20 @@ struct SmartHomeSection: View {
 
     @State private var selectedRoom: String? = nil
 
-    /// What a tap presents: the tapped device's hero sheet (S3), or the
-    /// "See all" list when the room holds more devices than the dashboard
-    /// shows. One optional drives `.sheet(item:)`, so the two presentations
-    /// can never stack or race.
+    /// What a tap presents: the tapped device's hero sheet (S3), the
+    /// climate page, or the "See all" list when the room holds more devices
+    /// than the dashboard shows. One optional drives `.sheet(item:)`, so
+    /// the presentations can never stack or race.
     private enum ActiveSheet: Identifiable {
         case device(SmartDevice)
         case allDevices
+        case climate
 
         var id: String {
             switch self {
             case .device(let device): "device-\(device.id)"
             case .allDevices:         "all-devices"
+            case .climate:            "climate"
             }
         }
     }
@@ -105,24 +109,29 @@ struct SmartHomeSection: View {
                 SmartDeviceSheet(device: device)
             case .allDevices:
                 SmartHomeDeviceListSheet(kind: nil, room: effectiveRoom)
+            case .climate:
+                ClimateView()
             }
         }
     }
 
-    // MARK: - Room filter chips
+    // MARK: - Room filter chips (+ the connect chip)
 
     private var roomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
-                GlassFilterChip(label: String(localized: "sh_room_all"),
-                                isSelected: effectiveRoom == nil) {
+                SmartChip(label: String(localized: "sh_room_all"),
+                          isSelected: effectiveRoom == nil) {
                     select(nil)
                 }
                 ForEach(allRooms, id: \.self) { room in
-                    GlassFilterChip(label: room, isSelected: effectiveRoom == room) {
+                    SmartChip(label: room, isSelected: effectiveRoom == room) {
                         select(room)
                     }
                 }
+                // The reference's trailing "+" chip — a REAL action: the
+                // existing Connect-HomeKit flow (devices are added there).
+                SmartPlusChip { smartHome.connectHomeKit() }
             }
             .padding(.horizontal, AppSpacing.xxs)
         }
@@ -155,40 +164,27 @@ struct SmartHomeSection: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(scenePairs) { pair in
-                    sceneChip(pair.actionSet, in: pair.home)
+                    SmartChip(label: pair.actionSet.name,
+                              systemImage: "sparkles",
+                              isSelected: false) {
+                        run(pair.actionSet, in: pair.home)
+                    }
                 }
             }
             .padding(.horizontal, AppSpacing.xxs)
         }
     }
 
-    private func sceneChip(_ actionSet: HMActionSet, in home: HMHome) -> some View {
-        Button {
-            HapticFeedback.impact(.light)
-            Task {
-                do {
-                    try await homeKit.execute(actionSet, in: home)
-                    HapticFeedback.success()
-                } catch {
-                    HapticFeedback.error()
-                    debugLog("Scene execution failed:", error)
-                }
+    private func run(_ actionSet: HMActionSet, in home: HMHome) {
+        Task {
+            do {
+                try await homeKit.execute(actionSet, in: home)
+                HapticFeedback.success()
+            } catch {
+                HapticFeedback.error()
+                debugLog("Scene execution failed:", error)
             }
-        } label: {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: "sparkles")
-                    .font(AppFont.captionStrong)
-                Text(verbatim: actionSet.name)
-                    .font(AppFont.captionEmphasis)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.sm)
-            .mediaGlass(in: Capsule(), interactive: true)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: actionSet.name))
     }
 
     // MARK: - Hero grid (staggered two-column layout, always populated)
@@ -269,7 +265,9 @@ struct SmartHomeSection: View {
                 case .temperature:
                     TemperatureDialCard(celsius: homeTemperature.celsius,
                                         source: homeTemperature.source,
-                                        thermostat: primaryThermostat)
+                                        thermostat: primaryThermostat) {
+                        activeSheet = .climate
+                    }
                 case .network:
                     NetworkStatusCard()
                 }
@@ -323,24 +321,24 @@ struct SmartHomeSection: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "square.grid.2x2")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.brandIndigo)
+                    .foregroundStyle(Color.smartAmber)
                 Text("sh_see_all")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                 Spacer(minLength: AppSpacing.sm)
                 Text("sh_device_count \(scopedDevices.count)")
                     .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.smartTextSecondary)
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.lg)
+        .smartGlassRow()
         .accessibilityElement(children: .combine)
     }
 
@@ -354,37 +352,51 @@ struct SmartHomeSection: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "homekit")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.brandIndigo)
+                    .foregroundStyle(Color.smartAmber)
                 Text("sh_connect_homekit")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                 Spacer(minLength: AppSpacing.sm)
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.lg)
+        .smartGlassRow()
+    }
+}
+
+/// Slim glass row backing (see-all / connect rows) — the card material at
+/// a tighter radius, still borderless.
+private extension View {
+    func smartGlassRow() -> some View {
+        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+        return background {
+            shape.fill(.ultraThinMaterial)
+            shape.fill(Color.smartGlassFill)
+        }
+        .clipShape(shape)
     }
 }
 
 // MARK: - Per-device hero card
 
-/// One large card per DEVICE (the reference's staggered tiles): a tinted
-/// icon disc — or, for thermostats with a target, a mini circular dial —
-/// the device name, an honest one-line state, and a power toggle drawn only
-/// when the device genuinely has the `.power` capability. Nothing else; no
-/// dead controls.
+/// One large card per DEVICE (the reference's staggered tiles): the icon
+/// over a warm amber radial glow (the lamp-photo mood) — or, for
+/// thermostats with a target, a mini circular dial — the device name
+/// bottom-left, an honest one-line state under it, and the vertical amber
+/// pill toggle bottom-trailing, drawn only when the device genuinely has
+/// the `.power` capability. Nothing else; no dead controls.
 ///
 /// Height staggering comes from the CONTENT: thermostat/light cards carry a
-/// ~90pt visual area, plain switch/sensor cards a compact disc — no fixed
+/// ~90pt visual area, plain switch/sensor cards a compact one — no fixed
 /// frames, no GeometryReader, so Dynamic Type can grow every card safely.
 ///
-/// Tapping the card BODY opens the S3 device sheet; the toggle keeps its
+/// Tapping the card BODY opens the S3 device page; the toggle keeps its
 /// own gesture, so flipping power never accidentally navigates.
 private struct SmartDeviceHeroCard: View {
     let device: SmartDevice
@@ -414,7 +426,6 @@ private struct SmartDeviceHeroCard: View {
         Binding(
             get: { isOn },
             set: { on in
-                HapticFeedback.impact(.light)
                 pendingOn = on
                 Task { @MainActor in
                     await smartHome.setPower(device, on: on)
@@ -424,7 +435,7 @@ private struct SmartDeviceHeroCard: View {
     }
 
     var body: some View {
-        GlassCard(padding: AppSpacing.base, cornerRadius: AppRadius.xl) {
+        SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 visualArea
                     .frame(maxWidth: .infinity, alignment: isTall ? .center : .leading)
@@ -432,8 +443,8 @@ private struct SmartDeviceHeroCard: View {
                 HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(verbatim: device.name)
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(.primary)
+                            .font(AppFont.scaled(16, weight: .semibold))
+                            .foregroundStyle(Color.smartTextPrimary)
                             .lineLimit(1)
                         stateLine
                             .lineLimit(1)
@@ -441,7 +452,7 @@ private struct SmartDeviceHeroCard: View {
                     }
                     // VoiceOver path to the tap gesture below (gestures on
                     // the card container aren't reachable as elements): the
-                    // title block is a button that opens the device sheet,
+                    // title block is a button that opens the device page,
                     // while the toggle stays its own element.
                     .accessibilityElement(children: .combine)
                     .accessibilityAddTraits(.isButton)
@@ -451,47 +462,43 @@ private struct SmartDeviceHeroCard: View {
                     Spacer(minLength: 0)
 
                     if device.hasPower {
-                        Toggle(isOn: powerBinding) {
-                            Text(verbatim: device.name)
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        .tint(device.kind.accent)
-                        .disabled(!device.isReachable)
-                        .accessibilityLabel(Text(verbatim: device.name))
+                        SmartPillToggle(isOn: powerBinding,
+                                        accessibilityLabel: Text(verbatim: device.name))
+                            .disabled(!device.isReachable)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        // A tap anywhere on the card body opens the device sheet; the
-        // Toggle's own gesture takes precedence, so it never navigates.
+        // A tap anywhere on the card body opens the device page; the
+        // toggle's own gesture takes precedence, so it never navigates.
         .onTapGesture {
             HapticFeedback.impact(.light)
             onOpen()
         }
     }
 
-    // MARK: Visual area — tinted icon disc, or the thermostat mini dial
+    // MARK: Visual area — icon over the amber glow, or the thermostat mini dial
 
     @ViewBuilder private var visualArea: some View {
         if device.kind == .thermostat, let target = smartHome.targetTemperature(of: device) {
             thermostatDial(target)
         } else {
-            Image(systemName: device.kind.icon)
-                .font(AppFont.scaled(isTall ? 24 : 17, weight: .semibold))
-                .foregroundStyle(device.kind.accent)
-                .frame(width: isTall ? 64 : 40, height: isTall ? 64 : 40)
-                .background(device.kind.accent.opacity(AppOpacity.tintedFill), in: Circle())
-                .frame(height: isTall ? 90 : 40)
-                .accessibilityHidden(true)
+            ZStack {
+                SmartRadialGlow(diameter: isTall ? 96 : 52)
+                Image(systemName: device.kind.icon)
+                    .font(AppFont.scaled(isTall ? 26 : 17, weight: .semibold))
+                    .foregroundStyle(Color.smartAmber)
+            }
+            .frame(width: isTall ? 64 : 40, height: isTall ? 90 : 40)
+            .accessibilityHidden(true)
         }
     }
 
     /// The reference's mini climate dial: a subtle full-circle track with a
-    /// trimmed accent arc marking where the commanded target sits in the
+    /// trimmed amber arc marking where the commanded target sits in the
     /// 10–30 °C range, the target itself bold in the center. Read-only here —
-    /// the real control lives in the S3 sheet a tap away.
+    /// the real control lives in the S3 page a tap away.
     private func thermostatDial(_ target: Double) -> some View {
         let span = Self.targetRange.upperBound - Self.targetRange.lowerBound
         let clamped = min(Self.targetRange.upperBound,
@@ -499,15 +506,16 @@ private struct SmartDeviceHeroCard: View {
         let fraction = (clamped - Self.targetRange.lowerBound) / span
         return ZStack {
             Circle()
-                .stroke(Color.subtleFill, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(Color.white.opacity(0.15),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round))
             Circle()
                 .trim(from: 0, to: fraction)
-                .stroke(device.kind.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(Color.smartAmber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: fraction)
             Text(verbatim: Self.temperatureText(clamped))
                 .font(AppFont.metricLarge)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.smartTextPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -535,24 +543,24 @@ private struct SmartDeviceHeroCard: View {
                   let percent = smartHome.brightness(of: device) {
             Text("sh_state_brightness \(percent)")
                 .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
         } else if let value = device.readingValue {
             Text(verbatim: Self.readingText(value, unit: device.readingUnit))
                 .font(AppFont.metricSmall)
-                .foregroundStyle(device.kind.accent)
+                .foregroundStyle(Color.smartAmber)
         } else if device.kind == .thermostat,
                   let current = smartHome.currentTemperature(of: device) {
             Text("sh_state_now \(Self.temperatureText(current))")
                 .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
         } else if let isOn = device.isOn {
             Text(LocalizedStringKey((pendingOn ?? isOn) ? "sh_state_on" : "sh_state_off"))
                 .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
         } else {
             Text(LocalizedStringKey(device.kind.titleKey))
                 .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
         }
     }
 
@@ -583,22 +591,11 @@ private extension SmartDevice {
 
 // MARK: - Kind accents
 
-/// Per-kind brand accent — presentation-only, so it lives with the S2 view
-/// rather than in the frozen S1 model. Internal (not private) on purpose:
-/// the S3 device sheets (`SmartDeviceSheet.swift`) reuse the same mapping,
-/// keeping one source of truth per kind's hue.
+/// Per-kind accent — since the warm-glass redesign every kind shares the
+/// theme's single amber accent (the reference uses one accent everywhere);
+/// the mapping survives as one switch point should kinds ever diverge
+/// again. Internal (not private) on purpose: the S3 surfaces reuse it,
+/// keeping one source of truth.
 extension SmartDeviceKind {
-    var accent: Color {
-        switch self {
-        case .light:      .brandGold
-        case .outlet:     .brandSuccess
-        case .switcher:   .brandTeal
-        case .thermostat: .brandWarning
-        case .sensor:     .brandSkyBlue
-        case .camera:     .brandIndigo
-        case .lock:       .brandPurple
-        case .cover:      .brandPrimaryBlue
-        case .other:      .brandPrimaryBlue
-        }
-    }
+    var accent: Color { .smartAmber }
 }

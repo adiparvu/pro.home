@@ -165,12 +165,18 @@ struct NowPlayingCard: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        GlassCard(padding: AppSpacing.base, cornerRadius: AppRadius.xl) {
+        SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack(spacing: AppSpacing.md) {
+                HStack(alignment: .top, spacing: AppSpacing.md) {
                     artwork
                     titleBlock
                     Spacer(minLength: 0)
+                    // Source glyph, top-right of the card (the reference's
+                    // small provider mark) — decorative, states the source.
+                    Image(systemName: "music.note")
+                        .font(AppFont.scaled(13, weight: .semibold))
+                        .foregroundStyle(Color.smartTextSecondary)
+                        .accessibilityHidden(true)
                 }
 
                 if model.nowPlaying != nil {
@@ -200,12 +206,15 @@ struct NowPlayingCard: View {
                     .frame(width: 56, height: 56)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             } else {
-                Image(systemName: "music.note")
-                    .font(AppFont.scaled(22, weight: .semibold))
-                    .foregroundStyle(Color.brandPink)
-                    .frame(width: 56, height: 56)
-                    .background(Color.brandPink.opacity(AppOpacity.tintedFill),
-                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                ZStack {
+                    SmartRadialGlow(diameter: 64)
+                    Image(systemName: "music.note")
+                        .font(AppFont.scaled(22, weight: .semibold))
+                        .foregroundStyle(Color.smartAmber)
+                }
+                .frame(width: 56, height: 56)
+                .background(Color.smartGlassFill,
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
         }
         .accessibilityHidden(true)
@@ -216,28 +225,28 @@ struct NowPlayingCard: View {
             if let now = model.nowPlaying {
                 if let title = now.title {
                     Text(verbatim: title)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
+                        .font(AppFont.scaled(15, weight: .semibold))
+                        .foregroundStyle(Color.smartTextPrimary)
                         .lineLimit(1)
                 } else {
                     Text("media_unknown_title")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
+                        .font(AppFont.scaled(15, weight: .semibold))
+                        .foregroundStyle(Color.smartTextPrimary)
                         .lineLimit(1)
                 }
                 if let artist = now.artist {
                     Text(verbatim: artist)
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.smartTextSecondary)
                         .lineLimit(1)
                 }
             } else {
                 Text("media_nothing_playing")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.primary)
+                    .font(AppFont.scaled(15, weight: .semibold))
+                    .foregroundStyle(Color.smartTextPrimary)
                 Text("media_nothing_playing_hint")
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.smartTextSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -256,12 +265,34 @@ struct NowPlayingCard: View {
 
     // MARK: Progress (live, only meaningful with a real item)
 
+    /// The reference's thin 3pt bar with the elapsed count at its right.
     private var progressBar: some View {
-        ProgressView(value: model.progress)
-            .progressViewStyle(.linear)
-            .tint(Color.accentColor)
+        HStack(spacing: AppSpacing.sm) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.15))
+                    Capsule()
+                        .fill(Color.smartAmber)
+                        .frame(width: max(3, geo.size.width * model.progress))
+                }
+            }
+            .frame(height: 3)
             .animation(reduceMotion ? nil : .linear(duration: 0.5), value: model.progress)
-            .accessibilityLabel(Text("media_progress"))
+
+            Text(verbatim: Self.elapsedText(model.elapsed))
+                .font(AppFont.caption2)
+                .foregroundStyle(Color.smartTextSecondary)
+                .monospacedDigit()
+        }
+        .accessibilityElement()
+        .accessibilityLabel(Text("media_progress"))
+        .accessibilityValue(Text(verbatim: Self.elapsedText(model.elapsed)))
+    }
+
+    /// "3:07" — minutes:seconds of real playback time.
+    private static func elapsedText(_ elapsed: TimeInterval) -> String {
+        let total = max(0, Int(elapsed))
+        return "\(total / 60):" + String(format: "%02d", total % 60)
     }
 
     // MARK: Transport row — every control commands the system player
@@ -289,16 +320,17 @@ struct NowPlayingCard: View {
         }
     }
 
+    /// The reference's plain warm-white play glyph — no filled disc.
     private var playPauseButton: some View {
         Button {
             HapticFeedback.impact(.light)
             model.togglePlayPause()
         } label: {
             Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                .font(AppFont.scaled(18, weight: .bold))
-                .foregroundStyle(.white)
+                .font(AppFont.scaled(24, weight: .semibold))
+                .foregroundStyle(Color.smartTextPrimary)
                 .frame(width: 46, height: 46)
-                .background(Color.accentColor, in: Circle())
+                .contentShape(Circle())
                 .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
         }
         .buttonStyle(.plain)
@@ -315,8 +347,7 @@ struct NowPlayingCard: View {
         } label: {
             Image(systemName: icon)
                 .font(AppFont.scaled(15, weight: .semibold))
-                .foregroundStyle(active ? Color.accentColor
-                                        : Color.primary.opacity(AppOpacity.emphasis))
+                .foregroundStyle(active ? Color.smartAmber : Color.smartTextSecondary)
                 .frame(width: 38, height: 38)
                 .contentShape(Circle())
         }
@@ -337,10 +368,10 @@ struct NowPlayingCard: View {
                 Text("media_open_music")
                     .font(AppFont.footnoteEmphasis)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.smartInk)
             .frame(maxWidth: .infinity)
             .frame(height: 40)
-            .background(Color.accentColor, in: Capsule())
+            .background(Color.smartCream, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("media_open_music"))

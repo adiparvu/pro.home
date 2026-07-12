@@ -159,6 +159,65 @@ extension Color {
     static let brandIndigo = Color(red: 0.42, green: 0.47, blue: 0.98)
 }
 
+// MARK: - Smart-home warm glass theme
+
+/// Tokens for the smart-home surfaces (home tab, device page, climate page)
+/// — the one deliberately dark-warm skin in the app: a blurred property
+/// photo under a warm-brown overlay, near-white warm text, cream contrast
+/// cards, and a single amber accent. These surfaces do NOT follow
+/// light/dark mode (the photo backdrop is the sanctioned exception); text
+/// always uses the `smartText*` tokens for contrast over the backdrop.
+/// Nothing here reaches for `Color.accentColor` or the brand blues.
+enum SmartHomeTheme {
+    /// Card corner radius on the smart-home surfaces (the reference's ~26pt).
+    static let cardRadius: CGFloat = 26
+    /// Filter/selector chip corner radius (the reference's ~14pt).
+    static let chipRadius: CGFloat = 14
+    /// Blur applied to the property cover photo behind these surfaces.
+    static let backdropBlur: CGFloat = 40
+    /// Radial glow opacity behind device icons (the lamp-photo mood).
+    static let glowOpacity: Double = 0.25
+    /// The vertical pill toggle's fixed footprint.
+    static let pillToggleSize = CGSize(width: 30, height: 52)
+
+    /// Fallback backdrop when the property has no cover photo yet:
+    /// dark bronze, top #3A2E22 → bottom #14100C.
+    static var fallbackGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(red: 0.227, green: 0.180, blue: 0.133),
+                     Color(red: 0.078, green: 0.063, blue: 0.047)],
+            startPoint: .top, endPoint: .bottom)
+    }
+
+    /// Warm-brown darkening laid over the blurred cover photo (~55% overall)
+    /// so cream text and glass cards always clear WCAG contrast on top.
+    static var overlayGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(red: 0.165, green: 0.122, blue: 0.078).opacity(0.45),
+                     Color(red: 0.078, green: 0.059, blue: 0.039).opacity(0.65)],
+            startPoint: .top, endPoint: .bottom)
+    }
+}
+
+extension Color {
+    /// #F2ECE3 — the near-white warm contrast card (the reference's "Alarm"
+    /// card); pair with `smartInk` text only.
+    static let smartCream = Color(red: 0.949, green: 0.925, blue: 0.890)
+    /// #E1975F — the single amber accent: toggles, dial arcs, glows.
+    static let smartAmber = Color(red: 0.882, green: 0.592, blue: 0.373)
+    /// White at 8% — the glass-card fill laid over `.ultraThinMaterial`
+    /// on top of the photo backdrop.
+    static let smartGlassFill = Color.white.opacity(0.08)
+    /// #F7F3ED — warm-white primary text over the dark backdrop.
+    static let smartTextPrimary = Color(red: 0.969, green: 0.953, blue: 0.929)
+    /// Secondary text over the backdrop — the warm white at 60%.
+    static let smartTextSecondary = Color(red: 0.969, green: 0.953, blue: 0.929).opacity(0.6)
+    /// #2B241C — warm near-black ink for text ON `smartCream` surfaces.
+    static let smartInk = Color(red: 0.169, green: 0.141, blue: 0.110)
+    /// Secondary ink on cream surfaces.
+    static let smartInkSecondary = Color(red: 0.169, green: 0.141, blue: 0.110).opacity(0.6)
+}
+
 // MARK: - Spacing
 
 /// 4-point spacing rhythm matching the app's existing padding usage.

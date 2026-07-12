@@ -56,43 +56,16 @@ struct DashboardView: View {
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                // ── Header ──────────────────────────────────────────────
-                dashHeader
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 14)
-
-                // ── Smart Home (S2.6): room/scene chips, the now-playing
-                //    media card, and the always-populated hero grid ────────
-                SmartHomeSection(nextAgendaItem: nextAgendaItem)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                // ── Widgets — the classic dashboard's one survivor here ──
-                ForEach(sectionOrder) { section in
-                    sectionView(section)
-                }
-
-                Spacer(minLength: 120)
-            }
-            .padding(.top, topSafeArea + 6)
-            .trackTabScroll()
-            .padding(.bottom, AppSpacing.xl)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self,
-                                           value: geo.frame(in: .named("dashScroll")).minY)
-                }
-            )
+        ZStack {
+            // The warm smart-home backdrop: the property's real cover photo
+            // blurred under a warm overlay, or the bronze fallback. This
+            // page is deliberately dark-warm by design (the sanctioned
+            // exception to dual-mode), so the content renders in the dark
+            // scheme regardless of the system setting.
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            scrollContent
+                .environment(\.colorScheme, .dark)
         }
-        .coordinateSpace(name: "dashScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
-                tabBarVis.scrollOffset = y
-            }
-        }
-        .background(appBackground.ignoresSafeArea())
         .floatingSpeedDial(.home)
         .navigationBarHidden(true)
         .task(id: propertyService.primary?.id) {
@@ -150,35 +123,75 @@ struct DashboardView: View {
         }
     }
 
+    private var scrollContent: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                // ── Header ──────────────────────────────────────────────
+                dashHeader
+                    .padding(.horizontal, AppSpacing.lg)
+
+                Spacer().frame(height: 14)
+
+                // ── Smart Home (S2.6): room/scene chips, the now-playing
+                //    media card, and the always-populated hero grid ────────
+                SmartHomeSection(nextAgendaItem: nextAgendaItem)
+                    .padding(.horizontal, AppSpacing.lg)
+
+                // ── Widgets — the classic dashboard's one survivor here ──
+                ForEach(sectionOrder) { section in
+                    sectionView(section)
+                }
+
+                Spacer(minLength: 120)
+            }
+            .padding(.top, topSafeArea + 6)
+            .trackTabScroll()
+            .padding(.bottom, AppSpacing.xl)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self,
+                                           value: geo.frame(in: .named("dashScroll")).minY)
+                }
+            )
+        }
+        .coordinateSpace(name: "dashScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { y in
+            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
+                tabBarVis.scrollOffset = y
+            }
+        }
+    }
+
     // MARK: - Header
 
-    /// The reference's airy smart-home header: a utility row (date +
-    /// search / notifications / avatar — same functionality as before,
-    /// restyled) above a LARGE two-line greeting block.
+    /// The reference's airy smart-home header: the hamburger-style menu
+    /// glyph on the left (a REAL control — it opens the existing global
+    /// search), the small date beside it, bell + avatar on the right, and
+    /// the LARGE light-weight two-line greeting beneath.
     private var dashHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.base) {
             HStack(alignment: .center, spacing: 10) {
-                Text(dateString)
-                    .font(AppFont.scaled(13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                    .lineLimit(1)
-
-                Spacer(minLength: 8)
-
                 Button { HapticFeedback.impact(.light); activeSheet = .search } label: {
-                    Image(systemName: "magnifyingglass")
+                    Image(systemName: "line.3.horizontal")
                         .font(AppFont.headline)
-                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .foregroundStyle(Color.smartTextPrimary)
                         .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.plain)
                 .glassCircle()
                 .accessibilityLabel(Text("Search"))
 
+                Text(dateString)
+                    .font(AppFont.scaled(13, weight: .medium))
+                    .foregroundStyle(Color.smartTextSecondary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
+
                 Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
                     Image(systemName: "bell.fill")
                         .font(AppFont.scaled(15))
-                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .foregroundStyle(Color.smartTextPrimary)
                         .frame(width: 40, height: 40)
                         .overlay(alignment: .topTrailing) {
                             // Numeric badge ONLY while there are unread
@@ -215,15 +228,16 @@ struct DashboardView: View {
 
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 // Composed from Texts so both parts resolve through the
-                // in-app locale — never the device language.
+                // in-app locale — never the device language. LIGHT weight —
+                // the reference greeting is thin and airy.
                 greetingTitle
-                    .font(AppFont.scaled(34, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .font(AppFont.scaled(38, weight: .light))
+                    .foregroundStyle(Color.smartTextPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text("sh_greeting_subtitle")
-                    .font(AppFont.scaled(17, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .font(AppFont.scaled(15, weight: .regular))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
             .accessibilityElement(children: .combine)
         }
