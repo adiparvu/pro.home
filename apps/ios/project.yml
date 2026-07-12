@@ -82,12 +82,17 @@ targets:
         # Fastfile already enables the WEATHERKIT capability portal-side on
         # every run, so the regenerated profile carries it.
         com.apple.developer.weatherkit: true
-        # NFC / HomeKit are deliberately NOT restored here yet. Restoring NFC
-        # as-is fails App Store upload validation on SDK 26.5 (ITMS-90778
-        # "NDEF is disallowed"); both are guarded in code (NFCScanService
-        # checks readingAvailable, HomeKitService is lazy) so nothing crashes
-        # without them. They return in a follow-up once each is verified to
-        # pass validation.
+        # HomeKit restored for the smart-home dashboard (SmartHomeService):
+        # the Fastfile already enables the HOMEKIT capability portal-side on
+        # every run, so the regenerated profile carries it. The validation
+        # failure that parked this block was NFC-specific (ITMS-90778 "NDEF
+        # is disallowed") — HomeKit is a plain capability. If an upload ever
+        # rejects it, revert THIS key only.
+        com.apple.developer.homekit: true
+        # NFC is deliberately NOT restored: restoring it as-is fails App
+        # Store upload validation on SDK 26.5 (ITMS-90778 "NDEF is
+        # disallowed"); NFCScanService checks readingAvailable so nothing
+        # crashes without it. It returns once verified to pass validation.
     postBuildScripts:
       # The .xcstrings catalog is copied raw by this project, not compiled —
       # this phase generates the per-language .lproj tables into the product
