@@ -211,11 +211,8 @@ extension DirectMessageView {
     }
 
     @MainActor
-    func sendDMEvent(title: String, details: String, date: Date, location: String) async {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
-        let event = ChatEvent(t: title, d: details.isEmpty ? nil : details,
-                              date: f.string(from: date), loc: location.isEmpty ? nil : location)
-        guard let body = DMRich.encodeEvent(event) else { return }
+    func sendDMEvent(_ draft: ChatEventDraft) async {
+        guard let body = DMRich.encodeEvent(draft.payload()) else { return }
         MessageSounds.sent()
         if await performDMSend(body: body, kind: .event) { HapticFeedback.success() }
     }

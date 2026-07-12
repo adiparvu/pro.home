@@ -251,7 +251,10 @@ struct MessageBubble: View {
             PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
                        bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
         } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
-            EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor)
+            // RSVP rides the poll-vote pipe (option 0 = going, 1 = can't go);
+            // where no vote callback exists the buttons stay hidden.
+            EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor,
+                        votes: pollVotes, myUserId: myUserId, onRSVP: onPollVote)
         } else if message.isTaskShare, let sharedTask = SharedTaskPayload.decode(message.body) {
             TaskCardBubble(payload: sharedTask, isOwn: isOwn,
                            bubbleColor: ownBubbleColor, hasTail: isGroupEnd)

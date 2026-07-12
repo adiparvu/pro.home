@@ -122,6 +122,42 @@ enum HouseCalendarMirror {
         }
     }
 
+    // MARK: Standalone chat events
+
+    /// Saves a chat-composed event into the dedicated PRVIO calendar
+    /// (created on first use). Standalone events intentionally carry NO
+    /// agenda occurrence key in `event.url`, so `sync`'s reconciliation —
+    /// which only matches, updates and prunes keyed events — never touches
+    /// them. Requires full access: resolving/creating the dedicated calendar
+    /// reads sources, which write-only access hides. Returns false when
+    /// access was denied or the save failed, so callers can be honest about
+    /// the outcome.
+    @discardableResult
+    static func addChatEvent(title: String, notes: String?, location: String?,
+                             start: Date, end: Date, isAllDay: Bool) async -> Bool {
+        guard await TaskCalendarSync.requestEventAccess() == .full,
+              let cal = mirrorCalendar() else { return false }
+        let event = EKEvent(eventStore: store)
+        event.calendar = cal
+        event.title = title
+        event.notes = notes
+        event.location = location
+        if isAllDay {
+            let day = Calendar.current.startOfDay(for: start)
+            event.isAllDay = true
+            event.startDate = day
+            event.endDate = max(day, Calendar.current.startOfDay(for: end))
+        } else {
+            event.startDate = start
+            event.endDate = max(end, start)
+            event.addAlarm(EKAlarm(relativeOffset: -3600))
+        }
+        do {
+            try store.save(event, span: .thisEvent, commit: true)
+            return true
+        } catch { return false }
+    }
+
     // MARK: Enable / disable
 
     /// Requests full access, enables the mirror and does a first sync. Returns

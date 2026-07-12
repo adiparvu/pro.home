@@ -135,11 +135,8 @@ extension ChatView {
         HapticFeedback.success()
     }
 
-    func sendEvent(title: String, details: String, date: Date, location: String) async {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
-        let ev = ChatEvent(t: title, d: details.isEmpty ? nil : details,
-                           date: f.string(from: date), loc: location.isEmpty ? nil : location)
-        guard let body = ev.encoded() else { return }
+    func sendEvent(_ draft: ChatEventDraft) async {
+        guard let body = draft.payload().encoded() else { return }
         MessageSounds.sent()
         await performGroupSend(body: body, attachmentType: "event", kind: .event)
         HapticFeedback.success()

@@ -41,6 +41,44 @@ final class ChatLogicTests: XCTestCase {
         XCTAssertNil(decoded?.loc)
     }
 
+    /// Bodies written before the end/all-day upgrade must keep decoding —
+    /// old messages live forever in the database.
+    func testChatEventLegacyBodyStillDecodes() {
+        let legacy = #"{"t":"Grătar","d":"La terasă","date":"2026-06-28T18:00:00Z","loc":"Acasă"}"#
+        let decoded = ChatEvent.decode(legacy)
+        XCTAssertEqual(decoded?.t, "Grătar")
+        XCTAssertNil(decoded?.end)
+        XCTAssertNil(decoded?.allDay)
+        XCTAssertFalse(decoded?.isAllDay ?? true)
+        XCTAssertNotNil(decoded?.parsedDate)
+    }
+
+    func testChatEventV2RoundTripKeepsEndAndAllDay() {
+        let ev = ChatEvent(t: "Concediu", d: nil, date: "2026-07-01T00:00:00Z", loc: nil,
+                           end: "2026-07-03T00:00:00Z", allDay: true)
+        let decoded = ChatEvent.decode(ev.encoded())
+        XCTAssertEqual(decoded?.end, "2026-07-03T00:00:00Z")
+        XCTAssertEqual(decoded?.allDay, true)
+        XCTAssertNotNil(decoded?.parsedEnd)
+    }
+
+    func testChatEventDraftPayloadNormalizes() {
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+        // End before start must clamp — the wire payload never carries an
+        // inverted range.
+        let draft = ChatEventDraft(title: "Test", details: "", start: start,
+                                   end: start.addingTimeInterval(-600),
+                                   isAllDay: false, location: "")
+        let payload = draft.payload()
+        XCTAssertNil(payload.d)
+        XCTAssertNil(payload.loc)
+        XCTAssertNil(payload.allDay)
+        guard let s = payload.parsedDate, let e = payload.parsedEnd else {
+            return XCTFail("payload dates must parse")
+        }
+        XCTAssertGreaterThanOrEqual(e, s)
+    }
+
     // MARK: - Offline outbox model
 
     func testPendingMessageCodableGroup() throws {

@@ -422,8 +422,8 @@ struct DirectMessageView: View {
             }
         }
         .sheet(isPresented: $showEventComposer) {
-            EventComposerView { title, details, date, location in
-                Task { await sendDMEvent(title: title, details: details, date: date, location: location) }
+            EventComposerView { draft in
+                Task { await sendDMEvent(draft) }
             }
         }
         .fileImporter(

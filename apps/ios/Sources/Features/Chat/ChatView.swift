@@ -529,8 +529,8 @@ struct ChatView: View {
             }
         }
         .sheet(isPresented: $showEventComposer) {
-            EventComposerView { title, details, date, location in
-                Task { await sendEvent(title: title, details: details, date: date, location: location) }
+            EventComposerView { draft in
+                Task { await sendEvent(draft) }
             }
         }
         .confirmationDialog("Delete message?", isPresented: .init(

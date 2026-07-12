@@ -289,10 +289,13 @@ extension ChatView {
                             myUserId: supabase.auth.currentSession?.user.id,
                             myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                             onPollVote: { idx in
-                                guard let pid = propertyId, let poll = ChatPoll.decode(msg.body) else { return }
+                                guard let pid = propertyId else { return }
+                                // Polls carry their multi flag in the body;
+                                // event RSVPs are always single-choice.
+                                let multi = ChatPoll.decode(msg.body)?.multi ?? false
                                 Task { await messageService.togglePollVote(
                                     messageId: msg.id, propertyId: pid,
-                                    optionIndex: idx, voterName: senderName, multi: poll.multi) }
+                                    optionIndex: idx, voterName: senderName, multi: multi) }
                             },
                             onLongPress: { menuMessage = msg },
                             isGroupStart: !prevSameSender,

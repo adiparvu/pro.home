@@ -21,8 +21,13 @@ struct ChatPoll: Codable {
 struct ChatEvent: Codable {
     let t: String
     let d: String?
-    let date: String   // ISO8601
+    let date: String   // ISO8601 start
     let loc: String?
+    /// ISO8601 end — absent on pre-upgrade payloads, which render as a
+    /// single start moment exactly like before.
+    var end: String? = nil
+    /// All-day flag — absent (nil) on pre-upgrade payloads ⇒ timed event.
+    var allDay: Bool? = nil
 
     static func decode(_ body: String?) -> ChatEvent? {
         guard let data = body?.data(using: .utf8) else { return nil }
@@ -33,10 +38,71 @@ struct ChatEvent: Codable {
         return String(data: data, encoding: .utf8)
     }
     var parsedDate: Date? { ISODate.date(from: date) }
-    var dateDisplay: String {
-        guard let d = parsedDate else { return date }
-        let out = DateFormatter(); out.dateFormat = "EEE, d MMM • HH:mm"; out.locale = .current
-        return out.string(from: d)
+    var parsedEnd: Date? { end.flatMap { ISODate.date(from: $0) } }
+    var isAllDay: Bool { allDay ?? false }
+
+    // Cached formatters — bubbles re-render on every scroll pass and
+    // DateFormatter construction is expensive. Localized templates follow
+    // the user's region (incl. 12/24-hour preference).
+    private static let dayFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current
+        f.setLocalizedDateFormatFromTemplate("EEEdMMM")
+        return f
+    }()
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current
+        f.setLocalizedDateFormatFromTemplate("jmm")
+        return f
+    }()
+
+    /// The bubble's formatted, all-day-aware date range. Legacy payloads
+    /// (no `end`) keep their historical "day • time" rendering.
+    var scheduleDisplay: String {
+        guard let start = parsedDate else { return date }
+        let cal = Calendar.current
+        let day = Self.dayFmt.string(from: start)
+        if isAllDay {
+            if let e = parsedEnd, !cal.isDate(start, inSameDayAs: e) {
+                return "\(day) – \(Self.dayFmt.string(from: e))"
+            }
+            return day
+        }
+        let t1 = Self.timeFmt.string(from: start)
+        guard let e = parsedEnd, e > start else { return "\(day) • \(t1)" }
+        let t2 = Self.timeFmt.string(from: e)
+        if cal.isDate(start, inSameDayAs: e) {
+            return "\(day) • \(t1)–\(t2)"
+        }
+        return "\(day), \(t1) – \(Self.dayFmt.string(from: e)), \(t2)"
+    }
+}
+
+// MARK: - Event draft (composer → sender)
+
+/// Everything the composer collected. `payload()` is the single wire encoder
+/// for both engines (group JSON body and DM marker body), so the two send
+/// paths can never drift.
+struct ChatEventDraft {
+    let title: String
+    let details: String
+    let start: Date
+    let end: Date
+    let isAllDay: Bool
+    let location: String
+
+    /// The wire payload. All-day dates normalize to local start-of-day; the
+    /// end never precedes the start.
+    func payload() -> ChatEvent {
+        let cal = Calendar.current
+        let s = isAllDay ? cal.startOfDay(for: start) : start
+        let e = max(isAllDay ? cal.startOfDay(for: end) : end, s)
+        return ChatEvent(
+            t: title,
+            d: details.isEmpty ? nil : details,
+            date: ISODate.string(from: s),
+            loc: location.isEmpty ? nil : location,
+            end: ISODate.string(from: e),
+            allDay: isAllDay ? true : nil)
     }
 }
 
@@ -223,15 +289,25 @@ struct EventBubble: View {
     let event: ChatEvent
     let isOwn: Bool
     var bubbleColor: Color = Color.blue.opacity(0.75)
+    /// RSVP responses, stored through the poll-vote infrastructure
+    /// (option 0 = going, option 1 = can't go).
+    var votes: [PollVote] = []
+    var myUserId: UUID? = nil
+    /// Provided only where RSVP storage exists (group chat — the DM engine
+    /// has no vote table); nil hides the buttons entirely.
+    var onRSVP: ((Int) -> Void)? = nil
 
     /// Readable foreground over the themed bubble fill.
     private var onBubble: Color { bubbleColor.readableText }
+
+    static let rsvpGoing = 0
+    static let rsvpDeclined = 1
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar").font(AppFont.scaled(12))
-                Text("Event").font(AppFont.label)
+                Text("ev_bubble_kind").font(AppFont.label)
             }
             .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.red)
 
@@ -245,7 +321,7 @@ struct EventBubble: View {
                     .lineLimit(3)
             }
 
-            Label(event.dateDisplay, systemImage: "clock")
+            Label(scheduleText, systemImage: "calendar")
                 .font(AppFont.scaled(12))
                 .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
 
@@ -265,11 +341,73 @@ struct EventBubble: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
+
+            if let onRSVP {
+                Divider().overlay(isOwn ? onBubble.opacity(0.25) : Color.primary.opacity(0.12))
+
+                HStack(spacing: AppSpacing.sm) {
+                    rsvpChip(option: Self.rsvpGoing, title: "ev_rsvp_yes",
+                             icon: "checkmark.circle", accent: isOwn ? onBubble : .brandSuccess,
+                             action: onRSVP)
+                    rsvpChip(option: Self.rsvpDeclined, title: "ev_rsvp_no",
+                             icon: "xmark.circle",
+                             accent: isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis),
+                             action: onRSVP)
+                }
+
+                let going = PollTally.count(votes, option: Self.rsvpGoing)
+                if going > 0 {
+                    // RO "participă" is invariant across counts, so a plain
+                    // format string stays grammatical for 1 and many.
+                    Text(String(format: String(localized: "ev_rsvp_going_fmt"), going))
+                        .font(AppFont.scaled(11))
+                        .foregroundStyle(isOwn ? onBubble.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
+                }
+            }
         }
         .padding(AppSpacing.base)
         .frame(maxWidth: 260, alignment: .leading)
         .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var scheduleText: String {
+        event.isAllDay
+            ? "\(event.scheduleDisplay) · \(String(localized: "ev_all_day"))"
+            : event.scheduleDisplay
+    }
+
+    /// One RSVP capsule: my choice fills and strokes in the accent, the
+    /// count rides inside so tallies are always live.
+    private func rsvpChip(option: Int, title: LocalizedStringKey, icon: String,
+                          accent: Color, action: @escaping (Int) -> Void) -> some View {
+        let count = PollTally.count(votes, option: option)
+        let mine = PollTally.didVote(votes, option: option, userId: myUserId)
+        return Button {
+            HapticFeedback.impact(.light)
+            action(option)
+        } label: {
+            HStack(spacing: AppSpacing.xxs) {
+                Image(systemName: mine ? icon + ".fill" : icon)
+                    .font(AppFont.scaled(13))
+                Text(title)
+                    .font(AppFont.captionStrong)
+                if count > 0 {
+                    Text(verbatim: "\(count)")
+                        .font(AppFont.captionStrong)
+                        .opacity(0.75)
+                }
+            }
+            .foregroundStyle(accent)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.xs)
+            .background(accent.opacity(mine ? 0.22 : (isOwn ? 0.10 : AppOpacity.subtleFill)),
+                        in: Capsule())
+            .overlay(Capsule().strokeBorder(accent.opacity(mine ? 0.5 : 0), lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(mine ? .isSelected : [])
     }
 
     private func addToCalendar() {
@@ -284,8 +422,14 @@ struct EventBubble: View {
             guard let calendar else { DispatchQueue.main.async { HapticFeedback.warning() }; return }
             let ek = EKEvent(eventStore: store)
             ek.title = event.t
-            ek.startDate = start
-            ek.endDate = start.addingTimeInterval(3600)
+            if event.isAllDay {
+                ek.isAllDay = true
+                ek.startDate = start
+                ek.endDate = event.parsedEnd.map { max($0, start) } ?? start
+            } else {
+                ek.startDate = start
+                ek.endDate = event.parsedEnd.map { max($0, start) } ?? start.addingTimeInterval(3600)
+            }
             ek.notes = event.d
             ek.location = event.loc
             ek.calendar = calendar
@@ -358,13 +502,34 @@ struct PollComposerView: View {
 // MARK: - Event composer
 
 struct EventComposerView: View {
-    let onSend: (String, String, Date, String) -> Void
+    let onSend: (ChatEventDraft) -> Void
     @Environment(\.dismiss) private var dismiss
 
     @State private var title = ""
     @State private var details = ""
-    @State private var date = Date()
+    @State private var allDay = false
+    @State private var start = Date()
+    @State private var end = Date().addingTimeInterval(3600)
     @State private var location = ""
+    @State private var addToAppleCalendar = false
+    @State private var showLocationPicker = false
+
+    private var canSend: Bool {
+        !title.trimmingCharacters(in: .whitespaces).isEmpty && (allDay || end >= start)
+    }
+
+    /// Bridges the free-text location to the shared Apple Maps search picker
+    /// (the tasks form's). Only the visible name flows back — the chat event
+    /// payload is text-only, so no coordinates are invented.
+    private var pickedLocation: Binding<TaskLocationValue?> {
+        Binding(
+            get: {
+                let t = location.trimmingCharacters(in: .whitespaces)
+                return t.isEmpty ? nil : TaskLocationValue(name: t, lat: nil, lon: nil)
+            },
+            set: { location = $0?.name ?? "" }
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -374,29 +539,87 @@ struct EventComposerView: View {
                     Section {
                         TextField("Add the event name", text: $title)
                         TextField("Add a description (optional)", text: $details, axis: .vertical)
+                            .lineLimit(1...4)
+                    } header: {
+                        Label("ev_section_details", systemImage: "square.and.pencil")
                     }
+
                     Section {
-                        DatePicker("Starts", selection: $date)
+                        Toggle("ev_all_day", isOn: $allDay.animation(.snappy(duration: 0.25)))
+                        DatePicker("Starts", selection: $start,
+                                   displayedComponents: allDay ? [.date] : [.date, .hourAndMinute])
+                        DatePicker("ev_ends", selection: $end, in: start...,
+                                   displayedComponents: allDay ? [.date] : [.date, .hourAndMinute])
+                    } header: {
+                        Label("ev_section_schedule", systemImage: "clock")
                     }
+
                     Section {
-                        TextField("Add the location (optional)", text: $location)
+                        HStack(spacing: AppSpacing.sm) {
+                            TextField("Add the location (optional)", text: $location)
+                            Button {
+                                HapticFeedback.impact(.light)
+                                showLocationPicker = true
+                            } label: {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(AppFont.scaled(20))
+                                    .foregroundStyle(Color.brandPurple)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text("ev_location_search"))
+                        }
+                    } header: {
+                        Label("ev_section_location", systemImage: "mappin.and.ellipse")
+                    }
+
+                    Section {
+                        Toggle("ev_add_apple_cal", isOn: $addToAppleCalendar)
+                    } footer: {
+                        Text("ev_add_apple_cal_footer")
                     }
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Create an event")
+            .navigationTitle(Text("ev_new_title"))
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: start) { old, new in
+                // Apple Calendar behavior: moving the start slides the end to
+                // preserve the chosen duration (and end can never precede start).
+                end = max(end.addingTimeInterval(new.timeIntervalSince(old)), new)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Send") {
-                        onSend(title.trimmingCharacters(in: .whitespaces), details.trimmingCharacters(in: .whitespaces), date, location.trimmingCharacters(in: .whitespaces))
-                        dismiss()
-                    }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button("Send") { send() }
+                        .disabled(!canSend)
                 }
+            }
+            .sheet(isPresented: $showLocationPicker) {
+                TaskLocationPickerSheet(location: pickedLocation)
             }
         }
         .presentationBackground(.thinMaterial)
+    }
+
+    private func send() {
+        let draft = ChatEventDraft(
+            title: title.trimmingCharacters(in: .whitespaces),
+            details: details.trimmingCharacters(in: .whitespaces),
+            start: start, end: max(end, start), isAllDay: allDay,
+            location: location.trimmingCharacters(in: .whitespaces))
+        onSend(draft)
+        if addToAppleCalendar {
+            // Device-local Apple Calendar write — independent of the message
+            // send, so it survives this sheet's dismissal.
+            Task { @MainActor in
+                let ok = await HouseCalendarMirror.addChatEvent(
+                    title: draft.title,
+                    notes: draft.details.isEmpty ? nil : draft.details,
+                    location: draft.location.isEmpty ? nil : draft.location,
+                    start: draft.start, end: draft.end, isAllDay: draft.isAllDay)
+                if !ok { HapticFeedback.warning() }
+            }
+        }
+        dismiss()
     }
 }
