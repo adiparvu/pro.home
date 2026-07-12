@@ -76116,6 +76116,86 @@
           }
         }
       }
+    },
+    "PHOTO (OPTIONAL)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PHOTO (OPTIONAL)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FOTOGRAFIE (OPȚIONAL)"
+          }
+        }
+      }
+    },
+    "Plant photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plant photo"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie plantă"
+          }
+        }
+      }
+    },
+    "plant_auto_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rule name (optional)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numele regulii (opțional)"
+          }
+        }
+      }
+    },
+    "cal_doc_renewal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renewal due"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reînnoire scadentă"
+          }
+        }
+      }
+    },
+    "cal_doc_alert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document reminder"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memento document"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -664,6 +664,10 @@ struct DocumentDetailView: View {
             } else {
                 await MainActor.run { sharePayload = SharePayload([url]) }
             }
+            // History (D5): the file left the app via the share sheet. The
+            // .downloaded kind existed with full render support but was never
+            // emitted. Best-effort — never blocks the share.
+            await DocumentEventsService.log(documentId: live.id, kind: .downloaded)
         }
     }
 }

@@ -106,15 +106,25 @@ enum HouseAgenda {
                 deepLink: "prvio://tasks/\(t.id.uuidString)"))
         }
 
-        // Documents — expiry dates.
+        // Documents — expiry, plus the renewal date and the user-chosen custom
+        // alert (both were collected and displayed but never reminded). Emitted
+        // in priority order with a per-day dedup: same-day duplicates would
+        // collide on occurrenceKey and triple-notify for one document.
         for doc in documents {
-            guard let raw = doc.expiresAt, let d = AppDate.day(from: raw), inRange(d) else { continue }
-            out.append(AgendaItem(
-                category: .document, date: d, hasTime: false,
-                title: doc.name,
-                subtitle: String(format: String(localized: "cal_expires_fmt"), doc.expiresDisplay ?? ""),
-                sourceId: doc.id.uuidString, isCompleted: false,
-                deepLink: "prvio://documents/\(doc.id.uuidString)"))
+            var seenDays = Set<String>()
+            func emitDocDay(_ raw: String?, subtitle: String) {
+                guard let raw, let d = AppDate.day(from: raw), inRange(d),
+                      seenDays.insert(AppDate.dayString(from: d)).inserted else { return }
+                out.append(AgendaItem(
+                    category: .document, date: d, hasTime: false,
+                    title: doc.name, subtitle: subtitle,
+                    sourceId: doc.id.uuidString, isCompleted: false,
+                    deepLink: "prvio://documents/\(doc.id.uuidString)"))
+            }
+            emitDocDay(doc.expiresAt,
+                       subtitle: String(format: String(localized: "cal_expires_fmt"), doc.expiresDisplay ?? ""))
+            emitDocDay(doc.renewAt, subtitle: String(localized: "cal_doc_renewal"))
+            emitDocDay(doc.notifyAt, subtitle: String(localized: "cal_doc_alert"))
         }
 
         // Appliance warranty ends.

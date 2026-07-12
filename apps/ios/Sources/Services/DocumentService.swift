@@ -245,6 +245,16 @@ final class DocumentService {
             }
             await DocumentEventsService.log(documentId: doc.id, kind: .edited,
                                             details: details)
+            // A distinct "renewed" entry when the expiry moved to a LATER day —
+            // the .renewed kind existed with full render support but nothing
+            // ever emitted it. Only a real extension counts; shortening or
+            // clearing the date stays a plain edit.
+            if let oldExp = old?.expiresAt.flatMap(AppDate.day(from:)),
+               let newExp = doc.expiresAt.flatMap(AppDate.day(from:)),
+               newExp > oldExp {
+                await DocumentEventsService.log(documentId: doc.id, kind: .renewed,
+                                                details: ["expires_at": doc.expiresAt ?? ""])
+            }
         } catch {
             self.error = error.localizedDescription
         }
@@ -289,7 +299,9 @@ final class DocumentService {
             if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
                 documents[idx].hiddenFromFamily = value
             }
-            await DocumentEventsService.log(documentId: doc.id, kind: .edited,
+            // Visibility is a sharing event, not a metadata edit — the .shared
+            // kind existed with full render support but was never emitted.
+            await DocumentEventsService.log(documentId: doc.id, kind: .shared,
                                             details: ["hidden_from_family": value ? "on" : "off"])
         } catch {
             self.error = error.localizedDescription

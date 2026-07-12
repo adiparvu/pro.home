@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 @MainActor
 @Observable
@@ -115,6 +116,27 @@ final class PlantService {
             try await supabase
                 .from("plants").update(PlantHealthScoreUpdate(healthScore: score, healthScoreAt: now))
                 .eq("id", value: plant.id.uuidString).execute()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    /// Uploads the plant's hero photo through the canonical property-imagery
+    /// path (`documents` bucket — the one `StorageImage` on the plant cards
+    /// already resolves and signs) and persists it as `photo_url`. Focused
+    /// single-column update, like `markWatered`. Best-effort: the plant is
+    /// already saved when this runs, so a failed upload only surfaces the
+    /// error and leaves the emoji fallback in place.
+    func setHeroPhoto(_ image: UIImage, for plantId: UUID) async {
+        guard let data = image.uploadJPEG(quality: 0.8, maxDimension: 2048) else { return }
+        do {
+            let url = try await SignedStorage.uploadPublicImage(data, folder: "plants")
+            let now = ISODate.string(from: Date())
+            if let i = plants.firstIndex(where: { $0.id == plantId }) {
+                plants[i].photoUrl = url
+                plants[i].updatedAt = now
+            }
+            try await supabase
+                .from("plants").update(PlantHeroPhotoUpdate(photoUrl: url, updatedAt: now))
+                .eq("id", value: plantId.uuidString).execute()
         } catch { self.error = error.localizedDescription }
     }
 

@@ -195,6 +195,7 @@ struct PlantAutomationBuilderSheet: View {
                         sensorCard
                         thresholdCard
                         actionCard
+                        nameCard
                         Spacer(minLength: AppSpacing.xl)
                     }
                     .padding(AppSpacing.lg)
@@ -339,6 +340,28 @@ struct PlantAutomationBuilderSheet: View {
                         }
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    // MARK: Rule name
+
+    /// Optional custom name. `save()` always supported one, but no field was
+    /// bound to `name`, so every rule silently took the auto-generated
+    /// default — which now doubles as the placeholder, so the fallback is
+    /// visible rather than implied.
+    private var nameCard: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Label("plant_auto_name", systemImage: "tag")
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                TextField(defaultName, text: $name)
+                    .font(AppFont.footnote)
+                    .tint(.accentColor)
+                    .padding(AppSpacing.md)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

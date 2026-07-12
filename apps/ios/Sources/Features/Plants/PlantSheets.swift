@@ -224,7 +224,7 @@ struct AddPlantSheet: View {
 
     private var plantPhotoSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("FOTOGRAFIE (OPȚIONAL)")
+            fieldLabel("PHOTO (OPTIONAL)")
             Button { showPhotoMenu = true } label: {
                 ZStack {
                     if let data = selectedImageData, let img = UIImage(data: data) {
@@ -241,7 +241,7 @@ struct AddPlantSheet: View {
                                     Image(systemName: "camera.fill")
                                         .font(AppFont.scaled(24))
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
-                                    Text("Adaugă fotografie")
+                                    Text("Add photo")
                                         .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
@@ -277,11 +277,11 @@ struct AddPlantSheet: View {
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5
                     )
             )
-            .confirmationDialog("Fotografie plantă", isPresented: $showPhotoMenu) {
-                Button("Cameră") { showCamera = true }
-                Button("Bibliotecă") { showLibrary = true }
-                Button("Fișiere") { showFileImporter = true }
-                Button("Anulează", role: .cancel) {}
+            .confirmationDialog("Plant photo", isPresented: $showPhotoMenu) {
+                Button("Camera") { showCamera = true }
+                Button("Library") { showLibrary = true }
+                Button("Files") { showFileImporter = true }
+                Button("Cancel", role: .cancel) {}
             }
         }
     }
@@ -519,8 +519,11 @@ struct AddPlantSheet: View {
         Task {
             do {
                 let plant = try await plantService.add(payload)
-                if let data = selectedImageData {
-                    await PlantImageStore.save(data, for: plant.id)
+                if let data = selectedImageData, let image = UIImage(data: data) {
+                    // Upload + photo_url — the hero used to be written only to a
+                    // device-local file no view ever read, so cards always fell
+                    // back to the emoji. Now it syncs like every other photo.
+                    await plantService.setHeroPhoto(image, for: plant.id)
                 }
                 HapticFeedback.success()
                 dismiss()
@@ -532,35 +535,6 @@ struct AddPlantSheet: View {
     }
 }
 
-// MARK: - Local image store for plants
-
-enum PlantImageStore {
-    private static func url(for id: UUID) -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("plant_\(id.uuidString).jpg")
-    }
-
-    /// Recompression is a full decode + JPEG encode — real CPU time that has
-    /// no business on the main actor. Same bytes end up on disk as before.
-    static func save(_ data: Data, for id: UUID) async {
-        let dest = url(for: id)
-        await Task.detached(priority: .utility) {
-            let compressed: Data
-            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
-                compressed = jpg
-            } else {
-                compressed = data
-            }
-            try? compressed.write(to: dest)
-        }.value
-    }
-
-    static func load(for id: UUID) -> UIImage? {
-        guard let data = try? Data(contentsOf: url(for: id)) else { return nil }
-        return UIImage(data: data)
-    }
-
-    static func delete(for id: UUID) {
-        try? FileManager.default.removeItem(at: url(for: id))
-    }
-}
+// (PlantImageStore is gone — it wrote the add-form hero photo to a
+// device-local file that no view ever read back. The hero now uploads through
+// PlantService.setHeroPhoto and syncs via photo_url like every other photo.)

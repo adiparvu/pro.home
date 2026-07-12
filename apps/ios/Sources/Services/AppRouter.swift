@@ -74,6 +74,7 @@ final class AppRouter {
     // Deep link destinations
     var deepLinkTaskId: UUID?
     var deepLinkPlantId: UUID?
+    var deepLinkDocumentId: UUID?
 
     // MARK: - Single navigation authority
     //
@@ -87,7 +88,8 @@ final class AppRouter {
     enum AppRoute: Equatable {
         case home, tasks(id: UUID?), newTask, plants(id: UUID?), supplies,
              pantry, cameras, deliveries, chat, familyChat, scan, receipts,
-             notifications, notificationsChat, aria, twin, settings, documents, finances,
+             notifications, notificationsChat, aria, twin, settings,
+             documents(id: UUID?), finances,
              inventory, family, profile, contractors, paintColors,
              photoJournal, addSupply, communities(groupId: UUID?), emergency,
              iotHub
@@ -195,7 +197,8 @@ final class AppRouter {
             push(.cameras)
         case .deliveries:
             push(.deliveries)
-        case .documents:
+        case .documents(let id):
+            deepLinkDocumentId = id
             push(.documents)
         case .finances:
             push(.finances)
@@ -262,7 +265,7 @@ final class AppRouter {
         case .finances:   navigate(to: .finances)
         case .chat:       navigate(to: .chat)
         case .waterPlant: navigate(to: .plants(id: nil))
-        case .documents:  navigate(to: .documents)
+        case .documents:  navigate(to: .documents(id: nil))
         case .deliveries: navigate(to: .deliveries)
         case .digitalTwin: selectedTab = .digitalTwin
         // Creation forms stay modal sheets (HIG). Cameras go full-screen.
@@ -322,7 +325,7 @@ final class AppRouter {
         case "iot":
             navigate(to: .iotHub)
         case "documents":
-            navigate(to: .documents)
+            navigate(to: .documents(id: pathId))
         case "finances":
             navigate(to: .finances)
         case "inventory":
@@ -362,7 +365,7 @@ final class AppRouter {
         case "chat":                    return .chat
         case "maintenance", "tasks":    return .tasks(id: id)
         case "garden", "plants":        return .plants(id: id)
-        case "documents", "document":   return .documents
+        case "documents", "document":   return .documents(id: id)
         case "inventory":               return .inventory
         case "finance", "finances":     return .finances
         case "delivery", "deliveries":  return .deliveries

@@ -608,7 +608,7 @@ struct GlobalSearchSheet: View {
                     resultRow(d.name, subtitle: d.expiresDisplay ?? String(localized: "No expiry"),
                               icon: "doc.fill", color: .orange,
                               isLast: d.id == docResults.prefix(8).last?.id) {
-                        navigateAway(route: .documents)
+                        navigateAway(route: .documents(id: nil))
                     }
                 }
             }

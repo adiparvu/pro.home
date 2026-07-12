@@ -655,7 +655,7 @@ struct EmergencyModeView: View {
                 VStack(spacing: 8) {
                     ForEach(docs) { doc in
                         Button {
-                            router.navigate(to: .documents)
+                            router.navigate(to: .documents(id: nil))
                         } label: {
                             HStack(spacing: 12) {
                                 ColoredIconBadge(icon: doc.categoryIcon, color: Color.brandSuccess)

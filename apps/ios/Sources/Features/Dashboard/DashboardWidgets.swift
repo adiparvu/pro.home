@@ -89,7 +89,7 @@ extension DashboardView {
                     : "\(documentService.expiringDocs.count)",
                 subtitle: documentService.expiringDocs.isEmpty ? String(localized: "total") : String(localized: "expiring soon"),
                 badge: documentService.expiringDocs.count
-            ) { router.navigate(to: .documents) }
+            ) { router.navigate(to: .documents(id: nil)) }
 
         case .family:
             HomeWidget(

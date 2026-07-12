@@ -85,8 +85,14 @@ struct PlantHealthScore {
     /// Colour band for the ring, using design-system brand tokens.
     var color: Color {
         guard let v = value else { return .secondary }
-        switch v {
-        case 80...:  return .brandSuccess
+        return Self.color(for: v)
+    }
+
+    /// Band colour for a bare persisted score — passive surfaces (the plant
+    /// card badge) show the stored value without recomputing the full score.
+    static func color(for value: Int) -> Color {
+        switch value {
+        case 80...:   return .brandSuccess
         case 60..<80: return Color(red: 0.55, green: 0.78, blue: 0.35) // healthy lime
         case 40..<60: return .brandWarning
         default:      return .brandDanger

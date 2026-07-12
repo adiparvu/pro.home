@@ -268,6 +268,22 @@ struct PlantCard: View {
     let plant: Plant
     let onTap: () -> Void
 
+    private var emojiBanner: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    plant.healthColor.opacity(0.18),
+                    plant.healthColor.opacity(0.07)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Text(plant.emoji)
+                .font(AppFont.scaled(44))
+        }
+        .frame(height: 80)
+    }
+
     var body: some View {
         Button(action: {
             HapticFeedback.impact(.light)
@@ -276,18 +292,38 @@ struct PlantCard: View {
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     ZStack {
-                        LinearGradient(
-                            colors: [
-                                plant.healthColor.opacity(0.18),
-                                plant.healthColor.opacity(0.07)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .frame(height: 80)
-
-                        Text(plant.emoji)
-                            .font(AppFont.scaled(44))
+                        // The real hero photo when one exists; the emoji banner
+                        // is also the stand-in while it loads or fails.
+                        if let urlStr = plant.photoUrl, !urlStr.isEmpty {
+                            StorageImage(source: urlStr, targetSize: 180) { phase in
+                                if case .success(let img) = phase {
+                                    img.resizable().scaledToFill()
+                                } else {
+                                    emojiBanner
+                                }
+                            }
+                            .frame(height: 80)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                        } else {
+                            emojiBanner
+                        }
+                    }
+                    // The persisted Health Score (P6) as a passive badge — the
+                    // pipeline stored it on every recompute but no surface read
+                    // it back until now. Shown only when a real score exists.
+                    .overlay(alignment: .topTrailing) {
+                        if let score = plant.healthScore {
+                            Text(verbatim: "\(score)")
+                                .font(AppFont.scaled(11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 3)
+                                .background(PlantHealthScore.color(for: score).opacity(0.9),
+                                            in: Capsule())
+                                .padding(6)
+                                .accessibilityLabel(Text("plant_score_title"))
+                                .accessibilityValue(Text(verbatim: "\(score)"))
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 4) {

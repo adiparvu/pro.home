@@ -162,7 +162,7 @@ struct PersonalSpaceHome: View {
         GlassCard {
             Button {
                 HapticFeedback.impact(.light)
-                router.navigate(to: .documents)
+                router.navigate(to: .documents(id: nil))
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "doc.text.fill")

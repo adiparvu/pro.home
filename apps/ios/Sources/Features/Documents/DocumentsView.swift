@@ -5,6 +5,7 @@ import QuickLook
 struct DocumentsView: View {
     @Environment(DocumentService.self) private var documentService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppRouter.self) private var router
     @State private var search = ""
     @State private var selectedCategory: String? = nil
     @State private var showAdd = false
@@ -32,6 +33,13 @@ struct DocumentsView: View {
     }
 
     @State private var sortOrder: DocSort = .recent
+
+    private func resolveDocumentDeepLink() {
+        guard let id = router.deepLinkDocumentId,
+              let doc = documentService.documents.first(where: { $0.id == id }) else { return }
+        selectedDoc = doc
+        router.deepLinkDocumentId = nil
+    }
 
     private func filtered(favs: Set<String>) -> [DocumentModel] {
         var docs = documentService.documents
@@ -181,6 +189,11 @@ struct DocumentsView: View {
         // Fetch only after a cold cache — re-appearances (navigation pops,
         // sheet dismissals) shouldn't refire the network round-trip.
         .task { if documentService.documents.isEmpty { await documentService.load() } }
+        // Deep link: an expiry notification / prvio://documents/<id> asks for a
+        // specific document — resolve once loaded (mirrors the plants pattern;
+        // the id used to be emitted but dropped, landing on the bare list).
+        .onChange(of: router.deepLinkDocumentId) { resolveDocumentDeepLink() }
+        .task(id: documentService.documents.count) { resolveDocumentDeepLink() }
         .sheet(isPresented: $showAdd, onDismiss: { pendingScan = nil }) {
             if let propertyId = propertyService.primary?.id {
                 AddDocumentSheet(propertyId: propertyId, initialScan: pendingScan) {

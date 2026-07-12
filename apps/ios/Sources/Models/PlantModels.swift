@@ -326,6 +326,18 @@ struct PlantHealthScoreUpdate: Encodable {
     }
 }
 
+/// Persists the plant's hero photo URL after upload. Focused single-purpose
+/// update, like `PlantWateringUpdate`, so a normal save can't clobber it.
+struct PlantHeroPhotoUpdate: Encodable {
+    let photoUrl: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case photoUrl  = "photo_url"
+        case updatedAt = "updated_at"
+    }
+}
+
 /// Links (or unlinks, when nil) a plant to its `plant_species` encyclopedia
 /// entry. Kept separate from `PlantUpdate` so the edit form never touches it
 /// (mirrors `PlantWateringUpdate`).
