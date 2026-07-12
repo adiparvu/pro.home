@@ -528,7 +528,7 @@ final class DirectMessageService {
     }
 
     func markRead(thread: DMThread) {
-        UserDefaults.standard.set(Date(), forKey: "dm.lastseen.id.\(thread.storeKey.uuidString)")
+        lastSeenCursor(for: thread).markSeen()
         localRevision &+= 1
         revision &+= 1
     }
@@ -918,21 +918,17 @@ final class DirectMessageService {
     /// member id for roster-backed threads so existing marks survive). The
     /// pre-phase-B key was the display name; migrate it forward once so no
     /// conversation flashes fully-unread after updating.
-    private func lastSeenDate(for thread: DMThread) -> Date {
-        let idKey = "dm.lastseen.id.\(thread.storeKey.uuidString)"
-        if let d = UserDefaults.standard.object(forKey: idKey) as? Date { return d }
-        if !thread.memberName.isEmpty,
-           let legacy = UserDefaults.standard.object(forKey: "dm.lastseen.\(thread.memberName)") as? Date {
-            UserDefaults.standard.set(legacy, forKey: idKey)
-            UserDefaults.standard.removeObject(forKey: "dm.lastseen.\(thread.memberName)")
-            return legacy
-        }
-        return .distantPast
+    /// The shared cursor for one thread — same key (and pre-identity legacy
+    /// key migration) the hand-rolled code used, so no stored data moves.
+    private func lastSeenCursor(for thread: DMThread) -> LastSeenCursor {
+        LastSeenCursor(
+            key: "dm.lastseen.id.\(thread.storeKey.uuidString)",
+            legacyKey: thread.memberName.isEmpty ? nil : "dm.lastseen.\(thread.memberName)")
     }
 
     /// This device's last-open time for a conversation — captured before
     /// `markRead` so the view can place the "unread messages" divider.
-    func lastSeen(for thread: DMThread) -> Date { lastSeenDate(for: thread) }
+    func lastSeen(for thread: DMThread) -> Date { lastSeenCursor(for: thread).date }
 
     /// The earliest inbound message in `thread` newer than `since` — where the
     /// unread divider goes. `dms` is oldest→newest, so `.first` is the earliest.

@@ -458,13 +458,15 @@ final class MessageService {
 
     // MARK: - Local "last seen" marker (drives the unread-messages divider)
 
-    private func lastSeenKey(_ propertyId: UUID) -> String { "chat.lastseen.\(propertyId.uuidString)" }
+    /// The shared cursor for the group conversation — same key the
+    /// hand-rolled code used, so no stored data moves.
+    private func lastSeenCursor(_ propertyId: UUID) -> LastSeenCursor {
+        LastSeenCursor(key: "chat.lastseen.\(propertyId.uuidString)")
+    }
 
     /// The moment this device last had the conversation open. Device-local (not
     /// synced) — its only job is to place the "unread messages" divider.
-    func lastSeen(propertyId: UUID) -> Date {
-        (UserDefaults.standard.object(forKey: lastSeenKey(propertyId)) as? Date) ?? .distantPast
-    }
+    func lastSeen(propertyId: UUID) -> Date { lastSeenCursor(propertyId).date }
 
     /// The id of the first message the viewer hasn't seen yet — the earliest
     /// message from someone else newer than `since`. nil when all is caught up.
@@ -475,7 +477,7 @@ final class MessageService {
     }
 
     func markSeen(propertyId: UUID) {
-        UserDefaults.standard.set(Date(), forKey: lastSeenKey(propertyId))
+        lastSeenCursor(propertyId).markSeen()
     }
 
     func togglePin(_ message: Message) async {
