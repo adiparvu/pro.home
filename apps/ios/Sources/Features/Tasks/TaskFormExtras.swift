@@ -245,6 +245,8 @@ struct TaskLocationPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var model = TaskLocationSearchModel()
+    @State private var nearby = TaskNearbyPlacesModel()
+    @State private var remembered = TaskLocationMemory.load()
     @State private var query = ""
     @State private var isResolving = false
 
@@ -255,41 +257,11 @@ struct TaskLocationPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if !trimmedQuery.isEmpty {
-                    Button {
-                        location = TaskLocationValue(name: trimmedQuery, lat: nil, lon: nil)
-                        dismiss()
-                    } label: {
-                        Label {
-                            Text(String(format: String(localized: "task_location_use_text"), trimmedQuery))
-                                .foregroundStyle(.primary)
-                        } icon: {
-                            Image(systemName: "character.cursor.ibeam")
-                                .foregroundStyle(Color.brandPurple)
-                        }
-                    }
-                }
-
-                ForEach(model.results, id: \.self) { completion in
-                    Button {
-                        resolve(completion)
-                    } label: {
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: completion.title)
-                                    .foregroundStyle(.primary)
-                                if !completion.subtitle.isEmpty {
-                                    Text(verbatim: completion.subtitle)
-                                        .font(AppFont.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        } icon: {
-                            Image(systemName: "mappin.circle.fill")
-                                .foregroundStyle(Color.brandDanger)
-                        }
-                    }
-                    .disabled(isResolving)
+                if trimmedQuery.isEmpty {
+                    rememberedSections
+                    nearbySection
+                } else {
+                    searchContent
                 }
             }
             .listStyle(.insetGrouped)
@@ -303,13 +275,146 @@ struct TaskLocationPickerSheet: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: Text("task_location_search"))
             .onChange(of: query) { _, q in model.update(query: q) }
+            // Nearby suggestions run only when location permission already
+            // exists (granted via chat/live sharing) — the sheet never prompts.
+            .task { nearby.startIfAuthorized() }
             .overlay {
-                if trimmedQuery.isEmpty && model.results.isEmpty {
+                if trimmedQuery.isEmpty && remembered.isEmpty && nearby.places.isEmpty {
                     EmptyStateView(icon: "mappin.and.ellipse", title: "task_location_hint")
                 }
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    // MARK: Search (free text + live Apple Maps completions)
+
+    @ViewBuilder
+    private var searchContent: some View {
+        Button {
+            select(TaskLocationValue(name: trimmedQuery, lat: nil, lon: nil))
+        } label: {
+            Label {
+                Text(String(format: String(localized: "task_location_use_text"), trimmedQuery))
+                    .foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: "character.cursor.ibeam")
+                    .foregroundStyle(Color.brandPurple)
+            }
+        }
+
+        ForEach(model.results, id: \.self) { completion in
+            Button {
+                resolve(completion)
+            } label: {
+                placeLabel(title: completion.title, subtitle: completion.subtitle,
+                           icon: "mappin.circle.fill", tint: Color.brandDanger)
+            }
+            .disabled(isResolving)
+        }
+    }
+
+    // MARK: Remembered picks (Frecvente / Recente)
+
+    @ViewBuilder
+    private var rememberedSections: some View {
+        let split = TaskLocationMemory.sections(of: remembered)
+        if !split.frequent.isEmpty {
+            Section {
+                ForEach(split.frequent) { rememberedRow($0) }
+            } header: {
+                sectionHeader(icon: "star", title: "locpick_frequent")
+            }
+        }
+        if !split.recent.isEmpty {
+            Section {
+                ForEach(split.recent) { rememberedRow($0) }
+            } header: {
+                sectionHeader(icon: "clock", title: "locpick_recent")
+            }
+        }
+    }
+
+    private func rememberedRow(_ item: RememberedTaskLocation) -> some View {
+        Button {
+            select(item.value)
+        } label: {
+            placeLabel(title: item.name, subtitle: "",
+                       icon: "mappin.circle.fill", tint: Color.brandPurple)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                withAnimation(.snappy(duration: 0.2)) {
+                    remembered = TaskLocationMemory.forget(id: item.id)
+                }
+            } label: {
+                Label("locpick_delete", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: Nearby (only with pre-existing permission AND real results)
+
+    @ViewBuilder
+    private var nearbySection: some View {
+        if !nearby.places.isEmpty {
+            Section {
+                ForEach(Array(nearby.places.enumerated()), id: \.offset) { _, item in
+                    Button {
+                        let coord = item.placemark.coordinate
+                        select(TaskLocationValue(name: item.name ?? "",
+                                                 lat: coord.latitude, lon: coord.longitude))
+                    } label: {
+                        placeLabel(title: item.name ?? "",
+                                   subtitle: item.placemark.title ?? "",
+                                   icon: "location.circle.fill", tint: Color.brandSkyBlue)
+                    }
+                }
+            } header: {
+                sectionHeader(icon: "location", title: "locpick_nearby")
+            }
+        }
+    }
+
+    // MARK: Shared pieces
+
+    private func sectionHeader(icon: String, title: LocalizedStringKey) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(11, weight: .semibold))
+            Text(title)
+                .font(AppFont.scaled(12, weight: .semibold))
+        }
+        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+        .textCase(nil)
+    }
+
+    private func placeLabel(title: String, subtitle: String,
+                            icon: String, tint: Color) -> some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: title)
+                    .foregroundStyle(.primary)
+                if !subtitle.isEmpty {
+                    Text(verbatim: subtitle)
+                        .font(AppFont.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        } icon: {
+            Image(systemName: icon)
+                .foregroundStyle(tint)
+        }
+    }
+
+    /// The single selection path — every pick (search, free text, remembered,
+    /// nearby) is recorded here so Frecvente/Recente reflect real usage.
+    private func select(_ value: TaskLocationValue) {
+        TaskLocationMemory.remember(value)
+        location = value
+        HapticFeedback.impact(.light)
+        dismiss()
     }
 
     /// A tapped completion resolves to a real map item — name + coordinates.
@@ -320,14 +425,12 @@ struct TaskLocationPickerSheet: View {
             let search = MKLocalSearch(request: MKLocalSearch.Request(completion: completion))
             guard let item = try? await search.start().mapItems.first else {
                 // Apple couldn't resolve it — keep the visible name, no coords.
-                location = TaskLocationValue(name: completion.title, lat: nil, lon: nil)
-                dismiss()
+                select(TaskLocationValue(name: completion.title, lat: nil, lon: nil))
                 return
             }
             let coord = item.placemark.coordinate
-            location = TaskLocationValue(name: item.name ?? completion.title,
-                                         lat: coord.latitude, lon: coord.longitude)
-            dismiss()
+            select(TaskLocationValue(name: item.name ?? completion.title,
+                                     lat: coord.latitude, lon: coord.longitude))
         }
     }
 }
@@ -390,15 +493,14 @@ struct TaskDetailPhotoStrip: View {
 
 struct TaskDetailLocationRow: View {
     let task: MaintenanceTask
+    @State private var showNavigationOptions = false
 
     var body: some View {
         if let name = task.locationName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
             Button {
-                guard let lat = task.locationLat, let lon = task.locationLon else { return }
-                let placemark = MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
-                let item = MKMapItem(placemark: placemark)
-                item.name = name
-                item.openInMaps()
+                guard task.locationLat != nil, task.locationLon != nil else { return }
+                HapticFeedback.impact(.light)
+                showNavigationOptions = true
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "mappin.circle.fill")
@@ -421,6 +523,19 @@ struct TaskDetailLocationRow: View {
             }
             .buttonStyle(.plain)
             .disabled(task.locationLat == nil || task.locationLon == nil)
+            // Same hand-off as chat's shared locations: Apple Maps always,
+            // Google Maps / Waze via NavigationAppLauncher's universal-link
+            // fallback — no Places API, no key, no new dependency.
+            .confirmationDialog(Text("locpick_open_in"),
+                                isPresented: $showNavigationOptions,
+                                titleVisibility: .visible) {
+                ForEach(NavigationAppLauncher.availableOptions()) { option in
+                    Button(option.label) {
+                        guard let lat = task.locationLat, let lon = task.locationLon else { return }
+                        NavigationAppLauncher.open(option.id, lat: lat, lon: lon, label: name)
+                    }
+                }
+            }
         }
     }
 }
