@@ -172,13 +172,8 @@ final class AppSettings {
         UserDefaults.standard.set(raw, forKey: actionsKey(host))
     }
 
-    var resolvedColorScheme: ColorScheme? {
-        switch theme {
-        case "light":  return .light
-        case "dark":   return .dark
-        default:       return nil   // system
-        }
-    }
+    // The color scheme now follows the mood engine (AppMood.swift); the
+    // stored `theme` remains only for the profile sync payload below.
 
     // Sync to Supabase profiles after sign-in
     func syncToProfile(userId: UUID) {
