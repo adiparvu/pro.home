@@ -120,6 +120,12 @@ final class InventoryService {
            let uuid = UUID(uuidString: String(qrString.dropFirst(prefix.count))) {
             return items.first { $0.id == uuid }
         }
+        // The app's own printed labels encode https://…/i/<uuid> — the id is
+        // the trailing path component, not a query item.
+        if let url = URL(string: qrString),
+           let uuid = UUID(uuidString: url.lastPathComponent) {
+            return items.first { $0.id == uuid }
+        }
         return nil
     }
 
@@ -173,10 +179,26 @@ final class InventoryService {
             )
             center.add(request)
         }
+        // The day the borrower PROMISED to return it — the one reminder
+        // that actually matters, on the date itself at 09:00.
+        if let due = loan.expectedReturnDate {
+            var comps = Calendar.current.dateComponents([.year, .month, .day], from: due)
+            comps.hour = 9
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Item Not Returned")
+            content.body = String(format: String(localized: "inv_due_today_fmt"),
+                                  item.name, loan.borrowerName)
+            content.sound = .default
+            center.add(UNNotificationRequest(
+                identifier: "inventory.loan.\(item.id.uuidString).due",
+                content: content,
+                trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
+        }
     }
 
     private func cancelLoanNotifications(for item: InventoryItem) {
-        let ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
+        var ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
+        ids.append("inventory.loan.\(item.id.uuidString).due")
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
 }
