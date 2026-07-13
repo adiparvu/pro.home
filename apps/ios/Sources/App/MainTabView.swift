@@ -36,6 +36,13 @@ struct MainTabView: View {
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
     @Environment(\.scenePhase) private var scenePhase
+    /// True once reloadWorld has fully hydrated the services. Guards every
+    /// consumer that would misread "not loaded yet" as "empty" — most
+    /// critically the Apple Calendar mirror, whose reconciliation would
+    /// otherwise prune EVERY event on a cold-launch foreground tick and
+    /// recreate them later (a delete+recreate storm that spams every
+    /// participant of a shared PRVIO calendar with "Deleted by …").
+    @State private var worldLoaded = false
 
     var body: some View {
         @Bindable var router = router
@@ -178,8 +185,10 @@ struct MainTabView: View {
                 // Keep the Apple Calendar mirror current: a deadline that
                 // changed on another device (or a due date that simply passed)
                 // reconciles into the PRVIO calendar on foreground, without the
-                // user having to open the in-app calendar first.
-                if HouseCalendarMirror.isEnabled {
+                // user having to open the in-app calendar first. NEVER before
+                // the world loaded — a pre-load snapshot is empty and would
+                // prune the whole calendar (see worldLoaded).
+                if HouseCalendarMirror.isEnabled, worldLoaded {
                     let snapshot = houseAgendaSnapshot()
                     Task { await HouseCalendarMirror.sync(snapshot) }
                 }
@@ -370,6 +379,10 @@ struct MainTabView: View {
     }
 
     private func reloadWorld(reason: ReloadReason) async {
+        // A context switch empties the services before refilling them — the
+        // mirror (and anything else that treats "empty" as meaningful) must
+        // wait for the refill.
+        worldLoaded = false
         // Phase 1 — identity: property list + role decide the tab layout and
         // every property-scoped load below.
         switch reason {
@@ -446,7 +459,13 @@ struct MainTabView: View {
             await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
         }
         notificationScheduler.registerCategories()
+        worldLoaded = true
         await notificationScheduler.reschedule(agenda: houseAgendaSnapshot())
+        // Mirror from FULL data, exactly once per world load — the foreground
+        // tick above is gated on worldLoaded, so this is the first sync.
+        if HouseCalendarMirror.isEnabled {
+            await HouseCalendarMirror.sync(houseAgendaSnapshot())
+        }
         writeWidgetSnapshot()
         updateDynamicShortcuts()
         await indexSpotlight()

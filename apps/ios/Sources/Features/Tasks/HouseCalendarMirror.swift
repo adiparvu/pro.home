@@ -94,6 +94,16 @@ enum HouseCalendarMirror {
             if let k = key(from: e.url) { byKey[k] = e }
         }
 
+        // Backstop against the wipe-and-recreate storm: an entirely empty
+        // agenda while the calendar still holds mirrored events is far more
+        // likely a snapshot taken before the services loaded than a house
+        // that truly emptied its whole agenda at once. Pruning on it would
+        // delete every event and recreate them on the next sync — and on a
+        // shared PRVIO calendar every participant gets a "Deleted by …"
+        // notification per event, every launch. The world-loaded gate at the
+        // call sites is the real fix; this keeps any future caller honest.
+        if items.isEmpty && !byKey.isEmpty { return }
+
         var wanted = Set<String>()
         for item in items where item.date >= start && item.date <= end {
             wanted.insert(item.occurrenceKey)
