@@ -1,4 +1,5 @@
 import SwiftUI
+import HomeKit
 
 // MARK: - Device hero page (Smart Home S3 — warm glass skin)
 //
@@ -38,10 +39,18 @@ struct SmartDeviceSheet: View {
     @Environment(PropertyService.self) private var propertyService
 
     private let smartHome = SmartHomeService.shared
+    private let homeKit = HomeKitService.shared
 
     /// The device currently shown — starts as the tapped device and moves
     /// with the picker pills (siblings of the same kind in the same room).
     @State private var selectedID: String? = nil
+
+    /// The room name confirmed by the last successful HomeKit assignment —
+    /// bridges the moment between the write landing and the provider
+    /// mirror re-rendering. Set only AFTER the write succeeds (honesty).
+    @State private var assignedRoomName: String? = nil
+    @State private var isAssigningRoom = false
+    @State private var roomAssignError: String? = nil
 
     /// Optimistic power state while the provider round-trip is in flight,
     /// so the toggle doesn't snap back before the accessory confirms.
@@ -96,6 +105,12 @@ struct SmartDeviceSheet: View {
                     if current.capabilities.contains(.color) { softLightCard(current) }
                     if current.capabilities.contains(.targetTemperature) { climateCard(current) }
                     if current.capabilities.contains(.reading) { readingCard(current) }
+                    // Room assignment exists only for HomeKit accessories —
+                    // IoT relays/sensors have no such concept, so they never
+                    // grow the row (honesty law).
+                    if case .homeKit(let accessory) = current.backing {
+                        roomCard(accessory: accessory)
+                    }
                     Spacer(minLength: AppSpacing.xxl)
                 }
                 .padding(.horizontal, AppSpacing.xl)
@@ -113,6 +128,8 @@ struct SmartDeviceSheet: View {
             hueDraft = nil
             targetDraft = nil
             targetWriteTask?.cancel()
+            assignedRoomName = nil
+            roomAssignError = nil
         }
     }
 
@@ -386,6 +403,87 @@ struct SmartDeviceSheet: View {
     /// "21.5°" — locale-aware number, at most one decimal (the 0.5° steps).
     private static func temperatureText(_ celsius: Double) -> String {
         "\(celsius.formatted(.number.precision(.fractionLength(0...1))))°"
+    }
+
+    // MARK: Room assignment — HomeKit accessories only (Apple-Home style)
+
+    /// The "Room" row: the accessory's current room and a menu of the
+    /// home's real rooms; picking one performs the actual
+    /// `assignAccessory` write. Rendered only when the home has rooms to
+    /// move the accessory into — an empty menu would be a dead control.
+    @ViewBuilder
+    private func roomCard(accessory: HMAccessory) -> some View {
+        if let home = homeKit.home(of: accessory) {
+            let rooms = homeKit.rooms(in: home)
+            if !rooms.isEmpty {
+                let currentName = assignedRoomName
+                    ?? accessory.room?.name
+                    ?? String(localized: "hub_room_unassigned")
+                SmartGlassCard(padding: AppSpacing.base) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.md) {
+                            Image(systemName: "door.left.hand.closed")
+                                .font(AppFont.headline)
+                                .foregroundStyle(Color.smartAmber)
+                            Text("hub_device_room")
+                                .font(AppFont.scaled(16, weight: .semibold))
+                                .foregroundStyle(Color.smartTextPrimary)
+                            Spacer(minLength: AppSpacing.sm)
+                            Menu {
+                                ForEach(rooms, id: \.uniqueIdentifier) { room in
+                                    Button {
+                                        assign(accessory, to: room, in: home)
+                                    } label: {
+                                        if room.name == currentName {
+                                            Label(room.name, systemImage: "checkmark")
+                                        } else {
+                                            Text(verbatim: room.name)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: AppSpacing.xxs) {
+                                    Text(verbatim: currentName)
+                                        .font(AppFont.footnoteEmphasis)
+                                        .lineLimit(1)
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(AppFont.captionStrong)
+                                }
+                                .foregroundStyle(Color.smartTextSecondary)
+                            }
+                            .disabled(isAssigningRoom)
+                            .accessibilityLabel(Text("hub_device_room"))
+                            .accessibilityValue(Text(verbatim: currentName))
+                        }
+                        if let roomAssignError {
+                            Text(verbatim: roomAssignError)
+                                .font(AppFont.caption2)
+                                .foregroundStyle(Color.brandWarning)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    private func assign(_ accessory: HMAccessory, to room: HMRoom, in home: HMHome) {
+        HapticFeedback.impact(.light)
+        isAssigningRoom = true
+        roomAssignError = nil
+        Task { @MainActor in
+            defer { isAssigningRoom = false }
+            do {
+                try await homeKit.assignAccessory(accessory, to: room, in: home)
+                assignedRoomName = room.name
+                HapticFeedback.success()
+            } catch {
+                HapticFeedback.error()
+                roomAssignError = String(
+                    format: String(localized: "hub_room_assign_failed"),
+                    error.localizedDescription)
+            }
+        }
     }
 
     // MARK: .reading — live sensor value, large

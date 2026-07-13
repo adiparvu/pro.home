@@ -50,7 +50,7 @@ struct DashboardView: View {
     @State private var activeSheet: DashboardSheet?
 
     private enum DashboardSheet: Int, Identifiable {
-        case notifications, editProfile, search, widgetPicker
+        case notifications, editProfile, hub, widgetPicker
         var id: Int { rawValue }
     }
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
@@ -107,8 +107,11 @@ struct DashboardView: View {
                     EditProfileView()
                         .environment(profileService)
                 }
-            case .search:
-                GlobalSearchSheet()
+            case .hub:
+                // The home hub (search lives inside it, unchanged). The
+                // explicit environments are what GlobalSearchSheet — now
+                // nested one level deeper — always received here.
+                SmartHomeHubSheet()
                     .environment(taskService)
                     .environment(documentService)
                     .environment(plantService)
@@ -116,6 +119,7 @@ struct DashboardView: View {
                     .environment(familyService)
                     .environment(financialService)
                     .environment(elementService)
+                    .environment(zoneService)
                     .environment(router)
             case .widgetPicker:
                 WidgetPickerSheet()
@@ -165,13 +169,14 @@ struct DashboardView: View {
     // MARK: - Header
 
     /// The reference's airy smart-home header: the hamburger-style menu
-    /// glyph on the left (a REAL control — it opens the existing global
-    /// search), the small date beside it, bell + avatar on the right, and
-    /// the LARGE light-weight two-line greeting beneath.
+    /// glyph on the left (a REAL control — it opens the home hub: search,
+    /// devices, cameras, rooms, pairing), the small date beside it, bell +
+    /// avatar on the right, and the LARGE light-weight two-line greeting
+    /// beneath.
     private var dashHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.base) {
             HStack(alignment: .center, spacing: 10) {
-                Button { HapticFeedback.impact(.light); activeSheet = .search } label: {
+                Button { HapticFeedback.impact(.light); activeSheet = .hub } label: {
                     Image(systemName: "line.3.horizontal")
                         .font(AppFont.headline)
                         .foregroundStyle(Color.smartTextPrimary)
@@ -179,7 +184,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .glassCircle()
-                .accessibilityLabel(Text("Search"))
+                .accessibilityLabel(Text("hub_title"))
 
                 Text(dateString)
                     .font(AppFont.scaled(13, weight: .medium))
