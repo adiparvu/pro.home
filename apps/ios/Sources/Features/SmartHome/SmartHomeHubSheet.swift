@@ -6,8 +6,9 @@ import HomeKit
 // The Apple-Home-style control center presented by the dashboard's top-left
 // menu button: one Liquid Glass sheet that carries the global search (the
 // hamburger's previous — and preserved — job), the all-devices list, the
-// cameras page, the home's rooms (with honest per-room device counts and
-// real room creation), and real HomeKit accessory pairing.
+// cameras page, the HomeKit scenes list (Smart Control R2), the home's
+// rooms (with honest per-room device counts and real room creation), and
+// real HomeKit accessory pairing.
 //
 // Honesty rules on this surface:
 // - The search row opens the EXISTING GlobalSearchSheet unchanged — same
@@ -32,6 +33,7 @@ struct SmartHomeHubSheet: View {
     private enum ActiveSheet: Identifiable {
         case search
         case allDevices
+        case scenes
         case room(String)
         case importWizard
 
@@ -39,6 +41,7 @@ struct SmartHomeHubSheet: View {
             switch self {
             case .search:         "search"
             case .allDevices:     "all-devices"
+            case .scenes:         "scenes"
             case .room(let name): "room-\(name)"
             case .importWizard:   "import-wizard"
             }
@@ -144,6 +147,7 @@ struct SmartHomeHubSheet: View {
                     hubRow(icon: "video.fill", titleKey: "hub_cameras") {
                         openCameras()
                     }
+                    scenesRow
 
                     sectionHeader("hub_rooms")
                     roomsSection
@@ -180,6 +184,8 @@ struct SmartHomeHubSheet: View {
                 GlobalSearchSheet()
             case .allDevices:
                 SmartHomeDeviceListSheet(kind: nil, room: nil)
+            case .scenes:
+                SmartSceneListSheet()
             case .room(let name):
                 SmartHomeDeviceListSheet(kind: nil, room: name)
             case .importWizard:
@@ -269,6 +275,50 @@ struct SmartHomeHubSheet: View {
         .buttonStyle(SmartCardPressStyle())
         .liquidGlass(cornerRadius: AppRadius.lg)
         .accessibilityHint(Text("hub_search_hint"))
+    }
+
+    // MARK: Scenes row (Smart Control R2)
+
+    /// The hub's scene entry, honest in every state:
+    /// - scenes exist → a row with the real count, opening the full list;
+    /// - HomeKit authorized but zero scenes → an informational row (not a
+    ///   button) explaining that scenes are created in the Apple Home app —
+    ///   PRVIO deliberately doesn't build scene creation, so no dead "+";
+    /// - HomeKit unauthorized → nothing renders at all.
+    @ViewBuilder private var scenesRow: some View {
+        if homeKit.isAuthorized {
+            let scenes = homeKit.scenes
+            if scenes.isEmpty {
+                HStack(alignment: .top, spacing: AppSpacing.md) {
+                    Image(systemName: "sparkles")
+                        .font(AppFont.headline)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 26)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("hub_scenes")
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                        Text("hub_scenes_empty")
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
+                .liquidGlass(cornerRadius: AppRadius.lg)
+                .accessibilityElement(children: .combine)
+            } else {
+                hubRow(icon: "sparkles", titleKey: "hub_scenes",
+                       detail: scenes.count == 1
+                           ? Text("sh_scene_one")
+                           : Text("sh_scene_count \(scenes.count)")) {
+                    activeSheet = .scenes
+                }
+            }
+        }
     }
 
     // MARK: Rooms section

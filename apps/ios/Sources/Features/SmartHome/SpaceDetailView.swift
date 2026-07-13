@@ -26,6 +26,10 @@ import SwiftUI
 //   excluded — they already ARE the metrics row); the pill toggle is
 //   drawn only for devices with the real `.power` capability. No devices →
 //   an honest empty row.
+// - Scenes (Smart Control R2): quick chips for the HomeKit scenes whose
+//   actions genuinely touch an accessory in THIS room (write action →
+//   characteristic → accessory → room, matched to the zone by the shared
+//   name link). No matching scene → the section simply doesn't exist.
 // - Kind extras: garden/greenhouse spaces list plants needing water whose
 //   free-text location names THIS zone (the same name-based link sensors
 //   use) — the section simply doesn't exist without such plants.
@@ -87,6 +91,13 @@ struct SpaceDetailView: View {
         SpaceCardModel.thirstyPlants(in: live, plantService: plantService)
     }
 
+    /// HomeKit scenes whose actions touch an accessory in THIS room —
+    /// resolved per render from the mirrored homes (empty when HomeKit is
+    /// unauthorized), through the shared name link between the two worlds.
+    private var spaceScenes: [HomeKitScene] {
+        HomeKitService.shared.scenes(touchingSpaceNamed: live.name)
+    }
+
     var body: some View {
         ZStack {
             backdrop
@@ -98,6 +109,10 @@ struct SpaceDetailView: View {
                     hero
                     metricsSection
                     devicesSection
+                    let scenes = spaceScenes
+                    if !scenes.isEmpty {
+                        scenesSection(scenes)
+                    }
                     if kind == .garden || kind == .greenhouse, !thirstyPlants.isEmpty {
                         plantsSection
                     }
@@ -333,6 +348,18 @@ struct SpaceDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: Scenes — quick chips for scenes touching THIS room (R2)
+
+    /// Rendered only when ≥1 scene genuinely touches an accessory in this
+    /// room — never an empty section. Execution is the shared chip-row
+    /// contract: spinner, haptics, verbatim-error alert, still-running note.
+    private func scenesSection(_ scenes: [HomeKitScene]) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionLabel("sh_scene_section")
+            SmartSceneChipRow(scenes: scenes)
         }
     }
 

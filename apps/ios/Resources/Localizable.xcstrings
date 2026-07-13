@@ -86436,6 +86436,166 @@
           }
         }
       }
+    },
+    "hub_scenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scenes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scene"
+          }
+        }
+      }
+    },
+    "hub_scenes_empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scenes are created in the Apple Home app and appear here automatically."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scenele se creează în aplicația Apple Home și apar aici automat."
+          }
+        }
+      }
+    },
+    "sh_scene_section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scenes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scene"
+          }
+        }
+      }
+    },
+    "sh_scene_one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 scene"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o scenă"
+          }
+        }
+      }
+    },
+    "sh_scene_count %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld scenes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld scene"
+          }
+        }
+      }
+    },
+    "sh_scene_running": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se execută"
+          }
+        }
+      }
+    },
+    "sh_scene_run_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs the scene."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Execută scena."
+          }
+        }
+      }
+    },
+    "sh_scene_still_running %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” is still running…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” încă se execută…"
+          }
+        }
+      }
+    },
+    "sh_scene_still_running_short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still running…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încă se execută…"
+          }
+        }
+      }
+    },
+    "sh_scene_error_title %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scene “%@” didn’t run"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scena „%@” nu a rulat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

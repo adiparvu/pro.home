@@ -114,7 +114,8 @@ struct SmartHomeSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             if !allRooms.isEmpty { roomChips }
-            if !scenePairs.isEmpty { sceneChips }
+            let scenes = homeKitScenes
+            if !scenes.isEmpty { SmartSceneChipRow(scenes: scenes) }
             NowPlayingCard()
             heroGrid
             if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
@@ -212,48 +213,15 @@ struct SmartHomeSection: View {
         }
     }
 
-    // MARK: - HomeKit scenes
+    // MARK: - HomeKit scenes (Smart Control R2 — the shared chip row)
 
-    /// Home × action-set pairs so chips from several homes share one row
-    /// (a struct because ForEach can't key-path into tuple elements).
-    private struct ScenePair: Identifiable {
-        let home: HMHome
-        let actionSet: HMActionSet
-        var id: UUID { actionSet.uniqueIdentifier }
-    }
-
-    private var scenePairs: [ScenePair] {
-        guard homeKit.isAuthorized else { return [] }
-        return homeKit.homes.flatMap { home in
-            homeKit.actionSets(in: home).map { ScenePair(home: home, actionSet: $0) }
-        }
-    }
-
-    private var sceneChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(scenePairs) { pair in
-                    GlassFilterChip(label: pair.actionSet.name,
-                                    systemImage: "sparkles",
-                                    isSelected: false) {
-                        run(pair.actionSet, in: pair.home)
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xxs)
-        }
-    }
-
-    private func run(_ actionSet: HMActionSet, in home: HMHome) {
-        Task {
-            do {
-                try await homeKit.execute(actionSet, in: home)
-                HapticFeedback.success()
-            } catch {
-                HapticFeedback.error()
-                debugLog("Scene execution failed:", error)
-            }
-        }
+    /// Every executable scene across the homes — empty (and the row absent)
+    /// when HomeKit is unauthorized or no scene exists. Scenes live in ONE
+    /// provider today (HomeKit); the row and its execution contract are the
+    /// shared `SmartSceneChipRow`, so this surface, the space page, and the
+    /// hub list can never drift apart.
+    private var homeKitScenes: [HomeKitScene] {
+        homeKit.scenes
     }
 
     // MARK: - Hero grid (staggered two-column layout, always populated)
