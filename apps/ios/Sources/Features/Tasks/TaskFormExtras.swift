@@ -243,12 +243,17 @@ final class TaskLocationSearchModel: NSObject, MKLocalSearchCompleterDelegate {
 struct TaskLocationPickerSheet: View {
     @Binding var location: TaskLocationValue?
     @Environment(\.dismiss) private var dismiss
+    // Optional on purpose: the sheet is also presented from the chat event
+    // composer — a host without PropertyService simply has no property row,
+    // it must never crash the sheet.
+    @Environment(PropertyService.self) private var propertyService: PropertyService?
 
     @State private var model = TaskLocationSearchModel()
     @State private var nearby = TaskNearbyPlacesModel()
     @State private var remembered = TaskLocationMemory.load()
     @State private var query = ""
     @State private var isResolving = false
+    @State private var isResolvingProperty = false
 
     private var trimmedQuery: String {
         query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -258,8 +263,9 @@ struct TaskLocationPickerSheet: View {
         NavigationStack {
             List {
                 if trimmedQuery.isEmpty {
+                    propertySection
+                    positionSection
                     rememberedSections
-                    nearbySection
                 } else {
                     searchContent
                 }
@@ -275,14 +281,10 @@ struct TaskLocationPickerSheet: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: Text("task_location_search"))
             .onChange(of: query) { _, q in model.update(query: q) }
-            // Nearby suggestions run only when location permission already
-            // exists (granted via chat/live sharing) — the sheet never prompts.
-            .task { nearby.startIfAuthorized() }
-            .overlay {
-                if trimmedQuery.isEmpty && remembered.isEmpty && nearby.places.isEmpty {
-                    EmptyStateView(icon: "mappin.and.ellipse", title: "task_location_hint")
-                }
-            }
+            // Reads the permission status and, when it already exists, feeds
+            // "În apropiere". The system dialog only ever appears from the
+            // user's own "Folosește poziția mea" tap.
+            .task { nearby.start() }
         }
         .presentationDetents([.medium, .large])
     }
@@ -314,16 +316,211 @@ struct TaskLocationPickerSheet: View {
         }
     }
 
-    // MARK: Remembered picks (Frecvente / Recente)
+    // MARK: Property location (always offered when a primary property exists)
+
+    /// The primary property's postal address, or nil when no line is set —
+    /// the row still shows with stored coordinates, otherwise it hides
+    /// entirely (a row that could select nothing would be a dead control).
+    private var propertyAddress: String? {
+        guard let p = propertyService?.primary else { return nil }
+        let joined = [p.addressLine1, p.city, p.country]
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+        return joined.isEmpty ? nil : joined
+    }
+
+    @ViewBuilder
+    private var propertySection: some View {
+        if let property = propertyService?.primary,
+           (property.latitude != nil && property.longitude != nil) || propertyAddress != nil {
+            Section {
+                Button {
+                    selectProperty(property)
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("locpick_property")
+                                .foregroundStyle(.primary)
+                            Group {
+                                if isResolvingProperty {
+                                    Text("locpick_locating")
+                                } else {
+                                    Text(verbatim: propertySubtitle(for: property))
+                                }
+                            }
+                            .font(AppFont.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        }
+                    } icon: {
+                        Image(systemName: "house.circle.fill")
+                            .foregroundStyle(Color.brandSuccess)
+                    }
+                }
+                .disabled(isResolvingProperty)
+                .overlay(alignment: .trailing) {
+                    if isResolvingProperty { ProgressView().controlSize(.small) }
+                }
+            }
+        }
+    }
+
+    /// What the row promises to select: the property's name when it has one,
+    /// otherwise its address.
+    private func propertySubtitle(for property: PropertyModel) -> String {
+        let name = property.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let address = propertyAddress {
+            return name.isEmpty ? address : "\(name) · \(address)"
+        }
+        return name
+    }
+
+    /// Stored coordinates select instantly; an address-only property geocodes
+    /// on tap (spinner in the row). If geocoding fails, the address is still
+    /// selected as plain text — the row always does something real.
+    private func selectProperty(_ property: PropertyModel) {
+        let name = property.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = name.isEmpty ? (propertyAddress ?? "") : name
+        if let lat = property.latitude, let lon = property.longitude {
+            select(TaskLocationValue(name: displayName, lat: lat, lon: lon))
+            return
+        }
+        guard let address = propertyAddress else { return }
+        isResolvingProperty = true
+        Task { @MainActor in
+            let placemarks = (try? await CLGeocoder().geocodeAddressString(address)) ?? []
+            isResolvingProperty = false
+            if let coord = placemarks.first?.location?.coordinate {
+                select(TaskLocationValue(name: displayName,
+                                         lat: coord.latitude, lon: coord.longitude))
+            } else {
+                select(TaskLocationValue(name: address, lat: nil, lon: nil))
+            }
+        }
+    }
+
+    // MARK: Current position + nearby
+
+    /// Always one honest row: "Folosește poziția mea" prompts/locates on tap;
+    /// denied/restricted swaps it for an "open Settings" row. Nearby results
+    /// follow underneath once a fix exists.
+    private var positionSection: some View {
+        Section {
+            if nearby.isDenied {
+                Button {
+                    HapticFeedback.impact(.light)
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("locpick_location_off")
+                                .foregroundStyle(.primary)
+                            Text("locpick_open_settings")
+                                .font(AppFont.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "location.slash.fill")
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    }
+                }
+            } else {
+                Button {
+                    useMyPosition()
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("locpick_my_position")
+                                .foregroundStyle(.primary)
+                            if nearby.isLocating || isResolving {
+                                Text("locpick_locating")
+                                    .font(AppFont.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } icon: {
+                        Image(systemName: "location.circle.fill")
+                            .foregroundStyle(Color.brandSkyBlue)
+                    }
+                }
+                .disabled(nearby.isLocating || isResolving)
+                .overlay(alignment: .trailing) {
+                    if nearby.isLocating || isResolving { ProgressView().controlSize(.small) }
+                }
+            }
+
+            ForEach(Array(nearby.places.enumerated()), id: \.offset) { _, item in
+                Button {
+                    let coord = item.placemark.coordinate
+                    select(TaskLocationValue(name: item.name ?? "",
+                                             lat: coord.latitude, lon: coord.longitude))
+                } label: {
+                    placeLabel(title: item.name ?? "",
+                               subtitle: item.placemark.title ?? "",
+                               icon: "mappin.circle.fill", tint: Color.brandSkyBlue)
+                }
+            }
+        } header: {
+            sectionHeader(icon: "location", title: "locpick_nearby")
+        }
+    }
+
+    /// The tap that may legitimately show the system permission dialog. A
+    /// granted fix reverse-geocodes into a readable name ("Str. Aviatorilor
+    /// 12, București"), falling back to "Poziția mea"; a deny flips the row
+    /// into the Settings state via `nearby.isDenied`.
+    private func useMyPosition() {
+        HapticFeedback.impact(.light)
+        nearby.useMyPosition { fix in
+            guard let fix else {
+                // Denied → the row already switched to "open Settings".
+                // A failed fix while authorized deserves an audible shrug.
+                if !nearby.isDenied { HapticFeedback.error() }
+                return
+            }
+            isResolving = true
+            Task { @MainActor in
+                let name = await Self.reverseGeocodedName(for: fix.coordinate)
+                    ?? String(localized: "locpick_my_position_fallback")
+                isResolving = false
+                select(TaskLocationValue(name: name,
+                                         lat: fix.coordinate.latitude,
+                                         lon: fix.coordinate.longitude))
+            }
+        }
+    }
+
+    /// Best-effort "street number, locality" name for a coordinate — the same
+    /// shape the chat share sheet renders for dropped pins.
+    private static func reverseGeocodedName(for coordinate: CLLocationCoordinate2D) async -> String? {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        guard let mark = try? await CLGeocoder().reverseGeocodeLocation(location).first else { return nil }
+        let street = mark.thoroughfare.map { t in
+            mark.subThoroughfare.map { "\(t) \($0)" } ?? t
+        }
+        let parts = [street ?? mark.name, mark.locality].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    // MARK: Remembered picks (Favorite / Frecvente / Recente)
 
     @ViewBuilder
     private var rememberedSections: some View {
         let split = TaskLocationMemory.sections(of: remembered)
+        if !split.favorites.isEmpty {
+            Section {
+                ForEach(split.favorites) { rememberedRow($0) }
+            } header: {
+                sectionHeader(icon: "star.fill", title: "locpick_favorites")
+            }
+        }
         if !split.frequent.isEmpty {
             Section {
                 ForEach(split.frequent) { rememberedRow($0) }
             } header: {
-                sectionHeader(icon: "star", title: "locpick_frequent")
+                sectionHeader(icon: "flame", title: "locpick_frequent")
             }
         }
         if !split.recent.isEmpty {
@@ -340,7 +537,23 @@ struct TaskLocationPickerSheet: View {
             select(item.value)
         } label: {
             placeLabel(title: item.name, subtitle: "",
-                       icon: "mappin.circle.fill", tint: Color.brandPurple)
+                       icon: item.isFavorite ? "star.circle.fill" : "mappin.circle.fill",
+                       tint: item.isFavorite ? Color.brandWarning : Color.brandPurple)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    remembered = TaskLocationMemory.toggleFavorite(id: item.id)
+                }
+            } label: {
+                // A ternary of string literals resolves to `String`, which
+                // would pick Label's non-localized initializer — bind the key
+                // to `LocalizedStringKey` first so it stays localizable.
+                let starKey: LocalizedStringKey = item.isFavorite
+                    ? "locpick_unfavorite" : "locpick_favorite"
+                Label(starKey, systemImage: item.isFavorite ? "star.slash" : "star")
+            }
+            .tint(Color.brandWarning)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
@@ -349,29 +562,6 @@ struct TaskLocationPickerSheet: View {
                 }
             } label: {
                 Label("locpick_delete", systemImage: "trash")
-            }
-        }
-    }
-
-    // MARK: Nearby (only with pre-existing permission AND real results)
-
-    @ViewBuilder
-    private var nearbySection: some View {
-        if !nearby.places.isEmpty {
-            Section {
-                ForEach(Array(nearby.places.enumerated()), id: \.offset) { _, item in
-                    Button {
-                        let coord = item.placemark.coordinate
-                        select(TaskLocationValue(name: item.name ?? "",
-                                                 lat: coord.latitude, lon: coord.longitude))
-                    } label: {
-                        placeLabel(title: item.name ?? "",
-                                   subtitle: item.placemark.title ?? "",
-                                   icon: "location.circle.fill", tint: Color.brandSkyBlue)
-                    }
-                }
-            } header: {
-                sectionHeader(icon: "location", title: "locpick_nearby")
             }
         }
     }
@@ -409,7 +599,8 @@ struct TaskLocationPickerSheet: View {
     }
 
     /// The single selection path — every pick (search, free text, remembered,
-    /// nearby) is recorded here so Frecvente/Recente reflect real usage.
+    /// nearby, property, my position) is recorded here so Favorite/Frecvente/
+    /// Recente reflect real usage and any pick can later be starred.
     private func select(_ value: TaskLocationValue) {
         TaskLocationMemory.remember(value)
         location = value
