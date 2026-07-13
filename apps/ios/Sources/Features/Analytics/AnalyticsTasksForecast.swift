@@ -270,7 +270,7 @@ struct TasksSection: View {
     }
 
     private func barChartCard<C: View>(header: LocalizedStringKey,
-                                       @ViewBuilder chart: () -> C) -> some View {
+                                       @ViewBuilder chart: @escaping () -> C) -> some View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(header)

@@ -96,7 +96,9 @@ final class PropertyFormDraft {
     var country = "RO"
     var latitude: Double?
     var longitude: Double?
-    var mapPosition: MapCameraPosition = .region(Self.defaultRegion)
+    // Explicit type: covariant `Self` can't appear in a class's stored
+    // property initializer.
+    var mapPosition: MapCameraPosition = .region(PropertyFormDraft.defaultRegion)
 
     // Details (each backed by a real column)
     var areaText = ""

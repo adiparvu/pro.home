@@ -112,13 +112,15 @@ enum Season: String, CaseIterable, Codable {
     /// into the season's next occurrence.
     func suggestedTaskDueDate(from now: Date = Date(), calendar: Calendar = .current) -> Date {
         let year = cycleYear(containing: now, calendar: calendar)
-        guard let window = window(cycleYear: year, calendar: calendar) else { return now }
-        if now < window.start {
-            return calendar.date(byAdding: .day, value: 14, to: window.start) ?? window.start
+        // `current`, not `window`: shadowing the method with the tuple local
+        // made the second `window(cycleYear:)` call below uncompilable.
+        guard let current = window(cycleYear: year, calendar: calendar) else { return now }
+        if now < current.start {
+            return calendar.date(byAdding: .day, value: 14, to: current.start) ?? current.start
         }
-        if now < window.end {
+        if now < current.end {
             let idea = calendar.date(byAdding: .day, value: 14, to: now) ?? now
-            let lastDay = calendar.date(byAdding: .day, value: -1, to: window.end) ?? window.end
+            let lastDay = calendar.date(byAdding: .day, value: -1, to: current.end) ?? current.end
             return min(idea, lastDay)
         }
         guard let next = window(cycleYear: year + 1, calendar: calendar) else { return now }
