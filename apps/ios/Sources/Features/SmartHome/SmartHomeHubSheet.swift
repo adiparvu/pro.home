@@ -127,8 +127,10 @@ struct SmartHomeHubSheet: View {
                     topBar
                     searchRow
 
+                    // Settings-style value: the row title already says
+                    // "Dispozitive", the detail is just the count.
                     hubRow(icon: "square.grid.2x2", titleKey: "hub_devices",
-                           detail: Text("sh_device_count \(smartHome.devices.count)")) {
+                           detail: Text(verbatim: "\(smartHome.devices.count)")) {
                         activeSheet = .allDevices
                     }
                     hubRow(icon: "video.fill", titleKey: "hub_cameras") {
@@ -249,7 +251,9 @@ struct SmartHomeHubSheet: View {
             ForEach(hubRooms) { room in
                 hubRow(icon: room.icon ?? "door.left.hand.closed",
                        title: Text(verbatim: room.name),
-                       detail: Text("sh_device_count \(room.deviceCount)")) {
+                       detail: room.deviceCount == 1
+                           ? Text("sh_device_one")
+                           : Text("sh_device_count \(room.deviceCount)")) {
                     activeSheet = .room(room.name)
                 }
             }

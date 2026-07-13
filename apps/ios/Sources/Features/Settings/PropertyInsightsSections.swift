@@ -216,13 +216,29 @@ struct PropertyInsightsSections: View {
         values.entries.sorted { ($0.enteredDate ?? .distantPast) < ($1.enteredDate ?? .distantPast) }
     }
 
+    /// The whole card routes to the dedicated value page for THIS property.
     private var valueCard: some View {
+        NavigationLink {
+            PropertyValueView(propertyId: propertyId)
+        } label: {
+            valueCardBody
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var valueCardBody: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Label("Property value", systemImage: "chart.line.uptrend.xyaxis")
-                    .font(AppFont.label)
-                    .foregroundStyle(.secondary)
-                    .tracking(0.8)
+                HStack {
+                    Label("Property value", systemImage: "chart.line.uptrend.xyaxis")
+                        .font(AppFont.label)
+                        .foregroundStyle(.secondary)
+                        .tracking(0.8)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.scaled(11, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
 
                 if sortedValues.isEmpty {
                     emptyHint("Add value estimates to follow how your property appreciates.")
@@ -279,8 +295,16 @@ struct PropertyInsightsSections: View {
                         .frame(height: 130)
                     }
 
-                    if let source = latest.source, !source.isEmpty {
-                        Text(String(format: String(localized: "Latest estimate: %@"), source))
+                    // "Ultima evaluare" — localized date + TYPED source: the
+                    // stored token/legacy text maps through the catalog
+                    // (PropertyValueSource.match); unknown free text shows
+                    // verbatim.
+                    if let source = latest.sourceDisplay {
+                        let line = latest.enteredDate.map {
+                            String(format: String(localized: "prop_value_last_eval_fmt"),
+                                   AppDate.monthDayYear.string(from: $0), source)
+                        } ?? String(format: String(localized: "Latest estimate: %@"), source)
+                        Text(verbatim: line)
                             .font(AppFont.scaled(11))
                             .foregroundStyle(Color.secondaryTextColor)
                     }

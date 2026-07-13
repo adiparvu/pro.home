@@ -3,10 +3,15 @@ import PhotosUI
 
 struct PropertyDetailView: View {
     let propertyId: UUID
-    @Environment(PropertyService.self) private var propertyService
+    // Internal (not private): the section builders in
+    // PropertyDetailViewComponents.swift read these too.
+    @Environment(PropertyService.self) var propertyService
+    @Environment(PropertyElementService.self) var elementService
 
     @State private var showEdit = false
     @State var showPhotoMenu = false
+    /// The health-score row opens the existing dashboard (active property).
+    @State var showHealthDashboard = false
     @State private var showCamera = false
     @State private var showGallery = false
     @State private var pickerItem: PhotosPickerItem?
@@ -59,6 +64,17 @@ struct PropertyDetailView: View {
                 }
                 .environment(propertyService)
             }
+        }
+        .sheet(isPresented: $showHealthDashboard) {
+            // The same route Spaces/Twin/Map present; its services are
+            // app-wide. The elements feed the score — make sure they exist
+            // before the dashboard reads them.
+            PropertyHealthDashboardView()
+                .task {
+                    if elementService.elements.isEmpty {
+                        await elementService.load(propertyId: propertyId)
+                    }
+                }
         }
         .confirmationDialog("Property photo", isPresented: $showPhotoMenu, titleVisibility: .visible) {
             Button("Take a photo") { showCamera = true }

@@ -51,6 +51,11 @@ extension PropertyDetailView {
 
                     PropertyInsightsSections(propertyId: property.id)
 
+                    // Documents · works timeline · house team · passport —
+                    // shown on the active property (their services are
+                    // active-property-scoped; see PropertyDetailSections).
+                    PropertyDetailExtraSections(property: property)
+
                     Spacer(minLength: 110)
                 }
                 .padding(.horizontal, AppSpacing.xl)
@@ -222,7 +227,7 @@ extension PropertyDetailView {
     private func basicCard(_ property: PropertyModel) -> some View {
         GlassCard(padding: 0) {
             VStack(spacing: 0) {
-                row("mappin.fill", "Address", "\(property.addressLine1), \(property.city)", .blue)
+                addressRow(property)
                 rowDivider()
                 if !property.country.isEmpty {
                     row("globe.europe.africa.fill", "Country", property.country, .blue)
@@ -241,19 +246,83 @@ extension PropertyDetailView {
                     rowDivider()
                 }
                 if let score = property.healthScore {
-                    row("heart.fill", "Health score", "\(score)/100",
-                        score >= 70 ? .green : score >= 40 ? .orange : .red)
+                    healthRow(property, score: score)
                     rowDivider()
                 }
                 if let lat = property.latitude, let lon = property.longitude {
-                    row("location.fill", "Coordinates",
-                        String(format: "%.4f, %.4f", lat, lon), .teal)
+                    // The raw numbers became a live map: a cached MapKit
+                    // snapshot with the pin on the property; the compact
+                    // coordinates caption stays underneath. Tap → the same
+                    // navigation menu as the address.
+                    PropertyMapSnapshotCard(latitude: lat, longitude: lon,
+                                            title: property.name)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.vertical, AppSpacing.md)
                 }
             }
         }
     }
 
-    private func row(_ icon: String, _ label: LocalizedStringKey, _ value: String, _ color: Color) -> some View {
+    /// Adresă, alive: tap opens a menu — directions in Hărți / Google Maps /
+    /// Waze (only when the property has real coordinates) plus copy. Without
+    /// coordinates only the copy action appears; nothing pretends to navigate.
+    private func addressRow(_ property: PropertyModel) -> some View {
+        let address = "\(property.addressLine1), \(property.city)"
+        return Menu {
+            if let lat = property.latitude, let lon = property.longitude {
+                ForEach(NavigationAppLauncher.availableOptions()) { opt in
+                    Button {
+                        NavigationAppLauncher.open(opt.id, lat: lat, lon: lon,
+                                                   label: property.name)
+                    } label: {
+                        Label {
+                            Text(verbatim: String(format: String(localized: "prop_detail_open_in_fmt"),
+                                                  opt.label))
+                        } icon: {
+                            Image(systemName: "arrow.triangle.turn.up.right.circle")
+                        }
+                    }
+                }
+            }
+            Button {
+                UIPasteboard.general.string = address
+                HapticFeedback.success()
+            } label: {
+                Label("prop_detail_copy_address", systemImage: "doc.on.doc")
+            }
+        } label: {
+            row("mappin.fill", "Address", address, .blue, chevron: true)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Address")
+        .accessibilityValue(Text(verbatim: address))
+    }
+
+    /// Scor de sănătate, alive: on the active property it opens the existing
+    /// health dashboard (whose element data is active-property-scoped);
+    /// on other homes it stays an honest static row.
+    @ViewBuilder
+    private func healthRow(_ property: PropertyModel, score: Int) -> some View {
+        let color: Color = score >= 70 ? .green : score >= 40 ? .orange : .red
+        if property.id == propertyService.primary?.id {
+            Button {
+                showHealthDashboard = true
+                HapticFeedback.impact(.light)
+            } label: {
+                row("heart.fill", "Health score", "\(score)/100", color, chevron: true)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Health score")
+            .accessibilityHint(Text("prop_detail_health_hint"))
+        } else {
+            row("heart.fill", "Health score", "\(score)/100", color)
+        }
+    }
+
+    private func row(_ icon: String, _ label: LocalizedStringKey, _ value: String,
+                     _ color: Color, chevron: Bool = false) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(AppFont.captionEmphasis)
@@ -268,6 +337,11 @@ extension PropertyDetailView {
                 .font(AppFont.footnote)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
+            if chevron {
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, AppSpacing.md)

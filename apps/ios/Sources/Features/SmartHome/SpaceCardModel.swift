@@ -101,15 +101,20 @@ enum SpaceCardModel {
         }
 
         // 2. Garden/greenhouse: plants needing water located in this zone.
+        // Singular via a dedicated key: the catalog's plural variations
+        // rendered as raw keys at runtime (IMG_8417), so counts use plain
+        // format strings + an explicit one-key.
         let kind = zone.resolvedSpaceKind
         if kind == .garden || kind == .greenhouse {
             let thirsty = thirstyPlants(in: zone, plantService: plantService).count
-            if thirsty > 0 { return Text("est_water_count \(thirsty)") }
+            if thirsty == 1 { return Text("est_water_one") }
+            if thirsty > 1 { return Text("est_water_count \(thirsty)") }
         }
 
         // 3. Devices actually in this room (either provider).
         let deviceCount = SmartHomeService.shared.devices(in: zone.name).count
-        if deviceCount > 0 { return Text("sh_device_count \(deviceCount)") }
+        if deviceCount == 1 { return Text("sh_device_one") }
+        if deviceCount > 1 { return Text("sh_device_count \(deviceCount)") }
 
         // 4. Nothing real to say — say nothing.
         return nil

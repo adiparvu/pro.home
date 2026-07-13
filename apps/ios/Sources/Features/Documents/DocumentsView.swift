@@ -8,6 +8,13 @@ struct DocumentsView: View {
     @Environment(AppRouter.self) private var router
     @State private var search = ""
     @State private var selectedCategory: String? = nil
+
+    /// Optional pre-applied filter — e.g. the property page's deadlines card
+    /// lands directly on "Expiring". Same values `selectedCategory` takes;
+    /// the user can clear it with the normal chips.
+    init(initialCategory: String? = nil) {
+        _selectedCategory = State(initialValue: initialCategory)
+    }
     @State private var showAdd = false
     @State private var docToDelete: DocumentModel?
     @State private var showDeleteConfirm = false

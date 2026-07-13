@@ -97,7 +97,9 @@ struct SpacesTabView: View {
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
             if !zoneService.zones.isEmpty {
-                Text("spaces_count \(zoneService.zones.count)")
+                (zoneService.zones.count == 1
+                    ? Text("spaces_one")
+                    : Text("spaces_count \(zoneService.zones.count)"))
                     .font(AppFont.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
