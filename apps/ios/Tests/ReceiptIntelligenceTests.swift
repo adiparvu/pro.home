@@ -68,9 +68,14 @@ final class ReceiptIntelligenceTests: XCTestCase {
         XCTAssertEqual(iaurt.unitPrice, 3.99, accuracy: 0.001)
         XCTAssertEqual(iaurt.totalPrice, 7.98, accuracy: 0.001)
 
-        // Discount subtracted from the previous item.
+        // Discount attributed to the previous item as STRUCTURE: the printed
+        // price survives untouched, the final price subtracts the discount.
         let ciocolata = receipt.items[3]
-        XCTAssertEqual(ciocolata.totalPrice, 4.60, accuracy: 0.001)
+        XCTAssertEqual(ciocolata.totalPrice, 5.45, accuracy: 0.001,
+                       "printed price must never be silently rewritten")
+        XCTAssertEqual(ciocolata.discount?.amount ?? 0, 0.85, accuracy: 0.001)
+        XCTAssertEqual(ciocolata.finalPrice, 4.60, accuracy: 0.001)
+        XCTAssertTrue(ciocolata.flags.contains(.discountAttached))
 
         // Printed TOTAL wins and matches the item sum.
         XCTAssertEqual(receipt.total, 28.48, accuracy: 0.001)
@@ -343,5 +348,232 @@ final class ReceiptIntelligenceTests: XCTestCase {
         let parsed = ReceiptIntelligence.parse(rows: lines)
         XCTAssertEqual(parsed.category, "cleaning")
         XCTAssertEqual(parsed.items.filter { $0.category == "cleaning" }.count, 2)
+    }
+
+    // MARK: - Parser: the real Delhaize (Belgian, FR/NL) receipt shapes
+    //
+    // Regression for the Brussels Delhaize receipt (IMG July 2026): barcode
+    // rows between item and weight line, "NUTRI-BOOST 10% -0,32" percent
+    // discounts, "AVANTAGES -5,98" multi-buy promos across four identical
+    // MYRTILLES rows (one of which used to show 0 €), house-brand
+    // abbreviations ("275G DLL CHIA BIO", "H&S SH DXP MOIST"), and the
+    // two-total footer (TOTAAL … reductions … TOTAAL … CASH … TERUG CASH).
+    func testParsesDelhaizeStyleReceipt() {
+        let lines: [OCRLine] = [
+            row("DELHAIZE ST-GILLIS", y: 0.02),
+            row("CHOU POINTU    3,20", y: 0.06),
+            row("540011958694", y: 0.08),                    // barcode row
+            row("TOM CHARNUE VRAC", y: 0.10),
+            row("1,292 Kg x 4,49/ Kg    5,80", y: 0.12),     // weight line
+            row("2226", y: 0.14),                            // article code
+            row("H&S SH DXP MOIST    6,50", y: 0.16),
+            row("NUTRI-BOOST 10%    -0,65", y: 0.18),        // percent discount
+            row("MYRTILLES 300GR    5,49", y: 0.20),
+            row("MYRTILLES 300GR    5,49", y: 0.22),
+            row("AVANTAGES    -5,98", y: 0.24),              // multi-buy promo
+            row("MYRTILLES 300GR    5,49", y: 0.26),
+            row("MYRTILLES 300GR    5,49", y: 0.28),
+            row("AVANTAGES    -5,98", y: 0.30),              // second promo
+            row("275G DLL CHIA BIO    3,99", y: 0.32),       // house brand + size
+            row("TOTAAL    41,45", y: 0.36),                 // pre-reduction total
+            row("REDUCTION NUTRI-BOOST    -0,65", y: 0.38),
+            row("PROMO    -11,96", y: 0.40),
+            row("TOTAAL    28,84", y: 0.42),                 // paid total
+            row("CASH    29,04", y: 0.44),
+            row("TERUG CASH    0,20", y: 0.46),
+            row("SUPERPLUS SALDO 1753", y: 0.50),            // loyalty block
+            row("1783", y: 0.52),
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+
+        XCTAssertEqual(parsed.storeName, "Delhaize")
+        XCTAssertEqual(parsed.currency, "EUR", "Dutch fiscal rows mean a € receipt")
+
+        // 4 identical MYRTILLES rows collapse into one ×4 group → 5 items.
+        XCTAssertEqual(parsed.items.count, 5)
+
+        // No barcode ever becomes an item or pollutes a name.
+        XCTAssertFalse(parsed.items.contains { $0.name.contains("540011958694") })
+        XCTAssertFalse(parsed.items.contains { $0.name.contains("2226") })
+
+        // Nothing shows 0 € — the promo is structure, not a price.
+        XCTAssertFalse(parsed.items.contains { $0.finalPrice <= 0 })
+
+        // The MYRTILLES group: ×4, both AVANTAGES promos merged, printed
+        // unit price intact, honest final price.
+        let myrtilles = parsed.items.first { $0.normalizedName == "Afine" }
+        XCTAssertNotNil(myrtilles)
+        XCTAssertEqual(myrtilles?.quantity ?? 0, 4, accuracy: 0.001)
+        XCTAssertEqual(myrtilles?.unitPrice ?? 0, 5.49, accuracy: 0.001)
+        XCTAssertEqual(myrtilles?.totalPrice ?? 0, 21.96, accuracy: 0.001)
+        XCTAssertEqual(myrtilles?.discount?.amount ?? 0, 11.96, accuracy: 0.001)
+        XCTAssertEqual(myrtilles?.finalPrice ?? 0, 10.00, accuracy: 0.001)
+        XCTAssertEqual(myrtilles?.sizeText, "300 g")
+        XCTAssertTrue(myrtilles?.flags.contains(.discountAttached) ?? false)
+
+        // "NUTRI-BOOST 10% -0,65" attached to H&S as percent + amount; the
+        // text never fused into the name, the unit price never changed.
+        let shampoo = parsed.items.first { $0.normalizedName.hasPrefix("Head & Shoulders") }
+        XCTAssertNotNil(shampoo, "H&S must expand to Head & Shoulders")
+        XCTAssertFalse(shampoo?.name.lowercased().contains("nutri") ?? true)
+        XCTAssertEqual(shampoo?.discount?.percent ?? 0, 10, accuracy: 0.001)
+        XCTAssertEqual(shampoo?.discount?.amount ?? 0, 0.65, accuracy: 0.001)
+        XCTAssertEqual(shampoo?.unitPrice ?? 0, 6.50, accuracy: 0.001)
+        XCTAssertEqual(shampoo?.totalPrice ?? 0, 6.50, accuracy: 0.001)
+        XCTAssertEqual(shampoo?.finalPrice ?? 0, 5.85, accuracy: 0.001)
+
+        // The weight line binds to TOM CHARNUE VRAC and is flagged as such.
+        let tomato = parsed.items.first { $0.name.lowercased().contains("charnue") }
+        XCTAssertEqual(tomato?.quantity ?? 0, 1.292, accuracy: 0.0005)
+        XCTAssertEqual(tomato?.unit, "kg")
+        XCTAssertEqual(tomato?.unitPrice ?? 0, 4.49, accuracy: 0.001)
+        XCTAssertEqual(tomato?.totalPrice ?? 0, 5.80, accuracy: 0.001)
+        XCTAssertTrue(tomato?.flags.contains(.weightPriced) ?? false)
+        XCTAssertTrue(tomato?.normalizedName.contains("Tomate") ?? false,
+                      "the Delhaize abbreviation table expands TOM")
+
+        // "275G DLL CHIA BIO": size lifted out, house brand expanded.
+        let chia = parsed.items.first { $0.normalizedName.contains("Chia") }
+        XCTAssertEqual(chia?.sizeText, "275 g")
+        XCTAssertTrue(chia?.normalizedName.contains("Delhaize") ?? false)
+        XCTAssertEqual(chia?.totalPrice ?? 0, 3.99, accuracy: 0.001)
+
+        // Footer story: subtotal, named reductions, paid total, cash, change.
+        XCTAssertEqual(parsed.subtotal ?? 0, 41.45, accuracy: 0.001)
+        XCTAssertEqual(parsed.total, 28.84, accuracy: 0.001)
+        XCTAssertEqual(parsed.reductions.count, 2)
+        XCTAssertEqual(parsed.reductions.first?.label, "Nutri-Boost")
+        XCTAssertEqual(parsed.reductions.first?.amount ?? 0, 0.65, accuracy: 0.001)
+        XCTAssertEqual(parsed.reductions.last?.label, "Promo")
+        XCTAssertEqual(parsed.reductions.last?.amount ?? 0, 11.96, accuracy: 0.001)
+        XCTAssertEqual(parsed.cashGiven ?? 0, 29.04, accuracy: 0.001)
+        XCTAssertEqual(parsed.changeGiven ?? 0, 0.20, accuracy: 0.001)
+
+        // Reconciliation: sum(items − discounts) == paid total, stated openly.
+        let recon = parsed.reconciliation
+        XCTAssertEqual(recon.itemsGross, 41.45, accuracy: 0.001)
+        XCTAssertEqual(recon.itemDiscounts, 12.61, accuracy: 0.001)
+        XCTAssertEqual(recon.itemsNet, 28.84, accuracy: 0.001)
+        XCTAssertEqual(recon.delta, 0, accuracy: 0.011)
+        XCTAssertTrue(recon.isMatched)
+    }
+
+    // A discount can never zero or overdraw the line it rides on, even when
+    // OCR attributes an oversized promo to a single row before grouping.
+    func testOversizedPromoNeverZeroesAnItem() {
+        let lines: [OCRLine] = [
+            row("DELHAIZE", y: 0.02),
+            row("MYRTILLES 300GR    5,49", y: 0.10),
+            row("AVANTAGES    -5,98", y: 0.12),
+            row("TOTAAL    0,00", y: 0.20),
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+        XCTAssertEqual(parsed.items.count, 1)
+        XCTAssertEqual(parsed.items[0].totalPrice, 5.49, accuracy: 0.001,
+                       "the printed price survives")
+        XCTAssertEqual(parsed.items[0].finalPrice, 0, accuracy: 0.001,
+                       "final price clamps at zero, never negative")
+    }
+
+    // Reconciliation states a mismatch openly when the numbers do not close.
+    func testReconciliationReportsMismatchHonestly() {
+        let lines: [OCRLine] = [
+            row("Magazin", y: 0.02),
+            row("LAPTE    7,49 A", y: 0.10),
+            row("PAINE    3,50 A", y: 0.12),
+            row("TOTAL    15,00", y: 0.20),   // receipt says more than items sum
+        ]
+        let parsed = ReceiptIntelligence.parse(rows: lines)
+        let recon = parsed.reconciliation
+        XCTAssertFalse(recon.isMatched)
+        XCTAssertEqual(recon.itemsNet, 10.99, accuracy: 0.001)
+        XCTAssertEqual(recon.delta, -4.01, accuracy: 0.011)
+    }
+
+    // MARK: - Cross-language produce matching (list ↔ receipt)
+
+    func testCrossLanguageProduceMatching() {
+        let threshold = ReceiptProductLexicon.matchThreshold
+        // The Delhaize receipt says MYRTILLES; the household list says Afine.
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("MYRTILLES 300GR", against: "Afine"), threshold)
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("BLAUWE BESSEN 500GR", against: "Afine"), threshold)
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("Blueberries", against: "Afine"), threshold)
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("CHOU POINTU", against: "Varză"), threshold)
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("BANANES", against: "Banane"), threshold)
+        XCTAssertGreaterThanOrEqual(
+            ReceiptProductLexicon.match("TOMATES", against: "Roșii"), threshold)
+        XCTAssertEqual(ReceiptProductLexicon.normalize("MYRTILLES 300GR"), "Afine")
+    }
+
+    func testListSyncMatchesTranslatedProduce() {
+        let afine = supplyItem(name: "Afine", quantity: "1")
+        let receiptItems = [
+            ParsedItem(name: "Myrtilles", quantity: 4, unit: "buc",
+                       unitPrice: 5.49, totalPrice: 21.96),
+        ]
+        let plan = ReceiptListSync.plan(receiptItems: receiptItems, listItems: [afine])
+        XCTAssertEqual(plan.actions.count, 1,
+                       "myrtilles = afine — the list match must cross languages")
+    }
+
+    // MARK: - Rename memory (store-scoped)
+
+    func testStoreScopedRenameMemory() {
+        ReceiptLexiconMemory.remember(original: "FB GRA DE GR",
+                                      corrected: "Fulgi graham",
+                                      storeName: "Delhaize")
+        ReceiptLexiconMemory.reloadForTesting()
+        XCTAssertEqual(
+            ReceiptLexiconMemory.correction(for: "FB GRA DE GR", storeName: "Delhaize"),
+            "Fulgi graham")
+        // The store-agnostic fallback learns too — the household's word
+        // for the product should not vanish one street over.
+        XCTAssertEqual(ReceiptLexiconMemory.correction(for: "fb gra de gr"),
+                       "Fulgi graham")
+    }
+
+    // MARK: - Name cleanup primitives
+
+    func testSizeExtraction() {
+        let leading = ReceiptIntelligence.extractSize(from: "275G DLL CHIA BIO")
+        XCTAssertEqual(leading.sizeText, "275 g")
+        XCTAssertEqual(leading.name.trimmingCharacters(in: .whitespaces), "DLL CHIA BIO")
+
+        let trailing = ReceiptIntelligence.extractSize(from: "MYRTILLES 300GR")
+        XCTAssertEqual(trailing.sizeText, "300 g")
+        XCTAssertEqual(trailing.name.trimmingCharacters(in: .whitespaces), "MYRTILLES")
+
+        // Never strip a size that IS the whole line.
+        let bare = ReceiptIntelligence.extractSize(from: "300G")
+        XCTAssertNil(bare.sizeText)
+    }
+
+    func testDiscountLineParsing() {
+        let nutri = ReceiptIntelligence.discountLine(in: "NUTRI-BOOST 10% -0,32")
+        XCTAssertEqual(nutri?.label, "Nutri-Boost")
+        XCTAssertEqual(nutri?.percent ?? 0, 10, accuracy: 0.001)
+        XCTAssertEqual(nutri?.amount ?? 0, 0.32, accuracy: 0.001)
+
+        let promo = ReceiptIntelligence.discountLine(in: "AVANTAGES -5,98")
+        XCTAssertEqual(promo?.label, "Avantages")
+        XCTAssertNil(promo?.percent)
+        XCTAssertEqual(promo?.amount ?? 0, 5.98, accuracy: 0.001)
+
+        // Marker words strip out of the label when a name remains.
+        let footer = ReceiptIntelligence.discountLine(in: "REDUCTION NUTRI-BOOST -2,11")
+        XCTAssertEqual(footer?.label, "Nutri-Boost")
+        XCTAssertEqual(footer?.amount ?? 0, 2.11, accuracy: 0.001)
+    }
+
+    func testBarcodeRowsAreNeverItems() {
+        XCTAssertTrue(ReceiptIntelligence.isBarcodeRow("540011958694"))
+        XCTAssertTrue(ReceiptIntelligence.isBarcodeRow("2226"))
+        XCTAssertFalse(ReceiptIntelligence.isBarcodeRow("5,49"))
+        XCTAssertFalse(ReceiptIntelligence.isBarcodeRow("MYRTILLES 300GR"))
     }
 }

@@ -81073,6 +81073,294 @@
           }
         }
       }
+    },
+    "scanner_reductions_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discounts"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reduceri"
+          }
+        }
+      }
+    },
+    "scanner_reduction_generic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reducere"
+          }
+        }
+      }
+    },
+    "scanner_reconciliation_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtotal %1$@ − discounts %2$@ = %3$@ paid"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtotal %1$@ − reduceri %2$@ = %3$@ plătit"
+          }
+        }
+      }
+    },
+    "scanner_reconciliation_ok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The math checks out"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Totalul se închide"
+          }
+        }
+      }
+    },
+    "scanner_reconciliation_off_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by %@ from the receipt total"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diferență de %@ față de totalul bonului"
+          }
+        }
+      }
+    },
+    "scanner_cash_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid cash %1$@ · change %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plătit cash %1$@ · rest %2$@"
+          }
+        }
+      }
+    },
+    "scanner_cash_no_change_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid cash %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plătit cash %@"
+          }
+        }
+      }
+    },
+    "scanner_reason_uncertain_price": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The price read from the receipt is uncertain — please check it."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prețul citit de pe bon e nesigur — verifică-l."
+          }
+        }
+      }
+    },
+    "scanner_reason_uncertain_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name read is uncertain — you can correct it and the app remembers it next time."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numele citit e nesigur — îl poți corecta, iar aplicația îl reține pentru data viitoare."
+          }
+        }
+      }
+    },
+    "scanner_reason_discount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The receipt attached a discount to this item; the struck price is the printed one."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bonul a atașat o reducere acestui articol; prețul tăiat e cel tipărit."
+          }
+        }
+      }
+    },
+    "scanner_reason_weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weighed at checkout — the price is per kilogram."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cântărit la casă — prețul e pe kilogram."
+          }
+        }
+      }
+    },
+    "scanner_reason_low_confidence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This line was read with low confidence — take a look."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rând citit cu încredere scăzută — aruncă o privire."
+          }
+        }
+      }
+    },
+    "scanner_action_edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editează"
+          }
+        }
+      }
+    },
+    "scanner_action_is_discount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's a discount"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E o reducere"
+          }
+        }
+      }
+    },
+    "scanner_action_delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge"
+          }
+        }
+      }
+    },
+    "scanner_reason_badge_ax": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show why this is flagged"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arată motivul semnalării"
+          }
+        }
+      }
+    },
+    "scanner_discount_ax_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discount of %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reducere de %@"
+          }
+        }
+      }
+    },
+    "scanner_original_price_ax_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Printed price %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preț tipărit %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

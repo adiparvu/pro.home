@@ -29,9 +29,52 @@ struct OCRLine: Equatable {
 
 // MARK: - Parsed models
 
+/// A discount the receipt itself printed against one item (or one group of
+/// identical items): "NUTRI-BOOST 10% -0,32", "AVANTAGES -5,98". Kept
+/// structured and SEPARATE from the item's own price — the printed price is
+/// never silently rewritten.
+struct ParsedDiscount: Equatable {
+    /// The label as printed ("Nutri-Boost", "Avantages"); may be empty when
+    /// the row carried only numbers.
+    var label: String
+    /// Percent when the row printed one ("10% -0,32" → 10); nil otherwise
+    /// (merged discounts with different percents also become nil).
+    var percent: Double?
+    /// Money taken off, always positive.
+    var amount: Double
+}
+
+/// Why an item is flagged for review — structured so the UI can explain the
+/// badge in plain language instead of showing a mute (!) icon.
+enum ParsedItemFlag: String, Equatable, CaseIterable {
+    case uncertainPrice     // price misread or qty × unit ≠ total
+    case uncertainName      // name too short / mostly noise
+    case discountAttached   // a discount row was attributed to this item
+    case weightPriced       // sold by weight (kg/g), price is per kg
+}
+
+/// A named receipt-level reduction printed in the footer between the
+/// subtotal and the paid total ("REDUCTION NUTRI-BOOST -2,11", "PROMO -11,96").
+struct ReceiptReduction: Equatable {
+    var label: String
+    var amount: Double      // positive
+}
+
+/// items − discounts vs. the printed paid total, stated openly.
+struct ReceiptReconciliation: Equatable {
+    var itemsGross: Double      // Σ printed line totals (before discounts)
+    var itemDiscounts: Double   // Σ discounts attached to items
+    var itemsNet: Double        // Σ final line prices
+    var paidTotal: Double       // the receipt's printed paid total
+    var delta: Double           // itemsNet − paidTotal
+    var isMatched: Bool         // the math closes (within a rounding cent)
+}
+
 struct ParsedReceipt {
     var storeName: String = ""
     var dateString: String = AppDate.dayString(from: Date())
+    /// The PAID total (the last printed total). When the receipt prints a
+    /// pre-reduction total first, that lands in `subtotal`.
     var total: Double = 0
     var currency: String = "RON"
     var category: String = "other"
@@ -40,9 +83,31 @@ struct ParsedReceipt {
     /// VAT total read off the receipt's fiscal rows (nil when absent) —
     /// captured instead of discarded, never invented.
     var vatAmount: Double? = nil
+    /// Pre-reduction total when the receipt printed two totals
+    /// ("TOTAAL 74,37 … TOTAAL 60,30" → 74,37); nil otherwise.
+    var subtotal: Double? = nil
+    /// Named footer reductions between subtotal and paid total.
+    var reductions: [ReceiptReduction] = []
+    /// Cash handed over / change returned, when printed. Read, not invented.
+    var cashGiven: Double? = nil
+    var changeGiven: Double? = nil
     var overallConfidence: Double = 0
 
     var dateValue: Date { AppDate.day(from: dateString) ?? Date() }
+
+    /// Compares what the items say with what the receipt says was paid.
+    var reconciliation: ReceiptReconciliation {
+        let gross = ReceiptIntelligence.roundMoney(items.reduce(0) { $0 + $1.totalPrice })
+        let discounts = ReceiptIntelligence.roundMoney(items.reduce(0) { $0 + ($1.discount?.amount ?? 0) })
+        let net = ReceiptIntelligence.roundMoney(items.reduce(0) { $0 + $1.finalPrice })
+        let delta = ReceiptIntelligence.roundMoney(net - total)
+        return ReceiptReconciliation(itemsGross: gross,
+                                     itemDiscounts: discounts,
+                                     itemsNet: net,
+                                     paidTotal: total,
+                                     delta: delta,
+                                     isMatched: total > 0 && abs(delta) <= 0.015)
+    }
 }
 
 struct ParsedItem: Identifiable, Equatable {
@@ -52,18 +117,33 @@ struct ParsedItem: Identifiable, Equatable {
     var quantity: Double
     var unit: String            // "buc" / "kg" / "g" / "l"
     var unitPrice: Double
+    /// The line total AS PRINTED, before any attached discount. Display and
+    /// persistence use `finalPrice`; this stays the receipt's own number.
     var totalPrice: Double
     var confidence: Double
     var uncertain: Bool
     /// ReceiptCategory id per product — detergents file under cleaning even
     /// on a grocery receipt, so budgets see where the money actually went.
     var category: String
+    /// Package size lifted out of the name ("275G DLL CHIA BIO" → "275 g").
+    var sizeText: String? = nil
+    /// Discount the receipt attributed to this item/group, kept separate.
+    var discount: ParsedDiscount? = nil
+    /// Structured reasons behind the review badge (order = display order).
+    var flags: [ParsedItemFlag] = []
+
+    /// What this line actually cost after its attached discount. Never
+    /// negative — a promo can cover the line, not overdraw it.
+    var finalPrice: Double {
+        ReceiptIntelligence.roundMoney(max(0, totalPrice - (discount?.amount ?? 0)))
+    }
 
     init(id: UUID = UUID(), name: String, normalizedName: String? = nil,
          quantity: Double = 1, unit: String = "buc",
          unitPrice: Double = 0, totalPrice: Double = 0,
          confidence: Double = 1, uncertain: Bool = false,
-         category: String? = nil) {
+         category: String? = nil, sizeText: String? = nil,
+         discount: ParsedDiscount? = nil, flags: [ParsedItemFlag] = []) {
         self.id = id
         self.name = name
         self.normalizedName = normalizedName ?? ReceiptProductLexicon.normalize(name)
@@ -74,6 +154,9 @@ struct ParsedItem: Identifiable, Equatable {
         self.confidence = confidence
         self.uncertain = uncertain
         self.category = category ?? ReceiptProductLexicon.category(for: name)
+        self.sizeText = sizeText
+        self.discount = discount
+        self.flags = flags
     }
 }
 
@@ -191,16 +274,26 @@ enum ReceiptIntelligence {
         receipt.currency = detectCurrency(in: texts)
 
         var items: [ParsedItem] = []
-        var declaredTotal: Double = 0
+        var totalsSeen: [Double] = []
         var vatTotal: Double = 0
+        var footerReductions: [ReceiptReduction] = []
+        var cashGiven: Double? = nil
+        var changeGiven: Double? = nil
         // A product name printed on its own row (its quantity/price follows).
         var pendingName: (name: String, confidence: Double)? = nil
         // A quantity row printed before its product name row.
         var pendingQuantity: QuantityMatch? = nil
+        let store = receipt.storeName
 
         for row in rows {
             let raw = row.text.trimmingCharacters(in: .whitespaces)
             guard raw.count > 1 else { continue }
+
+            // Barcode / article-number rows ("540011958694", "2226") sit
+            // BETWEEN a product and its weight line — skip them without
+            // touching the pending state, and never let them become items.
+            if isBarcodeRow(raw) { continue }
+
             let folded = ReceiptProductLexicon.fold(raw)
             let tokens = folded.split(separator: " ").map(String.init)
 
@@ -218,18 +311,35 @@ enum ReceiptIntelligence {
             // TOTAL — strongest signal; "TOTAL TVA"/"SUBTOTAL" are not it.
             // Belgian receipts print "Te betalen", French ones "à payer",
             // Romanian ones sometimes "de plată" — all mean THE total.
+            // Receipts with footer reductions print TWO totals (Delhaize:
+            // "TOTAAL 74,37 … TOTAAL 60,30") — keep them all, in order;
+            // the LAST is what was paid, the first is the subtotal.
             let isTotalRow = folded.contains("total") || folded.contains("totaal")
                 || folded.contains("te betalen") || folded.contains("a payer")
                 || folded.contains("de plata")
             if isTotalRow {
                 if !folded.contains("subtotal") && !folded.contains("sub-total")
-                    && !folded.contains("tva") && !folded.contains("btw") {
-                    if let best = allAmounts(in: raw).max(), best > declaredTotal {
-                        declaredTotal = best
-                    }
+                    && !folded.contains("tva") && !folded.contains("btw"),
+                   let best = allAmounts(in: raw).max(), best > 0 {
+                    totalsSeen.append(best)
                 }
                 pendingName = nil
                 continue
+            }
+
+            // Change / cash rows — read the payment story before the skip
+            // list swallows it ("CASH 60,50", "TERUG CASH 0,20", "REST 0,20").
+            if let amount = allAmounts(in: raw).last, amount > 0, !totalsSeen.isEmpty {
+                if tokens.contains(where: { ["terug", "wisselgeld", "rest", "change"].contains($0) }) {
+                    changeGiven = amount
+                    pendingName = nil
+                    continue
+                }
+                if tokens.contains(where: { ["cash", "numerar", "contant", "especes"].contains($0) }) {
+                    cashGiven = amount
+                    pendingName = nil
+                    continue
+                }
             }
 
             // Fiscal / payment / metadata rows — never products.
@@ -240,13 +350,27 @@ enum ReceiptIntelligence {
 
             let trailing = trailingAmount(in: raw)
 
-            // Discounts subtract from the item above them.
-            let isDiscountWord = ["reducere", "discount", "rabat", "korting"]
-                .contains { folded.contains($0) }
+            // Discount rows. Before the totals: attributed to the item just
+            // above as a STRUCTURED discount ("NUTRI-BOOST 10% -0,32",
+            // "AVANTAGES -5,98") — the item's own printed price stays
+            // untouched. After the first total: a named receipt-level
+            // reduction ("REDUCTION NUTRI-BOOST -2,11", "PROMO -11,96").
+            let isDiscountWord = discountWords.contains { folded.contains($0) }
             if isDiscountWord || (trailing?.isNegative ?? false) {
-                if let t = trailing, !items.isEmpty {
-                    let idx = items.count - 1
-                    items[idx].totalPrice = max(0, roundMoney(items[idx].totalPrice - abs(t.value)))
+                if let line = discountLine(in: raw) {
+                    if !totalsSeen.isEmpty {
+                        footerReductions.append(ReceiptReduction(label: line.label,
+                                                                 amount: line.amount))
+                    } else if !items.isEmpty {
+                        let idx = items.count - 1
+                        items[idx].discount = mergeDiscounts(
+                            items[idx].discount,
+                            ParsedDiscount(label: line.label, percent: line.percent,
+                                           amount: line.amount))
+                        if !items[idx].flags.contains(.discountAttached) {
+                            items[idx].flags.append(.discountAttached)
+                        }
+                    }
                 }
                 pendingName = nil
                 continue
@@ -267,7 +391,8 @@ enum ReceiptIntelligence {
                     items.append(makeItem(name: pending.name,
                                           quantity: q.qty, unit: q.unit,
                                           unitPrice: q.unitPrice, total: lineTotal,
-                                          visionConfidence: min(pending.confidence, row.confidence)))
+                                          visionConfidence: min(pending.confidence, row.confidence),
+                                          store: store))
                     pendingName = nil
                 } else if let last = items.last, last.quantity == 1,
                           abs(q.qty * q.unitPrice - last.totalPrice) <= max(0.05, last.totalPrice * 0.02) {
@@ -276,6 +401,10 @@ enum ReceiptIntelligence {
                     items[idx].quantity = q.qty
                     items[idx].unit = q.unit
                     items[idx].unitPrice = q.unitPrice
+                    if (q.unit == "kg" || q.unit == "g"),
+                       !items[idx].flags.contains(.weightPriced) {
+                        items[idx].flags.append(.weightPriced)
+                    }
                 } else {
                     pendingQuantity = q
                 }
@@ -292,16 +421,19 @@ enum ReceiptIntelligence {
                     // Belgian single-row style: "FAIRTRADEROZEN 2,99 x 2 5,98".
                     items.append(makeItem(name: inline.name, quantity: inline.qty, unit: "buc",
                                           unitPrice: inline.unitPrice, total: t.value,
-                                          visionConfidence: row.confidence))
+                                          visionConfidence: row.confidence,
+                                          store: store))
                 } else if let pq = pendingQuantity,
                    abs(pq.qty * pq.unitPrice - t.value) <= max(0.05, t.value * 0.02) {
                     items.append(makeItem(name: name, quantity: pq.qty, unit: pq.unit,
                                           unitPrice: pq.unitPrice, total: t.value,
-                                          visionConfidence: row.confidence))
+                                          visionConfidence: row.confidence,
+                                          store: store))
                 } else {
                     items.append(makeItem(name: name, quantity: 1, unit: "buc",
                                           unitPrice: t.value, total: t.value,
-                                          visionConfidence: row.confidence))
+                                          visionConfidence: row.confidence,
+                                          store: store))
                 }
                 pendingQuantity = nil
                 pendingName = nil
@@ -315,9 +447,31 @@ enum ReceiptIntelligence {
             }
         }
 
+        // Consecutive identical lines ("MYRTILLES 300GR 5,49" × 4) collapse
+        // into one ×N row; their promo discounts merge onto the group.
+        items = groupIdenticalItems(items)
+
+        // The household's own store-scoped renames outrank every static rule.
+        if !store.isEmpty {
+            for index in items.indices {
+                if let learned = ReceiptLexiconMemory.correction(for: items[index].name,
+                                                                 storeName: store) {
+                    items[index].normalizedName = learned
+                }
+            }
+        }
+
         receipt.items = items
-        let itemsSum = roundMoney(items.reduce(0) { $0 + $1.totalPrice })
+        let itemsSum = roundMoney(items.reduce(0) { $0 + $1.finalPrice })
+        let declaredTotal = totalsSeen.last ?? 0
         receipt.total = declaredTotal > 0 ? declaredTotal : itemsSum
+        if totalsSeen.count >= 2, let first = totalsSeen.first,
+           first > receipt.total + 0.005 {
+            receipt.subtotal = first
+        }
+        receipt.reductions = footerReductions
+        receipt.cashGiven = cashGiven
+        receipt.changeGiven = changeGiven
         // A VAT figure larger than the total is a misread, not a fact.
         if vatTotal > 0, vatTotal < receipt.total { receipt.vatAmount = vatTotal }
         receipt.category = guessCategory(storeName: receipt.storeName, items: items)
@@ -363,6 +517,8 @@ enum ReceiptIntelligence {
         "betalen", "betaalkaart", "bancontact", "payconiq", "aantal",
         "omschrijving", "kaarthouder", "kopie", "merchant", "wisselgeld",
         "eft", "girocard",
+        // Loyalty-points footer blocks (Delhaize SuperPlus: 1753 → +30 → 1783).
+        "punten", "saldo", "spaarpunten", "superplus", "points",
     ]
 
     private static let skipPhrases: [String] = [
@@ -490,27 +646,216 @@ enum ReceiptIntelligence {
         return QuantityMatch(qty: qty, unit: unit, unitPrice: unitPrice)
     }
 
+    // MARK: - Discount rows
+
+    /// Words that mark a discount/promo row in the languages receipts
+    /// actually arrive in (RO, NL, FR, EN). Rows with a negative amount are
+    /// discounts regardless; these words also catch rows where the OCR lost
+    /// the minus. "Promo" is deliberately absent — it appears in product
+    /// names too, so it only counts with a negative amount.
+    static let discountWords: [String] = [
+        "reducere", "discount", "rabat", "korting", "reduction", "remise",
+        "avantage", "avantaj", "voordeel",
+    ]
+
+    /// Marker words to strip from a discount label so "REDUCTION
+    /// NUTRI-BOOST" reads "Nutri-Boost" (only when something remains).
+    private static let discountLabelNoise: Set<String> = [
+        "reduction", "reducere", "discount", "korting", "remise", "rabat",
+    ]
+
+    struct DiscountLine {
+        var label: String
+        var percent: Double?
+        var amount: Double
+    }
+
+    private static let percentRegex = #/(\d{1,3}(?:[.,]\d{1,2})?)\s*%/#
+
+    /// Reads a discount row into (label, percent?, amount). "NUTRI-BOOST
+    /// 10% -0,32" → ("Nutri-Boost", 10, 0.32); "AVANTAGES -5,98" →
+    /// ("Avantages", nil, 5.98).
+    static func discountLine(in text: String) -> DiscountLine? {
+        guard let trailing = trailingAmount(in: text), trailing.value > 0
+        else { return nil }
+        var head = String(text[..<trailing.range.lowerBound])
+        var percent: Double? = nil
+        if let match = head.firstMatch(of: percentRegex),
+           let value = number(from: match.1), value > 0, value <= 100 {
+            percent = value
+            head.replaceSubrange(match.range, with: " ")
+        }
+        let labelWords = ReceiptProductLexicon.fold(head)
+            .split(separator: " ").map(String.init)
+        let meaningful = labelWords.filter { !discountLabelNoise.contains($0) }
+        let chosen = meaningful.isEmpty ? labelWords : meaningful
+        let label = cleanName(chosen.joined(separator: " "))
+        return DiscountLine(label: label, percent: percent,
+                            amount: roundMoney(abs(trailing.value)))
+    }
+
+    /// Sums two attached discounts; the percent survives only when both
+    /// agree (a merged 10% + flat promo has no single honest percent).
+    static func mergeDiscounts(_ a: ParsedDiscount?, _ b: ParsedDiscount?) -> ParsedDiscount? {
+        guard let a else { return b }
+        guard let b else { return a }
+        return ParsedDiscount(label: a.label.isEmpty ? b.label : a.label,
+                              percent: a.percent == b.percent ? a.percent : nil,
+                              amount: roundMoney(a.amount + b.amount))
+    }
+
+    // A discount fused into a product row by OCR: "… 10% -0,33" embedded in
+    // the name part. Extracted structurally, never left in the name.
+    private static let embeddedDiscountRegex =
+        #/(\d{1,3}(?:[.,]\d{1,2})?)\s*%\s*-\s*(\d{1,6}[.,]\d{2})/#
+
+    // MARK: - Line grouping
+
+    /// Collapses CONSECUTIVE identical unit-priced lines (same folded name,
+    /// same unit price, counted pieces) into one ×N row. Attached promo
+    /// discounts merge onto the group; flags and worst confidence carry over.
+    static func groupIdenticalItems(_ items: [ParsedItem]) -> [ParsedItem] {
+        var out: [ParsedItem] = []
+        for item in items {
+            if var last = out.last,
+               last.unit == "buc", item.unit == "buc",
+               last.quantity.rounded() == last.quantity,
+               item.quantity.rounded() == item.quantity,
+               abs(last.unitPrice - item.unitPrice) < 0.005,
+               ReceiptProductLexicon.fold(last.name) == ReceiptProductLexicon.fold(item.name) {
+                last.quantity += item.quantity
+                last.totalPrice = roundMoney(last.totalPrice + item.totalPrice)
+                last.discount = mergeDiscounts(last.discount, item.discount)
+                for flag in item.flags where !last.flags.contains(flag) {
+                    last.flags.append(flag)
+                }
+                last.confidence = min(last.confidence, item.confidence)
+                last.uncertain = last.uncertain || item.uncertain
+                out[out.count - 1] = last
+            } else {
+                out.append(item)
+            }
+        }
+        return out
+    }
+
+    // MARK: - Name cleanup
+
+    /// True for rows that are only a number (barcodes, article codes,
+    /// loyalty balances) — never products, never names.
+    static func isBarcodeRow(_ text: String) -> Bool {
+        let stripped = text.filter { !$0.isWhitespace }
+        guard stripped.count >= 4 else { return false }
+        return stripped.allSatisfy(\.isNumber)
+    }
+
+    /// Removes embedded barcode runs (6+ digits) from a name fragment.
+    private static func stripBarcodes(_ name: String) -> String {
+        name.replacingOccurrences(of: #"\d{6,}"#, with: " ",
+                                  options: .regularExpression)
+    }
+
+    // Leading or trailing package size in a name: "275G DLL CHIA BIO",
+    // "MYRTILLES 300GR". Moved into `sizeText`, never left as name noise.
+    private static let leadingSizeRegex =
+        #/^\s*(\d{1,4}(?:[.,]\d{1,2})?)\s*(g|gr|kg|ml|cl|l)\b[\s.]*/#.ignoresCase()
+    private static let trailingSizeRegex =
+        #/[\s.]+(\d{1,4}(?:[.,]\d{1,2})?)\s*(g|gr|kg|ml|cl|l)\.?\s*$/#.ignoresCase()
+
+    /// Lifts a leading/trailing size out of `name`; returns it as display
+    /// text ("275 g") and the name without it — only when a real name is
+    /// left over (never strip a size that IS the whole line).
+    static func extractSize(from name: String) -> (sizeText: String?, name: String) {
+        func normalizedUnit(_ raw: String) -> String {
+            let lower = raw.lowercased()
+            return lower == "gr" ? "g" : lower
+        }
+        if let match = name.firstMatch(of: leadingSizeRegex) {
+            var rest = name
+            rest.removeSubrange(match.range)
+            if isPlausibleName(rest) {
+                return ("\(match.1) \(normalizedUnit(String(match.2)))", rest)
+            }
+        }
+        if let match = name.firstMatch(of: trailingSizeRegex) {
+            var rest = name
+            rest.removeSubrange(match.range)
+            if isPlausibleName(rest) {
+                return ("\(match.1) \(normalizedUnit(String(match.2)))", rest)
+            }
+        }
+        return (nil, name)
+    }
+
+    /// The name the row should DISPLAY: the household's own store-scoped
+    /// rename first, then a curated retailer-abbreviation expansion
+    /// ("DLL" → "Delhaize"), then the shared product lexicon. The fallback
+    /// is always the cleaned original text — never an invention.
+    static func displayName(for clean: String, store: String) -> String {
+        if let learned = ReceiptLexiconMemory.correction(for: clean, storeName: store) {
+            return learned
+        }
+        if let expanded = ReceiptAbbreviations.expand(clean, store: store) {
+            return expanded
+        }
+        return ReceiptProductLexicon.normalize(clean)
+    }
+
     // MARK: - Item factory
 
-    private static func makeItem(name: String, quantity: Double, unit: String,
+    private static func makeItem(name rawName: String, quantity: Double, unit: String,
                                  unitPrice: Double, total: Double,
-                                 visionConfidence: Double) -> ParsedItem {
-        let clean = cleanName(name)
+                                 visionConfidence: Double, store: String) -> ParsedItem {
+        var working = stripBarcodes(rawName)
+        var discount: ParsedDiscount? = nil
+        var flags: [ParsedItemFlag] = []
+
+        // OCR sometimes fuses the discount row into the product row; pull
+        // the "10% -0,33" back out as structure and drop the store's promo
+        // marker words from the name (only when a discount was found —
+        // "Nutri-Boost" can also be a real product).
+        if let match = working.firstMatch(of: embeddedDiscountRegex),
+           let percent = number(from: match.1), let amount = number(from: match.2),
+           percent > 0, percent <= 100, amount > 0 {
+            discount = ParsedDiscount(label: "", percent: percent,
+                                      amount: roundMoney(amount))
+            working.replaceSubrange(match.range, with: " ")
+            working = ReceiptAbbreviations.removingPromoMarkers(from: working, store: store)
+            flags.append(.discountAttached)
+        }
+
+        let (sizeText, sized) = extractSize(from: working)
+        let clean = cleanName(sized)
+
         var quality = 1.0
-        if clean.count < 3 { quality *= 0.6 }
-        if total <= 0 { quality *= 0.5 }
+        if clean.count < 3 {
+            quality *= 0.6
+            flags.append(.uncertainName)
+        }
+        if total <= 0 {
+            quality *= 0.5
+            flags.append(.uncertainPrice)
+        }
         let expected = quantity * unitPrice
-        if expected > 0, abs(expected - total) > max(0.05, total * 0.02) { quality *= 0.7 }
+        if expected > 0, abs(expected - total) > max(0.05, total * 0.02) {
+            quality *= 0.7
+            if !flags.contains(.uncertainPrice) { flags.append(.uncertainPrice) }
+        }
+        if unit == "kg" || unit == "g" { flags.append(.weightPriced) }
 
         let confidence = min(1, max(0, visionConfidence * quality))
         let effectiveUnitPrice = unitPrice > 0 ? unitPrice : total / max(quantity, 0.001)
         return ParsedItem(name: clean,
+                          normalizedName: displayName(for: clean, store: store),
                           quantity: quantity,
                           unit: unit,
                           unitPrice: roundMoney(effectiveUnitPrice),
                           totalPrice: roundMoney(total),
                           confidence: confidence,
-                          uncertain: confidence < 0.8)
+                          uncertain: confidence < 0.8,
+                          sizeText: sizeText,
+                          discount: discount,
+                          flags: flags)
     }
 
     // MARK: - Store / date / currency / category
@@ -581,6 +926,13 @@ enum ReceiptIntelligence {
         for text in texts {
             let folded = ReceiptProductLexicon.fold(text)
             if text.contains("€") || folded.split(separator: " ").contains("eur") {
+                return "EUR"
+            }
+            // Dutch/French fiscal vocabulary only appears on Benelux
+            // receipts — those are Euro receipts even when the OCR misses
+            // the € sign (Delhaize prints bare "TOTAAL 74,37").
+            if folded.contains("totaal") || folded.contains("te betalen")
+                || folded.contains("btw") || folded.contains("terug") {
                 return "EUR"
             }
         }

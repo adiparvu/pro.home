@@ -58,8 +58,14 @@ struct ReceiptScannerView: View {
                     ScannerProcessingView(progress: progress)
                         .transition(.opacity)
                 case .review:
-                    if let binding = Binding($parsed) {
-                        ReceiptReviewView(parsed: binding,
+                    if let receipt = parsed {
+                        // Deliberately NOT `Binding($parsed)`: that binding's
+                        // getter force-unwraps, and the outgoing review view
+                        // (kept alive by the opacity transition) may re-read
+                        // it after `parsed` becomes nil — a crash. This
+                        // getter falls back to the last snapshot instead.
+                        ReceiptReviewView(parsed: Binding(get: { parsed ?? receipt },
+                                                          set: { parsed = $0 }),
                                           syncActions: syncActions,
                                           pantryAvailable: pantryService != nil,
                                           isSaving: isSaving) {
@@ -78,8 +84,10 @@ struct ReceiptScannerView: View {
                 if phase == .review {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(String(localized: "scanner_rescan")) {
+                            // `parsed` must survive the animated exit — the
+                            // review view can still read it mid-transition.
+                            // The next scan clears it in `process(images:)`.
                             withAnimation(phaseAnimation) {
-                                parsed = nil
                                 syncActions = []
                                 phase = .entry
                             }
@@ -185,6 +193,10 @@ struct ReceiptScannerView: View {
     private func process(images: [UIImage]) {
         guard !images.isEmpty else { return }
         scanFailed = false
+        // A stale review result may still be around after "rescan" (kept so
+        // the outgoing view never reads a nil) — this is where it dies.
+        parsed = nil
+        syncActions = []
         progress = ScanProgress(pageCount: images.count)
         withAnimation(phaseAnimation) { phase = .processing }
 
@@ -294,7 +306,9 @@ struct ReceiptScannerView: View {
                 name: item.normalizedName.isEmpty ? item.name : item.normalizedName,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
-                totalPrice: item.totalPrice,
+                // What the line actually cost: printed total minus its
+                // attached discount — so saved lines sum to the paid total.
+                totalPrice: item.finalPrice,
                 category: item.category,
                 createdAt: now
             )
@@ -545,6 +559,7 @@ private struct ReceiptReviewView: View {
                 headerCard
                 syncSection
                 itemsSection
+                reductionsSection
 
                 if pantryAvailable, !parsed.items.isEmpty {
                     pantryNote
@@ -739,7 +754,12 @@ private struct ReceiptReviewView: View {
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
                         ForEach($parsed.items) { $item in
-                            ReviewItemRow(item: $item, currency: parsed.currency)
+                            ReviewItemRow(item: $item,
+                                          currency: parsed.currency,
+                                          storeName: parsed.storeName,
+                                          canConvertToDiscount: parsed.items.first?.id != item.id,
+                                          onConvertToDiscount: { convertToDiscount(item.id) },
+                                          onDelete: { deleteItem(item.id) })
                             if item.id != parsed.items.last?.id {
                                 Rectangle().fill(Color.hairline)
                                     .frame(height: 0.5)
@@ -750,6 +770,142 @@ private struct ReceiptReviewView: View {
                 }
             }
         }
+    }
+
+    /// A row the user says is really a discount re-attaches to the item
+    /// above it — exactly what the parser does for recognized promo lines.
+    private func convertToDiscount(_ id: UUID) {
+        guard let index = parsed.items.firstIndex(where: { $0.id == id }),
+              index > 0 else { return }
+        let row = parsed.items[index]
+        let amount = row.totalPrice > 0 ? row.totalPrice : (row.discount?.amount ?? 0)
+        guard amount > 0 else { return }
+        var target = parsed.items[index - 1]
+        let label = row.normalizedName.isEmpty ? row.name : row.normalizedName
+        target.discount = ReceiptIntelligence.mergeDiscounts(
+            target.discount,
+            ParsedDiscount(label: label, percent: nil, amount: amount))
+        if !target.flags.contains(.discountAttached) {
+            target.flags.append(.discountAttached)
+        }
+        parsed.items[index - 1] = target
+        parsed.items.remove(at: index)
+        HapticFeedback.impact(.light)
+    }
+
+    private func deleteItem(_ id: UUID) {
+        parsed.items.removeAll { $0.id == id }
+        HapticFeedback.impact(.light)
+    }
+
+    // MARK: Reductions & reconciliation
+
+    /// Receipt-level reductions when the footer printed them; otherwise the
+    /// per-item discounts aggregated by label. Parsed values only.
+    private var displayReductions: [ReceiptReduction] {
+        if !parsed.reductions.isEmpty { return parsed.reductions }
+        var order: [String] = []
+        var sums: [String: Double] = [:]
+        for item in parsed.items {
+            guard let discount = item.discount else { continue }
+            let label = discount.label
+            if sums[label] == nil { order.append(label) }
+            sums[label, default: 0] += discount.amount
+        }
+        return order.map { ReceiptReduction(label: $0, amount: ReceiptIntelligence.roundMoney(sums[$0] ?? 0)) }
+    }
+
+    @ViewBuilder
+    private var reductionsSection: some View {
+        let recon = parsed.reconciliation
+        let named = displayReductions
+        if !named.isEmpty || recon.itemDiscounts > 0 || parsed.subtotal != nil {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                fieldLabel("scanner_reductions_title")
+                GlassCard(padding: AppSpacing.lg) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        ForEach(Array(named.enumerated()), id: \.offset) { _, reduction in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(verbatim: reduction.label.isEmpty
+                                     ? String(localized: "scanner_reduction_generic")
+                                     : reduction.label)
+                                    .font(AppFont.footnote)
+                                    .foregroundStyle(.primary)
+                                Spacer(minLength: AppSpacing.sm)
+                                Text(verbatim: "−" + money(reduction.amount))
+                                    .font(AppFont.footnoteEmphasis)
+                                    .foregroundStyle(Color.brandSuccess)
+                                    .monospacedDigit()
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+
+                        if !named.isEmpty {
+                            Rectangle().fill(Color.hairline).frame(height: 0.5)
+                        }
+
+                        reconciliationRow(recon)
+
+                        if let cash = parsed.cashGiven {
+                            Text(verbatim: cashCaption(cash: cash, change: parsed.changeGiven))
+                                .font(AppFont.caption2)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .monospacedDigit()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func reconciliationRow(_ recon: ReceiptReconciliation) -> some View {
+        let subtotal = parsed.subtotal ?? recon.itemsGross
+        let namedSum = displayReductions.reduce(0) { $0 + $1.amount }
+        let reductionsTotal = namedSum > 0 ? namedSum : recon.itemDiscounts
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(verbatim: String(format: String(localized: "scanner_reconciliation_fmt"),
+                                  money(subtotal), money(reductionsTotal),
+                                  money(recon.paidTotal)))
+                .font(AppFont.footnote)
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
+            if recon.paidTotal > 0 {
+                if recon.isMatched {
+                    Label {
+                        Text("scanner_reconciliation_ok")
+                            .font(AppFont.caption)
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill")
+                    }
+                    .foregroundStyle(Color.brandSuccess)
+                } else {
+                    Label {
+                        Text(String(format: String(localized: "scanner_reconciliation_off_fmt"),
+                                    money(abs(recon.delta))))
+                            .font(AppFont.caption)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                    }
+                    .foregroundStyle(Color.brandWarning)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func cashCaption(cash: Double, change: Double?) -> String {
+        if let change, change > 0 {
+            return String(format: String(localized: "scanner_cash_fmt"),
+                          money(cash), money(change))
+        }
+        return String(format: String(localized: "scanner_cash_no_change_fmt"), money(cash))
+    }
+
+    private func money(_ value: Double) -> String {
+        CurrencyService.money(value, code: parsed.currency, whole: false)
     }
 
     private func fieldLabel(_ key: LocalizedStringKey) -> some View {
@@ -767,23 +923,70 @@ private struct ReviewItemRow: View {
     /// The receipt's detected currency — prices are shown in what was
     /// actually printed, never a bare number.
     let currency: String
+    /// The receipt's store — renames learned here are store-scoped.
+    let storeName: String
+    /// False for the first row (there is nothing above to attach to).
+    let canConvertToDiscount: Bool
+    let onConvertToDiscount: () -> Void
+    let onDelete: () -> Void
+
     @State private var isEditing = false
+    @State private var showsReasons = false
     /// The OCR's original name, captured when the editor opens — the
     /// before/after pair is what the lexicon memory learns from.
     @State private var originalName = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var rowAnimation: Animation? { reduceMotion ? nil : .snappy }
+    private var displayTitle: String {
+        item.normalizedName.isEmpty ? item.name : item.normalizedName
+    }
+    /// Uncertainty warns (amber); attribution/weight merely informs.
+    private var hasWarning: Bool {
+        item.uncertain
+            || item.flags.contains(.uncertainPrice)
+            || item.flags.contains(.uncertainName)
+    }
+    private var hasBadge: Bool { hasWarning || !item.flags.isEmpty }
+    private var isCountedGroup: Bool {
+        item.unit == "buc" && item.quantity > 1
+            && item.quantity.rounded() == item.quantity
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            Button {
-                guard item.uncertain || isEditing else { return }
-                withAnimation(reduceMotion ? nil : .snappy) { toggleEditing() }
-            } label: {
-                rowContent
-            }
-            .buttonStyle(.plain)
-            .disabled(!item.uncertain && !isEditing)
+            HStack(spacing: AppSpacing.sm) {
+                Button {
+                    withAnimation(rowAnimation) { toggleEditing() }
+                } label: {
+                    rowContent
+                }
+                .buttonStyle(.plain)
 
+                if hasBadge {
+                    Button {
+                        HapticFeedback.selection()
+                        withAnimation(rowAnimation) { showsReasons.toggle() }
+                    } label: {
+                        Image(systemName: hasWarning
+                              ? "exclamationmark.circle.fill" : "info.circle")
+                            .font(AppFont.footnote)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(hasWarning ? Color.brandWarning : Color.secondary)
+                            .frame(width: 30, height: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, AppSpacing.sm)
+                    .accessibilityLabel(Text("scanner_reason_badge_ax"))
+                    .accessibilityAddTraits(showsReasons ? .isSelected : [])
+                }
+            }
+
+            if showsReasons {
+                reasonPanel
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+            }
             if isEditing {
                 editor
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
@@ -791,25 +994,55 @@ private struct ReviewItemRow: View {
         }
     }
 
+    // MARK: Row content
+
     private var rowContent: some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.normalizedName.isEmpty ? item.name : item.normalizedName)
+        HStack(alignment: .center, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(verbatim: displayTitle)
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+
+                if item.sizeText != nil || isCountedGroup || item.discount != nil {
+                    HStack(spacing: AppSpacing.xs) {
+                        if let size = item.sizeText {
+                            metaChip(Text(verbatim: size))
+                        }
+                        if isCountedGroup {
+                            metaChip(Text(verbatim: "×\(Int(item.quantity))"))
+                        }
+                        if let discount = item.discount {
+                            discountChip(discount)
+                        }
+                    }
+                }
+
                 if !item.normalizedName.isEmpty,
                    item.normalizedName.localizedCaseInsensitiveCompare(item.name) != .orderedSame {
-                    Text(item.name)
+                    Text(verbatim: item.name)
                         .font(AppFont.caption2)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
             }
             Spacer(minLength: AppSpacing.sm)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(verbatim: CurrencyService.money(item.totalPrice, code: currency, whole: false))
+                Text(verbatim: CurrencyService.money(item.finalPrice, code: currency, whole: false))
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .monospacedDigit()
+                if item.discount != nil, item.totalPrice > item.finalPrice {
+                    // The printed price stays visible — the discount never
+                    // silently rewrites it.
+                    Text(verbatim: CurrencyService.money(item.totalPrice, code: currency, whole: false))
+                        .font(AppFont.caption2)
+                        .strikethrough()
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .monospacedDigit()
+                        .accessibilityLabel(Text(String(
+                            format: String(localized: "scanner_original_price_ax_fmt"),
+                            CurrencyService.money(item.totalPrice, code: currency, whole: false))))
+                }
                 if item.quantity != 1 {
                     Text(verbatim: "\(quantityText) × \(CurrencyService.money(item.unitPrice, code: currency, whole: false))")
                         .font(AppFont.caption2)
@@ -817,26 +1050,136 @@ private struct ReviewItemRow: View {
                         .monospacedDigit()
                 }
             }
-            if item.uncertain {
-                Image(systemName: "exclamationmark.circle")
-                    .font(AppFont.footnote)
-                    .foregroundStyle(Color.brandWarning)
-                    .accessibilityLabel(Text("scanner_uncertain_badge"))
-            }
         }
-        .padding(.horizontal, AppSpacing.base)
+        .padding(.leading, AppSpacing.base)
+        .padding(.trailing, hasBadge ? 0 : AppSpacing.base)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint(item.uncertain ? Text("scanner_uncertain_badge") : Text(verbatim: ""))
     }
 
+    private func metaChip(_ text: Text) -> some View {
+        text
+            .font(AppFont.caption2)
+            .monospacedDigit()
+            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 2)
+            .background(Color.subtleFill, in: Capsule())
+    }
+
+    private func discountChip(_ discount: ParsedDiscount) -> some View {
+        let label: String
+        if let percent = discount.percent, percent.rounded() == percent {
+            label = "−\(Int(percent)) %"
+        } else if let percent = discount.percent {
+            label = "−\(quantityString(percent)) %"
+        } else {
+            label = "−" + CurrencyService.money(discount.amount, code: currency, whole: false)
+        }
+        return Text(verbatim: label)
+            .font(AppFont.caption2)
+            .monospacedDigit()
+            .foregroundStyle(Color.brandSuccess)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 2)
+            .background(Color.brandSuccess.opacity(AppOpacity.subtleFill), in: Capsule())
+            .accessibilityLabel(Text(String(
+                format: String(localized: "scanner_discount_ax_fmt"),
+                CurrencyService.money(discount.amount, code: currency, whole: false))))
+    }
+
+    // MARK: Reasons panel — the badge always explains itself
+
+    private var reasonPanel: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            ForEach(reasonKeys, id: \.self) { key in
+                Label {
+                    Text(LocalizedStringKey(key))
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "arrow.turn.down.right")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(spacing: AppSpacing.sm) {
+                actionChip("scanner_action_edit", icon: "pencil") {
+                    withAnimation(rowAnimation) {
+                        if !isEditing { toggleEditing() }
+                        showsReasons = false
+                    }
+                }
+                if canConvertToDiscount {
+                    actionChip("scanner_action_is_discount", icon: "arrow.up.forward") {
+                        withAnimation(rowAnimation) { onConvertToDiscount() }
+                    }
+                }
+                actionChip("scanner_action_delete", icon: "trash",
+                           tint: Color.brandDanger) {
+                    withAnimation(rowAnimation) { onDelete() }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.bottom, AppSpacing.md)
+    }
+
+    /// One plain-language line per structured flag; a generic line when
+    /// only the overall confidence was low. Catalog keys (RO+EN).
+    private var reasonKeys: [String] {
+        var keys: [String] = item.flags.map { flag in
+            switch flag {
+            case .uncertainPrice:   "scanner_reason_uncertain_price"
+            case .uncertainName:    "scanner_reason_uncertain_name"
+            case .discountAttached: "scanner_reason_discount"
+            case .weightPriced:     "scanner_reason_weight"
+            }
+        }
+        if keys.isEmpty, item.uncertain {
+            keys.append("scanner_reason_low_confidence")
+        }
+        return keys
+    }
+
+    private func actionChip(_ key: LocalizedStringKey, icon: String,
+                            tint: Color = .primary,
+                            action: @escaping () -> Void) -> some View {
+        Button {
+            HapticFeedback.selection()
+            action()
+        } label: {
+            Label {
+                Text(key).font(AppFont.captionEmphasis)
+            } icon: {
+                Image(systemName: icon).font(AppFont.caption2)
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, 6)
+            .background(Color.subtleFill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Quantity formatting
+
     private var quantityText: String {
-        let formatted = ReceiptListSync.formatQuantity(item.quantity,
-                                                       unit: item.unit == "buc" ? nil : item.unit)
+        quantityString(item.quantity, unit: item.unit == "buc" ? nil : item.unit)
+    }
+
+    /// Stored quantities keep dot decimals; display follows the locale.
+    private func quantityString(_ value: Double, unit: String? = nil) -> String {
+        let formatted = ReceiptListSync.formatQuantity(value, unit: unit)
         guard let separator = Locale.current.decimalSeparator, separator != "." else { return formatted }
         return formatted.replacingOccurrences(of: ".", with: separator)
     }
+
+    // MARK: Editor
 
     private var editor: some View {
         VStack(spacing: AppSpacing.sm) {
@@ -870,15 +1213,18 @@ private struct ReviewItemRow: View {
         if isEditing {
             // Closing the editor counts as the user's review.
             item.uncertain = false
+            item.flags.removeAll { $0 == .uncertainName || $0 == .uncertainPrice }
             item.unitPrice = item.quantity > 0
                 ? ReceiptIntelligence.roundMoney(item.totalPrice / item.quantity)
                 : item.totalPrice
             // Learn the rename — the app must never make the same OCR
-            // mistake twice on this household's receipts.
+            // mistake twice on this household's receipts. Store-scoped:
+            // the same shorthand can mean something else elsewhere.
             if !originalName.isEmpty, item.name != originalName {
                 ReceiptLexiconMemory.remember(
                     original: originalName,
-                    corrected: item.normalizedName.isEmpty ? item.name : item.normalizedName)
+                    corrected: item.normalizedName.isEmpty ? item.name : item.normalizedName,
+                    storeName: storeName)
             }
             isEditing = false
         } else {

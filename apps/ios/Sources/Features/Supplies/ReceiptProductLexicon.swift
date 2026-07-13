@@ -109,6 +109,8 @@ enum ReceiptProductLexicon {
         "ciuperci": "Ciuperci", "spanac": "Spanac", "broccoli": "Broccoli",
         "conopida": "Conopidă", "varza": "Varză", "dovlecei": "Dovlecei",
         "vinete": "Vinete", "servetele": "Șervețele", "grec": "grec",
+        "afine": "Afine", "zmeura": "Zmeură", "mango": "Mango",
+        "pecan": "Nuci pecan",
     ]
 
     /// Folded receipt/list token → canonical product id. Covers Romanian,
@@ -133,14 +135,27 @@ enum ReceiptProductLexicon {
         // fruit & veg
         "banane": "banane", "ban": "banane", "banana": "banane",
         "bananas": "banane", "banaan": "banane", "bananen": "banane",
+        "bananes": "banane",
         "rosii": "rosii", "rosie": "rosii", "tomate": "rosii",
         "tomato": "rosii", "tomatoes": "rosii", "tomaten": "rosii",
+        "tomates": "rosii",
         "cartofi": "cartofi", "cartof": "cartofi", "potato": "cartofi",
         "potatoes": "cartofi", "aardappelen": "cartofi",
         "ceapa": "ceapa", "onion": "ceapa", "onions": "ceapa", "uien": "ceapa",
         "usturoi": "usturoi", "garlic": "usturoi", "knoflook": "usturoi",
         "mere": "mere", "mar": "mere", "apple": "mere", "apples": "mere",
-        "appels": "mere",
+        "appels": "mere", "pomme": "mere", "pommes": "mere",
+        // berries & exotic fruit (FR/NL receipts around Brussels)
+        "afine": "afine", "myrtille": "afine", "myrtilles": "afine",
+        "blueberry": "afine", "blueberries": "afine",
+        "bosbes": "afine", "bosbessen": "afine",
+        "blauwe": "afine", "bessen": "afine",   // "BLAUWE BESSEN"
+        "zmeura": "zmeura", "framboise": "zmeura", "framboises": "zmeura",
+        "raspberry": "zmeura", "raspberries": "zmeura", "frambozen": "zmeura",
+        "mango": "mango", "mangue": "mango",
+        "pecan": "pecan", "pecanes": "pecan", "pecans": "pecan",
+        // FR/NL cabbage words ("CHOU POINTU" = spitskool)
+        "chou": "varza", "choux": "varza", "spitskool": "varza",
         "morcovi": "morcovi", "morcov": "morcovi", "carrot": "morcovi",
         "carrots": "morcovi", "wortelen": "morcovi",
         "castraveti": "castraveti", "castravete": "castraveti",
