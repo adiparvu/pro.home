@@ -519,7 +519,7 @@ struct SettingsView: View {
             }
         case .seasonal:
             NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
-                SeasonalChecklistView()
+                SeasonalChecklistView().environment(propertyService).environment(taskService)
             }
         case .paint:
             NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
