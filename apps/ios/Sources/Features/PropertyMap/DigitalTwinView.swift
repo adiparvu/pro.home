@@ -228,20 +228,29 @@ struct DigitalTwinView: View {
                 )
                 .ignoresSafeArea(edges: .bottom)
 
+                // The overlaid chrome (lens bar, controls, toolbars, legend)
+                // wears the smart-home warm glass; the aerial photo itself is
+                // content and stays untouched. Each overlay resolves its
+                // materials in the dark scheme (the smart-home surfaces'
+                // sanctioned exception), scoped so the map never dims.
                 lensBar
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .environment(\.colorScheme, .dark)
 
                 controls
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .environment(\.colorScheme, .dark)
 
                 if zoneDrawMode {
                     zoneDrawToolbar
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .environment(\.colorScheme, .dark)
                 }
 
                 if reshapeZoneId != nil {
                     reshapeToolbar
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .environment(\.colorScheme, .dark)
                 }
 
                 if anyLayerActive && !editingOverlayActive {
@@ -251,6 +260,7 @@ struct DigitalTwinView: View {
                         .padding(.bottom, 40)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                         .transition(.opacity)
+                        .environment(\.colorScheme, .dark)
                 }
 
                 // Time machine covers the whole twin while active — it's the
@@ -264,7 +274,13 @@ struct DigitalTwinView: View {
                     .zIndex(10)
                 }
             } else {
-                emptyState
+                // No property yet — the warm smart-home backdrop (honest
+                // bronze fallback: there is no cover photo to blur).
+                ZStack {
+                    SmartHomeBackdrop(photoSource: nil)
+                    emptyState
+                        .environment(\.colorScheme, .dark)
+                }
             }
         }
         .navigationTitle("Digital Twin")
@@ -316,6 +332,7 @@ struct DigitalTwinView: View {
             .environment(documentService)
             .environment(taskService)
             .environment(blueprintService)
+            .environment(propertyService)
             .presentationDetents([.height(320), .medium, .large])
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             .presentationDragIndicator(.visible)
@@ -354,6 +371,7 @@ struct DigitalTwinView: View {
             .environment(appSettings)
             .environment(documentService)
             .environment(taskService)
+            .environment(propertyService)
             .presentationDetents([.height(360), .medium, .large])
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             .presentationDragIndicator(.visible)
@@ -361,6 +379,7 @@ struct DigitalTwinView: View {
         .sheet(isPresented: $showLayers) {
             TwinLayersSheet(utilities: $layerUtilities, tasks: $layerTasks,
                             health: $layerHealth, journal: $layerJournal)
+                .environment(propertyService)
                 .presentationDetents([.height(430)])
                 .presentationBackgroundInteraction(.enabled)
                 .presentationDragIndicator(.visible)
@@ -401,6 +420,7 @@ struct DigitalTwinView: View {
                 .environment(elementService)
                 .environment(currencyService)
                 .environment(appSettings)
+                .environment(propertyService)
         }
         .sheet(item: $editZone) { zone in
             ZoneEditSheet(
@@ -416,7 +436,7 @@ struct DigitalTwinView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
-            controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: .white) {
+            controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: Color.smartTextPrimary) {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { controlsExpanded.toggle() }
                 HapticFeedback.impact(.medium)
             }
@@ -425,7 +445,7 @@ struct DigitalTwinView: View {
             // becomes "live" (utilities, tasks, health, journal).
             controlButton(
                 icon: "square.3.layers.3d\(anyLayerActive ? ".top.filled" : "")",
-                tint: anyLayerActive ? Color.accentColor : .white,
+                tint: anyLayerActive ? Color.smartAmber : Color.smartTextPrimary,
                 label: "Layers"
             ) {
                 showLayers = true
@@ -433,7 +453,7 @@ struct DigitalTwinView: View {
             }
 
             // Time machine: the yard through its seasons, from journal photos.
-            controlButton(icon: "clock.arrow.circlepath", tint: .white, label: "Time") {
+            controlButton(icon: "clock.arrow.circlepath", tint: Color.smartTextPrimary, label: "Time") {
                 withAnimation(.smooth) { showTimeMachine = true }
                 HapticFeedback.impact(.medium)
             }
@@ -441,7 +461,7 @@ struct DigitalTwinView: View {
             if controlsExpanded {
                 controlButton(
                     icon: pinMode ? "xmark.circle.fill" : "mappin.and.ellipse",
-                    tint: pinMode ? .red : .white,
+                    tint: pinMode ? .red : Color.smartTextPrimary,
                     label: pinMode ? "Cancel" : "Add"
                 ) {
                     withAnimation(.spring(response: 0.3)) { pinMode.toggle() }
@@ -449,13 +469,13 @@ struct DigitalTwinView: View {
                 }
                 controlButton(
                     icon: showNames ? "textformat.size" : "textformat.size.smaller",
-                    tint: showNames ? .white : Color.accentColor,
+                    tint: showNames ? Color.smartTextPrimary : Color.smartAmber,
                     label: showNames ? "Names" : "Hidden"
                 ) {
                     withAnimation(.spring(response: 0.3)) { showNames.toggle() }
                     HapticFeedback.selection()
                 }
-                controlButton(icon: "pentagon", tint: zoneDrawMode ? Color.accentColor : .white, label: "Zone") {
+                controlButton(icon: "pentagon", tint: zoneDrawMode ? Color.smartAmber : Color.smartTextPrimary, label: "Zone") {
                     withAnimation(.spring(response: 0.3)) {
                         zoneDrawMode = true
                         controlsExpanded = false
@@ -463,7 +483,7 @@ struct DigitalTwinView: View {
                     }
                     HapticFeedback.impact(.medium)
                 }
-                controlButton(icon: "heart.text.square.fill", tint: .pink) {
+                controlButton(icon: "heart.text.square.fill", tint: Color.smartAmber) {
                     showHealth = true
                     HapticFeedback.impact(.light)
                 }
@@ -491,9 +511,13 @@ struct DigitalTwinView: View {
                 }
             }
             .frame(width: 52, height: 52)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
+            .background {
+                Circle().fill(.ultraThinMaterial)
+                Circle().fill(Color.smartGlassFill)
+            }
+            .overlay(Circle().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
+            .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                    radius: SmartHomeTheme.cardShadowRadius, y: SmartHomeTheme.cardShadowY)
         }
         .buttonStyle(.plain)
         .transition(.scale.combined(with: .opacity))
@@ -506,19 +530,23 @@ struct DigitalTwinView: View {
             zoneToolButton("Cancel", icon: "xmark", tint: .red) {
                 withAnimation { zoneDrawMode = false; draftZonePoints = [] }
             }
-            zoneToolButton("Undo", icon: "arrow.uturn.backward", tint: .white) {
+            zoneToolButton("Undo", icon: "arrow.uturn.backward", tint: Color.smartTextPrimary) {
                 if !draftZonePoints.isEmpty { draftZonePoints.removeLast() }
             }
             .opacity(draftZonePoints.isEmpty ? 0.4 : 1)
-            zoneToolButton("Save", icon: "checkmark", tint: .green) {
+            zoneToolButton("Save", icon: "checkmark", tint: Color.brandSuccess) {
                 Task { await saveDraftZone() }
             }
             .opacity(draftZonePoints.count < 3 ? 0.4 : 1)
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
+        .background {
+            Capsule().fill(.ultraThinMaterial)
+            Capsule().fill(Color.smartGlassFill)
+        }
+        .overlay(Capsule().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
+        .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                radius: SmartHomeTheme.cardShadowRadius, y: SmartHomeTheme.cardShadowY)
         .padding(.bottom, 40)
     }
 
@@ -553,21 +581,25 @@ struct DigitalTwinView: View {
             zoneToolButton("Cancel", icon: "xmark", tint: .red) {
                 withAnimation { reshapeZoneId = nil; reshapePoints = [] }
             }
-            zoneToolButton("Add point", icon: "plus", tint: .white) {
+            zoneToolButton("Add point", icon: "plus", tint: Color.smartTextPrimary) {
                 let n = Double(reshapePoints.count)
                 let cx = n > 0 ? reshapePoints.map(\.x).reduce(0, +) / n : 0.5
                 let cy = n > 0 ? reshapePoints.map(\.y).reduce(0, +) / n : 0.5
                 reshapePoints.append(CGPoint(x: min(cx + 0.04, 1), y: min(cy + 0.04, 1)))
             }
-            zoneToolButton("Save", icon: "checkmark", tint: .green) {
+            zoneToolButton("Save", icon: "checkmark", tint: Color.brandSuccess) {
                 Task { await saveReshape() }
             }
             .opacity(reshapePoints.count < 3 ? 0.4 : 1)
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
+        .background {
+            Capsule().fill(.ultraThinMaterial)
+            Capsule().fill(Color.smartGlassFill)
+        }
+        .overlay(Capsule().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
+        .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                radius: SmartHomeTheme.cardShadowRadius, y: SmartHomeTheme.cardShadowY)
         .padding(.bottom, 40)
     }
 
@@ -626,10 +658,13 @@ struct DigitalTwinView: View {
                     .font(AppFont.captionEmphasis).lineLimit(1)
                 Image(systemName: "chevron.down").font(AppFont.scaled(10, weight: .bold))
             }
-            .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
+            .foregroundStyle(categoryFilter == nil ? Color.smartTextPrimary : Color.smartAmber)
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .background {
+                Capsule().fill(.ultraThinMaterial)
+                Capsule().fill(Color.smartGlassFill)
+            }
+            .overlay(Capsule().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
             .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
         }
     }
@@ -645,7 +680,7 @@ struct DigitalTwinView: View {
         } label: {
             Image(systemName: "list.bullet")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.75))
+                .foregroundStyle(Color.smartTextPrimary)
                 .frame(width: 40, height: 40)
                 .glassCircle()
         }
@@ -670,7 +705,7 @@ struct DigitalTwinView: View {
                     if searchMatches.isEmpty {
                         Text("No results")
                             .font(AppFont.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.smartTextSecondary)
                             .padding(.vertical, AppSpacing.base)
                     } else {
                         ForEach(searchMatches.prefix(6)) { el in
@@ -690,12 +725,12 @@ struct DigitalTwinView: View {
                                         .frame(width: 28)
                                     Text(el.name)
                                         .font(AppFont.footnote)
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(Color.smartTextPrimary)
                                         .lineLimit(1)
                                     Spacer()
                                     Image(systemName: "location.fill")
                                         .font(AppFont.label)
-                                        .foregroundStyle(Color.primary.opacity(0.35))
+                                        .foregroundStyle(Color.smartTextSecondary)
                                 }
                                 .padding(.horizontal, AppSpacing.md)
                                 .padding(.vertical, 10)
@@ -780,10 +815,13 @@ struct DigitalTwinView: View {
                     .font(AppFont.captionEmphasis).lineLimit(1)
                 Image(systemName: "chevron.down").font(AppFont.scaled(10, weight: .bold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.smartTextPrimary)
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .background {
+                Capsule().fill(.ultraThinMaterial)
+                Capsule().fill(Color.smartGlassFill)
+            }
+            .overlay(Capsule().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
             .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
         }
     }

@@ -7,6 +7,11 @@ import SwiftUI
 // interaction, so the map stays touchable while the card is up — the same
 // interaction model as a place card in Apple Maps. Deep dives (full detail
 // page, edit form, new task) are launched from here.
+//
+// Wears the smart-home warm glass skin (SmartHomeChrome/SmartHomeTheme):
+// blurred cover-photo backdrop, glass tiles, warm-white text, one amber
+// accent — semantic colors (health, success, favorites, category hues)
+// stay untouched.
 
 struct ElementInspectorSheet: View {
     let element: PropertyElement
@@ -20,7 +25,13 @@ struct ElementInspectorSheet: View {
     @Environment(DocumentService.self) private var documentService
     @Environment(TaskService.self) private var taskService
     @Environment(BlueprintService.self) private var blueprintService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
+
+    /// The glass tile shape shared by stats, notes and the 3D row.
+    private var tileShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius, style: .continuous)
+    }
 
     @State private var showDetail = false
     @State private var showNewTask = false
@@ -37,23 +48,27 @@ struct ElementInspectorSheet: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                quickActions
-                statsRow
-                if linkedScan != nil || !linkable3DScans.isEmpty {
-                    scanSection
+        ZStack {
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    quickActions
+                    statsRow
+                    if linkedScan != nil || !linkable3DScans.isEmpty {
+                        scanSection
+                    }
+                    if let notes = current.notes, !notes.isEmpty {
+                        notesCard(notes)
+                    }
+                    if let desc = current.description, !desc.isEmpty, current.notes?.isEmpty ?? true {
+                        notesCard(desc)
+                    }
+                    Spacer(minLength: 24)
                 }
-                if let notes = current.notes, !notes.isEmpty {
-                    notesCard(notes)
-                }
-                if let desc = current.description, !desc.isEmpty, current.notes?.isEmpty ?? true {
-                    notesCard(desc)
-                }
-                Spacer(minLength: 24)
+                .padding(AppSpacing.xl)
             }
-            .padding(AppSpacing.xl)
+            .environment(\.colorScheme, .dark)
         }
         .sheet(isPresented: $showDetail) {
             PropertyElementDetailView(element: current)
@@ -77,13 +92,13 @@ struct ElementInspectorSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("3D MODEL")
                 .font(AppFont.captionStrong)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
             if let scan = linkedScan {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "cube.transparent.fill", color: Color.brandPurple, size: 38)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(scan.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
-                        Text(scan.kindLabel).font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                        Text(scan.name).font(AppFont.subheadline).foregroundStyle(Color.smartTextPrimary).lineLimit(1)
+                        Text(scan.kindLabel).font(AppFont.scaled(12)).foregroundStyle(Color.smartTextSecondary)
                     }
                     Spacer()
                     Button {
@@ -92,7 +107,7 @@ struct ElementInspectorSheet: View {
                     } label: {
                         Text("View")
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color.smartAmber)
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
                             .glassCapsule()
                     }
@@ -106,14 +121,18 @@ struct ElementInspectorSheet: View {
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                            .foregroundStyle(Color.smartTextPrimary)
                             .frame(width: 30, height: 30)
-                            .background(Color.primary.opacity(0.06), in: Circle())
+                            .background(Color.smartGlassFill, in: Circle())
                     }
                     .accessibilityLabel("More")
                 }
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background {
+                    tileShape.fill(.ultraThinMaterial)
+                    tileShape.fill(Color.smartGlassFill)
+                }
+                .clipShape(tileShape)
             } else {
                 Menu {
                     ForEach(linkable3DScans) { scan in
@@ -131,14 +150,18 @@ struct ElementInspectorSheet: View {
                             .foregroundStyle(Color.brandPurple)
                         Text("Link a 3D scan")
                             .font(AppFont.footnote)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.smartTextPrimary)
                         Spacer()
                         Image(systemName: "chevron.up.chevron.down")
                             .font(AppFont.label)
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.smartTextSecondary)
                     }
                     .padding(AppSpacing.base)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background {
+                        tileShape.fill(.ultraThinMaterial)
+                        tileShape.fill(Color.smartGlassFill)
+                    }
+                    .clipShape(tileShape)
                 }
             }
         }
@@ -152,7 +175,7 @@ struct ElementInspectorSheet: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(current.name)
                     .font(AppFont.scaled(20, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                     .lineLimit(1)
                 HStack(spacing: 6) {
                     Image(systemName: current.elementType.icon).font(AppFont.scaled(11))
@@ -162,7 +185,7 @@ struct ElementInspectorSheet: View {
                         Text(zoneName).font(AppFont.caption).lineLimit(1)
                     }
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
             }
             Spacer()
             Button {
@@ -171,9 +194,9 @@ struct ElementInspectorSheet: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    .foregroundStyle(Color.smartTextPrimary)
                     .frame(width: 30, height: 30)
-                    .background(Color.primary.opacity(0.06), in: Circle())
+                    .background(Color.smartGlassFill, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")
@@ -202,10 +225,10 @@ struct ElementInspectorSheet: View {
 
     private var quickActions: some View {
         HStack(spacing: 12) {
-            inspectorActionBtn(icon: "doc.text.magnifyingglass", label: "Details", color: .blue) {
+            inspectorActionBtn(icon: "doc.text.magnifyingglass", label: "Details", color: Color.smartAmber) {
                 showDetail = true
             }
-            inspectorActionBtn(icon: "pencil", label: "Edit", color: .orange) {
+            inspectorActionBtn(icon: "pencil", label: "Edit", color: Color.smartAmber) {
                 dismiss()
                 onEdit()
             }
@@ -235,7 +258,7 @@ struct ElementInspectorSheet: View {
                     .glassCircle()
                 Text(label)
                     .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
         }
         .buttonStyle(.plain)
@@ -251,7 +274,7 @@ struct ElementInspectorSheet: View {
             statTile(value: valueString, label: "Value",
                      icon: "banknote.fill", color: Color.brandSuccess)
             statTile(value: current.technicalCondition.displayName, label: "Condition",
-                     icon: "wrench.and.screwdriver.fill", color: .blue)
+                     icon: "wrench.and.screwdriver.fill", color: Color.smartAmber)
         }
     }
 
@@ -265,14 +288,18 @@ struct ElementInspectorSheet: View {
             Image(systemName: icon).font(AppFont.footnoteEmphasis).foregroundStyle(color)
             Text(value)
                 .font(AppFont.scaled(15, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.smartTextPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
+            Text(label).font(AppFont.scaled(11)).foregroundStyle(Color.smartTextSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.md)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background {
+            tileShape.fill(.ultraThinMaterial)
+            tileShape.fill(Color.smartGlassFill)
+        }
+        .clipShape(tileShape)
     }
 
     // MARK: - Notes
@@ -281,14 +308,18 @@ struct ElementInspectorSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NOTES")
                 .font(AppFont.captionStrong)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.smartTextSecondary)
             Text(text)
                 .font(AppFont.footnote)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.smartTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.base)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background {
+            tileShape.fill(.ultraThinMaterial)
+            tileShape.fill(Color.smartGlassFill)
+        }
+        .clipShape(tileShape)
     }
 }

@@ -86,9 +86,13 @@ struct ZonesListView: View {
             .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
-        .background(appBackground.ignoresSafeArea())
+        // Smart-home warm skin: the blurred cover-photo backdrop with the
+        // content resolving in the dark scheme, like every twin surface.
+        .environment(\.colorScheme, .dark)
+        .background { SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl) }
         .navigationTitle("Zones")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
@@ -97,7 +101,7 @@ struct ZonesListView: View {
                 HStack(spacing: 10) {
                     Text("\(filteredZones.count)")
                         .font(AppFont.captionEmphasis)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.smartTextSecondary)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(.regularMaterial, in: Capsule())
 
@@ -110,7 +114,7 @@ struct ZonesListView: View {
                         // it (IMG_8315 class).
                         Image(systemName: "map.fill")
                             .font(AppFont.subheadline)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                            .foregroundStyle(Color.smartTextPrimary)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Open Digital Twin")
@@ -175,10 +179,10 @@ struct ZoneListRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(zone.name)
                     .font(AppFont.subheadline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
                     .font(AppFont.scaled(12))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
 
             Spacer()
@@ -189,22 +193,24 @@ struct ZoneListRow: View {
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)
                 .padding(.vertical, AppSpacing.xxs)
-                .background(zone.healthColor.opacity(0.15), in: Capsule())
+                .background(zone.healthColor.opacity(AppOpacity.tintedFill), in: Capsule())
 
             Image(systemName: "chevron.right")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.25))
+                .foregroundStyle(Color.smartTextSecondary)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
-                )
+                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.smartGlassFill)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
+        )
         .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 }

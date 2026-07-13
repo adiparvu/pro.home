@@ -12,45 +12,55 @@ struct TwinLayersSheet: View {
     @Binding var tasks: Bool
     @Binding var health: Bool
     @Binding var journal: Bool
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("Layers")
-                    .font(AppFont.scaled(20, weight: .bold))
-                Spacer()
-                Button {
-                    HapticFeedback.impact(.light)
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                        .frame(width: 30, height: 30)
-                        .background(Color.primary.opacity(0.06), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
-            }
+    /// The glass row shape (the smart-home tile treatment).
+    private static let rowShape =
+        RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
 
-            VStack(spacing: 10) {
-                layerRow(isOn: $utilities, icon: "pipe.and.drop.fill", color: .blue,
-                         title: "Buried utilities",
-                         subtitle: "Underground zones outlined on the same photo")
-                layerRow(isOn: $tasks, icon: "exclamationmark.circle.fill", color: .red,
-                         title: "Open tasks",
-                         subtitle: "Pulsing badge on elements with work to do")
-                layerRow(isOn: $health, icon: "heart.fill", color: Color.brandSuccess,
-                         title: "Health tint",
-                         subtitle: "Zones colored by the health of what's inside")
-                layerRow(isOn: $journal, icon: "photo.stack.fill", color: .orange,
-                         title: "Journal photos",
-                         subtitle: "Photo counts anchored to their zones")
+    var body: some View {
+        ZStack {
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    Text("Layers")
+                        .font(AppFont.scaled(20, weight: .bold))
+                        .foregroundStyle(Color.smartTextPrimary)
+                    Spacer()
+                    Button {
+                        HapticFeedback.impact(.light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(Color.smartTextPrimary)
+                            .frame(width: 30, height: 30)
+                            .background(Color.smartGlassFill, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close")
+                }
+
+                VStack(spacing: 10) {
+                    layerRow(isOn: $utilities, icon: "pipe.and.drop.fill", color: .blue,
+                             title: "Buried utilities",
+                             subtitle: "Underground zones outlined on the same photo")
+                    layerRow(isOn: $tasks, icon: "exclamationmark.circle.fill", color: .red,
+                             title: "Open tasks",
+                             subtitle: "Pulsing badge on elements with work to do")
+                    layerRow(isOn: $health, icon: "heart.fill", color: Color.brandSuccess,
+                             title: "Health tint",
+                             subtitle: "Zones colored by the health of what's inside")
+                    layerRow(isOn: $journal, icon: "photo.stack.fill", color: .orange,
+                             title: "Journal photos",
+                             subtitle: "Photo counts anchored to their zones")
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            .padding(AppSpacing.xl)
+            .environment(\.colorScheme, .dark)
         }
-        .padding(AppSpacing.xl)
     }
 
     private func layerRow(isOn: Binding<Bool>, icon: String, color: Color,
@@ -58,15 +68,20 @@ struct TwinLayersSheet: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color, size: 38)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(AppFont.subheadline).foregroundStyle(.primary)
-                Text(subtitle).font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                Text(title).font(AppFont.subheadline).foregroundStyle(Color.smartTextPrimary)
+                Text(subtitle).font(AppFont.scaled(12)).foregroundStyle(Color.smartTextSecondary)
                     .multilineTextAlignment(.leading)
             }
             Spacer()
             Toggle("", isOn: isOn).labelsHidden().tint(color)
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .background {
+            Self.rowShape.fill(.ultraThinMaterial)
+            Self.rowShape.fill(Color.smartGlassFill)
+        }
+        .clipShape(Self.rowShape)
+        .overlay(Self.rowShape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
         .contentShape(Rectangle())
         // Tapping anywhere on the row flips the layer; the switch itself
         // keeps its own gesture so the two never double-toggle.
@@ -94,14 +109,18 @@ struct TwinLayersLegend: View {
                     ForEach([Color.brandSuccess, .orange, .red], id: \.self) { c in
                         Circle().fill(c).frame(width: 7, height: 7)
                     }
-                    Text("Health").font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(.white)
+                    Text("Health").font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(Color.smartTextPrimary)
                 }
             }
             if journal { legendRow(color: .orange, dashed: false, label: "Journal", icon: "photo.fill") }
         }
         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.smartGlassFill)
+        }
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
         .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
         .allowsHitTesting(false)
     }
@@ -116,7 +135,7 @@ struct TwinLayersLegend: View {
             } else {
                 Circle().fill(color).frame(width: 7, height: 7)
             }
-            Text(label).font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(.white)
+            Text(label).font(AppFont.scaled(10, weight: .semibold)).foregroundStyle(Color.smartTextPrimary)
         }
     }
 }

@@ -9,6 +9,7 @@ struct ObjectsListView: View {
     @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
+    @Environment(PropertyService.self) var propertyService
     @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ObjectFilter = .all
@@ -93,14 +94,19 @@ struct ObjectsListView: View {
             .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
+        // Smart-home warm skin: the blurred cover-photo backdrop with the
+        // content resolving in the dark scheme, like every twin surface.
+        .environment(\.colorScheme, .dark)
+        .background { SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl) }
         .navigationTitle("Objects")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search name, brand, serial…")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredElements.count)")
                     .font(AppFont.captionEmphasis)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.smartTextSecondary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
             }
@@ -130,7 +136,7 @@ struct ObjectsListView: View {
                     }
                     .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
-                    .background(favoritesOnly ? Color.yellow : Color.primary.opacity(0.08), in: Capsule())
+                    .background(favoritesOnly ? Color.yellow : Color.smartGlassFill, in: Capsule())
                 }
                 .buttonStyle(.plain)
 
@@ -144,9 +150,9 @@ struct ObjectsListView: View {
                 } label: {
                     Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.smartAmber)
                         .padding(.horizontal, 11).padding(.vertical, AppSpacing.sm)
-                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                        .background(Color.smartAmber.opacity(AppOpacity.tintedFill), in: Capsule())
                 }
                 .buttonStyle(.plain)
 
@@ -230,7 +236,7 @@ struct ObjectListRow: View {
                 .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(element.healthColor)
                 .frame(width: 36, height: 28)
-                .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                .background(element.healthColor.opacity(AppOpacity.tintedFill), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
 
             Image(systemName: "chevron.right")
                 .font(AppFont.label)
@@ -242,6 +248,8 @@ struct ObjectListRow: View {
             // Opaque surface instead of a per-row material: blur + a soft
             // shadow on every row is pure compositor cost in a long list,
             // and the rows sit on an opaque screen background anyway.
+            // Adaptive on purpose — this row also serves ZoneDetailView; on
+            // the warm Objects sheet the scoped dark scheme darkens it.
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
                 .overlay(

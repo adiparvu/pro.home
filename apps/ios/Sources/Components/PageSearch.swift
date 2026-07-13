@@ -31,8 +31,11 @@ struct SearchIconButton: View {
             withAnimation(.easeOut(duration: 0.12)) { isActive.toggle() }
         } label: {
             Image(systemName: "magnifyingglass")
+                // Amber active state: this button serves only the Digital
+                // Twin's floating overlay (see header comment), which wears
+                // the smart-home warm skin.
                 .font(AppFont.headline)
-                .foregroundStyle(isActive ? Color.accentColor : Color.primary.opacity(0.75))
+                .foregroundStyle(isActive ? Color.smartAmber : Color.primary.opacity(0.75))
                 .frame(width: 40, height: 40)
                 .glassCircle()
         }
@@ -54,7 +57,9 @@ struct PageSearchField: View {
             TextField(placeholder, text: $text)
                 .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
-                .tint(.accentColor)
+                // Amber caret to match the twin's warm skin — the inline
+                // field exists only for that overlay (see header comment).
+                .tint(Color.smartAmber)
                 .autocorrectionDisabled()
                 .focused($focused)
             if !text.isEmpty {

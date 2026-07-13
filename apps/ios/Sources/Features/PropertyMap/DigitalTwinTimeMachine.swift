@@ -46,6 +46,9 @@ struct TwinTimeMachineOverlay: View {
                 }
             }
             .padding(AppSpacing.lg)
+            // Chrome only — the photo is content; its materials resolve in
+            // the dark scheme like every smart-home glass surface.
+            .environment(\.colorScheme, .dark)
         }
         .animation(.easeInOut(duration: 0.3), value: current.id)
         .onChange(of: current.id) { _, _ in HapticFeedback.selection() }
@@ -89,10 +92,13 @@ struct TwinTimeMachineOverlay: View {
                 Text(seasonLabel)
                     .font(AppFont.captionEmphasis)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.smartTextPrimary)
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .background {
+                Capsule().fill(.ultraThinMaterial)
+                Capsule().fill(Color.smartGlassFill)
+            }
+            .overlay(Capsule().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
 
             Spacer()
 
@@ -102,10 +108,13 @@ struct TwinTimeMachineOverlay: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(AppFont.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.smartTextPrimary)
                     .frame(width: 40, height: 40)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+                    .background {
+                        Circle().fill(.ultraThinMaterial)
+                        Circle().fill(Color.smartGlassFill)
+                    }
+                    .overlay(Circle().strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")
@@ -125,14 +134,15 @@ struct TwinTimeMachineOverlay: View {
     // MARK: - Timeline
 
     private var timeline: some View {
-        VStack(spacing: 10) {
+        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+        return VStack(spacing: 10) {
             Text(current.title)
                 .font(AppFont.scaled(17, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.smartTextPrimary)
                 .contentTransition(.numericText())
 
             Slider(value: $index, in: 0...Double(snapshots.count - 1), step: 1)
-                .tint(.white)
+                .tint(Color.smartAmber)
 
             HStack {
                 Text(snapshots.first?.title ?? "")
@@ -140,27 +150,37 @@ struct TwinTimeMachineOverlay: View {
                 Text("Today")
             }
             .font(AppFont.label)
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(Color.smartTextSecondary)
         }
         .padding(AppSpacing.base)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            .strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
+        .background {
+            shape.fill(.ultraThinMaterial)
+            shape.fill(Color.smartGlassFill)
+        }
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
+        .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                radius: SmartHomeTheme.cardShadowRadius, y: SmartHomeTheme.cardShadowY)
         .padding(.bottom, 30)
     }
 
     private var emptyHint: some View {
-        VStack(spacing: 6) {
+        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+        return VStack(spacing: 6) {
             Image(systemName: "photo.on.rectangle.angled")
                 .font(AppFont.title3)
             Text("Add dated photos to the Photo Journal to travel through time.")
                 .font(AppFont.footnote)
                 .multilineTextAlignment(.center)
         }
-        .foregroundStyle(.white.opacity(0.85))
+        .foregroundStyle(Color.smartTextPrimary.opacity(0.85))
         .padding(AppSpacing.base)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .background {
+            shape.fill(.ultraThinMaterial)
+            shape.fill(Color.smartGlassFill)
+        }
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1))
         .padding(.bottom, 30)
     }
 }

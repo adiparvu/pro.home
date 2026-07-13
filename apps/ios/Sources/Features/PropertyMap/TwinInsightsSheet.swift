@@ -32,24 +32,30 @@ struct TwinInsightsSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
-                    statsGrid
-                    if !critical.isEmpty { criticalCard }
-                    aiCard
+            ZStack {
+                SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        header
+                        statsGrid
+                        if !critical.isEmpty { criticalCard }
+                        aiCard
+                    }
+                    .padding(AppSpacing.xl)
                 }
-                .padding(AppSpacing.xl)
+                .environment(\.colorScheme, .dark)
             }
             .navigationTitle("\(assistantName) Insights")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.fontWeight(.semibold)
+                    Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
+                        .tint(Color.smartAmber)
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
     }
 
     private var header: some View {
@@ -66,8 +72,9 @@ struct TwinInsightsSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Property status")
                     .font(AppFont.scaled(18, weight: .bold))
+                    .foregroundStyle(Color.smartTextPrimary)
                 Text(propertyService.primary?.name ?? "My property")
-                    .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                    .font(AppFont.scaled(13)).foregroundStyle(Color.smartTextSecondary)
             }
             Spacer()
         }
@@ -75,10 +82,10 @@ struct TwinInsightsSheet: View {
 
     private var statsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            tile("\(zones.count)", "Zones", "square.dashed", .blue)
-            tile("\(objects.count)", "Objects", "cube.box.fill", .indigo)
+            tile("\(zones.count)", "Zones", "square.dashed", Color.smartAmber)
+            tile("\(objects.count)", "Objects", "cube.box.fill", Color.smartAmber)
             tile("\(avgHealth)%", "Average health", "heart.fill", healthColor)
-            tile(valueString, "Total value", "eurosign.circle.fill", .green)
+            tile(valueString, "Total value", "eurosign.circle.fill", Color.brandSuccess)
         }
     }
 
@@ -87,18 +94,23 @@ struct TwinInsightsSheet: View {
     }
 
     private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+        return VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon).font(AppFont.headline).foregroundStyle(color)
-            Text(value).font(AppFont.scaled(20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
-            Text(label).font(AppFont.scaled(12)).foregroundStyle(.secondary)
+            Text(value).font(AppFont.scaled(20, weight: .bold, design: .rounded)).foregroundStyle(Color.smartTextPrimary)
+            Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.smartTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.base)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .background {
+            shape.fill(.ultraThinMaterial)
+            shape.fill(Color.smartGlassFill)
+        }
+        .clipShape(shape)
     }
 
     private var criticalCard: some View {
-        GlassCard(padding: 14) {
+        SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Needs attention", systemImage: "exclamationmark.triangle.fill")
                     .font(AppFont.captionEmphasis)
@@ -107,7 +119,7 @@ struct TwinInsightsSheet: View {
                     HStack(spacing: 10) {
                         Image(systemName: obj.elementType.icon)
                             .font(AppFont.scaled(13)).foregroundStyle(obj.healthColor).frame(width: 22)
-                        Text(obj.name).font(AppFont.scaled(14)).foregroundStyle(.primary)
+                        Text(obj.name).font(AppFont.scaled(14)).foregroundStyle(Color.smartTextPrimary)
                         Spacer()
                         Text("\(obj.healthScore)")
                             .font(AppFont.scaled(13, weight: .bold, design: .rounded))
@@ -115,11 +127,12 @@ struct TwinInsightsSheet: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private var aiCard: some View {
-        GlassCard(padding: 16) {
+        SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: 12) {
                 Label("\(assistantName) Analysis", systemImage: "sparkles")
                     .font(AppFont.captionEmphasis)
@@ -128,17 +141,17 @@ struct TwinInsightsSheet: View {
                 if let aiReply {
                     Text(LocalizedStringKey(aiReply))
                         .font(AppFont.scaled(15))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.smartTextPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if isThinking {
                     HStack(spacing: 8) {
                         ProgressView()
                         Text("\(assistantName) is analyzing your property…")
-                            .font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                            .font(AppFont.scaled(14)).foregroundStyle(Color.smartTextSecondary)
                     }
                 } else {
                     Text("Request an AI analysis based on zones, objects and their condition.")
-                        .font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.smartTextSecondary)
                 }
 
                 Button {

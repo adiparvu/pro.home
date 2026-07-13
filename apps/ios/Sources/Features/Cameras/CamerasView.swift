@@ -15,6 +15,8 @@ struct CamerasView: View {
     private let service = CameraService.shared
     private let homeKit = HomeKitService.shared
 
+    @Environment(PropertyService.self) private var propertyService
+
     @State private var showAddSheet = false
     @State private var editingCamera: SecurityCamera?
 
@@ -25,11 +27,16 @@ struct CamerasView: View {
 
     var body: some View {
         ZStack {
-            appBackground.ignoresSafeArea()
+            // The cameras page is a smart-home surface: the warm blurred
+            // cover-photo backdrop, glass chrome, warm-white text. Camera
+            // frames themselves are content and stay untinted.
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
             content
+                .environment(\.colorScheme, .dark)
         }
         .navigationTitle(Text("cameras_title"))
         .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -72,7 +79,7 @@ struct CamerasView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     Text("cameras_subtitle")
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .foregroundStyle(Color.smartTextSecondary)
                         .padding(.leading, AppSpacing.xxs)
 
                     if !homeKitCameras.isEmpty {
@@ -109,7 +116,7 @@ struct CamerasView: View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("cameras_homekit_section")
 
-            GlassCard(padding: 0) {
+            SmartGlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     ForEach(Array(accessories.enumerated()), id: \.element.uniqueIdentifier) { idx, accessory in
                         NavigationLink {
@@ -119,7 +126,7 @@ struct CamerasView: View {
                         }
                         .buttonStyle(.plain)
                         if idx < accessories.count - 1 {
-                            Rectangle().fill(Color.primary.opacity(0.05))
+                            Rectangle().fill(Color.hairline)
                                 .frame(height: 0.5).padding(.leading, 60)
                         }
                     }
@@ -130,28 +137,30 @@ struct CamerasView: View {
 
     private func homeKitRow(_ accessory: HMAccessory) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "video.fill")
-                .font(AppFont.footnoteEmphasis)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.brandSkyBlue)
-                .frame(width: 34, height: 34)
-                .mediaGlass(in: Circle())
+            ZStack {
+                SmartRadialGlow(diameter: 44)
+                Image(systemName: "video.fill")
+                    .font(AppFont.footnoteEmphasis)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.smartAmber)
+            }
+            .frame(width: 34, height: 34)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: accessory.name)
                     .font(AppFont.footnote)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                     .lineLimit(1)
                 Text("cameras_homekit_live")
                     .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.smartTextSecondary)
             }
 
             Spacer(minLength: 8)
 
             Image(systemName: "chevron.right")
                 .font(AppFont.captionStrong)
-                .foregroundStyle(Color.primary.opacity(0.25))
+                .foregroundStyle(Color.smartTextSecondary)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
@@ -209,11 +218,12 @@ struct CamerasView: View {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                     .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.smartAmber)
                 Text(verbatim: actionSet.name)
                     .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.smartTextPrimary)
                     .lineLimit(1)
             }
-            .foregroundStyle(.primary)
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.sm)
             .mediaGlass(in: Capsule(), interactive: true)
@@ -267,12 +277,12 @@ struct CamerasView: View {
                         .opacity(isStale ? 0.45 : 1)
                 } else {
                     ZStack {
-                        Color.primary.opacity(AppOpacity.subtleFill)
+                        Color.smartGlassFill
                         VStack(spacing: 6) {
                             ProgressView()
                             Text("cameras_connecting")
                                 .font(AppFont.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.smartTextSecondary)
                         }
                     }
                 }
@@ -323,7 +333,7 @@ struct CamerasView: View {
         Text(key)
             .font(AppFont.label)
             .textCase(.uppercase)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.smartTextSecondary)
             .padding(.leading, AppSpacing.xxs)
     }
 }
@@ -335,6 +345,8 @@ struct CameraDetailView: View {
 
     private let service = CameraService.shared
 
+    @Environment(PropertyService.self) private var propertyService
+
     @State private var image: UIImage?
     @State private var fillsFrame = false
     @State private var saveFeedback: SaveFeedback?
@@ -344,14 +356,14 @@ struct CameraDetailView: View {
 
     var body: some View {
         ZStack {
-            appBackground.ignoresSafeArea()
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     snapshotArea
 
                     Text("cameras_detail_hint")
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .foregroundStyle(Color.smartTextSecondary)
 
                     GlassWideButton(icon: "square.and.arrow.down",
                                     label: "cameras_save_snapshot",
@@ -369,18 +381,18 @@ struct CameraDetailView: View {
                     }
 
                     if let notes = camera.notes, !notes.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("cameras_field_notes")
-                                .font(AppFont.label)
-                                .textCase(.uppercase)
-                                .foregroundStyle(.secondary)
-                            Text(verbatim: notes)
-                                .font(AppFont.footnote)
-                                .foregroundStyle(.primary)
+                        SmartGlassCard(padding: AppSpacing.base) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("cameras_field_notes")
+                                    .font(AppFont.label)
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(Color.smartTextSecondary)
+                                Text(verbatim: notes)
+                                    .font(AppFont.footnote)
+                                    .foregroundStyle(Color.smartTextPrimary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(AppSpacing.base)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlass(cornerRadius: AppRadius.lg)
                     }
 
                     Spacer(minLength: 40)
@@ -388,9 +400,11 @@ struct CameraDetailView: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.sm)
             }
+            .environment(\.colorScheme, .dark)
         }
         .navigationTitle(Text(verbatim: camera.name))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             // Seed from the grid's cache so the page never opens blank, then
             // refresh every 2s while visible (`.task` cancels on disappear).
@@ -417,7 +431,7 @@ struct CameraDetailView: View {
                         ProgressView()
                         Text("cameras_connecting")
                             .font(AppFont.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.smartTextSecondary)
                     }
                 }
             }
@@ -466,9 +480,11 @@ struct CameraDetailView: View {
 struct HomeKitCameraDetailView: View {
     let accessory: HMAccessory
 
+    @Environment(PropertyService.self) private var propertyService
+
     var body: some View {
         ZStack {
-            appBackground.ignoresSafeArea()
+            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
             VStack(spacing: AppSpacing.lg) {
                 HomeKitCameraStreamView(accessory: accessory)
                     .aspectRatio(16.0 / 9.0, contentMode: .fit)
@@ -476,21 +492,23 @@ struct HomeKitCameraDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                            .strokeBorder(Color.hairline, lineWidth: 0.5)
+                            .strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
                     )
                     .padding(.horizontal, AppSpacing.xl)
                     .accessibilityLabel(Text(verbatim: accessory.name))
 
                 Text("cameras_homekit_live")
                     .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .foregroundStyle(Color.smartTextSecondary)
 
                 Spacer()
             }
             .padding(.top, AppSpacing.lg)
+            .environment(\.colorScheme, .dark)
         }
         .navigationTitle(Text(verbatim: accessory.name))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
