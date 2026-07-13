@@ -290,11 +290,15 @@ struct DashboardView: View {
 
     // MARK: - Widget section header
 
+    /// The widgets strip's header, dressed in the smart-home language:
+    /// warm-white uppercase label (the section headers' voice on this
+    /// page), and the "+" as a warm glass circle like the header controls.
     private var widgetSectionHeader: some View {
         HStack {
             Text("OVERVIEW")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .kerning(1.1)
+                .foregroundStyle(Color.smartTextSecondary)
             Spacer()
             // One entry point: the + opens the widget manager, which owns
             // adding, removing, resizing AND drag-reordering (the separate
@@ -305,7 +309,7 @@ struct DashboardView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(AppFont.captionEmphasis)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    .foregroundStyle(Color.smartTextPrimary)
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)

@@ -95,6 +95,60 @@ struct SmartGlassCard<Content: View>: View {
     }
 }
 
+/// The `SmartGlassCard` treatment as a plain background modifier — for
+/// views that own their padding and layout (the dashboard's widget cards).
+/// Same recipe, one source of truth: `.ultraThinMaterial` under the white
+/// fill gradient, the light-catching hairline, the soft lift shadow —
+/// at the tighter widget radius by default.
+struct SmartWidgetGlass: ViewModifier {
+    var cornerRadius: CGFloat = SmartHomeTheme.widgetCardRadius
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                shape.fill(.ultraThinMaterial)
+                shape.fill(SmartHomeTheme.glassFillGradient)
+            }
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
+                    radius: SmartHomeTheme.cardShadowRadius,
+                    y: SmartHomeTheme.cardShadowY)
+    }
+}
+
+extension View {
+    /// Dresses a self-padded view in the smart-home glass card chrome.
+    func smartWidgetGlass(cornerRadius: CGFloat = SmartHomeTheme.widgetCardRadius) -> some View {
+        modifier(SmartWidgetGlass(cornerRadius: cornerRadius))
+    }
+}
+
+// MARK: - Card press micro-interaction
+
+/// The shared press feedback for tappable cards (hero tiles, widgets):
+/// a subtle scale-down while pressed, sprung back with `.snappy`. Under
+/// Reduce Motion the scale is off entirely — the tap still lands, nothing
+/// moves. Haptics stay in the button ACTIONS (one light impact per tap),
+/// not here, so a cancelled press never buzzes.
+struct SmartCardPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(!reduceMotion && configuration.isPressed
+                         ? SmartHomeTheme.pressedScale : 1)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.25),
+                       value: configuration.isPressed)
+    }
+}
+
 /// The one cream card per grid (the reference's white Alarm card): solid
 /// `smartCream`, dark ink content, a soft lift shadow.
 struct SmartCreamCard<Content: View>: View {

@@ -191,6 +191,20 @@ struct TemperatureDialCard: View {
     private static let dialRange: ClosedRange<Double> = -10...40
 
     var body: some View {
+        // A real Button (press micro-interaction included) instead of the
+        // old bare tap gesture; the pill toggle inside keeps its own
+        // gesture, so flipping power never accidentally navigates.
+        Button {
+            HapticFeedback.impact(.light)
+            onOpen()
+        } label: {
+            cardBody
+        }
+        .buttonStyle(SmartCardPressStyle())
+        .accessibilityElement(children: .contain)
+    }
+
+    private var cardBody: some View {
         SmartGlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 dial
@@ -227,13 +241,6 @@ struct TemperatureDialCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        // Body tap opens the climate page; the pill toggle keeps its own
-        // gesture, so flipping power never accidentally navigates.
-        .onTapGesture {
-            HapticFeedback.impact(.light)
-            onOpen()
-        }
-        .accessibilityElement(children: .contain)
     }
 
     // MARK: Dial

@@ -41,6 +41,12 @@ struct SmartHomeSection: View {
 
     @State private var selectedRoom: String? = nil
 
+    /// Flips true on the grid's first appearance and never resets for this
+    /// view's lifetime — the one-shot gate for the entrance stagger. Cards
+    /// that arrive LATER (async provider loads) render with it already
+    /// true, i.e. fully visible, no re-runs.
+    @State private var revealCards = false
+
     /// What a tap presents: the tapped device's hero sheet (S3), the
     /// climate page, or the "See all" list when the room holds more devices
     /// than the dashboard shows. One optional drives `.sheet(item:)`, so
@@ -117,15 +123,33 @@ struct SmartHomeSection: View {
 
     // MARK: - Room filter chips (+ the connect chip)
 
+    /// Room name → the Digital Twin zone's stored SF Symbol, when the room
+    /// corresponds to a real zone that carries one. Rooms known only to the
+    /// smart-home providers have no icon anywhere — their chips honestly
+    /// stay text-only rather than guessing a glyph.
+    private var zoneIcons: [String: String] {
+        var out: [String: String] = [:]
+        for zone in zoneService.zones {
+            let name = zone.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let icon = zone.icon.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, !icon.isEmpty, out[name] == nil else { continue }
+            out[name] = icon
+        }
+        return out
+    }
+
     private var roomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        let icons = zoneIcons
+        return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
                 SmartChip(label: String(localized: "sh_room_all"),
                           isSelected: effectiveRoom == nil) {
                     select(nil)
                 }
                 ForEach(allRooms, id: \.self) { room in
-                    SmartChip(label: room, isSelected: effectiveRoom == room) {
+                    SmartChip(label: room,
+                              systemImage: icons[room],
+                              isSelected: effectiveRoom == room) {
                         select(room)
                     }
                 }
@@ -263,18 +287,25 @@ struct SmartHomeSection: View {
     /// leave a dead hole under one column. Cards keep their natural
     /// (deliberately varied) heights; no GeometryReader, no measurement
     /// passes. At most ~9 cards render, so plain VStacks stay cheaper than
-    /// a lazy grid here.
+    /// a lazy grid here. Each entry keeps its position in the ORIGINAL
+    /// stable order — that index drives the one-time entrance stagger.
+    private struct GridSlot: Identifiable {
+        let index: Int
+        let entry: GridEntry
+        var id: String { entry.id }
+    }
+
     private var heroGrid: some View {
-        var left: [GridEntry] = []
-        var right: [GridEntry] = []
+        var left: [GridSlot] = []
+        var right: [GridSlot] = []
         var leftHeight: CGFloat = 0
         var rightHeight: CGFloat = 0
-        for entry in gridEntries {
+        for (index, entry) in gridEntries.enumerated() {
             if leftHeight <= rightHeight {
-                left.append(entry)
+                left.append(GridSlot(index: index, entry: entry))
                 leftHeight += entry.estimatedHeight
             } else {
-                right.append(entry)
+                right.append(GridSlot(index: index, entry: entry))
                 rightHeight += entry.estimatedHeight
             }
         }
@@ -282,32 +313,44 @@ struct SmartHomeSection: View {
             gridColumn(left)
             gridColumn(right)
         }
+        // One-time staggered entrance, once per view LIFETIME: the flag is
+        // @State, so tab switches (same identity) never replay it; only a
+        // fresh dashboard does. Reduce Motion reveals instantly — the flag
+        // flips with no animation attached to it.
+        .onAppear { revealCards = true }
     }
 
-    private func gridColumn(_ entries: [GridEntry]) -> some View {
+    private func gridColumn(_ slots: [GridSlot]) -> some View {
         VStack(spacing: AppSpacing.md) {
-            ForEach(entries) { entry in
-                switch entry {
-                case .device(let device):
-                    SmartDeviceHeroCard(device: device) {
-                        activeSheet = .device(device)
-                    }
-                case .connectHomeKit:
-                    ConnectHomeKitHeroCard()
-                case .nextUp:
-                    NextUpCard(item: nextAgendaItem)
-                case .temperature:
-                    TemperatureDialCard(celsius: homeTemperature.celsius,
-                                        source: homeTemperature.source,
-                                        thermostat: primaryThermostat) {
-                        activeSheet = .climate
-                    }
-                case .network:
-                    NetworkStatusCard()
-                }
+            ForEach(slots) { slot in
+                gridCard(slot.entry)
+                    .heroEntrance(revealed: revealCards,
+                                  index: slot.index,
+                                  reduceMotion: reduceMotion)
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder private func gridCard(_ entry: GridEntry) -> some View {
+        switch entry {
+        case .device(let device):
+            SmartDeviceHeroCard(device: device) {
+                activeSheet = .device(device)
+            }
+        case .connectHomeKit:
+            ConnectHomeKitHeroCard()
+        case .nextUp:
+            NextUpCard(item: nextAgendaItem)
+        case .temperature:
+            TemperatureDialCard(celsius: homeTemperature.celsius,
+                                source: homeTemperature.source,
+                                thermostat: primaryThermostat) {
+                activeSheet = .climate
+            }
+        case .network:
+            NetworkStatusCard()
+        }
     }
 
     // MARK: - Temperature sources (real, in honesty order)
@@ -404,6 +447,21 @@ struct SmartHomeSection: View {
     }
 }
 
+/// The hero grid's one-time entrance: each card fades in from 8pt below,
+/// `.snappy`, staggered ~35ms per card in the grid's stable order. Under
+/// Reduce Motion the animation is nil — cards simply appear in place.
+private extension View {
+    func heroEntrance(revealed: Bool, index: Int, reduceMotion: Bool) -> some View {
+        opacity(revealed ? 1 : 0)
+            .offset(y: revealed ? 0 : SmartHomeTheme.entranceRise)
+            .animation(reduceMotion
+                       ? nil
+                       : .snappy(duration: 0.35)
+                           .delay(Double(index) * SmartHomeTheme.entranceStagger),
+                       value: revealed)
+    }
+}
+
 /// Slim glass row backing (see-all / connect rows) — the card material at
 /// a tighter radius, still borderless.
 private extension View {
@@ -456,6 +514,11 @@ private struct SmartDeviceHeroCard: View {
 
     private var isOn: Bool { pendingOn ?? (device.isOn == true) }
 
+    /// True only when the device REPORTS being off (optimistic state
+    /// included) — devices without a power state (sensors) stay at full
+    /// brightness; there is nothing honest to dim.
+    private var isVisuallyOff: Bool { (pendingOn ?? device.isOn) == false }
+
     private var powerBinding: Binding<Bool> {
         Binding(
             get: { isOn },
@@ -469,47 +532,60 @@ private struct SmartDeviceHeroCard: View {
     }
 
     var body: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                visualArea
-                    .frame(maxWidth: .infinity, alignment: isTall ? .center : .leading)
-
-                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: device.name)
-                            .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(Color.smartTextPrimary)
-                            .lineLimit(1)
-                        stateLine
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                    // VoiceOver path to the tap gesture below (gestures on
-                    // the card container aren't reachable as elements): the
-                    // title block is a button that opens the device page,
-                    // while the toggle stays its own element.
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(Text("sh_card_open_hint"))
-                    .accessibilityAction { onOpen() }
-
-                    Spacer(minLength: 0)
-
-                    if device.hasPower {
-                        SmartPillToggle(isOn: powerBinding,
-                                        accessibilityLabel: Text(verbatim: device.name))
-                            .disabled(!device.isReachable)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        // A tap anywhere on the card body opens the device page; the
-        // toggle's own gesture takes precedence, so it never navigates.
-        .onTapGesture {
+        // A real Button (press micro-interaction included) instead of the
+        // old bare tap gesture; inner controls (the pill toggle) keep their
+        // own gestures, so flipping power never navigates.
+        Button {
             HapticFeedback.impact(.light)
             onOpen()
+        } label: {
+            SmartGlassCard(padding: AppSpacing.base) {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    visualArea
+                        .frame(maxWidth: .infinity, alignment: isTall ? .center : .leading)
+
+                    HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: device.name)
+                                .font(AppFont.scaled(16, weight: .semibold))
+                                .foregroundStyle(isVisuallyOff
+                                                 ? Color.smartTextSecondary
+                                                 : Color.smartTextPrimary)
+                                .lineLimit(1)
+                            stateLine
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        // VoiceOver path (the container below is `.contain`,
+                        // so this stays its own element, as before): the
+                        // title block is a button that opens the device
+                        // page, while the toggle stays its own element.
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint(Text("sh_card_open_hint"))
+                        .accessibilityAction { onOpen() }
+
+                        Spacer(minLength: 0)
+
+                        if device.hasPower {
+                            SmartPillToggle(isOn: powerBinding,
+                                            accessibilityLabel: Text(verbatim: device.name))
+                                .disabled(!device.isReachable)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // On/off re-dress (glow, glyph, title, value) glides with
+                // `.smooth`; Reduce Motion snaps instantly.
+                .animation(reduceMotion ? nil : .smooth(duration: 0.35),
+                           value: isVisuallyOff)
+            }
         }
+        .buttonStyle(SmartCardPressStyle())
+        // Keep the card an accessibility CONTAINER (the pre-Button
+        // contract): the title block keeps the open action, the toggle
+        // stays independent — the wrapping button never swallows them.
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: Visual area — icon over the amber glow, or the thermostat mini dial
@@ -519,10 +595,13 @@ private struct SmartDeviceHeroCard: View {
             thermostatDial(target)
         } else {
             ZStack {
+                // OFF: the lamp is out — the glow drops to an ember and the
+                // glyph dims; ON restores the full mood.
                 SmartRadialGlow(diameter: isTall ? 96 : 52)
+                    .opacity(isVisuallyOff ? SmartHomeTheme.glowOffOpacity : 1)
                 Image(systemName: device.kind.icon)
                     .font(AppFont.scaled(isTall ? 26 : 17, weight: .semibold))
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(isVisuallyOff ? Color.smartTextSecondary : Color.smartAmber)
             }
             .frame(width: isTall ? 64 : 40, height: isTall ? 90 : 40)
             .accessibilityHidden(true)
@@ -575,13 +654,18 @@ private struct SmartDeviceHeroCard: View {
         } else if device.isOn != false,
                   device.capabilities.contains(.brightness),
                   let percent = smartHome.brightness(of: device) {
-            Text("sh_state_brightness \(percent)")
-                .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+            // The reference's big light-weight live value — just the real
+            // number; VoiceOver still speaks the full "Brightness 72%".
+            Text(verbatim: "\(percent)%")
+                .font(AppFont.scaled(SmartHomeTheme.heroValueSize, weight: .light))
+                .foregroundStyle(Color.smartTextPrimary)
+                .monospacedDigit()
+                .accessibilityLabel(Text("sh_state_brightness \(percent)"))
         } else if let value = device.readingValue {
             Text(verbatim: Self.readingText(value, unit: device.readingUnit))
-                .font(AppFont.metricSmall)
-                .foregroundStyle(Color.smartAmber)
+                .font(AppFont.scaled(SmartHomeTheme.heroValueSize, weight: .light))
+                .foregroundStyle(isVisuallyOff ? Color.smartTextSecondary : Color.smartTextPrimary)
+                .monospacedDigit()
         } else if device.kind == .thermostat,
                   let current = smartHome.currentTemperature(of: device) {
             Text("sh_state_now \(Self.temperatureText(current))")

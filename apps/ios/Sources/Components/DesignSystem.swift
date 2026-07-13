@@ -180,6 +180,30 @@ enum SmartHomeTheme {
     /// The vertical pill toggle's fixed footprint.
     static let pillToggleSize = CGSize(width: 30, height: 52)
 
+    // MARK: Device card state (on / off)
+
+    /// How much of the radial glow survives when the device is OFF — the
+    /// lamp is out, only an ember of the mood remains.
+    static let glowOffOpacity: Double = 0.15
+    /// The reference's big light-weight live value (brightness %, sensor
+    /// reading) on device hero cards.
+    static let heroValueSize: CGFloat = 30
+
+    // MARK: Widget strip (the classic dashboard's survivor, re-dressed)
+
+    /// Corner radius for the dashboard's widget cards — tighter than the
+    /// hero cards (the widgets are denser), same glass language.
+    static let widgetCardRadius: CGFloat = 20
+
+    // MARK: Motion
+
+    /// Pressed-card scale for the shared press micro-interaction.
+    static let pressedScale: CGFloat = 0.97
+    /// The hero grid's one-time entrance: rise distance per card…
+    static let entranceRise: CGFloat = 8
+    /// …and the per-card stagger delay (seconds).
+    static let entranceStagger: Double = 0.035
+
     // MARK: Backdrop ambient light (static, two RadialGradients — no blur)
 
     /// The warm lamp-light pooling top-leading behind the greeting.
