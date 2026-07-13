@@ -371,6 +371,79 @@ extension Color {
     static let smartInkSecondary = Color(red: 0.169, green: 0.141, blue: 0.110).opacity(0.6)
 }
 
+// MARK: - Mood palettes (the living app background)
+
+/// Full-screen background palettes for the app's three moods (dimineața /
+/// zi / noapte) — the glassmorphism ground every adaptive Liquid Glass
+/// component sits on. Each palette is a quiet vertical wash plus at most two
+/// static ambient radial accents (no blur, no animation — compositor cost
+/// stays near a flat fill). `AppBackdrop` renders these; `AppMood` maps
+/// mood → palette.
+///
+/// Every palette declares the `ColorScheme` the app should adopt while it
+/// shows: morning/day are light grounds and night is a dark one, and native
+/// materials/text only keep AA contrast when the scheme follows the ground —
+/// that pairing is the honest contract, not a styling suggestion.
+struct AppMoodPalette {
+    /// One static ambient light pool (rendered as a RadialGradient fading
+    /// to clear). Two per palette at most.
+    struct Accent {
+        let color: Color
+        let opacity: Double
+        let center: UnitPoint
+        let radius: CGFloat
+    }
+
+    let colorScheme: ColorScheme
+    /// Vertical ground wash, top → bottom.
+    let baseTop: Color
+    let baseBottom: Color
+    let accents: [Accent]
+
+    /// Dimineața — a soft gold-rose wash over near-white warm ground:
+    /// sunrise light pooling top-leading, a faint rose answering low.
+    /// Ground #FBF2E7 → #F6ECE9; accents gold #EFBE8B, rose #E3A29D.
+    static let morning = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.984, green: 0.949, blue: 0.906),
+        baseBottom: Color(red: 0.965, green: 0.925, blue: 0.914),
+        accents: [
+            Accent(color: Color(red: 0.937, green: 0.745, blue: 0.545),
+                   opacity: 0.32, center: UnitPoint(x: 0.15, y: 0.10), radius: 420),
+            Accent(color: Color(red: 0.890, green: 0.635, blue: 0.616),
+                   opacity: 0.20, center: UnitPoint(x: 0.90, y: 0.88), radius: 460),
+        ])
+
+    /// Zi — the brightest ground: airy warm neutral, a whisper of sky
+    /// top-trailing and warm sand low so white cards never float on void.
+    /// Ground #FBFAF7 → #F1EFEA; accents sky #BED7ED, sand #EBDCC0.
+    static let day = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.984, green: 0.980, blue: 0.969),
+        baseBottom: Color(red: 0.945, green: 0.937, blue: 0.918),
+        accents: [
+            Accent(color: Color(red: 0.745, green: 0.843, blue: 0.929),
+                   opacity: 0.22, center: UnitPoint(x: 0.85, y: 0.08), radius: 440),
+            Accent(color: Color(red: 0.922, green: 0.863, blue: 0.753),
+                   opacity: 0.20, center: UnitPoint(x: 0.10, y: 0.92), radius: 480),
+        ])
+
+    /// Noaptea — deep warm dark, deliberately NOT the smart-home bronze skin:
+    /// a plum-charcoal ground with a single ember warmth high and a dusty
+    /// mauve low. Ground #241C21 → #100C11; accents ember #C98B52,
+    /// mauve #6E4E63 — both ≤ 12% so dark glass and white text stay AA.
+    static let night = AppMoodPalette(
+        colorScheme: .dark,
+        baseTop: Color(red: 0.141, green: 0.110, blue: 0.129),
+        baseBottom: Color(red: 0.063, green: 0.047, blue: 0.067),
+        accents: [
+            Accent(color: Color(red: 0.788, green: 0.545, blue: 0.322),
+                   opacity: 0.10, center: UnitPoint(x: 0.85, y: 0.06), radius: 420),
+            Accent(color: Color(red: 0.431, green: 0.306, blue: 0.388),
+                   opacity: 0.12, center: UnitPoint(x: 0.12, y: 0.90), radius: 460),
+        ])
+}
+
 // MARK: - Spacing
 
 /// 4-point spacing rhythm matching the app's existing padding usage.

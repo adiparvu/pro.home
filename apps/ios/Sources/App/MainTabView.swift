@@ -435,6 +435,10 @@ struct MainTabView: View {
         }
 
         // Phase 3 — glanceable surfaces, always in the same order.
+        // The mood engine gets the property's coordinates first (nil is
+        // meaningful: without them Auto honestly follows the clock alone).
+        AppMoodEngine.shared.latitude = propertyService.primary?.latitude
+        AppMoodEngine.shared.longitude = propertyService.primary?.longitude
         // Apple Weather first (1h App-Group cache) so the snapshot written
         // below already carries it to the watch.
         if let lat = propertyService.primary?.latitude,

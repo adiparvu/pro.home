@@ -64,6 +64,14 @@ struct AppearanceView: View {
 
     // MARK: - Theme
 
+    /// The living background's current selection, stated the way iOS
+    /// Settings states a row's value ("Fundal   Automat ›").
+    private var moodRowValue: String {
+        AppMoodEngine.shared.isAuto
+            ? String(localized: "mood_auto")
+            : AppMoodEngine.shared.resolved.localizedTitle
+    }
+
     private var themeSection: some View {
         SettingsGroup(title: "Theme") {
             ForEach(AppSettings.themes, id: \.code) { theme in
@@ -78,6 +86,11 @@ struct AppearanceView: View {
                     HapticFeedback.selection()
                     if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
                 }
+            }
+            NavSettingsRow(icon: "sun.horizon.fill", color: .brandGold,
+                           label: "mood_settings_title",
+                           value: moodRowValue) {
+                BackgroundMoodView()
             }
         }
     }

@@ -33,7 +33,11 @@ struct PRVIOApp: App {
                         LoginView()
                     }
                 }
-                .preferredColorScheme(appSettings.resolvedColorScheme)
+                // The color scheme follows the living background's mood
+                // (dimineața/zi → light, noaptea → dark; manual pin or Auto
+                // from Settings → Aspect → Fundal). Reading `resolved` here
+                // is what re-renders the scheme when the mood changes.
+                .preferredColorScheme(AppMoodEngine.shared.resolved.palette.colorScheme)
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(auth)

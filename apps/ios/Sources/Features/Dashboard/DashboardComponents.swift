@@ -2,14 +2,10 @@ import SwiftUI
 import CoreLocation
 
 // MARK: - Shared background
-
-var appBackground: Color {
-    Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.04, green: 0.04, blue: 0.08, alpha: 1)
-            : UIColor(red: 0.96, green: 0.96, blue: 0.985, alpha: 1)
-    })
-}
+//
+// `appBackground` lives in Components/AppBackdrop.swift now — it became the
+// living mood backdrop (AppBackdrop), not a flat color. Same name, same
+// call sites; only the definition moved out of this feature file.
 
 // MARK: - Home Widget Card
 //
