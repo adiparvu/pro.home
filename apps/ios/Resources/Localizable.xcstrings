@@ -83204,6 +83204,422 @@
           }
         }
       }
+    },
+    "ana_top_merchants": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top merchants"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top comercianți"
+          }
+        }
+      }
+    },
+    "ana_receipt_badge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scanned receipt"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bon scanat"
+          }
+        }
+      }
+    },
+    "ana_receipt_generic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanned receipt"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bon scanat"
+          }
+        }
+      }
+    },
+    "ana_cat_rest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other categories"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alte categorii"
+          }
+        }
+      }
+    },
+    "ana_includes_receipts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes scanned receipts"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include bonurile scanate"
+          }
+        }
+      }
+    },
+    "ana_category_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows this category's transactions"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afișează tranzacțiile din această categorie"
+          }
+        }
+      }
+    },
+    "ana_insight_savings_up %lld %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Savings rate rose from %1$lld%% to %2$lld%% vs last month."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rata de economii a urcat de la %1$lld%% la %2$lld%% față de luna trecută."
+          }
+        }
+      }
+    },
+    "ana_insight_savings_down %lld %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Savings rate fell from %1$lld%% to %2$lld%% vs last month."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rata de economii a coborât de la %1$lld%% la %2$lld%% față de luna trecută."
+          }
+        }
+      }
+    },
+    "ana_insight_outlier %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” (%2$@) stands out from the rest of this month's expenses."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@” (%2$@) iese în evidență față de restul cheltuielilor lunii."
+          }
+        }
+      }
+    },
+    "ana_year_total": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year total"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total an"
+          }
+        }
+      }
+    },
+    "ana_tasks_by_category": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By category"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pe categorie"
+          }
+        }
+      }
+    },
+    "ana_tasks_by_member": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By member"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pe membru"
+          }
+        }
+      }
+    },
+    "ana_tasks_by_member_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed tasks, by assignee"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcini finalizate, după persoana asignată"
+          }
+        }
+      }
+    },
+    "ana_hours_worked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hours worked"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ore lucrate"
+          }
+        }
+      }
+    },
+    "ana_hours_worked_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on tasks completed this month"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "la sarcinile finalizate luna aceasta"
+          }
+        }
+      }
+    },
+    "ana_avg_completion": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg. completion time"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timp mediu de finalizare"
+          }
+        }
+      }
+    },
+    "ana_avg_completion_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from creation to completion"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de la creare la finalizare"
+          }
+        }
+      }
+    },
+    "ana_projection_method %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average of the last %lld months with data, extended to 12 months"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media ultimelor %lld luni cu date, extinsă la 12 luni"
+          }
+        }
+      }
+    },
+    "ana_method_badge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly average"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medie lunară"
+          }
+        }
+      }
+    },
+    "ana_projection_disclaimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arithmetic from your real history — not a prediction."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calcul aritmetic din istoricul tău real — nu o predicție."
+          }
+        }
+      }
+    },
+    "ana_projection_needs_history": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The projection appears after at least two full months of history."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proiecția apare după cel puțin două luni complete de istoric."
+          }
+        }
+      }
+    },
+    "ana_known_header": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already known"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deja cunoscute"
+          }
+        }
+      }
+    },
+    "ana_known_sub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixed amounts due in the next 90 days — rents, recurring payments and documents."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sume fixe cu scadență în următoarele 90 de zile — chirii, plăți recurente și documente."
+          }
+        }
+      }
+    },
+    "ana_sub_annual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "annual"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "anual"
+          }
+        }
+      }
+    },
+    "ana_sub_estimated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "estimated"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "estimat"
+          }
+        }
+      }
+    },
+    "ana_trend_projection_legend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "projection (average)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "proiecție (medie)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

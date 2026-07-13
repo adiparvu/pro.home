@@ -16,6 +16,16 @@ extension FinancesSection {
             recs.filter { $0.type == type }
                 .reduce(0) { $0 + convertToPreferred($1.amount, from: $1.currency) }
         }
+        // Scanned receipts belong to the same expense ledger the KPIs and the
+        // donut read — the chart must not disagree with the cards above it.
+        // (Receipts carry no currency column: household preferred currency.)
+        func receiptSum(_ start: Date, _ end: Date) -> Double {
+            receiptService.receipts.reduce(0) { acc, r in
+                guard r.total > 0, let d = AppDate.day(from: r.date),
+                      d >= start, d < end else { return acc }
+                return acc + r.total
+            }
+        }
 
         func dayBuckets(days: Int) -> [(String, Double, Double)] {
             let lbl = DateFormatter(); lbl.dateFormat = days <= 7 ? "EEE" : "d"
@@ -27,7 +37,8 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= start && d < end
                 }
-                return (lbl.string(from: day), summed(recs, "income"), summed(recs, "expense"))
+                return (lbl.string(from: day), summed(recs, "income"),
+                        summed(recs, "expense") + receiptSum(start, end))
             }
         }
 
@@ -42,7 +53,8 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= cursor && d < next
                 }
-                buckets.append((lbl.string(from: cursor), summed(recs, "income"), summed(recs, "expense")))
+                buckets.append((lbl.string(from: cursor), summed(recs, "income"),
+                                summed(recs, "expense") + receiptSum(cursor, next)))
                 cursor = next
             }
             return buckets

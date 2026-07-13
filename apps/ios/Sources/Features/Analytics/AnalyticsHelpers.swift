@@ -20,25 +20,69 @@ enum ChartRange: String, CaseIterable {
     }
 }
 
+// MARK: - Unified expense-category display
+//
+// The finances tab aggregates TWO ledgers: manual financial records
+// ("groceries", "utilities", … — AddFinancialView's vocabulary) and scanned
+// receipts ("food", "cleaning", … — ReceiptCategory's vocabulary). Receipt
+// keys that name the same concept as a financial key fold into it, the
+// receipt-native rest localize through their own `expense_cat_*` entries,
+// and everything else goes through the capitalized catalog key the
+// transaction rows already display ("groceries" → "Groceries" → "Alimente").
+
+enum AnalyticsCategoryDisplay {
+    /// Receipt-vocabulary keys folded into the financial vocabulary.
+    private static let folds: [String: String] = [
+        "food":   "groceries",
+        "health": "healthcare",
+    ]
+
+    /// Receipt-native keys and their existing catalog entries.
+    private static let receiptKeys: [String: String.LocalizationValue] = [
+        "cleaning":    "expense_cat_cleaning",
+        "bathroom":    "expense_cat_bathroom",
+        "garden":      "expense_cat_garden",
+        "diy":         "expense_cat_diy",
+        "electronics": "expense_cat_electronics",
+        "clothing":    "expense_cat_clothing",
+    ]
+
+    /// Canonical lowercase key for any stored category value (either ledger).
+    static func normalize(_ raw: String) -> String {
+        let key = raw.isEmpty ? "other" : raw.lowercased()
+        return folds[key] ?? key
+    }
+
+    /// Localized display name for a canonical key.
+    static func label(_ key: String) -> String {
+        if let receiptKey = receiptKeys[key] { return String(localized: receiptKey) }
+        return String(localized: String.LocalizationValue(key.capitalized))
+    }
+}
+
 // MARK: - Category stat helper
 
 struct CategoryStat: Identifiable {
-    let id = UUID()
+    /// Canonical category keys aggregated into this slice — several for the
+    /// "other categories" remainder bucket, exactly one otherwise.
+    let keys: [String]
+    /// Localized display name.
     let name: String
     let amount: Double
+    /// Share of the month's total expenses, 0…1.
+    let share: Double
+    let color: Color
 
-    var color: Color {
-        let palette: [Color] = [
-            Color.brandPrimaryBlue,
-            Color.brandWarning,
-            Color.brandSuccess,
-            Color(red: 0.7, green: 0.3, blue: 0.9),
-            Color(red: 1.0, green: 0.75, blue: 0.1),
-            Color.brandDanger
-        ]
-        let idx = abs(name.hashValue) % palette.count
-        return palette[idx]
-    }
+    var id: String { keys.joined(separator: "+") }
+
+    /// Slice palette assigned by rank. The old mapping hashed the name
+    /// (`name.hashValue % palette.count`), which reshuffled every launch
+    /// (SipHash is seed-randomized) and let two categories collide on the
+    /// same color; rank order is stable and collision-free.
+    static let palette: [Color] = [
+        .brandPrimaryBlue, .brandWarning, .brandSuccess,
+        .brandPurple, .brandSkyBlue, .brandDanger,
+    ]
 }
 
 // MARK: - TrendKPICard
@@ -69,6 +113,9 @@ struct TrendKPICard: View {
                     .minimumScaleFactor(0.65)
                     .contentTransition(.numericText())
 
+                // The month-over-month delta, only when the previous month can
+                // back it. The old fallback rendered the label here, so every
+                // card without a trend printed its own title twice.
                 if let pct = trendPct {
                     HStack(spacing: 2) {
                         Image(systemName: pct >= 0 ? "arrow.up" : "arrow.down")
@@ -80,10 +127,8 @@ struct TrendKPICard: View {
                         ? Color.brandSuccess
                         : .red)
                 } else {
-                    Text(label)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    // Reserve the line so the three cards keep equal height.
+                    Color.clear.frame(height: 12)
                 }
 
                 Text(label)

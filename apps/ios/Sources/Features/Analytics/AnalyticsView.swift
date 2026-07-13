@@ -79,6 +79,20 @@ struct AnalyticsView: View {
         }
         .navigationTitle("Analytics")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            // Export lives in the existing report builder — one PDF pipeline
+            // for the whole app, never a duplicate exporter per screen. The
+            // report view reads its services from this stack's environment.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    PropertyReportView()
+                } label: {
+                    Image(systemName: "doc.richtext")
+                        .font(AppFont.headline)
+                }
+                .accessibilityLabel("Raport")
+            }
+        }
         .floatingSpeedDial(.analytics)
     }
 }

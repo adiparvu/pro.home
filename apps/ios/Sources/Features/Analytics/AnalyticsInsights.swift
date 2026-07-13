@@ -3,17 +3,40 @@ import Charts
 
 // MARK: - One month of finance data, in the preferred currency
 //
-// Built in a single pass over the month's records (FinancesSection.stats) —
-// every card on the Analytics finances tab reads from this instead of
-// re-filtering the record list per property access.
+// Built in a single pass over the month's records AND scanned receipts
+// (FinancesSection.stats) — every card on the Analytics finances tab reads
+// from this instead of re-filtering the source lists per property access.
+// Receipts are part of the ledger here: their categories ("food",
+// "cleaning", …) are what the category donut used to silently drop.
 
 struct MonthFinanceStats {
     var income: Double = 0
     var expenses: Double = 0
-    /// Lowercased category key → converted expense total.
+    /// Canonical category key (AnalyticsCategoryDisplay) → converted expense total.
     var byCategory: [String: Double] = [:]
     /// Day of month (1-based) → converted expense total.
     var byDay: [Int: Double] = [:]
+    /// Store name → receipt spend (receipts only).
+    var byMerchant: [String: Double] = [:]
+    /// Store name → number of receipts (receipts only).
+    var merchantVisits: [String: Int] = [:]
+    /// Every expense of the month, records and receipts alike — the category
+    /// drill-down list and the outlier insight read these.
+    var items: [MonthExpenseItem] = []
+    /// The part of `expenses` contributed by scanned receipts.
+    var receiptExpenses: Double = 0
+}
+
+/// One real expense of the month — a financial record or a scanned receipt.
+struct MonthExpenseItem: Identifiable {
+    let id: String
+    let title: String
+    /// Canonical category key (AnalyticsCategoryDisplay.normalize).
+    let categoryKey: String
+    let date: Date
+    /// Converted to the preferred currency.
+    let amount: Double
+    let isReceipt: Bool
 }
 
 // MARK: - Auto insight
