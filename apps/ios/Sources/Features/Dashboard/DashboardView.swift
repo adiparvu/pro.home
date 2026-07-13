@@ -156,6 +156,14 @@ struct DashboardView: View {
                 SmartHomeSection(nextAgendaItem: nextAgendaItem)
                     .padding(.horizontal, AppSpacing.lg)
 
+                // ── Estate OS (E1): the "Domeniul" strip — the property's
+                //    spaces. Rendered ONLY when zones exist; with zero
+                //    zones the home page stays exactly as it was. ─────────
+                if !zoneService.zones.isEmpty {
+                    Spacer().frame(height: 22)
+                    EstateDomainStrip()
+                }
+
                 // ── Widgets — the classic dashboard's one survivor here ──
                 ForEach(sectionOrder) { section in
                     sectionView(section)

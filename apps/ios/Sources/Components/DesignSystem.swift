@@ -288,6 +288,58 @@ enum SmartHomeTheme {
             startPoint: .top, endPoint: .bottom)
     }
 
+    // MARK: Estate scene gradients (Estate OS E1)
+    //
+    // Per-`SpaceKind` warm backdrops for spaces without a photo — each as
+    // dark as `fallbackGradient` so the `smartText*` tokens keep AA
+    // contrast, tinted toward its scene while staying in the warm family.
+    // House and custom spaces reuse `fallbackGradient` (the home's own hue).
+
+    /// Garden: warm olive-green, top #293418 → bottom #0D1108.
+    static var sceneGardenGradient: LinearGradient {
+        sceneGradient(Color(red: 0.161, green: 0.204, blue: 0.094),
+                      Color(red: 0.051, green: 0.067, blue: 0.031))
+    }
+    /// Pond: deep warm teal, top #17333A → bottom #081114.
+    static var scenePondGradient: LinearGradient {
+        sceneGradient(Color(red: 0.090, green: 0.200, blue: 0.227),
+                      Color(red: 0.031, green: 0.067, blue: 0.078))
+    }
+    /// Forest: deep fir green, top #1A2C1C → bottom #08100A.
+    static var sceneForestGradient: LinearGradient {
+        sceneGradient(Color(red: 0.102, green: 0.173, blue: 0.110),
+                      Color(red: 0.031, green: 0.063, blue: 0.039))
+    }
+    /// Greenhouse: sunlit olive-gold, top #37361B → bottom #12120A.
+    static var sceneGreenhouseGradient: LinearGradient {
+        sceneGradient(Color(red: 0.216, green: 0.212, blue: 0.106),
+                      Color(red: 0.071, green: 0.071, blue: 0.039))
+    }
+    /// Garage: warm slate, top #2E2B28 → bottom #100F0E.
+    static var sceneGarageGradient: LinearGradient {
+        sceneGradient(Color(red: 0.180, green: 0.169, blue: 0.157),
+                      Color(red: 0.063, green: 0.059, blue: 0.055))
+    }
+    /// Basement: deep umber, top #281E16 → bottom #0B0806.
+    static var sceneBasementGradient: LinearGradient {
+        sceneGradient(Color(red: 0.157, green: 0.118, blue: 0.086),
+                      Color(red: 0.043, green: 0.031, blue: 0.024))
+    }
+
+    private static func sceneGradient(_ top: Color, _ bottom: Color) -> LinearGradient {
+        LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+    }
+
+    // MARK: Space detail hero (Estate OS E2)
+
+    /// Breathing room of pure scene above the space page's floating title.
+    static let spaceHeroBreath: CGFloat = 140
+    /// The free-floating space name — large and light, tracking tight.
+    static let spaceNameSize: CGFloat = 36
+    static let spaceNameTracking: CGFloat = -0.5
+    /// Metric tile live-value size on the space page.
+    static let spaceMetricValueSize: CGFloat = 22
+
     /// Warm-brown darkening laid over the blurred cover photo — dark enough
     /// that warm-white text keeps AA contrast, light enough that the photo's
     /// texture survives (the ambient glows add the rest of the mood).

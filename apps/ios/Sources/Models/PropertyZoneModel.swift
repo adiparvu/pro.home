@@ -35,6 +35,11 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     var notes: String?
     var photoUrl: String?
     var sortOrder: Int
+    /// Estate OS (E1): what KIND of space this zone is (`SpaceKind` raw
+    /// value — "pond", "garden"…). nil = never classified; readers use
+    /// `resolvedSpaceKind`, which falls back to a conservative name/icon
+    /// heuristic. Written only through `PropertyZoneService.setSpaceKind`.
+    var spaceKind: String?
     let createdAt: String
     var updatedAt: String
 
@@ -46,6 +51,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
         case healthScore = "health_score"
         case photoUrl    = "photo_url"
         case sortOrder   = "sort_order"
+        case spaceKind   = "space_kind"
         case createdAt   = "created_at"
         case updatedAt   = "updated_at"
     }
