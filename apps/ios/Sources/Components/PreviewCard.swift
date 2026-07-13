@@ -53,6 +53,7 @@ struct PreviewCard<Avatar: View>: View {
     private let tint: Color
     private let details: [PreviewCardDetail]
     private let chips: [PreviewCardChip]
+    private let socialLinks: [SocialLink]
     private let avatar: () -> Avatar
 
     init(title: Text,
@@ -61,14 +62,17 @@ struct PreviewCard<Avatar: View>: View {
          tint: Color = .accentColor,
          details: [PreviewCardDetail] = [],
          chips: [PreviewCardChip] = [],
+         socialLinks: [SocialLink] = [],
          @ViewBuilder avatar: @escaping () -> Avatar) {
         self.title = title
         self.subtitle = subtitle
         self.headerTrailing = headerTrailing
         self.tint = tint
-        // The card is a glance, not a detail page — cap at four rows.
-        self.details = Array(details.prefix(4))
+        // The card is a glance, not a detail page — cap at five rows.
+        self.details = Array(details.prefix(5))
         self.chips = chips
+        // Same rule as every other social surface: saved handles only.
+        self.socialLinks = SocialLinksRow.displayable(socialLinks)
         self.avatar = avatar
     }
 
@@ -86,6 +90,13 @@ struct PreviewCard<Avatar: View>: View {
                         row(detail)
                     }
                 }
+            }
+            if !socialLinks.isEmpty {
+                hairline
+                // The preview is a system-rendered non-interactive snapshot
+                // (see the honesty constraint above) — the discs show WHICH
+                // networks are set; opening them lives on the full page.
+                SocialLinksRow(links: socialLinks)
             }
             if !chips.isEmpty {
                 hairline

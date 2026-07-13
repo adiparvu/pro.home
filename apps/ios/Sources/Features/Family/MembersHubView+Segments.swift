@@ -98,7 +98,8 @@ extension MembersHubView {
             details: personDetails(person),
             chips: isOnline(person)
                 ? [PreviewCardChip(icon: "circle.fill", text: Text("convo_online"), tint: .brandSuccess)]
-                : []
+                : [],
+            socialLinks: person.profile?.socialLinks ?? person.member?.socialLinks ?? []
         ) {
             HubAvatar(member: person.member,
                       avatarUrl: person.profile?.avatarUrl,
@@ -108,11 +109,18 @@ extension MembersHubView {
     }
 
     private func personDetails(_ person: HubPerson) -> [PreviewCardDetail] {
-        var rows: [PreviewCardDetail] = [
-            PreviewCardDetail(icon: "person.text.rectangle",
-                              label: Text("Role"),
-                              value: Text(person.roleLabel)),
-        ]
+        var rows: [PreviewCardDetail] = []
+        // The full name from the profile, when it says more than the title
+        // already does (the title shows the display name / nickname).
+        if let full = person.profile?.fullName?.trimmingCharacters(in: .whitespaces),
+           !full.isEmpty, full != person.displayName {
+            rows.append(PreviewCardDetail(icon: "person.fill",
+                                          label: Text("Name"),
+                                          value: Text(verbatim: full)))
+        }
+        rows.append(PreviewCardDetail(icon: "person.text.rectangle",
+                                      label: Text("Role"),
+                                      value: Text(person.roleLabel)))
         if let email = person.email {
             rows.append(PreviewCardDetail(icon: "envelope.fill",
                                           label: Text("E-mail"),
@@ -123,7 +131,19 @@ extension MembersHubView {
                                           label: Text("Phone"),
                                           value: Text(verbatim: phone)))
         }
+        if let birthday = birthdayText(person.profile?.birthDate) {
+            rows.append(PreviewCardDetail(icon: "birthday.cake.fill",
+                                          label: Text("cal_birthday"),
+                                          value: birthday))
+        }
         return rows
+    }
+
+    /// "yyyy-MM-dd" from profiles → a localized "14 iunie 1996". nil (absent
+    /// or unparseable) simply hides the row — real fields only.
+    private func birthdayText(_ raw: String?) -> Text? {
+        guard let raw, let date = AppDate.day(from: raw) else { return nil }
+        return Text(verbatim: date.formatted(.dateTime.day().month(.wide).year()))
     }
 
     private func isOnline(_ person: HubPerson) -> Bool {
@@ -207,11 +227,16 @@ extension MembersHubView {
     private func accountPreview(_ account: AccountMember) -> some View {
         let profile = accountService.profiles[account.userId]
         let name = profile?.bestName ?? ""
-        var rows: [PreviewCardDetail] = [
-            PreviewCardDetail(icon: "person.text.rectangle",
-                              label: Text("Role"),
-                              value: Text(accountRoleLabel(account.role))),
-        ]
+        var rows: [PreviewCardDetail] = []
+        if let full = profile?.fullName?.trimmingCharacters(in: .whitespaces),
+           !full.isEmpty, full != name {
+            rows.append(PreviewCardDetail(icon: "person.fill",
+                                          label: Text("Name"),
+                                          value: Text(verbatim: full)))
+        }
+        rows.append(PreviewCardDetail(icon: "person.text.rectangle",
+                                      label: Text("Role"),
+                                      value: Text(accountRoleLabel(account.role))))
         if let email = profile?.email, !email.isEmpty {
             rows.append(PreviewCardDetail(icon: "envelope.fill",
                                           label: Text("E-mail"),
@@ -222,6 +247,11 @@ extension MembersHubView {
                                           label: Text("Phone"),
                                           value: Text(verbatim: phone)))
         }
+        if let birthday = birthdayText(profile?.birthDate) {
+            rows.append(PreviewCardDetail(icon: "birthday.cake.fill",
+                                          label: Text("cal_birthday"),
+                                          value: birthday))
+        }
         return PreviewCard(
             title: name.isEmpty ? Text(accountRoleLabel(account.role)) : Text(verbatim: name),
             subtitle: account.joinedDate.map {
@@ -231,7 +261,8 @@ extension MembersHubView {
             details: rows,
             chips: account.isBlocked
                 ? [PreviewCardChip(icon: "hand.raised.fill", text: Text("Blocked"), tint: .brandDanger)]
-                : []
+                : [],
+            socialLinks: profile?.socialLinks ?? []
         ) {
             HubAvatar(member: nil, avatarUrl: profile?.avatarUrl, name: name, size: 54)
         }

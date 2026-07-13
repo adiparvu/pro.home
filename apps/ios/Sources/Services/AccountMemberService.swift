@@ -44,12 +44,16 @@ struct AccountProfile: Codable, Hashable {
     var email: String?
     var phone: String?
     var avatarUrl: String?
+    var birthDate: String?
+    var socialLinks: [SocialLink]?
 
     enum CodingKeys: String, CodingKey {
         case id, email, phone
         case displayName = "display_name"
         case fullName    = "full_name"
         case avatarUrl   = "avatar_url"
+        case birthDate   = "birth_date"
+        case socialLinks = "social_links"
     }
 
     var bestName: String {
@@ -93,7 +97,7 @@ final class AccountMemberService {
             if !ids.isEmpty {
                 let profs: [AccountProfile] = try await supabase
                     .from("profiles")
-                    .select("id, display_name, full_name, email, phone, avatar_url")
+                    .select("id, display_name, full_name, email, phone, avatar_url, birth_date, social_links")
                     .in("id", values: ids)
                     .execute().value
                 profiles = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
