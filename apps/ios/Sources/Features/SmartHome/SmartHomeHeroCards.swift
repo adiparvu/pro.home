@@ -17,10 +17,13 @@ import NetworkExtension
 
 /// The empty state's first grid slot, styled exactly like a device card:
 /// accent-glow icon, short title/subtitle (sized so the Romanian strings
-/// never wrap mid-word again), and a glass capsule that triggers the REAL
-/// HomeKit permission flow.
+/// never wrap mid-word again), and a glass capsule whose action the parent
+/// provides — the REAL HomeKit permission flow, followed by the import
+/// wizard once authorization lands (Smart Control R1).
 struct ConnectHomeKitHeroCard: View {
-    private let smartHome = SmartHomeService.shared
+    /// Triggers the real connect flow (and the parent's post-connect
+    /// wizard tracking) — the card never fires a dead control.
+    let onConnect: () -> Void
 
     var body: some View {
         GlassCard(padding: AppSpacing.base) {
@@ -54,7 +57,7 @@ struct ConnectHomeKitHeroCard: View {
 
                     Button {
                         HapticFeedback.impact(.light)
-                        smartHome.connectHomeKit()
+                        onConnect()
                     } label: {
                         Text("sh_connect_start")
                             .font(AppFont.captionStrong)
@@ -145,25 +148,6 @@ struct NextUpCard: View {
 
 // MARK: - Temperature dial card
 
-/// Where the temperature reading genuinely comes from — the card's sublabel
-/// says so, always honestly.
-enum HomeTemperatureSource {
-    /// A real indoor IoT temperature sensor.
-    case indoor
-    /// The property's Apple Weather current temperature.
-    case outdoor
-    /// No reading available from anywhere.
-    case unavailable
-
-    var labelKey: LocalizedStringKey {
-        switch self {
-        case .indoor:      "sh_temp_inside"
-        case .outdoor:     "sh_temp_outside"
-        case .unavailable: "sh_temp_unavailable"
-        }
-    }
-}
-
 /// The circular mini dial in the climate orange: the temperature big in the
 /// center of a trimmed arc, "Home temperature" beneath, and — ONLY when a
 /// real thermostat exists — that thermostat's actual power pill toggle.
@@ -171,7 +155,11 @@ enum HomeTemperatureSource {
 struct TemperatureDialCard: View {
     /// Current temperature in °C; nil renders an honest "—".
     let celsius: Double?
-    let source: HomeTemperatureSource
+    /// The honest sublabel — built by the section from what the value
+    /// GENUINELY is: the per-space indoor readings ("Living 21,5°"), the
+    /// "media a n senzori" summary, "Exterior · vremea" when only the
+    /// weather reading exists, or "no reading". Never a guessed source.
+    let caption: Text
     /// A real thermostat with the `.power` capability, when one exists —
     /// unlocks the toggle (its live power state, written via the provider).
     let thermostat: SmartDevice?
@@ -222,10 +210,11 @@ struct TemperatureDialCard: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
-                        Text(source.labelKey)
+                        caption
                             .font(AppFont.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     // VoiceOver path to the tap gesture below: the title
                     // block is the button that opens the climate page,

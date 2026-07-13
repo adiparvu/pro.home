@@ -54,6 +54,9 @@ struct SpaceDetailView: View {
     @Environment(AppRouter.self) private var router
 
     private let smartHome = SmartHomeService.shared
+    /// Cached HomeKit indoor readings (Smart Control R3) — feeds the
+    /// space's temperature tile when a sensor lives in this room.
+    private let indoorClimate = IndoorClimateStore.shared
 
     /// The live projection of the presented zone; falls back to the
     /// snapshot if the zone vanished mid-presentation.
@@ -107,6 +110,10 @@ struct SpaceDetailView: View {
         // Sheet chrome (ignored when pushed).
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        // Indoor climate (R3): fresh-enough readings on arrival, a real
+        // readValue fan-out on pull-to-refresh — the page's manual refresh.
+        .refreshable { await indoorClimate.refresh() }
+        .task { await indoorClimate.refreshIfStale() }
         // Push chrome: the page owns its top bar (the glass back circle),
         // so the system navigation bar stays hidden on the stack.
         .navigationBarBackButtonHidden(true)
@@ -233,9 +240,18 @@ struct SpaceDetailView: View {
 
     // MARK: Metrics — up to 3 real sensor tiles, or the honest empty card
 
+    /// This space's live HomeKit temperature (R3) — the accessory whose
+    /// HomeKit room matches the zone by name, when one reported.
+    private var homeKitReading: IndoorClimateReading? {
+        indoorClimate.reading(forSpaceNamed: live.name)
+    }
+
     @ViewBuilder private var metricsSection: some View {
-        let sensors = Array(zoneSensors.prefix(3))
-        if sensors.isEmpty {
+        let reading = homeKitReading
+        // The HomeKit temperature tile joins the row; IoT tiles fill the
+        // remaining slots — the row stays capped at 3, like before.
+        let sensors = Array(zoneSensors.prefix(reading == nil ? 3 : 2))
+        if sensors.isEmpty && reading == nil {
             GlassCard(padding: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("est_no_sensors_title")
@@ -249,6 +265,10 @@ struct SpaceDetailView: View {
             }
         } else {
             HStack(spacing: AppSpacing.md) {
+                if let reading {
+                    metricTile(value: Self.degreesText(reading.celsius),
+                               label: reading.accessoryName)
+                }
                 ForEach(sensors) { sensor in
                     metricTile(sensor)
                 }
@@ -257,16 +277,22 @@ struct SpaceDetailView: View {
     }
 
     private func metricTile(_ sensor: IoTSensor) -> some View {
+        // `displayValue` is the hub's own formatting: value + unit as
+        // stored, "—" while no reading has arrived (never invented).
+        metricTile(value: sensor.displayValue, label: sensor.name)
+    }
+
+    /// The one metric tile both worlds share — an IoT sensor's stored
+    /// display value or a HomeKit accessory's live temperature.
+    private func metricTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            // `displayValue` is the hub's own formatting: value + unit as
-            // stored, "—" while no reading has arrived (never invented).
-            Text(verbatim: sensor.displayValue)
+            Text(verbatim: value)
                 .font(AppFont.scaled(SpaceHero.metricValueSize, weight: .light))
                 .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Text(verbatim: sensor.name)
+            Text(verbatim: label)
                 .font(AppFont.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -275,6 +301,11 @@ struct SpaceDetailView: View {
         .padding(AppSpacing.base)
         .liquidGlass(cornerRadius: AppRadius.xl)
         .accessibilityElement(children: .combine)
+    }
+
+    /// "21,5 °C" — locale-aware, at most one decimal, the IoT tiles' format.
+    private static func degreesText(_ celsius: Double) -> String {
+        "\(celsius.formatted(.number.precision(.fractionLength(0...1)))) °C"
     }
 
     // MARK: Devices — real rows or the honest empty row

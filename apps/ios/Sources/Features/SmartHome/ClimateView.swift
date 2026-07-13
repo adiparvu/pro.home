@@ -154,6 +154,10 @@ struct ClimateView: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        // Fresh-enough indoor readings on arrival (R3): the same fan-out
+        // that feeds the dial also refreshes the characteristic cache the
+        // humidity line reads from.
+        .task { await IndoorClimateStore.shared.refreshIfStale() }
         .onChange(of: selectedRoom) { _, _ in
             // Another room may mean another (or no) thermostat — drop the
             // draft so the dial reads the new scope's real target.

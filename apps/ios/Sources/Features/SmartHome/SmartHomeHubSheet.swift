@@ -33,12 +33,14 @@ struct SmartHomeHubSheet: View {
         case search
         case allDevices
         case room(String)
+        case importWizard
 
         var id: String {
             switch self {
             case .search:         "search"
             case .allDevices:     "all-devices"
             case .room(let name): "room-\(name)"
+            case .importWizard:   "import-wizard"
             }
         }
     }
@@ -52,6 +54,12 @@ struct SmartHomeHubSheet: View {
 
     // Pairing flow.
     @State private var isPairing = false
+
+    /// Set when the hub's connect slot triggered the HomeKit permission
+    /// flow — the moment authorization lands, the import wizard presents
+    /// (Smart Control R1). Local to this sheet, so the dashboard's own
+    /// tracking can never double-present.
+    @State private var awaitingConnectWizard = false
 
     /// The truthful outcome of the last hub action (room creation or
     /// pairing), surfaced as an alert.
@@ -142,6 +150,19 @@ struct SmartHomeHubSheet: View {
 
                     Spacer().frame(height: AppSpacing.xs)
                     addDeviceRow
+                    if smartHome.homeKitAuthorized {
+                        // Re-run the import any time — the wizard reports
+                        // "deja legat" for everything already mirrored.
+                        hubRow(icon: "square.and.arrow.down",
+                               titleKey: "hub_import_title") {
+                            activeSheet = .importWizard
+                        }
+                    }
+                    if homeKit.isMissingHomeHub {
+                        // Honest info, only when the absence is genuinely
+                        // detected — never scare copy.
+                        HomeHubGuideRow()
+                    }
 
                     Spacer(minLength: AppSpacing.xxl)
                 }
@@ -161,7 +182,18 @@ struct SmartHomeHubSheet: View {
                 SmartHomeDeviceListSheet(kind: nil, room: nil)
             case .room(let name):
                 SmartHomeDeviceListSheet(kind: nil, room: name)
+            case .importWizard:
+                HomeKitImportWizardSheet()
+                    .environment(propertyService)
+                    .environment(zoneService)
             }
+        }
+        // The post-connect moment (R1): authorization landing after this
+        // sheet's connect tap presents the import wizard.
+        .onChange(of: homeKit.isAuthorized) { _, authorized in
+            guard authorized, awaitingConnectWizard else { return }
+            awaitingConnectWizard = false
+            activeSheet = .importWizard
         }
         .alert(Text("hub_create_room"), isPresented: $showCreateRoom) {
             TextField("hub_room_name_placeholder", text: $newRoomName)
@@ -277,9 +309,11 @@ struct SmartHomeHubSheet: View {
             .disabled(isPairing)
         } else {
             // Pairing needs HomeKit first — the same slot honestly offers
-            // the real permission flow instead of a control that can't work.
+            // the real permission flow instead of a control that can't
+            // work; the import wizard follows once authorization lands.
             hubRow(icon: "homekit", titleKey: "sh_connect_homekit",
                    showsChevron: false) {
+                awaitingConnectWizard = true
                 smartHome.connectHomeKit()
             }
         }

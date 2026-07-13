@@ -57995,6 +57995,342 @@
         }
       }
     },
+    "hub_guide_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automations and remote access need a hub — a HomePod or an Apple TV. Without one, control works only on your home network."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatizările și accesul de la distanță cer un hub — HomePod sau Apple TV. Fără el, controlul funcționează doar în rețeaua casei."
+          }
+        }
+      }
+    },
+    "hub_guide_less": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show less"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mai puțin"
+          }
+        }
+      }
+    },
+    "hub_guide_more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Learn more"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Află mai multe"
+          }
+        }
+      }
+    },
+    "hub_guide_more_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A HomePod, HomePod mini or Apple TV signed into the same home becomes the hub automatically. Set it up in Apple's Home app; automations, notifications and away-from-home access start working on their own."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un HomePod, un HomePod mini sau un Apple TV conectat la aceeași casă devine hub automat. Configurează-l în aplicația Casă de la Apple; automatizările, notificările și accesul din afara casei pornesc de la sine."
+          }
+        }
+      }
+    },
+    "hub_guide_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home hub"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hub pentru casă"
+          }
+        }
+      }
+    },
+    "hub_import_accessory_count %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld accessories"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld accesorii"
+          }
+        }
+      }
+    },
+    "hub_import_accessory_one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 accessory"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 accesoriu"
+          }
+        }
+      }
+    },
+    "hub_import_all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import all"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importă tot"
+          }
+        }
+      }
+    },
+    "hub_import_already_linked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already linked"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deja legat"
+          }
+        }
+      }
+    },
+    "hub_import_cameras_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HomeKit video cameras appear automatically on the Security Cameras page."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camerele video HomeKit apar automat în pagina Camere de securitate."
+          }
+        }
+      }
+    },
+    "hub_import_created": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creat"
+          }
+        }
+      }
+    },
+    "hub_import_done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gata"
+          }
+        }
+      }
+    },
+    "hub_import_empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HomeKit has no rooms to import yet."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HomeKit nu are încă nicio cameră de importat."
+          }
+        }
+      }
+    },
+    "hub_import_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eșuat"
+          }
+        }
+      }
+    },
+    "hub_import_include": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include in import"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include la import"
+          }
+        }
+      }
+    },
+    "hub_import_no_home": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No HomeKit home set up yet."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio casă HomeKit configurată încă."
+          }
+        }
+      }
+    },
+    "hub_import_nothing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything is already linked — nothing to import."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Totul este deja legat — nimic de importat."
+          }
+        }
+      }
+    },
+    "hub_import_rooms_section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HomeKit rooms"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camere HomeKit"
+          }
+        }
+      }
+    },
+    "hub_import_skipped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omis"
+          }
+        }
+      }
+    },
+    "hub_import_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked HomeKit rooms become PRVIO spaces; accessories stay grouped by their HomeKit room."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camerele HomeKit bifate devin spații în PRVIO; accesoriile rămân grupate după camera lor din HomeKit."
+          }
+        }
+      }
+    },
+    "hub_import_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import from HomeKit"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importă din HomeKit"
+          }
+        }
+      }
+    },
     "hub_no_property": {
       "localizations": {
         "en": {
@@ -75523,6 +75859,22 @@
         }
       }
     },
+    "sh_temp_avg_count %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "average of %lld sensors"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "media a %lld senzori"
+          }
+        }
+      }
+    },
     "sh_temp_decrease": {
       "localizations": {
         "en": {
@@ -75567,6 +75919,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interior"
+          }
+        }
+      }
+    },
+    "sh_temp_outdoor_weather": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outside · weather"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exterior · vremea"
           }
         }
       }

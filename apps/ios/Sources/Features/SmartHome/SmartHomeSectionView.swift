@@ -37,9 +37,16 @@ struct SmartHomeSection: View {
     var nextAgendaItem: AgendaItem? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(PropertyZoneService.self) private var zoneService
 
     @State private var selectedRoom: String? = nil
+
+    /// Set when THIS surface triggered the HomeKit connect flow — the
+    /// moment authorization lands, the import wizard presents (Smart
+    /// Control R1). Local by design: the hub sheet tracks its own taps,
+    /// so the two surfaces can never double-present.
+    @State private var awaitingConnectWizard = false
 
     /// Flips true on the grid's first appearance and never resets for this
     /// view's lifetime — the one-shot gate for the entrance stagger. Cards
@@ -55,12 +62,14 @@ struct SmartHomeSection: View {
         case device(SmartDevice)
         case allDevices
         case climate
+        case importWizard
 
         var id: String {
             switch self {
             case .device(let device): "device-\(device.id)"
             case .allDevices:         "all-devices"
             case .climate:            "climate"
+            case .importWizard:       "import-wizard"
             }
         }
     }
@@ -69,6 +78,8 @@ struct SmartHomeSection: View {
 
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
+    /// Cached HomeKit indoor readings (R3) — the dial's first truth.
+    private let indoorClimate = IndoorClimateStore.shared
 
     /// How many hero cards the dashboard shows before folding the rest
     /// behind the "See all" row.
@@ -117,7 +128,40 @@ struct SmartHomeSection: View {
                 SmartHomeDeviceListSheet(kind: nil, room: effectiveRoom)
             case .climate:
                 ClimateView()
+            case .importWizard:
+                HomeKitImportWizardSheet()
             }
+        }
+        // Indoor climate cache (R3): fill on first appearance, refresh on
+        // scene re-activation — never a polling loop.
+        .task { await indoorClimate.refreshIfStale() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await indoorClimate.refresh() }
+        }
+        // The post-connect moment (R1): authorization landing after a
+        // connect tap on THIS surface presents the import wizard, and the
+        // freshly reachable sensors feed the dial.
+        .onChange(of: homeKit.isAuthorized) { _, authorized in
+            guard authorized else { return }
+            Task { await indoorClimate.refresh() }
+            if awaitingConnectWizard {
+                awaitingConnectWizard = false
+                activeSheet = .importWizard
+            }
+        }
+    }
+
+    /// The connect slots' shared action: unauthorized → the real HomeKit
+    /// permission flow (the wizard follows once it lands); already
+    /// authorized → straight to the import wizard, so the control always
+    /// does something real.
+    private func connectOrImport() {
+        if smartHome.homeKitAuthorized {
+            activeSheet = .importWizard
+        } else {
+            awaitingConnectWizard = true
+            smartHome.connectHomeKit()
         }
     }
 
@@ -154,8 +198,9 @@ struct SmartHomeSection: View {
                     }
                 }
                 // The reference's trailing "+" chip — a REAL action: the
-                // existing Connect-HomeKit flow (devices are added there).
-                SmartPlusChip { smartHome.connectHomeKit() }
+                // Connect-HomeKit flow (the import wizard follows), or the
+                // wizard directly once HomeKit is already authorized.
+                SmartPlusChip { connectOrImport() }
             }
             .padding(.horizontal, AppSpacing.xxs)
         }
@@ -339,12 +384,13 @@ struct SmartHomeSection: View {
                 activeSheet = .device(device)
             }
         case .connectHomeKit:
-            ConnectHomeKitHeroCard()
+            ConnectHomeKitHeroCard { connectOrImport() }
         case .nextUp:
             NextUpCard(item: nextAgendaItem)
         case .temperature:
-            TemperatureDialCard(celsius: homeTemperature.celsius,
-                                source: homeTemperature.source,
+            let temperature = homeTemperature
+            TemperatureDialCard(celsius: temperature.celsius,
+                                caption: temperature.caption,
                                 thermostat: primaryThermostat) {
                 activeSheet = .climate
             }
@@ -355,29 +401,77 @@ struct SmartHomeSection: View {
 
     // MARK: - Temperature sources (real, in honesty order)
 
-    /// (1) A real indoor temperature sensor (any provider), else (2) the
-    /// property's Apple Weather current temperature, else an honest nothing.
-    private var homeTemperature: (celsius: Double?, source: HomeTemperatureSource) {
-        if let sensor = indoorTemperatureSensor, let value = sensor.readingValue {
+    /// One indoor temperature sample with the space (or sensor) it belongs
+    /// to — the dial's caption is built from these.
+    private struct IndoorSample {
+        let label: String
+        let celsius: Double
+    }
+
+    /// Every REAL indoor temperature: the HomeKit readings cached by
+    /// `IndoorClimateStore` (each tagged with its accessory's room), plus
+    /// the IoT hub's degree-unit sensors. Empty means no indoor sensor has
+    /// reported — never padded.
+    private var indoorSamples: [IndoorSample] {
+        var samples = indoorClimate.readings.map {
+            IndoorSample(label: $0.roomName ?? $0.accessoryName, celsius: $0.celsius)
+        }
+        for sensor in indoorTemperatureSensors {
+            guard let value = sensor.readingValue else { continue }
             // Normalize a Fahrenheit sensor to the app's Celsius display.
             let celsius = (sensor.readingUnit?.contains("F") == true)
                 ? (value - 32) * 5 / 9 : value
-            return (celsius, .indoor)
+            samples.append(IndoorSample(label: sensor.room ?? sensor.name,
+                                        celsius: celsius))
         }
-        if let cached = PropertyWeather.cached() {
-            return (cached.temp, .outdoor)
-        }
-        if let current = WeatherKitService.shared.currentWeather {
-            return (current.temperature.converted(to: .celsius).value, .outdoor)
-        }
-        return (nil, .unavailable)
+        return samples
     }
 
-    /// A sensor whose live reading is a temperature — identified by its
+    /// The dial's truth (R3): with ≥1 indoor sensor reporting, the AVERAGE
+    /// indoor temperature captioned by the per-space values (two or fewer)
+    /// or the honest "media a n senzori"; with none, the outdoor Apple
+    /// Weather reading captioned exactly as what it is — "Exterior ·
+    /// vremea" — never presented as the house's own temperature.
+    private var homeTemperature: (celsius: Double?, caption: Text) {
+        let samples = indoorSamples
+        if !samples.isEmpty {
+            let average = samples.map(\.celsius).reduce(0, +) / Double(samples.count)
+            return (average, indoorCaption(for: samples))
+        }
+        if let cached = PropertyWeather.cached() {
+            return (cached.temp, Text("sh_temp_outdoor_weather"))
+        }
+        if let current = WeatherKitService.shared.currentWeather {
+            return (current.temperature.converted(to: .celsius).value,
+                    Text("sh_temp_outdoor_weather"))
+        }
+        return (nil, Text("sh_temp_unavailable"))
+    }
+
+    private func indoorCaption(for samples: [IndoorSample]) -> Text {
+        guard samples.count > 2 else {
+            // Per-space values, real names verbatim: "Living 21,5° · Birou 19°".
+            let items = samples.map {
+                "\($0.label) \(Self.shortDegrees($0.celsius))"
+            }
+            return Text(verbatim: items.joined(separator: " · "))
+        }
+        return Text("sh_temp_avg_count \(samples.count)")
+    }
+
+    /// "21,5°" — locale-aware, at most one decimal (the dial's own format).
+    private static func shortDegrees(_ celsius: Double) -> String {
+        "\(celsius.formatted(.number.precision(.fractionLength(0...1))))°"
+    }
+
+    /// IoT sensors whose live reading is a temperature — identified by the
     /// degree unit ("°C"/"°F"), the one honest signal the model carries.
-    private var indoorTemperatureSensor: SmartDevice? {
-        smartHome.devices.first {
-            $0.kind == .sensor && $0.readingValue != nil
+    /// (HomeKit sensors come through `IndoorClimateStore` instead, so the
+    /// two sources can never double-count.)
+    private var indoorTemperatureSensors: [SmartDevice] {
+        smartHome.devices.filter {
+            if case .homeKit = $0.backing { return false }
+            return $0.kind == .sensor && $0.readingValue != nil
                 && ($0.readingUnit?.contains("°") == true)
         }
     }
@@ -424,7 +518,7 @@ struct SmartHomeSection: View {
     private var connectHomeKitRow: some View {
         Button {
             HapticFeedback.impact(.light)
-            smartHome.connectHomeKit()
+            connectOrImport()
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "homekit")
