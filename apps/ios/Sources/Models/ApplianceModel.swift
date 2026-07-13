@@ -72,6 +72,30 @@ struct Appliance: Identifiable, Codable, Equatable {
         return ISODate.date(from: str) ?? AppDate.day(from: str)
     }
 
+    /// The parsed purchase day, tolerant of both ISO timestamps (what the
+    /// form writes) and bare "yyyy-MM-dd" date columns.
+    var purchaseDateValue: Date? { parseDate(purchaseDate) }
+
+    /// The parsed warranty-end day, same tolerance as `purchaseDateValue`.
+    var warrantyDateValue: Date? { parseDate(warrantyUntil) }
+
+    /// Whole calendar days from today to the warranty end (negative when the
+    /// warranty already expired), or nil when no warranty is recorded.
+    var warrantyDaysRemaining: Int? {
+        guard let d = warrantyDateValue else { return nil }
+        let cal = Calendar.current
+        return cal.dateComponents([.day],
+                                  from: cal.startOfDay(for: Date()),
+                                  to: cal.startOfDay(for: d)).day
+    }
+
+    /// Age in fractional years since purchase, or nil without a purchase
+    /// date. Future-dated purchases clamp to 0 rather than going negative.
+    var ageYears: Double? {
+        guard let d = purchaseDateValue else { return nil }
+        return max(0, Date().timeIntervalSince(d)) / 31_557_600 // 365.25 days
+    }
+
     var isWarrantyExpired: Bool {
         guard let d = parseDate(warrantyUntil) else { return false }
         return d < Date()
@@ -81,22 +105,6 @@ struct Appliance: Identifiable, Codable, Equatable {
         guard let d = parseDate(warrantyUntil) else { return false }
         let threshold = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
         return d >= Date() && d <= threshold
-    }
-
-    var warrantyStatus: String {
-        guard let d = parseDate(warrantyUntil) else { return String(localized: "No Warranty") }
-        if d < Date() { return String(localized: "Expired") }
-        let threshold = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-        if d <= threshold { return String(localized: "Expiring Soon") }
-        return String(localized: "Active")
-    }
-
-    var warrantyColor: Color {
-        guard let d = parseDate(warrantyUntil) else { return .secondary }
-        if d < Date() { return .red }
-        let threshold = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-        if d <= threshold { return Color(red: 1.0, green: 0.62, blue: 0.1) }
-        return Color(red: 0.15, green: 0.80, blue: 0.4)
     }
 
     var categoryIcon: String { category.icon }
