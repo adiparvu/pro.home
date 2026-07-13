@@ -157,12 +157,10 @@ struct DashboardView: View {
                     .padding(.horizontal, AppSpacing.lg)
 
                 // ── Estate OS (E1): the "Domeniul" strip — the property's
-                //    spaces. Rendered ONLY when zones exist; with zero
-                //    zones the home page stays exactly as it was. ─────────
-                if !zoneService.zones.isEmpty {
-                    Spacer().frame(height: 22)
-                    EstateDomainStrip()
-                }
+                //    spaces. Always rendered; with zero zones the strip
+                //    shows one honest create-first-space card instead. ─────
+                Spacer().frame(height: 22)
+                EstateDomainStrip()
 
                 // ── Widgets — the classic dashboard's one survivor here ──
                 ForEach(sectionOrder) { section in

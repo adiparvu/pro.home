@@ -12,16 +12,28 @@ import SwiftUI
 //      whose location names this zone,
 //   3. the room's device count when devices exist there,
 //   4. nothing — no invented subline.
-// Tap → the SpaceDetailView sheet. The presenting DashboardView renders
-// this strip ONLY when zones exist; zero zones → the home page is
-// untouched. The strip owns its own sheet slot (the SmartHomeSection
-// pattern) so the dashboard's single DashboardSheet stays single.
+// Tap → the SpaceDetailView sheet. The strip renders ALWAYS: with zero
+// zones it shows one honest "create your first space" card instead of
+// disappearing, and with zones it appends a trailing "+" chip — both open
+// the same create-space alert, which writes through PropertyZoneService's
+// existing `add` exactly like the hub's create-room flow does. The strip
+// owns its own sheet slot (the SmartHomeSection pattern) so the
+// dashboard's single DashboardSheet stays single.
 
 struct EstateDomainStrip: View {
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PlantService.self) private var plantService
 
     @State private var selectedZone: PropertyZone?
+
+    // Create-space flow (the hub's create-room alert pattern).
+    @State private var showCreateSpace = false
+    @State private var newSpaceName = ""
+    @State private var isCreating = false
+    /// The truthful failure of the last creation attempt, surfaced as an
+    /// alert — success needs no alert; the new card appearing is the proof.
+    @State private var createFailure: String? = nil
 
     private let smartHome = SmartHomeService.shared
     private let iot = IoTService.shared
@@ -34,21 +46,97 @@ struct EstateDomainStrip: View {
                 .textCase(.uppercase)
                 .foregroundStyle(Color.smartTextSecondary)
                 .padding(.horizontal, AppSpacing.lg)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.md) {
-                    ForEach(zoneService.zones) { zone in
-                        SpaceCard(zone: zone, subline: subline(for: zone)) {
-                            selectedZone = zone
-                        }
-                    }
+            if zoneService.zones.isEmpty {
+                CreateFirstSpaceCard(isCreating: isCreating) {
+                    showCreateSpace = true
                 }
+                .disabled(isCreating)
                 .padding(.horizontal, AppSpacing.lg)
-                // Room for the cards' lift shadow inside the scroll clip.
+                // Match the populated strip's shadow breathing room.
                 .padding(.vertical, AppSpacing.xs)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.md) {
+                        ForEach(zoneService.zones) { zone in
+                            SpaceCard(zone: zone, subline: subline(for: zone)) {
+                                selectedZone = zone
+                            }
+                        }
+                        AddSpaceChip(isCreating: isCreating) {
+                            showCreateSpace = true
+                        }
+                        .disabled(isCreating)
+                    }
+                    .padding(.horizontal, AppSpacing.lg)
+                    // Room for the cards' lift shadow inside the scroll clip.
+                    .padding(.vertical, AppSpacing.xs)
+                }
             }
         }
         .sheet(item: $selectedZone) { zone in
             SpaceDetailView(zone: zone)
+        }
+        .alert(Text("est_create_space"), isPresented: $showCreateSpace) {
+            TextField("est_space_name_placeholder", text: $newSpaceName)
+            Button { createSpace() } label: { Text("hub_create") }
+                .disabled(newSpaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button(role: .cancel) { newSpaceName = "" } label: { Text("Cancel") }
+        }
+        .alert(
+            Text("est_create_space"),
+            isPresented: Binding(get: { createFailure != nil },
+                                 set: { if !$0 { createFailure = nil } })
+        ) {
+            Button(role: .cancel) {} label: { Text("OK") }
+        } message: {
+            Text(verbatim: createFailure ?? "")
+        }
+    }
+
+    // MARK: Create a space (the hub's PropertyZone half, verbatim)
+
+    /// Creates the space as an in-app PropertyZone through the service's
+    /// existing `add` — the same payload the hub's create-room flow builds:
+    /// a named zone without geometry is valid (the shape can be drawn later
+    /// in the Digital Twin). `add` appends into `zones`, so the strip
+    /// re-renders with the new card by itself.
+    private func createSpace() {
+        let name = newSpaceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        newSpaceName = ""
+        guard !name.isEmpty else { return }
+        guard !zoneService.zones.contains(where: {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(name) == .orderedSame
+        }) else {
+            createFailure = String(localized: "est_space_exists")
+            return
+        }
+        guard let propertyId = propertyService.primary?.id else {
+            createFailure = String(localized: "hub_no_property")
+            return
+        }
+        isCreating = true
+        Task { @MainActor in
+            defer { isCreating = false }
+            let now = ISODate.string(from: Date())
+            let payload = NewPropertyZone(
+                propertyId: propertyId,
+                name: name,
+                icon: "door.left.hand.closed",
+                colorHex: PropertyLayer.property.color.hexString(),
+                layer: PropertyLayer.property.rawValue,
+                healthScore: 100,
+                polygon: [],
+                sortOrder: zoneService.zones.count,
+                createdAt: now,
+                updatedAt: now)
+            if await zoneService.add(payload) != nil {
+                HapticFeedback.success()
+            } else {
+                HapticFeedback.error()
+                createFailure = zoneService.error
+                    ?? String(localized: "est_create_failed")
+            }
         }
     }
 
@@ -161,5 +249,86 @@ private struct SpaceCard: View {
         .frame(height: Self.thumbHeight)
         .clipShape(shape)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Zero-zones state: one honest create card
+
+/// The strip's empty state — instead of vanishing, the section offers the
+/// one real action: create the first space. Same glass chrome and press
+/// micro-interaction as the space cards it will become.
+private struct CreateFirstSpaceCard: View {
+    let isCreating: Bool
+    let onCreate: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            onCreate()
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                if isCreating {
+                    ProgressView()
+                        .tint(Color.smartAmber)
+                        .frame(width: 30)
+                } else {
+                    Image(systemName: "house")
+                        .font(AppFont.scaled(22, weight: .semibold))
+                        .foregroundStyle(Color.smartAmber)
+                        .frame(width: 30)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("est_create_first")
+                        .font(AppFont.scaled(14, weight: .semibold))
+                        .foregroundStyle(Color.smartTextPrimary)
+                    Text("est_create_first_caption")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.smartTextSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.base)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .smartWidgetGlass()
+        }
+        .buttonStyle(SmartCardPressStyle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Populated state: the trailing "+" chip
+
+/// A small circular glass "+" at the end of the strip — the same
+/// create-space alert the empty state opens, kept discoverable once
+/// spaces exist (consistent with the hub's create-room row).
+private struct AddSpaceChip: View {
+    let isCreating: Bool
+    let onCreate: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            onCreate()
+        } label: {
+            Group {
+                if isCreating {
+                    ProgressView()
+                        .tint(Color.smartAmber)
+                } else {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(Color.smartAmber)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(SmartCardPressStyle())
+        .glassCircle()
+        .padding(.horizontal, AppSpacing.xs)
+        .accessibilityLabel(Text("est_create_space"))
     }
 }
