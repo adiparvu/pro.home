@@ -98,7 +98,8 @@ struct AuditLogView: View {
             .liquidGlass(cornerRadius: AppRadius.xl)
         } header: {
             // Same construction as the activity feed's pinned day headers:
-            // an opaque backing so rows never scroll visibly beneath it.
+            // the bar blur masks rows scrolling beneath while blending with
+            // the living mood backdrop (an opaque patch would band on it).
             Text(day)
                 .textCase(.uppercase)
                 .font(AppFont.label)
@@ -106,7 +107,7 @@ struct AuditLogView: View {
                 .padding(.leading, AppSpacing.sm)
                 .padding(.vertical, AppSpacing.xs)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(appBackground)
+                .background(.thinMaterial)
         }
     }
 

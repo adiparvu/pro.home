@@ -481,7 +481,11 @@ struct TasksView: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
-            .background(appBackground)
+            // Pinned headers mask the rows scrolling beneath them. The old
+            // flat appBackground became a living gradient — re-rendered at
+            // this small frame it reads as a foreign band, so pinned masks
+            // use the native bar blur instead (blends over any mood).
+            .background(.thinMaterial)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

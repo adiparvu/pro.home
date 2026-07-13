@@ -675,7 +675,8 @@ struct ActivityFeedView: View {
         }
         .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
-        .background(appBackground)
+        // Bar blur, not an opaque patch — the living backdrop would band.
+        .background(.thinMaterial)
     }
 
     /// "Today"/"Yesterday" resolve through the catalog; other days use the

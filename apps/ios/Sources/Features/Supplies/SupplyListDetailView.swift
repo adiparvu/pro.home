@@ -170,7 +170,8 @@ struct SupplyListDetailView: View {
                             }
                             .foregroundStyle(Color.brandSuccess)
                             .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
-                            .background(appBackground)
+                            // Bar blur — the living backdrop would band here.
+                            .background(.thinMaterial)
                         }
                         .buttonStyle(.plain)
                     }
@@ -191,7 +192,8 @@ struct SupplyListDetailView: View {
             Spacer()
         }
         .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
-        .background(appBackground)
+        // Bar blur — the living backdrop would band here.
+        .background(.thinMaterial)
     }
 
     // MARK: States
