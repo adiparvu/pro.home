@@ -47,6 +47,21 @@ extension DirectMessageView {
         conversationMessages.filter { $0.pinned == true && $0.deletedForAll != true }
     }
 
+    /// RSVP handler for a DM event bubble — nil (no chips, no dead controls)
+    /// until the property id exists; toggles through DMVoteStore's
+    /// single-choice semantics.
+    private func dmRSVPHandler(for msg: DirectMessage) -> ((Int) -> Void)? {
+        guard let pid = propertyService.primary?.id else { return nil }
+        let name = myName
+        return { option in
+            Task {
+                await DMVoteStore.shared.toggle(
+                    messageId: msg.id, propertyId: pid,
+                    optionIndex: option, voterName: name)
+            }
+        }
+    }
+
     @ViewBuilder
     func dmActionOverlay(_ m: DirectMessage) -> some View {
         let own = m.isMine(myUserId: directMessageService.myUserId, myName: myName)
@@ -241,7 +256,9 @@ extension DirectMessageView {
                                         withAnimation { proxy.scrollTo(rid, anchor: .center) }
                                         flashHighlight(rid)
                                     },
-                                    isHighlighted: highlightedId == msg.id
+                                    isHighlighted: highlightedId == msg.id,
+                                    pollVotes: DMVoteStore.shared.votes[msg.id] ?? [],
+                                    onRSVP: dmRSVPHandler(for: msg)
                                 )
                                 .id(msg.id)
                             }

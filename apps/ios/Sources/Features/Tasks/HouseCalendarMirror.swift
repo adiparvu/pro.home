@@ -1,5 +1,6 @@
 import Foundation
 import EventKit
+import CoreLocation
 import UIKit
 
 // MARK: - House calendar → Apple Calendar mirror
@@ -134,6 +135,7 @@ enum HouseCalendarMirror {
     /// the outcome.
     @discardableResult
     static func addChatEvent(title: String, notes: String?, location: String?,
+                             lat: Double? = nil, lon: Double? = nil,
                              start: Date, end: Date, isAllDay: Bool) async -> Bool {
         guard await TaskCalendarSync.requestEventAccess() == .full,
               let cal = mirrorCalendar() else { return false }
@@ -141,7 +143,16 @@ enum HouseCalendarMirror {
         event.calendar = cal
         event.title = title
         event.notes = notes
+        // location first: assigning it resets any structuredLocation to a
+        // title-only one, so the geocoded pin must be applied after it.
         event.location = location
+        if let lat, let lon {
+            // Coordinates from the composer's map pick — a structured
+            // location makes Apple Calendar show the map and travel-time.
+            let place = EKStructuredLocation(title: location ?? title)
+            place.geoLocation = CLLocation(latitude: lat, longitude: lon)
+            event.structuredLocation = place
+        }
         if isAllDay {
             let day = Calendar.current.startOfDay(for: start)
             event.isAllDay = true

@@ -1,5 +1,6 @@
 import SwiftUI
 import EventKit
+import CoreLocation
 
 // MARK: - Payloads (stored as JSON in message.body; attachment_type = "poll" | "event")
 
@@ -28,6 +29,13 @@ struct ChatEvent: Codable {
     var end: String? = nil
     /// All-day flag — absent (nil) on pre-upgrade payloads ⇒ timed event.
     var allDay: Bool? = nil
+    /// Coordinates of the picked map location (v3) — present only when the
+    /// composer's location came from a real Apple Maps pick, absent on older
+    /// payloads and on free-text locations. Encoded only when non-nil (the
+    /// same discipline as end/allDay), so old clients see the exact old
+    /// shape and old bodies decode with nil here.
+    var lat: Double? = nil
+    var lon: Double? = nil
 
     static func decode(_ body: String?) -> ChatEvent? {
         guard let data = body?.data(using: .utf8) else { return nil }
@@ -89,9 +97,14 @@ struct ChatEventDraft {
     let end: Date
     let isAllDay: Bool
     let location: String
+    /// Coordinates of the picked map location — nil for free-text locations.
+    var lat: Double? = nil
+    var lon: Double? = nil
 
     /// The wire payload. All-day dates normalize to local start-of-day; the
-    /// end never precedes the start.
+    /// end never precedes the start. Coordinates only ever ride alongside a
+    /// non-empty location text — a pin with no visible name would be
+    /// unverifiable by the reader.
     func payload() -> ChatEvent {
         let cal = Calendar.current
         let s = isAllDay ? cal.startOfDay(for: start) : start
@@ -102,7 +115,9 @@ struct ChatEventDraft {
             date: ISODate.string(from: s),
             loc: location.isEmpty ? nil : location,
             end: ISODate.string(from: e),
-            allDay: isAllDay ? true : nil)
+            allDay: isAllDay ? true : nil,
+            lat: location.isEmpty ? nil : lat,
+            lon: location.isEmpty ? nil : lon)
     }
 }
 
@@ -293,8 +308,9 @@ struct EventBubble: View {
     /// (option 0 = going, option 1 = can't go).
     var votes: [PollVote] = []
     var myUserId: UUID? = nil
-    /// Provided only where RSVP storage exists (group chat — the DM engine
-    /// has no vote table); nil hides the buttons entirely.
+    /// Provided only where RSVP storage exists (`message_poll_votes` for
+    /// group chat, `dm_poll_votes` via DMVoteStore for DM threads); nil
+    /// hides the buttons entirely.
     var onRSVP: ((Int) -> Void)? = nil
 
     /// Readable foreground over the themed bubble fill.
@@ -302,6 +318,9 @@ struct EventBubble: View {
 
     static let rsvpGoing = 0
     static let rsvpDeclined = 1
+
+    /// Navigation-app chooser for a location that carries real coordinates.
+    @State private var showNavigationChooser = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -326,10 +345,41 @@ struct EventBubble: View {
                 .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
 
             if let loc = event.loc, !loc.isEmpty {
-                Label(loc, systemImage: "mappin.and.ellipse")
-                    .font(AppFont.scaled(12))
-                    .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
-                    .lineLimit(1)
+                if let lat = event.lat, let lon = event.lon {
+                    // A real map pin travelled with the payload — the line is
+                    // tappable and hands off to the reader's navigation app
+                    // (same chooser as shared locations). Text-only locations
+                    // stay plain: no coordinates, no pretend map link.
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showNavigationChooser = true
+                    } label: {
+                        HStack(spacing: AppSpacing.xxs) {
+                            Label(loc, systemImage: "mappin.and.ellipse")
+                                .lineLimit(1)
+                            Image(systemName: "map")
+                                .font(AppFont.scaled(11, weight: .semibold))
+                        }
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.accentColor)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Text("ev_open_in_maps"))
+                    .confirmationDialog(loc, isPresented: $showNavigationChooser,
+                                        titleVisibility: .visible) {
+                        ForEach(NavigationAppLauncher.availableOptions()) { opt in
+                            Button(opt.label) {
+                                NavigationAppLauncher.open(opt.id, lat: lat, lon: lon, label: loc)
+                            }
+                        }
+                    }
+                } else {
+                    Label(loc, systemImage: "mappin.and.ellipse")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
+                        .lineLimit(1)
+                }
             }
 
             Button { addToCalendar() } label: {
@@ -431,7 +481,16 @@ struct EventBubble: View {
                 ek.endDate = event.parsedEnd.map { max($0, start) } ?? start.addingTimeInterval(3600)
             }
             ek.notes = event.d
+            // location first: assigning it resets any structuredLocation to a
+            // title-only one, so the geocoded pin must be applied after it.
             ek.location = event.loc
+            if let lat = event.lat, let lon = event.lon {
+                // The composer's map pin — a structured location makes Apple
+                // Calendar render the map preview and enables travel-time.
+                let place = EKStructuredLocation(title: event.loc ?? event.t)
+                place.geoLocation = CLLocation(latitude: lat, longitude: lon)
+                ek.structuredLocation = place
+            }
             ek.calendar = calendar
             do {
                 try store.save(ek, span: .thisEvent)
@@ -511,6 +570,12 @@ struct EventComposerView: View {
     @State private var start = Date()
     @State private var end = Date().addingTimeInterval(3600)
     @State private var location = ""
+    /// Coordinates from the last real map pick, kept only while the visible
+    /// text still names that pin (see the onChange below). `pickedName`
+    /// remembers what the pin was called so a manual edit is detectable.
+    @State private var pickedLat: Double? = nil
+    @State private var pickedLon: Double? = nil
+    @State private var pickedName: String? = nil
     @State private var addToAppleCalendar = false
     @State private var showLocationPicker = false
 
@@ -518,16 +583,24 @@ struct EventComposerView: View {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && (allDay || end >= start)
     }
 
-    /// Bridges the free-text location to the shared Apple Maps search picker
-    /// (the tasks form's). Only the visible name flows back — the chat event
-    /// payload is text-only, so no coordinates are invented.
+    /// Bridges the location to the shared Apple Maps search picker (the tasks
+    /// form's). A resolved pick flows back with its coordinates; free-text
+    /// picks stay text-only — coordinates are never invented.
     private var pickedLocation: Binding<TaskLocationValue?> {
         Binding(
             get: {
                 let t = location.trimmingCharacters(in: .whitespaces)
-                return t.isEmpty ? nil : TaskLocationValue(name: t, lat: nil, lon: nil)
+                return t.isEmpty ? nil : TaskLocationValue(name: t, lat: pickedLat, lon: pickedLon)
             },
-            set: { location = $0?.name ?? "" }
+            set: {
+                location = $0?.name ?? ""
+                pickedLat = $0?.lat
+                pickedLon = $0?.lon
+                // Only a coordinate-bearing pick is worth remembering — the
+                // name is what a later manual edit is compared against.
+                pickedName = ($0?.lat != nil)
+                    ? $0?.name.trimmingCharacters(in: .whitespaces) : nil
+            }
         )
     }
 
@@ -587,6 +660,17 @@ struct EventComposerView: View {
                 // preserve the chosen duration (and end can never precede start).
                 end = max(end.addingTimeInterval(new.timeIntervalSince(old)), new)
             }
+            .onChange(of: location) { _, new in
+                // Honesty: a manually edited location no longer names the
+                // picked pin, so the stale coordinates must not ride along.
+                // (The picker's own set writes the matching name, so it never
+                // trips this.)
+                guard let name = pickedName,
+                      new.trimmingCharacters(in: .whitespaces) != name else { return }
+                pickedLat = nil
+                pickedLon = nil
+                pickedName = nil
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -606,7 +690,8 @@ struct EventComposerView: View {
             title: title.trimmingCharacters(in: .whitespaces),
             details: details.trimmingCharacters(in: .whitespaces),
             start: start, end: max(end, start), isAllDay: allDay,
-            location: location.trimmingCharacters(in: .whitespaces))
+            location: location.trimmingCharacters(in: .whitespaces),
+            lat: pickedLat, lon: pickedLon)
         onSend(draft)
         if addToAppleCalendar {
             // Device-local Apple Calendar write — independent of the message
@@ -616,6 +701,8 @@ struct EventComposerView: View {
                     title: draft.title,
                     notes: draft.details.isEmpty ? nil : draft.details,
                     location: draft.location.isEmpty ? nil : draft.location,
+                    lat: draft.location.isEmpty ? nil : draft.lat,
+                    lon: draft.location.isEmpty ? nil : draft.lon,
                     start: draft.start, end: draft.end, isAllDay: draft.isAllDay)
                 if !ok { HapticFeedback.warning() }
             }

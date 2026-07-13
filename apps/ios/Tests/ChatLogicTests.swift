@@ -62,6 +62,54 @@ final class ChatLogicTests: XCTestCase {
         XCTAssertNotNil(decoded?.parsedEnd)
     }
 
+    /// v3: coordinates from a real map pick round-trip through the body.
+    func testChatEventCoordinatesRoundTrip() {
+        let ev = ChatEvent(t: "Cină", d: nil, date: "2026-07-20T19:00:00Z", loc: "Trattoria",
+                           end: "2026-07-20T21:00:00Z", allDay: nil,
+                           lat: 44.4268, lon: 26.1025)
+        let decoded = ChatEvent.decode(ev.encoded())
+        XCTAssertEqual(decoded?.lat ?? .nan, 44.4268, accuracy: 0.000001)
+        XCTAssertEqual(decoded?.lon ?? .nan, 26.1025, accuracy: 0.000001)
+        XCTAssertEqual(decoded?.loc, "Trattoria")
+    }
+
+    /// Encode-only-when-present: a coordinate-less payload must not mention
+    /// lat/lon at all, so pre-upgrade clients see exactly the old shape.
+    func testChatEventWithoutCoordinatesOmitsKeys() {
+        let ev = ChatEvent(t: "X", d: nil, date: "2026-06-28T18:00:00Z", loc: "Acasă")
+        let encoded = ev.encoded() ?? ""
+        XCTAssertFalse(encoded.contains("\"lat\""))
+        XCTAssertFalse(encoded.contains("\"lon\""))
+    }
+
+    /// …and bodies written before the coordinates upgrade decode with nil
+    /// coordinates (no map affordance is invented for them).
+    func testChatEventLegacyBodyHasNilCoordinates() {
+        let legacy = #"{"t":"Grătar","date":"2026-06-28T18:00:00Z","loc":"Acasă"}"#
+        let decoded = ChatEvent.decode(legacy)
+        XCTAssertNotNil(decoded)
+        XCTAssertNil(decoded?.lat)
+        XCTAssertNil(decoded?.lon)
+    }
+
+    /// The draft forwards coordinates only alongside a non-empty location —
+    /// a pin with no visible name never reaches the wire.
+    func testChatEventDraftCoordinatesFollowLocation() {
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+        let with = ChatEventDraft(title: "T", details: "", start: start,
+                                  end: start.addingTimeInterval(3600),
+                                  isAllDay: false, location: "Parc",
+                                  lat: 44.43, lon: 26.10).payload()
+        XCTAssertEqual(with.lat ?? .nan, 44.43, accuracy: 0.000001)
+        XCTAssertEqual(with.lon ?? .nan, 26.10, accuracy: 0.000001)
+        let without = ChatEventDraft(title: "T", details: "", start: start,
+                                     end: start.addingTimeInterval(3600),
+                                     isAllDay: false, location: "",
+                                     lat: 44.43, lon: 26.10).payload()
+        XCTAssertNil(without.lat)
+        XCTAssertNil(without.lon)
+    }
+
     func testChatEventDraftPayloadNormalizes() {
         let start = Date(timeIntervalSince1970: 1_790_000_000)
         // End before start must clamp — the wire payload never carries an

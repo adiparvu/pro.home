@@ -53974,6 +53974,22 @@
         }
       }
     },
+    "ev_open_in_maps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the location in a maps app"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide locația într-o aplicație de hărți"
+          }
+        }
+      }
+    },
     "ev_rsvp_going_fmt": {
       "localizations": {
         "en": {

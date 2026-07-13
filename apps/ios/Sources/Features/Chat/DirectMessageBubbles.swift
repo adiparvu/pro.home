@@ -15,8 +15,10 @@ import Supabase
 // new columns. Each marker is a sentinel no ordinary message begins with,
 // followed by the payload; the bubble decodes and renders the rich variant, and
 // the offline outbox re-sends the body verbatim so a queued rich message is
-// never lost or corrupted. Poll is intentionally absent: voting lives in the
-// group-only `message_poll_votes` table, so a DM poll would be a dead control.
+// never lost or corrupted. Poll is intentionally absent (there is no DM poll
+// composer); event bubbles DO offer RSVP — their Going / Can't go answers
+// live in `dm_poll_votes` (see DMVoteStore), the DM mirror of the group
+// `message_poll_votes` table.
 enum DMRich {
     case location(lat: Double, lon: Double)
     case sticker(id: String)
@@ -115,6 +117,12 @@ struct DMBubble: View {
     var onQuotedTap: (() -> Void)? = nil
     /// Briefly tinted when the reader jumped here from a reply.
     var isHighlighted: Bool = false
+    /// RSVP answers for an EVENT message (DMVoteStore rows for this id);
+    /// unused for every other message kind.
+    var pollVotes: [PollVote] = []
+    /// Going / Can't go tap — nil hides the RSVP chips entirely (EventBubble's
+    /// own no-dead-controls contract).
+    var onRSVP: ((Int) -> Void)? = nil
 
     @State private var showDetails = false
     @State private var viewerItem: ImageViewerItem? = nil
@@ -270,7 +278,8 @@ struct DMBubble: View {
         case .event:
             if case .event(let event) = DMRich.decode(message.body) {
                 EventBubble(event: event, isOwn: isOwn,
-                            bubbleColor: outgoingColor ?? Color.accentColor)
+                            bubbleColor: outgoingColor ?? Color.accentColor,
+                            votes: pollVotes, myUserId: myUserId, onRSVP: onRSVP)
             }
         case .file:
             if case .file(let name, let path) = DMRich.decode(message.body) {

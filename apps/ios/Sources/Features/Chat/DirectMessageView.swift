@@ -471,6 +471,13 @@ struct DirectMessageView: View {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+            // Event-RSVP storage rides the same lifecycle as the DM channel:
+            // property-scoped, subscribed while a thread is open and never
+            // torn down on disappear (no view calls the DM unsubscribe either
+            // — the conversation list depends on the live channel). Both
+            // calls are idempotent.
+            await DMVoteStore.shared.load(propertyId: pid)
+            await DMVoteStore.shared.subscribeRealtime(propertyId: pid)
         }
         // Foreground catch-up: iOS freezes the realtime socket in the
         // background and missed events are never replayed on reconnect, so a
@@ -482,6 +489,10 @@ struct DirectMessageView: View {
             Task {
                 await directMessageService.load(propertyId: pid, myName: myName)
                 await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+                // RSVPs cast while the app was suspended were never replayed
+                // either — refetch and re-assert the votes channel too.
+                await DMVoteStore.shared.load(propertyId: pid)
+                await DMVoteStore.shared.subscribeRealtime(propertyId: pid)
             }
         }
         .onAppear {
