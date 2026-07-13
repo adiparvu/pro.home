@@ -9,13 +9,13 @@ import CoreLocation
 
 // MARK: - Home Widget Card
 //
-// Dashboard-only (the widgets strip under the smart-home grid): dressed in
-// the smart-home warm glass chrome so the whole page speaks one language.
-// Content and layout are untouched — icon + badge row, big value, subtitle,
-// title — only the skin changed: `smartWidgetGlass` card, `smartText*`
-// type over the dark backdrop, and the shared press micro-interaction.
-// Semantic icon colors (danger red, success green, warning orange) are
-// passed in unchanged by the callers.
+// Dashboard-only (the widgets strip under the smart-home grid): native
+// Liquid Glass, so the whole page speaks the app's one language. Content
+// and layout are untouched — icon + badge row, big value, subtitle, title —
+// only the material changed: `liquidGlass` card, adaptive `.primary`/
+// `.secondary` type over the mood backdrop, and the shared press
+// micro-interaction. Semantic icon colors (danger red, success green,
+// warning orange) are passed in unchanged by the callers.
 
 struct HomeWidget: View {
     let icon: String
@@ -49,22 +49,22 @@ struct HomeWidget: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(value)
                         .font(AppFont.scaled(22, weight: .bold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text(subtitle)
                         .font(AppFont.scaled(11))
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
                 Text(title)
                     .font(AppFont.caption)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(AppSpacing.base)
             .frame(maxWidth: .infinity, alignment: .leading)
             // Inside the label so the glass scales WITH the pressed card.
-            .smartWidgetGlass()
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
         .buttonStyle(SmartCardPressStyle())
     }

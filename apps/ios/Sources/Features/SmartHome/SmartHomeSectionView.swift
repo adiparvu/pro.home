@@ -2,7 +2,7 @@ import SwiftUI
 import HomeKit
 import WeatherKit
 
-// MARK: - Smart Home dashboard section (Smart Home S2.6 — warm glass skin)
+// MARK: - Smart Home dashboard section (Smart Home S2.6 — Liquid Glass)
 //
 // The home tab's smart-home-first page, bound entirely to the S1 aggregation
 // layer (`SmartHomeService` + `HomeKitService`): a room filter chip row
@@ -11,8 +11,8 @@ import WeatherKit
 // hero grid — per-DEVICE cards followed by the always-present
 // agenda/temperature/network cards. Every card control writes real provider
 // state (`setPower`); thermostats draw a mini target-temperature dial
-// instead of an icon disc. Visuals come exclusively from the SmartHomeTheme
-// tokens (warm glass over the photo backdrop the dashboard renders).
+// instead of an icon disc. Visuals are the app's native Liquid Glass
+// language (adaptive glass over the mood backdrop the dashboard renders).
 //
 // Honest states throughout:
 // - Room chips union the smart-home providers' rooms with the property's
@@ -142,14 +142,14 @@ struct SmartHomeSection: View {
         let icons = zoneIcons
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
-                SmartChip(label: String(localized: "sh_room_all"),
-                          isSelected: effectiveRoom == nil) {
+                GlassFilterChip(label: String(localized: "sh_room_all"),
+                                isSelected: effectiveRoom == nil) {
                     select(nil)
                 }
                 ForEach(allRooms, id: \.self) { room in
-                    SmartChip(label: room,
-                              systemImage: icons[room],
-                              isSelected: effectiveRoom == room) {
+                    GlassFilterChip(label: room,
+                                    systemImage: icons[room],
+                                    isSelected: effectiveRoom == room) {
                         select(room)
                     }
                 }
@@ -188,9 +188,9 @@ struct SmartHomeSection: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(scenePairs) { pair in
-                    SmartChip(label: pair.actionSet.name,
-                              systemImage: "sparkles",
-                              isSelected: false) {
+                    GlassFilterChip(label: pair.actionSet.name,
+                                    systemImage: "sparkles",
+                                    isSelected: false) {
                         run(pair.actionSet, in: pair.home)
                     }
                 }
@@ -398,17 +398,17 @@ struct SmartHomeSection: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "square.grid.2x2")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(Color.accentColor)
                 Text("sh_see_all")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: AppSpacing.sm)
                 Text("sh_device_count \(scopedDevices.count)")
                     .font(AppFont.caption2)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
@@ -429,14 +429,14 @@ struct SmartHomeSection: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "homekit")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(Color.accentColor)
                 Text("sh_connect_homekit")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: AppSpacing.sm)
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
@@ -451,13 +451,17 @@ struct SmartHomeSection: View {
 /// `.snappy`, staggered ~35ms per card in the grid's stable order. Under
 /// Reduce Motion the animation is nil — cards simply appear in place.
 private extension View {
+    /// Rise distance and per-card stagger delay of the one-time entrance.
+    static var entranceRise: CGFloat { 8 }
+    static var entranceStagger: Double { 0.035 }
+
     func heroEntrance(revealed: Bool, index: Int, reduceMotion: Bool) -> some View {
         opacity(revealed ? 1 : 0)
-            .offset(y: revealed ? 0 : SmartHomeTheme.entranceRise)
+            .offset(y: revealed ? 0 : Self.entranceRise)
             .animation(reduceMotion
                        ? nil
                        : .snappy(duration: 0.35)
-                           .delay(Double(index) * SmartHomeTheme.entranceStagger),
+                           .delay(Double(index) * Self.entranceStagger),
                        value: revealed)
     }
 }
@@ -466,23 +470,18 @@ private extension View {
 /// a tighter radius, still borderless.
 private extension View {
     func smartGlassRow() -> some View {
-        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        return background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        liquidGlass(cornerRadius: AppRadius.lg)
     }
 }
 
 // MARK: - Per-device hero card
 
 /// One large card per DEVICE (the reference's staggered tiles): the icon
-/// over a warm amber radial glow (the lamp-photo mood) — or, for
-/// thermostats with a target, a mini circular dial — the device name
-/// bottom-left, an honest one-line state under it, and the vertical amber
-/// pill toggle bottom-trailing, drawn only when the device genuinely has
-/// the `.power` capability. Nothing else; no dead controls.
+/// over a soft accent radial glow — or, for thermostats with a target, a
+/// mini circular dial — the device name bottom-left, an honest one-line
+/// state under it, and the vertical pill toggle bottom-trailing, drawn
+/// only when the device genuinely has the `.power` capability. Nothing
+/// else; no dead controls.
 ///
 /// Height staggering comes from the CONTENT: thermostat/light cards carry a
 /// ~90pt visual area, plain switch/sensor cards a compact one — no fixed
@@ -507,6 +506,12 @@ private struct SmartDeviceHeroCard: View {
     /// The thermostat dial's commanded range — mirrors the S3 sheet's
     /// climate control (10–30 °C) so both surfaces tell the same story.
     private static let targetRange: ClosedRange<Double> = 10...30
+
+    /// How much of the radial glow survives when the device is OFF — the
+    /// lamp is out, only an ember of the mood remains.
+    private static let glowOffOpacity: Double = 0.15
+    /// The big light-weight live value (brightness %, sensor reading).
+    private static let heroValueSize: CGFloat = 30
 
     /// Tall cards (the reference's hero tiles): thermostats and lights get
     /// the ~90pt visual area; switches/outlets/sensors stay compact.
@@ -539,7 +544,7 @@ private struct SmartDeviceHeroCard: View {
             HapticFeedback.impact(.light)
             onOpen()
         } label: {
-            SmartGlassCard(padding: AppSpacing.base) {
+            GlassCard(padding: AppSpacing.base) {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     visualArea
                         .frame(maxWidth: .infinity, alignment: isTall ? .center : .leading)
@@ -549,8 +554,8 @@ private struct SmartDeviceHeroCard: View {
                             Text(verbatim: device.name)
                                 .font(AppFont.scaled(16, weight: .semibold))
                                 .foregroundStyle(isVisuallyOff
-                                                 ? Color.smartTextSecondary
-                                                 : Color.smartTextPrimary)
+                                                 ? AnyShapeStyle(.secondary)
+                                                 : AnyShapeStyle(.primary))
                                 .lineLimit(1)
                             stateLine
                                 .lineLimit(1)
@@ -588,7 +593,7 @@ private struct SmartDeviceHeroCard: View {
         .accessibilityElement(children: .contain)
     }
 
-    // MARK: Visual area — icon over the amber glow, or the thermostat mini dial
+    // MARK: Visual area — icon over the accent glow, or the thermostat mini dial
 
     @ViewBuilder private var visualArea: some View {
         if device.kind == .thermostat, let target = smartHome.targetTemperature(of: device) {
@@ -598,10 +603,11 @@ private struct SmartDeviceHeroCard: View {
                 // OFF: the lamp is out — the glow drops to an ember and the
                 // glyph dims; ON restores the full mood.
                 SmartRadialGlow(diameter: isTall ? 96 : 52)
-                    .opacity(isVisuallyOff ? SmartHomeTheme.glowOffOpacity : 1)
+                    .opacity(isVisuallyOff ? Self.glowOffOpacity : 1)
                 Image(systemName: device.kind.icon)
                     .font(AppFont.scaled(isTall ? 26 : 17, weight: .semibold))
-                    .foregroundStyle(isVisuallyOff ? Color.smartTextSecondary : Color.smartAmber)
+                    .foregroundStyle(isVisuallyOff ? AnyShapeStyle(.secondary)
+                                                   : AnyShapeStyle(device.kind.accent))
             }
             .frame(width: isTall ? 64 : 40, height: isTall ? 90 : 40)
             .accessibilityHidden(true)
@@ -609,9 +615,9 @@ private struct SmartDeviceHeroCard: View {
     }
 
     /// The reference's mini climate dial: a subtle full-circle track with a
-    /// trimmed amber arc marking where the commanded target sits in the
-    /// 10–30 °C range, the target itself bold in the center. Read-only here —
-    /// the real control lives in the S3 page a tap away.
+    /// trimmed climate-orange arc marking where the commanded target sits in
+    /// the 10–30 °C range, the target itself bold in the center. Read-only
+    /// here — the real control lives in the S3 page a tap away.
     private func thermostatDial(_ target: Double) -> some View {
         let span = Self.targetRange.upperBound - Self.targetRange.lowerBound
         let clamped = min(Self.targetRange.upperBound,
@@ -619,16 +625,16 @@ private struct SmartDeviceHeroCard: View {
         let fraction = (clamped - Self.targetRange.lowerBound) / span
         return ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.15),
+                .stroke(Color.primary.opacity(AppOpacity.tintedFill),
                         style: StrokeStyle(lineWidth: 6, lineCap: .round))
             Circle()
                 .trim(from: 0, to: fraction)
-                .stroke(Color.smartAmber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(Color.brandWarning, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: fraction)
             Text(verbatim: Self.temperatureText(clamped))
                 .font(AppFont.metricLarge)
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -657,28 +663,28 @@ private struct SmartDeviceHeroCard: View {
             // The reference's big light-weight live value — just the real
             // number; VoiceOver still speaks the full "Brightness 72%".
             Text(verbatim: "\(percent)%")
-                .font(AppFont.scaled(SmartHomeTheme.heroValueSize, weight: .light))
-                .foregroundStyle(Color.smartTextPrimary)
+                .font(AppFont.scaled(Self.heroValueSize, weight: .light))
+                .foregroundStyle(.primary)
                 .monospacedDigit()
                 .accessibilityLabel(Text("sh_state_brightness \(percent)"))
         } else if let value = device.readingValue {
             Text(verbatim: Self.readingText(value, unit: device.readingUnit))
-                .font(AppFont.scaled(SmartHomeTheme.heroValueSize, weight: .light))
-                .foregroundStyle(isVisuallyOff ? Color.smartTextSecondary : Color.smartTextPrimary)
+                .font(AppFont.scaled(Self.heroValueSize, weight: .light))
+                .foregroundStyle(isVisuallyOff ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .monospacedDigit()
         } else if device.kind == .thermostat,
                   let current = smartHome.currentTemperature(of: device) {
             Text("sh_state_now \(Self.temperatureText(current))")
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
         } else if let isOn = device.isOn {
             Text(LocalizedStringKey((pendingOn ?? isOn) ? "sh_state_on" : "sh_state_off"))
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
         } else {
             Text(LocalizedStringKey(device.kind.titleKey))
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -709,11 +715,11 @@ private extension SmartDevice {
 
 // MARK: - Kind accents
 
-/// Per-kind accent — since the warm-glass redesign every kind shares the
-/// theme's single amber accent (the reference uses one accent everywhere);
-/// the mapping survives as one switch point should kinds ever diverge
-/// again. Internal (not private) on purpose: the S3 surfaces reuse it,
-/// keeping one source of truth.
+/// Per-kind accent — since the Liquid Glass re-skin every kind shares the
+/// app's accent color (adaptive on both mood schemes); the mapping survives
+/// as one switch point should kinds ever diverge again. Internal (not
+/// private) on purpose: the S3 surfaces reuse it, keeping one source of
+/// truth.
 extension SmartDeviceKind {
-    var accent: Color { .smartAmber }
+    var accent: Color { .accentColor }
 }

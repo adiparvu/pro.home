@@ -1,14 +1,14 @@
 import SwiftUI
 
-// MARK: - Space detail page (Estate OS E2 — warm glass skin)
+// MARK: - Space detail page (Estate OS E2 — Liquid Glass)
 //
 // The ONE template every space kind shares — presentation-agnostic: a
 // sheet from the dashboard's "Domeniul" strip (the original contract,
 // unchanged) or a NavigationStack push from the Spaces tab (`presentation:
 // .push`, which hides the system bar and drops the tab-switching menu
-// entry — from tab 2 it would route to itself). The scene leads: the zone's own photo
-// through the SmartHomeBackdrop pipeline (or the kind's warm scene gradient
-// when no photo exists yet), ~140pt of pure breathing scene, then the space
+// entry — from tab 2 it would route to itself). The page sits on the
+// app-wide mood backdrop (the zone's own photo stays where it is content —
+// the grid/strip cards), with ~140pt of breathing ground, then the space
 // NAME floating free over it — no card, no chenar — in the app's light
 // typography, with a small "Domeniul · <kind>" kicker above and an honest
 // status pill below.
@@ -23,7 +23,7 @@ import SwiftUI
 //   has). No sensors → one empty-state glass card that says so and explains
 //   where linking happens. Never a fabricated pH/EC/level tile.
 // - Devices: `SmartHomeService.devices(in: zone.name)` rows (IoT sensors
-//   excluded — they already ARE the metrics row); the amber pill toggle is
+//   excluded — they already ARE the metrics row); the pill toggle is
 //   drawn only for devices with the real `.power` capability. No devices →
 //   an honest empty row.
 // - Kind extras: garden/greenhouse spaces list plants needing water whose
@@ -90,8 +90,8 @@ struct SpaceDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     topBar
-                    // The hero's breathing room: nothing but scene.
-                    Spacer().frame(height: SmartHomeTheme.spaceHeroBreath)
+                    // The hero's breathing room: nothing but the mood ground.
+                    Spacer().frame(height: SpaceHero.breath)
                     hero
                     metricsSection
                     devicesSection
@@ -103,7 +103,6 @@ struct SpaceDetailView: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .environment(\.colorScheme, .dark)
         }
         // Sheet chrome (ignored when pushed).
         .presentationDetents([.large])
@@ -114,33 +113,10 @@ struct SpaceDetailView: View {
         .toolbar(presentation == .push ? .hidden : .automatic, for: .navigationBar)
     }
 
-    // MARK: Backdrop — the zone's photo, else the kind's warm scene
+    // MARK: Backdrop — the app-wide living mood ground
 
-    @ViewBuilder private var backdrop: some View {
-        if let photo = live.photoUrl, !photo.isEmpty {
-            SmartHomeBackdrop(photoSource: photo)
-        } else {
-            // Same recipe as SmartHomeBackdrop's photo-less path, tinted by
-            // the kind: the scene gradient under the two static ambient
-            // glows — no blur views, no animation.
-            ZStack {
-                kind.sceneGradient
-                RadialGradient(
-                    colors: [Color.smartAmber.opacity(SmartHomeTheme.ambientTopGlowOpacity),
-                             .clear],
-                    center: .topLeading,
-                    startRadius: 0,
-                    endRadius: SmartHomeTheme.ambientTopGlowRadius)
-                RadialGradient(
-                    colors: [SmartHomeTheme.ambientEmber.opacity(SmartHomeTheme.ambientBottomGlowOpacity),
-                             .clear],
-                    center: .bottomTrailing,
-                    startRadius: 0,
-                    endRadius: SmartHomeTheme.ambientBottomGlowRadius)
-            }
-            .ignoresSafeArea()
-            .accessibilityHidden(true)
-        }
+    private var backdrop: some View {
+        appBackground.ignoresSafeArea()
     }
 
     // MARK: Top bar — back + the edit menu
@@ -153,7 +129,7 @@ struct SpaceDetailView: View {
             } label: {
                 Image(systemName: "chevron.backward")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
@@ -188,7 +164,7 @@ struct SpaceDetailView: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
             }
             .glassCircle()
@@ -220,13 +196,11 @@ struct SpaceDetailView: View {
                 .font(AppFont.scaled(11, weight: .semibold))
                 .kerning(1.2)
                 .textCase(.uppercase)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
             Text(verbatim: live.name)
-                .font(AppFont.scaled(SmartHomeTheme.spaceNameSize, weight: .light))
-                .kerning(SmartHomeTheme.spaceNameTracking)
-                .foregroundStyle(Color.smartTextPrimary)
-                // Legibility over an unpredictable photo — a shadow, not a card.
-                .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
+                .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
+                .kerning(SpaceHero.nameTracking)
+                .foregroundStyle(.primary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.6)
             statusPill
@@ -250,15 +224,11 @@ struct SpaceDetailView: View {
             }
             Text(status.titleKey)
                 .font(AppFont.scaled(12, weight: .medium))
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.xs)
-        .background {
-            Capsule(style: .continuous).fill(.ultraThinMaterial)
-            Capsule(style: .continuous).fill(Color.smartGlassFill)
-        }
-        .clipShape(Capsule(style: .continuous))
+        .glassCapsule()
     }
 
     // MARK: Metrics — up to 3 real sensor tiles, or the honest empty card
@@ -266,14 +236,14 @@ struct SpaceDetailView: View {
     @ViewBuilder private var metricsSection: some View {
         let sensors = Array(zoneSensors.prefix(3))
         if sensors.isEmpty {
-            SmartGlassCard {
+            GlassCard(padding: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("est_no_sensors_title")
                         .font(AppFont.scaled(15, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Text("est_no_sensors_caption")
                         .font(AppFont.caption2)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -291,19 +261,19 @@ struct SpaceDetailView: View {
             // `displayValue` is the hub's own formatting: value + unit as
             // stored, "—" while no reading has arrived (never invented).
             Text(verbatim: sensor.displayValue)
-                .font(AppFont.scaled(SmartHomeTheme.spaceMetricValueSize, weight: .light))
-                .foregroundStyle(Color.smartTextPrimary)
+                .font(AppFont.scaled(SpaceHero.metricValueSize, weight: .light))
+                .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(verbatim: sensor.name)
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.base)
-        .smartWidgetGlass()
+        .liquidGlass(cornerRadius: AppRadius.xl)
         .accessibilityElement(children: .combine)
     }
 
@@ -316,10 +286,10 @@ struct SpaceDetailView: View {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "cube")
                         .font(AppFont.headline)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                     Text("est_no_devices")
                         .font(AppFont.footnote)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, AppSpacing.base)
@@ -354,23 +324,17 @@ struct SpaceDetailView: View {
     /// Informational chip — deliberately NOT a button (no dead controls):
     /// it states which real plant is thirsty, nothing more.
     private func plantChip(_ plant: Plant) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius,
-                                     style: .continuous)
-        return HStack(spacing: AppSpacing.xxs) {
+        HStack(spacing: AppSpacing.xxs) {
             Text(verbatim: plant.emoji)
                 .font(AppFont.scaled(13))
             Text(verbatim: plant.name)
                 .font(AppFont.scaled(13, weight: .medium))
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.sm)
-        .background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        .liquidGlass(cornerRadius: AppRadius.md)
         .accessibilityElement(children: .combine)
     }
 
@@ -379,15 +343,15 @@ struct SpaceDetailView: View {
             .font(AppFont.label)
             .kerning(1.1)
             .textCase(.uppercase)
-            .foregroundStyle(Color.smartTextSecondary)
+            .foregroundStyle(.secondary)
     }
 }
 
 // MARK: - Device row (icon, name, honest state, pill toggle)
 
 /// One slim glass row per device: kind icon, name, an honest one-line
-/// state, and the amber pill toggle only when the device genuinely has
-/// `.power` — the S2 hero card's contract at row density.
+/// state, and the pill toggle only when the device genuinely has `.power`
+/// — the S2 hero card's contract at row density.
 private struct SpaceDeviceRow: View {
     let device: SmartDevice
 
@@ -413,13 +377,13 @@ private struct SpaceDeviceRow: View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: device.kind.icon)
                 .font(AppFont.headline)
-                .foregroundStyle(Color.smartAmber)
+                .foregroundStyle(device.kind.accent)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: device.name)
                     .font(AppFont.scaled(15, weight: .semibold))
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 stateLine
             }
@@ -445,11 +409,11 @@ private struct SpaceDeviceRow: View {
         } else if let isOn = device.isOn {
             Text(LocalizedStringKey((pendingOn ?? isOn) ? "sh_state_on" : "sh_state_off"))
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
         } else {
             Text(LocalizedStringKey(device.kind.titleKey))
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -458,11 +422,6 @@ private struct SpaceDeviceRow: View {
 
 private extension View {
     func spaceGlassRow() -> some View {
-        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        return background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        liquidGlass(cornerRadius: AppRadius.lg)
     }
 }

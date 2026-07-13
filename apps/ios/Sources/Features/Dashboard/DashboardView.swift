@@ -57,14 +57,12 @@ struct DashboardView: View {
 
     var body: some View {
         ZStack {
-            // The warm smart-home backdrop: the property's real cover photo
-            // blurred under a warm overlay, or the bronze fallback. This
-            // page is deliberately dark-warm by design (the sanctioned
-            // exception to dual-mode), so the content renders in the dark
-            // scheme regardless of the system setting.
-            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            // The app-wide living mood backdrop (dimineața / zi / noapte) —
+            // the same glassmorphism ground every other tab sits on. The
+            // content above is fully adaptive, so it follows the mood's
+            // color scheme instead of pinning dark.
+            appBackground.ignoresSafeArea()
             scrollContent
-                .environment(\.colorScheme, .dark)
         }
         .floatingSpeedDial(.home)
         .navigationBarHidden(true)
@@ -200,7 +198,7 @@ struct DashboardView: View {
                 Button { HapticFeedback.impact(.light); activeSheet = .hub } label: {
                     Image(systemName: "line.3.horizontal")
                         .font(AppFont.headline)
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.plain)
@@ -209,7 +207,7 @@ struct DashboardView: View {
 
                 Text(dateString)
                     .font(AppFont.scaled(13, weight: .medium))
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
 
                 Spacer(minLength: 8)
@@ -217,7 +215,7 @@ struct DashboardView: View {
                 Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
                     Image(systemName: "bell.fill")
                         .font(AppFont.scaled(15))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .frame(width: 40, height: 40)
                         .overlay(alignment: .topTrailing) {
                             // Numeric badge ONLY while there are unread
@@ -229,7 +227,7 @@ struct DashboardView: View {
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 4.5).padding(.vertical, 1.5)
                                     .background(Color.red, in: Capsule())
-                                    .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
+                                    .overlay(Capsule().strokeBorder(Color.primary.opacity(AppOpacity.tintedFill), lineWidth: 1))
                                     .offset(x: -2, y: 4)
                             }
                         }
@@ -258,12 +256,12 @@ struct DashboardView: View {
                 // the reference greeting is thin and airy.
                 greetingTitle
                     .font(AppFont.scaled(38, weight: .light))
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text("sh_greeting_subtitle")
                     .font(AppFont.scaled(15, weight: .regular))
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)
         }
@@ -289,8 +287,7 @@ struct DashboardView: View {
         ZStack {
             Circle()
                 .fill(LinearGradient(
-                    colors: [Color(red: 0.25, green: 0.82, blue: 0.48),
-                             Color(red: 0.18, green: 0.60, blue: 0.88)],
+                    colors: [Color.brandSuccess, Color.brandPrimaryBlue],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
             if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
@@ -316,15 +313,14 @@ struct DashboardView: View {
 
     // MARK: - Widget section header
 
-    /// The widgets strip's header, dressed in the smart-home language:
-    /// warm-white uppercase label (the section headers' voice on this
-    /// page), and the "+" as a warm glass circle like the header controls.
+    /// The widgets strip's header: the app's uppercase section-label voice,
+    /// and the "+" as a glass circle like the header controls.
     private var widgetSectionHeader: some View {
         HStack {
             Text("OVERVIEW")
                 .font(AppFont.label)
                 .kerning(1.1)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
             Spacer()
             // One entry point: the + opens the widget manager, which owns
             // adding, removing, resizing AND drag-reordering (the separate
@@ -335,7 +331,7 @@ struct DashboardView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(AppFont.captionEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)

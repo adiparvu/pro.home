@@ -4,11 +4,11 @@ import SwiftUI
 //
 // What a Digital Twin zone IS as a lived-in space — the classification the
 // estate surfaces (the dashboard's "Domeniul" strip, the space detail page)
-// dress themselves by: one SF Symbol, one localized title, one warm scene
-// gradient per kind. Persisted per zone in `property_zones.space_kind`
-// (nullable); zones never classified resolve through a deliberately
-// conservative name/icon heuristic and otherwise stay `.custom` — the UI
-// never guesses a kind it can't justify.
+// dress themselves by: one SF Symbol, one localized title, one accent color
+// and one adaptive scene wash per kind. Persisted per zone in
+// `property_zones.space_kind` (nullable); zones never classified resolve
+// through a deliberately conservative name/icon heuristic and otherwise
+// stay `.custom` — the UI never guesses a kind it can't justify.
 
 enum SpaceKind: String, CaseIterable, Identifiable {
     case house, garden, pond, forest, greenhouse, garage, basement, custom
@@ -36,18 +36,30 @@ enum SpaceKind: String, CaseIterable, Identifiable {
     /// Resolved display title through the app's string catalog.
     var title: String { String(localized: String.LocalizationValue(titleKey)) }
 
-    /// The kind's warm scene gradient — the backdrop for spaces without a
-    /// photo. Tokens live in `SmartHomeTheme` with the rest of the warm skin.
-    var sceneGradient: LinearGradient {
+    /// The kind's accent color — always laid over glass or the mood
+    /// backdrop, so every hue is either a brand token or a system color
+    /// that adapts to both light and dark schemes.
+    var accent: Color {
         switch self {
-        case .house, .custom: return SmartHomeTheme.fallbackGradient
-        case .garden:         return SmartHomeTheme.sceneGardenGradient
-        case .pond:           return SmartHomeTheme.scenePondGradient
-        case .forest:         return SmartHomeTheme.sceneForestGradient
-        case .greenhouse:     return SmartHomeTheme.sceneGreenhouseGradient
-        case .garage:         return SmartHomeTheme.sceneGarageGradient
-        case .basement:       return SmartHomeTheme.sceneBasementGradient
+        case .house:      return .brandSkyBlue
+        case .garden:     return .brandSuccess
+        case .pond:       return .brandTeal
+        case .forest:     return .green
+        case .greenhouse: return .brandGold
+        case .garage:     return .gray
+        case .basement:   return .brown
+        case .custom:     return .accentColor
         }
+    }
+
+    /// The kind's scene wash — the photo slot's stand-in (and loading
+    /// state) for spaces without a photo: the accent as a quiet tinted
+    /// gradient over whatever surface hosts it. Low opacities keep both
+    /// the light and dark mood grounds (and the icon on top) legible.
+    var sceneGradient: LinearGradient {
+        LinearGradient(
+            colors: [accent.opacity(0.30), accent.opacity(0.10)],
+            startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     // MARK: Heuristic (conservative, RO + EN)

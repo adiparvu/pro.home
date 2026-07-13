@@ -72,21 +72,12 @@ struct AppearanceView: View {
             : AppMoodEngine.shared.resolved.localizedTitle
     }
 
+    /// The app's color scheme follows the background mood engine (Auto /
+    /// Dimineața / Zi / Noaptea), so the old Dark/Light/System rows would
+    /// be dead controls — the mood row is the single scheme control now.
+    /// (`appSettings.theme` stays stored for profile compatibility.)
     private var themeSection: some View {
         SettingsGroup(title: "Theme") {
-            ForEach(AppSettings.themes, id: \.code) { theme in
-                ThemeOptionRow(
-                    icon: theme.icon,
-                    title: LocalizedStringKey(theme.label),
-                    isSelected: appSettings.theme == theme.code,
-                    accentColor: currentColor
-                ) {
-                    withAnimation(.spring(response: 0.3)) { appSettings.theme = theme.code }
-                    UserDefaults.standard.set(true, forKey: "prvio.theme.explicit")
-                    HapticFeedback.selection()
-                    if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
-                }
-            }
             NavSettingsRow(icon: "sun.horizon.fill", color: .brandGold,
                            label: "mood_settings_title",
                            value: moodRowValue) {
@@ -220,34 +211,4 @@ struct AppearanceView: View {
     }
 }
 
-// MARK: - Theme Row
-
-private struct ThemeOptionRow: View {
-    let icon: String
-    let title: LocalizedStringKey
-    let isSelected: Bool
-    var accentColor: Color = .blue
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ColoredIconBadge(icon: icon, color: isSelected ? accentColor : Color.primary.opacity(0.4), size: 36)
-                Text(title)
-                    .font(AppFont.scaled(15)).foregroundStyle(.primary)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(AppFont.scaled(20)).foregroundStyle(accentColor)
-                        .transition(.scale.combined(with: .opacity))
-                } else {
-                    Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
-                        .frame(width: 20, height: 20)
-                }
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
-        }
-        .buttonStyle(.plain)
-    }
-}
 

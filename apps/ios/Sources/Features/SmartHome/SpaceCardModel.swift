@@ -32,10 +32,11 @@ enum SpaceStatus {
 
     /// The status dot's color — nil when there is nothing live to signal
     /// (no sensors / no readings), so surfaces never draw an empty promise.
+    /// Semantic hues (warning orange / success green) read on both schemes.
     var dotColor: Color? {
         switch self {
         case .attention:            Color.brandWarning
-        case .ok:                   Color.smartAmber
+        case .ok:                   Color.brandSuccess
         case .noSignal, .noSensors: nil
         }
     }

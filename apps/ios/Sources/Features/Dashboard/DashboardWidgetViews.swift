@@ -88,18 +88,14 @@ struct WeatherWidget: View {
                 .frame(height: 120)
                 // Chrome inside the label so it scales WITH the pressed
                 // card. The live time-of-day gradient is the widget's
-                // honest content and stays; only the lift changed — the
-                // heavy colored glow became the strip's shared soft card
-                // shadow, and the hairline now catches the light like
-                // every other card on this page.
+                // honest content and stays; the lift is the page's shared
+                // soft card shadow plus the standard hairline.
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                        .strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
+                        .strokeBorder(Color.hairline, lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
-                        radius: SmartHomeTheme.cardShadowRadius,
-                        y: SmartHomeTheme.cardShadowY)
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
             }
         }
         .buttonStyle(SmartCardPressStyle())
@@ -163,17 +159,17 @@ struct CalendarLargeWidget: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(dayNumber(ctx.date))
                             .font(AppFont.scaled(72, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
                             .contentTransition(.numericText())
                             .animation(.spring(response: 0.5), value: dayNumber(ctx.date))
                         Text(monthYear(ctx.date))
                             .font(AppFont.scaled(13, weight: .medium))
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.leading, AppSpacing.xl)
 
                     Rectangle()
-                        .fill(Color.smartTextPrimary.opacity(0.08))
+                        .fill(Color.hairline)
                         .frame(width: 1, height: 60)
                         .padding(.horizontal, 18)
 
@@ -181,26 +177,26 @@ struct CalendarLargeWidget: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(dayName(ctx.date))
                             .font(AppFont.title3)
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
 
                         HStack(spacing: 6) {
                             ForEach(0..<7, id: \.self) { offset in
                                 let day = weekDay(ctx.date, offset: offset - weekdayOffset(ctx.date))
                                 let isToday = Calendar.current.isDateInToday(day)
                                 VStack(spacing: 2) {
-                                    // Today sits on the amber accent — warm
-                                    // INK on it (white fails contrast there).
+                                    // Today sits on the accent — white on it,
+                                    // the system's own accent-fill contract.
                                     Text(weekDayLetter(day))
                                         .font(AppFont.scaled(9, weight: .medium))
                                         .foregroundStyle(isToday
-                                            ? Color.smartInkSecondary
-                                            : Color.smartTextSecondary.opacity(0.6))
+                                            ? Color.white.opacity(AppOpacity.emphasis)
+                                            : Color.secondary.opacity(0.6))
                                     Text(dayNum(day))
                                         .font(AppFont.scaled(12, weight: isToday ? .bold : .regular))
-                                        .foregroundStyle(isToday ? Color.smartInk : Color.smartTextSecondary)
+                                        .foregroundStyle(isToday ? Color.white : Color.secondary)
                                 }
                                 .frame(width: 26, height: 36)
-                                .background(isToday ? Color.smartAmber : Color.clear,
+                                .background(isToday ? Color.accentColor : Color.clear,
                                             in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                             }
                         }
@@ -210,7 +206,7 @@ struct CalendarLargeWidget: View {
                 }
                 .padding(.vertical, AppSpacing.lg)
                 // Inside the label so the glass scales WITH the pressed card.
-                .smartWidgetGlass(cornerRadius: AppRadius.xl)
+                .liquidGlass(cornerRadius: AppRadius.xl)
             }
         }
         .buttonStyle(SmartCardPressStyle())

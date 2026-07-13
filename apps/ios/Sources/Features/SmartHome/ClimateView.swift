@@ -1,13 +1,13 @@
 import SwiftUI
 import HomeKit
 
-// MARK: - Climate page (Smart Home — warm glass skin)
+// MARK: - Climate page (Smart Home — Liquid Glass)
 //
 // Opened by tapping the dashboard's temperature dial card — ALWAYS
-// available. Warm photo backdrop, room pills (real rooms), the reference's
-// big dotted-arc dial (48 dots over 270°, amber up to the current
-// position), −/+ steppers, four mode buttons, and the shared Schedule card
-// when a real thermostat exists.
+// available. The app's mood backdrop, room pills (real rooms), the big
+// dotted-arc dial (48 dots over 270°, lit in the climate orange up to the
+// current position), −/+ steppers, four mode buttons, and the shared
+// Schedule card when a real thermostat exists.
 //
 // Honesty contract:
 // - With a thermostat (with the .targetTemperature capability) in scope,
@@ -24,7 +24,6 @@ import HomeKit
 struct ClimateView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(PropertyService.self) private var propertyService
 
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
@@ -124,13 +123,13 @@ struct ClimateView: View {
 
     var body: some View {
         ZStack {
-            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.xl) {
                     topBar
                     Text("sh_kind_thermostats")
                         .font(AppFont.scaled(26, weight: .light))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .accessibilityAddTraits(.isHeader)
                     dialSection
                     if thermostat == nil {
@@ -138,7 +137,7 @@ struct ClimateView: View {
                         // comfort target, not a hardware command.
                         Text("sh_climate_no_thermostat")
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, AppSpacing.lg)
                     }
@@ -152,7 +151,6 @@ struct ClimateView: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .environment(\.colorScheme, .dark)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -174,7 +172,7 @@ struct ClimateView: View {
             } label: {
                 Image(systemName: "chevron.backward")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
@@ -186,12 +184,12 @@ struct ClimateView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.sm) {
-                        SmartChip(label: String(localized: "sh_room_all"),
-                                  isSelected: effectiveRoom == nil) {
+                        GlassFilterChip(label: String(localized: "sh_room_all"),
+                                        isSelected: effectiveRoom == nil) {
                             select(nil)
                         }
                         ForEach(rooms, id: \.self) { room in
-                            SmartChip(label: room, isSelected: effectiveRoom == room) {
+                            GlassFilterChip(label: room, isSelected: effectiveRoom == room) {
                                 select(room)
                             }
                         }
@@ -222,17 +220,17 @@ struct ClimateView: View {
                 VStack(spacing: 2) {
                     Text("sh_climate_air")
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                     Text(verbatim: temperatureText(displayedTarget))
                         .font(AppFont.scaled(44, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     Text("sh_climate_celsius")
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .accessibilityElement()
@@ -265,7 +263,7 @@ struct ClimateView: View {
             Text(verbatim: rangeText(Self.range.upperBound))
         }
         .font(AppFont.caption2)
-        .foregroundStyle(Color.smartTextSecondary)
+        .foregroundStyle(.secondary)
         .frame(width: 190)
         .offset(y: 6)
         .accessibilityHidden(true) // the dial element already speaks range/value
@@ -284,7 +282,7 @@ struct ClimateView: View {
         } label: {
             Image(systemName: icon)
                 .font(AppFont.scaled(18, weight: .semibold))
-                .foregroundStyle(enabled ? Color.smartTextPrimary : Color.smartTextSecondary)
+                .foregroundStyle(enabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(width: 48, height: 48)
                 .glassCircle()
         }
@@ -346,20 +344,16 @@ struct ClimateView: View {
             VStack(spacing: AppSpacing.xs) {
                 Image(systemName: candidate.icon)
                     .font(AppFont.scaled(18, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.smartInk : Color.smartTextPrimary)
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.accentColor)
+                                                : AnyShapeStyle(.primary))
                     .frame(width: 56, height: 56)
-                    .background {
-                        if isSelected {
-                            Circle().fill(Color.smartCream)
-                                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
-                        } else {
-                            Circle().fill(.ultraThinMaterial)
-                            Circle().fill(Color.smartGlassFill)
-                        }
-                    }
+                    // A capsule over a square frame is a circle — the
+                    // sanctioned selected-filter glass, in the round.
+                    .glassFilterCapsule(selected: isSelected)
                 Text(candidate.labelKey)
                     .font(AppFont.caption2)
-                    .foregroundStyle(isSelected ? Color.smartTextPrimary : Color.smartTextSecondary)
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.primary)
+                                                : AnyShapeStyle(.secondary))
             }
         }
         .buttonStyle(.plain)
@@ -373,16 +367,16 @@ struct ClimateView: View {
         HStack(spacing: AppSpacing.xs) {
             Image(systemName: "humidity.fill")
                 .font(AppFont.captionStrong)
-                .foregroundStyle(Color.smartAmber)
+                .foregroundStyle(Color.brandWarning)
             if let humidity {
                 Text(verbatim: "\(humidity.formatted(.number.precision(.fractionLength(0))))%")
                     .font(AppFont.metric)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .monospacedDigit()
             } else {
                 Text("sh_temp_unavailable")
                     .font(AppFont.caption)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -407,12 +401,13 @@ struct ClimateView: View {
 
 // MARK: - Dotted-arc dial
 
-/// The reference's dial: ~48 small circles along a 270° arc (opening at the
-/// bottom), filled amber up to the current fraction, the rest faint white;
-/// arbitrary center content. Pure geometry — no GeometryReader (the size is
-/// fixed) and only the dot colors change per value, so re-renders stay cheap.
+/// The dial: ~48 small circles along a 270° arc (opening at the bottom),
+/// lit in the climate orange up to the current fraction, the rest a faint
+/// primary tint; arbitrary center content. Pure geometry — no
+/// GeometryReader (the size is fixed) and only the dot colors change per
+/// value, so re-renders stay cheap.
 private struct SmartDottedDial<Center: View>: View {
-    /// 0…1 — how far along the arc the amber fill reaches.
+    /// 0…1 — how far along the arc the lit fill reaches.
     let fraction: Double
     @ViewBuilder let center: () -> Center
 
@@ -444,7 +439,7 @@ private struct SmartDottedDial<Center: View>: View {
         let radius = (Self.size - Self.dotSize) / 2
         let lit = progress <= fraction
         return Circle()
-            .fill(lit ? Color.smartAmber : Color.white.opacity(0.2))
+            .fill(lit ? Color.brandWarning : Color.primary.opacity(0.2))
             .frame(width: Self.dotSize, height: Self.dotSize)
             .offset(x: radius * cos(angle.radians),
                     y: radius * sin(angle.radians))

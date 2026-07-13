@@ -1,20 +1,20 @@
 import SwiftUI
 
-/// The health dashboard sheet, in the smart-home warm glass skin: blurred
-/// cover-photo backdrop, SmartGlassCards, warm-white text. Score colors
-/// stay semantic (green→red by condition) — the skin never repaints truth.
+/// The health dashboard sheet, in the app's native Liquid Glass language:
+/// the mood backdrop, adaptive GlassCards, `.primary`/`.secondary` text.
+/// Score colors stay semantic (green→red by condition) — the skin never
+/// repaints truth.
 struct PropertyHealthDashboardView: View {
     @Environment(PropertyElementService.self) private var elementService
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AppSettings.self) private var appSettings
-    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     var body: some View {
         NavigationStack {
             ZStack {
-                SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+                appBackground.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         // Overall score
@@ -38,15 +38,12 @@ struct PropertyHealthDashboardView: View {
                     .padding(.horizontal, AppSpacing.xl)
                     .padding(.top, AppSpacing.sm)
                 }
-                .environment(\.colorScheme, .dark)
             }
             .navigationTitle("Property Health Score")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close") { dismiss() }
-                        .foregroundStyle(Color.smartTextSecondary)
                 }
             }
         }
@@ -55,11 +52,11 @@ struct PropertyHealthDashboardView: View {
     // MARK: - Overall
 
     private var overallScoreCard: some View {
-        SmartGlassCard {
+        GlassCard(padding: AppSpacing.lg) {
             HStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .stroke(Color.smartGlassFill, lineWidth: 8)
+                        .stroke(Color.subtleFill, lineWidth: 8)
                         .frame(width: 90, height: 90)
                     Circle()
                         .trim(from: 0, to: CGFloat(elementService.overallHealthScore) / 100)
@@ -78,20 +75,20 @@ struct PropertyHealthDashboardView: View {
                             .foregroundStyle(scoreColor(elementService.overallHealthScore))
                         Text("/100")
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Property Health Score")
                         .font(AppFont.subheadline)
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Text(LocalizedStringKey(scoreLabel(elementService.overallHealthScore)))
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                     HStack(spacing: 16) {
                         miniStat(label: "Elements", value: "\(elementService.elements.count)")
-                        miniStat(label: "Critical", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.smartTextSecondary : Color.red)
+                        miniStat(label: "Critical", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondaryTextColor : Color.red)
                         miniStat(label: "Attention", value: "\(elementService.elementsNeedingAttention.count)", color: .orange)
                     }
                 }
@@ -119,7 +116,7 @@ struct PropertyHealthDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("All elements")
                 .font(AppFont.subheadline)
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
             ForEach(elementService.elements.sorted { $0.healthScore < $1.healthScore }) { el in
                 HealthElementRow(element: el)
             }
@@ -129,12 +126,12 @@ struct PropertyHealthDashboardView: View {
     // MARK: - Layer breakdown
 
     private var layerBreakdownSection: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(spacing: 12) {
                 HStack {
                     Text("Breakdown per layer")
                         .font(AppFont.subheadline)
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Spacer()
                 }
                 ForEach(PropertyLayer.allCases, id: \.self) { layer in
@@ -145,18 +142,18 @@ struct PropertyHealthDashboardView: View {
                             HStack {
                                 Label(layer.displayName, systemImage: layer.icon)
                                     .font(AppFont.caption)
-                                    .foregroundStyle(Color.smartTextSecondary)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                                 Text("\(avg)/100")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(scoreColor(avg))
                                 Text("(\(els.count))")
                                     .font(AppFont.caption2)
-                                    .foregroundStyle(Color.smartTextSecondary)
+                                    .foregroundStyle(.secondary)
                             }
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
-                                    Capsule().fill(Color.smartGlassFill).frame(height: 5)
+                                    Capsule().fill(Color.subtleFill).frame(height: 5)
                                     Capsule()
                                         .fill(scoreColor(avg))
                                         .frame(width: geo.size.width * CGFloat(avg) / 100, height: 5)
@@ -172,11 +169,11 @@ struct PropertyHealthDashboardView: View {
     // MARK: - Total value
 
     private var totalValueCard: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("Total estimated value", systemImage: "banknote")
-                        .font(AppFont.captionStrong).foregroundStyle(Color.smartTextSecondary)
+                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
                     Text(currencyService.formatted(elementService.totalEstimatedValue(), from: "EUR", preferred: appSettings.preferredCurrency))
                         .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(Color.brandSuccess)
@@ -192,7 +189,7 @@ struct PropertyHealthDashboardView: View {
     // MARK: - AI Recommendations
 
     private var aiRecommendationsCard: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: 12) {
                 Label("AI Recommendations", systemImage: "sparkles")
                     .font(AppFont.subheadline)
@@ -217,13 +214,13 @@ struct PropertyHealthDashboardView: View {
                         icon: "chart.line.uptrend.xyaxis",
                         title: "Cost analysis",
                         desc: "Add maintenance costs for an accurate expense prediction.",
-                        color: Color.smartAmber
+                        color: Color.accentColor
                     )
                 }
 
                 Text("Full AI functionality — \(assistantName) integration coming in next version")
                     .font(AppFont.caption2)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -231,10 +228,10 @@ struct PropertyHealthDashboardView: View {
 
     // MARK: - Helpers
 
-    private func miniStat(label: LocalizedStringKey, value: String, color: Color = .smartTextSecondary) -> some View {
+    private func miniStat(label: LocalizedStringKey, value: String, color: Color = .secondaryTextColor) -> some View {
         VStack(spacing: 2) {
             Text(value).font(AppFont.scaled(15, weight: .bold)).foregroundStyle(color)
-            Text(label).font(AppFont.caption2).foregroundStyle(Color.smartTextSecondary)
+            Text(label).font(AppFont.caption2).foregroundStyle(.secondary)
         }
     }
 
@@ -246,8 +243,8 @@ struct PropertyHealthDashboardView: View {
                 .frame(width: 28, height: 28)
                 .background(color.opacity(AppOpacity.tintedFill), in: Circle())
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(AppFont.captionStrong).foregroundStyle(Color.smartTextPrimary)
-                Text(desc).font(AppFont.caption).foregroundStyle(Color.smartTextSecondary)
+                Text(title).font(AppFont.captionStrong).foregroundStyle(.primary)
+                Text(desc).font(AppFont.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -279,7 +276,7 @@ private struct HealthElementRow: View {
     let element: PropertyElement
 
     var body: some View {
-        SmartGlassCard(padding: AppSpacing.md) {
+        GlassCard(padding: AppSpacing.md) {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
@@ -292,11 +289,11 @@ private struct HealthElementRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(element.name)
                         .font(AppFont.scaled(15, weight: .medium))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(element.elementType.displayName)
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
@@ -305,7 +302,7 @@ private struct HealthElementRow: View {
                         .foregroundStyle(element.healthColor)
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.smartGlassFill).frame(height: 4)
+                            Capsule().fill(Color.subtleFill).frame(height: 4)
                             Capsule()
                                 .fill(element.healthColor)
                                 .frame(width: geo.size.width * CGFloat(element.healthScore) / 100, height: 4)

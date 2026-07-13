@@ -4,8 +4,8 @@ import SwiftUI
 //
 // The home page's ONE new element: a horizontally scrolling row of the
 // property's spaces (Digital Twin zones), between the smart-home grid and
-// the widgets. Each card: the zone's photo thumbnail (or its kind's warm
-// scene gradient + SF icon), the zone name, and ONE honest live line, in
+// the widgets. Each card: the zone's photo thumbnail (or its kind's tinted
+// scene wash + SF icon), the zone name, and ONE honest live line, in
 // priority order —
 //   1. the first linked IoT sensor's reading (value + unit as stored),
 //   2. for garden/greenhouse kinds, the count of plants needing water
@@ -39,7 +39,7 @@ struct EstateDomainStrip: View {
                 .font(AppFont.label)
                 .kerning(1.1)
                 .textCase(.uppercase)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, AppSpacing.lg)
             if zoneService.zones.isEmpty {
                 CreateFirstSpaceCard(isCreating: createFlow.isCreating) {
@@ -104,12 +104,12 @@ private struct SpaceCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: zone.name)
                         .font(AppFont.scaled(14, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     if let subline {
                         subline
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .monospacedDigit()
                             .lineLimit(1)
                     }
@@ -118,7 +118,7 @@ private struct SpaceCard: View {
             }
             .padding(AppSpacing.sm + 2)
             .frame(width: Self.cardWidth, alignment: .leading)
-            .smartWidgetGlass()
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
         .buttonStyle(SmartCardPressStyle())
         .accessibilityElement(children: .combine)
@@ -126,7 +126,7 @@ private struct SpaceCard: View {
     }
 
     private var thumbnail: some View {
-        let shape = RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius,
+        let shape = RoundedRectangle(cornerRadius: AppRadius.md,
                                      style: .continuous)
         return ZStack {
             // The kind's scene gradient is also the photo's loading state.
@@ -145,7 +145,7 @@ private struct SpaceCard: View {
             } else {
                 Image(systemName: kind.icon)
                     .font(AppFont.scaled(22, weight: .semibold))
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(kind.accent)
             }
         }
         .frame(height: Self.thumbHeight)
@@ -171,21 +171,20 @@ private struct CreateFirstSpaceCard: View {
             HStack(spacing: AppSpacing.md) {
                 if isCreating {
                     ProgressView()
-                        .tint(Color.smartAmber)
                         .frame(width: 30)
                 } else {
                     Image(systemName: "house")
                         .font(AppFont.scaled(22, weight: .semibold))
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(Color.accentColor)
                         .frame(width: 30)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("est_create_first")
                         .font(AppFont.scaled(14, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Text("est_create_first_caption")
                         .font(AppFont.caption2)
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .multilineTextAlignment(.leading)
@@ -194,7 +193,7 @@ private struct CreateFirstSpaceCard: View {
             .padding(AppSpacing.base)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .smartWidgetGlass()
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
         .buttonStyle(SmartCardPressStyle())
         .accessibilityElement(children: .combine)
@@ -218,11 +217,10 @@ private struct AddSpaceChip: View {
             Group {
                 if isCreating {
                     ProgressView()
-                        .tint(Color.smartAmber)
                 } else {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .frame(width: 44, height: 44)

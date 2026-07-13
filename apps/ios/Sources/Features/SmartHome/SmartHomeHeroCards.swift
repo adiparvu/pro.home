@@ -2,34 +2,34 @@ import SwiftUI
 import Network
 import NetworkExtension
 
-// MARK: - Non-device hero cards (Smart Home S2.6 — warm glass skin)
+// MARK: - Non-device hero cards (Smart Home S2.6 — Liquid Glass)
 //
-// The reference grid is never empty: alongside the real device tiles it
-// carries the CREAM alarm-style "Next up" card (the house agenda's next
-// deadline), the amber temperature dial (which opens the climate page), and
-// a compact glass connectivity card. Each one binds to REAL data — the
-// agenda aggregator, an actual indoor sensor / the property's Apple Weather
-// reading, and NWPathMonitor — and states are always honest ("All clear",
-// "—", "Offline") rather than invented. Styling comes exclusively from the
-// SmartHomeTheme tokens.
+// The grid is never empty: alongside the real device tiles it carries the
+// alarm-style "Next up" card (the house agenda's next deadline), the
+// temperature dial (which opens the climate page), and a compact glass
+// connectivity card. Each one binds to REAL data — the agenda aggregator,
+// an actual indoor sensor / the property's Apple Weather reading, and
+// NWPathMonitor — and states are always honest ("All clear", "—",
+// "Offline") rather than invented. Styling is the app's native adaptive
+// glass language over the mood backdrop.
 
 // MARK: - Connect HomeKit hero card (no devices from any provider)
 
 /// The empty state's first grid slot, styled exactly like a device card:
-/// amber-glow icon, short title/subtitle (sized so the Romanian strings
-/// never wrap mid-word again), and a cream capsule that triggers the REAL
+/// accent-glow icon, short title/subtitle (sized so the Romanian strings
+/// never wrap mid-word again), and a glass capsule that triggers the REAL
 /// HomeKit permission flow.
 struct ConnectHomeKitHeroCard: View {
     private let smartHome = SmartHomeService.shared
 
     var body: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 ZStack {
                     SmartRadialGlow(diameter: 96)
                     Image(systemName: "lightbulb.fill")
                         .font(AppFont.scaled(28, weight: .semibold))
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .frame(height: 90)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -39,12 +39,12 @@ struct ConnectHomeKitHeroCard: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("sh_connect_title_short")
                             .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                         Text("sh_connect_homekit")
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.leading)
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
@@ -58,12 +58,12 @@ struct ConnectHomeKitHeroCard: View {
                     } label: {
                         Text("sh_connect_start")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.smartInk)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
                             .frame(width: 72)
                             .padding(.vertical, AppSpacing.xs)
-                            .background(Color.smartCream, in: Capsule())
+                            .mediaGlass(in: Capsule(), interactive: true)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("sh_connect_homekit"))
@@ -76,11 +76,10 @@ struct ConnectHomeKitHeroCard: View {
 
 // MARK: - "Next up" alarm-style card (house agenda)
 
-/// The reference's WHITE alarm tile — the one cream card in the grid —
-/// backed by the REAL house agenda: the next upcoming deadline within
-/// 30 days, its time (today, timed) or date big in rounded dark type, the
-/// item's own title beneath. No upcoming item → an honest "All clear"; the
-/// card never disappears.
+/// The alarm-style tile, backed by the REAL house agenda: the next
+/// upcoming deadline within 30 days, its time (today, timed) or date big
+/// in rounded type, the item's own title beneath. No upcoming item → an
+/// honest "All clear"; the card never disappears.
 struct NextUpCard: View {
     /// The next agenda item at/after now, computed by the dashboard from the
     /// same services the calendar reads (nil = nothing in the next 30 days).
@@ -89,15 +88,15 @@ struct NextUpCard: View {
     @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
-        SmartCreamCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: item == nil ? "checkmark.circle.fill" : "alarm.fill")
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.smartInkSecondary)
+                        .foregroundStyle(.secondary)
                     Text("sh_next_up")
                         .font(AppFont.caption)
-                        .foregroundStyle(Color.smartInkSecondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                 }
@@ -105,23 +104,23 @@ struct NextUpCard: View {
                 if let item {
                     Text(verbatim: bigText(for: item))
                         .font(AppFont.scaled(36, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.smartInk)
+                        .foregroundStyle(.primary)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                     Text(verbatim: item.title)
                         .font(AppFont.caption2)
-                        .foregroundStyle(Color.smartInkSecondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
                     Text("sh_all_clear")
                         .font(AppFont.scaled(22, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.smartInk)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     Text("sh_all_clear_subtitle")
                         .font(AppFont.caption2)
-                        .foregroundStyle(Color.smartInkSecondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
@@ -165,7 +164,7 @@ enum HomeTemperatureSource {
     }
 }
 
-/// The reference's circular mini dial in amber: the temperature big in the
+/// The circular mini dial in the climate orange: the temperature big in the
 /// center of a trimmed arc, "Home temperature" beneath, and — ONLY when a
 /// real thermostat exists — that thermostat's actual power pill toggle.
 /// Tapping the card body opens the climate page (always available).
@@ -190,6 +189,12 @@ struct TemperatureDialCard: View {
     /// Display range the decorative arc maps over (indoor/outdoor °C).
     private static let dialRange: ClosedRange<Double> = -10...40
 
+    /// The empty dial ring: a faint warm gradient instead of dead gray.
+    private static let emptyDialGradient = LinearGradient(
+        colors: [Color.brandWarning.opacity(0.30),
+                 Color.primary.opacity(AppOpacity.subtleFill)],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+
     var body: some View {
         // A real Button (press micro-interaction included) instead of the
         // old bare tap gesture; the pill toggle inside keeps its own
@@ -205,7 +210,7 @@ struct TemperatureDialCard: View {
     }
 
     private var cardBody: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 dial
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -214,12 +219,12 @@ struct TemperatureDialCard: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("sh_home_temperature")
                             .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                         Text(source.labelKey)
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                     // VoiceOver path to the tap gesture below: the title
@@ -248,27 +253,27 @@ struct TemperatureDialCard: View {
     private var dial: some View {
         ZStack {
             if celsius == nil {
-                // Honest empty state, warmly drawn: a faint warm-gradient
-                // ring with a thermometer glyph — the "no reading" caption
-                // below keeps telling the truth.
+                // Honest empty state: a faint gradient ring with a
+                // thermometer glyph — the "no reading" caption below keeps
+                // telling the truth.
                 Circle()
-                    .stroke(SmartHomeTheme.dialEmptyGradient,
+                    .stroke(Self.emptyDialGradient,
                             style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 Image(systemName: "thermometer.medium")
                     .font(AppFont.scaled(22, weight: .semibold))
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             } else {
                 Circle()
-                    .stroke(Color.white.opacity(0.15),
+                    .stroke(Color.primary.opacity(AppOpacity.tintedFill),
                             style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 Circle()
                     .trim(from: 0, to: fraction)
-                    .stroke(Color.smartAmber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .stroke(Color.brandWarning, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: fraction)
                 Text(verbatim: temperatureText)
                     .font(AppFont.scaled(22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
@@ -373,14 +378,14 @@ final class NetworkStatusModel {
     deinit { monitor.cancel() }
 }
 
-/// Compact glass Wi-Fi tile: amber-tinted icon, "Network" title, and the
+/// Compact glass Wi-Fi tile: accent-tinted icon, "Network" title, and the
 /// LIVE connection state with a green/red dot. On Wi-Fi the real SSID shows
 /// when the system discloses it — a name is never invented.
 struct NetworkStatusCard: View {
     @State private var model = NetworkStatusModel()
 
     var body: some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 // Slightly more presence than the old 40pt disc: a bigger
                 // glow and glyph so the card holds its own in the balanced
@@ -389,7 +394,7 @@ struct NetworkStatusCard: View {
                     SmartRadialGlow(diameter: 64)
                     Image(systemName: model.status.isOnline ? "wifi" : "wifi.slash")
                         .font(AppFont.scaled(20, weight: .semibold))
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .frame(width: 48, height: 48)
                 .accessibilityHidden(true)
@@ -397,7 +402,7 @@ struct NetworkStatusCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("sh_network")
                         .font(AppFont.scaled(16, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     HStack(spacing: AppSpacing.xs) {
                         Circle()
@@ -406,12 +411,12 @@ struct NetworkStatusCard: View {
                         if model.status == .wifi, let ssid = model.ssid, !ssid.isEmpty {
                             Text(verbatim: ssid)
                                 .font(AppFont.caption2)
-                                .foregroundStyle(Color.smartTextSecondary)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         } else {
                             Text(model.status.labelKey)
                                 .font(AppFont.caption2)
-                                .foregroundStyle(Color.smartTextSecondary)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }

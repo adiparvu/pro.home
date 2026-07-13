@@ -1,133 +1,32 @@
 import SwiftUI
 
-// MARK: - Smart-home warm glass chrome (shared by all three surfaces)
+// MARK: - Smart-home chrome (shared by the home tab, device page, climate page)
 //
-// The reference concept's visual vocabulary, built once and reused by the
-// dashboard (S2), the device page (S3) and the climate page: the warm
-// blurred-photo backdrop, the glass card, the vertical amber pill toggle,
-// the cream/glass selector chips, the radial icon glow, the thin level
-// slider, and the shared Schedule card. Every color comes from the
-// `SmartHomeTheme` tokens in DesignSystem.swift — no accentColor, no brand
-// blues on these surfaces.
+// Since the Liquid Glass re-skin this file speaks the app's ONE native
+// component language: `liquidGlass` / `GlassCard` materials, adaptive
+// `.primary`/`.secondary` foregrounds, and the AppFont/AppSpacing/AppRadius
+// tokens — the mood backdrop (`appBackground`) shows through every surface,
+// in both light (morning/day) and dark (night) schemes. The warm bronze
+// `SmartHomeTheme` skin is retired here; only the retired twin files still
+// reference it (see the legacy shims at the bottom).
+//
+// What lives here: the press micro-interaction, the radial icon glow, the
+// vertical pill toggle, the "+" chip, the thin level slider, the shared
+// Schedule card, and the space-hero typography constants shared by the
+// Spaces tab and the space page.
 
-// MARK: - Backdrop
+// MARK: - Space hero typography (shared: SpacesTabView + SpaceDetailView)
 
-/// The warm backdrop behind every smart-home surface: the property's real
-/// cover photo blurred at ~40pt under a warm-brown darkening gradient, or —
-/// honestly, when no photo exists yet — the dark bronze fallback gradient.
-/// Callers place it in a ZStack behind their content and wrap the content
-/// in `.environment(\.colorScheme, .dark)` so materials and system text
-/// resolve against the deliberately dark surface.
-struct SmartHomeBackdrop: View {
-    /// The property's stored cover-photo reference (public-form URL);
-    /// resolved through the signed-storage pipeline like every property image.
-    let photoSource: String?
-
-    var body: some View {
-        ZStack {
-            SmartHomeTheme.fallbackGradient
-            if let photoSource, !photoSource.isEmpty {
-                GeometryReader { geo in
-                    StorageImage(source: photoSource, targetSize: 480) { phase in
-                        if case .success(let image) = phase {
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: geo.size.width, height: geo.size.height)
-                                .clipped()
-                                .blur(radius: SmartHomeTheme.backdropBlur, opaque: true)
-                        }
-                    }
-                }
-                SmartHomeTheme.overlayGradient
-            }
-            // Static ambient light over the photo/fallback, under content:
-            // an amber pool top-leading (behind the greeting) and a deeper
-            // ember warmth bottom-trailing. Two plain RadialGradients — no
-            // blur views, no animation — so the backdrop stops reading as a
-            // flat brown wash while text contrast on top stays intact.
-            RadialGradient(
-                colors: [Color.smartAmber.opacity(SmartHomeTheme.ambientTopGlowOpacity),
-                         .clear],
-                center: .topLeading,
-                startRadius: 0,
-                endRadius: SmartHomeTheme.ambientTopGlowRadius)
-            RadialGradient(
-                colors: [SmartHomeTheme.ambientEmber.opacity(SmartHomeTheme.ambientBottomGlowOpacity),
-                         .clear],
-                center: .bottomTrailing,
-                startRadius: 0,
-                endRadius: SmartHomeTheme.ambientBottomGlowRadius)
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
-    }
-}
-
-// MARK: - Glass card
-
-/// The reference card: ~26pt continuous corners, `.ultraThinMaterial` under
-/// a subtle white fill GRADIENT (brighter at the top), a 1pt hairline that
-/// catches the light on the top-leading edge and fades away, and a soft
-/// lift shadow — the depth every smart-home surface inherits from here.
-struct SmartGlassCard<Content: View>: View {
-    var padding: CGFloat = AppSpacing.lg
-    @ViewBuilder let content: () -> Content
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: SmartHomeTheme.cardRadius, style: .continuous)
-    }
-
-    var body: some View {
-        content()
-            .padding(padding)
-            .background {
-                shape.fill(.ultraThinMaterial)
-                shape.fill(SmartHomeTheme.glassFillGradient)
-            }
-            .clipShape(shape)
-            .overlay {
-                shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
-                    radius: SmartHomeTheme.cardShadowRadius,
-                    y: SmartHomeTheme.cardShadowY)
-    }
-}
-
-/// The `SmartGlassCard` treatment as a plain background modifier — for
-/// views that own their padding and layout (the dashboard's widget cards).
-/// Same recipe, one source of truth: `.ultraThinMaterial` under the white
-/// fill gradient, the light-catching hairline, the soft lift shadow —
-/// at the tighter widget radius by default.
-struct SmartWidgetGlass: ViewModifier {
-    var cornerRadius: CGFloat = SmartHomeTheme.widgetCardRadius
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .background {
-                shape.fill(.ultraThinMaterial)
-                shape.fill(SmartHomeTheme.glassFillGradient)
-            }
-            .clipShape(shape)
-            .overlay {
-                shape.strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(SmartHomeTheme.cardShadowOpacity),
-                    radius: SmartHomeTheme.cardShadowRadius,
-                    y: SmartHomeTheme.cardShadowY)
-    }
-}
-
-extension View {
-    /// Dresses a self-padded view in the smart-home glass card chrome.
-    func smartWidgetGlass(cornerRadius: CGFloat = SmartHomeTheme.widgetCardRadius) -> some View {
-        modifier(SmartWidgetGlass(cornerRadius: cornerRadius))
-    }
+/// The free-floating space title's shared metrics, so tab 2 and the space
+/// page can never drift apart.
+enum SpaceHero {
+    /// Breathing room of pure backdrop above the space page's floating title.
+    static let breath: CGFloat = 140
+    /// The free-floating space name — large and light, tracking tight.
+    static let nameSize: CGFloat = 36
+    static let nameTracking: CGFloat = -0.5
+    /// Metric tile live-value size on the space page.
+    static let metricValueSize: CGFloat = 22
 }
 
 // MARK: - Card press micro-interaction
@@ -140,44 +39,35 @@ extension View {
 struct SmartCardPressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Pressed-card scale for the shared press micro-interaction.
+    private static let pressedScale: CGFloat = 0.97
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(!reduceMotion && configuration.isPressed
-                         ? SmartHomeTheme.pressedScale : 1)
+                         ? Self.pressedScale : 1)
             .animation(reduceMotion ? nil : .snappy(duration: 0.25),
                        value: configuration.isPressed)
     }
 }
 
-/// The one cream card per grid (the reference's white Alarm card): solid
-/// `smartCream`, dark ink content, a soft lift shadow.
-struct SmartCreamCard<Content: View>: View {
-    var padding: CGFloat = AppSpacing.lg
-    @ViewBuilder let content: () -> Content
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: SmartHomeTheme.cardRadius, style: .continuous)
-    }
-
-    var body: some View {
-        content()
-            .padding(padding)
-            .background(Color.smartCream, in: shape)
-            .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
-    }
-}
-
 // MARK: - Radial icon glow
 
-/// The lamp-photo mood behind a device icon: a soft amber radial glow.
-/// Decorative only — always paired with a real icon on top.
+/// A soft radial glow behind a device icon — decorative only, always paired
+/// with a real icon on top. Tinted per surface (device cards use the app
+/// accent, climate uses orange, cameras blue); the low opacity reads on both
+/// the light and dark mood grounds.
 struct SmartRadialGlow: View {
     var diameter: CGFloat = 120
+    var color: Color = .accentColor
+
+    /// Glow opacity at the glow's center (fades to clear).
+    private static let opacity: Double = 0.25
 
     var body: some View {
         Circle()
             .fill(RadialGradient(
-                colors: [Color.smartAmber.opacity(SmartHomeTheme.glowOpacity), .clear],
+                colors: [color.opacity(Self.opacity), .clear],
                 center: .center,
                 startRadius: 0,
                 endRadius: diameter / 2))
@@ -188,9 +78,10 @@ struct SmartRadialGlow: View {
 
 // MARK: - Vertical pill toggle
 
-/// The reference's toggle: a vertical ~30×52 capsule. Off — translucent
-/// 10% white with the dot resting at the bottom; on — amber-filled with a
-/// white dot at the top. The dot travels with a `.snappy` spring (frozen
+/// The smart-home toggle: a vertical ~30×52 capsule. Off — a quiet primary
+/// tint with the dot resting at the bottom; on — accent-filled with the
+/// white dot at the top (the system switch's own color contract, so it
+/// reads on both schemes). The dot travels with a `.snappy` spring (frozen
 /// under Reduce Motion). Exposed to accessibility as a switch.
 struct SmartPillToggle: View {
     @Binding var isOn: Bool
@@ -201,6 +92,7 @@ struct SmartPillToggle: View {
     @Environment(\.isEnabled) private var isEnabled
 
     private static let dotSize: CGFloat = 22
+    private static let size = CGSize(width: 30, height: 52)
 
     var body: some View {
         Button {
@@ -210,15 +102,15 @@ struct SmartPillToggle: View {
             }
         } label: {
             Capsule(style: .continuous)
-                .fill(isOn ? Color.smartAmber : Color.white.opacity(0.10))
+                .fill(isOn ? Color.accentColor : Color.primary.opacity(AppOpacity.tintedFill))
                 .overlay(alignment: isOn ? .top : .bottom) {
                     Circle()
                         .fill(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                         .frame(width: Self.dotSize, height: Self.dotSize)
                         .padding(4)
                 }
-                .frame(width: SmartHomeTheme.pillToggleSize.width,
-                       height: SmartHomeTheme.pillToggleSize.height)
+                .frame(width: Self.size.width, height: Self.size.height)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -229,65 +121,14 @@ struct SmartPillToggle: View {
     }
 }
 
-// MARK: - Selector chip
+// MARK: - "+" chip
 
-/// The reference's filter/selector chip, rounded ~14pt: selected — cream
-/// fill, dark ink text, a subtle lift shadow; unselected — 8%-white glass
-/// with warm-white text.
-struct SmartChip: View {
-    let label: String
-    /// Optional leading SF Symbol (scene chips carry a sparkle).
-    var systemImage: String? = nil
-    let isSelected: Bool
-    var action: () -> Void
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius, style: .continuous)
-    }
-
-    var body: some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            HStack(spacing: AppSpacing.xxs) {
-                if let systemImage {
-                    Image(systemName: systemImage)
-                        .font(AppFont.scaled(11, weight: .semibold))
-                }
-                Text(verbatim: label)
-                    .font(AppFont.scaled(13, weight: isSelected ? .semibold : .medium))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(isSelected ? Color.smartInk : Color.smartTextPrimary)
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.sm + 1)
-            .background {
-                if isSelected {
-                    shape.fill(Color.smartCream)
-                } else {
-                    shape.fill(.ultraThinMaterial)
-                    shape.fill(Color.smartGlassFill)
-                }
-            }
-            .clipShape(shape)
-            .shadow(color: .black.opacity(isSelected ? 0.16 : 0), radius: 8, y: 3)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: label))
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    }
-}
-
-/// The square-ish "+" glass chip that ends the chip row — a real control:
-/// it starts the existing Connect-HomeKit flow (adding devices happens in
-/// the Home app; this is the app's honest entry point to more devices).
+/// The square-ish "+" glass chip that ends the room-chip row — a real
+/// control: it starts the existing Connect-HomeKit flow (adding devices
+/// happens in the Home app; this is the app's honest entry point to more
+/// devices).
 struct SmartPlusChip: View {
     var action: () -> Void
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius, style: .continuous)
-    }
 
     var body: some View {
         Button {
@@ -296,13 +137,9 @@ struct SmartPlusChip: View {
         } label: {
             Image(systemName: "plus")
                 .font(AppFont.scaled(13, weight: .semibold))
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
                 .frame(width: 34, height: 34)
-                .background {
-                    shape.fill(.ultraThinMaterial)
-                    shape.fill(Color.smartGlassFill)
-                }
-                .clipShape(shape)
+                .glassRoundedRect(AppRadius.md)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("sh_connect_homekit"))
@@ -311,9 +148,9 @@ struct SmartPlusChip: View {
 
 // MARK: - Thin level slider (brightness)
 
-/// The reference's brightness control: a 4pt track with a 22pt white round
-/// thumb. Commits ONCE per interaction (drag end / accessibility step) —
-/// the same write discipline as the rest of the S3 surface.
+/// The brightness control: a 4pt track with a 22pt white round thumb.
+/// Commits ONCE per interaction (drag end / accessibility step) — the same
+/// write discipline as the rest of the device surface.
 struct SmartLevelSlider: View {
     /// 0…100 percent.
     @Binding var percent: Double
@@ -333,10 +170,10 @@ struct SmartLevelSlider: View {
             let fraction = min(1, max(0, percent / 100))
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.white.opacity(0.15))
+                    .fill(Color.primary.opacity(AppOpacity.tintedFill))
                     .frame(height: Self.trackHeight)
                 Capsule()
-                    .fill(Color.smartAmber)
+                    .fill(Color.accentColor)
                     .frame(width: Self.thumbSize / 2 + fraction * usable,
                            height: Self.trackHeight)
                 Circle()
@@ -378,8 +215,8 @@ struct SmartLevelSlider: View {
 
 // MARK: - Schedule card (shared: device page + climate page)
 
-/// The reference's Schedule card: title + pill toggle, and when ON, the
-/// From/To time chips. Wiring is real per provider:
+/// The Schedule card: title + pill toggle, and when ON, the From/To time
+/// chips. Wiring is real per provider:
 /// - HomeKit accessories with power → a daily `HMTimerTrigger` pair on the
 ///   accessory's home (on at From, off at To) via `SmartScheduleService`.
 /// - IoT relays → the schedule persists locally and is evaluated by a
@@ -399,19 +236,19 @@ struct SmartScheduleCard: View {
     @State private var applyFailed = false
 
     var body: some View {
-        SmartGlassCard {
+        GlassCard(padding: AppSpacing.lg) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack(alignment: .center, spacing: AppSpacing.sm) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("sh_schedule")
                             .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
                         if case .iotRelay = device.backing {
                             // Honest: the relay schedule runs only while
                             // the app itself is running.
                             Text("sh_schedule_note_iot")
                                 .font(AppFont.caption2)
-                                .foregroundStyle(Color.smartTextSecondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     Spacer(minLength: 0)
@@ -452,26 +289,19 @@ struct SmartScheduleCard: View {
 
     private func timeChip(titleKey: LocalizedStringKey,
                           minutes: Binding<Int>) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SmartHomeTheme.chipRadius,
-                                     style: .continuous)
-        return HStack(spacing: AppSpacing.xs) {
+        HStack(spacing: AppSpacing.xs) {
             Text(titleKey)
                 .font(AppFont.caption)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
             DatePicker("", selection: dateBinding(minutes),
                        displayedComponents: .hourAndMinute)
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .tint(Color.smartAmber)
                 .accessibilityLabel(Text(titleKey))
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.vertical, AppSpacing.xxs)
-        .background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        .liquidGlass(cornerRadius: AppRadius.md)
         .disabled(isApplying)
     }
 
@@ -525,6 +355,37 @@ struct SmartScheduleCard: View {
                 applyFailed = true
                 draft = service.schedule(for: device.id) ?? .default
             }
+        }
+    }
+}
+
+// MARK: - Legacy shims (retired twin files only)
+//
+// The unreferenced Digital Twin files (Twin3DView, TwinInsightsSheet, …)
+// still compile against these two names. They now render the native
+// language too, so nothing bronze survives in code that builds; both shims
+// go away with the twin cleanup pass. Live surfaces use `appBackground`
+// and `GlassCard` directly — never these.
+
+/// LEGACY: the old warm photo backdrop. Now the living mood backdrop; the
+/// photo parameter is ignored (the mood ground is the app-wide backdrop).
+struct SmartHomeBackdrop: View {
+    let photoSource: String?
+
+    var body: some View {
+        AppBackdrop()
+            .ignoresSafeArea()
+    }
+}
+
+/// LEGACY: the old warm glass card. Now exactly `GlassCard`.
+struct SmartGlassCard<Content: View>: View {
+    var padding: CGFloat = AppSpacing.lg
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        GlassCard(padding: padding) {
+            content()
         }
     }
 }

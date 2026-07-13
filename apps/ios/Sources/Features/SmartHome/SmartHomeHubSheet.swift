@@ -4,7 +4,7 @@ import HomeKit
 // MARK: - Home hub (the dashboard hamburger's destination)
 //
 // The Apple-Home-style control center presented by the dashboard's top-left
-// menu button: one warm-glass sheet that carries the global search (the
+// menu button: one Liquid Glass sheet that carries the global search (the
 // hamburger's previous — and preserved — job), the all-devices list, the
 // cameras page, the home's rooms (with honest per-room device counts and
 // real room creation), and real HomeKit accessory pairing.
@@ -121,7 +121,7 @@ struct SmartHomeHubSheet: View {
 
     var body: some View {
         ZStack {
-            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     topBar
@@ -146,7 +146,6 @@ struct SmartHomeHubSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .environment(\.colorScheme, .dark)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -195,7 +194,7 @@ struct SmartHomeHubSheet: View {
         HStack(alignment: .center, spacing: AppSpacing.sm) {
             Text("hub_title")
                 .font(AppFont.scaled(26, weight: .light))
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
             Button {
@@ -204,7 +203,7 @@ struct SmartHomeHubSheet: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
@@ -216,18 +215,17 @@ struct SmartHomeHubSheet: View {
     // MARK: Search row (the preserved hamburger job, top of the hub)
 
     private var searchRow: some View {
-        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        return Button {
+        Button {
             HapticFeedback.impact(.light)
             activeSheet = .search
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "magnifyingglass")
                     .font(AppFont.subheadline)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
                 Text("hub_search")
                     .font(AppFont.scaled(16))
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, AppSpacing.base)
@@ -235,11 +233,7 @@ struct SmartHomeHubSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(SmartCardPressStyle())
-        .background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        .liquidGlass(cornerRadius: AppRadius.lg)
         .accessibilityHint(Text("hub_search_hint"))
     }
 
@@ -249,7 +243,7 @@ struct SmartHomeHubSheet: View {
         if hubRooms.isEmpty {
             Text("hub_rooms_empty")
                 .font(AppFont.caption)
-                .foregroundStyle(Color.smartTextSecondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, AppSpacing.xxs)
         } else {
             ForEach(hubRooms) { room in
@@ -422,34 +416,32 @@ struct SmartHomeHubSheet: View {
                         detail: Text? = nil, showsChevron: Bool = true,
                         showsProgress: Bool = false,
                         action: @escaping () -> Void) -> some View {
-        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        return Button {
+        Button {
             HapticFeedback.impact(.light)
             action()
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: icon)
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 26)
                 title
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Spacer(minLength: AppSpacing.sm)
                 if showsProgress {
                     ProgressView()
-                        .tint(Color.smartAmber)
                 } else {
                     if let detail {
                         detail
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     if showsChevron {
                         Image(systemName: "chevron.right")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -458,11 +450,7 @@ struct SmartHomeHubSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(SmartCardPressStyle())
-        .background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        .liquidGlass(cornerRadius: AppRadius.lg)
         .accessibilityElement(children: .combine)
     }
 
@@ -471,7 +459,7 @@ struct SmartHomeHubSheet: View {
             .font(AppFont.label)
             .kerning(1.1)
             .textCase(.uppercase)
-            .foregroundStyle(Color.smartTextSecondary)
+            .foregroundStyle(.secondary)
             .padding(.top, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.xxs)
             .accessibilityAddTraits(.isHeader)

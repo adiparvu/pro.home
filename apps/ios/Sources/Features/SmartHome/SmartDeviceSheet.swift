@@ -1,13 +1,13 @@
 import SwiftUI
 import HomeKit
 
-// MARK: - Device hero page (Smart Home S3 — warm glass skin)
+// MARK: - Device hero page (Smart Home S3 — Liquid Glass)
 //
 // The single-device control surface, presented as a sheet from the S2
-// dashboard: warm photo backdrop, a back affordance plus device-picker
+// dashboard: the app's mood backdrop, a back affordance plus device-picker
 // pills (the room's devices of the same kind — real names, the selected
-// one cream), the light-weight device name, the big glowing hero icon,
-// then the control cards. Every control section is strictly
+// one accent-tinted), the light-weight device name, the big glowing hero
+// icon, then the control cards. Every control section is strictly
 // capability-gated (honesty law): a section renders ONLY when its
 // capability is in `device.capabilities`, so a relay never grows a
 // brightness slider and a sensor never grows a power toggle.
@@ -36,7 +36,6 @@ struct SmartDeviceSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(PropertyService.self) private var propertyService
 
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
@@ -93,7 +92,7 @@ struct SmartDeviceSheet: View {
     var body: some View {
         let current = live
         ZStack {
-            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.lg) {
                     topBar
@@ -116,7 +115,6 @@ struct SmartDeviceSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .environment(\.colorScheme, .dark)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -143,7 +141,7 @@ struct SmartDeviceSheet: View {
             } label: {
                 Image(systemName: "chevron.backward")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
@@ -154,8 +152,8 @@ struct SmartDeviceSheet: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.sm) {
                         ForEach(siblings) { sibling in
-                            SmartChip(label: sibling.name,
-                                      isSelected: sibling.id == live.id) {
+                            GlassFilterChip(label: sibling.name,
+                                            isSelected: sibling.id == live.id) {
                                 withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) {
                                     selectedID = sibling.id
                                 }
@@ -176,13 +174,13 @@ struct SmartDeviceSheet: View {
         VStack(spacing: AppSpacing.xxs) {
             Text(verbatim: device.name)
                 .font(AppFont.scaled(26, weight: .light))
-                .foregroundStyle(Color.smartTextPrimary)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
             if let room = device.room, !room.isEmpty {
                 Text(verbatim: room)
                     .font(AppFont.caption)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
 
             if !device.isReachable {
@@ -203,14 +201,14 @@ struct SmartDeviceSheet: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Hero — the big icon over the warm radial glow
+    // MARK: Hero — the big icon over the radial glow
 
     private func hero(_ device: SmartDevice) -> some View {
         ZStack {
-            SmartRadialGlow(diameter: 190)
+            SmartRadialGlow(diameter: 190, color: device.kind.accent)
             Image(systemName: device.kind.icon)
                 .font(AppFont.scaled(64, weight: .medium))
-                .foregroundStyle(Color.smartAmber)
+                .foregroundStyle(device.kind.accent)
         }
         .frame(height: 130)
         .accessibilityHidden(true)
@@ -219,14 +217,14 @@ struct SmartDeviceSheet: View {
     // MARK: .power — pill toggle row (optimistic hold)
 
     private func powerCard(_ device: SmartDevice) -> some View {
-        SmartGlassCard(padding: AppSpacing.base) {
+        GlassCard(padding: AppSpacing.base) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "power")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.smartAmber)
+                    .foregroundStyle(Color.accentColor)
                 Text("sh_power")
                     .font(AppFont.scaled(16, weight: .semibold))
-                    .foregroundStyle(Color.smartTextPrimary)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 0)
                 SmartPillToggle(isOn: powerBinding(device),
                                 accessibilityLabel: Text("sh_power"))
@@ -252,16 +250,16 @@ struct SmartDeviceSheet: View {
 
     private func brightnessCard(_ device: SmartDevice) -> some View {
         let percent = brightnessDraft ?? Double(smartHome.brightness(of: device) ?? 0)
-        return SmartGlassCard(padding: AppSpacing.base) {
+        return GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack {
                     Text("sh_light_brightness")
                         .font(AppFont.scaled(16, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Spacer(minLength: AppSpacing.sm)
                     Text(verbatim: "\(Int(percent.rounded()))%")
                         .font(AppFont.metricLarge)
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                         .accessibilityHidden(true) // the slider's value speaks
@@ -288,18 +286,18 @@ struct SmartDeviceSheet: View {
 
     private func softLightCard(_ device: SmartDevice) -> some View {
         let degrees = hueDraft ?? smartHome.hue(of: device) ?? 0
-        return SmartGlassCard(padding: AppSpacing.base) {
+        return GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack {
                     Text("sh_soft_light")
                         .font(AppFont.scaled(16, weight: .semibold))
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                     Spacer(minLength: AppSpacing.sm)
                     // Live swatch of the selected hue.
                     Circle()
                         .fill(Color(hue: degrees / 360, saturation: 1, brightness: 1))
                         .frame(width: 22, height: 22)
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5))
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 0.5))
                         .accessibilityHidden(true)
                 }
                 HueSpectrumSlider(
@@ -319,18 +317,18 @@ struct SmartDeviceSheet: View {
 
     private func climateCard(_ device: SmartDevice) -> some View {
         let target = targetDraft ?? smartHome.targetTemperature(of: device) ?? Self.fallbackTarget
-        return SmartGlassCard(padding: AppSpacing.lg) {
+        return GlassCard(padding: AppSpacing.lg) {
             VStack(spacing: AppSpacing.base) {
                 // Shown only when the thermostat actually reports one.
                 if let current = smartHome.currentTemperature(of: device) {
                     VStack(spacing: AppSpacing.xxs) {
                         Text(verbatim: Self.temperatureText(current))
                             .font(AppFont.metricLarge)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .monospacedDigit()
                         Text("sh_climate_current")
                             .font(AppFont.label)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                     }
                     .accessibilityElement(children: .combine)
@@ -345,7 +343,7 @@ struct SmartDeviceSheet: View {
 
                     Text(verbatim: Self.temperatureText(target))
                         .font(AppFont.scaled(40, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(Color.brandWarning)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                         .lineLimit(1)
@@ -363,7 +361,7 @@ struct SmartDeviceSheet: View {
 
                 Text("sh_climate_target")
                     .font(AppFont.caption2)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
         }
@@ -374,7 +372,7 @@ struct SmartDeviceSheet: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(AppFont.scaled(20, weight: .semibold))
-                .foregroundStyle(enabled ? Color.smartTextPrimary : Color.smartTextSecondary)
+                .foregroundStyle(enabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(width: 52, height: 52)
                 .glassCircle()
         }
@@ -419,15 +417,15 @@ struct SmartDeviceSheet: View {
                 let currentName = assignedRoomName
                     ?? accessory.room?.name
                     ?? String(localized: "hub_room_unassigned")
-                SmartGlassCard(padding: AppSpacing.base) {
+                GlassCard(padding: AppSpacing.base) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(spacing: AppSpacing.md) {
                             Image(systemName: "door.left.hand.closed")
                                 .font(AppFont.headline)
-                                .foregroundStyle(Color.smartAmber)
+                                .foregroundStyle(Color.accentColor)
                             Text("hub_device_room")
                                 .font(AppFont.scaled(16, weight: .semibold))
-                                .foregroundStyle(Color.smartTextPrimary)
+                                .foregroundStyle(.primary)
                             Spacer(minLength: AppSpacing.sm)
                             Menu {
                                 ForEach(rooms, id: \.uniqueIdentifier) { room in
@@ -449,7 +447,7 @@ struct SmartDeviceSheet: View {
                                     Image(systemName: "chevron.up.chevron.down")
                                         .font(AppFont.captionStrong)
                                 }
-                                .foregroundStyle(Color.smartTextSecondary)
+                                .foregroundStyle(.secondary)
                             }
                             .disabled(isAssigningRoom)
                             .accessibilityLabel(Text("hub_device_room"))
@@ -489,23 +487,23 @@ struct SmartDeviceSheet: View {
     // MARK: .reading — live sensor value, large
 
     private func readingCard(_ device: SmartDevice) -> some View {
-        SmartGlassCard(padding: AppSpacing.lg) {
+        GlassCard(padding: AppSpacing.lg) {
             VStack(spacing: AppSpacing.xs) {
                 Text("sh_sensor_reading")
                     .font(AppFont.label)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
                     .textCase(.uppercase)
                 if let value = device.readingValue {
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                         Text(verbatim: value.formatted(.number.precision(.fractionLength(0...1))))
                             .font(AppFont.scaled(40, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.smartAmber)
+                            .foregroundStyle(Color.accentColor)
                             .monospacedDigit()
                             .contentTransition(reduceMotion ? .identity : .numericText())
                         if let unit = device.readingUnit, !unit.isEmpty {
                             Text(verbatim: unit)
                                 .font(AppFont.title3)
-                                .foregroundStyle(Color.smartTextSecondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .accessibilityElement(children: .combine)
@@ -514,7 +512,7 @@ struct SmartDeviceSheet: View {
                     // sensors means offline; say so instead of inventing one.
                     Text(verbatim: "—")
                         .font(AppFont.scaled(40, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.smartTextSecondary)
+                        .foregroundStyle(.secondary)
                         .accessibilityLabel(Text("sh_unreachable"))
                 }
             }
@@ -528,7 +526,7 @@ struct SmartDeviceSheet: View {
 // Presented from the dashboard's "See all" row (kind == nil → every device
 // in the filtered room) — and reusable as the per-kind list it originally
 // was: a simple glass row list (name, room, honest state text) over the
-// warm backdrop that drills into the hero page. Devices re-resolve from
+// mood backdrop that drills into the hero page. Devices re-resolve from
 // the service on every render, so rows stay live.
 
 struct SmartHomeDeviceListSheet: View {
@@ -538,7 +536,6 @@ struct SmartHomeDeviceListSheet: View {
     let room: String?
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(PropertyService.self) private var propertyService
     @State private var selectedDevice: SmartDevice? = nil
 
     private let smartHome = SmartHomeService.shared
@@ -555,7 +552,7 @@ struct SmartHomeDeviceListSheet: View {
 
     var body: some View {
         ZStack {
-            SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl)
+            appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.sm) {
@@ -565,7 +562,7 @@ struct SmartHomeDeviceListSheet: View {
                         } label: {
                             Image(systemName: "chevron.backward")
                                 .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color.smartTextPrimary)
+                                .foregroundStyle(.primary)
                                 .frame(width: 36, height: 36)
                         }
                         .buttonStyle(.plain)
@@ -575,7 +572,7 @@ struct SmartHomeDeviceListSheet: View {
                         Spacer(minLength: 0)
                         title
                             .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(Color.smartTextPrimary)
+                            .foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         // Symmetry spacer matching the back button's width.
                         Color.clear.frame(width: 36, height: 36)
@@ -588,7 +585,7 @@ struct SmartHomeDeviceListSheet: View {
                         // removed); say so instead of an empty scroll.
                         Text("sh_list_empty")
                             .font(AppFont.caption)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.top, AppSpacing.xl)
                     } else {
@@ -600,7 +597,6 @@ struct SmartHomeDeviceListSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .environment(\.colorScheme, .dark)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
@@ -610,29 +606,28 @@ struct SmartHomeDeviceListSheet: View {
     }
 
     private func deviceRow(_ device: SmartDevice) -> some View {
-        let shape = RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-        return Button {
+        Button {
             HapticFeedback.impact(.light)
             selectedDevice = device
         } label: {
             HStack(spacing: AppSpacing.md) {
                 ZStack {
-                    SmartRadialGlow(diameter: 44)
+                    SmartRadialGlow(diameter: 44, color: device.kind.accent)
                     Image(systemName: device.kind.icon)
                         .font(AppFont.subheadline)
-                        .foregroundStyle(Color.smartAmber)
+                        .foregroundStyle(device.kind.accent)
                 }
                 .frame(width: 34, height: 34)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: device.name)
                         .font(AppFont.subheadline)
-                        .foregroundStyle(Color.smartTextPrimary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     if let room = device.room, !room.isEmpty {
                         Text(verbatim: room)
                             .font(AppFont.caption2)
-                            .foregroundStyle(Color.smartTextSecondary)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                 }
@@ -643,18 +638,14 @@ struct SmartHomeDeviceListSheet: View {
 
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.smartTextSecondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background {
-            shape.fill(.ultraThinMaterial)
-            shape.fill(Color.smartGlassFill)
-        }
-        .clipShape(shape)
+        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 
     /// Honest state, in priority order: unreachable → live reading →
@@ -668,11 +659,12 @@ struct SmartHomeDeviceListSheet: View {
         } else if let value = device.readingValue {
             Text(verbatim: smartReadingText(value, unit: device.readingUnit))
                 .font(AppFont.metric)
-                .foregroundStyle(Color.smartAmber)
+                .foregroundStyle(Color.accentColor)
         } else if let isOn = device.isOn {
             Text(LocalizedStringKey(isOn ? "sh_state_on" : "sh_state_off"))
                 .font(AppFont.captionEmphasis)
-                .foregroundStyle(isOn ? Color.smartAmber : Color.smartTextSecondary)
+                .foregroundStyle(isOn ? AnyShapeStyle(Color.accentColor)
+                                      : AnyShapeStyle(.secondary))
         }
     }
 }

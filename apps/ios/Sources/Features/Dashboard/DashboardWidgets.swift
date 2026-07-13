@@ -53,10 +53,10 @@ extension DashboardView {
         }
     }
 
-    // Widget accents since the warm reskin: DECORATIVE icon tints share the
-    // page's single smartAmber accent; SEMANTIC state colors (danger red,
-    // warning orange, success green) are kept exactly — they carry meaning,
-    // not decoration, and all read on the dark backdrop.
+    // Widget accents since the Liquid Glass reskin: DECORATIVE icon tints
+    // share the app accent; SEMANTIC state colors (danger red, warning
+    // orange, success green) are kept exactly — they carry meaning, not
+    // decoration, and read on both mood schemes.
     @ViewBuilder
     func widgetView(for config: HomeWidgetConfig) -> some View {
         let type = config.type
@@ -65,7 +65,7 @@ extension DashboardView {
         case .tasks:
             HomeWidget(
                 icon: "checklist",
-                iconColor: taskService.overdueCount > 0 ? .red : Color.smartAmber,
+                iconColor: taskService.overdueCount > 0 ? .red : Color.accentColor,
                 title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? String(localized: "urgent") : String(localized: "active"),
@@ -86,7 +86,7 @@ extension DashboardView {
             HomeWidget(
                 icon: "doc.fill",
                 iconColor: documentService.expiringDocs.isEmpty
-                    ? Color.smartAmber : .orange,
+                    ? Color.accentColor : .orange,
                 title: "Documents",
                 value: documentService.expiringDocs.isEmpty
                     ? "\(documentService.documents.count)"
@@ -98,7 +98,7 @@ extension DashboardView {
         case .family:
             HomeWidget(
                 icon: "person.2.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Family",
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? String(localized: "member") : String(localized: "members")
@@ -116,7 +116,7 @@ extension DashboardView {
         case .inventory:
             HomeWidget(
                 icon: "shippingbox.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
                 subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
@@ -125,7 +125,7 @@ extension DashboardView {
         case .contractors:
             HomeWidget(
                 icon: "hammer.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Contractors",
                 value: "\(contractorService.contractors.count)",
                 subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
@@ -148,7 +148,7 @@ extension DashboardView {
                 // Half size: a compact tile that opens the forecast.
                 HomeWidget(
                     icon: "cloud.sun.fill",
-                    iconColor: Color.smartAmber,
+                    iconColor: Color.accentColor,
                     title: "Weather",
                     value: propertyService.primary?.city ?? "–",
                     subtitle: String(localized: "Tap for forecast")
@@ -163,7 +163,7 @@ extension DashboardView {
             HomeWidget(
                 icon: "leaf.fill",
                 iconColor: plantService.plantsNeedingWater.isEmpty
-                    ? Color(red: 0.25, green: 0.78, blue: 0.45)
+                    ? Color.brandSuccess
                     : .orange,
                 title: "Plants",
                 value: "\(plantService.plants.count)",
@@ -183,7 +183,7 @@ extension DashboardView {
             } else {
                 HomeWidget(
                     icon: "calendar",
-                    iconColor: Color.smartAmber,
+                    iconColor: Color.accentColor,
                     title: "Calendar",
                     value: "\(Calendar.current.component(.day, from: Date()))",
                     subtitle: Date().formatted(.dateTime.weekday(.wide))
@@ -197,7 +197,7 @@ extension DashboardView {
         case .deliveries:
             HomeWidget(
                 icon: "shippingbox.and.arrow.backward.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Deliveries",
                 value: "\(deliveryService.activeDeliveries.count)",
                 subtitle: String(localized: "in transit"),
@@ -207,7 +207,7 @@ extension DashboardView {
         case .shopping:
             HomeWidget(
                 icon: "cart.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Shopping list",
                 value: "\(supplyService.totalPending)",
                 subtitle: String(localized: "to buy")
@@ -216,7 +216,7 @@ extension DashboardView {
         case .journal:
             HomeWidget(
                 icon: "photo.stack.fill",
-                iconColor: Color.smartAmber,
+                iconColor: Color.accentColor,
                 title: "Photo Journal",
                 value: "\(photoJournalService.entries.count)",
                 subtitle: String(localized: "memories")

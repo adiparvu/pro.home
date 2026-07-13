@@ -161,6 +161,13 @@ extension Color {
 
 // MARK: - Smart-home warm glass theme
 
+// DEPRECATED (Liquid Glass re-skin): the live smart-home surfaces moved to
+// the app's native adaptive glass language (`liquidGlass`/`GlassCard`,
+// `.primary`/`.secondary`, the mood backdrop) and no longer read these
+// tokens. Only the retired, unreferenced Digital Twin files still compile
+// against `SmartHomeTheme`/`smart*`; this whole block is deleted with them
+// in the twin cleanup pass. Do not use in new code.
+
 /// Tokens for the smart-home surfaces (home tab, device page, climate page)
 /// — the one deliberately dark-warm skin in the app: a blurred property
 /// photo under a warm-brown overlay, near-white warm text, cream contrast
