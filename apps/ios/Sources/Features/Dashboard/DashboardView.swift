@@ -72,6 +72,21 @@ struct DashboardView: View {
             if let pid = propertyService.primary?.id {
                 await zoneService.load(propertyId: pid)
             }
+            // Feed the temperature dial from the property's stored
+            // coordinates. The shared PropertyWeather cache is UserDefaults —
+            // not observable — so a write landing after the first render
+            // never re-rendered the dial; WeatherKitService IS observable but
+            // only the weather widget used to populate it. Refresh the cache
+            // AND mirror into the observable service so the dial updates the
+            // moment a reading lands. Both paths no-op when fresh.
+            if let lat = propertyService.primary?.latitude,
+               let lon = propertyService.primary?.longitude {
+                await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
+                if WeatherKitService.shared.currentWeather == nil {
+                    await WeatherKitService.shared.fetch(
+                        for: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                }
+            }
         }
         .task(id: auth.session?.user.id) {
             guard let uid = auth.session?.user.id else { return }
