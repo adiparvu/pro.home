@@ -164,35 +164,10 @@ extension PlantDetailSheet {
 
     var editFields: some View {
         VStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("EMOJI")
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
-                    ForEach(Plant.emojiOptions, id: \.self) { emoji in
-                        Button {
-                            editedPlant.emoji = emoji
-                            HapticFeedback.selection()
-                        } label: {
-                            Text(emoji)
-                                .font(AppFont.scaled(26))
-                                .frame(width: 40, height: 40)
-                                .background(
-                                    editedPlant.emoji == emoji
-                                        ? Color.accentColor.opacity(0.18)
-                                        : Color.primary.opacity(AppOpacity.hairline),
-                                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .strokeBorder(
-                                            editedPlant.emoji == emoji ? Color.accentColor : Color.clear,
-                                            lineWidth: 2
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            // The shared searchable picker (Components/EmojiPickerField):
+            // same favorites strip as the add form, plus RO/EN search and
+            // the full sectioned nature catalog.
+            EmojiPickerField(selection: $editedPlant.emoji, favorites: Plant.emojiOptions)
 
             VStack(alignment: .leading, spacing: 8) {
                 fieldLabel("NAME *")

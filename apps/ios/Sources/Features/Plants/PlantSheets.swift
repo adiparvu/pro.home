@@ -177,47 +177,12 @@ struct AddPlantSheet: View {
 
     // MARK: Emoji picker
 
-    /// A catalog pick may carry an emoji outside the preset strip (🍅, 🍎…);
-    /// surface it as the first, selected option instead of losing it.
-    private var emojiChoices: [String] {
-        Plant.emojiOptions.contains(selectedEmoji)
-            ? Plant.emojiOptions
-            : [selectedEmoji] + Plant.emojiOptions
-    }
-
+    /// The shared searchable picker (Components/EmojiPickerField). It keeps
+    /// the historical 16-emoji strip as favorites, and a catalog pick that
+    /// carries an emoji outside the strip (🍅, 🍎…) still surfaces as the
+    /// first, selected tile instead of being lost.
     private var emojiPickerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("EMOJI")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(emojiChoices, id: \.self) { emoji in
-                        Button {
-                            selectedEmoji = emoji
-                            HapticFeedback.selection()
-                        } label: {
-                            Text(emoji)
-                                .font(AppFont.scaled(30))
-                                .frame(width: 52, height: 52)
-                                .background(
-                                    selectedEmoji == emoji
-                                        ? Color.accentColor.opacity(0.15)
-                                        : Color.primary.opacity(AppOpacity.hairline),
-                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                        .strokeBorder(
-                                            selectedEmoji == emoji ? Color.accentColor : Color.clear,
-                                            lineWidth: 2
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 1)
-            }
-        }
+        EmojiPickerField(selection: $selectedEmoji, favorites: Plant.emojiOptions)
     }
 
     // MARK: Plant photo
