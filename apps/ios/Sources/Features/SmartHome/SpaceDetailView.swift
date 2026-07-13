@@ -2,8 +2,11 @@ import SwiftUI
 
 // MARK: - Space detail page (Estate OS E2 — warm glass skin)
 //
-// The ONE template every space kind shares, presented as a sheet from the
-// dashboard's "Domeniul" strip. The scene leads: the zone's own photo
+// The ONE template every space kind shares — presentation-agnostic: a
+// sheet from the dashboard's "Domeniul" strip (the original contract,
+// unchanged) or a NavigationStack push from the Spaces tab (`presentation:
+// .push`, which hides the system bar and drops the tab-switching menu
+// entry — from tab 2 it would route to itself). The scene leads: the zone's own photo
 // through the SmartHomeBackdrop pipeline (or the kind's warm scene gradient
 // when no photo exists yet), ~140pt of pure breathing scene, then the space
 // NAME floating free over it — no card, no chenar — in the app's light
@@ -36,8 +39,14 @@ import SwiftUI
 // open page the moment the reload lands.
 
 struct SpaceDetailView: View {
-    /// Snapshot from the presenting strip — identity + fallback only.
+    /// How the page is on screen — `dismiss` handles both (sheet dismissal
+    /// / stack pop); the difference is chrome and the toolbar menu's
+    /// tab-switching entry.
+    enum Presentation { case sheet, push }
+
+    /// Snapshot from the presenting surface — identity + fallback only.
     let zone: PropertyZone
+    var presentation: Presentation = .sheet
 
     @Environment(\.dismiss) private var dismiss
     @Environment(PropertyZoneService.self) private var zoneService
@@ -45,7 +54,6 @@ struct SpaceDetailView: View {
     @Environment(AppRouter.self) private var router
 
     private let smartHome = SmartHomeService.shared
-    private let iot = IoTService.shared
 
     /// The live projection of the presented zone; falls back to the
     /// snapshot if the zone vanished mid-presentation.
@@ -55,15 +63,10 @@ struct SpaceDetailView: View {
 
     private var kind: SpaceKind { live.resolvedSpaceKind }
 
-    /// The zone's linked IoT sensors — sensors carry the zone NAME (set in
-    /// the IoT hub), so the match is the trimmed name, like everywhere else
-    /// the two worlds meet.
+    /// The zone's linked IoT sensors — the shared `SpaceCardModel` match
+    /// (trimmed zone name, like everywhere else the two worlds meet).
     private var zoneSensors: [IoTSensor] {
-        let name = live.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return [] }
-        return iot.sensors.filter {
-            $0.linkedZoneName.trimmingCharacters(in: .whitespacesAndNewlines) == name
-        }
+        SpaceCardModel.sensors(for: live)
     }
 
     /// Devices in this space across both providers, minus IoT sensors —
@@ -75,19 +78,10 @@ struct SpaceDetailView: View {
         }
     }
 
-    /// Plants needing water whose free-text location names this zone
-    /// (case/diacritic-insensitive) — the same name-based link the IoT
-    /// sensors use. Empty when plants aren't tied to this space.
+    /// Plants needing water located in this zone — the shared
+    /// `SpaceCardModel` name-based link. Empty when plants aren't tied here.
     private var thirstyPlants: [Plant] {
-        let name = live.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return [] }
-        return plantService.plantsNeedingWater.filter { plant in
-            guard let location = plant.location?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-                  !location.isEmpty else { return false }
-            return location.compare(name,
-                                    options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-        }
+        SpaceCardModel.thirstyPlants(in: live, plantService: plantService)
     }
 
     var body: some View {
@@ -111,8 +105,13 @@ struct SpaceDetailView: View {
             }
             .environment(\.colorScheme, .dark)
         }
+        // Sheet chrome (ignored when pushed).
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        // Push chrome: the page owns its top bar (the glass back circle),
+        // so the system navigation bar stays hidden on the stack.
+        .navigationBarBackButtonHidden(true)
+        .toolbar(presentation == .push ? .hidden : .automatic, for: .navigationBar)
     }
 
     // MARK: Backdrop — the zone's photo, else the kind's warm scene
@@ -174,12 +173,17 @@ struct SpaceDetailView: View {
                         .tag(option)
                     }
                 }
-                Button {
-                    HapticFeedback.impact(.light)
-                    dismiss()
-                    router.navigate(to: .twin)
-                } label: {
-                    Label("est_open_twin", systemImage: "square.stack.3d.up")
+                if presentation == .sheet {
+                    // From the home strip's sheet this jumps to tab 2 (the
+                    // Spaces page). Pushed FROM that tab it would route to
+                    // itself, so it doesn't exist there — no dead controls.
+                    Button {
+                        HapticFeedback.impact(.light)
+                        dismiss()
+                        router.navigate(to: .twin)
+                    } label: {
+                        Label("est_open_twin", systemImage: "square.split.2x2")
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -230,34 +234,18 @@ struct SpaceDetailView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// The pill's honest states, in priority order.
-    private enum SpaceStatus {
-        case ok, attention, noSignal, noSensors
-
-        var titleKey: LocalizedStringKey {
-            switch self {
-            case .ok:        "est_status_ok"
-            case .attention: "est_status_attention"
-            case .noSignal:  "est_status_no_signal"
-            case .noSensors: "est_status_no_sensors"
-            }
-        }
-    }
-
+    /// The pill's honest states — the shared `SpaceCardModel` priority
+    /// order (also the Spaces tab's card dot).
     private var status: SpaceStatus {
-        let sensors = zoneSensors
-        if sensors.isEmpty { return .noSensors }
-        if sensors.contains(where: \.isLiveAlerting) { return .attention }
-        if sensors.allSatisfy({ $0.value == nil }) { return .noSignal }
-        return .ok
+        SpaceCardModel.status(for: live)
     }
 
     private var statusPill: some View {
         let status = status
         return HStack(spacing: AppSpacing.xs) {
-            if status == .ok || status == .attention {
+            if let dot = status.dotColor {
                 Circle()
-                    .fill(status == .attention ? Color.brandWarning : Color.smartAmber)
+                    .fill(dot)
                     .frame(width: 6, height: 6)
             }
             Text(status.titleKey)

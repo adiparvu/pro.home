@@ -60,7 +60,7 @@ struct MainTabView: View {
 
             if visibleTabs.contains(.digitalTwin) {
                 NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
-                    .tabItem { Image(systemName: "square.stack.3d.up.fill") }
+                    .tabItem { Image(systemName: "square.split.2x2.fill") }
                     .tag(AppTab.digitalTwin)
             }
 

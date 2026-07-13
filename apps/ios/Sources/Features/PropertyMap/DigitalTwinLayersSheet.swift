@@ -1,3 +1,4 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 
 // MARK: - Digital Twin layers (Faza 3 — "straturi live")

@@ -1,11 +1,10 @@
 import SwiftUI
 
-// MARK: - Property Tab — map-first Digital Twin
+// MARK: - Property Tab — "Spațiile casei"
 //
-// "One map, many lenses": the aerial photo IS the Digital Twin screen.
-// Zones, object categories, lists and search are lenses layered over the
-// same map (see DigitalTwinView.lensBar) instead of separate pages — the
-// old Zones/Objects segments live on as sheets reachable from the map.
+// Tab 2 is the estate's spaces page (SpacesTabView, via the DigitalTwinView
+// shell). The map/3D Digital Twin was retired by final user decision — no
+// 3D, no maps, no digital twin of any kind.
 
 struct PropertyTabView: View {
     var body: some View {

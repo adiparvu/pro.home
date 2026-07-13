@@ -29,7 +29,7 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .home:        return "house.fill"
-        case .digitalTwin: return "square.stack.3d.up.fill"
+        case .digitalTwin: return "square.split.2x2.fill"
         case .tasks:       return "checklist"
         case .chat:        return "sparkles"
         case .settings:    return "person.crop.circle.fill"
@@ -39,7 +39,7 @@ enum AppTab: String, CaseIterable {
     var inactiveIcon: String {
         switch self {
         case .home:        return "house"
-        case .digitalTwin: return "square.stack.3d.up"
+        case .digitalTwin: return "square.split.2x2"
         case .tasks:       return "checklist"
         case .chat:        return "sparkles"
         case .settings:    return "person.crop.circle"
@@ -49,7 +49,7 @@ enum AppTab: String, CaseIterable {
     var label: String {
         switch self {
         case .home:        return String(localized: "Home")
-        case .digitalTwin: return String(localized: "Property")
+        case .digitalTwin: return String(localized: "Spaces")
         case .tasks:       return String(localized: "Tasks")
         case .chat:        return String(localized: "AI")
         case .settings:    return String(localized: "You")

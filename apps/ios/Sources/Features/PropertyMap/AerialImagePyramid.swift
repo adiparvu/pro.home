@@ -1,3 +1,4 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import UIKit
 
 // MARK: - Aerial photo pyramid

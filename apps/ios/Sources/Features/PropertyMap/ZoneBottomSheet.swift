@@ -1,3 +1,4 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 
 /// The zone inspector shown when a zone is tapped on the Digital Twin map.
