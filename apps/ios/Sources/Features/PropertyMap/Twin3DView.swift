@@ -2,33 +2,57 @@ import SwiftUI
 import SceneKit
 import UIKit
 
-// MARK: - Twin 3D (T1) — the Digital Twin's primary face
+// MARK: - Twin 3D (T1.5) — the Digital Twin's primary face, cinematic pass
 //
 // A real-time SceneKit maquette built from the property's OWN data: the same
 // bundled aerial photo the 2D canvas renders (via `AerialImagePyramid`)
-// textured onto a ground slab, and every zone with a drawn `imagePolygon`
-// extruded into a translucent glass prism in the zone's own color, capped by
-// a floating amber pin and a billboarded name label. Tapping a zone opens
-// its Estate OS space page (`SpaceDetailView`).
+// textured onto a physically-based ground slab, and every zone with a drawn
+// `imagePolygon` extruded into a glass prism in the zone's own color, capped
+// by a refined pin (torus ring + emissive orb) and a billboarded name label
+// on a dark capsule. Tapping a zone opens its Estate OS space page
+// (`SpaceDetailView`).
+//
+// T1.5 cinematic layer (all support types in `Twin3D+Materials.swift`):
+// - A mood sky (dawn/day/dusk/night) from an approximate, documented sun
+//   model — device clock + the property's stored latitude when available.
+//   The same tiny gradient doubles as `lightingEnvironment` for PBR fill.
+// - A low warm sun with soft deferred shadows so prisms and the plinth
+//   throw long shadows across the photo; moonlight at night.
+// - HDR + subtle bloom (emissives glow), gentle depth of field focused on
+//   the slab center, light vignetting. Motion blur stays 0 — gestures crisp.
+// - Fireflies/dust particles and a pond-prism shimmer, both OFF under
+//   Reduce Motion or Low Power Mode.
+// - `highlight(zoneID:style:)` — the Pulsul bridge (see the hook's docs).
 //
 // Honest by construction (honesty law):
 // - Nothing here is invented: no fake terrain, no guessed elevations. The
 //   ground is the real photo; prisms exist only for zones the user actually
 //   drew in 2D; heights are uniform because the app knows no real heights.
+// - The sun is an approximation and says so (`Twin3DSunModel` docs); the
+//   photo's north is unknown, so light direction is scene-relative mood,
+//   not a surveyed shadow claim.
 // - No aerial photo decodable → an empty state that says so; no zones → the
 //   photo slab alone plus a hint pointing at the 2D drawing flow.
+// - No invented alerts: the highlight hook ships dormant until a real
+//   threshold model exists.
 //
 // Performance:
 // - The scene graph is rebuilt ONLY when the data signature changes (image
-//   identity + zone geometry/colors), never per frame.
-// - `rendersContinuously = false`: SceneKit redraws only when the camera or
-//   graph mutates, so an idle twin costs ~0 GPU.
+//   identity + zone geometry/colors + effects flag + lighting-mood bucket),
+//   never per frame.
+// - `rendersContinuously` stays false — SceneKit still redraws while a
+//   CAAnimation (shimmer/highlight pulse) runs, then goes idle — EXCEPT
+//   while the particle system is active, which needs a live simulation.
+//   That power trade is gated: Reduce Motion or Low Power Mode → no
+//   particles, no continuous rendering, idle twin costs ~0 GPU again.
+// - Max 8 pin omni-lights (deterministic: first 8 zones); beyond that pins
+//   keep the emissive orb but add no light, so the forward renderer's
+//   per-object light budget is never blown.
 // - 4× MSAA, the default Metal renderer, and a fixed medium pyramid level
 //   (≥2048 px) as the ground texture — crisp without decoding the native
 //   drone photo into hundreds of MB of texture.
-// - No idle auto-orbit at all, so Reduce Motion has nothing to switch off;
-//   the only camera animation is the one-shot intro dolly, skipped under
-//   Reduce Motion.
+// - No idle auto-orbit at all; the only camera animation is the one-shot
+//   intro dolly, skipped under Reduce Motion.
 //
 // T1 scope note: only ZONES get 3D presence. Element/object pins, RoomPlan /
 // LiDAR volumes, and real heights are deliberately out (T2+).
@@ -59,8 +83,17 @@ struct Twin3DView: View {
         zoneService.zones.compactMap { zone in
             guard zone.hasImageShape else { return nil }
             return Twin3DZone(id: zone.id, name: zone.name,
-                              colorHex: zone.colorHex, points: zone.imagePoints)
+                              colorHex: zone.colorHex, points: zone.imagePoints,
+                              kind: zone.resolvedSpaceKind)
         }
+    }
+
+    /// Ambient life (fireflies, pond shimmer) is a pure garnish — the first
+    /// things to go when the user asked for less motion or the device asked
+    /// for less power. Checked per SwiftUI update, so toggling Low Power
+    /// Mode takes effect on the next re-render.
+    private var ambientEffectsAllowed: Bool {
+        !reduceMotion && !ProcessInfo.processInfo.isLowPowerModeEnabled
     }
 
     var body: some View {
@@ -80,6 +113,8 @@ struct Twin3DView: View {
                     aerialImage: image,
                     zones: zones3D,
                     animateIntro: !reduceMotion,
+                    ambientEffects: ambientEffectsAllowed,
+                    latitude: propertyService.primary?.latitude,
                     onZoneTap: { id in
                         guard let zone = zoneService.zones.first(where: { $0.id == id }) else { return }
                         HapticFeedback.impact(.light)
@@ -272,6 +307,9 @@ struct Twin3DZone: Equatable, Hashable {
     /// Normalized 0–1 image coordinates (top-left origin), exactly as the
     /// 2D canvas draws them via `NormPolygon`.
     let points: [ImagePoint]
+    /// The zone's resolved Estate OS kind — drives honest garnish only
+    /// (pond prisms shimmer), never invented geometry.
+    let kind: SpaceKind
 }
 
 // MARK: - SceneKit view (UIViewRepresentable)
@@ -280,6 +318,8 @@ private struct Twin3DSceneView: UIViewRepresentable {
     let aerialImage: UIImage
     let zones: [Twin3DZone]
     let animateIntro: Bool
+    let ambientEffects: Bool
+    let latitude: Double?
     let onZoneTap: (UUID) -> Void
 
     func makeCoordinator() -> Twin3DCoordinator {
@@ -298,14 +338,18 @@ private struct Twin3DSceneView: UIViewRepresentable {
 
         context.coordinator.attach(to: view)
         context.coordinator.rebuildIfNeeded(image: aerialImage, zones: zones,
-                                            animateIntro: animateIntro)
+                                            animateIntro: animateIntro,
+                                            ambientEffects: ambientEffects,
+                                            latitude: latitude)
         return view
     }
 
     func updateUIView(_ uiView: SCNView, context: Context) {
         context.coordinator.onZoneTap = onZoneTap
         context.coordinator.rebuildIfNeeded(image: aerialImage, zones: zones,
-                                            animateIntro: animateIntro)
+                                            animateIntro: animateIntro,
+                                            ambientEffects: ambientEffects,
+                                            latitude: latitude)
     }
 }
 
@@ -316,10 +360,49 @@ final class Twin3DCoordinator: NSObject {
     var onZoneTap: (UUID) -> Void
 
     private weak var scnView: SCNView?
-    /// Hash of (image identity + zone snapshots): the scene rebuilds only
-    /// when this changes — never per frame, never per SwiftUI render.
+    /// Hash of (image identity + zone snapshots + effects flag + lighting
+    /// mood bucket): the scene rebuilds only when this changes — never per
+    /// frame, never per SwiftUI render.
     private var sceneSignature: Int?
     private var hasBuiltOnce = false
+
+    // T1.5 cinematic state ---------------------------------------------------
+
+    /// Firefly particles need a live simulation loop, so while they exist
+    /// the view renders continuously — the ONE deliberate power trade of the
+    /// cinematic pass. Gated hard: Reduce Motion or Low Power Mode disables
+    /// the particles AND restores pure on-demand rendering. CAAnimations
+    /// (shimmer, highlight pulses) do NOT need this flag — SceneKit already
+    /// redraws on-demand while an animation is running.
+    private static let particlesRequireContinuousRendering = true
+
+    /// Max pins that carry a real omni light. SceneKit's forward renderer
+    /// evaluates every light hitting an object per draw; 8 tiny falloff-
+    /// limited omnis + sun + ambient stays comfortably inside the budget.
+    /// Zones beyond the cap keep the emissive orb (bloom still glows) but
+    /// add no light — deterministic, first-come by zone order.
+    private static let maxPinLights = 8
+
+    private static let highlightAnimationKey = "twin3d.highlight"
+    private static let shimmerAnimationKey = "twin3d.pondShimmer"
+
+    #if DEBUG
+    /// Preview switch for the Pulsul highlight pipeline: flip to true to see
+    /// the FIRST zone pulse `.warning` on launch. OFF by default and DEBUG-
+    /// only — there is no threshold model yet, so shipping any live trigger
+    /// would invent an alert (honesty law). Real wiring lands with Pulsul.
+    private static let debugHighlightPreview = false
+    #endif
+
+    /// Whether ambient garnish (particles, shimmer, pulsing) is allowed for
+    /// the current build — false under Reduce Motion / Low Power Mode.
+    private var effectsEnabled = false
+    /// Zone tint + kind by id, kept so highlights can restore the honest
+    /// material and ponds re-arm their shimmer after a highlight clears.
+    private var zoneMeta: [UUID: (tint: UIColor, kind: SpaceKind)] = [:]
+    /// The highlight each zone is currently asked to show; survives scene
+    /// rebuilds (reapplied after construction).
+    private var activeHighlights: [UUID: Twin3DHighlightStyle] = [:]
 
     // Camera rig: target (pans) → yaw (orbits around Y) → pitch (tilts) →
     // camera (dollies along local Z). Gestures mutate angles/distance and
@@ -366,23 +449,35 @@ final class Twin3DCoordinator: NSObject {
 
     // MARK: Rebuild gate
 
-    func rebuildIfNeeded(image: UIImage, zones: [Twin3DZone], animateIntro: Bool) {
+    func rebuildIfNeeded(image: UIImage, zones: [Twin3DZone], animateIntro: Bool,
+                         ambientEffects: Bool, latitude: Double?) {
+        // The sun model is a handful of trig calls — cheap enough to compute
+        // per update; only a changed MOOD BUCKET (mood + 5° elevation step)
+        // triggers a rebuild, so the lighting tracks the clock across
+        // re-renders without ever rebuilding per frame.
+        let sun = Twin3DSunModel.compute(latitude: latitude)
         var hasher = Hasher()
         hasher.combine(ObjectIdentifier(image))   // pyramid levels are cached & stable
         hasher.combine(zones)
+        hasher.combine(ambientEffects)
+        hasher.combine(sun.mood)
+        hasher.combine(Int(sun.renderedElevationDegrees / 5))
         let signature = hasher.finalize()
         guard signature != sceneSignature else { return }
         sceneSignature = signature
         buildScene(image: image, zones: zones,
-                   animateIntro: animateIntro && !hasBuiltOnce)
+                   animateIntro: animateIntro && !hasBuiltOnce,
+                   ambientEffects: ambientEffects, sun: sun)
         hasBuiltOnce = true
     }
 
     // MARK: Scene construction (once per data change)
 
-    private func buildScene(image: UIImage, zones: [Twin3DZone], animateIntro: Bool) {
+    private func buildScene(image: UIImage, zones: [Twin3DZone], animateIntro: Bool,
+                            ambientEffects: Bool, sun: Twin3DSunModel) {
         guard let scnView else { return }
         let scene = SCNScene()
+        effectsEnabled = ambientEffects
 
         // World scale: the photo's width is 12 units; height follows its
         // aspect so normalized zone coordinates land on real pixels.
@@ -391,12 +486,30 @@ final class Twin3DCoordinator: NSObject {
         let height = width * aspect
         let maxDim = Float(max(width, height))
 
+        // Atmosphere: the mood sky as screen-space background, the same
+        // low-res gradient as the PBR lighting environment (soft ambience).
+        scene.background.contents = Twin3DAtmosphere.skyImage(for: sun.mood)
+        scene.lightingEnvironment.contents = Twin3DAtmosphere.environmentImage(for: sun.mood)
+        scene.lightingEnvironment.intensity = sun.mood.environmentIntensity
+
         scene.rootNode.addChildNode(groundNode(image: image, width: width, height: height))
         scene.rootNode.addChildNode(plinthNode(width: width, height: height))
-        for zone in zones {
-            scene.rootNode.addChildNode(zoneNode(zone, width: width, height: height))
+        scene.rootNode.addChildNode(plinthRimNode(width: width, height: height))
+        zoneMeta.removeAll(keepingCapacity: true)
+        for (index, zone) in zones.enumerated() {
+            scene.rootNode.addChildNode(
+                zoneNode(zone, width: width, height: height,
+                         withPinLight: index < Self.maxPinLights)
+            )
         }
-        addLights(to: scene)
+        addLights(to: scene, sun: sun, maxDim: maxDim)
+
+        if ambientEffects {
+            scene.rootNode.addChildNode(firefliesNode(width: width, height: height))
+        }
+        // Continuous rendering ONLY while particles are alive — see the
+        // `particlesRequireContinuousRendering` doc for the power policy.
+        scnView.rendersContinuously = ambientEffects && Self.particlesRequireContinuousRendering
 
         // Camera rig (nodes are re-parented into each new scene).
         targetNode.position = SCNVector3Zero
@@ -404,11 +517,7 @@ final class Twin3DCoordinator: NSObject {
         yawNode.addChildNode(pitchNode)
         pitchNode.addChildNode(cameraNode)
         if cameraNode.camera == nil {
-            let camera = SCNCamera()
-            camera.fieldOfView = 55
-            camera.zNear = 0.1
-            camera.zFar = 500
-            cameraNode.camera = camera
+            cameraNode.camera = makeCinematicCamera()
         }
         scene.rootNode.addChildNode(targetNode)
 
@@ -421,6 +530,16 @@ final class Twin3DCoordinator: NSObject {
         scnView.scene = scene
         scnView.pointOfView = cameraNode
 
+        // Re-arm per-zone material states on the fresh graph: persisted
+        // highlights first (they survive rebuilds), pond shimmer otherwise.
+        activeHighlights = activeHighlights.filter { zoneMeta[$0.key] != nil }
+        for id in zoneMeta.keys { applyHighlight(zoneID: id) }
+        #if DEBUG
+        if Self.debugHighlightPreview, let first = zones.first {
+            highlight(zoneID: first.id, style: .warning)
+        }
+        #endif
+
         if animateIntro {
             // One-shot cinematic dolly-in; skipped under Reduce Motion.
             cameraNode.position = SCNVector3(0, 0, distance * 1.3)
@@ -432,16 +551,43 @@ final class Twin3DCoordinator: NSObject {
         }
     }
 
+    /// The cinematic camera: HDR with a soft bloom so the emissive orbs,
+    /// rims and highlights genuinely glow, a subtle depth of field focused
+    /// on the slab center (updated on every dolly in `applyCamera`), and a
+    /// light vignette. Exposure adaptation is OFF — no brightness pumping
+    /// while orbiting — and motion blur stays 0 so gestures render crisp.
+    /// All of these are per-drawn-frame effects: they coexist with
+    /// on-demand rendering (`rendersContinuously = false`) unchanged.
+    private func makeCinematicCamera() -> SCNCamera {
+        let camera = SCNCamera()
+        camera.fieldOfView = 55
+        camera.zNear = 0.1
+        camera.zFar = 500
+
+        camera.wantsHDR = true
+        camera.wantsExposureAdaptation = false
+        camera.bloomThreshold = 0.7
+        camera.bloomIntensity = 0.6
+        camera.bloomBlurRadius = 6
+
+        camera.wantsDepthOfField = true
+        camera.fStop = 5.6                       // subtle — context stays readable
+        camera.focusDistance = CGFloat(distance) // kept in sync by applyCamera()
+
+        camera.motionBlurIntensity = 0           // gestures must stay crisp
+        camera.vignettingPower = 0.7
+        camera.vignettingIntensity = 0.35
+        return camera
+    }
+
     /// The ground: the SAME aerial photo the 2D canvas shows, textured onto
     /// a plane laid flat in XZ. Mapping contract: normalized image (x, y)
     /// with top-left origin → world ((x−0.5)·W, 0, (y−0.5)·H).
     private func groundNode(image: UIImage, width: CGFloat, height: CGFloat) -> SCNNode {
         let plane = SCNPlane(width: width, height: height)
-        let material = SCNMaterial()
-        material.diffuse.contents = image
-        material.lightingModel = .lambert        // receives the sun's shadow
-        material.isDoubleSided = false
-        plane.materials = [material]
+        // Physically based, rough and non-metallic: receives the sun's soft
+        // shadow and the environment fill without turning glossy.
+        plane.materials = [Twin3DAtmosphere.groundMaterial(image: image)]
         let node = SCNNode(geometry: plane)
         // Rotating the XY plane by −90° about X maps plane (px, py) →
         // world (px, 0, −py); with texture v=1 at the image top this puts
@@ -451,24 +597,48 @@ final class Twin3DCoordinator: NSObject {
         return node
     }
 
-    /// A thin dark-warm slab under the photo — the "table maquette" edge.
+    /// A thin slab under the photo — the "table maquette" edge, now with
+    /// dark brushed-metal sides and a matte top (`plinthMaterials`).
     private func plinthNode(width: CGFloat, height: CGFloat) -> SCNNode {
         let box = SCNBox(width: width + 0.5, height: 0.4,
                          length: height + 0.5, chamferRadius: 0.08)
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(red: 0.13, green: 0.10, blue: 0.08, alpha: 1)
-        material.lightingModel = .lambert
-        box.materials = [material]
+        box.materials = Twin3DAtmosphere.plinthMaterials()
         let node = SCNNode(geometry: box)
         node.position = SCNVector3(0, -0.21, 0)  // top face just under the photo
         return node
     }
 
-    /// One zone: an extruded translucent prism in the zone's color, a small
-    /// amber pin floating above the centroid, and a billboarded name label.
+    /// The warm emissive seam just under the plinth's top edge — a slightly
+    /// wider, very thin box whose amber rim peeks out 0.05 on every side.
+    /// Sits fully below the plinth top (no coplanar faces → no z-fighting).
+    private func plinthRimNode(width: CGFloat, height: CGFloat) -> SCNNode {
+        let box = SCNBox(width: width + 0.6, height: 0.03,
+                         length: height + 0.6, chamferRadius: 0.015)
+        box.materials = [Twin3DAtmosphere.rimMaterial()]
+        let node = SCNNode(geometry: box)
+        node.position = SCNVector3(0, -0.035, 0)
+        node.castsShadow = false
+        return node
+    }
+
+    /// Fireflies/dust drifting over the slab. ≤ ~40 alive at once; only
+    /// added when ambient effects are allowed (see the power policy).
+    private func firefliesNode(width: CGFloat, height: CGFloat) -> SCNNode {
+        let node = SCNNode()
+        node.position = SCNVector3(0, 0.9, 0)
+        node.addParticleSystem(Twin3DAtmosphere.fireflies(spanX: width * 0.9,
+                                                          spanZ: height * 0.9))
+        return node
+    }
+
+    /// One zone: an extruded glass prism in the zone's color over a thin
+    /// outset base ring (the SCNShape "bevel" — SCNShape has no chamfer, so
+    /// a 0.05-tall, 5%-outset second outline reads as one), a refined pin
+    /// above the centroid, and a billboarded name label on a dark capsule.
     /// The group node carries "zone-<uuid>" so a hit anywhere inside opens
     /// the zone's space page.
-    private func zoneNode(_ zone: Twin3DZone, width: CGFloat, height: CGFloat) -> SCNNode {
+    private func zoneNode(_ zone: Twin3DZone, width: CGFloat, height: CGFloat,
+                          withPinLight: Bool) -> SCNNode {
         let group = SCNNode()
         group.name = "zone-\(zone.id.uuidString)"
 
@@ -476,133 +646,209 @@ final class Twin3DCoordinator: NSObject {
         // XY and rotated −90° about X, which maps (px, py) → (px, −py) in
         // XZ — so py must be (0.5 − y)·H for image-top to land at −Z,
         // identical to the 2D canvas's NormPolygon mapping.
-        let path = UIBezierPath()
-        for (index, point) in zone.points.enumerated() {
-            let planePoint = CGPoint(x: (point.x - 0.5) * width,
-                                     y: (0.5 - point.y) * height)
-            if index == 0 { path.move(to: planePoint) } else { path.addLine(to: planePoint) }
+        let planePoints = zone.points.map { point in
+            CGPoint(x: (point.x - 0.5) * width, y: (0.5 - point.y) * height)
         }
-        path.close()
+        let path = polygonPath(planePoints)
 
         let prismHeight: CGFloat = 0.5
         let shape = SCNShape(path: path, extrusionDepth: prismHeight)
         let tint = UIColor(Color(hex: zone.colorHex) ?? Color.smartAmber)
-        let material = SCNMaterial()
-        material.diffuse.contents = tint
-        material.transparency = 0.30
-        material.emission.contents = tint
-        material.emission.intensity = 0.35
-        material.lightingModel = .lambert
-        material.isDoubleSided = true
-        shape.materials = [material]
+        zoneMeta[zone.id] = (tint: tint, kind: zone.kind)
+        shape.materials = [Twin3DAtmosphere.prismMaterial(tint: tint)]
         let prism = SCNNode(geometry: shape)
+        prism.name = "prism"                     // highlight() finds it here
         prism.eulerAngles.x = -.pi / 2
         prism.position.y = Float(prismHeight / 2) + 0.005   // sits on the photo
+
+        // Local centroid of the plane polygon, shared by the ring outset
+        // and (converted to world XZ) the pin/label anchor.
+        let count = CGFloat(zone.points.count)
+        let centroid = CGPoint(x: planePoints.map(\.x).reduce(0, +) / count,
+                               y: planePoints.map(\.y).reduce(0, +) / count)
+
+        // Base ring: same outline, outset 5% around the centroid, 0.05 tall.
+        let ringPoints = planePoints.map { point in
+            CGPoint(x: centroid.x + (point.x - centroid.x) * 1.05,
+                    y: centroid.y + (point.y - centroid.y) * 1.05)
+        }
+        let ringShape = SCNShape(path: polygonPath(ringPoints), extrusionDepth: 0.05)
+        ringShape.materials = [Twin3DAtmosphere.ringMaterial(tint: tint)]
+        let ring = SCNNode(geometry: ringShape)
+        ring.eulerAngles.x = -.pi / 2
+        ring.position.y = 0.030                  // 0.05-tall ring hugging the photo
+        ring.castsShadow = false
+
+        group.addChildNode(ring)
         group.addChildNode(prism)
 
-        // Centroid in world XZ for the pin + label anchor.
-        let count = Double(zone.points.count)
-        let cx = Float((zone.points.map(\.x).reduce(0, +) / count - 0.5) * width)
-        let cz = Float((zone.points.map(\.y).reduce(0, +) / count - 0.5) * height)
-
-        group.addChildNode(pinNode(at: SIMD3(cx, Float(prismHeight), cz)))
+        let cx = Float(centroid.x)
+        let cz = Float(-centroid.y)              // plane py → world −Z
+        group.addChildNode(pinNode(at: SIMD3(cx, Float(prismHeight), cz),
+                                   withLight: withPinLight))
         group.addChildNode(labelNode(text: zone.name,
                                      at: SIMD3(cx, Float(prismHeight) + 1.05, cz)))
         return group
     }
 
-    /// The floating space pin: stem + amber marker + soft glow halo.
-    private func pinNode(at base: SIMD3<Float>) -> SCNNode {
+    private func polygonPath(_ points: [CGPoint]) -> UIBezierPath {
+        let path = UIBezierPath()
+        for (index, point) in points.enumerated() {
+            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        path.close()
+        return path
+    }
+
+    /// The refined space pin: a small metallic torus ring hovering over the
+    /// prism with a floating emissive orb above it — the orb crosses the
+    /// bloom threshold so it genuinely glows under HDR. The first
+    /// `maxPinLights` pins also carry a tiny falloff-limited omni light so
+    /// each marker warms its own patch of the maquette.
+    private func pinNode(at base: SIMD3<Float>, withLight: Bool) -> SCNNode {
         let amber = UIColor(Color.smartAmber)
         let pin = SCNNode()
 
-        let stemGeometry = SCNCylinder(radius: 0.022, height: 0.55)
-        let stemMaterial = SCNMaterial()
-        stemMaterial.diffuse.contents = amber.withAlphaComponent(0.8)
-        stemMaterial.lightingModel = .constant
-        stemGeometry.materials = [stemMaterial]
-        let stem = SCNNode(geometry: stemGeometry)
-        stem.position = SCNVector3(base.x, base.y + 0.275, base.z)
-        stem.castsShadow = false
-        pin.addChildNode(stem)
+        let ringGeometry = SCNTorus(ringRadius: 0.15, pipeRadius: 0.02)
+        let ringMaterial = SCNMaterial()
+        ringMaterial.lightingModel = .physicallyBased
+        ringMaterial.diffuse.contents = amber
+        ringMaterial.metalness.contents = 0.6
+        ringMaterial.roughness.contents = 0.3
+        ringMaterial.emission.contents = amber
+        ringMaterial.emission.intensity = 0.2
+        ringGeometry.materials = [ringMaterial]
+        let ring = SCNNode(geometry: ringGeometry)
+        ring.position = SCNVector3(base.x, base.y + 0.22, base.z)
+        ring.castsShadow = false
+        pin.addChildNode(ring)
 
-        let markerGeometry = SCNSphere(radius: 0.14)
-        markerGeometry.segmentCount = 24
-        let markerMaterial = SCNMaterial()
-        markerMaterial.diffuse.contents = amber
-        markerMaterial.emission.contents = amber
-        markerMaterial.emission.intensity = 0.8
-        markerMaterial.lightingModel = .constant
-        markerGeometry.materials = [markerMaterial]
-        let marker = SCNNode(geometry: markerGeometry)
-        marker.position = SCNVector3(base.x, base.y + 0.62, base.z)
-        marker.castsShadow = false
-        pin.addChildNode(marker)
+        let orbGeometry = SCNSphere(radius: 0.10)
+        orbGeometry.segmentCount = 24
+        let orbMaterial = SCNMaterial()
+        orbMaterial.diffuse.contents = amber
+        orbMaterial.emission.contents = amber
+        orbMaterial.emission.intensity = 1.3     // above bloomThreshold → glows
+        orbMaterial.lightingModel = .constant
+        orbGeometry.materials = [orbMaterial]
+        let orb = SCNNode(geometry: orbGeometry)
+        orb.position = SCNVector3(base.x, base.y + 0.5, base.z)
+        orb.castsShadow = false
+        pin.addChildNode(orb)
 
-        let haloGeometry = SCNSphere(radius: 0.26)
-        haloGeometry.segmentCount = 16
-        let haloMaterial = SCNMaterial()
-        haloMaterial.diffuse.contents = UIColor.clear
-        haloMaterial.emission.contents = amber
-        haloMaterial.emission.intensity = 0.6
-        haloMaterial.transparency = 0.22
-        haloMaterial.lightingModel = .constant
-        haloMaterial.writesToDepthBuffer = false
-        haloGeometry.materials = [haloMaterial]
-        let halo = SCNNode(geometry: haloGeometry)
-        halo.position = marker.position
-        halo.castsShadow = false
-        pin.addChildNode(halo)
+        if withLight {
+            // A genuinely lit pin: tiny warm omni, hard distance falloff,
+            // no shadow — cheap, and capped at `maxPinLights` scene-wide.
+            let glow = SCNLight()
+            glow.type = .omni
+            glow.color = amber
+            glow.intensity = 140
+            glow.attenuationStartDistance = 0.1
+            glow.attenuationEndDistance = 2.4
+            glow.castsShadow = false
+            let glowNode = SCNNode()
+            glowNode.light = glow
+            glowNode.position = orb.position
+            pin.addChildNode(glowNode)
+        }
 
         return pin
     }
 
-    /// Billboarded zone name in the warm-white text tone; always faces the
-    /// camera via `SCNBillboardConstraint`, so it reads at any orbit angle.
+    /// Billboarded zone name — SF rounded, warm white — on a soft dark
+    /// capsule (an `SCNPlane` with `cornerRadius`, no texture needed) so it
+    /// stays readable over bright photo areas at any orbit angle.
     private func labelNode(text: String, at position: SIMD3<Float>) -> SCNNode {
         let textGeometry = SCNText(string: text, extrusionDepth: 0)
-        textGeometry.font = UIFont.systemFont(ofSize: 4, weight: .semibold)
+        let baseFont = UIFont.systemFont(ofSize: 4, weight: .semibold)
+        if let rounded = baseFont.fontDescriptor.withDesign(.rounded) {
+            textGeometry.font = UIFont(descriptor: rounded, size: 4)
+        } else {
+            textGeometry.font = baseFont
+        }
         textGeometry.flatness = 0.25
         let material = SCNMaterial()
         material.diffuse.contents = UIColor(Color.smartTextPrimary)
         material.lightingModel = .constant       // always readable, unlit
         textGeometry.materials = [material]
 
-        let node = SCNNode(geometry: textGeometry)
-        let (minBound, maxBound) = node.boundingBox
+        let textNode = SCNNode(geometry: textGeometry)
+        let (minBound, maxBound) = textNode.boundingBox
+        let textWidth = maxBound.x - minBound.x
+        let textHeight = maxBound.y - minBound.y
         // Pivot at bottom-center so the label floats centered above the pin.
-        node.pivot = SCNMatrix4MakeTranslation((minBound.x + maxBound.x) / 2, minBound.y, 0)
+        textNode.pivot = SCNMatrix4MakeTranslation(minBound.x + textWidth / 2, minBound.y, 0)
+        textNode.position = SCNVector3(0, 0, 0.25)   // in front of the capsule
+        textNode.castsShadow = false
+        textNode.renderingOrder = 11
+
+        let capsule = SCNPlane(width: CGFloat(textWidth) + 2.6,
+                               height: CGFloat(textHeight) + 1.3)
+        capsule.cornerRadius = capsule.height / 2
+        let capsuleMaterial = SCNMaterial()
+        capsuleMaterial.diffuse.contents = UIColor(white: 0, alpha: 0.5)
+        capsuleMaterial.lightingModel = .constant
+        capsuleMaterial.writesToDepthBuffer = false
+        capsule.materials = [capsuleMaterial]
+        let capsuleNode = SCNNode(geometry: capsule)
+        capsuleNode.position = SCNVector3(0, textHeight / 2, 0)
+        capsuleNode.castsShadow = false
+        capsuleNode.renderingOrder = 10
+
+        // Parent carries the billboard so capsule + text turn as one.
+        let node = SCNNode()
+        node.addChildNode(capsuleNode)
+        node.addChildNode(textNode)
         node.scale = SCNVector3(0.2, 0.2, 0.2)
         node.position = SCNVector3(position.x, position.y, position.z)
-        node.castsShadow = false
         node.constraints = [SCNBillboardConstraint()]   // free on all axes
         return node
     }
 
-    /// Warm ambient + one warm directional "sun" with a soft ground shadow —
-    /// the SmartHomeTheme mood carried into the scene's lighting.
-    private func addLights(to scene: SCNScene) {
-        let warm = UIColor(red: 1.0, green: 0.94, blue: 0.86, alpha: 1)
+    /// The mood lighting rig: one directional "sun" (moonlight at night)
+    /// with soft deferred shadows at the model's rendered azimuth/elevation,
+    /// plus a low ambient for the few non-PBR materials (pins, labels).
+    /// PBR surfaces take their fill from `scene.lightingEnvironment`.
+    private func addLights(to scene: SCNScene, sun model: Twin3DSunModel, maxDim: Float) {
+        let mood = model.mood
 
         let ambient = SCNLight()
         ambient.type = .ambient
-        ambient.color = warm
-        ambient.intensity = 450
+        ambient.color = mood.ambientColor
+        ambient.intensity = mood.ambientIntensity
         let ambientNode = SCNNode()
         ambientNode.light = ambient
         scene.rootNode.addChildNode(ambientNode)
 
         let sun = SCNLight()
         sun.type = .directional
-        sun.color = warm
-        sun.intensity = 900
+        sun.color = mood.sunColor
+        sun.intensity = mood.sunIntensity
         sun.castsShadow = true
-        sun.shadowColor = UIColor.black.withAlphaComponent(0.32)
-        sun.shadowRadius = 8
+        sun.shadowMode = .deferred               // screen-space, contact-tight
+        sun.shadowSampleCount = 8
+        sun.shadowRadius = 4                     // soft penumbra
+        sun.shadowMapSize = CGSize(width: 2048, height: 2048)
+        sun.shadowColor = UIColor.black.withAlphaComponent(mood.shadowOpacity)
+        sun.orthographicScale = CGFloat(maxDim)  // shadow frustum covers the slab
+        sun.zNear = 1
+        sun.zFar = CGFloat(maxDim * 6)
+
+        // Scene-relative sun direction: azimuth measured from −Z (image
+        // top), clockwise toward +X; `look(at:)` points the node's −Z at
+        // the origin, which is exactly a directional light's beam axis.
+        let azimuth = model.renderedAzimuthDegrees * .pi / 180
+        let elevation = model.renderedElevationDegrees * .pi / 180
+        let toSun = SIMD3<Float>(Float(sin(azimuth) * cos(elevation)),
+                                 Float(sin(elevation)),
+                                 Float(-cos(azimuth) * cos(elevation)))
         let sunNode = SCNNode()
         sunNode.light = sun
-        sunNode.eulerAngles = SCNVector3(-Float.pi / 2.6, -Float.pi / 5, 0)
+        sunNode.position = SCNVector3(toSun.x * maxDim * 2,
+                                      toSun.y * maxDim * 2,
+                                      toSun.z * maxDim * 2)
         scene.rootNode.addChildNode(sunNode)
+        sunNode.look(at: SCNVector3Zero)
     }
 
     // MARK: Camera
@@ -611,11 +857,86 @@ final class Twin3DCoordinator: NSObject {
         yawNode.eulerAngles.y = yaw
         pitchNode.eulerAngles.x = pitch
         cameraNode.position = SCNVector3(0, 0, distance)
+        // Depth of field tracks the orbit target (the slab center): the
+        // camera-to-target distance IS the focus distance.
+        cameraNode.camera?.focusDistance = CGFloat(distance)
         targetNode.position = SCNVector3(
             min(max(targetNode.position.x, -panLimit.x), panLimit.x),
             0,
             min(max(targetNode.position.z, -panLimit.y), panLimit.y)
         )
+    }
+
+    // MARK: State glow (T1.5 → Pulsul bridge)
+
+    /// Puts a zone's prism into a highlight state — `.warning` (amber
+    /// pulse), `.alert` (red pulse) or `.none` (back to the zone's honest
+    /// tint, pond shimmer re-armed). Highlights survive scene rebuilds and
+    /// unknown zone ids are ignored safely.
+    ///
+    /// Deliberately DORMANT for now: PRVIO has no sensor-threshold model
+    /// yet, so no in-app source calls this — wiring a synthetic trigger
+    /// would invent an alert the data can't back (honesty law). Pulsul will
+    /// drive it from real device events; until then the only caller is the
+    /// DEBUG-only `debugHighlightPreview` flag.
+    func highlight(zoneID: UUID, style: Twin3DHighlightStyle) {
+        if style == .none {
+            activeHighlights.removeValue(forKey: zoneID)
+        } else {
+            activeHighlights[zoneID] = style
+        }
+        applyHighlight(zoneID: zoneID)
+    }
+
+    /// Applies the zone's current material state: highlight pulse when one
+    /// is active, else the honest tint — with the pond shimmer (a 3s
+    /// emission breath) as the resting state for pond zones when ambient
+    /// effects are on. Pulses degrade to a static raised emission under
+    /// Reduce Motion. Running CAAnimations trigger on-demand redraws, so
+    /// none of this needs continuous rendering.
+    private func applyHighlight(zoneID: UUID) {
+        guard let scene = scnView?.scene, let meta = zoneMeta[zoneID],
+              let group = scene.rootNode.childNode(withName: "zone-\(zoneID.uuidString)",
+                                                   recursively: false),
+              let material = group.childNode(withName: "prism", recursively: false)?
+                  .geometry?.firstMaterial
+        else { return }
+
+        material.removeAnimation(forKey: Self.highlightAnimationKey)
+        material.removeAnimation(forKey: Self.shimmerAnimationKey)
+
+        if let pulseColor = (activeHighlights[zoneID] ?? .none).pulseColor {
+            material.emission.contents = pulseColor
+            if UIAccessibility.isReduceMotionEnabled {
+                material.emission.intensity = 0.9
+            } else {
+                material.emission.intensity = 0.35
+                material.addAnimation(Self.pulse(from: 0.35, to: 1.1, duration: 0.9),
+                                      forKey: Self.highlightAnimationKey)
+            }
+        } else {
+            material.emission.contents = meta.tint
+            material.emission.intensity = 0.25
+            if effectsEnabled, meta.kind == .pond {
+                // Water hint: a slow emission breath — an honest "this is
+                // water" wink on the zone's own color, nothing simulated.
+                material.emission.intensity = 0.15
+                material.addAnimation(Self.pulse(from: 0.15, to: 0.3, duration: 3),
+                                      forKey: Self.shimmerAnimationKey)
+            }
+        }
+    }
+
+    private static func pulse(from: CGFloat, to: CGFloat,
+                              duration: CFTimeInterval) -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: "emission.intensity")
+        animation.fromValue = from
+        animation.toValue = to
+        animation.duration = duration
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        return animation
     }
 
     // MARK: Gestures (clamped; each writes the rig once, no per-frame work)
