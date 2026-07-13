@@ -45,6 +45,10 @@ struct DigitalTwinView: View {
     /// Local scans store (LiDAR/USDZ) — the source of pin "3D" badges.
     @State private var blueprintService = BlueprintService()
 
+    // Twin 3D (T1): which face the tab shows. The 3D maquette is the new
+    // default; "2D" flips to the full legacy experience, which stays intact.
+    @AppStorage("twin.mode3d") private var mode3D = true
+
     // Live layers (Faza 3) — persisted so the twin reopens as it was left.
     @AppStorage("prvio.twin.layer.utilities") private var layerUtilities = false
     @AppStorage("prvio.twin.layer.tasks") private var layerTasks = false
@@ -171,6 +175,21 @@ struct DigitalTwinView: View {
     }
 
     var body: some View {
+        Group {
+            if mode3D {
+                Twin3DView(onShow2D: {
+                    withAnimation(.smooth) { mode3D = false }
+                })
+            } else {
+                legacyTwinBody
+            }
+        }
+        .task(id: propertyService.primary?.id) { await loadData() }
+    }
+
+    // MARK: - Legacy 2D twin (the full pre-T1 experience, unchanged)
+
+    private var legacyTwinBody: some View {
         @Bindable var elementService = elementService
         return ZStack(alignment: .bottomTrailing) {
             if let prop = propertyService.primary {
@@ -429,13 +448,19 @@ struct DigitalTwinView: View {
                 onDelete: { Task { await zoneService.delete(zone) } }
             )
         }
-        .task(id: propertyService.primary?.id) { await loadData() }
     }
 
     // MARK: - Controls
 
     private var controls: some View {
         VStack(spacing: 12) {
+            // Back to the Twin 3D face (T1) — the two faces stay one tap
+            // apart in both directions.
+            controlButton(icon: "view.3d", tint: Color.smartAmber, label: "3D") {
+                withAnimation(.smooth) { mode3D = true }
+                HapticFeedback.impact(.medium)
+            }
+
             controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: Color.smartTextPrimary) {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { controlsExpanded.toggle() }
                 HapticFeedback.impact(.medium)
