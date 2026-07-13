@@ -436,6 +436,9 @@ struct SettingsView: View {
                     .environment(financialService)
                     .environment(photoJournalService)
                     .environment(documentService)
+                    .environment(plantService)
+                    .environment(familyService)
+                    .environment(propertyValueService)
                     .environment(appSettings)
             }
         case .houseCalendar:
