@@ -5,6 +5,22 @@ import PhotosUI
 
 extension PropertyDetailView {
 
+    /// Coordinate space of the page's scroll view — the stretchy hero
+    /// measures itself in it (rest minY == 0 at the top of the screen).
+    private static let heroScrollSpace = "propertyDetailHeroScroll"
+    private static let heroHeight: CGFloat = 280
+    /// The inline-title strip at the bottom of the compact bar — the iPhone
+    /// navigation-bar band the floating buttons sit in.
+    private static let compactBarStripHeight: CGFloat = 44
+    /// Estimated distance from the hero's bottom edge to the top of the
+    /// page-title text: content column top padding (`AppSpacing.lg`) +
+    /// `PageHeader` top padding (`AppSpacing.sm`) + the kicker line
+    /// (~15pt at default Dynamic Type).
+    private static let heroTitleTopGap: CGFloat = 39
+    /// Scroll distance over which the compact bar fades in, starting the
+    /// moment the title's top edge slides under the bar's bottom edge.
+    private static let heroBarFadeDistance: CGFloat = 28
+
     @ViewBuilder
     func mainContent(_ property: PropertyModel) -> some View {
         ScrollView(showsIndicators: false) {
@@ -41,16 +57,43 @@ extension PropertyDetailView {
                 .padding(.top, AppSpacing.lg)
             }
         }
+        .coordinateSpace(name: Self.heroScrollSpace)
         .background(appBackground.ignoresSafeArea())
+        // Edge-to-edge hero: the scroll content starts at the very top of
+        // the screen, under the status bar and the floating nav buttons.
+        .ignoresSafeArea(edges: .top)
+        // Measured OUTSIDE the ignored edge, so it still reports the full
+        // status-bar + navigation-bar height — the compact bar's frame.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.safeAreaInsets.top
+        } action: { inset in
+            heroTopInset = inset
+        }
+        .overlay(alignment: .top) { compactBar(property) }
+        .onPreferenceChange(StretchyHeroBottomEdgeKey.self) { bottom in
+            updateHeroBarProgress(heroBottom: bottom)
+        }
     }
 
     // MARK: Photo header
 
     @ViewBuilder
     private func photoHeader(_ property: PropertyModel) -> some View {
-        ZStack(alignment: .bottomTrailing) {
+        StretchyHeroHeader(height: Self.heroHeight,
+                           scrollSpace: Self.heroScrollSpace) {
+            heroMedia(property)
+        } overlay: {
+            heroControls
+        }
+    }
+
+    /// The stretchable photo layer. The hero sizes, clips, stretches,
+    /// recedes and dims it — keep it free of controls.
+    @ViewBuilder
+    private func heroMedia(_ property: PropertyModel) -> some View {
+        Group {
             if let urlStr = property.photoUrl, let url = URL(string: urlStr) {
-                StorageImage(url: url) { phase in
+                StorageImage(url: url, targetSize: 520) { phase in
                     switch phase {
                     case .success(let img):
                         img.resizable().scaledToFill()
@@ -58,15 +101,25 @@ extension PropertyDetailView {
                         photoPlaceholder
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 280)
-                .clipped()
             } else {
                 photoPlaceholder
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 280)
             }
+        }
+        .overlay(alignment: .top) {
+            // Keeps the status bar and floating buttons legible over bright
+            // skies; pinned to the photo's visual top, so it stays at the
+            // screen top while the hero is stretched.
+            LinearGradient(colors: [.black.opacity(0.28), .clear],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 90)
+                .allowsHitTesting(false)
+        }
+    }
 
+    /// Controls pinned to the hero's resting bounds — never stretched,
+    /// receded, or dimmed.
+    private var heroControls: some View {
+        ZStack(alignment: .bottomTrailing) {
             LinearGradient(
                 colors: [.clear, Color(uiColor: .systemBackground).opacity(0.6)],
                 startPoint: .top,
@@ -97,7 +150,58 @@ extension PropertyDetailView {
             }
             .padding(AppSpacing.lg)
         }
-        .frame(height: 280)
+    }
+
+    // MARK: Compact inline bar
+
+    /// The TestFlight transition: once the page title would slide under the
+    /// top, a thin-material bar materializes with the property name inline.
+    /// The system's floating back/edit buttons draw above it, visually
+    /// settling into the bar. Decorative only — never intercepts touches,
+    /// hidden from accessibility (the page title remains in the content).
+    private func compactBar(_ property: PropertyModel) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(.bar)
+            Text(property.name)
+                .font(AppFont.headline)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                // Clearance for the floating back/edit buttons on top.
+                .padding(.horizontal, 72)
+                .frame(height: Self.compactBarStripHeight)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.hairline).frame(height: 0.5)
+        }
+        .frame(height: heroTopInset)
+        .frame(maxWidth: .infinity)
+        .ignoresSafeArea(edges: .top)
+        .opacity(heroBarProgress)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Single source of truth for the bar fade, fed by the hero's
+    /// layout-derived bottom edge. State is written only when the derived
+    /// progress actually changes (quantized), so scrolling outside the fade
+    /// window never invalidates the page.
+    func updateHeroBarProgress(heroBottom: CGFloat) {
+        // Without a measured top inset the bar has no frame to occupy —
+        // keep it hidden rather than float a stray title.
+        guard heroTopInset > 0 else {
+            if heroBarProgress != 0 { heroBarProgress = 0 }
+            return
+        }
+        let titleTop = heroBottom + Self.heroTitleTopGap
+        let raw = (heroTopInset - titleTop) / Self.heroBarFadeDistance
+        let clamped = min(max(raw, 0), 1)
+        // Reduce Motion: an instant step at the midpoint instead of a fade.
+        let next = reduceMotion
+            ? (clamped < 0.5 ? 0 : 1)
+            : (clamped * 50).rounded() / 50
+        if next != heroBarProgress {
+            heroBarProgress = next
+        }
     }
 
     private var photoPlaceholder: some View {

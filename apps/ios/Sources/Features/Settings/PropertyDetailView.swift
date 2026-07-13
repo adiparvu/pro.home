@@ -12,6 +12,13 @@ struct PropertyDetailView: View {
     @State private var pickerItem: PhotosPickerItem?
     @State var isUploadingPhoto = false
 
+    // Stretchy-hero chrome (driven from PropertyDetailViewComponents).
+    /// 0…1 — how far the compact inline bar has materialized.
+    @State var heroBarProgress: CGFloat = 0
+    /// Measured status-bar + navigation-bar height; the compact bar's frame.
+    @State var heroTopInset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+
     private var property: PropertyModel? {
         propertyService.properties.first { $0.id == propertyId }
     }
@@ -26,11 +33,21 @@ struct PropertyDetailView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // The hero owns the top of the screen: the system bar never draws its
+        // own background (it would fade in on the first scrolled point);
+        // the compact bar in mainContent materializes at the title threshold
+        // instead, exactly like TestFlight.
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showEdit = true } label: {
                     Image(systemName: "pencil")
                         .font(AppFont.subheadline)
+                        .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
+                        // Legible over the photo pre-26; on iOS 26 the system
+                        // wraps toolbar items in Liquid Glass already.
+                        .chatToolbarCapsule()
                 }
                 .accessibilityLabel("Edit property")
             }
