@@ -92,12 +92,21 @@ struct PublicContactSheet: View {
 // MARK: - Loan Sheet
 
 struct LoanItemSheet: View {
+    /// Names the household has lent to before (from loan history) — shown as
+    /// one-tap chips after the family members. Pass real data only.
+    var suggestions: [String] = []
     let onSave: (String, Date?) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(FamilyService.self) private var familyService
     @State private var borrower = ""
     @State private var hasReturnDate = false
     @State private var returnDate = Calendar.current.date(byAdding: .weekOfYear, value: 2, to: Date()) ?? Date()
+
+    /// Past borrowers who aren't already offered as family chips.
+    private var pastBorrowers: [String] {
+        let family = Set(familyService.members.map { $0.name.lowercased() })
+        return suggestions.filter { !family.contains($0.lowercased()) }
+    }
 
     var body: some View {
         NavigationStack {
@@ -118,6 +127,24 @@ struct LoanItemSheet: View {
                                         GlassFilterChip(label: member.name,
                                                         isSelected: borrower == member.name) {
                                             borrower = borrower == member.name ? "" : member.name
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !pastBorrowers.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("inv_recent_borrowers")
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .padding(.leading, AppSpacing.xxs)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(pastBorrowers, id: \.self) { name in
+                                        GlassFilterChip(label: name,
+                                                        isSelected: borrower == name) {
+                                            borrower = borrower == name ? "" : name
                                         }
                                     }
                                 }

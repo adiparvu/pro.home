@@ -52,7 +52,9 @@ struct ItemDetailView: View {
             }
         }
         .sheet(isPresented: $showLoan) {
-            LoanItemSheet { borrower, returnDate in Task { await service.loanOut(live, to: borrower, expectedReturn: returnDate) } }
+            LoanItemSheet(suggestions: service.items.recentBorrowers) { borrower, returnDate in
+                Task { await service.loanOut(live, to: borrower, expectedReturn: returnDate) }
+            }
         }
         .confirmationDialog("Mark as Returned?", isPresented: $showReturnConfirm, titleVisibility: .visible) {
             Button("Yes, mark returned") { HapticFeedback.success(); Task { await service.markReturned(live) } }
@@ -109,10 +111,10 @@ struct ItemDetailView: View {
             HStack(spacing: 8) {
                 conditionBadge
                 if live.purchasePrice > 0 {
-                    heroChip("\(CurrencyService.money(live.purchasePrice, code: "EUR", whole: true))", icon: "eurosign.circle.fill")
+                    heroChip(CurrencyService.money(live.purchasePrice, code: "EUR", whole: true), icon: "eurosign.circle.fill")
                 }
                 if !live.location.isEmpty {
-                    heroChip(LocalizedStringKey(live.location.capitalized), icon: "mappin.circle.fill")
+                    heroChip(InventoryLabels.location(live.location), icon: "mappin.circle.fill")
                 }
             }
         }
@@ -137,10 +139,10 @@ struct ItemDetailView: View {
         .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
     }
 
-    private func heroChip(_ text: LocalizedStringKey, icon: String) -> some View {
+    private func heroChip(_ text: String, icon: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(AppFont.scaled(10, weight: .semibold))
-            Text(text).font(AppFont.caption)
+            Text(verbatim: text).font(AppFont.caption)
         }
         .foregroundStyle(.white.opacity(0.9))
         .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
@@ -247,21 +249,28 @@ struct ItemDetailView: View {
                     Label("Loan Status", systemImage: "arrow.uturn.right.circle.fill")
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
+                    // Plain-Romanian states — "Împrumutat" / "Disponibil" —
+                    // instead of the cryptic IN/OUT badges.
                     if live.isLoaned {
-                        Text("OUT").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(.orange)
+                        Text("inv_status_loaned").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(.orange)
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
                     } else {
-                        Text("IN").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
-                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
+                        Text("inv_status_available").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.brandSuccess)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color.brandSuccess.opacity(0.15), in: Capsule())
                     }
                 }
                 if let loan = live.currentLoan {
+                    let overdue = loan.expectedReturnDate.map { $0 < Calendar.current.startOfDay(for: Date()) } ?? false
                     VStack(spacing: 6) {
                         loanRow("Borrower", loan.borrowerName)
                         loanRow("Loaned", loan.loanedAt.formatted(date: .abbreviated, time: .omitted))
                         loanRow("Days out", "\(loan.daysOut) day\(loan.daysOut == 1 ? "" : "s")", highlight: loan.daysOut > 7)
                         if let ret = loan.expectedReturnDate {
-                            loanRow("Expected return", ret.formatted(date: .abbreviated, time: .omitted))
+                            loanRow("Expected return",
+                                    overdue
+                                        ? "\(ret.formatted(date: .abbreviated, time: .omitted)) · \(String(localized: "inv_loan_overdue"))"
+                                        : ret.formatted(date: .abbreviated, time: .omitted),
+                                    highlight: overdue, tint: Color.brandDanger)
                         }
                     }
                     .padding(AppSpacing.md).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
@@ -269,9 +278,9 @@ struct ItemDetailView: View {
                     Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
                         Label("Mark as Returned", systemImage: "checkmark.circle.fill")
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                            .foregroundStyle(Color.brandSuccess)
                             .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                            .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color.brandSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
                 } else {
                     Button { HapticFeedback.impact(.medium); showLoan = true } label: {
@@ -285,12 +294,13 @@ struct ItemDetailView: View {
         }
     }
 
-    private func loanRow(_ label: LocalizedStringKey, _ value: String, highlight: Bool = false) -> some View {
+    private func loanRow(_ label: LocalizedStringKey, _ value: String,
+                         highlight: Bool = false, tint: Color = .orange) -> some View {
         HStack {
             Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Spacer()
             Text(value).font(AppFont.scaled(13, weight: highlight ? .semibold : .regular))
-                .foregroundStyle(highlight ? .orange : Color.primary.opacity(AppOpacity.emphasis))
+                .foregroundStyle(highlight ? tint : Color.primary.opacity(AppOpacity.emphasis))
         }
     }
 

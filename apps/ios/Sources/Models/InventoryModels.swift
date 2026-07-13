@@ -69,7 +69,23 @@ struct InventoryItem: Identifiable, Codable {
 
     enum WarrantyStatus { case none, valid, expiringSoon, expired }
 
-    var categoryIcon: String {
+    var categoryIcon: String { InventoryCatalog.icon(for: category) }
+    var categoryColor: Color { InventoryCatalog.color(for: category) }
+}
+
+// MARK: - Category / location vocabulary
+//
+// The canonical value lists the add form, the filter chips and the PDF report
+// all share — one source of truth instead of per-view copies.
+
+enum InventoryCatalog {
+    static let categories = ["tools", "garden", "outdoor", "appliances", "electronics",
+                             "furniture", "vehicles", "sports", "security", "other"]
+    static let locations = ["garage", "garden", "basement", "attic", "shed",
+                            "balcony", "kitchen", "living room", "bedroom", "storage"]
+    static let conditions = ["excellent", "good", "fair", "poor"]
+
+    static func icon(for category: String) -> String {
         switch category {
         case "tools":       return "wrench.and.screwdriver.fill"
         case "garden":      return "leaf.fill"
@@ -84,7 +100,7 @@ struct InventoryItem: Identifiable, Codable {
         }
     }
 
-    var categoryColor: Color {
+    static func color(for category: String) -> Color {
         switch category {
         case "tools":       return .orange
         case "garden":      return Color(red: 0.2, green: 0.8, blue: 0.3)
@@ -97,6 +113,42 @@ struct InventoryItem: Identifiable, Codable {
         case "security":    return Color.brandSuccess
         default:            return .gray
         }
+    }
+}
+
+// MARK: - Localized labels for stored raw values
+//
+// Categories localize through their capitalized catalog key ("tools" →
+// "Tools"). Locations only uppercase the first letter — `.capitalized` would
+// turn "living room" into the key "Living Room", which doesn't exist.
+
+enum InventoryLabels {
+    static func category(_ raw: String) -> String {
+        String(localized: String.LocalizationValue(raw.capitalized))
+    }
+
+    static func location(_ raw: String) -> String {
+        guard let first = raw.first else { return raw }
+        return String(localized: String.LocalizationValue(first.uppercased() + raw.dropFirst()))
+    }
+}
+
+extension [InventoryItem] {
+    /// Distinct borrower names from every loan on record (current first,
+    /// then history), newest data first — real names the household actually
+    /// lends to, offered as one-tap suggestions.
+    var recentBorrowers: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for item in self {
+            let names = (item.currentLoan.map { [$0] } ?? []) + item.loanHistory.reversed()
+            for loan in names {
+                let name = loan.borrowerName.trimmingCharacters(in: .whitespaces)
+                guard !name.isEmpty, seen.insert(name.lowercased()).inserted else { continue }
+                out.append(name)
+            }
+        }
+        return out
     }
 }
 

@@ -9,7 +9,11 @@ struct InventoryView: View {
     @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) private var router
     @Environment(InventoryService.self) private var service
-    @State private var filter: InvFilter = .all
+    @Environment(PropertyService.self) private var propertyService
+    @State private var status: StatusFilter?
+    @State private var selectedCategory: String?
+    @State private var selectedLocation: String?
+    @AppStorage("inventory.sort") private var sortRaw = InvSort.recent.rawValue
     @State private var searchText = ""
     @State private var showAdd = false
     @State private var showScanner = false
@@ -22,50 +26,85 @@ struct InventoryView: View {
     @State private var didAutoAdd = false
     private let favorites = InventoryFavorites.shared
 
-    enum InvFilter: String, CaseIterable {
-        case all = "Toate", favorites = "Favorite", loaned = "Împrumutate", warranty = "Garanții"
-        case tools = "Unelte", garden = "Grădină", outdoor = "Exterior", electronics = "Electronice"
-        case other = "Altele"
+    /// Cross-cutting slices (favorites / loaned / warranty). One at a time —
+    /// they answer different questions — but each combines freely with a
+    /// category, a location and the search text.
+    enum StatusFilter { case favorites, loaned, warranty }
 
+    enum InvSort: String, CaseIterable {
+        case recent, name, value, location
+
+        var labelKey: LocalizedStringKey {
+            switch self {
+            case .recent:   return "inv_sort_recent"
+            case .name:     return "inv_sort_name"
+            case .value:    return "inv_sort_value"
+            case .location: return "inv_sort_location"
+            }
+        }
         var icon: String {
             switch self {
-            case .all:         return "square.grid.2x2.fill"
-            case .favorites:   return "star.fill"
-            case .loaned:      return "arrow.uturn.right.circle.fill"
-            case .warranty:    return "checkmark.shield.fill"
-            case .tools:       return "wrench.and.screwdriver.fill"
-            case .garden:      return "leaf.fill"
-            case .outdoor:     return "sun.max.fill"
-            case .electronics: return "tv.fill"
-            case .other:       return "cube.fill"
+            case .recent:   return "clock"
+            case .name:     return "textformat"
+            case .value:    return "eurosign.circle"
+            case .location: return "mappin.circle"
             }
         }
     }
 
+    private var sort: InvSort { InvSort(rawValue: sortRaw) ?? .recent }
+    private var hasActiveFilter: Bool { status != nil || selectedCategory != nil || selectedLocation != nil }
+
+    // MARK: Filtering + sorting
+
     private var filtered: [InventoryItem] {
-        let base: [InventoryItem]
-        switch filter {
-        case .all:         base = service.items
-        case .favorites:   base = service.items.filter { favorites.isFavorite($0.id) }
-        case .loaned:      base = service.items.filter { $0.isLoaned }
-        case .warranty:
-            // Items that carry a warranty, the ones expiring (or expired)
-            // soonest first — the slice the user checks under time pressure.
-            base = service.items
-                .filter { $0.warrantyExpiresAt != nil }
-                .sorted { ($0.warrantyExpiresAt ?? .distantFuture) < ($1.warrantyExpiresAt ?? .distantFuture) }
-        case .tools:       base = service.items.filter { $0.category == "tools" }
-        case .garden:      base = service.items.filter { $0.category == "garden" }
-        case .outdoor:     base = service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }
-        case .electronics: base = service.items.filter { $0.category == "electronics" }
-        case .other:       base = service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }
+        var base = service.items
+        switch status {
+        case .favorites: base = base.filter { favorites.isFavorite($0.id) }
+        case .loaned:    base = base.filter(\.isLoaned)
+        case .warranty:  base = base.filter { $0.warrantyExpiresAt != nil }
+        case nil:        break
         }
-        return base.filter {
+        if let cat = selectedCategory { base = base.filter { $0.category == cat } }
+        if let loc = selectedLocation { base = base.filter { $0.location == loc } }
+        base = base.filter {
             $0.name.matchesSearch(searchText)
                 || $0.brand.matchesSearch(searchText)
                 || $0.serialNumber.matchesSearch(searchText)
                 || $0.category.matchesSearch(searchText)
                 || $0.location.matchesSearch(searchText)
+        }
+        return sorted(base)
+    }
+
+    private func sorted(_ items: [InventoryItem]) -> [InventoryItem] {
+        switch sort {
+        case .recent:
+            // The service delivers newest-first (created_at desc). The one
+            // exception: the warranty slice defaults to soonest-expiring
+            // first — the order the user checks under time pressure.
+            if status == .warranty {
+                return items.sorted {
+                    ($0.warrantyExpiresAt ?? .distantFuture) < ($1.warrantyExpiresAt ?? .distantFuture)
+                }
+            }
+            return items
+        case .name:
+            return items.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        case .value:
+            return items.sorted {
+                $0.purchasePrice != $1.purchasePrice
+                    ? $0.purchasePrice > $1.purchasePrice
+                    : $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
+        case .location:
+            return items.sorted {
+                let l0 = InventoryLabels.location($0.location)
+                let l1 = InventoryLabels.location($1.location)
+                return l0 != l1
+                    ? l0.localizedStandardCompare(l1) == .orderedAscending
+                    : $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
         }
     }
 
@@ -74,14 +113,15 @@ struct InventoryView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.vertical, 10)
+                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.top, 10).padding(.bottom, AppSpacing.xs)
+                    filterChips.padding(.bottom, AppSpacing.sm)
                 }
                 if service.items.isEmpty {
                     emptyState
                 } else if filtered.isEmpty {
                     VStack {
                         Spacer()
-                        Text("No items in this category").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text("inv_no_results").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
                         Spacer()
                     }
                 } else {
@@ -166,21 +206,8 @@ struct InventoryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    Menu {
-                        // One pass builds every badge count for the menu.
-                        let counts = filterCounts
-                        ForEach(InvFilter.allCases, id: \.self) { f in
-                            Button {
-                                withAnimation(.spring(response: 0.25)) { filter = f }
-                            } label: {
-                                Label("\(f.rawValue)  (\(counts[f] ?? 0))", systemImage: filter == f ? "checkmark" : f.icon)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(AppFont.subheadline).frame(width: 38, height: 32)
-                    }
-                    .accessibilityLabel("Filter inventory")
+                    sortMenu
+                    if !service.items.isEmpty { exportMenu }
                     Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                         Image(systemName: "plus").font(AppFont.subheadline).frame(width: 38, height: 32)
@@ -193,7 +220,7 @@ struct InventoryView: View {
         .fullScreenCover(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
                 showScanner = false
-                if let found = service.itemByQR(qrValue) {
+                if let found = resolveScanned(qrValue) {
                     HapticFeedback.success()
                     selectedItem = found
                 } else {
@@ -207,7 +234,7 @@ struct InventoryView: View {
             AddInventorySheet(editing: item) { updated in Task { await service.update(updated) } }
         }
         .sheet(item: $loanItem) { item in
-            LoanItemSheet { borrower, returnDate in
+            LoanItemSheet(suggestions: service.items.recentBorrowers) { borrower, returnDate in
                 Task { await service.loanOut(item, to: borrower, expectedReturn: returnDate) }
             }
         }
@@ -237,11 +264,84 @@ struct InventoryView: View {
         }
     }
 
+    // MARK: - Toolbar menus
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("inv_sort_by", selection: $sortRaw) {
+                ForEach(InvSort.allCases, id: \.rawValue) { s in
+                    Label(s.labelKey, systemImage: s.icon).tag(s.rawValue)
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .font(AppFont.subheadline).frame(width: 38, height: 32)
+        }
+        .accessibilityLabel(Text("inv_sort_by"))
+    }
+
+    private var exportMenu: some View {
+        Menu {
+            Button {
+                HapticFeedback.impact(.light)
+                shareReport()
+            } label: {
+                Label("inv_report_action", systemImage: "doc.richtext")
+            }
+            Button {
+                HapticFeedback.impact(.light)
+                printQRLabels()
+            } label: {
+                Label("inv_qr_labels_action", systemImage: "qrcode")
+            }
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .font(AppFont.subheadline).frame(width: 38, height: 32)
+        }
+        .accessibilityLabel(Text("inv_share_print"))
+    }
+
+    /// Full inventory, grouped by category with subtotals — the document you
+    /// hand an insurer, so it always covers every item, not the current slice.
+    private func shareReport() {
+        guard let url = InventoryExport.makeReportPDF(
+            items: service.items,
+            propertyName: propertyService.primary?.name
+        ) else { return }
+        SystemActions.share([url])
+    }
+
+    /// One printable A4 sheet of QR labels for what's currently listed —
+    /// filter first to print a subset, or leave "Toate" for everything.
+    private func printQRLabels() {
+        guard let data = InventoryExport.makeQRLabelsPDF(items: filtered) else { return }
+        SystemActions.print(data: data, jobName: String(localized: "inv_qr_labels_job"))
+    }
+
+    // MARK: - Scan resolution
+
+    /// The service resolves legacy formats (`?id=` and `prvio://inventory/`);
+    /// current labels encode `https://…/i/<uuid>`, whose id rides in the last
+    /// path component — without this, the app couldn't find its own codes.
+    private func resolveScanned(_ value: String) -> InventoryItem? {
+        if let hit = service.itemByQR(value) { return hit }
+        if let last = value.split(separator: "/").last,
+           let id = UUID(uuidString: String(last)) {
+            return service.items.first { $0.id == id }
+        }
+        return nil
+    }
+
     // MARK: - Sub-views
 
     private var summaryBar: some View {
         HStack(spacing: 8) {
-            infoTile(CurrencyService.money(service.totalValue, code: "EUR", whole: true), "Value")
+            // Honest value: until at least one item carries a price, there is
+            // no total to report — show a dash, not a misleading "0 €".
+            infoTile(service.items.contains(where: { $0.purchasePrice > 0 })
+                        ? CurrencyService.money(service.totalValue, code: "EUR", whole: true)
+                        : "—",
+                     "Value")
             infoTile("\(service.items.count)", "Items")
             filterTile("\(service.loanedCount)", "Loaned", target: .loaned,
                        highlight: service.loanedCount > 0 ? .orange : nil)
@@ -268,11 +368,11 @@ struct InventoryView: View {
     /// slice, tap again returns to All. Selection speaks the GlassFilterChip
     /// language (accent-tinted glass / accent ring) so it reads instantly.
     private func filterTile(_ value: String, _ label: LocalizedStringKey,
-                            target: InvFilter, highlight: Color? = nil) -> some View {
-        let isSelected = filter == target
+                            target: StatusFilter, highlight: Color? = nil) -> some View {
+        let isSelected = status == target
         return Button {
             HapticFeedback.impact(.light)
-            withAnimation(.spring(response: 0.25)) { filter = isSelected ? .all : target }
+            withAnimation(.spring(response: 0.25)) { status = isSelected ? nil : target }
         } label: {
             VStack(spacing: 3) {
                 Text(value).font(AppFont.scaled(15, weight: .bold))
@@ -290,6 +390,100 @@ struct InventoryView: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
+    // MARK: - Filter chips
+
+    /// Everything the list can be sliced by, in one scrollable row: the three
+    /// status slices, then the categories and locations that actually hold
+    /// items (real counts, never a dead chip). Category + location + status
+    /// + search all combine.
+    private var filterChips: some View {
+        let counts = chipCounts
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                GlassFilterChip(label: String(localized: "inv_filter_all"),
+                                isSelected: !hasActiveFilter) {
+                    withAnimation(.spring(response: 0.25)) {
+                        status = nil; selectedCategory = nil; selectedLocation = nil
+                    }
+                }
+                GlassFilterChip(label: String(localized: "inv_filter_favorites"),
+                                systemImage: "star.fill",
+                                count: counts.favorites,
+                                isSelected: status == .favorites) { toggleStatus(.favorites) }
+                GlassFilterChip(label: String(localized: "inv_filter_loaned"),
+                                systemImage: "arrow.uturn.right.circle",
+                                count: counts.loaned,
+                                isSelected: status == .loaned) { toggleStatus(.loaned) }
+                GlassFilterChip(label: String(localized: "inv_filter_warranty"),
+                                systemImage: "checkmark.shield",
+                                count: counts.warranty,
+                                isSelected: status == .warranty) { toggleStatus(.warranty) }
+                if !counts.categories.isEmpty { chipDivider }
+                ForEach(InventoryCatalog.categories.filter { counts.categories[$0] != nil }, id: \.self) { cat in
+                    GlassFilterChip(label: InventoryLabels.category(cat),
+                                    systemImage: InventoryCatalog.icon(for: cat),
+                                    count: counts.categories[cat],
+                                    isSelected: selectedCategory == cat) {
+                        withAnimation(.spring(response: 0.25)) {
+                            selectedCategory = selectedCategory == cat ? nil : cat
+                        }
+                    }
+                }
+                if !counts.locations.isEmpty { chipDivider }
+                ForEach(orderedLocations(counts.locations), id: \.self) { loc in
+                    GlassFilterChip(label: InventoryLabels.location(loc),
+                                    systemImage: "mappin",
+                                    count: counts.locations[loc],
+                                    isSelected: selectedLocation == loc) {
+                        withAnimation(.spring(response: 0.25)) {
+                            selectedLocation = selectedLocation == loc ? nil : loc
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var chipDivider: some View {
+        Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
+    }
+
+    private func toggleStatus(_ target: StatusFilter) {
+        withAnimation(.spring(response: 0.25)) { status = status == target ? nil : target }
+    }
+
+    /// Known locations keep their canonical order; free-form ones (from older
+    /// data) follow, alphabetically.
+    private func orderedLocations(_ present: [String: Int]) -> [String] {
+        let known = InventoryCatalog.locations.filter { present[$0] != nil }
+        let extra = present.keys.filter { !InventoryCatalog.locations.contains($0) }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return known + extra
+    }
+
+    private struct ChipCounts {
+        var favorites = 0
+        var loaned = 0
+        var warranty = 0
+        var categories: [String: Int] = [:]
+        var locations: [String: Int] = [:]
+    }
+
+    /// One pass over the items builds every chip badge.
+    private var chipCounts: ChipCounts {
+        var c = ChipCounts()
+        for item in service.items {
+            if favorites.isFavorite(item.id) { c.favorites += 1 }
+            if item.isLoaned { c.loaned += 1 }
+            if item.warrantyExpiresAt != nil { c.warranty += 1 }
+            c.categories[item.category, default: 0] += 1
+            c.locations[item.location, default: 0] += 1
+        }
+        return c
+    }
+
     private var emptyState: some View {
         VStack(spacing: 14) {
             Spacer()
@@ -300,24 +494,4 @@ struct InventoryView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    /// One pass over the items builds every badge count — the filter menu
-    /// used to re-scan the whole array once per case.
-    private var filterCounts: [InvFilter: Int] {
-        var counts: [InvFilter: Int] = [.all: service.items.count]
-        for item in service.items {
-            if favorites.isFavorite(item.id) { counts[.favorites, default: 0] += 1 }
-            if item.isLoaned { counts[.loaned, default: 0] += 1 }
-            if item.warrantyExpiresAt != nil { counts[.warranty, default: 0] += 1 }
-            switch item.category {
-            case "tools":                          counts[.tools, default: 0] += 1
-            case "garden":                         counts[.garden, default: 0] += 1
-            case "outdoor", "sports", "vehicles":  counts[.outdoor, default: 0] += 1
-            case "electronics":                    counts[.electronics, default: 0] += 1
-            default:                               counts[.other, default: 0] += 1
-            }
-        }
-        return counts
-    }
-
 }

@@ -57,15 +57,15 @@ struct InventoryRow: View {
                             Text(item.brand).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                         }
-                        Text(LocalizedStringKey(item.location.capitalized)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text(verbatim: InventoryLabels.location(item.location)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
+                        // "La Vasile · până la 12 aug." when a return was
+                        // promised (red once that day has passed), otherwise
                         // "La Vasile · 3 iul." — who has it and since when.
-                        Label(String(format: String(localized: "inv_loaned_short"),
-                                     loan.borrowerName,
-                                     loan.loanedAt.formatted(.dateTime.day().month(.abbreviated))),
-                              systemImage: "person.fill")
-                            .font(AppFont.scaled(10, weight: .medium)).foregroundStyle(.orange)
+                        Label(loanLine(loan), systemImage: isOverdue(loan) ? "exclamationmark.circle.fill" : "person.fill")
+                            .font(AppFont.scaled(10, weight: .medium))
+                            .foregroundStyle(isOverdue(loan) ? Color.brandDanger : .orange)
                     }
                 }
                 Spacer()
@@ -74,7 +74,14 @@ struct InventoryRow: View {
                         Text(CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)).font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
-                    case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(AppFont.scaled(11)).foregroundStyle(.orange)
+                    case .expiringSoon:
+                        // Amber expiry date — the <30-day window at a glance.
+                        if let exp = item.warrantyExpiresAt {
+                            HStack(spacing: 3) {
+                                Image(systemName: "exclamationmark.shield.fill").font(AppFont.scaled(11))
+                                Text(exp.formatted(.dateTime.day().month(.abbreviated))).font(AppFont.scaled(10, weight: .medium))
+                            }.foregroundStyle(.orange)
+                        }
                     case .expired:     Image(systemName: "xmark.shield.fill").font(AppFont.scaled(11)).foregroundStyle(.red.opacity(0.7))
                     default: EmptyView()
                     }
@@ -86,6 +93,22 @@ struct InventoryRow: View {
                 RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
             }
         }
+    }
+
+    private func loanLine(_ loan: LoanRecord) -> String {
+        if let due = loan.expectedReturnDate {
+            return String(format: String(localized: "inv_loaned_due"),
+                          loan.borrowerName,
+                          due.formatted(.dateTime.day().month(.abbreviated)))
+        }
+        return String(format: String(localized: "inv_loaned_short"),
+                      loan.borrowerName,
+                      loan.loanedAt.formatted(.dateTime.day().month(.abbreviated)))
+    }
+
+    private func isOverdue(_ loan: LoanRecord) -> Bool {
+        guard let due = loan.expectedReturnDate else { return false }
+        return due < Calendar.current.startOfDay(for: Date())
     }
 }
 
@@ -120,9 +143,9 @@ struct AddInventorySheet: View {
     @State private var showLibrary = false
     @State private var isSaving = false
 
-    private let categories = ["tools","garden","outdoor","appliances","electronics","furniture","vehicles","sports","security","other"]
-    private let locations = ["garage","garden","basement","attic","shed","balcony","kitchen","living room","bedroom","storage"]
-    private let conditions = ["excellent","good","fair","poor"]
+    private let categories = InventoryCatalog.categories
+    private let locations = InventoryCatalog.locations
+    private let conditions = InventoryCatalog.conditions
 
     var body: some View {
         NavigationStack {
@@ -136,7 +159,9 @@ struct AddInventorySheet: View {
                             div
                             picker("folder.fill", "Category", $category, categories)
                             div
-                            picker("mappin.circle.fill", "Location", $location, locations)
+                            // Locations localize with sentence-case keys —
+                            // `.capitalized` would miss "Living room".
+                            picker("mappin.circle.fill", "Location", $location, locations, display: InventoryLabels.location)
                             div
                             picker("checkmark.seal", "Condition", $condition, conditions)
                         }
@@ -403,12 +428,13 @@ struct AddInventorySheet: View {
             TextField(ph, text: b).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
-    private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
+    private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String],
+                        display: @escaping (String) -> String = InventoryLabels.category) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(verbatim: display($0)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {

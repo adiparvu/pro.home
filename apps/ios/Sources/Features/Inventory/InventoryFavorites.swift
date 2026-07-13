@@ -68,9 +68,9 @@ struct InventoryItemPreview: View {
                             Text(item.brand)
                             Text("·")
                         }
-                        Text(LocalizedStringKey(item.category.capitalized))
+                        Text(verbatim: InventoryLabels.category(item.category))
                         Text("·")
-                        Text(LocalizedStringKey(item.location.capitalized))
+                        Text(verbatim: InventoryLabels.location(item.location))
                     }
                     .font(AppFont.scaled(12))
                     .foregroundStyle(Color.secondaryTextColor)
