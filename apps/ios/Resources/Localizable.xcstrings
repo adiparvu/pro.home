@@ -80104,6 +80104,805 @@
           }
         }
       }
+    },
+    "textsize_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text Size"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mărimea textului"
+          }
+        }
+      }
+    },
+    "textsize_value_system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem"
+          }
+        }
+      }
+    },
+    "textsize_preview_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previzualizare"
+          }
+        }
+      }
+    },
+    "textsize_sample_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your home, all in one place"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Casa ta, într-un singur loc"
+          }
+        }
+      }
+    },
+    "textsize_sample_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is how text will look across the app — cards, lists, and buttons."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Așa va arăta textul în întreaga aplicație — carduri, liste și butoane."
+          }
+        }
+      }
+    },
+    "textsize_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mărime"
+          }
+        }
+      }
+    },
+    "textsize_use_system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use System Size"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosește mărimea sistemului"
+          }
+        }
+      }
+    },
+    "textsize_use_system_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follows the Display & Brightness setting"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urmează setarea din Afișaj și luminozitate"
+          }
+        }
+      }
+    },
+    "textsize_ax_toggle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Larger Accessibility Sizes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mărimi mai mari pentru accesibilitate"
+          }
+        }
+      }
+    },
+    "textsize_footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The size you choose applies to text inside PRVIO. Other apps keep following the system setting."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mărimea aleasă se aplică textului din PRVIO. Celelalte aplicații urmează în continuare setarea sistemului."
+          }
+        }
+      }
+    },
+    "textsize_size_xsmall": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra Small"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foarte mică"
+          }
+        }
+      }
+    },
+    "textsize_size_small": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mică"
+          }
+        }
+      }
+    },
+    "textsize_size_medium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medie"
+          }
+        }
+      }
+    },
+    "textsize_size_large": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Implicită"
+          }
+        }
+      }
+    },
+    "textsize_size_xlarge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mare"
+          }
+        }
+      }
+    },
+    "textsize_size_xxlarge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra Large"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foarte mare"
+          }
+        }
+      }
+    },
+    "textsize_size_xxxlarge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra Extra Large"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra mare"
+          }
+        }
+      }
+    },
+    "textsize_size_ax1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility 1"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilitate 1"
+          }
+        }
+      }
+    },
+    "textsize_size_ax2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility 2"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilitate 2"
+          }
+        }
+      }
+    },
+    "textsize_size_ax3": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility 3"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilitate 3"
+          }
+        }
+      }
+    },
+    "textsize_size_ax4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility 4"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilitate 4"
+          }
+        }
+      }
+    },
+    "textsize_size_ax5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility 5"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilitate 5"
+          }
+        }
+      }
+    },
+    "mood_personalize_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalization"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalizare"
+          }
+        }
+      }
+    },
+    "mood_icon_follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon follows the mood"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iconița urmează atmosfera"
+          }
+        }
+      }
+    },
+    "mood_icon_follow_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night installs your icon's dark face; morning and day, the light one. iOS can only change the icon when you open the app, and pinning a Day or Night face in the gallery turns this off."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noaptea instalează fața întunecată a iconiței alese; dimineața și ziua, pe cea luminoasă. iOS schimbă iconița doar când deschizi aplicația, iar fixarea manuală a unei fețe Zi/Noapte din galerie oprește această opțiune."
+          }
+        }
+      }
+    },
+    "mood_icon_follow_default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The default icon already switches its day and night faces with the system."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iconița implicită își schimbă singură fața de zi și de noapte, odată cu sistemul."
+          }
+        }
+      }
+    },
+    "mood_icon_follow_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your chosen icon has no day and night variants. Pick a paired design in the icon gallery."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iconița aleasă nu are variante de zi și de noapte. Alege un model pereche din galeria de iconițe."
+          }
+        }
+      }
+    },
+    "mood_weather_reactive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "React to weather"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reacționează la vreme"
+          }
+        }
+      }
+    },
+    "mood_weather_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtly tints the background with your property's real weather: rain, snow, overcast skies."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuanțează discret fundalul după vremea reală de la proprietate: ploaie, ninsoare, cer acoperit."
+          }
+        }
+      }
+    },
+    "mood_weather_nodata": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No recent weather data for your property — the tint comes alive once current weather exists."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio informație meteo recentă pentru proprietate — nuanțarea pornește când există vreme actuală."
+          }
+        }
+      }
+    },
+    "mood_hours_custom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom hours"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ore personalizate"
+          }
+        }
+      }
+    },
+    "mood_hours_caption_sun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose when morning and night begin. Turn off to return to sunrise and sunset."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alege tu când încep dimineața și noaptea. Dezactivează pentru a reveni la răsărit și apus."
+          }
+        }
+      }
+    },
+    "mood_hours_caption_clock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose when morning and night begin. Turn off to return to the standard hours."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alege tu când încep dimineața și noaptea. Dezactivează pentru a reveni la orele standard."
+          }
+        }
+      }
+    },
+    "mood_hours_morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morning starts at"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimineața începe la"
+          }
+        }
+      }
+    },
+    "mood_hours_night": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night starts at"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noaptea începe la"
+          }
+        }
+      }
+    },
+    "mood_auto_explain_custom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follows your custom hours."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urmează orele alese de tine."
+          }
+        }
+      }
+    },
+    "mood_accent_auto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automat"
+          }
+        }
+      }
+    },
+    "mood_accent_auto_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The accent follows the mood: gold in the morning, sky blue by day, ember at night."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accentul urmează atmosfera: auriu dimineața, albastru ziua, chihlimbar noaptea."
+          }
+        }
+      }
+    },
+    "locpick_property": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locația proprietății"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Property location"
+          }
+        }
+      }
+    },
+    "locpick_locating": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se localizează…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locating…"
+          }
+        }
+      }
+    },
+    "locpick_my_position": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosește poziția mea"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use my location"
+          }
+        }
+      }
+    },
+    "locpick_my_position_fallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poziția mea"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My location"
+          }
+        }
+      }
+    },
+    "locpick_location_off": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesul la locație este dezactivat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location access is off"
+          }
+        }
+      }
+    },
+    "locpick_open_settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide Setările pentru a-l activa"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings to turn it on"
+          }
+        }
+      }
+    },
+    "locpick_favorites": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorite"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorites"
+          }
+        }
+      }
+    },
+    "locpick_favorite": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă la favorite"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorite"
+          }
+        }
+      }
+    },
+    "locpick_unfavorite": {
+      "extractionState": "manual",
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge din favorite"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfavorite"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

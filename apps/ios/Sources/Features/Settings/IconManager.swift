@@ -306,6 +306,7 @@ enum AppIconFamilies {
 struct IconColorSchemeWatcher: View {
     var iconManager: IconManager
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Color.clear
@@ -314,6 +315,12 @@ struct IconColorSchemeWatcher: View {
             }
             .onAppear {
                 iconManager.colorSchemeChanged(isDark: colorScheme == .dark)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // Foreground is the one moment iOS reliably allows icon
+                // changes — retry a mood face a too-early launch attempt
+                // could not install (no-op when the icon is already right).
+                if phase == .active { iconManager.sceneBecameActive() }
             }
     }
 }
@@ -346,6 +353,15 @@ final class IconManager {
         didSet { UserDefaults.standard.set(autoSwitch, forKey: "prvio.autoSwitchIcon") }
     }
 
+    /// "Iconița urmează atmosfera" (Settings → Aspect → Fundal): the icon
+    /// installs the selected pair's face for the RESOLVED MOOD — night mood
+    /// → dark face, morning/day → light face — instead of riding the merged
+    /// asset (which follows the SYSTEM appearance, something the mood does
+    /// not control). Default OFF. Flip it through `setFollowsMood(_:)`.
+    private(set) var followsMood: Bool {
+        didSet { UserDefaults.standard.set(followsMood, forKey: "app.mood.autoIcon") }
+    }
+
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
 
     /// A manual pick owns the icon for a beat — any appearance-driven
@@ -353,11 +369,32 @@ final class IconManager {
     /// visibly flip right after the user chose it.
     @ObservationIgnored private var suppressAutoUntil: Date = .distantPast
 
+    @ObservationIgnored private var moodObserver: NSObjectProtocol?
+
     init() {
         let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         selected = AppIconCatalog.theme(id: id)
         autoSwitch = (UserDefaults.standard.object(forKey: "prvio.autoSwitchIcon") as? Bool) ?? true
         pinnedFace = UserDefaults.standard.string(forKey: "prvio.pinnedIconFace").flatMap(IconFace.init)
+        followsMood = (UserDefaults.standard.object(forKey: "app.mood.autoIcon") as? Bool) ?? false
+
+        // The engine announces every resolved-mood change while the app runs.
+        moodObserver = NotificationCenter.default.addObserver(
+            forName: .appMoodResolvedChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.moodDidChange() }
+        }
+        // The mood may have rolled over while the app was closed, and iOS
+        // only changes icons with the app foregrounded — catch up now (the
+        // engine's launch resolution is already current, so no notification
+        // will fire for it).
+        if followsMood {
+            Task { @MainActor [weak self] in self?.moodDidChange() }
+        }
+    }
+
+    deinit {
+        if let moodObserver { NotificationCenter.default.removeObserver(moodObserver) }
     }
 
     var supportsAlternateIcons: Bool { UIApplication.shared.supportsAlternateIcons }
@@ -366,13 +403,29 @@ final class IconManager {
     /// Lets the picker mark the precise pair face that is applied.
     var appliedIconName: String? { lastAppliedName }
 
+    /// True when the mood-following option can actually do something: the
+    /// selected theme must be a pair with installable alternate faces (the
+    /// default primary icon has none — iOS already day/night-switches it
+    /// with the SYSTEM appearance, which the mood does not drive).
+    var canFollowMood: Bool {
+        selected.hasPair && !selected.isDefault && supportsAlternateIcons
+    }
+
+    /// The resolved mood's darkness — the one signal `followsMood` rides.
+    private var moodIsDark: Bool {
+        AppMoodEngine.shared.resolved.palette.colorScheme == .dark
+    }
+
     /// The asset to install for a theme: an explicitly pinned face wins;
-    /// otherwise pair themes with auto-switch ride the merged day/night
-    /// asset (iOS adapts it silently); auto-switch off falls back to the
-    /// face matching the current appearance.
+    /// then a mood-following pair installs the exact face for the resolved
+    /// mood; otherwise pair themes with auto-switch ride the merged
+    /// day/night asset (iOS adapts it silently with the system appearance);
+    /// auto-switch off falls back to the face matching the current
+    /// appearance.
     private func resolvedName(for theme: AppIconTheme, isDark: Bool) -> String? {
         if theme.hasPair {
             if let face = pinnedFace { return theme.iconName(isDark: face == .dark) }
+            if followsMood, !theme.isDefault { return theme.iconName(isDark: moodIsDark) }
             if autoSwitch, let paired = theme.pairedIcon { return paired }
         }
         return theme.iconName(isDark: isDark)
@@ -411,18 +464,57 @@ final class IconManager {
 
     /// `pinFace` non-nil installs exactly that half of a pair and keeps it
     /// through appearance changes; nil restores automatic day/night.
+    ///
+    /// Honest interplay with "Iconița urmează atmosfera": pinning a face is
+    /// a direct contradiction of the mood driving the face, so the manual
+    /// choice wins and the option turns itself off (its caption on the
+    /// Fundal page says so). Picking a new THEME keeps the option on — the
+    /// mood then drives the new design's day/night faces.
     func select(_ theme: AppIconTheme, isDark: Bool, pinFace: IconFace? = nil) {
         pinnedFace = theme.hasPair ? pinFace : nil
+        if pinFace != nil { followsMood = false }
         suppressAutoUntil = Date().addingTimeInterval(2.5)
         apply(theme, isDark: isDark, force: true)
+    }
+
+    // MARK: Mood-following icon
+
+    /// The Fundal page's toggle. Turning it on releases any pinned face
+    /// (the pin would contradict the mood) and immediately installs the
+    /// resolved mood's face; turning it off restores the standard behavior
+    /// (paired themes ride the merged day/night asset with the system).
+    func setFollowsMood(_ on: Bool) {
+        guard on != followsMood else { return }
+        followsMood = on
+        if on { pinnedFace = nil }
+        guard canFollowMood else { return }
+        apply(selected, isDark: moodIsDark)
+    }
+
+    /// Resolved mood changed (engine notification / launch catch-up):
+    /// install the matching face. `apply` no-ops when the right face is
+    /// already installed, so morning→day never touches the system.
+    private func moodDidChange() {
+        guard followsMood, canFollowMood else { return }
+        apply(selected, isDark: moodIsDark)
+    }
+
+    /// Scene became active: retry the mood face in case the launch-time
+    /// attempt ran before iOS considered the app foregrounded (a failed
+    /// apply rolls `lastAppliedName` back, so this retry is never a no-op
+    /// masked by stale state — and a clean state makes it free).
+    func sceneBecameActive() {
+        guard followsMood, canFollowMood else { return }
+        apply(selected, isDark: moodIsDark)
     }
 
     /// Appearance changes no longer install anything — the merged pair asset
     /// carries both variants and iOS switches them itself, silently. The one
     /// job left is migrating users still on a legacy per-face name (installed
-    /// before the merge) onto the merged asset, once.
+    /// before the merge) onto the merged asset, once. A mood-following icon
+    /// deliberately KEEPS its per-face name, so the migration skips it.
     func colorSchemeChanged(isDark: Bool) {
-        guard pinnedFace == nil,
+        guard pinnedFace == nil, !followsMood,
               autoSwitch, selected.hasPair, let paired = selected.pairedIcon,
               lastAppliedName != nil, lastAppliedName != paired,
               AppIconCatalog.theme(forIconName: lastAppliedName).id == selected.id else { return }

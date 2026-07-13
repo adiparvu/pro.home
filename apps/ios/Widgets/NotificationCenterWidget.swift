@@ -141,7 +141,9 @@ struct NotificationCenterSmallView: View {
                 Spacer().frame(height: 10)
             }
         }
-        .containerBackground(for: .widget) { Color.clear }
+        // systemSmall only (home screen / Smart Stack) — the accessory
+        // rectangular view below keeps its untinted lock-screen treatment.
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://alerts"))
     }
 }

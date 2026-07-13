@@ -17,6 +17,7 @@ struct AppearanceView: View {
     ]
 
     private var currentAccentLabel: LocalizedStringKey {
+        if appSettings.accentColor == "auto" { return "mood_accent_auto" }
         if appSettings.accentColor.hasPrefix("#") { return "Custom" }
         return accentOptions.first(where: { $0.name == appSettings.accentColor })?.labelKey ?? "Blue"
     }
@@ -83,6 +84,11 @@ struct AppearanceView: View {
                            value: moodRowValue) {
                 BackgroundMoodView()
             }
+            NavSettingsRow(icon: "textformat.size", color: .brandSkyBlue,
+                           label: "textsize_title",
+                           value: TextSizePreference.shared.rowValue) {
+                TextSizeView()
+            }
         }
     }
 
@@ -128,6 +134,13 @@ struct AppearanceView: View {
 
                 if appSettings.accentEnabled {
                     Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
+
+                // "Automat" first: the accent follows the living background's
+                // mood (morning gold / day sky / night ember). The swatch
+                // previews the CURRENT mood's accent, honestly.
+                autoAccentRow
+
+                Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
 
                 HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
@@ -176,6 +189,58 @@ struct AppearanceView: View {
                 }
             }
         }
+    }
+
+    /// "Automat" stores the `"auto"` sentinel; the root `.tint` and
+    /// `avatarRingColor(for:)` resolve it to the resolved mood's palette
+    /// accent (morning gold, day sky, night ember). The swatch previews the
+    /// CURRENT mood's accent — exactly what the app is tinted with now.
+    private var autoAccentRow: some View {
+        let isSelected = appSettings.accentColor == "auto"
+        let moodAccent = AppMoodEngine.shared.resolved.palette.accent
+        return Button {
+            withAnimation(.spring(response: 0.28)) {
+                appSettings.accentColor = "auto"
+                HapticFeedback.selection()
+            }
+            if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(moodAccent).frame(width: 26, height: 26)
+                    Image(systemName: "sparkles")
+                        .font(AppFont.scaled(11, weight: .semibold))
+                        .foregroundStyle(.white)
+                    if isSelected {
+                        Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
+                        Circle().strokeBorder(moodAccent, lineWidth: 1.5).frame(width: 32, height: 32)
+                    }
+                }
+                .frame(width: 32, height: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("mood_accent_auto")
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Text("mood_accent_auto_caption")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(AppFont.scaled(20))
+                        .foregroundStyle(moodAccent)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Haptic

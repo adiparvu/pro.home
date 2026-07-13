@@ -15,6 +15,27 @@ import UIKit
 
 // MARK: - Typography
 
+/// In-app text-size override hook (Settings → Aspect → Mărimea textului).
+///
+/// `UIFontMetrics` follows the app-global content size category and never
+/// sees a SwiftUI `.dynamicTypeSize` environment override, so the `AppFont`
+/// tokens resolve against this hook instead: nil (the default, and always
+/// the case in the widget/watch extensions, where nothing ever writes it)
+/// means "follow the system"; the app target's `TextSizePreference` mirrors
+/// its persisted override here.
+///
+/// Observable on purpose: AppFont tokens read `category` inside view bodies,
+/// so every token call site re-resolves the moment the override changes —
+/// the same invalidation the system gives us for free on a system-wide
+/// content-size change. Main-thread writes only.
+@Observable
+final class AppTextScale {
+    static let shared = AppTextScale()
+
+    /// The pinned content size category; nil follows the system.
+    var category: UIContentSizeCategory?
+}
+
 /// Every token scales with the user's Dynamic Type setting — a plain
 /// `Font.system(size:)` is frozen and silently opts the whole design system
 /// out of accessibility text sizes. `Font.system` has no `relativeTo:`, so
@@ -28,8 +49,17 @@ enum AppFont {
     private static func scaled(_ size: CGFloat, weight: Font.Weight,
                                design: Font.Design = .default,
                                relativeTo style: UIFont.TextStyle) -> Font {
-        Font.system(size: UIFontMetrics(forTextStyle: style).scaledValue(for: size),
-                    weight: weight, design: design)
+        let metrics = UIFontMetrics(forTextStyle: style)
+        // In-app override first (Settings → Aspect → Mărimea textului);
+        // without one, the system's own category applies — the pre-existing
+        // behavior, byte for byte.
+        let resolved: CGFloat = if let category = AppTextScale.shared.category {
+            metrics.scaledValue(for: size,
+                                compatibleWith: UITraitCollection(preferredContentSizeCategory: category))
+        } else {
+            metrics.scaledValue(for: size)
+        }
+        return Font.system(size: resolved, weight: weight, design: design)
     }
 
     /// 11pt semibold — section headers, uppercase labels, tags.
@@ -406,6 +436,12 @@ struct AppMoodPalette {
     let baseTop: Color
     let baseBottom: Color
     let accents: [Accent]
+    /// The mood's interactive tint — what the app's accent becomes when the
+    /// user picks "Automat" in Settings → Aspect. Each value is AA-legible
+    /// (≥ 4.5:1) as text/tint against BOTH stops of its own ground wash in
+    /// its own color scheme: morning gold #8F5C10 (5.1:1 / 4.9:1), day sky
+    /// #1B6C9C (5.5:1 / 5.0:1), night ember #E8A45C (7.8:1 / 9.1:1).
+    let accent: Color
 
     /// Dimineața — a soft gold-rose wash over near-white warm ground:
     /// sunrise light pooling top-leading, a faint rose answering low.
@@ -419,7 +455,9 @@ struct AppMoodPalette {
                    opacity: 0.32, center: UnitPoint(x: 0.15, y: 0.10), radius: 420),
             Accent(color: Color(red: 0.890, green: 0.635, blue: 0.616),
                    opacity: 0.20, center: UnitPoint(x: 0.90, y: 0.88), radius: 460),
-        ])
+        ],
+        // Warm sunrise gold #8F5C10.
+        accent: Color(red: 0.561, green: 0.361, blue: 0.063))
 
     /// Zi — the brightest ground: airy warm neutral, a whisper of sky
     /// top-trailing and warm sand low so white cards never float on void.
@@ -433,7 +471,9 @@ struct AppMoodPalette {
                    opacity: 0.22, center: UnitPoint(x: 0.85, y: 0.08), radius: 440),
             Accent(color: Color(red: 0.922, green: 0.863, blue: 0.753),
                    opacity: 0.20, center: UnitPoint(x: 0.10, y: 0.92), radius: 480),
-        ])
+        ],
+        // Deep sky blue #1B6C9C.
+        accent: Color(red: 0.106, green: 0.424, blue: 0.612))
 
     /// Noaptea — deep warm dark, deliberately NOT the smart-home bronze skin:
     /// a plum-charcoal ground with a single ember warmth high and a dusty
@@ -448,7 +488,9 @@ struct AppMoodPalette {
                    opacity: 0.10, center: UnitPoint(x: 0.85, y: 0.06), radius: 420),
             Accent(color: Color(red: 0.431, green: 0.306, blue: 0.388),
                    opacity: 0.12, center: UnitPoint(x: 0.12, y: 0.90), radius: 460),
-        ])
+        ],
+        // Warm ember amber #E8A45C.
+        accent: Color(red: 0.910, green: 0.643, blue: 0.361))
 }
 
 // MARK: - Spacing

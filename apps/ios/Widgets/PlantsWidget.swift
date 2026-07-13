@@ -52,7 +52,7 @@ struct PlantsSmallView: View {
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://plants"))
     }
 }
@@ -126,7 +126,7 @@ struct PlantsMediumView: View {
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://plants"))
     }
 }

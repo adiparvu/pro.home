@@ -43,8 +43,16 @@ extension TimeInterval {
 @Observable
 final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDelegate {
     private(set) var payload: WatchPayload?
+    /// The app mood that rode the current payload ("morning"/"day"/"night") —
+    /// nil until the phone actually sends one, and the pages then keep their
+    /// plain tints. See WatchMood.swift for the whole honesty contract.
+    private(set) var mood: WatchMood?
 
     private static let cacheKey = "prvio.watch.payload"
+    /// Persisted separately from the payload blob: wrist-side mutations
+    /// re-encode the cache through the frozen WatchPayload struct, which may
+    /// not carry the mood field yet — this key survives that round trip.
+    private static let moodKey = "prvio.watch.mood"
     /// The App Group suite, so the watch-face complications read the same
     /// payload the app renders. Falls back to standard if the group is
     /// unavailable (e.g. simulator without entitlements).
@@ -61,6 +69,10 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         if let data = Self.defaults.data(forKey: Self.cacheKey),
            let cached = try? JSONDecoder().decode(WatchPayload.self, from: data) {
             payload = cached.sanitizedForRender()
+            // The last delivery's mood — the same freshness as the cached
+            // payload it arrived with (nil when none ever arrived).
+            mood = Self.defaults.string(forKey: Self.moodKey)
+                .flatMap(WatchMood.init(rawValue:))
         }
         // Local critical-sensor alerts must show even while the app is up —
         // the delegate's willPresent grants them the banner.
@@ -77,19 +89,34 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
 
     private func ingestData(_ data: Data) {
         guard let decoded = try? JSONDecoder().decode(WatchPayload.self, from: data) else { return }
+        // The frozen WatchPayload struct may not declare the mood field yet;
+        // the probe reads it straight off the wire the moment the phone
+        // starts sending it, and stays nil until then.
+        let deliveredMood = WatchMood.fromPayloadData(data)
         Task { @MainActor in
             // A cleared push (accountId == nil) means the phone logged out or is
             // mid-switch — wipe the cache so the wrist stops showing the previous
             // account's data and falls back to the "waiting for iPhone" state.
             if decoded.accountId == nil {
                 self.payload = nil
+                self.mood = nil
                 Self.defaults.removeObject(forKey: Self.cacheKey)
+                Self.defaults.removeObject(forKey: Self.moodKey)
                 Self.defaults.removeObject(forKey: Self.criticalSensorsKey)
                 WidgetCenter.shared.reloadAllTimelines()
                 return
             }
             self.payload = decoded.sanitizedForRender()
             Self.defaults.set(data, forKey: Self.cacheKey)
+            // Each delivery is the mood's only honest source — a payload
+            // without one (older phone build) clears it rather than letting
+            // a stale atmosphere linger.
+            self.mood = deliveredMood
+            if let deliveredMood {
+                Self.defaults.set(deliveredMood.rawValue, forKey: Self.moodKey)
+            } else {
+                Self.defaults.removeObject(forKey: Self.moodKey)
+            }
             // A hazard sensor that JUST went critical taps the wrist — the
             // one payload change that must never pass silently.
             self.alertCriticalSensorTransitions(in: decoded)

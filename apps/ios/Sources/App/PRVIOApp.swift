@@ -38,6 +38,9 @@ struct PRVIOApp: App {
                 // from Settings → Aspect → Fundal). Reading `resolved` here
                 // is what re-renders the scheme when the mood changes.
                 .preferredColorScheme(AppMoodEngine.shared.resolved.palette.colorScheme)
+                // In-app text size (Settings → Aspect → Mărimea textului);
+                // nil override = pure re-application of the system size.
+                .appTextSize()
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(auth)
@@ -122,6 +125,11 @@ struct PRVIOApp: App {
             .onAppear { applyNavBarTint() }
             .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
             .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
+            // The "Automat" accent follows the mood — re-tint the UIKit nav
+            // chrome when the atmosphere flips, or back-buttons go stale.
+            .onChange(of: AppMoodEngine.shared.resolved) { _, _ in
+                if appSettings.accentColor == "auto" { applyNavBarTint() }
+            }
             // The custom scene delegate owns URL/activity delivery (it must,
             // to receive Home Screen quick actions) and forwards through these
             // notifications; .onOpenURL stays as a safety net for any path

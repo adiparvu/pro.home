@@ -131,6 +131,9 @@ struct WatchRootView: View {
         if let payload = store.payload {
             pages(payload)
                 .tabViewStyle(.verticalPage)
+                // One atmosphere for every page ground (moodPageGround reads
+                // it); nil until the phone delivers a mood with the payload.
+                .environment(\.watchMood, store.mood)
                 .onOpenURL { url in
                     // Complication taps: prvio://tasks, prvio://plants, …
                     switch url.host {
@@ -362,7 +365,7 @@ private struct WatchModuleGrid: View {
                 .padding(.horizontal, 4)
             }
             .navigationTitle(Text("watch_menu_title"))
-            .containerBackground(Color.blue.gradient.opacity(0.25), for: .navigation)
+            .moodPageGround(fallback: .blue, opacity: 0.25)
         }
     }
 }
@@ -431,7 +434,7 @@ private struct TodayGlance: View {
                 }
             }
             .navigationTitle(Text(verbatim: "PRVIO"))
-            .containerBackground(Color.blue.gradient.opacity(0.25), for: .navigation)
+            .moodPageGround(fallback: .blue, opacity: 0.25)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     // Ask the phone for a fresh payload over the live channel.
@@ -810,7 +813,7 @@ private struct MessagesPage: View {
                 }
             }
             .navigationTitle(Text("watch_menu_messages"))
-            .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+            .moodPageGround(fallback: .blue, opacity: 0.3)
         }
     }
 
@@ -913,7 +916,7 @@ private struct DMThreadDetail: View {
             }
         }
         .navigationTitle(Text(verbatim: convo.peerName))
-        .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+        .moodPageGround(fallback: .blue, opacity: 0.3)
     }
 }
 
@@ -973,7 +976,7 @@ private struct TasksPage: View {
                 }
             }
             .navigationTitle(Text("watch_tasks"))
-            .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+            .moodPageGround(fallback: .blue, opacity: 0.3)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Dictate a task straight from the wrist — the phone
@@ -1041,7 +1044,7 @@ private struct TaskDetail: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .containerBackground(Color.blue.gradient.opacity(0.3), for: .navigation)
+        .moodPageGround(fallback: .blue, opacity: 0.3)
         .sheet(isPresented: $showSession) { WorkSessionView() }
     }
 }
@@ -1177,7 +1180,7 @@ private struct PlantsPage: View {
                 }
             }
             .navigationTitle(Text("watch_plants"))
-            .containerBackground(Color.green.gradient.opacity(0.3), for: .navigation)
+            .moodPageGround(fallback: .green, opacity: 0.3)
             .toolbar {
                 if thirsty.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -1225,7 +1228,7 @@ private struct PlantDetail: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .containerBackground(Color.green.gradient.opacity(0.3), for: .navigation)
+        .moodPageGround(fallback: .green, opacity: 0.3)
     }
 }
 
@@ -1266,7 +1269,7 @@ private struct ShoppingPage: View {
                 }
             }
             .navigationTitle(Text("watch_shopping"))
-            .containerBackground(Color.orange.gradient.opacity(0.3), for: .navigation)
+            .moodPageGround(fallback: .orange, opacity: 0.3)
         }
     }
 }
@@ -1311,7 +1314,7 @@ private struct PantryPage: View {
                 }
             }
             .navigationTitle(Text("watch_pantry"))
-            .containerBackground(Color.green.gradient.opacity(0.25), for: .navigation)
+            .moodPageGround(fallback: .green, opacity: 0.25)
         }
     }
 }
@@ -1426,7 +1429,7 @@ private struct DeliveriesPage: View {
                 }
             }
             .navigationTitle(Text("watch_deliveries"))
-            .containerBackground(Color.cyan.gradient.opacity(0.3), for: .navigation)
+            .moodPageGround(fallback: .cyan, opacity: 0.3)
         }
     }
 }
@@ -1478,7 +1481,7 @@ private struct DeliveryDetail: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .containerBackground(Color.cyan.gradient.opacity(0.3), for: .navigation)
+        .moodPageGround(fallback: .cyan, opacity: 0.3)
     }
 }
 
@@ -1594,7 +1597,7 @@ private struct ControlsPage: View {
                 .padding(.top, 2)
             }
             .navigationTitle(Text("watch_menu_controls"))
-            .containerBackground(Color.purple.gradient.opacity(0.25), for: .navigation)
+            .moodPageGround(fallback: .purple, opacity: 0.25)
         }
     }
 
@@ -1689,7 +1692,7 @@ private struct SensorsPage: View {
                 .padding(.top, 2)
             }
             .navigationTitle(Text("watch_menu_sensors"))
-            .containerBackground(Color.mint.gradient.opacity(0.25), for: .navigation)
+            .moodPageGround(fallback: .mint, opacity: 0.25)
         }
     }
 
@@ -1829,6 +1832,8 @@ private struct EmergencyPage: View {
                 .padding(.top, 2)
             }
             .navigationTitle(Text("watch_menu_emergency"))
+            // Deliberately NOT moodPageGround: the red ground is a signal
+            // (this is the SOS page), never an atmosphere to soften.
             .containerBackground(Color.red.gradient.opacity(0.28), for: .navigation)
         }
     }

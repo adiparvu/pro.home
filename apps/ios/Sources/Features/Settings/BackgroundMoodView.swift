@@ -4,21 +4,38 @@ import SwiftUI
 //
 // The dedicated page for the living background: a hero preview that renders
 // the ACTUAL backdrop of the selected mood with a real glass card on top
-// (what you see is literally what every screen gets), an Auto row, and the
-// three moods as tappable preview cards. Selection persists through
-// `AppMoodEngine.override`.
+// (what you see is literally what every screen gets), an Atmosferă group
+// (Auto + optional custom hours), the three moods as tappable preview
+// cards, and a Personalizare group (mood-following app icon, weather-
+// reactive backdrop). Selection persists through `AppMoodEngine.override`.
 //
-// Honesty: the Auto explanation only claims sunrise/sunset when the engine
-// actually has coordinates; otherwise it says it follows the clock.
+// Honesty:
+// - The Auto explanation only claims sunrise/sunset when the engine
+//   actually has coordinates, and says "your hours" when custom thresholds
+//   are set.
+// - Custom-hour pickers exist only while Auto is active — a pinned mood
+//   ignores them, so they are never shown as dead controls.
+// - The icon toggle disables itself (with the reason) when the selected
+//   icon has no installable day/night pair; the weather toggle disables
+//   itself when no fresh weather data exists.
 
 struct BackgroundMoodView: View {
+    @Environment(IconManager.self) private var iconManager
+
     private var engine: AppMoodEngine { .shared }
+
+    /// Sane picker windows (minutes since midnight): morning onset
+    /// 04:00–11:45, night onset 15:00–23:45. They keep the two thresholds
+    /// from ever crossing, so "night wins" stays a theoretical fallback.
+    private static let morningRange = 4 * 60...(11 * 60 + 45)
+    private static let nightRange = 15 * 60...(23 * 60 + 45)
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.xxl) {
                 heroPreview
                 selectorSection
+                personalizeSection
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -66,12 +83,28 @@ struct BackgroundMoodView: View {
         .accessibilityLabel(Text(mood.titleKey))
     }
 
-    // MARK: Selector — Auto + the three moods
+    // MARK: Selector — Auto (+ custom hours) + the three moods
 
     private var selectorSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             SettingsGroup(title: "mood_choose_title") {
                 autoRow
+                // Custom hours refine Auto only; a pinned mood ignores them,
+                // so the rows exist only while Auto is active.
+                if engine.isAuto {
+                    rowDivider
+                    customHoursToggleRow
+                    if engine.hasCustomHours {
+                        rowDivider
+                        hourRow(title: "mood_hours_morning",
+                                minutes: morningMinutesBinding,
+                                range: Self.morningRange)
+                        rowDivider
+                        hourRow(title: "mood_hours_night",
+                                minutes: nightMinutesBinding,
+                                range: Self.nightRange)
+                    }
+                }
             }
             HStack(spacing: AppSpacing.md) {
                 ForEach(AppMood.allCases) { mood in
@@ -82,6 +115,13 @@ struct BackgroundMoodView: View {
                 }
             }
         }
+    }
+
+    /// Honest Auto caption: the user's hours when set, the sun only when
+    /// coordinates exist, the plain clock otherwise.
+    private var autoCaptionKey: LocalizedStringKey {
+        if engine.hasCustomHours { return "mood_auto_explain_custom" }
+        return engine.latitude != nil ? "mood_auto_explain_sun" : "mood_auto_explain_clock"
     }
 
     private var autoRow: some View {
@@ -95,9 +135,7 @@ struct BackgroundMoodView: View {
                     Text("mood_auto")
                         .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
-                    // Only claim the sun when coordinates actually exist.
-                    Text(engine.latitude != nil ? "mood_auto_explain_sun"
-                                                : "mood_auto_explain_clock")
+                    Text(autoCaptionKey)
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .fixedSize(horizontal: false, vertical: true)
@@ -129,6 +167,172 @@ struct BackgroundMoodView: View {
         // The backdrop crossfades itself (.smooth 1.2 / instant under Reduce
         // Motion); this spring only carries the checkmarks and rings.
         withAnimation(.spring(response: 0.3)) { engine.override = mood }
+    }
+
+    // MARK: Custom hours (refine Auto; hidden while a mood is pinned)
+
+    private var customHoursToggleRow: some View {
+        MoodToggleRow(icon: "clock",
+                      title: "mood_hours_custom",
+                      caption: engine.latitude != nil ? "mood_hours_caption_sun"
+                                                      : "mood_hours_caption_clock",
+                      isOn: Binding(
+                          get: { engine.hasCustomHours },
+                          set: { on in
+                              HapticFeedback.selection()
+                              withAnimation(.spring(response: 0.3)) {
+                                  if on {
+                                      // Seed from what Auto would do TODAY, so
+                                      // the pickers open on the honest values.
+                                      let edges = engine.defaultEdges()
+                                      engine.morningStartMinutes =
+                                          Self.minutes(fromHours: edges.morning, in: Self.morningRange)
+                                      engine.nightStartMinutes =
+                                          Self.minutes(fromHours: edges.night, in: Self.nightRange)
+                                  } else {
+                                      // The labeled reset: back to sunrise/sunset
+                                      // (or the standard clock windows).
+                                      engine.morningStartMinutes = nil
+                                      engine.nightStartMinutes = nil
+                                  }
+                              }
+                          }))
+    }
+
+    private var morningMinutesBinding: Binding<Int> {
+        Binding(get: { engine.morningStartMinutes ?? Self.morningRange.lowerBound },
+                set: { engine.morningStartMinutes = $0 })
+    }
+
+    private var nightMinutesBinding: Binding<Int> {
+        Binding(get: { engine.nightStartMinutes ?? Self.nightRange.lowerBound },
+                set: { engine.nightStartMinutes = $0 })
+    }
+
+    private func hourRow(title: LocalizedStringKey,
+                         minutes: Binding<Int>,
+                         range: ClosedRange<Int>) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppFont.scaled(15))
+                .foregroundStyle(.primary)
+            Spacer()
+            DatePicker(selection: Binding(
+                           get: { Self.date(fromMinutes: minutes.wrappedValue) },
+                           set: { minutes.wrappedValue = Self.clamp(Self.minutes(from: $0), to: range) }
+                       ),
+                       in: Self.date(fromMinutes: range.lowerBound)...Self.date(fromMinutes: range.upperBound),
+                       displayedComponents: .hourAndMinute) {
+                Text(title)
+            }
+            .labelsHidden()
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.sm)
+    }
+
+    private var rowDivider: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(AppOpacity.hairline))
+            .frame(height: 0.4)
+            .padding(.leading, 52)
+    }
+
+    // MARK: Personalizare — icon + weather
+
+    private var personalizeSection: some View {
+        let canFollow = iconManager.canFollowMood
+        let hasWeather = AppWeatherTone.hasFreshSummary
+        return SettingsGroup(title: "mood_personalize_title") {
+            MoodToggleRow(icon: "app.badge",
+                          title: "mood_icon_follow",
+                          caption: iconCaptionKey,
+                          isOn: Binding(
+                              get: { iconManager.followsMood },
+                              set: { on in
+                                  HapticFeedback.selection()
+                                  iconManager.setFollowsMood(on)
+                              }))
+                .disabled(!canFollow)
+                .opacity(canFollow ? 1 : 0.5)
+            rowDivider
+            MoodToggleRow(icon: "cloud.sun",
+                          title: "mood_weather_reactive",
+                          caption: hasWeather ? "mood_weather_caption" : "mood_weather_nodata",
+                          isOn: Binding(
+                              get: { engine.weatherReactive },
+                              set: { on in
+                                  HapticFeedback.selection()
+                                  engine.weatherReactive = on
+                              }))
+                .disabled(!hasWeather)
+                .opacity(hasWeather ? 1 : 0.5)
+        }
+    }
+
+    /// Why the icon can(not) follow the mood, stated plainly: the default
+    /// primary icon already day/night-switches with the SYSTEM; singles have
+    /// no faces to switch; pairs get the full explanation.
+    private var iconCaptionKey: LocalizedStringKey {
+        if iconManager.canFollowMood { return "mood_icon_follow_caption" }
+        return iconManager.selected.isDefault ? "mood_icon_follow_default"
+                                              : "mood_icon_follow_unavailable"
+    }
+
+    // MARK: Minutes ↔ Date plumbing (thresholds persist as minutes since midnight)
+
+    private static func date(fromMinutes minutes: Int) -> Date {
+        Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60,
+                              second: 0, of: .now) ?? .now
+    }
+
+    private static func minutes(from date: Date) -> Int {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+    }
+
+    /// Fractional hours → clamped minutes, rounded to 5 for a tidy seed.
+    private static func minutes(fromHours hours: Double, in range: ClosedRange<Int>) -> Int {
+        clamp(Int((hours * 60 / 5).rounded()) * 5, to: range)
+    }
+
+    private static func clamp(_ value: Int, to range: ClosedRange<Int>) -> Int {
+        min(max(value, range.lowerBound), range.upperBound)
+    }
+}
+
+// MARK: - Toggle row with caption (Apple Settings grammar)
+
+private struct MoodToggleRow: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let caption: LocalizedStringKey
+    @Binding var isOn: Bool
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon,
+                             color: isOn && isEnabled ? .accentColor : Color.primary.opacity(0.4))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppFont.scaled(15))
+                    .foregroundStyle(.primary)
+                Text(caption)
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(.accentColor)
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 13)
+        .accessibilityElement(children: .combine)
     }
 }
 

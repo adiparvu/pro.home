@@ -121,6 +121,11 @@ struct WatchPayload: Codable {
     /// mail, not a family surface — it rides outsider payloads too (it is
     /// THEIR mail). Empty until the phone's conversation heads load.
     var dmConversations: [DMConversationEntry] = []
+    /// The resolved app mood at snapshot time ("morning"/"day"/"night" —
+    /// mirrors the App Group key "app.mood.current"), so the wrist can
+    /// breathe the same atmosphere. nil (older phone build, signed-out
+    /// push) keeps the watch's neutral page tints.
+    var mood: String? = nil
 }
 
 // MARK: Tolerant decoding
@@ -140,6 +145,7 @@ extension WatchPayload {
         case weatherTemp, weatherSymbol, weatherLo, weatherHi, weatherAdvisory
         case streakDays, budgetSpent, budgetLimit, budgetCurrency, pageOrder
         case sensors, actuators, emergencyContacts, emergencySteps, dmConversations
+        case mood
     }
 
     init(from decoder: Decoder) throws {
@@ -171,6 +177,7 @@ extension WatchPayload {
         emergencyContacts = try c.decodeIfPresent([EmergencyContactEntry].self, forKey: .emergencyContacts) ?? []
         emergencySteps    = try c.decodeIfPresent([EmergencyStepEntry].self,  forKey: .emergencySteps) ?? []
         dmConversations   = try c.decodeIfPresent([DMConversationEntry].self, forKey: .dmConversations) ?? []
+        mood              = try c.decodeIfPresent(String.self,                forKey: .mood)
     }
 }
 
@@ -874,7 +881,10 @@ enum SharedDataStore {
                             // Personal mail: the DM catalog is written from the
                             // signed-in user's own conversation heads, so it is
                             // theirs on every role — family or outsider.
-                            dmConversations: readDMCatalog())
+                            dmConversations: readDMCatalog(),
+                            // The living backdrop's resolved mood, so the wrist
+                            // breathes the same atmosphere as the phone.
+                            mood: UserDefaults(suiteName: suiteName)?.string(forKey: "app.mood.current"))
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

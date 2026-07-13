@@ -189,6 +189,13 @@ struct AssigneeAvatarView: View {
 func avatarRingColor(for name: String) -> Color {
     if name.hasPrefix("#") { return Color(hex: name) ?? .blue }
     switch name {
+    // "auto" = the accent follows the living background's mood. Resolved
+    // through the engine's last-published mood (nonisolated — this function
+    // is also called from UIKit appearance setup off the main actor). Views
+    // that show it live (root tint, AppearanceView) already read
+    // `AppMoodEngine.shared.resolved` in their bodies, so they re-evaluate
+    // this the moment the mood changes.
+    case "auto":   return AppMood.lastPublished.palette.accent
     case "purple": return .purple
     case "green":  return Color(red: 0.25, green: 0.82, blue: 0.45)
     case "orange": return .orange

@@ -3,9 +3,11 @@ import SwiftUI
 // MARK: - AppBackdrop — the one living background
 //
 // Renders the resolved mood's palette: a vertical ground wash plus two
-// static ambient radial accents. Mood changes crossfade with `.smooth(1.2)`
-// (instant under Reduce Motion). There is no continuous animation and no
-// blur — off a mood change this costs what the old flat color did.
+// static ambient radial accents, and — on live backdrops, when the engine
+// has a fresh weather tone — one extra flat low-opacity weather wash. Mood
+// and tone changes crossfade with `.smooth(1.2)` (instant under Reduce
+// Motion). There is no continuous animation and no blur — off a change
+// this costs what the old flat color did.
 //
 // Lifecycle: live backdrops (fixed == nil) ref-count themselves into
 // `AppMoodEngine` so its 15-minute re-resolution timer runs only while at
@@ -46,6 +48,12 @@ struct AppBackdrop: View {
     var body: some View {
         let mood = effectiveMood
         let palette = mood.palette
+        // Weather modulates LIVE backdrops only (fixed settings previews
+        // stay the pure mood): one extra flat low-opacity wash, derived by
+        // the engine from the property's fresh cached weather. It is always
+        // in the tree for live backdrops (clear when no tone) so tone
+        // changes crossfade instead of inserting/removing a layer.
+        let tone: AppWeatherTone? = fixed == nil ? AppMoodEngine.shared.weatherTone : nil
         ZStack {
             LinearGradient(colors: [palette.baseTop, palette.baseBottom],
                            startPoint: .top, endPoint: .bottom)
@@ -54,8 +62,12 @@ struct AppBackdrop: View {
                                center: accent.center,
                                startRadius: 0, endRadius: accent.radius)
             }
+            if fixed == nil {
+                tone?.wash(for: palette.colorScheme) ?? Color.clear
+            }
         }
         .animation(reduceMotion ? nil : .smooth(duration: 1.2), value: mood)
+        .animation(reduceMotion ? nil : .smooth(duration: 1.2), value: tone)
         .accessibilityHidden(true)   // pure atmosphere — nothing to announce
         .onAppear { if fixed == nil { AppMoodEngine.shared.backdropAppeared() } }
         .onDisappear { if fixed == nil { AppMoodEngine.shared.backdropDisappeared() } }

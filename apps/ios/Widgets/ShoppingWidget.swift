@@ -44,7 +44,7 @@ struct ShoppingSmallView: View {
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://shopping"))
     }
 }
@@ -120,7 +120,7 @@ struct ShoppingMediumView: View {
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://shopping"))
     }
 }
