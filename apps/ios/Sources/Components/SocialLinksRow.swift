@@ -3,15 +3,16 @@ import SwiftUI
 // MARK: - SocialLinksRow
 //
 // The one way saved social profiles are previewed anywhere in the app:
-// a horizontal row with one platform-tinted disc per SAVED network — never
-// a placeholder, never a dead icon. Tapping opens the profile through its
-// https URL (which universal-links into the installed app when present).
-// An entry that has a handle but no truthful destination — a WhatsApp
-// value that isn't a phone number — renders as a visibly inert chip
-// showing the stored handle instead of pretending to be a link.
+// a horizontal row with one true brand badge (SocialBrandIcon) per SAVED
+// network — never a placeholder, never a dead icon. Tapping opens the
+// profile through its https URL (which universal-links into the installed
+// app when present). An entry that has a handle but no truthful
+// destination — a WhatsApp value that isn't a phone number — renders as a
+// visibly inert chip showing the stored handle instead of pretending to
+// be a link.
 //
-// Iconography, colors and URL building all come from SocialLink itself
-// (the same source the "Add Network" sheet draws from), so every surface
+// Marks come from SocialBrandIcon and colors/URLs from SocialLink itself
+// (the same sources the "Add Network" sheet draws from), so every surface
 // stays consistent by construction.
 
 struct SocialLinksRow: View {
@@ -45,23 +46,16 @@ struct SocialLinksRow: View {
         }
     }
 
-    // The 46pt tinted disc the member profile sheet established.
+    // The 46pt badge slot the member profile sheet established — now the
+    // platform's true mark on its brand field.
     private func platformDisc(_ link: SocialLink) -> some View {
-        ZStack {
-            Circle()
-                .fill(link.platformColor.opacity(0.13))
-                .frame(width: 46, height: 46)
-            Image(systemName: link.platformIcon)
-                .font(AppFont.scaled(17, weight: .semibold))
-                .foregroundStyle(link.platformColor)
-        }
+        SocialBrandIcon(platform: link.platform, size: 46)
     }
 
     /// Honest fallback: the network and its stored handle, not a button.
     private func inertChip(_ link: SocialLink) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: link.platformIcon)
-                .font(AppFont.scaled(13, weight: .semibold))
+            SocialBrandIcon(platform: link.platform, size: 18)
             Text(link.sanitizedHandle)
                 .font(AppFont.scaled(13))
                 .lineLimit(1)

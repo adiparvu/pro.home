@@ -542,7 +542,7 @@ struct AddFamilyMemberSheet: View {
         FormGroup(title: "SOCIAL NETWORKS") {
             ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                 HStack(spacing: AppSpacing.md) {
-                    ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
+                    SocialBrandIcon(platform: link.platform, size: 36)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(LocalizedStringKey(link.platformLabel))
                             .font(AppFont.captionEmphasis).foregroundStyle(.primary)

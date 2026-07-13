@@ -29,13 +29,8 @@ final class FamilyModelTests: XCTestCase {
         XCTAssertEqual(link("myspace", "x").platformLabel, "Myspace")
     }
 
-    // MARK: - SocialLink.platformIcon
-
-    func testPlatformIconKnownAndFallback() {
-        XCTAssertEqual(link("instagram", "x").platformIcon, "camera.filters")
-        XCTAssertEqual(link("telegram", "x").platformIcon, "paperplane.fill")
-        XCTAssertEqual(link("myspace", "x").platformIcon, "link")
-    }
+    // (platformIcon was removed: platform marks are drawn as vectors by
+    // SocialBrandIcon, not mapped to SF Symbol names on the model.)
 
     // MARK: - SocialLink.openURL
 

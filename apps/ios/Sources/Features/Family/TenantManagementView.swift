@@ -304,8 +304,7 @@ struct TenantManagementView: View {
 
     private func socialChip(_ link: SocialLink) -> some View {
         HStack(spacing: 5) {
-            Image(systemName: link.platformIcon)
-                .font(AppFont.label)
+            SocialBrandIcon(platform: link.platform, size: 18)
             Text(link.platformLabel)
                 .font(AppFont.caption)
         }

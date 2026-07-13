@@ -47,8 +47,6 @@ struct AddSocialLinkSheet: View {
     @State private var platform = "instagram"
     @State private var handle = ""
 
-    private var link: SocialLink { SocialLink(platform: platform, handle: handle) }
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -57,25 +55,42 @@ struct AddSocialLinkSheet: View {
                     HStack(spacing: 16) {
                         ForEach(kSocialPlatforms, id: \.self) { p in
                             let sl = SocialLink(platform: p, handle: "")
-                            Button { platform = p } label: {
+                            let isSelected = platform == p
+                            Button {
+                                HapticFeedback.selection()
+                                platform = p
+                            } label: {
                                 VStack(spacing: 6) {
-                                    ColoredIconBadge(icon: sl.platformIcon, color: sl.platformColor, size: 48)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                .strokeBorder(platform == p ? sl.platformColor : .clear, lineWidth: 2)
-                                        )
+                                    // Unselected tiles keep full brand color
+                                    // (that's what makes them recognizable)
+                                    // but recede via opacity and scale; the
+                                    // selection ring floats just outside the
+                                    // chosen badge, so the cue is shape and
+                                    // motion, never color alone.
+                                    SocialBrandIcon(platform: p, size: 48)
+                                        .opacity(isSelected ? 1 : 0.45)
+                                        .scaleEffect(isSelected ? 1 : 0.92)
+                                        .overlay {
+                                            if isSelected {
+                                                RoundedRectangle(cornerRadius: 48 * 0.235 + 3, style: .continuous)
+                                                    .strokeBorder(sl.platformColor, lineWidth: 2)
+                                                    .padding(-3.5)
+                                            }
+                                        }
                                     Text(LocalizedStringKey(sl.platformLabel))
                                         .font(AppFont.scaled(9, weight: .medium))
-                                        .foregroundStyle(platform == p ? sl.platformColor : Color.primary.opacity(0.4))
+                                        .foregroundStyle(isSelected ? sl.platformColor : Color.primary.opacity(0.4))
                                 }
+                                .animation(.smooth(duration: 0.22), value: platform)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(isSelected ? .isSelected : [])
                         }
                     }
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
 
                     HStack(spacing: 12) {
-                        ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
+                        SocialBrandIcon(platform: platform, size: 36)
                         TextField("@username", text: $handle)
                             .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)

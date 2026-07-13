@@ -18,28 +18,20 @@ struct SocialLink: Codable, Identifiable, Hashable {
         }
     }
 
-    var platformIcon: String {
-        switch platform {
-        case "instagram": return "camera.filters"
-        case "facebook":  return "hand.thumbsup.fill"
-        case "whatsapp":  return "message.fill"
-        case "linkedin":  return "briefcase.fill"
-        case "tiktok":    return "music.note"
-        case "twitter":   return "bird"
-        case "telegram":  return "paperplane.fill"
-        default:          return "link"
-        }
-    }
-
+    /// The platform's accent for text, rings and tinted chips — the official
+    /// brand color, mirroring the fields SocialBrandIcon paints (the badge
+    /// itself is always drawn by SocialBrandIcon, never composed from this).
+    /// TikTok and X are brand-black, so they use `.primary` to stay legible
+    /// in both color schemes wherever this drives foreground text.
     var platformColor: Color {
         switch platform {
-        case "instagram": return Color(red: 0.85, green: 0.20, blue: 0.55)
-        case "facebook":  return Color(red: 0.23, green: 0.35, blue: 0.68)
-        case "whatsapp":  return Color(red: 0.16, green: 0.72, blue: 0.37)
-        case "linkedin":  return Color(red: 0.10, green: 0.47, blue: 0.71)
+        case "instagram": return Color(red: 0.882, green: 0.188, blue: 0.424) // #E1306C
+        case "facebook":  return Color(red: 0.094, green: 0.467, blue: 0.949) // #1877F2
+        case "whatsapp":  return Color(red: 0.145, green: 0.827, blue: 0.400) // #25D366
+        case "linkedin":  return Color(red: 0.039, green: 0.400, blue: 0.761) // #0A66C2
         case "tiktok":    return .primary
-        case "twitter":   return Color(red: 0.10, green: 0.55, blue: 0.92)
-        case "telegram":  return Color(red: 0.13, green: 0.60, blue: 0.87)
+        case "twitter":   return .primary
+        case "telegram":  return Color(red: 0.133, green: 0.620, blue: 0.851) // #229ED9
         default:          return .blue
         }
     }

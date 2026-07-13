@@ -110,7 +110,10 @@ struct EditProfileView: View {
                             socialLinks.append(SocialLink(platform: p, handle: ""))
                             HapticFeedback.selection()
                         } label: {
-                            Label(SocialLink(platform: p, handle: "").platformLabel, systemImage: SocialLink(platform: p, handle: "").platformIcon)
+                            // Text-only on purpose: system menus can only
+                            // render SF Symbols, and no symbol is the real
+                            // brand mark — an honest name beats a fake icon.
+                            Text(SocialLink(platform: p, handle: "").platformLabel)
                         }
                     }
                 } label: {
@@ -129,11 +132,7 @@ struct EditProfileView: View {
             } else {
                 ForEach($socialLinks) { $link in
                     HStack(spacing: 10) {
-                        Image(systemName: link.platformIcon)
-                            .font(AppFont.scaled(14))
-                            .foregroundStyle(link.platformColor)
-                            .frame(width: 26, height: 26)
-                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                        SocialBrandIcon(platform: link.platform, size: 26)
                         TextField(link.platformLabel, text: $link.handle)
                             .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
