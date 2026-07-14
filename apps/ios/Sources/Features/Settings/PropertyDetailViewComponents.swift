@@ -69,10 +69,23 @@ extension PropertyDetailView {
         .ignoresSafeArea(edges: .top)
         // Measured OUTSIDE the ignored edge, so it still reports the full
         // status-bar + navigation-bar height — the compact bar's frame.
+        //
+        // LOOP GUARD: this callback runs mid-layout, and with a hidden bar
+        // background + a top-ignoring ScrollView the measured inset is
+        // recomputed while the navigation bar settles during the push. A
+        // synchronous @State write from inside that measurement re-enters
+        // the same layout pass — if the inset flips between passes the page
+        // livelocks on the main thread (freeze → watchdog kill). Absorb
+        // sub-point jitter with a dead-band and land the write in its own
+        // main-queue turn, so every re-layout is frame-paced, never
+        // same-pass re-entrant.
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.safeAreaInsets.top
         } action: { inset in
-            heroTopInset = inset
+            guard abs(inset - heroTopInset) > 0.5 else { return }
+            Task { @MainActor in
+                if abs(inset - heroTopInset) > 0.5 { heroTopInset = inset }
+            }
         }
         .overlay(alignment: .top) { compactBar(property) }
         .onPreferenceChange(StretchyHeroBottomEdgeKey.self) { bottom in
@@ -194,7 +207,11 @@ extension PropertyDetailView {
         // Without a measured top inset the bar has no frame to occupy —
         // keep it hidden rather than float a stray title.
         guard heroTopInset > 0 else {
-            if heroBarProgress != 0 { heroBarProgress = 0 }
+            if heroBarProgress != 0 {
+                Task { @MainActor in
+                    if heroBarProgress != 0 { heroBarProgress = 0 }
+                }
+            }
             return
         }
         let titleTop = heroBottom + Self.heroTitleTopGap
@@ -204,8 +221,14 @@ extension PropertyDetailView {
         let next = reduceMotion
             ? (clamped < 0.5 ? 0 : 1)
             : (clamped * 50).rounded() / 50
-        if next != heroBarProgress {
-            heroBarProgress = next
+        guard next != heroBarProgress else { return }
+        // Same transaction-break as the inset capture above: the preference
+        // is collected during view updates, so its handler must never write
+        // state back into the pass that produced it. The bar fade lands one
+        // frame later — invisible across a 28 pt fade window — and a
+        // geometry↔state oscillation can no longer lock the main thread.
+        Task { @MainActor in
+            if heroBarProgress != next { heroBarProgress = next }
         }
     }
 
@@ -233,8 +256,10 @@ extension PropertyDetailView {
                     row("globe.europe.africa.fill", "Country", property.country, .blue)
                     rowDivider()
                 }
-                if let size = property.sizeSqm {
-                    row("ruler.fill", "Area", "\(Int(size)) m²", .orange)
+                // `Int(Double)` traps on values outside Int's range — a
+                // garbage `size_sqm` row must degrade, never kill the page.
+                if let size = property.sizeSqm, size.isFinite, size > 0 {
+                    row("ruler.fill", "Area", "\(Int(min(size.rounded(), 100_000_000))) m²", .orange)
                     rowDivider()
                 }
                 if let rooms = property.numRooms {

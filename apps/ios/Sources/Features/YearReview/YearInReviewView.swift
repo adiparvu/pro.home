@@ -49,8 +49,10 @@ struct YearInReviewView: View {
     /// Fingerprint of everything the share cards draw — re-renders them only
     /// when a number actually changed (year switch, realtime update).
     private func shareFingerprint(_ story: YearStory) -> String {
+        // Double interpolation, not `Int(...)`: the conversion traps on a
+        // pathological expense total, and this runs at page entry.
         "\(story.year)-\(story.tasksDoneCount)-\(story.photosCount)-\(story.documentsCount)-"
-            + "\(Int(story.expenseTotal))-\(story.workedSeconds)-\(story.waterings)-"
+            + "\(story.expenseTotal.rounded())-\(story.workedSeconds)-\(story.waterings)-"
             + "\(story.rentPaymentsCount)-\(propertyService.primary?.name ?? "")"
     }
 
