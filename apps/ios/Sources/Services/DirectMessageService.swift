@@ -161,6 +161,14 @@ final class DirectMessageService {
     var dms: [DirectMessage] = [] { didSet { revision &+= 1 } }
     var isLoading = false
 
+    /// Live realtime diagnostic, surfaced by the chat view's warning banner.
+    /// Exactly `"live"` when the WebSocket is connected AND the channel is
+    /// subscribed (banner hidden); a `"socket:… chan:…"` string when either is
+    /// degraded; and `"FAIL: <error> · socket:…"` carrying the FULL, verbatim
+    /// subscribe error when `subscribeWithError()` throws — the whole point
+    /// being that the real error is finally visible instead of swallowed.
+    private(set) var realtimeStatus: String = "…"
+
     /// Bumped whenever UserDefaults-backed local state (last-seen timestamps,
     /// hidden message ids) changes. Those aren't observable stored properties,
     /// so the derived reads (`messages`, `unreadCount`) touch this value to
@@ -596,8 +604,13 @@ final class DirectMessageService {
         // thread is open). The status check matters: a channel whose initial
         // subscribe failed at launch used to satisfy `!= nil` and silence the
         // whole session — no live messages, no typing indicator.
+        // GENUINELY live means BOTH halves are up: the channel reads
+        // `.subscribed` AND the underlying WebSocket is `.connected`. A stale
+        // `.subscribed` channel on a dead socket (the "no connected users"
+        // tenant shutdown) used to satisfy the old channel-only guard and
+        // silence the session forever — so the socket is now part of the test.
         if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed { return }
+           ch.status == .subscribed, supabase.realtimeV2.status == .connected { return }
         if channel != nil { await unsubscribe() }
         let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
         // Incremental reconciliation: append/patch/remove the single changed row
@@ -675,11 +688,16 @@ final class DirectMessageService {
             }
         }
         do {
+            // Note: with the default `connectOnSubscribe` option (true), this
+            // auto-connects the WebSocket when it's disconnected — so no
+            // explicit `realtimeV2.connect()` is needed here.
             try await ch.subscribeWithError()
         } catch {
             // A failed subscribe must leave NO trace: keeping the dead channel
-            // made the idempotent guard treat the whole session as live.
+            // made the idempotent guard treat the whole session as live. Surface
+            // the FULL error to the diagnostic banner before cleaning up.
             debugLog("DM realtime subscribe failed:", error)
+            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
@@ -688,6 +706,45 @@ final class DirectMessageService {
         }
         channel = ch
         subscribedPropertyId = propertyId
+        refreshRealtimeStatus()
+    }
+
+    // MARK: - Realtime diagnostics
+
+    /// Short lowercase description of the realtime WebSocket connection.
+    private var socketStatusText: String {
+        switch supabase.realtimeV2.status {
+        case .connected: "connected"
+        case .connecting: "connecting"
+        case .disconnected: "disconnected"
+        @unknown default: "unknown"
+        }
+    }
+
+    /// Short description of a channel's subscription state (`nil` = no channel).
+    private func channelStatusText(_ status: RealtimeChannelStatus?) -> String {
+        switch status {
+        case .subscribed: "subscribed"
+        case .subscribing: "subscribing"
+        case .unsubscribing: "unsubscribing"
+        case .unsubscribed: "unsubscribed"
+        case nil: "none"
+        @unknown default: "unknown"
+        }
+    }
+
+    /// Genuinely healthy: the WebSocket is connected AND the channel is
+    /// subscribed. A stale `.subscribed` channel on a dropped socket is NOT
+    /// healthy — the old code trusted the channel alone and never rebuilt.
+    private var realtimeHealthy: Bool {
+        supabase.realtimeV2.status == .connected && channel?.status == .subscribed
+    }
+
+    /// Recomputes `realtimeStatus` from current socket + channel health.
+    private func refreshRealtimeStatus() {
+        realtimeStatus = realtimeHealthy
+            ? "live"
+            : "socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
     }
 
     /// Delivery safety net for an OPEN thread: verifies the channel is
@@ -695,8 +752,19 @@ final class DirectMessageService {
     /// dropped socket), rebuilds it and refetches — so a conversation the
     /// user is looking at can never sit silent. Free when healthy.
     func ensureLiveDelivery(propertyId: UUID, myName: String) async {
-        if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed { return }
+        // Healthy ONLY when the channel is subscribed AND the socket is
+        // connected — a stale `.subscribed` channel riding a dead WebSocket is
+        // treated as unhealthy so it actually gets rebuilt. Refresh the
+        // diagnostic on the healthy path so the banner reflects the live socket.
+        if subscribedPropertyId == propertyId, realtimeHealthy {
+            refreshRealtimeStatus()
+            return
+        }
+        // Unhealthy: if we're holding a (now dead) channel, tear it down first
+        // so subscribeRealtime can't short-circuit on its stale `.subscribed`
+        // status; a nil channel means the initial subscribe still owns setup.
+        // subscribeRealtime then rebuilds and auto-reconnects the socket.
+        if channel != nil { await unsubscribe() }
         await subscribeRealtime(propertyId: propertyId, myName: myName)
         await load(propertyId: propertyId, myName: myName)
     }

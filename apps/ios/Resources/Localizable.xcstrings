@@ -44081,6 +44081,22 @@
         }
       }
     },
+    "realtime_status_prefix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Realtime"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Realtime"
+          }
+        }
+      }
+    },
     "account_id_copy_hint": {
       "localizations": {
         "en": {

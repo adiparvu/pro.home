@@ -193,6 +193,13 @@ struct ChatView: View {
 
     var body: some View {
         messageList
+            // Diagnostic strip: shows only when the realtime channel/socket is
+            // NOT live, carrying the exact status (and verbatim subscribe error)
+            // so the user can tap to copy it. Zero height — and no visible
+            // chrome — while healthy, so it never touches the normal layout.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                RealtimeStatusBanner(status: messageService.realtimeStatus)
+            }
             // The compose bar lives in the safe-area inset — the canonical
             // iMessage structure (matches the DM thread): the scroll view
             // gains the matching bottom inset automatically and the content

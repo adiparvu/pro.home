@@ -253,6 +253,13 @@ struct DirectMessageView: View {
         // which stretched the list and pushed sent bubbles off the right edge.
         // This matches the group chat (`ChatView`), which frames correctly.
         messageList
+        // Diagnostic strip: shows only when the realtime channel/socket is
+        // NOT live, carrying the exact status (and verbatim subscribe error)
+        // so the user can tap to copy it. Zero height — and no visible chrome —
+        // while healthy, so it never touches the normal chat layout.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            RealtimeStatusBanner(status: directMessageService.realtimeStatus)
+        }
         // The compose bar lives in the safe-area inset — the canonical
         // iMessage structure. It can never be pushed off-screen by the
         // list's internal geometry (the empty-state GeometryReader used to
