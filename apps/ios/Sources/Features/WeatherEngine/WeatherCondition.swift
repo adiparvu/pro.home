@@ -205,10 +205,12 @@ enum WeatherRendererTier: String, Sendable {
 ///   heavyRain     Composite  — denser rain + stronger lens refraction
 ///   thunderstorm ★ Composite — Canvas storm clouds + SpriteKit rain + Metal
 ///                              lightning illumination + bolt stroke
-///   snow          SpriteKit  — parallax flake system
-///   blizzard      SpriteKit  — dense wind-driven flakes
+///   snow          Composite  — SpriteKit parallax flakes + Canvas near-flake
+///                              motion blur + growing accumulation band
+///   blizzard      Composite  — dense wind-driven SpriteKit flakes + Canvas
+///                              motion streaks + pulsing whiteout + accumulation
 ///   wind          Canvas     — fast streaked cloud wisps
-///   hail          Composite  — hard SpriteKit pellets + flash accents
+///   hail          Composite  — hard SpriteKit pellets (+ bottom bounce) + flash
 ///   heatWave      Metal      — heat-shimmer distortion over a hazy sky
 enum WeatherCondition: String, CaseIterable, Identifiable, Sendable {
     case clearDay, goldenHour, sunrise, sunset, blueHour, night, fullMoon
@@ -308,10 +310,12 @@ enum WeatherCondition: String, CaseIterable, Identifiable, Sendable {
             return .metal
         case .blueHour, .clouds, .heavyClouds, .fog, .mist, .wind:
             return .canvas
-        case .snow, .blizzard:
-            return .spriteKit
         case .sunrise, .sunset, .night, .fullMoon,
-             .rain, .heavyRain, .thunderstorm, .hail:
+             .rain, .heavyRain, .thunderstorm, .hail,
+             .snow, .blizzard:
+            // snow/blizzard layer the SpriteKit flake engine with Canvas
+            // accents (near-flake motion blur / streaks / whiteout /
+            // accumulation), so they are composite, not single-tier SpriteKit.
             return .composite
         }
     }

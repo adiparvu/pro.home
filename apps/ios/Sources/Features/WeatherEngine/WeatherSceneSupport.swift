@@ -58,9 +58,14 @@ struct ComposedRainView: View, Equatable {
 }
 
 /// Hosts the shared `SnowScene`. Same lifecycle/pause contract as the rain host.
+/// `wind` (0…1, default 0) forwards the shared scene's additive wind-bias knob —
+/// the snow scene passes 0 (calm), the blizzard passes a strong bias for driven,
+/// near-horizontal flakes. Default 0 keeps the existing (generic-snow) caller
+/// byte-for-byte, and the scene object is still created once and kept in `@State`.
 struct ComposedSnowView: View, Equatable {
     let intensity: CGFloat
     let isActive: Bool
+    var wind: CGFloat = 0
 
     @State private var scene: SKScene?
 
@@ -73,13 +78,14 @@ struct ComposedSnowView: View, Equatable {
             }
         }
         .onAppear {
-            if scene == nil { scene = SnowScene(intensity: intensity) }
+            if scene == nil { scene = SnowScene(intensity: intensity, wind: wind) }
         }
         .allowsHitTesting(false)
     }
 
     static func == (lhs: ComposedSnowView, rhs: ComposedSnowView) -> Bool {
         lhs.intensity == rhs.intensity && lhs.isActive == rhs.isActive
+            && lhs.wind == rhs.wind
     }
 }
 
@@ -456,6 +462,80 @@ struct WeatherFogBank: View {
             }
         }
         .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Snow accumulation band (Canvas, time-bounded) — shared
+
+/// A soft white snow pile that builds along the BOTTOM edge and thickens over
+/// time, then holds — the settling snow the flake field alone can't show. It is
+/// SHARED by SnowWeatherScene (slow, thin) and BlizzardScene (faster, deeper).
+///
+/// GROWTH + CAP (the energy contract for accumulation — it must not grow
+/// forever): the band height is `size.height * cap * (1 - e^(-elapsed/tau))`,
+/// an asymptotic rise that is BOUNDED by `cap` by construction and RESETS on
+/// scene mount (`mountTime` is captured in `onAppear`, so a fresh snow scene
+/// starts from a bare ground and builds up again). `tau` sets how fast it
+/// approaches the cap. In the still frame (Reduce Motion / Low Power / effects
+/// off — `motionEnabled == false`, time frozen) it shows a settled
+/// representative pile instead of a bare edge, so the frozen frame reads as snow.
+///
+/// COST: one deterministic ~26-point path fill per frame (an undulating drift
+/// crest) with a baked soft-edge gradient — no Canvas blur, no per-flake work.
+struct SnowAccumulationBand: View {
+    /// Maximum band height as a fraction of the scene height (the hard cap).
+    var cap: Double
+    /// Seconds to reach ~63% of the cap — smaller builds faster.
+    var timeConstant: Double
+    /// Snow tint — a soft cool white.
+    var tint: Color = Color(red: 0.95, green: 0.97, blue: 1.0)
+    var time: TimeInterval
+    var motionEnabled: Bool
+
+    /// The stage clock value when this band first appeared — the growth origin,
+    /// so accumulation restarts from zero every time the snow scene mounts.
+    @State private var mountTime: TimeInterval?
+
+    var body: some View {
+        Canvas { context, size in
+            let progress = growthProgress
+            guard progress > 0.002, size.width > 1, size.height > 1 else { return }
+            let h = size.height * cap * progress
+            let baseTop = size.height - h
+            let w = size.width
+
+            // Undulating drift crest — deterministic humps, calm (no time term
+            // in the shape, so the pile sits still while it slowly deepens).
+            var path = Path()
+            path.move(to: CGPoint(x: 0, y: size.height))
+            path.addLine(to: CGPoint(x: 0, y: baseTop))
+            let samples = 26
+            for i in 0...samples {
+                let fx = Double(i) / Double(samples)
+                let hump = 0.22 * (0.5 + 0.5 * sin(fx * .pi * 3 + 0.6))
+                    + 0.09 * (0.5 + 0.5 * sin(fx * .pi * 7 + 2.1))
+                path.addLine(to: CGPoint(x: fx * w, y: baseTop - h * hump))
+            }
+            path.addLine(to: CGPoint(x: w, y: size.height))
+            path.closeSubpath()
+
+            // Soft pile: feathers to nothing above the crest, opaque at the edge.
+            context.fill(path, with: .linearGradient(
+                Gradient(colors: [tint.opacity(0), tint.opacity(0.9), tint.opacity(0.98)]),
+                startPoint: CGPoint(x: 0, y: baseTop - h * 0.3),
+                endPoint: CGPoint(x: 0, y: size.height)))
+        }
+        .onAppear { if mountTime == nil { mountTime = time } }
+        .allowsHitTesting(false)
+    }
+
+    /// 0 (bare ground) → cap-fraction (settled), asymptotic and bounded.
+    private var growthProgress: Double {
+        // Still frame: a settled representative pile (no clock to integrate).
+        guard motionEnabled else { return 0.62 }
+        guard let mountTime else { return 0 }
+        let elapsed = max(0, time - mountTime)
+        return 1 - exp(-elapsed / max(0.5, timeConstant))
     }
 }
 

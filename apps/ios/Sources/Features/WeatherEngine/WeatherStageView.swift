@@ -246,6 +246,9 @@ struct WeatherStageView: View {
         case .heavyClouds: HeavyCloudsScene(context: context)
         case .fog: FogScene(context: context)
         case .mist: MistScene(context: context)
+        case .snow: SnowWeatherScene(context: context)
+        case .blizzard: BlizzardScene(context: context)
+        case .hail: HailScene(context: context)
         default: GenericWeatherScene(context: context)
         }
     }

@@ -583,12 +583,22 @@ final class RainScene: SKScene {
 // this exact flake system for its snow/blizzard scenes. The optional
 // `intensity` multiplier scales the live-flake budget (blizzard ≈ 1.7); the
 // mood backdrop keeps the tuned default of 1, unchanged.
+//
+// WIND BIAS (additive, default 0 — the Dynamic Weather Engine's blizzard):
+// `wind` 0…1 drives the flakes near-horizontal for a storm. At the default 0
+// EVERY value below is byte-for-byte the original calm snow — `tilt`, `drive`
+// and the speed bump are all `wind * k`, so the mood-backdrop winter scene and
+// the phase-1 composed snow caller (which never pass `wind`) are untouched.
+// When the blizzard passes `wind ≈ 0.85`: the emission angle leans ~44° off
+// vertical, a strong horizontal acceleration builds lateral velocity over each
+// flake's life (near-horizontal streaking), and the fall speeds rise — so the
+// SAME flake engine reads as violent driven snow, not merely denser snow.
 final class SnowScene: SKScene {
     private let farFlakes = SKEmitterNode()
     private let nearFlakes = SKEmitterNode()
     private var prewarmed = false
 
-    init(intensity: CGFloat = 1) {
+    init(intensity: CGFloat = 1, wind: CGFloat = 0) {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -597,20 +607,27 @@ final class SnowScene: SKScene {
         // ground (white-on-white flakes would simply not exist).
         let flakeColor = UIColor(red: 0.470, green: 0.580, blue: 0.680, alpha: 1)
 
+        // Wind bias — all three terms vanish at wind 0 (calm default preserved).
+        let tilt = wind * 0.9                     // radians off vertical
+        let drive = wind * 210                    // horizontal wind acceleration
+        let gust = wind * 120                     // extra fall speed in a storm
+
         // Far: 6.75/s × 8 s = 54 live, ~2–3 pt (× intensity).
         Self.configure(farFlakes, color: flakeColor,
                        birthRate: 6.75 * intensity, lifetime: 8,
-                       speed: 55, speedRange: 20,
+                       speed: 55 + gust, speedRange: 20,
                        scale: 0.16, scaleRange: 0.05,   // 16 pt texture → ~2.6 pt
                        peakAlpha: 0.55,
-                       xAcceleration: 6, rotationSpeed: 0.45)
+                       xAcceleration: 6 + drive, rotationSpeed: 0.45,
+                       emissionAngle: -.pi / 2 + tilt)
         // Near: 4/s × 7 s = 28 live, ~4–5 pt, swaying the other way.
         Self.configure(nearFlakes, color: flakeColor,
                        birthRate: 4 * intensity, lifetime: 7,
-                       speed: 90, speedRange: 25,
+                       speed: 90 + gust, speedRange: 25,
                        scale: 0.28, scaleRange: 0.06,   // → ~4.5 pt
                        peakAlpha: 0.80,
-                       xAcceleration: -7, rotationSpeed: -0.7)
+                       xAcceleration: -7 + drive * 1.1, rotationSpeed: -0.7,
+                       emissionAngle: -.pi / 2 + tilt)
         farFlakes.zPosition = 0
         nearFlakes.zPosition = 1
         addChild(farFlakes)
@@ -631,14 +648,15 @@ final class SnowScene: SKScene {
                                   speed: CGFloat, speedRange: CGFloat,
                                   scale: CGFloat, scaleRange: CGFloat,
                                   peakAlpha: Double,
-                                  xAcceleration: CGFloat, rotationSpeed: CGFloat) {
+                                  xAcceleration: CGFloat, rotationSpeed: CGFloat,
+                                  emissionAngle: CGFloat = -.pi / 2) {
         e.particleTexture = AtmosphericParticleTextures.flake
         e.particleColor = color
         e.particleColorBlendFactor = 1
         e.particleBirthRate = birthRate
         e.particleLifetime = lifetime
         e.particleLifetimeRange = lifetime * 0.2
-        e.emissionAngle = -.pi / 2
+        e.emissionAngle = emissionAngle
         e.emissionAngleRange = 0.35
         e.particleSpeed = speed
         e.particleSpeedRange = speedRange
