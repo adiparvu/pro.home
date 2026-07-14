@@ -4,7 +4,8 @@ import WidgetKit
 // MARK: - Mood-aware widget ground
 //
 // The app's living backdrop reaches the home screen. Every time the app
-// resolves its mood (dimineața / zi / noapte), it writes the raw AppMood
+// resolves its mood (dimineața / zi / apus / noapte / ploaie / iarnă /
+// eveniment), it writes the raw AppMood
 // value into the shared App Group under "app.mood.current"; widgets read
 // that key when their views are rendered (timeline archive time) and stand
 // on the matching palette. `AppMoodPalette` itself compiles into this
@@ -29,14 +30,21 @@ enum WidgetMood {
     private static let moodKey = "app.mood.current"
 
     /// The palette for the mood the app last resolved, or nil when no mood
-    /// has ever been written (the honest "no mood" state).
+    /// has ever been written (the honest "no mood" state). Raw values
+    /// mirror `AppMood`'s cases 1:1; anything unknown (a future mood this
+    /// build predates) falls back to the neutral ground rather than
+    /// guessing.
     static func currentPalette() -> AppMoodPalette? {
         guard let raw = UserDefaults(suiteName: SharedDataStore.suiteName)?
             .string(forKey: moodKey) else { return nil }
         switch raw {
         case "morning": return .morning
         case "day":     return .day
+        case "sunset":  return .sunset
         case "night":   return .night
+        case "rain":    return .rain
+        case "winter":  return .winter
+        case "event":   return .event
         default:        return nil
         }
     }

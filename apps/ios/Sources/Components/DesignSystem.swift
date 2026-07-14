@@ -410,17 +410,18 @@ extension Color {
 
 // MARK: - Mood palettes (the living app background)
 
-/// Full-screen background palettes for the app's three moods (dimineața /
-/// zi / noapte) — the glassmorphism ground every adaptive Liquid Glass
-/// component sits on. Each palette is a quiet vertical wash plus at most two
-/// static ambient radial accents (no blur, no animation — compositor cost
-/// stays near a flat fill). `AppBackdrop` renders these; `AppMood` maps
-/// mood → palette.
+/// Full-screen background palettes for the app's seven moods (dimineața /
+/// zi / apus / noapte / ploaie / iarnă / eveniment) — the glassmorphism
+/// ground every adaptive Liquid Glass component sits on. Each palette is a
+/// quiet vertical wash plus at most two static ambient radial accents (no
+/// blur, no animation — compositor cost stays near a flat fill).
+/// `AppBackdrop` renders these; `AppMood` maps mood → palette.
 ///
 /// Every palette declares the `ColorScheme` the app should adopt while it
-/// shows: morning/day are light grounds and night is a dark one, and native
-/// materials/text only keep AA contrast when the scheme follows the ground —
-/// that pairing is the honest contract, not a styling suggestion.
+/// shows: morning/day/sunset/rain/winter are light grounds and night/event
+/// are dark ones, and native materials/text only keep AA contrast when the
+/// scheme follows the ground — that pairing is the honest contract, not a
+/// styling suggestion.
 struct AppMoodPalette {
     /// One static ambient light pool (rendered as a RadialGradient fading
     /// to clear). Two per palette at most.
@@ -440,7 +441,10 @@ struct AppMoodPalette {
     /// user picks "Automat" in Settings → Aspect. Each value is AA-legible
     /// (≥ 4.5:1) as text/tint against BOTH stops of its own ground wash in
     /// its own color scheme: morning gold #8F5C10 (5.1:1 / 4.9:1), day sky
-    /// #1B6C9C (5.5:1 / 5.0:1), night ember #E8A45C (7.8:1 / 9.1:1).
+    /// #1B6C9C (5.5:1 / 5.0:1), night ember #E8A45C (7.8:1 / 9.1:1),
+    /// sunset ember #7E430F (6.2:1 / 5.7:1), rain slate #3C5B74
+    /// (6.4:1 / 5.5:1), winter glacier #1F6580 (6.2:1 / 5.6:1), event gold
+    /// #E9C15E (9.5:1 / 11.1:1).
     let accent: Color
 
     /// Dimineața — a soft gold-rose wash over near-white warm ground:
@@ -491,6 +495,76 @@ struct AppMoodPalette {
         ],
         // Warm ember amber #E8A45C.
         accent: Color(red: 0.910, green: 0.643, blue: 0.361))
+
+    /// Apus — golden hour: a warm amber-rose dusk, deliberately deeper than
+    /// morning's near-white (the light is lower, the color richer) while
+    /// staying a light ground. The ember pool sits LOW (the sun is at the
+    /// horizon) and a violet answer sits high where dusk is already arriving.
+    /// Ground #F7E2C8 → #EFD6D6; pools ember #E8975A, violet #9B7BB8.
+    static let sunset = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.969, green: 0.886, blue: 0.784),
+        baseBottom: Color(red: 0.937, green: 0.839, blue: 0.839),
+        accents: [
+            Accent(color: Color(red: 0.910, green: 0.592, blue: 0.353),
+                   opacity: 0.26, center: UnitPoint(x: 0.12, y: 0.80), radius: 440),
+            Accent(color: Color(red: 0.608, green: 0.482, blue: 0.722),
+                   opacity: 0.16, center: UnitPoint(x: 0.88, y: 0.10), radius: 460),
+        ],
+        // Deep ember #7E430F — AA even over the ember pool's blended ground.
+        accent: Color(red: 0.494, green: 0.263, blue: 0.059))
+
+    /// Ploaie — deliberate rain atmosphere, not gloom: a cool gray-blue
+    /// washed ground that stays bright (light scheme), a slate-blue pool
+    /// high like a rain sky and a soft teal answering low like wet ground.
+    /// Ground #F0F3F6 → #DDE3E9; pools slate #7A93AC, teal #7FB0A8.
+    static let rain = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.941, green: 0.953, blue: 0.965),
+        baseBottom: Color(red: 0.867, green: 0.890, blue: 0.914),
+        accents: [
+            Accent(color: Color(red: 0.478, green: 0.576, blue: 0.675),
+                   opacity: 0.22, center: UnitPoint(x: 0.15, y: 0.08), radius: 440),
+            Accent(color: Color(red: 0.498, green: 0.690, blue: 0.659),
+                   opacity: 0.16, center: UnitPoint(x: 0.88, y: 0.90), radius: 480),
+        ],
+        // Slate blue #3C5B74.
+        accent: Color(red: 0.235, green: 0.357, blue: 0.455))
+
+    /// Iarnă — the brightest cool ground: near-white with an ice-blue pool
+    /// high (winter sky) and a pale silver sheen low (snow light). Cool
+    /// where day is warm, so the two never read as the same backdrop.
+    /// Ground #F7FAFC → #E8EFF5; pools ice #BFE0F0, silver #D7DEE5.
+    static let winter = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.969, green: 0.980, blue: 0.988),
+        baseBottom: Color(red: 0.910, green: 0.937, blue: 0.961),
+        accents: [
+            Accent(color: Color(red: 0.749, green: 0.878, blue: 0.941),
+                   opacity: 0.30, center: UnitPoint(x: 0.85, y: 0.08), radius: 440),
+            Accent(color: Color(red: 0.843, green: 0.871, blue: 0.898),
+                   opacity: 0.26, center: UnitPoint(x: 0.12, y: 0.90), radius: 480),
+        ],
+        // Glacier blue #1F6580.
+        accent: Color(red: 0.122, green: 0.396, blue: 0.502))
+
+    /// Eveniment — celebratory dark: a plum-charcoal ground one shade richer
+    /// than night, with TWO warm festive pools — gold high, magenta low —
+    /// both ≤ 12% so dark glass and white text stay AA and the room reads
+    /// elegant, never kitsch. Static like every palette: no animation.
+    /// Ground #2A1B2E → #140D18; pools gold #E3B354, magenta #C2478F.
+    static let event = AppMoodPalette(
+        colorScheme: .dark,
+        baseTop: Color(red: 0.165, green: 0.106, blue: 0.180),
+        baseBottom: Color(red: 0.078, green: 0.051, blue: 0.094),
+        accents: [
+            Accent(color: Color(red: 0.890, green: 0.702, blue: 0.329),
+                   opacity: 0.12, center: UnitPoint(x: 0.15, y: 0.08), radius: 420),
+            Accent(color: Color(red: 0.761, green: 0.278, blue: 0.561),
+                   opacity: 0.10, center: UnitPoint(x: 0.88, y: 0.90), radius: 460),
+        ],
+        // Festive gold #E9C15E.
+        accent: Color(red: 0.914, green: 0.757, blue: 0.369))
 }
 
 // MARK: - Spacing

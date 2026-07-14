@@ -1,12 +1,15 @@
 import SwiftUI
 import Observation
 
-// MARK: - App mood (the living background's three atmospheres)
+// MARK: - App mood (the living background's seven atmospheres)
 //
-// One mood drives the whole app's backdrop and color scheme:
-// dimineața (morning) / zi (day) / noapte (night). The mood resolves
-// automatically from the clock — refined by the property's coordinates when
-// they exist — or is pinned manually from Settings → Aspect → Fundal.
+// One mood drives the whole app's backdrop and color scheme: dimineața
+// (morning) / zi (day) / apus (sunset) / noapte (night) / ploaie (rain) /
+// iarnă (winter) / eveniment (event). Auto composes the first four from the
+// clock — refined by the property's coordinates when they exist — then
+// layers weather, season, and celebrations on top (the precedence is
+// documented on `AppMoodEngine`); any of the seven can also be pinned
+// manually from Settings → Aspect → Fundal, exactly like before.
 //
 // Honesty notes (constitution):
 // - The sunrise/sunset window is a standard low-precision solar
@@ -16,18 +19,36 @@ import Observation
 //   also absorbs DST); the equation of time (±16 min) is ignored. Good for
 //   picking an atmosphere, never presented as an ephemeris.
 // - Without coordinates the engine claims nothing about the sun — it follows
-//   fixed clock windows (6–10 / 10–19 / 19–6), and the settings page's Auto
+//   fixed clock windows (6–10 / 10–19 / 19–20 / 20–6, the 19–20 hour being
+//   the coordinate-less sunset band), and the settings page's Auto
 //   explanation says exactly that.
 // - Custom Auto thresholds ("night starts at…") override only the edge they
 //   name; the settings caption then says the hours are the user's, not the
-//   sun's. A pinned mood ignores them, so their pickers never show then.
+//   sun's. The sunset band always derives from the real sun window (or the
+//   fixed clock band); a custom night onset only decides where it ends —
+//   and when the two cross, night wins. A pinned mood ignores them, so
+//   their pickers never show then.
 // - The weather tone comes only from a FRESH cached Apple Weather summary
-//   (≤ 2h); with stale or missing data the backdrop claims nothing.
+//   (≤ 2h); with stale or missing data the backdrop claims nothing. The
+//   same freshness rule gates the Auto rain MOOD (see AppMoodEngine).
+// - The event layer claims only what it can prove: a curated in-code table
+//   of Romanian legal holidays (sources cited at the table) and the family
+//   roster's stored birth dates. House states (Vacanță / Petrecere) do not
+//   exist yet, so Auto never pretends to know them — see the extension
+//   point on `AppMoodEngine.eventToday`.
 
 enum AppMood: String, CaseIterable, Identifiable {
+    // Raw values are a persistence contract: they live in the stored
+    // override ("app.mood.override"), the App Group publish
+    // ("app.mood.current"), and the watch payload's `mood` field. Existing
+    // values must never change; new atmospheres only ever append.
     case morning
     case day
+    case sunset
     case night
+    case rain
+    case winter
+    case event
 
     var id: String { rawValue }
 
@@ -35,7 +56,11 @@ enum AppMood: String, CaseIterable, Identifiable {
         switch self {
         case .morning: "mood_morning"
         case .day:     "mood_day"
+        case .sunset:  "mood_sunset"
         case .night:   "mood_night"
+        case .rain:    "mood_rain"
+        case .winter:  "mood_winter"
+        case .event:   "mood_event"
         }
     }
 
@@ -45,7 +70,25 @@ enum AppMood: String, CaseIterable, Identifiable {
         switch self {
         case .morning: String(localized: "mood_morning")
         case .day:     String(localized: "mood_day")
+        case .sunset:  String(localized: "mood_sunset")
         case .night:   String(localized: "mood_night")
+        case .rain:    String(localized: "mood_rain")
+        case .winter:  String(localized: "mood_winter")
+        case .event:   String(localized: "mood_event")
+        }
+    }
+
+    /// The mood's picker glyph (Settings → Aspect → Fundal carousel).
+    /// Symbolic, not user text — the localized name always sits beside it.
+    var emoji: String {
+        switch self {
+        case .morning: "🌅"
+        case .day:     "☀️"
+        case .sunset:  "🌇"
+        case .night:   "🌙"
+        case .rain:    "🌧️"
+        case .winter:  "❄️"
+        case .event:   "🎉"
         }
     }
 
@@ -55,24 +98,34 @@ enum AppMood: String, CaseIterable, Identifiable {
         switch self {
         case .morning: .morning
         case .day:     .day
+        case .sunset:  .sunset
         case .night:   .night
+        case .rain:    .rain
+        case .winter:  .winter
+        case .event:   .event
         }
     }
 
-    // MARK: Automatic resolution
+    // MARK: Automatic resolution (the TIME base only)
 
-    /// Sunrise..10h → morning; 10h..(sunset−1h) → day; everything else →
-    /// night. Without coordinates (or inside a polar day/night) the fixed
-    /// clock windows apply (6–10 / 10–19 / 19–6). In a high-latitude winter
-    /// where the sun rises after 10h, the morning band collapses and day
-    /// starts at sunrise.
+    /// The time-of-day base of the Auto composition — it only ever returns
+    /// morning / day / sunset / night; the weather, season, and event layers
+    /// live in `AppMoodEngine` where their data sources are.
+    ///
+    /// Sunrise..10h → morning; 10h..(sunset−45m) → day; (sunset−45m)..
+    /// (sunset+45m) → sunset (golden hour straddles the real sun);
+    /// everything else → night. Without coordinates (or inside a polar
+    /// day/night) the fixed clock windows apply (6–10 / 10–19 / 19–20 /
+    /// 20–6). In a high-latitude winter where the sun rises after 10h, the
+    /// morning band collapses and day starts at sunrise.
     ///
     /// `morningStart`/`nightStart` (fractional local-clock hours) are the
     /// user's optional custom thresholds: each one overrides ONLY the edge
-    /// it names — morning onset (sunrise / 6h) or night onset (sunset−1h /
-    /// 19h) — and every other edge keeps its sun/clock default. When the
-    /// two ever cross, night wins (the settings pickers are ranged so this
-    /// stays theoretical).
+    /// it names — morning onset (sunrise / 6h) or night onset (sunset+45m /
+    /// 20h) — and every other edge keeps its sun/clock default. The sunset
+    /// band's START always derives from the sun window (or the 19h clock
+    /// band); a custom night onset only moves where the band ENDS, and when
+    /// it starts before the band does, night wins and the band collapses.
     static func auto(at date: Date = .now,
                      latitude: Double?,
                      longitude: Double? = nil,
@@ -84,27 +137,44 @@ enum AppMood: String, CaseIterable, Identifiable {
         let edges = defaultEdges(on: date, latitude: latitude, longitude: longitude)
         let morningBegin = morningStart ?? edges.morning
         let nightBegin = nightStart ?? edges.night
-        // Day never begins before 10h (the original band) nor after night.
-        let dayBegin = min(max(10, morningBegin), max(morningBegin, nightBegin))
+        // The sunset band never outlives night's onset (night wins a cross).
+        let duskBegin = min(edges.dusk, nightBegin)
+        // Day never begins before 10h (the original band) nor after dusk.
+        let dayBegin = min(max(10, morningBegin), max(morningBegin, duskBegin))
 
         if hour < morningBegin || hour >= nightBegin { return .night }
-        return hour < dayBegin ? .morning : .day
+        if hour < dayBegin { return .morning }
+        return hour < duskBegin ? .day : .sunset
     }
 
     /// The automatic edges a given day would use with no custom thresholds:
     /// morning onset (sunrise, or 6h without coordinates / in polar
-    /// day/night) and night onset (sunset−1h, or 19h). The settings page
-    /// seeds its custom-hour pickers from this, so "reset" is always honest
-    /// about what Auto would actually do today.
+    /// day/night), dusk onset (sunset−45m, or 19h — where the sunset band
+    /// begins), and night onset (sunset+45m, or 20h). The settings page
+    /// seeds its custom-hour pickers from `morning`/`night`, so "reset" is
+    /// always honest about what Auto would actually do today.
     static func defaultEdges(on date: Date = .now,
                              latitude: Double?,
-                             longitude: Double? = nil) -> (morning: Double, night: Double) {
+                             longitude: Double? = nil)
+        -> (morning: Double, dusk: Double, night: Double) {
         guard let latitude,
               let sun = SunWindow.compute(on: date, latitude: latitude,
                                           longitude: longitude) else {
-            return (6, 19)
+            return (6, 19, 20)
         }
-        return (sun.sunrise, sun.sunset - 1)
+        return (sun.sunrise, sun.sunset - 0.75, sun.sunset + 0.75)
+    }
+
+    // MARK: Season (the Auto winter layer's only input)
+
+    /// December–February. The primary property is in Romania — northern
+    /// hemisphere — so the winter months are hardcoded honestly rather than
+    /// pretending to read a hemisphere the model doesn't store; if southern
+    /// properties ever arrive, derive this from the property's latitude.
+    static func isWinterSeason(_ date: Date = .now,
+                               calendar: Calendar = .current) -> Bool {
+        let month = calendar.component(.month, from: date)
+        return month == 12 || month <= 2
     }
 }
 
@@ -149,6 +219,26 @@ private struct SunWindow {
 /// thresholds; the app shell provides the primary property's coordinates
 /// when it has them (PropertyService is a per-scene `@State` service, not a
 /// singleton — the engine never reaches into the environment itself).
+///
+/// AUTO COMPOSITION — the layers and their exact precedence, top wins:
+///  1. EVENT (whole day): today is a Romanian legal holiday (curated
+///     in-code table, sources cited there) or a family member's birthday
+///     (the roster's stored birth dates, read from the same offline cache
+///     `FamilyService` hydrates from) → `.event`.
+///  2. WEATHER RAIN: the weather-reactive toggle is ON and a FRESH (≤ 2h)
+///     cached Apple Weather summary maps to `AppWeatherTone.rain` → the
+///     morning/day/sunset/winter base becomes `.rain`. Night stays night —
+///     rain after dark keeps the night palette with the existing wash
+///     modulation, which reads more honestly than a bright rain ground.
+///  3. SEASON: December–February (northern hemisphere, hardcoded — see
+///     `AppMood.isWinterSeason`) shifts the broad DAY base to `.winter`;
+///     morning and sunset keep their character at the day's edges.
+///  4. TIME base: sunrise..10h morning, 10h..sunset−45m day, ±45m around
+///     sunset the sunset band, else night (`AppMood.auto`; the fixed clock
+///     windows without coordinates, custom thresholds for the
+///     morning/night edges).
+/// A manual `override` bypasses the whole composition — a flat pick of any
+/// of the seven moods, exactly like before.
 ///
 /// Recomputation is event-driven, never continuous: an internal 15-minute
 /// timer runs only while at least one live `AppBackdrop` is on screen
@@ -209,6 +299,9 @@ final class AppMoodEngine {
         didSet {
             UserDefaults.standard.set(weatherReactive, forKey: Self.weatherReactiveKey)
             refreshWeatherTone()
+            // The toggle now also gates the Auto rain MOOD, so flipping it
+            // can change what the whole app shows — republish.
+            publishResolvedIfChanged()
         }
     }
 
@@ -231,10 +324,44 @@ final class AppMoodEngine {
     /// True while no manual pin is set.
     var isAuto: Bool { override == nil }
 
-    /// What the app shows right now.
+    /// What the app shows right now: the manual pin, or the full Auto
+    /// composition (event > rain > winter > time — see the class comment).
     var resolved: AppMood {
-        override ?? autoMood(at: clock)
+        override ?? autoResolved
     }
+
+    /// What Auto composes right now, independent of any pin — the settings
+    /// page's Auto card previews exactly this.
+    var autoResolved: AppMood {
+        compose(base: dateBase(at: clock))
+    }
+
+    /// WHY Auto shows what it shows — the settings page's Auto caption
+    /// ("Automat · apus", "Automat · zi de sărbătoare"). Mirrors `compose`
+    /// exactly, so the stated reason can never drift from the shown mood.
+    var autoReason: AppMoodAutoReason {
+        switch eventToday {
+        case .holiday:  return .holiday
+        case .birthday: return .birthday
+        case nil:       break
+        }
+        let base = dateBase(at: clock)
+        if weatherTone == .rain, base != .night { return .rain }
+        if base == .winter { return .winter }
+        return .time(base)
+    }
+
+    /// Today's celebration, if any — the Auto event layer's whole truth.
+    /// Recomputed once per calendar day (and when the day rolls over under
+    /// a running app) from the holiday table and the family roster's cached
+    /// birth dates. EXTENSION POINT: when house states (Vacanță / Petrecere)
+    /// exist as real data, they join this enum and `refreshEventDay` — Auto
+    /// never fakes a toggle for state the app cannot read yet.
+    private(set) var eventToday: AppMoodEventReason?
+
+    /// The calendar day `eventToday` was computed for (start of day), so the
+    /// roster file is re-read at most once per day, not every 15-minute tick.
+    @ObservationIgnored private var eventDay: Date?
 
     /// The observation-tracked "now" that `resolved` derives from. Only
     /// reassigned when the automatic mood actually changes, so the dozens of
@@ -253,34 +380,91 @@ final class AppMoodEngine {
         nightStartMinutes = Self.readMinutes(key: Self.nightStartKey)
         weatherReactive = (UserDefaults.standard.object(forKey: Self.weatherReactiveKey) as? Bool) ?? true
         refreshWeatherTone()
+        refreshEventDay(on: .now)
         // Seed the App Group without posting: observers registering later
         // (IconManager) check the engine themselves at startup, and posting
         // from inside the singleton's own `init` could re-enter `shared`.
         publishResolvedIfChanged(posting: false)
     }
 
-    /// `AppMood.auto` with this engine's coordinates and custom thresholds.
-    private func autoMood(at date: Date) -> AppMood {
-        AppMood.auto(at: date, latitude: latitude, longitude: longitude,
-                     morningStart: morningStartMinutes.map { Double($0) / 60 },
-                     nightStart: nightStartMinutes.map { Double($0) / 60 })
+    /// The date-derived part of Auto — time base plus the season layer
+    /// (both pure functions of the date, so `refresh` can compare them
+    /// across ticks): `AppMood.auto` with this engine's coordinates and
+    /// custom thresholds, with the broad day window turned to winter in
+    /// December–February. Morning and sunset keep their character.
+    private func dateBase(at date: Date) -> AppMood {
+        let base = AppMood.auto(at: date, latitude: latitude, longitude: longitude,
+                                morningStart: morningStartMinutes.map { Double($0) / 60 },
+                                nightStart: nightStartMinutes.map { Double($0) / 60 })
+        if base == .day, AppMood.isWinterSeason(date) { return .winter }
+        return base
+    }
+
+    /// Layers the state-derived signals over a date base, in the documented
+    /// precedence: event (whole day) > weather rain (never at night —
+    /// night keeps its palette and the existing wash) > the base itself
+    /// (which already carries the winter season shift).
+    private func compose(base: AppMood) -> AppMood {
+        if eventToday != nil { return .event }
+        if weatherTone == .rain, base != .night { return .rain }
+        return base
     }
 
     /// Today's sun/clock edges (fractional hours) — what Auto uses when no
-    /// custom threshold is set; the settings pickers seed from this.
-    func defaultEdges() -> (morning: Double, night: Double) {
+    /// custom threshold is set; the settings pickers seed from
+    /// `morning`/`night`, and `dusk` is where the sunset band begins.
+    func defaultEdges() -> (morning: Double, dusk: Double, night: Double) {
         AppMood.defaultEdges(latitude: latitude, longitude: longitude)
     }
 
-    /// Re-evaluates the automatic mood and the weather tone (scene became
-    /// active, timer tick).
+    /// Re-evaluates the automatic mood, the weather tone, and (on a day
+    /// change) the event layer (scene became active, timer tick).
     func refresh() {
         let now = Date.now
-        if autoMood(at: now) != autoMood(at: clock) {
+        if dateBase(at: now) != dateBase(at: clock) {
             clock = now
         }
         refreshWeatherTone()
+        refreshEventDay(on: now)
         publishResolvedIfChanged()
+    }
+
+    // MARK: Event day (holidays + family birthdays, once per calendar day)
+
+    /// Recomputes `eventToday` when the calendar day changed (or was never
+    /// computed). The birthday source is the family roster's offline cache —
+    /// the very rows `FamilyService` hydrates from and the dashboard's
+    /// birthday feed reads — so the layer is exactly as fresh as the app's
+    /// own family data and costs one small file read per day. A property
+    /// switch is picked up on the next refresh tick the same way.
+    private func refreshEventDay(on date: Date) {
+        let day = Calendar.current.startOfDay(for: date)
+        guard day != eventDay else { return }
+        eventDay = day
+        let reason: AppMoodEventReason?
+        if RomanianLegalHolidays.contains(day) {
+            reason = .holiday
+        } else if Self.hasFamilyBirthday(on: day) {
+            reason = .birthday
+        } else {
+            reason = nil
+        }
+        if reason != eventToday { eventToday = reason }
+    }
+
+    /// True when a family member's stored birth date (month + day) matches
+    /// the given day — the same match the dashboard's Today feed makes.
+    private static func hasFamilyBirthday(on day: Date) -> Bool {
+        guard let members = ServiceCache.load([FamilyMember].self, entity: "family",
+                                              propertyId: PropertyService.activePropertyId),
+              !members.isEmpty else { return false }
+        let cal = Calendar.current
+        let today = cal.dateComponents([.month, .day], from: day)
+        return members.contains { member in
+            guard let birth = member.birthdayDate else { return false }
+            let b = cal.dateComponents([.month, .day], from: birth)
+            return b.month == today.month && b.day == today.day
+        }
     }
 
     // MARK: Weather tone (event-driven, from the cached summary only)
@@ -350,6 +534,87 @@ final class AppMoodEngine {
     }
 }
 
+// MARK: - Auto reasons (why Auto shows what it shows)
+
+/// Today's celebration, as the event layer proved it.
+enum AppMoodEventReason: Equatable {
+    case holiday    // Romanian legal holiday (curated table below)
+    case birthday   // a family member's stored birth date is today
+}
+
+/// The single winning reason behind `AppMoodEngine.autoResolved`, for the
+/// settings page's honest Auto caption. One case per layer, plus the time
+/// base itself.
+enum AppMoodAutoReason: Equatable {
+    case time(AppMood)   // morning / day / sunset / night — the clock/sun base
+    case rain            // fresh weather at the property says rain
+    case winter          // December–February day window
+    case holiday         // Romanian legal holiday
+    case birthday        // a family member's birthday
+
+    /// Lowercase, sentence-embeddable label ("Automat · apus").
+    var localizedLabel: String {
+        switch self {
+        case .time(.morning): String(localized: "mood_auto_reason_morning")
+        case .time(.day):     String(localized: "mood_auto_reason_day")
+        case .time(.sunset):  String(localized: "mood_auto_reason_sunset")
+        case .time(.night):   String(localized: "mood_auto_reason_night")
+        // The layered moods never arrive as a time base; if one ever did,
+        // its own name is still the honest description.
+        case .time(let other): other.localizedTitle
+        case .rain:     String(localized: "mood_auto_reason_rain")
+        case .winter:   String(localized: "mood_auto_reason_winter")
+        case .holiday:  String(localized: "mood_auto_reason_holiday")
+        case .birthday: String(localized: "mood_auto_reason_birthday")
+        }
+    }
+}
+
+// MARK: - Romanian legal holidays (the event layer's curated table)
+
+/// Zilele libere legale din România — the days the whole house celebrates.
+/// Sources: Codul Muncii (Legea 53/2003) art. 139 alin. (1), including the
+/// days added by Legea 176/2018 (Vinerea Mare), Legea 220/2016 (1 iunie),
+/// and Legea 52/2023 (6–7 ianuarie, in force since 2024).
+///
+/// Fixed dates are year-independent. The Orthodox Easter–derived days
+/// (Vinerea Mare, Paștele, Rusaliile) move with the Julian computus, so
+/// they are precomputed for 2026–2028 from the published Orthodox calendar
+/// (Easter Sunday: 2026-04-12, 2027-05-02, 2028-04-16). Outside those
+/// years only the fixed dates apply — honest degradation, never a guess.
+enum RomanianLegalHolidays {
+    /// (month, day) — every year.
+    private static let fixed: Set<[Int]> = [
+        [1, 1], [1, 2],    // Anul Nou
+        [1, 6],            // Boboteaza (legal since 2024)
+        [1, 7],            // Sfântul Ioan Botezătorul (legal since 2024)
+        [1, 24],           // Unirea Principatelor Române
+        [5, 1],            // Ziua Muncii
+        [6, 1],            // Ziua Copilului
+        [8, 15],           // Adormirea Maicii Domnului
+        [11, 30],          // Sfântul Andrei
+        [12, 1],           // Ziua Națională
+        [12, 25], [12, 26] // Crăciunul
+    ]
+
+    /// (year, month, day) — Orthodox Easter–derived: Vinerea Mare (E−2),
+    /// Paștele (E, E+1), Rusaliile (E+49, E+50).
+    private static let easterDerived: Set<[Int]> = [
+        // 2026 — Easter Sunday April 12
+        [2026, 4, 10], [2026, 4, 12], [2026, 4, 13], [2026, 5, 31], [2026, 6, 1],
+        // 2027 — Easter Sunday May 2
+        [2027, 4, 30], [2027, 5, 2], [2027, 5, 3], [2027, 6, 20], [2027, 6, 21],
+        // 2028 — Easter Sunday April 16
+        [2028, 4, 14], [2028, 4, 16], [2028, 4, 17], [2028, 6, 4], [2028, 6, 5],
+    ]
+
+    static func contains(_ date: Date, calendar: Calendar = .current) -> Bool {
+        let p = calendar.dateComponents([.year, .month, .day], from: date)
+        guard let year = p.year, let month = p.month, let day = p.day else { return false }
+        return fixed.contains([month, day]) || easterDerived.contains([year, month, day])
+    }
+}
+
 // MARK: - Resolved-mood change notification
 
 extension Notification.Name {
@@ -387,10 +652,13 @@ extension AppMood {
 // MARK: - Weather tone (the backdrop's weather modulation)
 
 /// A subtle weather wash blended over the mood palette — one extra
-/// low-opacity layer, never a fourth mood. Derived exclusively from the
-/// property's FRESH cached Apple Weather summary (≤ 2 hours old — stale
-/// data claims nothing about now) by mapping its SF symbol name. Clear
-/// skies map to no tone at all.
+/// low-opacity layer. Derived exclusively from the property's FRESH cached
+/// Apple Weather summary (≤ 2 hours old — stale data claims nothing about
+/// now) by mapping its SF symbol name. Clear skies map to no tone at all.
+/// Since Mood 2.0 the `.rain` tone additionally feeds the Auto composition
+/// (a rainy morning/day/sunset resolves to the dedicated rain MOOD — see
+/// `AppMoodEngine.compose`); the wash itself remains what live backdrops
+/// blend, with the same freshness rules as before.
 enum AppWeatherTone: Equatable {
     case rain       // rain / drizzle / storms — cool gray-blue
     case snow       // snow / sleet / flurries — whiter, quieter

@@ -52,8 +52,12 @@ struct AppBackdrop: View {
         // stay the pure mood): one extra flat low-opacity wash, derived by
         // the engine from the property's fresh cached weather. It is always
         // in the tree for live backdrops (clear when no tone) so tone
-        // changes crossfade instead of inserting/removing a layer.
-        let tone: AppWeatherTone? = fixed == nil ? AppMoodEngine.shared.weatherTone : nil
+        // changes crossfade instead of inserting/removing a layer. The rain
+        // MOOD is itself the weather statement, so the rain wash never
+        // doubles up on it — an extra gray layer would push the deliberate
+        // rain atmosphere toward gloom.
+        let engineTone: AppWeatherTone? = fixed == nil ? AppMoodEngine.shared.weatherTone : nil
+        let tone: AppWeatherTone? = (mood == .rain && engineTone == .rain) ? nil : engineTone
         ZStack {
             LinearGradient(colors: [palette.baseTop, palette.baseBottom],
                            startPoint: .top, endPoint: .bottom)

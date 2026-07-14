@@ -62976,13 +62976,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The accent follows the mood: gold in the morning, sky blue by day, ember at night."
+            "value": "The accent follows the backdrop's current mood — each of the seven brings its own shade."
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accentul urmează atmosfera: auriu dimineața, albastru ziua, chihlimbar noaptea."
+            "value": "Accentul urmează atmosfera curentă a fundalului — fiecare dintre cele șapte își aduce nuanța ei."
           }
         }
       }
@@ -88177,6 +88177,278 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alerte și istoric de la orice dispozitiv care poate trimite JSON — Shelly, ESPHome, Home Assistant."
+          }
+        }
+      }
+    },
+    "mood_sunset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunset"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apus"
+          }
+        }
+      }
+    },
+    "mood_rain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rain"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ploaie"
+          }
+        }
+      }
+    },
+    "mood_winter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Winter"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iarnă"
+          }
+        }
+      }
+    },
+    "mood_event": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eveniment"
+          }
+        }
+      }
+    },
+    "mood_auto_card_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto · %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automat · %@"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "morning"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dimineață"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_day": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "daytime"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zi"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_sunset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sunset"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "apus"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_night": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "night"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noapte"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_rain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rain at the property"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "plouă la proprietate"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_winter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "winter"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iarnă"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_holiday": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "public holiday"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zi de sărbătoare"
+          }
+        }
+      }
+    },
+    "mood_auto_reason_birthday": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a family birthday"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zi de naștere în familie"
+          }
+        }
+      }
+    },
+    "mood_auto_explain_weather_layer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it rains at the property, the mood becomes Rain."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Când plouă la proprietate, atmosfera devine Ploaie."
+          }
+        }
+      }
+    },
+    "mood_auto_explain_winter_layer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Through the winter months, daytime wears the Winter mood."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În lunile de iarnă, zilele senine poartă atmosfera Iarnă."
+          }
+        }
+      }
+    },
+    "mood_auto_explain_event_layer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today is a celebration — the backdrop wears the Event mood."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azi e sărbătoare — fundalul poartă atmosfera Eveniment."
           }
         }
       }

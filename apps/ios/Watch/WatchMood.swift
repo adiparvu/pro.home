@@ -2,10 +2,12 @@ import SwiftUI
 
 // MARK: - The app's mood, on the wrist
 //
-// The iPhone resolves the app's living mood (dimineața / zi / noapte) and —
-// once `WatchPayload` carries a `mood` field (a frozen-file addition owned by
-// the lead; see the probe below) — the raw value rides the SAME snapshot push
-// the wrist already lives on. This file is the watch's whole mood vocabulary.
+// The iPhone resolves the app's living mood (dimineața / zi / apus / noapte /
+// ploaie / iarnă / eveniment) and — once `WatchPayload` carries a `mood` field
+// (a frozen-file addition owned by the lead; see the probe below) — the raw
+// value rides the SAME snapshot push the wrist already lives on. This file is
+// the watch's whole mood vocabulary. Raw values this build doesn't know
+// (a future mood) decode to nil, and the pages keep their plain tints.
 //
 // Palette provenance: `AppMoodPalette` in Sources/Components/DesignSystem.swift
 // is the single source of truth for every mood color. DesignSystem.swift does
@@ -25,13 +27,17 @@ import SwiftUI
 // more live than that.
 
 enum WatchMood: String {
-    case morning, day, night
+    case morning, day, sunset, night, rain, winter, event
 
     /// The page wash: top accent → bottom accent, vertical, at the
     /// palette's own accent opacities. Values from AppMoodPalette:
     /// - morning: gold #EFBE8B @ 0.32, rose #E3A29D @ 0.20
     /// - day:     sky #BED7ED @ 0.22, sand #EBDCC0 @ 0.20
+    /// - sunset:  ember #E8975A @ 0.26, violet #9B7BB8 @ 0.16
     /// - night:   ember #C98B52 @ 0.10, mauve #6E4E63 @ 0.12
+    /// - rain:    slate #7A93AC @ 0.22, teal #7FB0A8 @ 0.16
+    /// - winter:  ice #BFE0F0 @ 0.30, silver #D7DEE5 @ 0.26
+    /// - event:   gold #E3B354 @ 0.12, magenta #C2478F @ 0.10
     var pageWash: LinearGradient {
         let top: Color, topOpacity: Double
         let bottom: Color, bottomOpacity: Double
@@ -42,9 +48,21 @@ enum WatchMood: String {
         case .day:
             top = Color(red: 0.745, green: 0.843, blue: 0.929); topOpacity = 0.22
             bottom = Color(red: 0.922, green: 0.863, blue: 0.753); bottomOpacity = 0.20
+        case .sunset:
+            top = Color(red: 0.910, green: 0.592, blue: 0.353); topOpacity = 0.26
+            bottom = Color(red: 0.608, green: 0.482, blue: 0.722); bottomOpacity = 0.16
         case .night:
             top = Color(red: 0.788, green: 0.545, blue: 0.322); topOpacity = 0.10
             bottom = Color(red: 0.431, green: 0.306, blue: 0.388); bottomOpacity = 0.12
+        case .rain:
+            top = Color(red: 0.478, green: 0.576, blue: 0.675); topOpacity = 0.22
+            bottom = Color(red: 0.498, green: 0.690, blue: 0.659); bottomOpacity = 0.16
+        case .winter:
+            top = Color(red: 0.749, green: 0.878, blue: 0.941); topOpacity = 0.30
+            bottom = Color(red: 0.843, green: 0.871, blue: 0.898); bottomOpacity = 0.26
+        case .event:
+            top = Color(red: 0.890, green: 0.702, blue: 0.329); topOpacity = 0.12
+            bottom = Color(red: 0.761, green: 0.278, blue: 0.561); bottomOpacity = 0.10
         }
         return LinearGradient(colors: [top.opacity(topOpacity),
                                        bottom.opacity(bottomOpacity)],

@@ -5,14 +5,21 @@ import SwiftUI
 // The dedicated page for the living background: a hero preview that renders
 // the ACTUAL backdrop of the selected mood with a real glass card on top
 // (what you see is literally what every screen gets), an Atmosferă group
-// (Auto + optional custom hours), the three moods as tappable preview
-// cards, and a Personalizare group (mood-following app icon, weather-
-// reactive backdrop). Selection persists through `AppMoodEngine.override`.
+// (Auto + optional custom hours), an airy horizontal carousel — the Auto
+// card first (a live preview of what Auto composes right now, captioned
+// with WHY), then the seven atmospheres (~3.5 visible, swipe for the
+// rest, view-aligned snapping) — and a Personalizare group (mood-following
+// app icon, weather-reactive backdrop). Selection persists through
+// `AppMoodEngine.override`.
 //
 // Honesty:
 // - The Auto explanation only claims sunrise/sunset when the engine
 //   actually has coordinates, and says "your hours" when custom thresholds
-//   are set.
+//   are set. It mentions the weather / season / celebration layers only
+//   while each is actually available or active — never as a promise.
+// - The Auto card's caption states the single winning reason behind what
+//   Auto shows ("Automat · apus", "Automat · zi de sărbătoare"), straight
+//   from the engine's own composition.
 // - Custom-hour pickers exist only while Auto is active — a pinned mood
 //   ignores them, so they are never shown as dead controls.
 // - The icon toggle disables itself (with the reason) when the selected
@@ -21,6 +28,7 @@ import SwiftUI
 
 struct BackgroundMoodView: View {
     @Environment(IconManager.self) private var iconManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var engine: AppMoodEngine { .shared }
 
@@ -83,7 +91,7 @@ struct BackgroundMoodView: View {
         .accessibilityLabel(Text(mood.titleKey))
     }
 
-    // MARK: Selector — Auto (+ custom hours) + the three moods
+    // MARK: Selector — Auto (+ custom hours) + the atmosphere carousel
 
     private var selectorSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -106,22 +114,66 @@ struct BackgroundMoodView: View {
                     }
                 }
             }
-            HStack(spacing: AppSpacing.md) {
+            moodCarousel
+        }
+    }
+
+    /// The atmosphere carousel: Auto first (live composition + reason),
+    /// then all seven moods. ~3.5 cards visible (each spans 2/7 of the
+    /// width), view-aligned snapping, bleeding to the screen edge so the
+    /// swipe feels airy while the cards still align with the page margin.
+    /// No programmatic scrolling — nothing moves that the user didn't move
+    /// (which is also the whole Reduce Motion story for this row).
+    private var moodCarousel: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: AppSpacing.md) {
+                AutoMoodCard(preview: engine.autoResolved,
+                             reason: engine.autoReason,
+                             isSelected: engine.isAuto) {
+                    select(nil)
+                }
+                .carouselCardWidth()
                 ForEach(AppMood.allCases) { mood in
                     MoodPreviewCard(mood: mood,
                                     isSelected: engine.override == mood) {
                         select(mood)
                     }
+                    .carouselCardWidth()
                 }
             }
+            .scrollTargetLayout()
         }
+        .scrollTargetBehavior(.viewAligned)
+        // Bleed past the page's horizontal padding, then restore it as
+        // content margins so the first card rests on the page grid.
+        .padding(.horizontal, -AppSpacing.xl)
+        .contentMargins(.horizontal, AppSpacing.xl, for: .scrollContent)
     }
 
-    /// Honest Auto caption: the user's hours when set, the sun only when
-    /// coordinates exist, the plain clock otherwise.
-    private var autoCaptionKey: LocalizedStringKey {
-        if engine.hasCustomHours { return "mood_auto_explain_custom" }
-        return engine.latitude != nil ? "mood_auto_explain_sun" : "mood_auto_explain_clock"
+    /// Honest Auto caption, composed of only what is true right now: the
+    /// base clause (custom hours / sun / clock — exactly as before), plus
+    /// one clause per composition layer that is actually available or
+    /// active — weather (toggle on AND fresh data), season (only during the
+    /// winter months), celebration (only on an actual event day).
+    private var autoCaption: String {
+        var parts: [String] = []
+        if engine.hasCustomHours {
+            parts.append(String(localized: "mood_auto_explain_custom"))
+        } else if engine.latitude != nil {
+            parts.append(String(localized: "mood_auto_explain_sun"))
+        } else {
+            parts.append(String(localized: "mood_auto_explain_clock"))
+        }
+        if engine.weatherReactive, AppWeatherTone.hasFreshSummary {
+            parts.append(String(localized: "mood_auto_explain_weather_layer"))
+        }
+        if AppMood.isWinterSeason() {
+            parts.append(String(localized: "mood_auto_explain_winter_layer"))
+        }
+        if engine.eventToday != nil {
+            parts.append(String(localized: "mood_auto_explain_event_layer"))
+        }
+        return parts.joined(separator: " ")
     }
 
     private var autoRow: some View {
@@ -135,7 +187,7 @@ struct BackgroundMoodView: View {
                     Text("mood_auto")
                         .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
-                    Text(autoCaptionKey)
+                    Text(autoCaption)
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .fixedSize(horizontal: false, vertical: true)
@@ -165,8 +217,11 @@ struct BackgroundMoodView: View {
         guard engine.override != mood else { return }
         HapticFeedback.selection()
         // The backdrop crossfades itself (.smooth 1.2 / instant under Reduce
-        // Motion); this spring only carries the checkmarks and rings.
-        withAnimation(.spring(response: 0.3)) { engine.override = mood }
+        // Motion); this spring only carries the checkmarks and rings — and
+        // it too stands still when motion is reduced.
+        withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
+            engine.override = mood
+        }
     }
 
     // MARK: Custom hours (refine Auto; hidden while a mood is pinned)
@@ -336,7 +391,18 @@ private struct MoodToggleRow: View {
     }
 }
 
-// MARK: - Mood preview card (mini gradient thumbnail + title)
+// MARK: - Carousel card width (~3.5 visible)
+
+private extension View {
+    /// Each carousel card spans 2/7 of the container, so roughly 3.5 cards
+    /// share the screen — enough to invite the swipe toward the rest.
+    func carouselCardWidth() -> some View {
+        containerRelativeFrame(.horizontal, count: 7, span: 2,
+                               spacing: AppSpacing.md)
+    }
+}
+
+// MARK: - Mood preview card (mini gradient thumbnail + emoji + title)
 
 private struct MoodPreviewCard: View {
     let mood: AppMood
@@ -354,7 +420,9 @@ private struct MoodPreviewCard: View {
                             .strokeBorder(isSelected ? Color.accentColor : Color.hairline,
                                           lineWidth: isSelected ? 2 : 1)
                     )
-                Text(mood.titleKey)
+                // The glyph is symbolic; the localized name carries the
+                // meaning (and is all VoiceOver ever reads).
+                (Text(verbatim: mood.emoji) + Text(verbatim: " ") + Text(mood.titleKey))
                     .font(isSelected ? AppFont.footnoteEmphasis : AppFont.footnote)
                     .foregroundStyle(isSelected ? AnyShapeStyle(.primary)
                                                 : AnyShapeStyle(.secondary))
@@ -366,6 +434,57 @@ private struct MoodPreviewCard: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(mood.titleKey))
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+// MARK: - Auto card (live composition preview + the winning reason)
+
+/// The carousel's first card: a live thumbnail of whatever Auto composes
+/// right now, and one caption line saying WHY ("Automat · apus",
+/// "Automat · zi de sărbătoare") — the reason comes from the engine's own
+/// composition, so it can never disagree with the preview above it.
+private struct AutoMoodCard: View {
+    let preview: AppMood
+    let reason: AppMoodAutoReason
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var caption: String {
+        String(format: String(localized: "mood_auto_card_caption"),
+               reason.localizedLabel)
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: AppSpacing.sm) {
+                AppBackdrop(fixed: preview)
+                    .frame(height: 84)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(alignment: .topTrailing) {
+                        // The badge that says "this card composes itself".
+                        Image(systemName: "sparkles")
+                            .font(AppFont.scaled(13))
+                            .foregroundStyle(preview.palette.accent)
+                            .padding(AppSpacing.xs)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                            .strokeBorder(isSelected ? Color.accentColor : Color.hairline,
+                                          lineWidth: isSelected ? 2 : 1)
+                    )
+                Text(caption)
+                    .font(isSelected ? AppFont.footnoteEmphasis : AppFont.footnote)
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.primary)
+                                                : AnyShapeStyle(.secondary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(caption))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
