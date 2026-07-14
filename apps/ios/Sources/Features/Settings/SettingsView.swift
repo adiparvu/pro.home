@@ -544,13 +544,9 @@ struct SettingsView: View {
 
     private var familySection: some View {
         SettingsGroup(title: "People & Access") {
-            if canManageMembers {
-                NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
-                    MembersHubView()
-                        .environment(familyService)
-                        .environment(propertyService)
-                }
-            }
+            // Members moved into the General page (with Appearance, Language,
+            // Watch, automation…). Guest Mode stays here as the one
+            // property-scoped sharing control.
             if allowed(.guestMode) {
                 NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
                     GuestModeView().environment(propertyService).environment(familyService)
@@ -586,51 +582,12 @@ struct SettingsView: View {
     }
 
     private var appSection: some View {
-        VStack(spacing: 14) {
-            SettingsGroup(title: "Personalization") {
-                NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
-                    AppearanceView()
-                        .environment(appSettings)
-                        .environment(auth)
-                        .environment(currencyService)
-                }
-                NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
-                    LanguageSettingsView()
-                        .environment(appSettings)
-                }
-                NavSettingsRow(icon: "applewatch", color: .teal, label: "Apple Watch") {
-                    WatchSettingsView()
-                }
-                if allowedApp(.liveActivities) {
-                    NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
-                        LiveActivitiesHubView()
-                    }
-                }
-                if allowedApp(.floatingButtons) {
-                    NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
-                        QuickActionsSettingsView()
-                            .environment(appSettings)
-                    }
-                }
-            }
-
-            SettingsGroup(title: "Automation & Connections") {
-                NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
-                    SiriShortcutsView()
-                }
-                if allowedApp(.nfcKeys) {
-                    NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
-                        NFCWalletView()
-                    }
-                }
-                if allowedApp(.integrations) {
-                    NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
-                        IntegrationsView()
-                            .environment(taskService)
-                            .environment(propertyService)
-                            .environment(familyService)
-                    }
-                }
+        SettingsGroup(title: "Personalization") {
+            // Members, Appearance, Language, Apple Watch, Live Activities,
+            // Floating Buttons, Siri, NFC keys and Integrations now live
+            // together in one General page, so the root list stays short.
+            NavSettingsRow(icon: "gearshape.fill", color: .gray, label: "General") {
+                GeneralSettingsView()
             }
         }
     }
