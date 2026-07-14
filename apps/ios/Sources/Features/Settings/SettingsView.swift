@@ -598,9 +598,6 @@ struct SettingsView: View {
                     LanguageSettingsView()
                         .environment(appSettings)
                 }
-                NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
-                    AppIconPickerView()
-                }
                 NavSettingsRow(icon: "applewatch", color: .teal, label: "Apple Watch") {
                     WatchSettingsView()
                 }

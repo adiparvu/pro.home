@@ -89,6 +89,12 @@ struct AppearanceView: View {
                            value: TextSizePreference.shared.rowValue) {
                 TextSizeView()
             }
+            // The app-icon gallery lives here in Aspect (Appearance), beside the
+            // mood and text-size controls — it is a look-and-feel choice.
+            NavSettingsRow(icon: "app.fill", color: .brandPurple,
+                           label: "App Icon") {
+                AppIconPickerView()
+            }
         }
     }
 
