@@ -57,6 +57,9 @@ struct SpaceDetailView: View {
     @Environment(PlantService.self) private var plantService
     @Environment(AppRouter.self) private var router
 
+    /// The sensor stream whose history sheet is up (R4) — nil when none.
+    @State private var historyTarget: SensorHistoryTarget? = nil
+
     private let smartHome = SmartHomeService.shared
     /// Cached HomeKit indoor readings (Smart Control R3) — feeds the
     /// space's temperature tile when a sensor lives in this room.
@@ -129,6 +132,12 @@ struct SpaceDetailView: View {
         // readValue fan-out on pull-to-refresh — the page's manual refresh.
         .refreshable { await indoorClimate.refresh() }
         .task { await indoorClimate.refreshIfStale() }
+        // History (R4): tapping a metric tile opens the sensor's iot_events
+        // line — HomeKit tiles under their mirrored id, IoT tiles under
+        // their sensor id.
+        .sheet(item: $historyTarget) { target in
+            SensorHistorySheet(target: target)
+        }
         // Push chrome: the page owns its top bar (the glass back circle),
         // so the system navigation bar stays hidden on the stack.
         .navigationBarBackButtonHidden(true)
@@ -282,7 +291,14 @@ struct SpaceDetailView: View {
             HStack(spacing: AppSpacing.md) {
                 if let reading {
                     metricTile(value: Self.degreesText(reading.celsius),
-                               label: reading.accessoryName)
+                               label: reading.accessoryName,
+                               staleSince: nil,
+                               history: SensorHistoryTarget(
+                                   id: IoTService.homeKitSensorId(accessory: reading.id,
+                                                                  metric: "temperature"),
+                                   name: reading.accessoryName,
+                                   unit: "°C",
+                                   tint: IoTSensor.SensorType.temperature.color))
                 }
                 ForEach(sensors) { sensor in
                     metricTile(sensor)
@@ -294,28 +310,53 @@ struct SpaceDetailView: View {
     private func metricTile(_ sensor: IoTSensor) -> some View {
         // `displayValue` is the hub's own formatting: value + unit as
         // stored, "—" while no reading has arrived (never invented).
-        metricTile(value: sensor.displayValue, label: sensor.name)
+        // Freshness honesty (R4): a reading older than 24 h carries a
+        // quiet relative stamp so stale never masquerades as live.
+        metricTile(value: sensor.displayValue, label: sensor.name,
+                   staleSince: SensorFreshness.isStale(sensor.lastUpdated)
+                       ? sensor.lastUpdated : nil,
+                   history: SensorHistoryTarget(id: sensor.id.uuidString,
+                                                name: sensor.name,
+                                                unit: sensor.unit,
+                                                tint: sensor.type.color))
     }
 
     /// The one metric tile both worlds share — an IoT sensor's stored
-    /// display value or a HomeKit accessory's live temperature.
-    private func metricTile(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text(verbatim: value)
-                .font(AppFont.scaled(SpaceHero.metricValueSize, weight: .light))
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(verbatim: label)
-                .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+    /// display value or a HomeKit accessory's live temperature. Tapping
+    /// opens the stream's history sheet (R4).
+    private func metricTile(value: String, label: String,
+                            staleSince: Date?,
+                            history: SensorHistoryTarget) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            historyTarget = history
+        } label: {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(verbatim: value)
+                    .font(AppFont.scaled(SpaceHero.metricValueSize, weight: .light))
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(verbatim: label)
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if let staleSince {
+                    Text(staleSince, format: .relative(presentation: .named))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.base)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.base)
+        .buttonStyle(.plain)
         .liquidGlass(cornerRadius: AppRadius.xl)
         .accessibilityElement(children: .combine)
+        .accessibilityHint(Text("sh_history_title"))
     }
 
     /// "21,5 °C" — locale-aware, at most one decimal, the IoT tiles' format.

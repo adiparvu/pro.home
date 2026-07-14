@@ -86596,6 +86596,470 @@
           }
         }
       }
+    },
+    "sh_history_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Istoric"
+          }
+        }
+      }
+    },
+    "sh_history_24h": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24 h"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24 h"
+          }
+        }
+      }
+    },
+    "sh_history_7d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 d"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 z"
+          }
+        }
+      }
+    },
+    "sh_history_30d": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 d"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 z"
+          }
+        }
+      }
+    },
+    "sh_history_latest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latest"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultima"
+          }
+        }
+      }
+    },
+    "sh_history_min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Min"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Min"
+          }
+        }
+      }
+    },
+    "sh_history_max": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max"
+          }
+        }
+      }
+    },
+    "sh_history_loading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading history…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se încarcă istoricul…"
+          }
+        }
+      }
+    },
+    "sh_history_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No history yet"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niciun istoric încă"
+          }
+        }
+      }
+    },
+    "sh_history_empty_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History builds up from webhook events and automatically mirrored HomeKit readings."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Istoricul se adună din evenimentele webhook și din citirile HomeKit oglindite automat."
+          }
+        }
+      }
+    },
+    "sh_history_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History could not be loaded."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Istoricul nu a putut fi încărcat."
+          }
+        }
+      }
+    },
+    "sh_history_retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reîncearcă"
+          }
+        }
+      }
+    },
+    "sh_history_partial %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing only the most recent %lld readings."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se afișează doar cele mai recente %lld măsurători."
+          }
+        }
+      }
+    },
+    "iot_wh_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensor webhook"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook senzori"
+          }
+        }
+      }
+    },
+    "iot_wh_page_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any device that can POST JSON — Shelly, ESPHome, Home Assistant, an ESP32 running your own firmware — can feed PRVIO with alerts and history."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orice dispozitiv care poate trimite JSON prin POST — Shelly, ESPHome, Home Assistant, un ESP32 cu firmware propriu — poate alimenta PRVIO cu alerte și istoric."
+          }
+        }
+      }
+    },
+    "iot_wh_url_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook URL"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresă webhook"
+          }
+        }
+      }
+    },
+    "iot_wh_secret_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secret key"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cheie secretă"
+          }
+        }
+      }
+    },
+    "iot_wh_secret_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treat the key like a password: anyone who has it can send events into your account."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tratează cheia ca pe o parolă: oricine o are poate trimite evenimente în contul tău."
+          }
+        }
+      }
+    },
+    "iot_wh_reveal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reveal key"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arată cheia"
+          }
+        }
+      }
+    },
+    "iot_wh_hide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide key"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascunde cheia"
+          }
+        }
+      }
+    },
+    "iot_wh_copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiază"
+          }
+        }
+      }
+    },
+    "iot_wh_copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiat"
+          }
+        }
+      }
+    },
+    "iot_wh_example_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Example payload"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exemplu de payload"
+          }
+        }
+      }
+    },
+    "iot_wh_example_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POST with Content-Type: application/json to the address above. “event” can be “alert” (sends a push notification) or “clear” (ends the alert); every event lands in the sensor's history."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite POST cu Content-Type: application/json către adresa de mai sus. „event” poate fi „alert” (trimite o notificare push) sau „clear” (închide alerta); fiecare eveniment intră în istoricul senzorului."
+          }
+        }
+      }
+    },
+    "iot_wh_preparing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing your key…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se pregătește cheia ta…"
+          }
+        }
+      }
+    },
+    "iot_wh_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key could not be prepared. Check your connection and try again."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cheia nu a putut fi pregătită. Verifică conexiunea și încearcă din nou."
+          }
+        }
+      }
+    },
+    "iot_wh_retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reîncearcă"
+          }
+        }
+      }
+    },
+    "iot_wh_row_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensor webhook"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook senzori"
+          }
+        }
+      }
+    },
+    "iot_wh_row_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts and history from any device that can POST JSON — Shelly, ESPHome, Home Assistant."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerte și istoric de la orice dispozitiv care poate trimite JSON — Shelly, ESPHome, Home Assistant."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

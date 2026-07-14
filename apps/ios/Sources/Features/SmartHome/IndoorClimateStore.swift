@@ -49,6 +49,13 @@ final class IndoorClimateStore {
         defer { isRefreshing = false }
         readings = await homeKit.readIndoorClimate(timeout: Self.readTimeout)
         lastRefreshed = Date()
+        // History mirroring (R4): fire-and-forget so the refresh (and the
+        // UI awaiting it) never waits on the network. The mirror throttles
+        // itself to one point per sensor per 30 minutes and logs-but-
+        // swallows failures — background writes never raise UI errors.
+        let snapshot = readings
+        guard !snapshot.isEmpty else { return }
+        Task { await IoTService.shared.mirrorIndoorClimate(snapshot) }
     }
 
     /// Refreshes only when the cache is older than `maxAge` — the cheap

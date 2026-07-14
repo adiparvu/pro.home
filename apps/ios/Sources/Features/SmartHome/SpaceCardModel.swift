@@ -92,11 +92,17 @@ enum SpaceCardModel {
         let zoneName = zone.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !zoneName.isEmpty else { return nil }
 
-        // 1. The first linked IoT sensor with a live reading.
+        // 1. The first linked IoT sensor with a live reading. Freshness
+        // honesty (R4): a reading older than 24 h carries a quiet relative
+        // stamp so a dead sensor's last value never masquerades as live.
         if let sensor = IoTService.shared.sensors.first(where: {
             $0.value != nil &&
             $0.linkedZoneName.trimmingCharacters(in: .whitespacesAndNewlines) == zoneName
         }) {
+            if let updated = sensor.lastUpdated, SensorFreshness.isStale(updated) {
+                return Text(verbatim: "\(sensor.displayValue) · ")
+                    + Text(updated, format: .relative(presentation: .named))
+            }
             return Text(verbatim: sensor.displayValue)
         }
 

@@ -189,6 +189,15 @@ extension IntegrationsView {
 
     var localControllersSection: some View {
         IntegrationGroup(title: "Local Controllers") {
+            // The account's iot-event webhook (R4): URL + secret + example
+            // payload — alerts and history from anything that can POST JSON.
+            NavigationLink { IoTWebhookSetupView() } label: {
+                IntegrationRowContent(
+                    icon: "dot.radiowaves.up.forward", color: Color.brandPurple,
+                    title: "iot_wh_row_title",
+                    description: "iot_wh_row_desc")
+            }
+            .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "cpu.fill", color: Color(red: 0.05, green: 0.75, blue: 0.45),

@@ -104,6 +104,12 @@ struct SmartDeviceSheet: View {
                     if current.capabilities.contains(.color) { softLightCard(current) }
                     if current.capabilities.contains(.targetTemperature) { climateCard(current) }
                     if current.capabilities.contains(.reading) { readingCard(current) }
+                    // History (R4): the sensor's iot_events line — rendered
+                    // for IoT sensors, whose readings accrue under their id
+                    // (webhook posts + "Phone Alert" automations).
+                    if let history = Self.historyTarget(for: current) {
+                        SensorHistorySection(target: history)
+                    }
                     // Room assignment exists only for HomeKit accessories —
                     // IoT relays/sensors have no such concept, so they never
                     // grow the row (honesty law).
@@ -515,9 +521,31 @@ struct SmartDeviceSheet: View {
                         .foregroundStyle(.secondary)
                         .accessibilityLabel(Text("sh_unreachable"))
                 }
+                // Freshness honesty (R4): a reading older than 24 h gains a
+                // quiet relative stamp so stale never masquerades as live.
+                if case .iotSensor(let sensor) = device.backing,
+                   let updated = sensor.lastUpdated,
+                   SensorFreshness.isStale(updated) {
+                    Text(updated, format: .relative(presentation: .named))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
             .frame(maxWidth: .infinity)
         }
+    }
+
+    // MARK: History target (R4)
+
+    /// The `iot_events` stream behind a device, when one exists: IoT
+    /// sensors accrue under their sensor id. HomeKit accessories accrue
+    /// climate history via the mirror, surfaced on the space page's tiles.
+    private static func historyTarget(for device: SmartDevice) -> SensorHistoryTarget? {
+        guard case .iotSensor(let sensor) = device.backing else { return nil }
+        return SensorHistoryTarget(id: sensor.id.uuidString,
+                                   name: sensor.name,
+                                   unit: sensor.unit,
+                                   tint: sensor.type.color)
     }
 }
 
