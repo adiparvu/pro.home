@@ -242,6 +242,10 @@ struct WeatherStageView: View {
         case .blueHour: BlueHourScene(context: context)
         case .night: NightScene(context: context)
         case .fullMoon: NightScene(context: context, forceFull: true)
+        case .clouds: CloudsScene(context: context)
+        case .heavyClouds: HeavyCloudsScene(context: context)
+        case .fog: FogScene(context: context)
+        case .mist: MistScene(context: context)
         default: GenericWeatherScene(context: context)
         }
     }
