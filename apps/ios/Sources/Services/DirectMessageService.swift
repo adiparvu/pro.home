@@ -715,6 +715,12 @@ final class DirectMessageService {
         dms.append(row)
         if !row.isMine(myUserId: myUserId, myName: myName) {
             Task { [weak self] in await self?.markDelivered(myName: myName) }
+            // The iMessage-style receive tone for a DM that lands while the
+            // thread is open — the group chat already plays it on its own
+            // inbound path; DMs had no sound at all. Keyed by the sender (the
+            // peer) so the per-conversation tone/mute preference is honored;
+            // playIncoming itself only sounds in the foreground.
+            ChatToneStore.playIncoming(row.senderName)
         }
     }
 
