@@ -386,7 +386,7 @@ extension WeatherCondition {
                 particleIntensity: 0, cloudCover: 0.2, cloudDarkness: 0.12,
                 fogDensity: 0.14, starVisibility: 0.4,
                 rainIntensity: 0, snowIntensity: 0, windStrength: 0.06,
-                godRayStrength: 0.1, flashEnabled: false)
+                godRayStrength: 0, flashEnabled: false)
 
         case .night:
             return WeatherParameters(

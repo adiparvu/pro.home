@@ -27,18 +27,43 @@ struct NightScene: WeatherScene {
         self.forceFull = forceFull
     }
 
+    /// Where the moon disc is seated (unit space, shared by the moon canvas and
+    /// the full-moon moonlight wash so the two align).
+    static let moonSeat = UnitPoint(x: 0.76, y: 0.20)
+
     var body: some View {
         let p = context.parameters
         ZStack {
             if p.starVisibility > 0.05 {
-                StarFieldCanvas(visibility: p.starVisibility, time: context.time)
+                WeatherStarField(visibility: p.starVisibility, time: context.time)
             }
-            MoonCanvas(phase: forceFull ? .fullOverride : MoonPhase.renderPhaseNow(),
-                       brightness: forceFull ? 1 : max(0.35, p.starVisibility))
+
+            // A FULL MOON floods the sky with a soft, cool moonlight wash seated
+            // at the moon — this is what makes `.fullMoon` read as a luminous
+            // moonlit night rather than the plain dark of `.night`.
+            if forceFull {
+                RadialGradient(
+                    colors: [Color(red: 0.82, green: 0.87, blue: 1.0).opacity(0.16),
+                             Color(red: 0.70, green: 0.78, blue: 1.0).opacity(0.05),
+                             .clear],
+                    center: Self.moonSeat, startRadius: 0,
+                    endRadius: context.size.width * 0.95)
+                .blendMode(.plusLighter)
                 .allowsHitTesting(false)
-            // Dark drifting clouds pass IN FRONT of the stars/moon at night.
+            }
+
+            MoonCanvas(phase: forceFull ? .fullOverride : MoonPhase.renderPhaseNow(),
+                       brightness: forceFull ? 1 : max(0.35, p.starVisibility),
+                       enlarged: forceFull)
+                .allowsHitTesting(false)
+
+            // Drifting clouds pass IN FRONT of the stars/moon at night. Under a
+            // full moon their rims are lit (brighter, kept cool), so they read as
+            // moonlit; plain night keeps them storm-dark exactly as before.
             if p.cloudCover > 0.02 {
-                CloudField(cover: p.cloudCover, darkness: max(p.cloudDarkness, 0.55),
+                CloudField(cover: p.cloudCover,
+                           darkness: forceFull ? min(p.cloudDarkness, 0.30)
+                                               : max(p.cloudDarkness, 0.55),
                            warmth: 0, wind: p.windStrength, time: context.time,
                            band: 0.05...0.45)
             }
@@ -54,49 +79,6 @@ struct NightScene: WeatherScene {
     }
 }
 
-// MARK: - Star field (Canvas, fixed seed + twinkle)
-
-/// A fixed-seed constellation of ~90 stars twinkling off the shared clock.
-/// Deterministic layout (SplitMix64) so the sky never jumps; a pure function of
-/// `time`, so the still frame is a valid night. `visibility` fades the whole
-/// field in as dusk deepens.
-private struct StarFieldCanvas: View {
-    var visibility: Double
-    var time: TimeInterval
-
-    private struct Star { let x, y, size, baseAlpha, twinkleAmp, speed, phase: Double }
-
-    private static let stars: [Star] = {
-        var rng = SystemRandomNumberGeneratorSeeded(seed: 0x5EED_57A2_F1E1D)
-        return (0..<90).map { _ in
-            Star(x: .random(in: 0.01...0.99, using: &rng),
-                 y: .random(in: 0.01...0.72, using: &rng), // stars sit in the upper sky
-                 size: .random(in: 0.6...1.7, using: &rng),
-                 baseAlpha: .random(in: 0.25...0.9, using: &rng),
-                 twinkleAmp: .random(in: 0.05...0.35, using: &rng),
-                 speed: .random(in: 0.6...2.2, using: &rng),
-                 phase: .random(in: 0...(2 * .pi), using: &rng))
-        }
-    }()
-
-    var body: some View {
-        Canvas { context, size in
-            for star in Self.stars {
-                let tw = star.baseAlpha
-                    + star.twinkleAmp * sin(time * star.speed + star.phase)
-                let alpha = max(0, min(1, tw)) * visibility
-                guard alpha > 0.01 else { continue }
-                let r = star.size
-                let rect = CGRect(x: star.x * size.width - r, y: star.y * size.height - r,
-                                  width: r * 2, height: r * 2)
-                context.fill(Path(ellipseIn: rect),
-                             with: .color(.white.opacity(alpha)))
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
 // MARK: - Moon (Canvas, real phase + scanline terminator)
 
 /// Draws the moon: an earthshine base disc, the lit lune bounded by a scanline
@@ -107,11 +89,16 @@ private struct StarFieldCanvas: View {
 private struct MoonCanvas: View {
     var phase: MoonRenderPhase
     var brightness: Double
+    /// `.fullMoon` draws a larger disc so the full moon reads as prominent; the
+    /// real-phase night moon (default) keeps its original size.
+    var enlarged: Bool = false
 
     var body: some View {
         Canvas { context, size in
-            let radius = max(14, min(size.width, size.height) * 0.052)
-            // Upper-right seat, clear of most constellations.
+            let radius = max(14, min(size.width, size.height)
+                             * (enlarged ? 0.066 : 0.052))
+            // Upper-right seat, clear of most constellations. Matches
+            // `NightScene.moonSeat` so the full-moon wash aligns with the disc.
             let center = CGPoint(x: size.width * 0.76, y: size.height * 0.20)
 
             // Halo — a soft glow that grows with illumination.

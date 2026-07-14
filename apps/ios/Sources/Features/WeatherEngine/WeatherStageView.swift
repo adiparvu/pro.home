@@ -236,7 +236,10 @@ struct WeatherStageView: View {
         switch condition {
         case .thunderstorm: ThunderstormScene(context: context)
         case .rain, .heavyRain: RainWeatherScene(context: context)
+        case .clearDay: ClearDayScene(context: context)
+        case .goldenHour: GoldenHourScene(context: context)
         case .sunrise, .sunset: SunriseScene(context: context)
+        case .blueHour: BlueHourScene(context: context)
         case .night: NightScene(context: context)
         case .fullMoon: NightScene(context: context, forceFull: true)
         default: GenericWeatherScene(context: context)
