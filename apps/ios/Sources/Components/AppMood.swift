@@ -372,6 +372,9 @@ final class AppMoodEngine {
     @ObservationIgnored private var timer: Timer?
     /// The last mood written to the App Group (dedupes publishes).
     @ObservationIgnored private var publishedMood: AppMood?
+    /// Weather-cache observation token (the singleton never deallocates,
+    /// so the registration is for life — kept only for clarity of intent).
+    @ObservationIgnored private var weatherCacheObserver: NSObjectProtocol?
 
     private init() {
         let stored = UserDefaults.standard.string(forKey: Self.overrideKey) ?? ""
@@ -385,6 +388,15 @@ final class AppMoodEngine {
         // (IconManager) check the engine themselves at startup, and posting
         // from inside the singleton's own `init` could re-enter `shared`.
         publishResolvedIfChanged(posting: false)
+        // A freshly fetched weather summary recomposes Auto immediately —
+        // rain arrives with the data, not on the next 15-minute tick. The
+        // closure resolves `shared` lazily (never during this init), so the
+        // singleton's own construction is never re-entered.
+        weatherCacheObserver = NotificationCenter.default.addObserver(
+            forName: .propertyWeatherCacheDidUpdate, object: nil, queue: .main
+        ) { _ in
+            Task { @MainActor in AppMoodEngine.shared.refresh() }
+        }
     }
 
     /// The date-derived part of Auto — time base plus the season layer

@@ -63361,6 +63361,57 @@
         }
       }
     },
+    "mood_weather_error_auth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple's weather service isn't responding — check that WeatherKit is activated for the app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serviciul meteo Apple nu răspunde — verifică activarea WeatherKit pentru aplicație."
+          }
+        }
+      }
+    },
+    "mood_weather_error_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather could not be fetched: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vremea n-a putut fi obținută: %@"
+          }
+        }
+      }
+    },
+    "mood_weather_refreshing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching the property's weather…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se obține vremea de la proprietate…"
+          }
+        }
+      }
+    },
     "mood_weather_nodata": {
       "extractionState": "manual",
       "localizations": {
@@ -63374,6 +63425,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nicio informație meteo recentă pentru proprietate — nuanțarea pornește când există vreme actuală."
+          }
+        }
+      }
+    },
+    "mood_weather_retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reîncearcă"
           }
         }
       }
@@ -88483,6 +88551,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Azi e sărbătoare — fundalul poartă atmosfera Eveniment."
+          }
+        }
+      }
+    },
+    "weather_dial_fetch_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather couldn't be fetched"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vremea n-a putut fi obținută"
           }
         }
       }

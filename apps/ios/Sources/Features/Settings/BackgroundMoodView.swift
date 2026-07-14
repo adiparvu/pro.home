@@ -29,11 +29,20 @@ import SwiftUI
 //   ignores them, so they are never shown as dead controls.
 // - The icon toggle disables itself (with the reason) when the selected
 //   icon has no installable day/night pair; the weather toggle disables
-//   itself when no fresh weather data exists.
+//   itself when no fresh weather data exists — and since the toggle drives
+//   real behavior, opening this page is also the on-demand weather moment:
+//   with property coordinates and a stale/absent cache one fetch attempt
+//   runs (progress on the row meanwhile). When it fails, the caption quotes
+//   the RECORDED error (PropertyWeather.lastRefreshError) instead of
+//   implying the fetch merely hasn't happened, hints at WeatherKit
+//   activation for auth-shaped failures, and offers a retry.
 
 struct BackgroundMoodView: View {
     @Environment(IconManager.self) private var iconManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// True while the page's own weather fetch attempt is in flight.
+    @State private var isRefreshingWeather = false
 
     private var engine: AppMoodEngine { .shared }
 
@@ -57,6 +66,22 @@ struct BackgroundMoodView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(Text("mood_settings_title"))
         .navigationBarTitleDisplayMode(.large)
+        .task { await refreshWeatherIfStale() }
+    }
+
+    // MARK: On-demand weather refresh (page open + the row's retry)
+
+    /// One honest fetch attempt when the property has coordinates and the
+    /// cache is stale or absent (no-op otherwise — the 1h write TTL makes
+    /// repeat visits free). Success enables the toggle and recomposes Auto
+    /// immediately (the engine observes `.propertyWeatherCacheDidUpdate`);
+    /// failure records the error the caption quotes.
+    private func refreshWeatherIfStale() async {
+        guard let lat = engine.latitude, let lon = engine.longitude,
+              !PropertyWeather.hasFreshCache, !isRefreshingWeather else { return }
+        isRefreshingWeather = true
+        await PropertyWeather.refreshRecordingErrors(latitude: lat, longitude: lon)
+        isRefreshingWeather = false
     }
 
     // MARK: Hero — the real backdrop, the real glass
@@ -239,8 +264,8 @@ struct BackgroundMoodView: View {
     private var customHoursToggleRow: some View {
         MoodToggleRow(icon: "clock",
                       title: "mood_hours_custom",
-                      caption: engine.latitude != nil ? "mood_hours_caption_sun"
-                                                      : "mood_hours_caption_clock",
+                      caption: engine.latitude != nil ? Text("mood_hours_caption_sun")
+                                                      : Text("mood_hours_caption_clock"),
                       isOn: Binding(
                           get: { engine.hasCustomHours },
                           set: { on in
@@ -315,7 +340,7 @@ struct BackgroundMoodView: View {
             // Power Mode and under Reduce Motion, whatever this says.
             MoodToggleRow(icon: "cloud.bolt.rain",
                           title: "mood_fx_toggle_title",
-                          caption: "mood_fx_toggle_caption",
+                          caption: Text("mood_fx_toggle_caption"),
                           isOn: Binding(
                               get: { AtmosphericEffectsPolicy.shared.userEnabled },
                               set: { on in
@@ -325,7 +350,7 @@ struct BackgroundMoodView: View {
             rowDivider
             MoodToggleRow(icon: "app.badge",
                           title: "mood_icon_follow",
-                          caption: iconCaptionKey,
+                          caption: Text(iconCaptionKey),
                           isOn: Binding(
                               get: { iconManager.followsMood },
                               set: { on in
@@ -335,18 +360,49 @@ struct BackgroundMoodView: View {
                 .disabled(!canFollow)
                 .opacity(canFollow ? 1 : 0.5)
             rowDivider
+            // The weather row manages its own dimming (`dimsAsDisabled`)
+            // instead of a row-level `.disabled`, so the retry button under
+            // the caption stays tappable when the toggle cannot be.
             MoodToggleRow(icon: "cloud.sun",
                           title: "mood_weather_reactive",
-                          caption: hasWeather ? "mood_weather_caption" : "mood_weather_nodata",
+                          caption: weatherCaption,
                           isOn: Binding(
                               get: { engine.weatherReactive },
                               set: { on in
                                   HapticFeedback.selection()
                                   engine.weatherReactive = on
-                              }))
-                .disabled(!hasWeather)
-                .opacity(hasWeather ? 1 : 0.5)
+                              }),
+                          isBusy: isRefreshingWeather,
+                          dimsAsDisabled: !hasWeather,
+                          retry: canRetryWeather
+                              ? { Task { await refreshWeatherIfStale() } }
+                              : nil)
         }
+    }
+
+    /// The weather row's honest caption, in priority order: what is being
+    /// done right now (fetching) → what works (fresh data) → what failed
+    /// (the recorded error, verbatim; auth-shaped failures hint that the
+    /// WeatherKit service needs activation) → what never ran (no data yet).
+    private var weatherCaption: Text {
+        if isRefreshingWeather { return Text("mood_weather_refreshing") }
+        if AppWeatherTone.hasFreshSummary { return Text("mood_weather_caption") }
+        if let failure = PropertyWeather.lastRefreshError {
+            if failure.looksLikeAuthFailure { return Text("mood_weather_error_auth") }
+            return Text(verbatim: String(
+                format: String(localized: "mood_weather_error_message"),
+                failure.message))
+        }
+        return Text("mood_weather_nodata")
+    }
+
+    /// Retry only when it could help: a recorded failure, coordinates to
+    /// retry with, no fresh data, and no attempt already in flight.
+    private var canRetryWeather: Bool {
+        !isRefreshingWeather
+            && !AppWeatherTone.hasFreshSummary
+            && PropertyWeather.lastRefreshError != nil
+            && engine.latitude != nil && engine.longitude != nil
     }
 
     /// Why the icon can(not) follow the mood, stated plainly: the default
@@ -385,33 +441,69 @@ struct BackgroundMoodView: View {
 private struct MoodToggleRow: View {
     let icon: String
     let title: LocalizedStringKey
-    let caption: LocalizedStringKey
+    /// Prebuilt so captions can carry runtime values (the weather row
+    /// quotes a recorded error); plain rows pass `Text("key")` as before.
+    let caption: Text
     @Binding var isOn: Bool
+    /// A fetch is in flight: the toggle yields to a small spinner and the
+    /// caption says what is happening.
+    var isBusy: Bool = false
+    /// Dims and disables the toggle (and the badge/text) WITHOUT a
+    /// row-level `.disabled`, which would also kill the retry button — a
+    /// child inside a disabled parent can never re-enable itself.
+    var dimsAsDisabled: Bool = false
+    /// When set, a small retry affordance renders under the caption. It
+    /// stays fully interactive and undimmed even while the toggle is not.
+    var retry: (() -> Void)? = nil
 
     @Environment(\.isEnabled) private var isEnabled
+
+    private var dimmed: Bool { dimsAsDisabled || !isEnabled }
 
     var body: some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon,
-                             color: isOn && isEnabled ? .accentColor : Color.primary.opacity(0.4))
+                             color: isOn && !dimmed ? .accentColor : Color.primary.opacity(0.4))
+                .opacity(dimmed ? 0.5 : 1)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
-                Text(caption)
-                    .font(AppFont.scaled(12))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
+                Group {
+                    Text(title)
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                    caption
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+                .opacity(dimmed ? 0.5 : 1)
+                if let retry {
+                    Button(action: retry) {
+                        Text("mood_weather_retry")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, AppSpacing.xxs)
+                }
             }
             Spacer()
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .tint(.accentColor)
+            if isBusy {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Toggle("", isOn: $isOn)
+                    .labelsHidden()
+                    .tint(.accentColor)
+                    .disabled(dimsAsDisabled)
+                    .opacity(dimmed ? 0.5 : 1)
+            }
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
-        .accessibilityElement(children: .combine)
+        // With a retry button inside, combining would swallow its action;
+        // containment keeps the button reachable as its own element.
+        .accessibilityElement(children: retry == nil ? .combine : .contain)
     }
 }
 

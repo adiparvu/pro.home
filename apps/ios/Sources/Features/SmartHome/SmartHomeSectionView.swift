@@ -55,6 +55,11 @@ struct SmartHomeSection: View {
     /// true, i.e. fully visible, no re-runs.
     @State private var revealCards = false
 
+    /// Bumped after the `.task` weather probe so the dial re-renders once
+    /// with whatever the probe produced (summary or recorded error) — the
+    /// PropertyWeather cache lives in UserDefaults and is not observable.
+    @State private var weatherProbeTick = 0
+
     /// What a tap presents: the tapped device's hero sheet (S3), the
     /// climate page, or the "See all" list when the room holds more devices
     /// than the dashboard shows. One optional drives `.sheet(item:)`, so
@@ -152,6 +157,19 @@ struct SmartHomeSection: View {
             rulesStore.adopt(taskService: taskService)
             await rulesStore.loadIfNeeded()
             await indoorClimate.refreshIfStale()
+            // The dial's outdoor fallback: when the launch refresh failed
+            // silently (empty cache), one error-RECORDING attempt with the
+            // engine's property coordinates either fills the cache or gives
+            // the dial an honest failure caption. No-op while the cache is
+            // fresh (1h TTL). The tick forces one re-render — the UserDefaults
+            // cache is not observable, so a summary landing after first
+            // render would otherwise never reach the dial.
+            if let lat = AppMoodEngine.shared.latitude,
+               let lon = AppMoodEngine.shared.longitude,
+               !PropertyWeather.hasFreshCache {
+                await PropertyWeather.refreshRecordingErrors(latitude: lat, longitude: lon)
+                weatherProbeTick += 1
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -432,6 +450,12 @@ struct SmartHomeSection: View {
         if let current = WeatherKitService.shared.currentWeather {
             return (current.temperature.converted(to: .celsius).value,
                     Text("sh_temp_outdoor_weather"))
+        }
+        // No sensor and no weather: when a weather fetch actually FAILED
+        // (recorded by the diagnostics refresh), say so instead of the
+        // bare "no reading" — same honesty as the Fundal weather row.
+        if PropertyWeather.lastRefreshError != nil {
+            return (nil, Text("weather_dial_fetch_failed"))
         }
         return (nil, Text("sh_temp_unavailable"))
     }
