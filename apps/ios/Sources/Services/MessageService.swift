@@ -191,14 +191,13 @@ final class MessageService {
         // MAIN topic (same property, different group — no messages, no typing),
         // and a channel whose initial subscribe failed at launch was kept as
         // if live, silencing the whole session.
-        // GENUINELY live means BOTH halves are up: the channel reads
-        // `.subscribed` AND the underlying WebSocket is `.connected`. A stale
-        // `.subscribed` channel on a dead socket (the "no connected users"
-        // tenant shutdown) used to satisfy the old channel-only guard and
-        // silence the session forever — so the socket is now part of the test.
+        // Live for this scope → keep it. Trust the channel's own `.subscribed`
+        // status (supabase-swift auto-reconnects the socket under it); also
+        // gating on realtimeV2.status == .connected made this guard fail while
+        // the socket briefly read `.connecting`, turning the 3s heartbeat into a
+        // teardown/rebuild loop that silenced the very channel it guards.
         if let ch = realtimeChannel, subscribedPropertyId == propertyId,
-           currentGroupId == groupId, ch.status == .subscribed,
-           supabase.realtimeV2.status == .connected { return }
+           currentGroupId == groupId, ch.status == .subscribed { return }
         if realtimeChannel != nil { await unsubscribe() }
         // The group scope arrives EXPLICITLY: this races load() (separate .task),
         // and deriving the topic from a not-yet-set currentGroupId subscribed a
@@ -323,11 +322,12 @@ final class MessageService {
         }
     }
 
-    /// Genuinely healthy: the WebSocket is connected AND the main messages
-    /// channel is subscribed. A stale `.subscribed` channel on a dropped socket
-    /// is NOT healthy — the old code trusted the channel alone and never rebuilt.
+    /// Healthy = the messages channel is subscribed. The channel's own status is
+    /// the reliable signal (supabase-swift auto-reconnects the socket under it);
+    /// also requiring realtimeV2.status == .connected made the 3s heartbeat tear
+    /// the channel down whenever that socket read briefly lagged `.connecting`.
     private var realtimeHealthy: Bool {
-        supabase.realtimeV2.status == .connected && realtimeChannel?.status == .subscribed
+        realtimeChannel?.status == .subscribed
     }
 
     /// Recomputes `realtimeStatus` from current socket + channel health.

@@ -616,13 +616,13 @@ final class DirectMessageService {
         // thread is open). The status check matters: a channel whose initial
         // subscribe failed at launch used to satisfy `!= nil` and silence the
         // whole session — no live messages, no typing indicator.
-        // GENUINELY live means BOTH halves are up: the channel reads
-        // `.subscribed` AND the underlying WebSocket is `.connected`. A stale
-        // `.subscribed` channel on a dead socket (the "no connected users"
-        // tenant shutdown) used to satisfy the old channel-only guard and
-        // silence the session forever — so the socket is now part of the test.
+        // Live for this property → keep it. Trust the channel's own
+        // `.subscribed` status (supabase-swift auto-reconnects the socket under
+        // it); gating additionally on realtimeV2.status == .connected made this
+        // guard fail spuriously while the socket briefly read `.connecting`,
+        // which let the 3s heartbeat tear down and rebuild a healthy channel.
         if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed, supabase.realtimeV2.status == .connected { return }
+           ch.status == .subscribed { return }
         if channel != nil { await unsubscribe() }
         // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
         // ping. The real typing/dm_new handlers already ignore our own signals
@@ -784,11 +784,16 @@ final class DirectMessageService {
         }
     }
 
-    /// Genuinely healthy: the WebSocket is connected AND the channel is
-    /// subscribed. A stale `.subscribed` channel on a dropped socket is NOT
-    /// healthy — the old code trusted the channel alone and never rebuilt.
+    /// Healthy = the channel is subscribed. The channel's own status is the
+    /// reliable signal: supabase-swift keeps it `.subscribed` across transient
+    /// socket blips and auto-reconnects underneath, flipping it off `.subscribed`
+    /// only when the subscription is genuinely gone. An earlier build ALSO
+    /// required `realtimeV2.status == .connected`, but that socket-status read
+    /// can lag `.connecting` right after a subscribe — turning the 3s heartbeat
+    /// into a teardown/rebuild loop that silences the very channel it guards.
+    /// Broadcast liveness is proven separately by the round-trip self-test.
     private var realtimeHealthy: Bool {
-        supabase.realtimeV2.status == .connected && channel?.status == .subscribed
+        channel?.status == .subscribed
     }
 
     /// Recomputes `realtimeStatus` from current socket + channel health, folding
@@ -802,8 +807,8 @@ final class DirectMessageService {
         }
         switch broadcastEcho {
         case .some(true):  realtimeStatus = "live"
-        case .some(false): realtimeStatus = "socket:connected chan:subscribed bcast:DEAD"
-        case .none:        realtimeStatus = "socket:connected chan:subscribed bcast:testing"
+        case .some(false): realtimeStatus = "socket:\(socketStatusText) chan:subscribed bcast:DEAD"
+        case .none:        realtimeStatus = "socket:\(socketStatusText) chan:subscribed bcast:testing"
         }
     }
 
