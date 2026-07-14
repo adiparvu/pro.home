@@ -19,9 +19,15 @@ struct RealtimeStatusBanner: View {
 
     @State private var copied = false
 
-    /// Healthy or still-connecting states hide the banner entirely.
-    private var isHidden: Bool { status == "live" || status == "…" }
+    /// Before the first subscribe resolves there is nothing to show.
+    private var isHidden: Bool { status == "…" }
+    /// Fully healthy: socket connected, channel subscribed, broadcast echoed.
+    private var isLive: Bool { status == "live" }
+    private var tint: Color { isLive ? Color.brandSuccess : Color.brandWarning }
 
+    // NOTE: temporarily ALWAYS visible (green when live) so the exact realtime
+    // state can be captured in a single screenshot while the typing/delivery
+    // fault is being diagnosed. Reverts to warning-only once resolved.
     var body: some View {
         if !isHidden {
             Button {
@@ -34,7 +40,7 @@ struct RealtimeStatusBanner: View {
                 }
             } label: {
                 HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "exclamationmark.triangle.fill")
+                    Image(systemName: isLive ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                     Text("\(String(localized: "realtime_status_prefix")): \(status)")
                         .lineLimit(2)
                         .truncationMode(.middle)
@@ -42,11 +48,11 @@ struct RealtimeStatusBanner: View {
                     Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
                 }
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.brandWarning)
+                .foregroundStyle(tint)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.brandWarning.opacity(0.12))
+                .background(tint.opacity(0.12))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

@@ -199,6 +199,18 @@ final class DirectMessageService {
     /// RLS-free "a new DM landed" broadcast — the reliable delivery path when
     /// postgres_changes is withheld by the SELECT policy (see send()).
     @ObservationIgnored private var newMsgSub: RealtimeSubscription?
+    /// Broadcast round-trip self-test. Typing/recording AND live DM delivery
+    /// (dm_new) all ride on channel broadcast — postgres_changes is withheld
+    /// from the recipient by the direct_messages SELECT policy by design. So if
+    /// broadcast doesn't relay, EVERYTHING live breaks together. The channel is
+    /// created with receiveOwnBroadcasts=on and, once subscribed, we broadcast a
+    /// one-shot nonce to ourselves: if it echoes back the whole broadcast path is
+    /// proven live; if it never returns, broadcast relay is the culprit.
+    @ObservationIgnored private var selftestSub: RealtimeSubscription?
+    @ObservationIgnored private var selftestNonce = ""
+    @ObservationIgnored private var selftestTask: Task<Void, Never>?
+    /// nil = not yet tested, true = our ping echoed back, false = timed out.
+    private(set) var broadcastEcho: Bool?
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -612,7 +624,13 @@ final class DirectMessageService {
         if let ch = channel, subscribedPropertyId == propertyId,
            ch.status == .subscribed, supabase.realtimeV2.status == .connected { return }
         if channel != nil { await unsubscribe() }
-        let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
+        // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
+        // ping. The real typing/dm_new handlers already ignore our own signals
+        // (name != myName, from != my id), so echoing our own broadcasts back is
+        // harmless to them and gives us a zero-second-device liveness probe.
+        let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)") {
+            $0.broadcast.receiveOwnBroadcasts = true
+        }
         // Incremental reconciliation: append/patch/remove the single changed row
         // per event instead of refetching up to 1000 rows on every insert,
         // reaction, tick or edit (which also chained load → markDelivered → a
@@ -687,6 +705,16 @@ final class DirectMessageService {
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
         }
+        // The broadcast liveness probe's receiver: our own ping coming back.
+        selftestSub = ch.onBroadcast(event: "selftest") { [weak self] json in
+            guard case let .string(nonce)? = json["nonce"] else { return }
+            Task { @MainActor [weak self] in
+                guard let self, nonce == self.selftestNonce else { return }
+                self.selftestTask?.cancel()
+                self.broadcastEcho = true
+                self.refreshRealtimeStatus()
+            }
+        }
         do {
             // Note: with the default `connectOnSubscribe` option (true), this
             // auto-connects the WebSocket when it's disconnected — so no
@@ -701,12 +729,35 @@ final class DirectMessageService {
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
+            selftestSub = nil
             await supabase.realtimeV2.removeChannel(ch)
             return
         }
         channel = ch
         subscribedPropertyId = propertyId
+        runBroadcastSelfTest(on: ch)
         refreshRealtimeStatus()
+    }
+
+    /// Sends a nonce to ourselves over the just-subscribed channel and waits for
+    /// the echo. Success proves socket + channel + broadcast relay are all live;
+    /// timing out fingers broadcast as the reason typing/recording and instant
+    /// delivery are dead. Result is surfaced in `realtimeStatus`.
+    private func runBroadcastSelfTest(on ch: RealtimeChannelV2) {
+        selftestTask?.cancel()
+        broadcastEcho = nil
+        let nonce = UUID().uuidString
+        selftestNonce = nonce
+        selftestTask = Task { [weak self] in
+            await ch.broadcast(event: "selftest", message: ["nonce": .string(nonce)])
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                guard let self, self.broadcastEcho == nil else { return }
+                self.broadcastEcho = false          // no echo in 4s → relay dead
+                self.refreshRealtimeStatus()
+            }
+        }
     }
 
     // MARK: - Realtime diagnostics
@@ -740,11 +791,20 @@ final class DirectMessageService {
         supabase.realtimeV2.status == .connected && channel?.status == .subscribed
     }
 
-    /// Recomputes `realtimeStatus` from current socket + channel health.
+    /// Recomputes `realtimeStatus` from current socket + channel health, folding
+    /// in the broadcast round-trip probe. "live" only once broadcast is proven —
+    /// a subscribed channel whose broadcast never echoes is the exact broken
+    /// state (typing/delivery ride on broadcast), so it must NOT read as live.
     private func refreshRealtimeStatus() {
-        realtimeStatus = realtimeHealthy
-            ? "live"
-            : "socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
+        guard realtimeHealthy else {
+            realtimeStatus = "socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
+            return
+        }
+        switch broadcastEcho {
+        case .some(true):  realtimeStatus = "live"
+        case .some(false): realtimeStatus = "socket:connected chan:subscribed bcast:DEAD"
+        case .none:        realtimeStatus = "socket:connected chan:subscribed bcast:testing"
+        }
     }
 
     /// Delivery safety net for an OPEN thread: verifies the channel is
@@ -805,6 +865,10 @@ final class DirectMessageService {
         postgresSubs.removeAll()
         typingSub = nil
         newMsgSub = nil
+        selftestSub = nil
+        selftestTask?.cancel()
+        selftestTask = nil
+        broadcastEcho = nil
         activity.reset()
         activity.channel = nil
         reloadTask?.cancel()
