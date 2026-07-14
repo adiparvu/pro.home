@@ -370,7 +370,13 @@ private struct LightningLayer: View {
 /// every drop crosses the whole screen and the live count stays exactly the
 /// target on any device: lifetime = (height + margin) / slowestSpeed,
 /// birthRate = targetLive / lifetime.
-private final class RainScene: SKScene {
+// Exposed as `internal` (was `private`) so the Dynamic Weather Engine can
+// COMPOSE this exact rain system in its storm/rain scenes rather than
+// duplicating the particle engine — the one rain implementation in the app.
+// Behavior is unchanged for the mood backdrop, which still constructs it with
+// the default intensity. Additive: the optional `intensity` multiplier scales
+// only the live-drop budget the weather engine asks for (heavyRain / storm).
+final class RainScene: SKScene {
     /// 12° from vertical — consistent across every layer, splash drift, and
     /// the mist's direction of travel.
     private static let windTilt: CGFloat = 12 * .pi / 180
@@ -386,8 +392,13 @@ private final class RainScene: SKScene {
     private let mist = SKEmitterNode()
     private let splash = SKEmitterNode()
     private var prewarmed = false
+    /// Live-drop budget multiplier. 1 is the tuned mood-backdrop rain; the
+    /// weather engine passes >1 for heavier rain (heavyRain ≈ 1.5, storm ≈ 1.6).
+    /// Documented so the ×112 baseline budget stays auditable at any intensity.
+    private let intensity: CGFloat
 
-    init(scheme: ColorScheme) {
+    init(scheme: ColorScheme, intensity: CGFloat = 1) {
+        self.intensity = intensity
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -445,7 +456,7 @@ private final class RainScene: SKScene {
         splash.particleTexture = AtmosphericParticleTextures.splashRing
         splash.particleColor = near
         splash.particleColorBlendFactor = 1
-        splash.particleBirthRate = 12
+        splash.particleBirthRate = 12 * intensity
         splash.particleLifetime = 0.35
         splash.particleLifetimeRange = 0.1
         splash.particleSpeed = 0
@@ -497,7 +508,7 @@ private final class RainScene: SKScene {
         for (emitter, spec) in streaks {
             let lifetime = travel / (spec.speed - spec.speedRange)
             emitter.particleLifetime = lifetime
-            emitter.particleBirthRate = spec.targetLive / lifetime
+            emitter.particleBirthRate = spec.targetLive * intensity / lifetime
             emitter.particleSpeed = spec.speed
             emitter.particleSpeedRange = spec.speedRange
             // Spawn line above the top edge, widened and shifted against the
@@ -534,12 +545,16 @@ private final class RainScene: SKScene {
 /// flakes do the same — which keeps lifetimes, and therefore the live
 /// count, small: 54 + 28 = 82 < 100. Horizontal sway comes from opposing
 /// per-layer xAcceleration, so the two depths visibly cross-drift.
-private final class SnowScene: SKScene {
+// Exposed as `internal` (was `private`) so the Dynamic Weather Engine composes
+// this exact flake system for its snow/blizzard scenes. The optional
+// `intensity` multiplier scales the live-flake budget (blizzard ≈ 1.7); the
+// mood backdrop keeps the tuned default of 1, unchanged.
+final class SnowScene: SKScene {
     private let farFlakes = SKEmitterNode()
     private let nearFlakes = SKEmitterNode()
     private var prewarmed = false
 
-    override init() {
+    init(intensity: CGFloat = 1) {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -548,16 +563,16 @@ private final class SnowScene: SKScene {
         // ground (white-on-white flakes would simply not exist).
         let flakeColor = UIColor(red: 0.470, green: 0.580, blue: 0.680, alpha: 1)
 
-        // Far: 6.75/s × 8 s = 54 live, ~2–3 pt.
+        // Far: 6.75/s × 8 s = 54 live, ~2–3 pt (× intensity).
         Self.configure(farFlakes, color: flakeColor,
-                       birthRate: 6.75, lifetime: 8,
+                       birthRate: 6.75 * intensity, lifetime: 8,
                        speed: 55, speedRange: 20,
                        scale: 0.16, scaleRange: 0.05,   // 16 pt texture → ~2.6 pt
                        peakAlpha: 0.55,
                        xAcceleration: 6, rotationSpeed: 0.45)
         // Near: 4/s × 7 s = 28 live, ~4–5 pt, swaying the other way.
         Self.configure(nearFlakes, color: flakeColor,
-                       birthRate: 4, lifetime: 7,
+                       birthRate: 4 * intensity, lifetime: 7,
                        speed: 90, speedRange: 25,
                        scale: 0.28, scaleRange: 0.06,   // → ~4.5 pt
                        peakAlpha: 0.80,
