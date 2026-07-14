@@ -72,7 +72,7 @@ extension ChatView {
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? String(localized: "This message was deleted") : pinnedSnippet(m),
             isOwn: own,
-            bubbleColor: chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+            bubbleColor: chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble,
             myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
             onReact: { e in
                 if let pid = propertyId {
@@ -310,7 +310,7 @@ extension ChatView {
                     // optimistically with a clock while queued, or a red badge +
                     // "tap to retry" once a send attempt has failed.
                     ForEach(pendingOutbox) { pm in
-                        let pendingFill = chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble
+                        let pendingFill = chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble
                         let failed = pm.state == .failed || !outbox.isOnline
                         VStack(alignment: .trailing, spacing: 2) {
                             HStack {

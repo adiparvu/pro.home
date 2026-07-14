@@ -29,8 +29,9 @@ struct ChatActivityBubble: View {
             content
                 .frame(minWidth: 34, minHeight: 17)
                 .padding(.horizontal, 13).padding(.vertical, 9)
-                .background(Color.primary.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                // Same translucent Liquid Glass bubble (with a tail) as an
+                // incoming message — the iMessage typing/recording indicator.
+                .incomingBubbleGlass(hasTail: true)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(kind == .typing

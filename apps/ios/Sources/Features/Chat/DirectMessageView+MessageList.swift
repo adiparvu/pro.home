@@ -70,7 +70,7 @@ extension DirectMessageView {
         ChatActionOverlay(
             previewText: m.previewSnippet,
             isOwn: own,
-            bubbleColor: chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+            bubbleColor: chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble,
             myReaction: m.myReaction(myUserId: directMessageService.myUserId, myName: myName),
             onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
             actions: dmMessageActions(m, own: own),
@@ -214,6 +214,10 @@ extension DirectMessageView {
                                     && shown[idx + 1].senderName == msg.senderName
                                     && sameDay(msg, shown[idx + 1])
                                 let showDate = idx == 0 || !sameDay(shown[idx - 1], msg)
+                                // First bubble of a same-sender run — drives the
+                                // incoming sender-name label for unknown peers.
+                                let prevSameSender = !isSearching && !showDate && idx > 0
+                                    && shown[idx - 1].senderName == msg.senderName
 
                                 if showDate {
                                     ChatDateSeparator(dateStr: msg.createdAt)
@@ -227,6 +231,7 @@ extension DirectMessageView {
                                     message: msg,
                                     isOwn: isOwn,
                                     hasTail: !nextSameSender,
+                                    isFirstInRun: !prevSameSender,
                                     myName: myName,
                                     myUserId: directMessageService.myUserId,
                                     partner: member,
@@ -263,7 +268,7 @@ extension DirectMessageView {
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in
-                                let pendingFill = chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
+                                let pendingFill = chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble
                                 let failed = pm.state == .failed || !outbox.isOnline
                                 VStack(alignment: .trailing, spacing: 2) {
                                     HStack {

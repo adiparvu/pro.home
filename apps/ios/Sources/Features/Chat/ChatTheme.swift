@@ -71,6 +71,40 @@ enum ChatBackgroundStore {
     }
 }
 
+// MARK: - iMessage bubble tokens
+//
+// The default PRVIO chat dresses its bubbles exactly like Apple Messages on
+// iOS 26: outgoing in the signature blue (a subtle top-to-bottom gradient) and
+// incoming in translucent Liquid Glass (rendered via `incomingBubbleGlass`,
+// with these gray stops as the Reduce-Transparency / pre-iOS-26 fallback so
+// text stays legible over any wallpaper). Custom chat themes keep their own
+// picked bubble colour and never see the gradient.
+extension Color {
+    /// Solid iMessage outgoing blue (#0A7CFF) — the base tint used for
+    /// readable-foreground computations and non-gradient surfaces.
+    static let imessageBlue = Color(red: 10 / 255, green: 124 / 255, blue: 255 / 255)
+
+    /// The received-bubble gray Messages falls back to when Liquid Glass is
+    /// unavailable or Reduce Transparency is on. Light #E9E9EB / dark #262628 —
+    /// the exact iMessage grays, adaptive to the interface style.
+    static var imessageIncoming: Color {
+        Color(uiColor: UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(red: 38 / 255, green: 38 / 255, blue: 40 / 255, alpha: 1)
+                : UIColor(red: 233 / 255, green: 233 / 255, blue: 235 / 255, alpha: 1)
+        })
+    }
+
+    /// The outgoing-bubble gradient: iMessage blue #0A7CFF (top) → #1E8FFF
+    /// (bottom). Applied only on the default theme; custom themes stay solid.
+    static var imessageBlueGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(red: 10 / 255, green: 124 / 255, blue: 255 / 255),
+                     Color(red: 30 / 255, green: 143 / 255, blue: 255 / 255)],
+            startPoint: .top, endPoint: .bottom)
+    }
+}
+
 struct ChatTheme: Identifiable {
     let id: String
     let name: String

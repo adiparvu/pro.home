@@ -105,10 +105,12 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
 
             VStack(alignment: model.isMine ? .trailing : .leading, spacing: 3) {
                 if let name = model.senderLabel {
+                    // iMessage renders the sender's name in small gray above the
+                    // first bubble of an incoming run — not a coloured label.
                     Text(name)
-                        .font(AppFont.label)
-                        .foregroundStyle(model.senderLabelColor)
-                        .padding(.leading, AppSpacing.xxs)
+                        .font(AppFont.scaled(11, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .padding(.leading, AppSpacing.xs)
                 }
                 if let quote = model.replyQuote, !model.isDeleted {
                     quotedReply(quote)
@@ -363,17 +365,26 @@ struct ChatDeletedBubbleView: View {
     }
 }
 
-/// The plain-text bubble: coloured for own messages, opaque system fill for
-/// incoming (like iMessage) so it stays legible over any wallpaper — a
-/// translucent tint vanished against photo backgrounds, and opaque by
-/// construction it also satisfies Reduce Transparency. The foreground tracks
-/// the fill's luminance so a light custom theme colour gets dark text.
+/// The plain-text bubble, dressed like iMessage: outgoing in the blue (the
+/// default theme's subtle top-to-bottom gradient, a custom theme's solid
+/// colour otherwise), incoming in translucent Liquid Glass. Incoming text is
+/// `.primary` (white on dark / black on light, exactly Messages) which the
+/// system keeps legible on glass; outgoing text is white on the default blue,
+/// or tracks the custom fill's luminance so a light theme colour gets dark text.
 struct ChatTextBubbleView: View {
     let text: String
     let isOwn: Bool
     var hasTail: Bool = true
     /// Own-bubble fill — driven by the selected chat theme.
     var fill: Color = .accentColor
+    /// Render the default iMessage-blue gradient (own bubbles on the default
+    /// theme). Custom themes keep their picked solid colour.
+    var useDefaultBlueGradient: Bool = false
+
+    private var foreground: Color {
+        if !isOwn { return .primary }
+        return useDefaultBlueGradient ? .white : fill.readableText
+    }
 
     var body: some View {
         // A subject-bearing body (see MessageSubject) renders iMessage-style:
@@ -391,10 +402,10 @@ struct ChatTextBubbleView: View {
                     .font(AppFont.scaled(15))
             }
         }
-        .foregroundStyle(isOwn ? fill.readableText : .primary)
-        .tint(isOwn ? fill.readableText : Color.accentColor)
+        .foregroundStyle(foreground)
+        .tint(isOwn ? foreground : Color.accentColor)
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-        .background(isOwn ? fill : Color(.secondarySystemBackground),
-                    in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
+        .chatBubbleBackground(isOwn: isOwn, hasTail: hasTail, fill: fill,
+                              gradient: useDefaultBlueGradient)
     }
 }

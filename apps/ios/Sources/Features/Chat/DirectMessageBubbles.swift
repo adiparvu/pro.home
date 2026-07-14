@@ -91,6 +91,9 @@ struct DMBubble: View {
     let isOwn: Bool
     /// Draw the iMessage-style tail — true on the last bubble of a same-sender run.
     let hasTail: Bool
+    /// First bubble of a same-sender run — anchors the sender-name label (only
+    /// shown for an incoming peer who isn't a saved contact, iMessage-style).
+    var isFirstInRun: Bool = true
     var myName: String = ""
     /// My auth user id — reactions key on it (names collide and drift).
     var myUserId: UUID? = nil
@@ -137,6 +140,11 @@ struct DMBubble: View {
 
     private var myReaction: String? { message.myReaction(myUserId: myUserId, myName: myName) }
 
+    /// The default theme (no custom `outgoingColor`) draws the iMessage-blue
+    /// gradient; a custom theme keeps its picked solid colour.
+    private var usesDefaultBlue: Bool { outgoingColor == nil }
+    private var ownFill: Color { outgoingColor ?? Color.imessageBlue }
+
     private var showsQuickForward: Bool {
         guard onForward != nil, messageType == .text else { return false }
         // Quick-forward button only on link messages.
@@ -174,6 +182,11 @@ struct DMBubble: View {
             isMine: isOwn,
             hasTail: hasTail,
             isDeleted: messageType == .deleted,
+            // A peer who isn't a saved contact (no roster member) gets their
+            // name above the first bubble of a run — matches iMessage DMs with
+            // unknown senders; saved contacts stay label-free.
+            senderLabel: (!isOwn && isFirstInRun && partner == nil)
+                ? message.senderName : nil,
             timeText: message.timeDisplay,
             isEdited: message.editedAt != nil,
             showsPinned: message.pinned == true,
@@ -247,7 +260,7 @@ struct DMBubble: View {
                 timeText: message.timeDisplay,
                 tick: isOwn ? (message.readAt != nil ? .read
                                : (message.deliveredAt != nil ? .delivered : .sent)) : .none,
-                bubbleColor: outgoingColor ?? Color.accentColor,
+                bubbleColor: ownFill,
                 hasTail: hasTail
             )
         case .image:
@@ -263,7 +276,7 @@ struct DMBubble: View {
         case .contacts:
             ContactCardBubble(payloads: SharedContactPayload.decode(message.body),
                               isOwn: isOwn,
-                              bubbleColor: outgoingColor ?? Color.accentColor,
+                              bubbleColor: ownFill,
                               hasTail: hasTail, members: members)
         case .location:
             if case .location(let lat, let lon) = DMRich.decode(message.body) {
@@ -278,20 +291,21 @@ struct DMBubble: View {
         case .event:
             if case .event(let event) = DMRich.decode(message.body) {
                 EventBubble(event: event, isOwn: isOwn,
-                            bubbleColor: outgoingColor ?? Color.accentColor,
+                            bubbleColor: ownFill,
                             votes: pollVotes, myUserId: myUserId, onRSVP: onRSVP)
             }
         case .file:
             if case .file(let name, let path) = DMRich.decode(message.body) {
                 ChatFileBubble(stored: path, name: name, isOwn: isOwn,
-                               ownBubbleColor: outgoingColor ?? Color.accentColor,
+                               ownBubbleColor: ownFill,
                                hasTail: hasTail) { url, filename in
                     fileItem = FilePreviewItem(url: url, name: filename)
                 }
             }
         case .text:
             ChatTextBubbleView(text: message.body, isOwn: isOwn, hasTail: hasTail,
-                               fill: outgoingColor ?? Color.accentColor)
+                               fill: ownFill,
+                               useDefaultBlueGradient: isOwn && usesDefaultBlue)
         }
     }
 }

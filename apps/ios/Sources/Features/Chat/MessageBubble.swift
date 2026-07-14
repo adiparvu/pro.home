@@ -47,7 +47,10 @@ struct MessageBubble: View {
     var isHighlighted: Bool = false
 
     private var isDeleted: Bool { message.deletedForAll == true }
-    private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
+    /// The default theme (no custom `outgoingColor`) draws the iMessage-blue
+    /// gradient; a custom theme keeps its picked solid colour.
+    private var usesDefaultBlue: Bool { outgoingColor == nil }
+    private var ownBubbleColor: Color { outgoingColor ?? Color.imessageBlue }
     private var linkURL: URL? {
         guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }
         return firstDetectedURL(in: body)
@@ -292,7 +295,8 @@ struct MessageBubble: View {
             ChatVideoBubble(stored: urlStr, isOwn: isOwn, hasTail: isGroupEnd) { resolved in videoItem = ImageViewerItem(url: resolved) }
         } else {
             ChatTextBubbleView(text: message.body ?? "", isOwn: isOwn,
-                               hasTail: isGroupEnd, fill: ownBubbleColor)
+                               hasTail: isGroupEnd, fill: ownBubbleColor,
+                               useDefaultBlueGradient: isOwn && usesDefaultBlue)
         }
     }
 }

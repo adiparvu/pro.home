@@ -81789,6 +81789,22 @@
         }
       }
     },
+    "voice_raise_to_listen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise to listen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ridicați pentru ascultare"
+          }
+        }
+      }
+    },
     "voice_retry": {
       "localizations": {
         "en": {

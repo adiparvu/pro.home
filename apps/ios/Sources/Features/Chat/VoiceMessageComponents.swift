@@ -382,7 +382,7 @@ struct AudioBubble: View {
     var timeText: String = ""
     var tick: AudioTick = .none
     /// Outgoing-bubble fill — driven by the selected chat theme.
-    var bubbleColor: Color = Color.blue.opacity(0.75)
+    var bubbleColor: Color = Color.imessageBlue
     /// Draw the group tail — true only on the last bubble of a same-sender run.
     var hasTail: Bool = true
 
@@ -406,23 +406,33 @@ struct AudioBubble: View {
     private var subFg: Color { isOwn ? onBubble.opacity(0.7) : Color.primary.opacity(AppOpacity.mediumText) }
 
     var body: some View {
-        HStack(spacing: 10) {
-            avatar
-            playButton
-            VStack(alignment: .leading, spacing: 5) {
-                waveform
-                bottomRow
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 10) {
+                avatar
+                playButton
+                VStack(alignment: .leading, spacing: 5) {
+                    waveform
+                    bottomRow
+                }
+            }
+            .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
+            // Incoming voice notes sit on translucent Liquid Glass, like the
+            // iMessage received bubble; outgoing keeps the themed blue fill. The
+            // glass helper falls back to the opaque iMessage gray under Reduce
+            // Transparency so the waveform stays legible over any wallpaper.
+            .chatBubbleBackground(isOwn: isOwn, hasTail: hasTail, fill: bubbleColor)
+            .frame(minWidth: 230, maxWidth: 290)
+
+            // iMessage shows a small "Raise to listen" hint under an incoming
+            // voice note. Decorative — VoiceOver already announces the bubble.
+            if !isOwn {
+                Text("voice_raise_to_listen")
+                    .font(AppFont.scaled(10))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .padding(.leading, 8)
+                    .accessibilityHidden(true)
             }
         }
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
-        // Incoming voice bars use an OPAQUE system fill (like iMessage) so the
-        // waveform stays legible over any wallpaper; a translucent tint vanished
-        // against photo backgrounds. Opaque, it also satisfies Reduce Transparency.
-        .background(
-            isOwn ? bubbleColor : Color(.secondarySystemBackground),
-            in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
-        )
-        .frame(minWidth: 230, maxWidth: 290)
         .task(id: "\(audioValue ?? "")#\(reloadToken)") {
             guard let audioValue else { url = nil; didResolve = true; return }
             didResolve = false

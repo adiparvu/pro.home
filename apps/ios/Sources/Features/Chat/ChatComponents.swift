@@ -290,25 +290,133 @@ struct MessageTick: View {
 
 // MARK: - Bubble shape (shared)
 
-/// A speech-bubble background whose bottom corner nearest the sender tightens
-/// into a "tail" on the last bubble of a same-sender run — the iMessage /
-/// WhatsApp read for "this is where the group ends, and who it's from". Middle
-/// bubbles of a run stay fully rounded so the column reads as one block.
+/// A speech-bubble background that grows a real iMessage tail — a small curl
+/// merged into the bottom corner nearest the sender — on the LAST bubble of a
+/// same-sender run. Every bubble reserves the same `tail` strip on its sender
+/// side so a run's bodies stay edge-aligned; only the last bubble fills that
+/// strip with the tail curl, while earlier bubbles stay fully rounded and the
+/// column reads as one block. The tail is authored entirely within `rect` (it
+/// never protrudes past the view bounds), so the shape is safe as a `.fill`,
+/// a `.background(in:)`, a `.clipShape`, and an iOS 26 `.glassEffect(in:)` mask.
 struct ChatBubbleShape: Shape {
     let isOwn: Bool
     /// Draw the tail — true only on the last bubble of a same-sender group.
     var hasTail: Bool = true
+    /// Continuous corner radius of the bubble body.
     var radius: CGFloat = 18
-    var tailRadius: CGFloat = 5
+    /// How far the body is inset from the sender edge (and, on the last bubble,
+    /// how far the tail curl reaches back out to that edge).
+    var tail: CGFloat = 6
 
     func path(in rect: CGRect) -> Path {
-        UnevenRoundedRectangle(
-            topLeadingRadius: radius,
-            bottomLeadingRadius: hasTail && !isOwn ? tailRadius : radius,
-            bottomTrailingRadius: hasTail && isOwn ? tailRadius : radius,
-            topTrailingRadius: radius,
-            style: .continuous
-        ).path(in: rect)
+        let w = rect.width, h = rect.height
+        // Clamp so tiny bubbles (a single glyph) never self-intersect.
+        let r = min(radius, (w - tail) / 2, h / 2)
+        let t = min(tail, max(0, (w - 2 * r) / 2))
+        // How high up the sender edge the tail curl re-joins the body.
+        let th = min(9, h - r)
+
+        if isOwn {
+            // Body occupies [0, w - t]; tail curls out to the bottom-right (w, h).
+            var p = Path()
+            p.move(to: CGPoint(x: r, y: 0))
+            p.addLine(to: CGPoint(x: w - t - r, y: 0))
+            p.addQuadCurve(to: CGPoint(x: w - t, y: r), control: CGPoint(x: w - t, y: 0))
+            if hasTail {
+                p.addLine(to: CGPoint(x: w - t, y: h - th))
+                // Sweep out and down to the tip at the true bottom-right corner…
+                p.addQuadCurve(to: CGPoint(x: w, y: h),
+                               control: CGPoint(x: w - t * 0.5, y: h - th * 0.5))
+                // …then curl back in to the body's bottom-right corner.
+                p.addQuadCurve(to: CGPoint(x: w - t, y: h),
+                               control: CGPoint(x: w - t * 0.2, y: h))
+            } else {
+                p.addLine(to: CGPoint(x: w - t, y: h - r))
+                p.addQuadCurve(to: CGPoint(x: w - t - r, y: h), control: CGPoint(x: w - t, y: h))
+            }
+            p.addLine(to: CGPoint(x: r, y: h))
+            p.addQuadCurve(to: CGPoint(x: 0, y: h - r), control: CGPoint(x: 0, y: h))
+            p.addLine(to: CGPoint(x: 0, y: r))
+            p.addQuadCurve(to: CGPoint(x: r, y: 0), control: CGPoint(x: 0, y: 0))
+            p.closeSubpath()
+            return p
+        } else {
+            // Body occupies [t, w]; tail curls out to the bottom-left (0, h).
+            var p = Path()
+            p.move(to: CGPoint(x: t + r, y: 0))
+            p.addLine(to: CGPoint(x: w - r, y: 0))
+            p.addQuadCurve(to: CGPoint(x: w, y: r), control: CGPoint(x: w, y: 0))
+            p.addLine(to: CGPoint(x: w, y: h - r))
+            p.addQuadCurve(to: CGPoint(x: w - r, y: h), control: CGPoint(x: w, y: h))
+            if hasTail {
+                p.addLine(to: CGPoint(x: t, y: h))
+                // Sweep out and down to the tip at the true bottom-left corner…
+                p.addQuadCurve(to: CGPoint(x: 0, y: h),
+                               control: CGPoint(x: t * 0.5, y: h))
+                // …then curl back in and up the sender edge.
+                p.addQuadCurve(to: CGPoint(x: t, y: h - th),
+                               control: CGPoint(x: t * 0.5, y: h - th * 0.5))
+            } else {
+                p.addLine(to: CGPoint(x: t + r, y: h))
+                p.addQuadCurve(to: CGPoint(x: t, y: h - r), control: CGPoint(x: t, y: h))
+            }
+            p.addLine(to: CGPoint(x: t, y: r))
+            p.addQuadCurve(to: CGPoint(x: t + r, y: 0), control: CGPoint(x: t, y: 0))
+            p.closeSubpath()
+            return p
+        }
+    }
+}
+
+// MARK: - Incoming bubble glass (iOS 26 Liquid Glass)
+
+extension View {
+    /// The received-bubble background: translucent Liquid Glass on iOS 26 (the
+    /// iMessage look), a system material on earlier systems, and — under Reduce
+    /// Transparency — the opaque iMessage gray, all in the tail-aware bubble
+    /// shape. Text over it stays `.primary`, which the system keeps legible on
+    /// glass and material in both light and dark.
+    func incomingBubbleGlass(hasTail: Bool) -> some View {
+        modifier(IncomingBubbleGlass(hasTail: hasTail))
+    }
+
+    /// The one bubble-background entry point shared by the text and voice
+    /// bubbles: incoming → Liquid Glass; outgoing → the themed solid fill, or
+    /// the default iMessage-blue gradient when `gradient` is set.
+    @ViewBuilder
+    func chatBubbleBackground(isOwn: Bool, hasTail: Bool, fill: Color,
+                              gradient: Bool = false) -> some View {
+        if isOwn {
+            if gradient {
+                background(Color.imessageBlueGradient,
+                           in: ChatBubbleShape(isOwn: true, hasTail: hasTail))
+            } else {
+                background(fill, in: ChatBubbleShape(isOwn: true, hasTail: hasTail))
+            }
+        } else {
+            incomingBubbleGlass(hasTail: hasTail)
+        }
+    }
+}
+
+private struct IncomingBubbleGlass: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let hasTail: Bool
+
+    private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: false, hasTail: hasTail) }
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            // Honor the accessibility request explicitly: an opaque elevated
+            // surface with the exact iMessage gray, never a blur to read through.
+            content.background(Color.imessageIncoming, in: shape)
+        } else if #available(iOS 26, *) {
+            content.glassEffect(in: shape)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(0.06), lineWidth: 0.5))
+        }
     }
 }
 
