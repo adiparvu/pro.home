@@ -6,16 +6,21 @@ import UIKit
 //
 // Optional signature effects layered ABOVE the mood palette's gradients —
 // every one of the seven atmospheres now carries one:
-//   rain    — two streak depths + a sparse very-fast third, splashes, a
-//             drifting mist band, probabilistic lightning
-//   winter  — two parallax flake layers with rotation drift and a twinkle
-//   night   — a pre-baked star field (one static sprite), ~20 twinkling
-//             stars, and a rare shooting star (60–180 s scheduler); when it
-//             actually rains at night, the rain wins and the stars stay away
+//   rain    — two streak depths (the near one with a bright leading bead) + a
+//             sparse very-fast third, crown splashes, a drifting mist band,
+//             probabilistic lightning
+//   winter  — two parallax layers of real six-armed crystal flakes with
+//             rotation drift and a mid-fall twinkle
+//   night   — a pre-baked star field (one static sprite) faintly colour-varied
+//             with glints on the brightest, ~20 four-point twinkling sparkles,
+//             and a rare shooting star (60–180 s scheduler); when it actually
+//             rains at night, the rain wins and the stars stay away
 //   morning — golden dust motes drifting lazily through the light
 //   day     — three enormous ultra-soft clouds crossing over minutes
-//   sunset  — a once-a-day bird flock over a continuous faint golden drift
-//   event   — the once-a-day 2.5 s gold shimmer
+//   sunset  — a continuous warm low sun-glow + faint golden drift, with a
+//             once-a-day bird flock crossing above
+//   event   — the once-a-day ~2.5 s shimmer: soft gold motes + bright
+//             four-point sparkles rising together
 // The visual reference is Apple's Weather app; the budget reference is not —
 // every particle count here is deliberately a fraction of it.
 //
@@ -370,12 +375,6 @@ private struct LightningLayer: View {
 /// every drop crosses the whole screen and the live count stays exactly the
 /// target on any device: lifetime = (height + margin) / slowestSpeed,
 /// birthRate = targetLive / lifetime.
-// Exposed as `internal` (was `private`) so the Dynamic Weather Engine can
-// COMPOSE this exact rain system in its storm/rain scenes rather than
-// duplicating the particle engine — the one rain implementation in the app.
-// Behavior is unchanged for the mood backdrop, which still constructs it with
-// the default intensity. Additive: the optional `intensity` multiplier scales
-// only the live-drop budget the weather engine asks for (heavyRain / storm).
 final class RainScene: SKScene {
     /// 12° from vertical — consistent across every layer, splash drift, and
     /// the mist's direction of travel.
@@ -391,20 +390,9 @@ final class RainScene: SKScene {
     private var streaks: [(SKEmitterNode, StreakSpec)] = []
     private let mist = SKEmitterNode()
     private let splash = SKEmitterNode()
-    /// Optional faint airborne dust/haze — only added when the caller asks for
-    /// it (the Dynamic Weather Engine's thunderstorm). Default rain never mounts
-    /// it, so the mood-backdrop budget is unchanged.
-    private let dust = SKEmitterNode()
-    private let airborneDust: Bool
     private var prewarmed = false
-    /// Live-drop budget multiplier. 1 is the tuned mood-backdrop rain; the
-    /// weather engine passes >1 for heavier rain (heavyRain ≈ 1.5, storm ≈ 1.6).
-    /// Documented so the ×112 baseline budget stays auditable at any intensity.
-    private let intensity: CGFloat
 
-    init(scheme: ColorScheme, intensity: CGFloat = 1, airborneDust: Bool = false) {
-        self.intensity = intensity
-        self.airborneDust = airborneDust
+    init(scheme: ColorScheme) {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -462,7 +450,7 @@ final class RainScene: SKScene {
         splash.particleTexture = AtmosphericParticleTextures.splashRing
         splash.particleColor = near
         splash.particleColorBlendFactor = 1
-        splash.particleBirthRate = 12 * intensity
+        splash.particleBirthRate = 12
         splash.particleLifetime = 0.35
         splash.particleLifetimeRange = 0.1
         splash.particleSpeed = 0
@@ -474,32 +462,9 @@ final class RainScene: SKScene {
         splash.particleScaleSpeed = 1.5
         splash.zPosition = 4
 
-        // Airborne dust/haze motes (storm only): ~12 live (1.5/s × 8 s), a
-        // near-black-invisible soft speckle drifting on the wind that only
-        // reads when the lightning wash lights it. zPosition below the streaks
-        // so drops pass in front of it.
-        if airborneDust {
-            dust.particleTexture = AtmosphericParticleTextures.dot
-            dust.particleColor = UIColor(white: 1, alpha: 1)
-            dust.particleColorBlendFactor = 1
-            dust.particleBirthRate = 1.5
-            dust.particleLifetime = 8
-            dust.particleLifetimeRange = 2
-            dust.emissionAngle = 0            // drift with the wind
-            dust.emissionAngleRange = .pi     // gentle omnidirectional wander
-            dust.particleSpeed = 10
-            dust.particleSpeedRange = 8
-            dust.particleAlpha = 0.05
-            dust.particleAlphaRange = 0.03
-            dust.particleScale = 0.5
-            dust.particleScaleRange = 0.3
-            dust.zPosition = 0
-        }
-
         for (emitter, _) in streaks { addChild(emitter) }
         addChild(mist)
         addChild(splash)
-        if airborneDust { addChild(dust) }
         layoutEmitters()
     }
 
@@ -537,7 +502,7 @@ final class RainScene: SKScene {
         for (emitter, spec) in streaks {
             let lifetime = travel / (spec.speed - spec.speedRange)
             emitter.particleLifetime = lifetime
-            emitter.particleBirthRate = spec.targetLive * intensity / lifetime
+            emitter.particleBirthRate = spec.targetLive / lifetime
             emitter.particleSpeed = spec.speed
             emitter.particleSpeedRange = spec.speedRange
             // Spawn line above the top edge, widened and shifted against the
@@ -550,10 +515,6 @@ final class RainScene: SKScene {
         mist.particlePositionRange = CGVector(dx: size.width, dy: size.height * 0.14)
         splash.position = CGPoint(x: size.width / 2, y: 26)
         splash.particlePositionRange = CGVector(dx: size.width, dy: 18)
-        if airborneDust {
-            dust.position = CGPoint(x: size.width / 2, y: size.height * 0.5)
-            dust.particlePositionRange = CGVector(dx: size.width, dy: size.height)
-        }
     }
 
     /// Prewarm on the first simulated frame — by then the SpriteView has
@@ -567,38 +528,25 @@ final class RainScene: SKScene {
         }
         mist.advanceSimulationTime(20)
         splash.advanceSimulationTime(1)
-        if airborneDust { dust.advanceSimulationTime(10) }
     }
 }
 
 // MARK: - Snow scene (two parallax flake layers)
 
-/// Slow flakes with per-flake rotation drift (the flake texture is slightly
-/// asymmetric, so rotation actually reads) and a gentle brightness twinkle.
+/// Slow flakes with per-flake rotation drift (the six-armed crystal texture
+/// turns visibly) and a gentle brightness twinkle.
 /// Flakes spawn across the whole height and fade in/out mid-air — Apple's
 /// flakes do the same — which keeps lifetimes, and therefore the live
 /// count, small: 54 + 28 = 82 < 100. Horizontal sway comes from opposing
 /// per-layer xAcceleration, so the two depths visibly cross-drift.
-// Exposed as `internal` (was `private`) so the Dynamic Weather Engine composes
-// this exact flake system for its snow/blizzard scenes. The optional
-// `intensity` multiplier scales the live-flake budget (blizzard ≈ 1.7); the
-// mood backdrop keeps the tuned default of 1, unchanged.
-//
-// WIND BIAS (additive, default 0 — the Dynamic Weather Engine's blizzard):
-// `wind` 0…1 drives the flakes near-horizontal for a storm. At the default 0
-// EVERY value below is byte-for-byte the original calm snow — `tilt`, `drive`
-// and the speed bump are all `wind * k`, so the mood-backdrop winter scene and
-// the phase-1 composed snow caller (which never pass `wind`) are untouched.
-// When the blizzard passes `wind ≈ 0.85`: the emission angle leans ~44° off
-// vertical, a strong horizontal acceleration builds lateral velocity over each
-// flake's life (near-horizontal streaking), and the fall speeds rise — so the
-// SAME flake engine reads as violent driven snow, not merely denser snow.
+// Each particle now carries a real six-armed CRYSTAL texture (not a blob), so
+// the per-flake rotation reads as an actual snowflake turning as it falls.
 final class SnowScene: SKScene {
     private let farFlakes = SKEmitterNode()
     private let nearFlakes = SKEmitterNode()
     private var prewarmed = false
 
-    init(intensity: CGFloat = 1, wind: CGFloat = 0) {
+    override init() {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -607,27 +555,20 @@ final class SnowScene: SKScene {
         // ground (white-on-white flakes would simply not exist).
         let flakeColor = UIColor(red: 0.470, green: 0.580, blue: 0.680, alpha: 1)
 
-        // Wind bias — all three terms vanish at wind 0 (calm default preserved).
-        let tilt = wind * 0.9                     // radians off vertical
-        let drive = wind * 210                    // horizontal wind acceleration
-        let gust = wind * 120                     // extra fall speed in a storm
-
-        // Far: 6.75/s × 8 s = 54 live, ~2–3 pt (× intensity).
+        // Far: 6.75/s × 8 s = 54 live. The 22 pt crystal at 0.14 → ~3 pt.
         Self.configure(farFlakes, color: flakeColor,
-                       birthRate: 6.75 * intensity, lifetime: 8,
-                       speed: 55 + gust, speedRange: 20,
-                       scale: 0.16, scaleRange: 0.05,   // 16 pt texture → ~2.6 pt
-                       peakAlpha: 0.55,
-                       xAcceleration: 6 + drive, rotationSpeed: 0.45,
-                       emissionAngle: -.pi / 2 + tilt)
-        // Near: 4/s × 7 s = 28 live, ~4–5 pt, swaying the other way.
+                       birthRate: 6.75, lifetime: 8,
+                       speed: 55, speedRange: 20,
+                       scale: 0.14, scaleRange: 0.05,
+                       peakAlpha: 0.52,
+                       xAcceleration: 6, rotationSpeed: 0.30)
+        // Near: 4/s × 7 s = 28 live, larger crystals swaying the other way.
         Self.configure(nearFlakes, color: flakeColor,
-                       birthRate: 4 * intensity, lifetime: 7,
-                       speed: 90 + gust, speedRange: 25,
-                       scale: 0.28, scaleRange: 0.06,   // → ~4.5 pt
-                       peakAlpha: 0.80,
-                       xAcceleration: -7 + drive * 1.1, rotationSpeed: -0.7,
-                       emissionAngle: -.pi / 2 + tilt)
+                       birthRate: 4, lifetime: 7,
+                       speed: 90, speedRange: 25,
+                       scale: 0.24, scaleRange: 0.07,   // → ~5.3 pt crystals
+                       peakAlpha: 0.78,
+                       xAcceleration: -7, rotationSpeed: -0.45)
         farFlakes.zPosition = 0
         nearFlakes.zPosition = 1
         addChild(farFlakes)
@@ -699,6 +640,9 @@ final class SnowScene: SKScene {
 /// the rest of the day. Elegance over spectacle.
 private final class EventSparkleScene: SKScene {
     private let motes = SKEmitterNode()
+    /// A dozen brighter four-point sparkles mixed through the soft motes — the
+    /// glints that make a celebration read as a celebration, not just dust.
+    private let sparks = SKEmitterNode()
 
     override init() {
         super.init(size: CGSize(width: 390, height: 850))
@@ -722,7 +666,32 @@ private final class EventSparkleScene: SKScene {
         motes.particleRotationRange = 2 * .pi
         motes.particleAlphaSequence = SKKeyframeSequence(
             keyframeValues: [0.0, 0.55, 0.0], times: [0, 0.35, 1])
+        motes.zPosition = 0
         addChild(motes)
+
+        // Bright sparkles: warmer, larger four-point glints rising with the
+        // motes, spinning slowly so the diffraction cross flashes. 12 total,
+        // one-shot, gone within the same ~2.6 s window.
+        sparks.particleTexture = AtmosphericParticleTextures.sparkleStar
+        sparks.particleColor = UIColor(red: 1.0, green: 0.90, blue: 0.62, alpha: 1)
+        sparks.particleColorBlendFactor = 1
+        sparks.particleBlendMode = .add
+        sparks.numParticlesToEmit = 12
+        sparks.particleBirthRate = 18
+        sparks.particleLifetime = 1.6
+        sparks.particleLifetimeRange = 0.4
+        sparks.emissionAngle = .pi / 2
+        sparks.emissionAngleRange = 0.7
+        sparks.particleSpeed = 36
+        sparks.particleSpeedRange = 20
+        sparks.particleScale = 0.22
+        sparks.particleScaleRange = 0.12
+        sparks.particleRotationRange = 2 * .pi
+        sparks.particleRotationSpeed = 1.2       // the cross flashes as it turns
+        sparks.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0.0, 0.9, 0.0], times: [0, 0.4, 1])
+        sparks.zPosition = 1
+        addChild(sparks)
         layoutEmitter()
     }
 
@@ -736,9 +705,11 @@ private final class EventSparkleScene: SKScene {
 
     private func layoutEmitter() {
         guard size.width > 1, size.height > 1 else { return }
-        motes.position = CGPoint(x: size.width / 2, y: size.height * 0.30)
-        motes.particlePositionRange = CGVector(dx: size.width * 0.75,
-                                               dy: size.height * 0.35)
+        for emitter in [motes, sparks] {
+            emitter.position = CGPoint(x: size.width / 2, y: size.height * 0.30)
+            emitter.particlePositionRange = CGVector(dx: size.width * 0.75,
+                                                     dy: size.height * 0.35)
+        }
     }
 }
 
@@ -757,7 +728,7 @@ private final class EventSparkleScene: SKScene {
 /// Budget: 1 static field sprite + 20 twinkles + ≤1 streak ≤ 22 live nodes.
 private final class NightStarsScene: SKScene {
     /// A star in unit space. For the baked field `size` is the dot radius in
-    /// points; for twinkles it is the sprite scale on the 12 pt dot texture
+    /// points; for twinkles it is the sprite scale on the 22 pt sparkle texture
     /// and `alpha` is the twinkle's PEAK.
     private struct StarSpec {
         let x: CGFloat
@@ -789,16 +760,19 @@ private final class NightStarsScene: SKScene {
                      alpha: .random(in: 0.12...0.55, using: &rng))
         }
 
-        // Twinkles: pale ice over the night ground; alpha keyframe tweens
-        // only. Random initial alpha + per-star durations desync the phases.
-        let twinkleColor = UIColor(red: 0.855, green: 0.894, blue: 0.965, alpha: 1)
+        // Twinkles: four-point sparkles (not plain dots) with a real sky's
+        // faint colour spread — most cool ice, a few warm. Alpha keyframe
+        // tweens only. Random initial alpha + per-star durations desync phases.
+        let coolStar = UIColor(red: 0.855, green: 0.894, blue: 0.965, alpha: 1)
+        let warmStar = UIColor(red: 0.980, green: 0.930, blue: 0.830, alpha: 1)
         for _ in 0..<20 {
             let spec = StarSpec(x: .random(in: 0.03...0.97, using: &rng),
                                 y: .random(in: 0.05...0.97, using: &rng),
-                                size: .random(in: 0.14...0.28, using: &rng),  // ~1.7–3.4 pt
+                                size: .random(in: 0.10...0.20, using: &rng),  // ~2.2–4.4 pt
                                 alpha: .random(in: 0.45...0.75, using: &rng))
-            let sprite = SKSpriteNode(texture: AtmosphericParticleTextures.dot)
-            sprite.color = twinkleColor
+            let sprite = SKSpriteNode(texture: AtmosphericParticleTextures.sparkleStar)
+            // One star in four leans warm — a real sky is not one colour.
+            sprite.color = Double.random(in: 0...1, using: &rng) < 0.25 ? warmStar : coolStar
             sprite.colorBlendFactor = 1
             sprite.setScale(spec.size)
             sprite.zPosition = 1
@@ -874,13 +848,33 @@ private final class NightStarsScene: SKScene {
         let format = UIGraphicsImageRendererFormat()
         format.opaque = false
         format.scale = 2
+        // A real sky is faintly coloured — most stars near-white, a few warm
+        // (older) or cool-blue (hotter). Deterministic per index so the tint
+        // is stable across re-bakes. The brightest stars also get a small
+        // four-point glint so a handful read as prominent stars, not just dots.
+        let warm = UIColor(red: 1.0, green: 0.94, blue: 0.85, alpha: 1)
+        let cool = UIColor(red: 0.86, green: 0.91, blue: 1.0, alpha: 1)
         let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             let cg = ctx.cgContext
-            for star in fieldSpecs {
-                cg.setFillColor(UIColor.white.withAlphaComponent(star.alpha).cgColor)
-                cg.fillEllipse(in: CGRect(x: star.x * size.width - star.size,
-                                          y: star.y * size.height - star.size,
+            for (i, star) in fieldSpecs.enumerated() {
+                let base: UIColor = i % 7 == 0 ? warm : (i % 5 == 0 ? cool : .white)
+                let c = CGPoint(x: star.x * size.width, y: star.y * size.height)
+                cg.setFillColor(base.withAlphaComponent(star.alpha).cgColor)
+                cg.fillEllipse(in: CGRect(x: c.x - star.size, y: c.y - star.size,
                                           width: star.size * 2, height: star.size * 2))
+                // The brightest few get thin diffraction spikes.
+                if star.size > 1.1 {
+                    cg.setStrokeColor(base.withAlphaComponent(star.alpha * 0.6).cgColor)
+                    cg.setLineWidth(0.5)
+                    cg.setLineCap(.round)
+                    let spike = star.size * 3.2
+                    for a in stride(from: 0, to: CGFloat.pi * 2, by: .pi / 2) {
+                        cg.move(to: c)
+                        cg.addLine(to: CGPoint(x: c.x + cos(a) * spike,
+                                               y: c.y + sin(a) * spike))
+                    }
+                    cg.strokePath()
+                }
             }
         }
         fieldNode.texture = SKTexture(image: image)
@@ -1046,6 +1040,10 @@ private final class DayCloudsScene: SKScene {
 ///    path always uses the real scene width.
 private final class SunsetGlowScene: SKScene {
     private let drift = SKEmitterNode()
+    /// The setting sun's warm bloom, low on the horizon — a continuous soft
+    /// glow that breathes gently. This is the thing that makes the mood read as
+    /// an actual sunset rather than "gold specks over a gradient".
+    private let sunGlow = SKSpriteNode(texture: AtmosphericParticleTextures.sunGlow)
     private var prewarmed = false
     private var flockPending = false
 
@@ -1053,6 +1051,21 @@ private final class SunsetGlowScene: SKScene {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
+
+        // Warm low sun bloom — deep amber-gold, seated below the horizon so
+        // only its upper glow shows. Additive so it lifts the palette warmly,
+        // with a slow ±8% breathe and a barely-there scale swell.
+        sunGlow.color = UIColor(red: 1.0, green: 0.66, blue: 0.34, alpha: 1)
+        sunGlow.colorBlendFactor = 1
+        sunGlow.blendMode = .add
+        sunGlow.alpha = 0.20
+        sunGlow.zPosition = -1
+        let breatheDown = SKAction.fadeAlpha(to: 0.13, duration: 4.5)
+        breatheDown.timingMode = .easeInEaseOut
+        let breatheUp = SKAction.fadeAlpha(to: 0.22, duration: 4.5)
+        breatheUp.timingMode = .easeInEaseOut
+        sunGlow.run(.repeatForever(.sequence([breatheDown, breatheUp])))
+        addChild(sunGlow)
 
         drift.particleTexture = AtmosphericParticleTextures.mist
         // Deep warm gold — reads as late light, not fog.
@@ -1091,6 +1104,12 @@ private final class SunsetGlowScene: SKScene {
         guard size.width > 1, size.height > 1 else { return }
         drift.position = CGPoint(x: size.width / 2, y: size.height * 0.38)
         drift.particlePositionRange = CGVector(dx: size.width, dy: size.height * 0.28)
+        // The sun sits low and slightly off-centre, its bloom sized to spill
+        // across the width; the lower half is below the frame so only the glow
+        // rises into the sky.
+        let bloom = size.width * 1.7
+        sunGlow.size = CGSize(width: bloom, height: bloom)
+        sunGlow.position = CGPoint(x: size.width * 0.62, y: size.height * 0.14)
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -1151,19 +1170,31 @@ private enum AtmosphericParticleTextures {
     /// Depth 1 rain streak: 2×26 pt, hard-edged, dim.
     static let farStreak = streak(width: 2, height: 26, halo: 0)
     /// Depth 2 rain streak: 3.5×34 pt with a soft halo (the "slightly
-    /// blurred-bright" near layer — blur is baked, never live).
-    static let nearStreak = streak(width: 3.5, height: 34, halo: 2)
+    /// blurred-bright" near layer — blur is baked, never live) and a bright
+    /// leading bead so the closest drops read as heavy falling water.
+    static let nearStreak = streak(width: 3.5, height: 34, halo: 2, head: true)
     /// Depth 3 rain streak: 1.5×42 pt needle for the very-fast faint layer.
     static let fastStreak = streak(width: 1.5, height: 42, halo: 0)
-    /// Soft round dot (event motes).
-    static let dot = radialDot(diameter: 12, asymmetric: false)
-    /// Slightly asymmetric soft blob — snow. The lobe off center is what
-    /// makes per-flake rotation drift visible on something this small.
-    static let flake = radialDot(diameter: 16, asymmetric: true)
+    /// Soft round dot (morning motes, soft event motes).
+    static let dot = radialDot(diameter: 12)
+    /// A real six-armed dendritic snow crystal — a soft glow core with six
+    /// branched arms — instead of a plain blob. On something this small the
+    /// crystalline arms read as an actual snowflake when it rotates, not a
+    /// speck. Rendered once; the per-flake rotation makes each land differently.
+    static let flake = crystalFlake(diameter: 22)
+    /// A four-point star sparkle: a bright soft core with thin tapering
+    /// diffraction spikes (the way a real star reads through a lens). Used by
+    /// the night twinkles and the brighter event sparkles.
+    static let sparkleStar = starSparkle(diameter: 22)
     /// Large soft blob scaled up ~3× for the drifting mist band.
     static let mist = mistBlob(diameter: 96)
-    /// Thin ellipse ring that expands and fades — a rain splash.
-    static let splashRing = splashEllipse(size: CGSize(width: 14, height: 5))
+    /// A wide, warm, extra-soft bloom — the low sun's glow at sunset. No hard
+    /// core; tinted warm gold by the node.
+    static let sunGlow = cloudBlob(diameter: 220)
+    /// A rain splash: the thin expanding ring PLUS a small three-tick crown of
+    /// rebounding droplets, so an impact reads as water hitting a surface, not
+    /// just a widening circle.
+    static let splashRing = splashCrown(size: CGSize(width: 16, height: 6))
     /// Shooting-star streak: 90×3 pt horizontal capsule, tail (−x) fading to
     /// nothing, bright head at +x. The stretch is baked; flight is one moveBy.
     static let shootingStreak = horizontalStreak(length: 90, thickness: 3)
@@ -1182,9 +1213,13 @@ private enum AtmosphericParticleTextures {
     }
 
     /// Vertical capsule with alpha fading at both tips; `halo` adds a wider
-    /// soft capsule behind it for the near layer's baked glow.
-    private static func streak(width: CGFloat, height: CGFloat, halo: CGFloat) -> SKTexture {
-        let pad = halo + 1
+    /// soft capsule behind it for the near layer's baked glow. `head` adds a
+    /// small bright bead at the LEADING (bottom) tip — a real drop is heaviest
+    /// and brightest at its front, so the near layer reads as falling water,
+    /// not a uniform line.
+    private static func streak(width: CGFloat, height: CGFloat,
+                               halo: CGFloat, head: Bool = false) -> SKTexture {
+        let pad = halo + 2
         let canvas = CGSize(width: width + pad * 2, height: height + pad * 2)
         let image = renderer(canvas).image { ctx in
             let cg = ctx.cgContext
@@ -1194,7 +1229,15 @@ private enum AtmosphericParticleTextures {
                 fillCapsule(cg, rect: haloRect, alphas: [0, 0.35, 0.35, 0])
             }
             let body = CGRect(x: pad, y: pad, width: width, height: height)
-            fillCapsule(cg, rect: body, alphas: [0, 1, 1, 0])
+            // Bottom-weighted body: fades in slowly at the top, stays bright at
+            // the leading tip so the head reads as heavier than the tail.
+            fillCapsule(cg, rect: body, alphas: head ? [0, 0.5, 1, 0.9] : [0, 1, 1, 0])
+            if head {
+                // A bright rounded bead at the leading (bottom) tip.
+                let r = width * 1.15
+                drawRadialFade(cg, center: CGPoint(x: body.midX, y: body.maxY - width * 0.4),
+                               radius: r, peak: 1)
+            }
         }
         return SKTexture(image: image)
     }
@@ -1215,16 +1258,82 @@ private enum AtmosphericParticleTextures {
         cg.restoreGState()
     }
 
-    private static func radialDot(diameter: CGFloat, asymmetric: Bool) -> SKTexture {
+    private static func radialDot(diameter: CGFloat) -> SKTexture {
         let canvas = CGSize(width: diameter, height: diameter)
         let image = renderer(canvas).image { ctx in
-            let cg = ctx.cgContext
-            drawRadialFade(cg, center: CGPoint(x: diameter / 2, y: diameter / 2),
+            drawRadialFade(ctx.cgContext,
+                           center: CGPoint(x: diameter / 2, y: diameter / 2),
                            radius: diameter / 2, peak: 1)
-            if asymmetric {
-                // A dimmer lobe off center: rotation becomes visible.
-                drawRadialFade(cg, center: CGPoint(x: diameter * 0.68, y: diameter * 0.40),
-                               radius: diameter * 0.22, peak: 0.7)
+        }
+        return SKTexture(image: image)
+    }
+
+    /// A six-armed dendritic snow crystal: a faint round glow so the shape
+    /// never looks like a hard icon at small size, then six arms at 60° each
+    /// with a symmetric pair of side-branches — the classic stellar-dendrite
+    /// silhouette. White, thin, round-capped; tinted by the emitter.
+    private static func crystalFlake(diameter: CGFloat) -> SKTexture {
+        let image = renderer(CGSize(width: diameter, height: diameter)).image { ctx in
+            let cg = ctx.cgContext
+            let c = CGPoint(x: diameter / 2, y: diameter / 2)
+            // Soft core glow — keeps the crystal from reading as a hard glyph.
+            drawRadialFade(cg, center: c, radius: diameter * 0.30, peak: 0.65)
+
+            cg.setStrokeColor(UIColor.white.cgColor)
+            cg.setLineCap(.round)
+            cg.setLineJoin(.round)
+            let arm = diameter * 0.44          // arm length from centre
+            let branch = diameter * 0.15       // side-branch length
+            for i in 0..<6 {
+                let a = CGFloat(i) * .pi / 3    // 60° spacing
+                let dir = CGVector(dx: cos(a), dy: sin(a))
+                let tip = CGPoint(x: c.x + dir.dx * arm, y: c.y + dir.dy * arm)
+                cg.setLineWidth(1.1)
+                cg.move(to: c)
+                cg.addLine(to: tip)
+                cg.strokePath()
+                // Two symmetric side-branches part-way along the arm.
+                let mid = CGPoint(x: c.x + dir.dx * arm * 0.55,
+                                  y: c.y + dir.dy * arm * 0.55)
+                for sign in [CGFloat(1), -1] {
+                    let b = a + sign * (.pi / 3)
+                    cg.setLineWidth(0.9)
+                    cg.move(to: mid)
+                    cg.addLine(to: CGPoint(x: mid.x + cos(b) * branch,
+                                           y: mid.y + sin(b) * branch))
+                    cg.strokePath()
+                }
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    /// A four-point star: a bright soft core plus four thin diffraction spikes
+    /// that taper to nothing — how a real point of light reads through optics.
+    /// White; the emitter/sprite tints it (cool ice for stars, gold for events).
+    private static func starSparkle(diameter: CGFloat) -> SKTexture {
+        let image = renderer(CGSize(width: diameter, height: diameter)).image { ctx in
+            let cg = ctx.cgContext
+            let c = CGPoint(x: diameter / 2, y: diameter / 2)
+            // Bright soft core.
+            drawRadialFade(cg, center: c, radius: diameter * 0.22, peak: 1)
+            // Four spikes (up/down/left/right), each a thin triangle tapering
+            // from the core to a fine point — the diffraction cross.
+            let reach = diameter * 0.48
+            let halfW = diameter * 0.06
+            for i in 0..<4 {
+                let a = CGFloat(i) * .pi / 2
+                let dir = CGVector(dx: cos(a), dy: sin(a))
+                let perp = CGVector(dx: -dir.dy, dy: dir.dx)
+                let tip = CGPoint(x: c.x + dir.dx * reach, y: c.y + dir.dy * reach)
+                let baseL = CGPoint(x: c.x + perp.dx * halfW, y: c.y + perp.dy * halfW)
+                let baseR = CGPoint(x: c.x - perp.dx * halfW, y: c.y - perp.dy * halfW)
+                cg.setFillColor(UIColor.white.withAlphaComponent(0.9).cgColor)
+                cg.move(to: baseL)
+                cg.addLine(to: tip)
+                cg.addLine(to: baseR)
+                cg.closePath()
+                cg.fillPath()
             }
         }
         return SKTexture(image: image)
@@ -1315,13 +1424,30 @@ private enum AtmosphericParticleTextures {
         return SKTexture(image: image)
     }
 
-    private static func splashEllipse(size: CGSize) -> SKTexture {
-        let canvas = CGSize(width: size.width + 2, height: size.height + 2)
+    /// A splash: the thin expanding ellipse ring plus a small three-tick crown
+    /// of rebounding droplets above it, so an impact reads as water striking a
+    /// surface (a crown), not merely a widening circle. All white; the emitter
+    /// tints and expands it.
+    private static func splashCrown(size: CGSize) -> SKTexture {
+        let tick: CGFloat = 4                     // droplet rebound height
+        let canvas = CGSize(width: size.width + 4, height: size.height + tick + 4)
         let image = renderer(canvas).image { ctx in
             let cg = ctx.cgContext
+            let ringRect = CGRect(x: 2, y: tick + 2, width: size.width, height: size.height)
             cg.setStrokeColor(UIColor.white.cgColor)
+            cg.setLineCap(.round)
+            // The ring.
             cg.setLineWidth(1)
-            cg.strokeEllipse(in: CGRect(x: 1, y: 1, width: size.width, height: size.height))
+            cg.strokeEllipse(in: ringRect)
+            // Three rebound ticks rising from the ring's crown.
+            cg.setLineWidth(1.1)
+            for fx in [CGFloat(0.28), 0.5, 0.72] {
+                let x = ringRect.minX + ringRect.width * fx
+                let jitter = fx == 0.5 ? tick : tick * 0.7
+                cg.move(to: CGPoint(x: x, y: ringRect.minY))
+                cg.addLine(to: CGPoint(x: x, y: ringRect.minY - jitter))
+                cg.strokePath()
+            }
         }
         return SKTexture(image: image)
     }
@@ -1400,12 +1526,20 @@ struct AppBackdropEffectsHint: View {
                                    style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
                 }
             case .snow:
+                // Tiny six-armed crystals — the same silhouette the live flakes
+                // now carry, so the thumbnail matches what actually falls.
                 let color = Color(red: 0.470, green: 0.580, blue: 0.680)
                 for (x, y, alpha) in Self.snowMarks {
-                    let r: CGFloat = alpha > 0.5 ? 2.4 : 1.7
-                    let rect = CGRect(x: x * size.width - r, y: y * size.height - r,
-                                      width: r * 2, height: r * 2)
-                    context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
+                    let c = CGPoint(x: x * size.width, y: y * size.height)
+                    let r: CGFloat = alpha > 0.5 ? 3.0 : 2.2
+                    var path = Path()
+                    for i in 0..<6 {
+                        let a = CGFloat(i) * .pi / 3
+                        path.move(to: c)
+                        path.addLine(to: CGPoint(x: c.x + cos(a) * r, y: c.y + sin(a) * r))
+                    }
+                    context.stroke(path, with: .color(color.opacity(alpha)),
+                                   style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
                 }
             case .spark:
                 let gold = Color(red: 0.914, green: 0.757, blue: 0.369)
@@ -1416,13 +1550,24 @@ struct AppBackdropEffectsHint: View {
                     context.fill(Path(ellipseIn: rect), with: .color(gold.opacity(alpha)))
                 }
             case .stars:
-                // Pinpoint white dots over the dark night thumbnail.
+                // Pinpoint stars; the brighter ones get a tiny four-point
+                // glint, matching the live field's diffraction spikes.
                 for (x, y, alpha) in Self.starMarks {
+                    let c = CGPoint(x: x * size.width, y: y * size.height)
                     let r: CGFloat = alpha > 0.5 ? 1.1 : 0.8
-                    let rect = CGRect(x: x * size.width - r, y: y * size.height - r,
-                                      width: r * 2, height: r * 2)
-                    context.fill(Path(ellipseIn: rect),
+                    context.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r,
+                                                        width: r * 2, height: r * 2)),
                                  with: .color(.white.opacity(alpha)))
+                    if alpha > 0.5 {
+                        let s = r * 2.6
+                        var cross = Path()
+                        for a in stride(from: 0, to: CGFloat.pi * 2, by: .pi / 2) {
+                            cross.move(to: c)
+                            cross.addLine(to: CGPoint(x: c.x + cos(a) * s, y: c.y + sin(a) * s))
+                        }
+                        context.stroke(cross, with: .color(.white.opacity(alpha * 0.6)),
+                                       style: StrokeStyle(lineWidth: 0.5, lineCap: .round))
+                    }
                 }
             case .motes:
                 let gold = Color(red: 0.973, green: 0.831, blue: 0.576)
@@ -1433,7 +1578,17 @@ struct AppBackdropEffectsHint: View {
                     context.fill(Path(ellipseIn: rect), with: .color(gold.opacity(alpha)))
                 }
             case .birds:
-                // Three tiny chevrons — the flock's silhouette signature.
+                // A warm low sun glow — the sunset's continuous signature —
+                // with the flock's three chevrons crossing above it.
+                let sun = CGPoint(x: size.width * 0.62, y: size.height * 1.02)
+                context.fill(
+                    Path(ellipseIn: CGRect(x: sun.x - size.width * 0.5,
+                                           y: sun.y - size.width * 0.5,
+                                           width: size.width, height: size.width)),
+                    with: .radialGradient(
+                        Gradient(colors: [Color(red: 1.0, green: 0.66, blue: 0.34).opacity(0.5),
+                                          .clear]),
+                        center: sun, startRadius: 0, endRadius: size.width * 0.5))
                 let ink = Color(red: 0.28, green: 0.17, blue: 0.14)
                 let span = max(7, size.width * 0.06)
                 let rise = span * 0.35
