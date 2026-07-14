@@ -8,9 +8,14 @@ import SwiftUI
 // (Auto + optional custom hours), an airy horizontal carousel — the Auto
 // card first (a live preview of what Auto composes right now, captioned
 // with WHY), then the seven atmospheres (~3.5 visible, swipe for the
-// rest, view-aligned snapping) — and a Personalizare group (mood-following
-// app icon, weather-reactive backdrop). Selection persists through
-// `AppMoodEngine.override`.
+// rest, view-aligned snapping) — and a Personalizare group (atmospheric
+// effects, mood-following app icon, weather-reactive backdrop). Selection
+// persists through `AppMoodEngine.override`.
+//
+// The hero preview is the one fixed preview allowed to run the LIVE
+// atmospheric effects scene (it is a single instance and the page is where
+// the user auditions moods); the carousel thumbnails only ever get the
+// static pre-baked hint that `AppBackdrop` bakes into fixed previews.
 //
 // Honesty:
 // - The Auto explanation only claims sunrise/sunset when the engine
@@ -64,6 +69,11 @@ struct BackgroundMoodView: View {
         let mood = engine.resolved
         return ZStack {
             AppBackdrop(fixed: mood)
+            // The one live effects instance a fixed preview may run: what
+            // you audition here is exactly what the real backdrop does
+            // (and it obeys the same energy policy — toggle off, Reduce
+            // Motion, or Low Power Mode leave the hero static too).
+            AppBackdropEffectsLayer(mood: mood)
             GlassCard(padding: AppSpacing.lg, cornerRadius: AppRadius.xl) {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("mood_preview_card_title")
@@ -299,6 +309,20 @@ struct BackgroundMoodView: View {
         let canFollow = iconManager.canFollowMood
         let hasWeather = AppWeatherTone.hasFreshSummary
         return SettingsGroup(title: "mood_personalize_title") {
+            // Atmospheric effects (rain / snow / event shimmer on the live
+            // backdrop). Always operable — the caption is the honest
+            // contract: the effects still stand down by themselves in Low
+            // Power Mode and under Reduce Motion, whatever this says.
+            MoodToggleRow(icon: "cloud.bolt.rain",
+                          title: "mood_fx_toggle_title",
+                          caption: "mood_fx_toggle_caption",
+                          isOn: Binding(
+                              get: { AtmosphericEffectsPolicy.shared.userEnabled },
+                              set: { on in
+                                  HapticFeedback.selection()
+                                  AtmosphericEffectsPolicy.shared.userEnabled = on
+                              }))
+            rowDivider
             MoodToggleRow(icon: "app.badge",
                           title: "mood_icon_follow",
                           caption: iconCaptionKey,
