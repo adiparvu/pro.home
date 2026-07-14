@@ -23,6 +23,13 @@ struct ComposedRainView: View, Equatable {
     let scheme: ColorScheme
     let intensity: CGFloat
     let isActive: Bool
+    /// Adds a very faint airborne dust/haze emitter to the shared rain scene —
+    /// invisible in the dark storm, but "caught in the flash" when the Metal
+    /// illumination wash (a plusLighter layer composited above this SpriteView)
+    /// lights it. Default OFF, so the mood backdrop and the plain rain scenes
+    /// are unchanged; the thunderstorm passes `true`. It rides the SAME SKView
+    /// this scene already mounts, so it costs no extra display link.
+    var airborneDust: Bool = false
 
     @State private var scene: SKScene?
 
@@ -36,7 +43,8 @@ struct ComposedRainView: View, Equatable {
         }
         .onAppear {
             if scene == nil {
-                scene = RainScene(scheme: scheme, intensity: intensity)
+                scene = RainScene(scheme: scheme, intensity: intensity,
+                                  airborneDust: airborneDust)
             }
         }
         .allowsHitTesting(false)
@@ -45,7 +53,7 @@ struct ComposedRainView: View, Equatable {
     // Rebuild only when the rain's defining inputs change — not every frame.
     static func == (lhs: ComposedRainView, rhs: ComposedRainView) -> Bool {
         lhs.scheme == rhs.scheme && lhs.intensity == rhs.intensity
-            && lhs.isActive == rhs.isActive
+            && lhs.isActive == rhs.isActive && lhs.airborneDust == rhs.airborneDust
     }
 }
 

@@ -391,14 +391,20 @@ final class RainScene: SKScene {
     private var streaks: [(SKEmitterNode, StreakSpec)] = []
     private let mist = SKEmitterNode()
     private let splash = SKEmitterNode()
+    /// Optional faint airborne dust/haze — only added when the caller asks for
+    /// it (the Dynamic Weather Engine's thunderstorm). Default rain never mounts
+    /// it, so the mood-backdrop budget is unchanged.
+    private let dust = SKEmitterNode()
+    private let airborneDust: Bool
     private var prewarmed = false
     /// Live-drop budget multiplier. 1 is the tuned mood-backdrop rain; the
     /// weather engine passes >1 for heavier rain (heavyRain ≈ 1.5, storm ≈ 1.6).
     /// Documented so the ×112 baseline budget stays auditable at any intensity.
     private let intensity: CGFloat
 
-    init(scheme: ColorScheme, intensity: CGFloat = 1) {
+    init(scheme: ColorScheme, intensity: CGFloat = 1, airborneDust: Bool = false) {
         self.intensity = intensity
+        self.airborneDust = airborneDust
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
@@ -468,9 +474,32 @@ final class RainScene: SKScene {
         splash.particleScaleSpeed = 1.5
         splash.zPosition = 4
 
+        // Airborne dust/haze motes (storm only): ~12 live (1.5/s × 8 s), a
+        // near-black-invisible soft speckle drifting on the wind that only
+        // reads when the lightning wash lights it. zPosition below the streaks
+        // so drops pass in front of it.
+        if airborneDust {
+            dust.particleTexture = AtmosphericParticleTextures.dot
+            dust.particleColor = UIColor(white: 1, alpha: 1)
+            dust.particleColorBlendFactor = 1
+            dust.particleBirthRate = 1.5
+            dust.particleLifetime = 8
+            dust.particleLifetimeRange = 2
+            dust.emissionAngle = 0            // drift with the wind
+            dust.emissionAngleRange = .pi     // gentle omnidirectional wander
+            dust.particleSpeed = 10
+            dust.particleSpeedRange = 8
+            dust.particleAlpha = 0.05
+            dust.particleAlphaRange = 0.03
+            dust.particleScale = 0.5
+            dust.particleScaleRange = 0.3
+            dust.zPosition = 0
+        }
+
         for (emitter, _) in streaks { addChild(emitter) }
         addChild(mist)
         addChild(splash)
+        if airborneDust { addChild(dust) }
         layoutEmitters()
     }
 
@@ -521,6 +550,10 @@ final class RainScene: SKScene {
         mist.particlePositionRange = CGVector(dx: size.width, dy: size.height * 0.14)
         splash.position = CGPoint(x: size.width / 2, y: 26)
         splash.particlePositionRange = CGVector(dx: size.width, dy: 18)
+        if airborneDust {
+            dust.position = CGPoint(x: size.width / 2, y: size.height * 0.5)
+            dust.particlePositionRange = CGVector(dx: size.width, dy: size.height)
+        }
     }
 
     /// Prewarm on the first simulated frame — by then the SpriteView has
@@ -534,6 +567,7 @@ final class RainScene: SKScene {
         }
         mist.advanceSimulationTime(20)
         splash.advanceSimulationTime(1)
+        if airborneDust { dust.advanceSimulationTime(10) }
     }
 }
 

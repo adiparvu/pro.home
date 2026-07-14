@@ -72,6 +72,15 @@ final class WeatherEngine {
     /// different parts of the cloud field, never the dead center every time.
     private(set) var flashOrigin: UnitPoint = UnitPoint(x: 0.5, y: 0.0)
 
+    /// Per-strike intensity, 0 (a distant, dim flash) → 1 (a full, close strike).
+    /// Chosen fresh on every `pulseLightning`, it is FOLDED INTO `flashLevel` so
+    /// the whole broadcast (illumination shader, bolt brightness, any reactive
+    /// Liquid Glass card) dims together for a distant strike, and drives the
+    /// bolt's GEOMETRY (reach, width, fork count) directly via the scene context.
+    /// It also maps to the thunder delay (nearer strikes clap sooner). Defaults
+    /// to a full strike so a manually-forced flash reads at full strength.
+    private(set) var flashMagnitude: Double = 1
+
     private init(initial: WeatherCondition = .clearDay) {
         current = initial
     }
@@ -148,29 +157,53 @@ final class WeatherEngine {
 
     // MARK: Lightning broadcast
 
-    /// Total envelope length of one strike (two pulses), in seconds.
-    private static let flashDuration: TimeInterval = 1.1
+    /// Total envelope length of one strike (bright flash + flicker + afterglow).
+    private static let flashDuration: TimeInterval = 1.4
 
-    /// The live lightning brightness at a frame time, 0 (dark) → 1 (peak). A
-    /// two-pulse envelope: an instant bright flash decaying to a dim plateau,
-    /// then a weaker echo fading out — the classic double flash. Fed to the
-    /// Metal illumination shader and the bolt; any Liquid Glass surface can read
-    /// it against its own frame clock to brighten with the storm.
+    /// The live lightning brightness at a frame time, 0 (dark) → 1 (peak),
+    /// already scaled by `flashMagnitude`. The envelope models a real strike:
+    ///   1. a ~6 ms attack to peak,
+    ///   2. a bright MAIN FLASH lasting 30–120 ms (wider for a nearer strike),
+    ///   3. a brief secondary return-stroke FLICKER, then
+    ///   4. a dim AFTERGLOW tail fading to 0 by ~1.4 s.
+    /// The 30–120 ms visible-flash window is the spec target; a distant strike
+    /// (low magnitude) is both shorter and dimmer. Fed to the Metal illumination
+    /// shader and the bolt; any Liquid Glass surface can read it against its own
+    /// frame clock (see `WeatherFlashProvider`) to brighten with the storm.
     func flashLevel(at date: Date) -> Double {
         guard let start = flashStart else { return 0 }
         let e = date.timeIntervalSince(start)
         guard e >= 0, e <= Self.flashDuration else { return 0 }
+        let mag = flashMagnitude
         func easeOut(_ x: Double) -> Double { 1 - (1 - x) * (1 - x) }
-        if e < 0.17 {                       // first pulse: 1.0 → 0.12
-            return 1.0 - 0.88 * easeOut(e / 0.17)
+
+        // Main-flash body width: 30 ms (distant) → 120 ms (close).
+        let mainWidth = 0.03 + 0.09 * mag
+        let level: Double
+        if e < 0.006 {                               // attack → peak
+            level = e / 0.006
+        } else if e < mainWidth {                    // bright main flash → dim
+            level = 1.0 - 0.92 * easeOut((e - 0.006) / (mainWidth - 0.006))
+        } else {
+            let gapEnd = mainWidth + 0.05             // short dark gap
+            let echoEnd = mainWidth + 0.16            // return-stroke flicker
+            if e < gapEnd {
+                level = 0.08
+            } else if e < echoEnd {                  // a brief re-strike
+                let u = (e - gapEnd) / (echoEnd - gapEnd)
+                level = 0.08 + 0.34 * sin(u * .pi)
+            } else {                                  // afterglow tail → 0
+                let tail = (e - echoEnd) / (Self.flashDuration - echoEnd)
+                level = 0.22 * (1 - easeOut(min(1, tail)))
+            }
         }
-        if e < 0.18 { return 0.12 }         // brief plateau between pulses
-        return 0.55 * (1 - easeOut((e - 0.18) / 0.92)) // echo: 0.55 → 0
+        return max(0, level) * mag
     }
 
-    /// Begin one strike now: pick a fresh top-edge origin and stamp the start.
-    /// The stage's scheduler calls this; the envelope then plays out purely
-    /// from the frame clock (`flashLevel(at:)`), so nothing else has to tick.
+    /// Begin one strike now: pick a fresh top-edge origin, a fresh per-strike
+    /// magnitude, and stamp the start. The stage's scheduler calls this; the
+    /// envelope then plays out purely from the frame clock (`flashLevel(at:)`),
+    /// so nothing else has to tick.
     ///
     /// Returns the THUNDER DELAY that would precede the clap for this strike —
     /// a documented hook for the future audio pass (sound-at-distance). No
@@ -180,10 +213,18 @@ final class WeatherEngine {
     func pulseLightning() -> TimeInterval {
         flashOrigin = UnitPoint(x: .random(in: 0.15...0.85),
                                 y: .random(in: 0.0...0.10))
+        // Most strikes are moderate; ~28% are a full, close, full-screen strike;
+        // the rest range down to a distant dim flash. This one number varies the
+        // whole strike — brightness, bolt reach/branching, and thunder delay.
+        var mag = Double.random(in: 0.45...1.0)
+        if Double.random(in: 0...1) < 0.28 { mag = 1.0 }
+        flashMagnitude = mag
         flashStart = Date()
-        // FUTURE (audio): a nearer strike (brighter) claps sooner. 0.3–2.4 s
-        // maps to ~100 m–800 m at 340 m/s; structure only, silent for now.
-        return TimeInterval.random(in: 0.3...2.4)
+        // FUTURE (audio): the thunder clap follows the flash after this delay —
+        // a nearer/brighter strike (high magnitude) claps sooner. 0.4–6 s maps
+        // to ~140 m–2 km at 340 m/s. Structure only; silent this phase.
+        let delay = 0.4 + (1 - mag) * 5.6 + Double.random(in: -0.2...0.5)
+        return max(0.4, delay)
     }
 
     /// Hard-resets the flash to dark — the stage calls this when the storm

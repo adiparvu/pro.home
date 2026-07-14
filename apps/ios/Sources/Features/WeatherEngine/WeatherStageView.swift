@@ -49,6 +49,10 @@ struct WeatherSceneContext: Equatable {
     var flashLevel: Double
     /// Strike origin in unit space (near the top edge).
     var flashOrigin: UnitPoint
+    /// Per-strike intensity, 0 (distant/dim) → 1 (close/full). Drives the bolt's
+    /// geometry (reach, width, fork count); brightness is already folded into
+    /// `flashLevel`. (WeatherEngine.flashMagnitude.)
+    var flashMagnitude: Double
     /// Seconds from the stage's single TimelineView clock. Frozen in the
     /// static frame.
     var time: TimeInterval
@@ -136,19 +140,21 @@ struct WeatherStageView: View {
             Group {
                 if motionEnabled {
                     // ONE clock for the whole stage — ProMotion 120 / others 60,
-                    // paused the instant the scene leaves .active. The sky lives
-                    // inside it too so the lens-rain refraction (a layerEffect)
-                    // can bend the sky AND clouds behind each droplet.
+                    // paused the instant the scene leaves .active. Scenes read
+                    // the elapsed seconds; RainWeatherScene owns its own scoped
+                    // lens-rain refraction (see the note inside the closure).
                     TimelineView(.animation(paused: !isActive)) { timeline in
                         let t = timeline.date.timeIntervalSince(clockStart)
                         stageContent(size: size, frame: timeline.date, time: t,
                                      motionEnabled: true, isActive: isActive)
-                            // Refraction intensity rides the LERPED rain value,
-                            // so beads fade in exactly as rain arrives in a
-                            // transition, and vanish (branch → plain view) at 0.
-                            .weatherLensRain(time: t,
-                                             intensity: engine.displayParameters(at: timeline.date).rainIntensity,
-                                             size: size)
+                        // NOTE (Phase 2): the lens-rain refraction is no longer
+                        // applied stage-wide. Phase 1 flagged that wrapping the
+                        // WHOLE stage — including the live SpriteView rain — in a
+                        // `.layerEffect` is both the priciest pass AND unreliable
+                        // (SwiftUI may not rasterize an SKView into a layerEffect
+                        // input). RainWeatherScene now applies `.weatherLensRain`
+                        // to ITS OWN sky+cloud sublayer only, with the streaks
+                        // composited above the refracted sky — correct + cheaper.
                     }
                 } else {
                     // Reduce Motion / Low Power / effects off → one still frame,
@@ -215,6 +221,7 @@ struct WeatherStageView: View {
             parameters: parameters,
             flashLevel: engine.flashLevel(at: frame),
             flashOrigin: engine.flashOrigin,
+            flashMagnitude: engine.flashMagnitude,
             time: time, size: size,
             reduceMotion: reduceMotion,
             motionEnabled: motionEnabled, isActive: isActive)
@@ -228,6 +235,7 @@ struct WeatherStageView: View {
                            context: WeatherSceneContext) -> some View {
         switch condition {
         case .thunderstorm: ThunderstormScene(context: context)
+        case .rain, .heavyRain: RainWeatherScene(context: context)
         case .sunrise, .sunset: SunriseScene(context: context)
         case .night: NightScene(context: context)
         case .fullMoon: NightScene(context: context, forceFull: true)
@@ -257,8 +265,12 @@ struct WeatherStageView: View {
             guard (try? await Task.sleep(for: .seconds(wait))) != nil else {
                 engine.resetFlash(); return
             }
-            // FUTURE (audio): schedule the thunder clap after this delay.
-            _ = engine.pulseLightning()
+            let thunderDelay = engine.pulseLightning()
+            // FUTURE (audio): after `thunderDelay` seconds, play the thunder clap
+            // at a volume scaled by the strike magnitude. The delay is already
+            // computed and distance-mapped, so wiring audio later needs no new
+            // plumbing; it stays silent this phase.
+            _ = thunderDelay
         }
         engine.resetFlash()
     }

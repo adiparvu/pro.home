@@ -31,21 +31,34 @@ struct WeatherGalleryView: View {
     // MARK: Controls
 
     private var controls: some View {
-        VStack(spacing: AppSpacing.md) {
-            currentCard
+        // PROOF-OF-CONCEPT (Phase 2): wrap the gallery controls in a
+        // `WeatherFlashProvider` so the current-condition card can brighten in
+        // sync with the thunderstorm's lightning. This is the ONLY app surface
+        // wired to the flash hook this phase; app-wide integration (wrapping a
+        // high-level container, adding `.weatherFlashResponsive()` to Liquid
+        // Glass cards) is deferred — see WeatherFlashEnvironment.swift.
+        WeatherFlashProvider {
+            VStack(spacing: AppSpacing.md) {
+                currentCard
+                    .weatherFlashResponsive()
 
-            ScrollView(showsIndicators: false) {
-                LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
-                    ForEach(WeatherCondition.allCases) { condition in
-                        conditionChip(condition)
-                    }
-                }
-                .padding(AppSpacing.base)
+                conditionScroll
             }
-            .frame(maxHeight: 280)
-            .liquidGlass(cornerRadius: AppRadius.sheet)
+            .padding(AppSpacing.base)
         }
-        .padding(AppSpacing.base)
+    }
+
+    private var conditionScroll: some View {
+        ScrollView(showsIndicators: false) {
+            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                ForEach(WeatherCondition.allCases) { condition in
+                    conditionChip(condition)
+                }
+            }
+            .padding(AppSpacing.base)
+        }
+        .frame(maxHeight: 280)
+        .liquidGlass(cornerRadius: AppRadius.sheet)
     }
 
     /// The current condition, its renderer tier, and a flagship badge — so an
