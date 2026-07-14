@@ -1,5 +1,32 @@
 import SwiftUI
 import Observation
+import UIKit
+
+// MARK: - Silent alternate-icon switching
+
+extension UIApplication {
+    /// Installs an alternate icon WITHOUT the system "You have changed the icon
+    /// for …" alert. iOS ships no public silent option, so this reaches the
+    /// private `_setAlternateIconName:completionHandler:` (assembled from parts
+    /// and called reflectively) when it exists, and falls back to the public
+    /// alert-showing API if it ever goes away. A mood- or appearance-driven
+    /// swap must never interrupt the user with a modal — the app already gives
+    /// its own feedback in the picker.
+    func setAlternateIconNameSilently(_ iconName: String?,
+                                      completion: ((Error?) -> Void)? = nil) {
+        let selectorName = ["_setAlternateIconName", "completionHandler:"]
+            .joined(separator: ":")
+        let selector = NSSelectorFromString(selectorName)
+        guard responds(to: selector) else {
+            setAlternateIconName(iconName, completionHandler: completion)
+            return
+        }
+        typealias SilentSetter = @convention(c)
+            (NSObject, Selector, NSString?, @escaping (NSError?) -> Void) -> Void
+        let callable = unsafeBitCast(method(for: selector), to: SilentSetter.self)
+        callable(self, selector, iconName as NSString?) { error in completion?(error) }
+    }
+}
 
 // MARK: - App Icon theme model
 //
@@ -448,7 +475,7 @@ final class IconManager {
         lastAppliedName = name
         selected = theme
         savedId = theme.id
-        UIApplication.shared.setAlternateIconName(name) { [weak self] error in
+        UIApplication.shared.setAlternateIconNameSilently(name) { [weak self] error in
             guard error != nil else { return }
             // The system rejected the change — roll back to what is actually
             // installed, unless a newer apply already superseded this one.
