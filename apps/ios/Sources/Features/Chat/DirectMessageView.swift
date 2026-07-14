@@ -464,7 +464,7 @@ struct DirectMessageView: View {
             while !Task.isCancelled {
                 await LiveLocationService.shared.load(propertyId: pid)
                 await directMessageService.ensureLiveDelivery(propertyId: pid, myName: myName)
-                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
         }
         .task {

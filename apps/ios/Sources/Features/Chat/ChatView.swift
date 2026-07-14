@@ -388,7 +388,7 @@ struct ChatView: View {
             while !Task.isCancelled {
                 await LiveLocationService.shared.load(propertyId: pid)
                 await messageService.ensureLiveDelivery(propertyId: pid, groupId: groupId)
-                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
         }
         .task { await flushOutbox() }
