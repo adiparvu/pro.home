@@ -117,9 +117,11 @@ struct EditProfileView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(AppFont.scaled(20))
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.tint)
+                        .frame(width: 34, height: 34)
+                        .glassCircle()
                 }
                 .accessibilityLabel(Text("Add account"))
             }
@@ -148,7 +150,7 @@ struct EditProfileView: View {
                         .accessibilityLabel(Text("Delete"))
                     }
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .liquidGlass(cornerRadius: AppRadius.md)
                 }
             }
         }
