@@ -39,6 +39,7 @@ struct SmartHomeSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(TaskService.self) private var taskService
 
     @State private var selectedRoom: String? = nil
 
@@ -63,6 +64,7 @@ struct SmartHomeSection: View {
         case allDevices
         case climate
         case importWizard
+        case rules
 
         var id: String {
             switch self {
@@ -70,6 +72,7 @@ struct SmartHomeSection: View {
             case .allDevices:         "all-devices"
             case .climate:            "climate"
             case .importWizard:       "import-wizard"
+            case .rules:              "rules"
             }
         }
     }
@@ -80,6 +83,9 @@ struct SmartHomeSection: View {
     private let homeKit = HomeKitService.shared
     /// Cached HomeKit indoor readings (R3) — the dial's first truth.
     private let indoorClimate = IndoorClimateStore.shared
+    /// The rules engine (R5) — loaded here so the dashboard is the moment
+    /// rules start evaluating; its compact row renders only when ≥1 exists.
+    private let rulesStore = PropertyRulesStore.shared
 
     /// How many hero cards the dashboard shows before folding the rest
     /// behind the "See all" row.
@@ -120,6 +126,9 @@ struct SmartHomeSection: View {
             heroGrid
             if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
             if smartHome.hasAnyDevice, !smartHome.homeKitAuthorized { connectHomeKitRow }
+            // R5: only once at least one rule genuinely exists — never a
+            // promotional slot for an empty feature.
+            if !rulesStore.rules.isEmpty { rulesRow }
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -131,13 +140,24 @@ struct SmartHomeSection: View {
                 ClimateView()
             case .importWizard:
                 HomeKitImportWizardSheet()
+            case .rules:
+                PropertyRulesView()
             }
         }
         // Indoor climate cache (R3): fill on first appearance, refresh on
         // scene re-activation — never a polling loop.
-        .task { await indoorClimate.refreshIfStale() }
+        // Rules engine (R5): load the property's rules alongside, and adopt
+        // the app's TaskService so rule-created tasks land in the live list.
+        .task {
+            rulesStore.adopt(taskService: taskService)
+            await rulesStore.loadIfNeeded()
+            await indoorClimate.refreshIfStale()
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
+            // Scene-active is an R5 evaluation trigger of its own; the
+            // climate refresh below feeds the engine's observation hook too.
+            rulesStore.evaluateSoon()
             Task { await indoorClimate.refresh() }
         }
         // The post-connect moment (R1): authorization landing after a
@@ -466,6 +486,43 @@ struct SmartHomeSection: View {
                     .foregroundStyle(.primary)
                 Spacer(minLength: AppSpacing.sm)
                 Text("sh_device_count \(scopedDevices.count)")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .smartGlassRow()
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Slim rules row (Smart Control R5 — only when ≥1 rule exists)
+
+    /// Compact entry to the rules page, mirroring the see-all row's
+    /// language: title, enabled count, chevron. Rendered only when the
+    /// household actually has rules — creation lives on the rules page
+    /// itself (reached via the ☰ hub), never as dashboard bait.
+    private var rulesRow: some View {
+        let enabled = rulesStore.enabledCount
+        return Button {
+            HapticFeedback.impact(.light)
+            activeSheet = .rules
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "bolt.badge.automatic")
+                    .font(AppFont.headline)
+                    .foregroundStyle(Color.accentColor)
+                Text("rule_hub_title")
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: AppSpacing.sm)
+                (enabled == 1 ? Text("rule_enabled_one")
+                              : Text("rule_enabled_count \(enabled)"))
                     .font(AppFont.caption2)
                     .foregroundStyle(.secondary)
                 Image(systemName: "chevron.right")

@@ -34,6 +34,7 @@ struct SmartHomeHubSheet: View {
         case search
         case allDevices
         case scenes
+        case rules
         case room(String)
         case importWizard
 
@@ -42,6 +43,7 @@ struct SmartHomeHubSheet: View {
             case .search:         "search"
             case .allDevices:     "all-devices"
             case .scenes:         "scenes"
+            case .rules:          "rules"
             case .room(let name): "room-\(name)"
             case .importWizard:   "import-wizard"
             }
@@ -148,6 +150,7 @@ struct SmartHomeHubSheet: View {
                         openCameras()
                     }
                     scenesRow
+                    rulesRow
 
                     sectionHeader("hub_rooms")
                     roomsSection
@@ -176,6 +179,9 @@ struct SmartHomeHubSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        // The rules row's enabled-count detail needs the store filled (a
+        // cheap no-op when the dashboard already loaded it).
+        .task { await PropertyRulesStore.shared.loadIfNeeded() }
         .sheet(item: $activeSheet, onDismiss: nestedSheetDismissed) { sheet in
             switch sheet {
             case .search:
@@ -186,6 +192,10 @@ struct SmartHomeHubSheet: View {
                 SmartHomeDeviceListSheet(kind: nil, room: nil)
             case .scenes:
                 SmartSceneListSheet()
+            case .rules:
+                PropertyRulesView()
+                    .environment(propertyService)
+                    .environment(zoneService)
             case .room(let name):
                 SmartHomeDeviceListSheet(kind: nil, room: name)
             case .importWizard:
@@ -318,6 +328,24 @@ struct SmartHomeHubSheet: View {
                     activeSheet = .scenes
                 }
             }
+        }
+    }
+
+    // MARK: Rules row (Smart Control R5)
+
+    /// The rules engine's hub entry — always a real destination (the rules
+    /// page carries creation, templates and the honest client-side caption);
+    /// the detail shows how many rules are currently enabled, once any exist.
+    private var rulesRow: some View {
+        let store = PropertyRulesStore.shared
+        let enabled = store.enabledCount
+        return hubRow(icon: "bolt.badge.automatic",
+                      titleKey: "rule_hub_title",
+                      detail: store.rules.isEmpty
+                          ? nil
+                          : (enabled == 1 ? Text("rule_enabled_one")
+                                          : Text("rule_enabled_count \(enabled)"))) {
+            activeSheet = .rules
         }
     }
 
