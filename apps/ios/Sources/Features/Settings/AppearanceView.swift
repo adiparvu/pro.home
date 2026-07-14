@@ -89,13 +89,6 @@ struct AppearanceView: View {
                            value: TextSizePreference.shared.rowValue) {
                 TextSizeView()
             }
-            // Showcase/testing surface for the Dynamic Weather Engine — an
-            // honest "beta" label; it auditions the 19 live scenes and is not
-            // wired into the app-wide backdrop yet.
-            NavSettingsRow(icon: "cloud.sun.bolt.fill", color: .brandPrimaryBlue,
-                           label: "weather_gallery_row") {
-                WeatherGalleryView()
-            }
         }
     }
 
