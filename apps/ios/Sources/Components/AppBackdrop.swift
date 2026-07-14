@@ -10,11 +10,11 @@ import SwiftUI
 // this costs what the old flat color did.
 //
 // Live backdrops additionally compose `AppBackdropEffectsLayer` ABOVE the
-// gradients — the optional atmospheric effects (rain / snow / one-shot
-// event shimmer). The layer renders nothing at all unless the mood wants an
-// effect AND the energy policy allows it (user toggle, Reduce Motion, Low
-// Power Mode — see AtmosphericEffectsPolicy), so the static backdrop's cost
-// is untouched. Fixed previews get `AppBackdropEffectsHint` instead: a few
+// gradients — every mood's signature atmospheric effect (rain / snow /
+// night stars / morning dust / passing day clouds / sunset flock + glow /
+// one-shot event shimmer). The layer renders nothing at all unless the
+// energy policy allows it (user toggle, Reduce Motion, Low Power Mode — see
+// AtmosphericEffectsPolicy), so the static backdrop's cost is untouched. Fixed previews get `AppBackdropEffectsHint` instead: a few
 // pre-baked static marks, never a live scene per thumbnail.
 //
 // Lifecycle: live backdrops (fixed == nil) ref-count themselves into

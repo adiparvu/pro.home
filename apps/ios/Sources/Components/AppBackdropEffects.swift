@@ -4,10 +4,18 @@ import UIKit
 
 // MARK: - AppBackdropEffects — real atmosphere over the living backdrop
 //
-// Optional weather effects layered ABOVE the mood palette's gradients:
-// rain (two streak depths + a sparse very-fast third, splashes, a drifting
-// mist band, probabilistic lightning), snow (two parallax flake layers with
-// rotation drift and an alpha twinkle), and a once-a-day event shimmer.
+// Optional signature effects layered ABOVE the mood palette's gradients —
+// every one of the seven atmospheres now carries one:
+//   rain    — two streak depths + a sparse very-fast third, splashes, a
+//             drifting mist band, probabilistic lightning
+//   winter  — two parallax flake layers with rotation drift and a twinkle
+//   night   — a pre-baked star field (one static sprite), ~20 twinkling
+//             stars, and a rare shooting star (60–180 s scheduler); when it
+//             actually rains at night, the rain wins and the stars stay away
+//   morning — golden dust motes drifting lazily through the light
+//   day     — three enormous ultra-soft clouds crossing over minutes
+//   sunset  — a once-a-day bird flock over a continuous faint golden drift
+//   event   — the once-a-day 2.5 s gold shimmer
 // The visual reference is Apple's Weather app; the budget reference is not —
 // every particle count here is deliberately a fraction of it.
 //
@@ -27,11 +35,15 @@ import UIKit
 // empty scene, no observers beyond three cheap @Observable reads.
 //
 // PARTICLE BUDGETS (steady-state live count = birthRate × lifetime; for the
-// streak layers lifetime is derived from the actual scene height so the live
-// count holds by construction on every device):
-//   Rain  ≈ 45 far + 44 near + 14 fast + ~4 splashes + ~5 mist ≈ 112 < 150
-//   Snow  = 54 far + 28 near = 82 < 100
-//   Event = 30 total, one-shot, dead ≤ 2.6 s after appear — then nothing.
+// streak/cloud layers lifetime is derived from the actual scene size so the
+// live count holds by construction on every device):
+//   Rain    ≈ 45 far + 44 near + 14 fast + ~4 splashes + ~5 mist ≈ 112 < 150
+//   Snow    = 54 far + 28 near = 82 < 100
+//   Night   = 1 baked star-field sprite + 20 twinkles + ≤1 shooting streak ≤ 22
+//   Morning = 2.5/s × 10 s = 25 motes
+//   Day     = 3 clouds (birthRate = 3 / lifetime — exact by construction)
+//   Sunset  = 0.15/s × 20 s = 3 drift blobs + ≤9 bird sprites for ~7 s, once a day
+//   Event   = 30 total, one-shot, dead ≤ 2.6 s after appear — then nothing.
 // The SpriteView renders at 60 fps on its own CADisplayLink (particle motion
 // gains nothing perceptible from 120), leaving SwiftUI free to run the UI at
 // 120 on ProMotion. Particle textures are tiny white @2x images rendered
@@ -47,11 +59,12 @@ import UIKit
 ///
 /// STATE → WHAT RUNS:
 ///   toggle OFF / Reduce Motion / Low Power  → nothing mounted (zero cost)
-///   mood without effects                    → nothing mounted (zero cost)
-///   all gates pass, scenePhase == .active   → SpriteView @ 60 fps + (rain
-///                                             only) one sleeping lightning task
+///   all gates pass, scenePhase == .active   → SpriteView @ 60 fps + at most
+///                                             ONE sleeping scheduler task
+///                                             (rain: lightning; night:
+///                                             shooting stars; others: none)
 ///   all gates pass, scenePhase != .active   → SpriteView mounted but PAUSED
-///                                             (SKView idle), lightning task
+///                                             (SKView idle), scheduler task
 ///                                             cancelled — no timers at all
 ///   backdrop leaves the screen              → view unmounted, scene released
 @MainActor
@@ -61,6 +74,7 @@ final class AtmosphericEffectsPolicy {
 
     private static let enabledKey = "app.mood.effects"
     private static let sparkleDayKey = "app.mood.effects.sparkleDay"
+    private static let flockDayKey = "app.mood.effects.flockDay"
 
     /// The user's "Efecte atmosferice" toggle (Settings → Aspect → Fundal).
     /// Persisted; default ON — rain/winter/event are already opt-in moods.
@@ -94,17 +108,21 @@ final class AtmosphericEffectsPolicy {
         userEnabled && !reduceMotion && !isLowPowerMode
     }
 
-    /// The effect a mood wants, if any. The night mood joins in only while
-    /// the engine's live weather tone says it is actually raining — the
-    /// night-with-rain modulation keeps the night palette, but the drops
-    /// still deserve to be real there.
-    static func effect(for mood: AppMood, weatherTone: AppWeatherTone?) -> AtmosphericEffect? {
+    /// The signature effect each mood renders when the policy allows
+    /// mounting — every atmosphere carries one. The night mood joins the
+    /// rain only while the engine's live weather tone says it is actually
+    /// raining: the night-with-rain modulation keeps the night palette, but
+    /// the drops still deserve to be real there — and the stars honestly
+    /// stay behind the clouds.
+    static func effect(for mood: AppMood, weatherTone: AppWeatherTone?) -> AtmosphericEffect {
         switch mood {
-        case .rain:   .rain(scheme: .light)
-        case .night:  weatherTone == .rain ? .rain(scheme: .dark) : nil
-        case .winter: .snow
-        case .event:  .sparkle
-        default:      nil
+        case .morning: .morningMotes
+        case .day:     .dayClouds
+        case .sunset:  .sunsetGlow
+        case .night:   weatherTone == .rain ? .rain(scheme: .dark) : .stars
+        case .rain:    .rain(scheme: .light)
+        case .winter:  .snow
+        case .event:   .sparkle
         }
     }
 
@@ -112,10 +130,22 @@ final class AtmosphericEffectsPolicy {
     /// calendar day — the first event backdrop to appear that day plays the
     /// 2.5 s shimmer; every later one stays static, as designed.
     func takeDailySparkle(now: Date = .now) -> Bool {
+        Self.takeDaily(key: Self.sparkleDayKey, now: now)
+    }
+
+    /// Claims today's one sunset bird flock — the same once-per-calendar-day
+    /// mechanism as the shimmer, on its own key: the first sunset backdrop
+    /// to appear that day plays the crossing; the golden drift underneath is
+    /// continuous regardless.
+    func takeDailyFlock(now: Date = .now) -> Bool {
+        Self.takeDaily(key: Self.flockDayKey, now: now)
+    }
+
+    private static func takeDaily(key: String, now: Date) -> Bool {
         let day = Calendar.current.startOfDay(for: now).timeIntervalSinceReferenceDate
         let defaults = UserDefaults.standard
-        guard defaults.double(forKey: Self.sparkleDayKey) != day else { return false }
-        defaults.set(day, forKey: Self.sparkleDayKey)
+        guard defaults.double(forKey: key) != day else { return false }
+        defaults.set(day, forKey: key)
         return true
     }
 }
@@ -127,14 +157,19 @@ enum AtmosphericEffect: Hashable {
     case rain(scheme: ColorScheme)
     case snow
     case sparkle
+    case stars          // night: baked field + twinkles + rare shooting star
+    case morningMotes   // morning: golden dust in the light
+    case dayClouds      // day: three enormous barely-there passing clouds
+    case sunsetGlow     // sunset: faint golden drift + once-a-day bird flock
 }
 
 // MARK: - AppBackdropEffectsLayer (what AppBackdrop composes)
 
 /// The optional live layer above the palette gradients. Renders NOTHING —
-/// not even an empty scene — unless the mood wants an effect and the policy
-/// allows mounting; `AppBackdrop`'s static cost is untouched when this
-/// resolves to the empty branch.
+/// not even an empty scene — unless the policy allows mounting;
+/// `AppBackdrop`'s static cost is untouched when this resolves to the empty
+/// branch. Every mood now carries a signature effect, so the mount decision
+/// is purely the energy policy's.
 struct AppBackdropEffectsLayer: View {
     let mood: AppMood
 
@@ -144,10 +179,9 @@ struct AppBackdropEffectsLayer: View {
     var body: some View {
         // Three cheap observable reads decide the branch; when it is empty,
         // that is the layer's ENTIRE cost.
-        let effect = AtmosphericEffectsPolicy.effect(
-            for: mood, weatherTone: AppMoodEngine.shared.weatherTone)
-        if let effect,
-           AtmosphericEffectsPolicy.shared.allowsMounting(reduceMotion: reduceMotion) {
+        if AtmosphericEffectsPolicy.shared.allowsMounting(reduceMotion: reduceMotion) {
+            let effect = AtmosphericEffectsPolicy.effect(
+                for: mood, weatherTone: AppMoodEngine.shared.weatherTone)
             EffectsSceneHost(effect: effect, isRunning: scenePhase == .active)
                 .id(effect)   // mood/scheme change = a fresh scene, old one released
                 .allowsHitTesting(false)
@@ -158,7 +192,8 @@ struct AppBackdropEffectsLayer: View {
 
 /// Owns the one SKScene of a backdrop instance (state resets with the
 /// parent's `.id(effect)`, so a mood change swaps scenes cleanly), pauses it
-/// with the scene phase, and runs the rain-only lightning scheduler.
+/// with the scene phase, and runs the per-effect scheduler (rain: lightning;
+/// night: shooting stars; sunset: the one-shot flock claim).
 private struct EffectsSceneHost: View {
     let effect: AtmosphericEffect
     let isRunning: Bool
@@ -167,6 +202,9 @@ private struct EffectsSceneHost: View {
     /// The event shimmer is strictly one-shot: spent means either played
     /// here or already claimed by an earlier backdrop today.
     @State private var sparkleSpent = false
+    /// Same contract for the sunset flock — but unlike the shimmer it rides
+    /// a continuous scene, so only the crossing is once a day, not the mount.
+    @State private var flockSpent = false
 
     var body: some View {
         ZStack {
@@ -197,27 +235,64 @@ private struct EffectsSceneHost: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.4)) { scene = nil }
         }
+        // Shooting stars ride the exact lightning pause matrix: between
+        // streaks exactly one task sleeps, and pausing cancels it (task(id:)
+        // re-arms on resume) — no timers exist while the scene is paused.
+        .task(id: shootingStarArmed) {
+            guard shootingStarArmed else { return }
+            while !Task.isCancelled {
+                let wait = Double.random(in: 60...180)
+                guard (try? await Task.sleep(for: .seconds(wait))) != nil else { return }
+                (scene as? NightStarsScene)?.spawnShootingStar()
+            }
+        }
     }
 
     private var sparkleCleanupArmed: Bool {
         effect == .sparkle && scene != nil && isRunning
     }
 
+    private var shootingStarArmed: Bool {
+        effect == .stars && scene != nil && isRunning
+    }
+
     private func mountIfNeeded() {
-        guard scene == nil, !sparkleSpent else { return }
-        switch effect {
-        case .rain(let scheme):
-            scene = RainScene(scheme: scheme)
-        case .snow:
-            scene = SnowScene()
-        case .sparkle:
-            // Claim the day only when the shimmer can actually play NOW —
-            // a paused mount must not silently spend it.
-            guard isRunning else { return }
-            sparkleSpent = true
-            guard AtmosphericEffectsPolicy.shared.takeDailySparkle() else { return }
-            scene = EventSparkleScene()
+        if scene == nil, !sparkleSpent {
+            switch effect {
+            case .rain(let scheme):
+                scene = RainScene(scheme: scheme)
+            case .snow:
+                scene = SnowScene()
+            case .stars:
+                scene = NightStarsScene()
+            case .morningMotes:
+                scene = MorningMotesScene()
+            case .dayClouds:
+                scene = DayCloudsScene()
+            case .sunsetGlow:
+                scene = SunsetGlowScene()
+            case .sparkle:
+                // Claim the day only when the shimmer can actually play
+                // NOW — a paused mount must not silently spend it.
+                guard isRunning else { break }
+                sparkleSpent = true
+                if AtmosphericEffectsPolicy.shared.takeDailySparkle() {
+                    scene = EventSparkleScene()
+                }
+            }
         }
+        armFlockIfReady()
+    }
+
+    /// Mirrors the sparkle's "claim only when it can play NOW" rule for the
+    /// sunset flock: a paused mount leaves the claim untouched, and the
+    /// activation path re-enters through `mountIfNeeded`.
+    private func armFlockIfReady() {
+        guard effect == .sunsetGlow, !flockSpent, isRunning,
+              let glow = scene as? SunsetGlowScene else { return }
+        flockSpent = true
+        guard AtmosphericEffectsPolicy.shared.takeDailyFlock() else { return }
+        glow.runFlock()
     }
 }
 
@@ -600,6 +675,406 @@ private final class EventSparkleScene: SKScene {
     }
 }
 
+// MARK: - Night stars scene (baked field + twinkles + rare shooting star)
+
+/// The night sky in three costs:
+///  1. A star FIELD — 80 dots of varying size/alpha baked into ONE texture
+///     on one static sprite. Zero per-frame cost beyond compositing a single
+///     quad; the texture lives with the scene and is released on unmount.
+///  2. 20 live twinkle sprites running slow alpha tweens only — no movement,
+///     one shared tiny texture, so SpriteKit batches them in one draw.
+///  3. A rare shooting star: every 60–180 s the host's scheduler task (the
+///     lightning pattern — cancelled while paused) asks for ONE streak, a
+///     pre-baked bright-head/fading-tail texture moved across a top-area
+///     diagonal over 0.7 s with an .easeIn alpha out.
+/// Budget: 1 static field sprite + 20 twinkles + ≤1 streak ≤ 22 live nodes.
+private final class NightStarsScene: SKScene {
+    /// A star in unit space. For the baked field `size` is the dot radius in
+    /// points; for twinkles it is the sprite scale on the 12 pt dot texture
+    /// and `alpha` is the twinkle's PEAK.
+    private struct StarSpec {
+        let x: CGFloat
+        let y: CGFloat
+        let size: CGFloat
+        let alpha: CGFloat
+    }
+
+    private let fieldNode = SKSpriteNode()
+    private var fieldSpecs: [StarSpec] = []
+    private var twinkles: [(sprite: SKSpriteNode, spec: StarSpec)] = []
+    /// The scene size the field texture was last baked for — re-baked only
+    /// on a real size change (rotation), never per frame.
+    private var bakedFieldSize: CGSize = .zero
+
+    override init() {
+        super.init(size: CGSize(width: 390, height: 850))
+        scaleMode = .resizeFill
+        backgroundColor = .clear
+
+        // The sky is a designed constellation, not a dice roll: a fixed seed
+        // bakes the same field on every mount and every re-bake, so stars
+        // never jump on rotation or between screens.
+        var rng = SplitMix64(seed: 0x5EED_57A2_F1E1D)
+        fieldSpecs = (0..<80).map { _ in
+            StarSpec(x: .random(in: 0.01...0.99, using: &rng),
+                     y: .random(in: 0.01...0.99, using: &rng),
+                     size: .random(in: 0.5...1.3, using: &rng),
+                     alpha: .random(in: 0.12...0.55, using: &rng))
+        }
+
+        // Twinkles: pale ice over the night ground; alpha keyframe tweens
+        // only. Random initial alpha + per-star durations desync the phases.
+        let twinkleColor = UIColor(red: 0.855, green: 0.894, blue: 0.965, alpha: 1)
+        for _ in 0..<20 {
+            let spec = StarSpec(x: .random(in: 0.03...0.97, using: &rng),
+                                y: .random(in: 0.05...0.97, using: &rng),
+                                size: .random(in: 0.14...0.28, using: &rng),  // ~1.7–3.4 pt
+                                alpha: .random(in: 0.45...0.75, using: &rng))
+            let sprite = SKSpriteNode(texture: AtmosphericParticleTextures.dot)
+            sprite.color = twinkleColor
+            sprite.colorBlendFactor = 1
+            sprite.setScale(spec.size)
+            sprite.zPosition = 1
+            let dim = spec.alpha * 0.3
+            sprite.alpha = .random(in: dim...spec.alpha, using: &rng)
+            let down = SKAction.fadeAlpha(to: dim,
+                                          duration: .random(in: 1.6...3.2, using: &rng))
+            down.timingMode = .easeInEaseOut
+            let up = SKAction.fadeAlpha(to: spec.alpha,
+                                        duration: .random(in: 1.6...3.2, using: &rng))
+            up.timingMode = .easeInEaseOut
+            sprite.run(.repeatForever(.sequence([down, up])))
+            twinkles.append((sprite, spec))
+            addChild(sprite)
+        }
+
+        fieldNode.zPosition = 0
+        addChild(fieldNode)
+        layoutNodes()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("NightStarsScene is code-built only") }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutNodes()
+    }
+
+    /// One shooting star, on demand from the host's scheduler. A single
+    /// transient sprite: the stretched streak texture (head at local +x)
+    /// rotated onto a random top-area diagonal, one moveBy + the .easeIn
+    /// fade-out over 0.7 s total, then removed.
+    func spawnShootingStar() {
+        guard !isPaused, size.width > 1 else { return }
+        let sprite = SKSpriteNode(texture: AtmosphericParticleTextures.shootingStreak)
+        sprite.color = UIColor(red: 0.92, green: 0.95, blue: 1.0, alpha: 1)
+        sprite.colorBlendFactor = 1
+        let fromLeft = Bool.random()
+        let startX = size.width * .random(in: 0.15...0.60)
+        sprite.position = CGPoint(x: fromLeft ? startX : size.width - startX,
+                                  y: size.height * .random(in: 0.78...0.94))
+        let dx: CGFloat = .random(in: 190...260) * (fromLeft ? 1 : -1)
+        let dy: CGFloat = -.random(in: 70...120)
+        sprite.zRotation = atan2(dy, dx)   // head leads along the velocity
+        sprite.alpha = 0
+        sprite.zPosition = 2
+        addChild(sprite)
+        let fade = SKAction.fadeOut(withDuration: 0.55)
+        fade.timingMode = .easeIn
+        let alphaTrack = SKAction.sequence([.fadeAlpha(to: 0.9, duration: 0.08),
+                                            .wait(forDuration: 0.07),
+                                            fade])
+        sprite.run(.sequence([.group([.moveBy(x: dx, y: dy, duration: 0.7), alphaTrack]),
+                              .removeFromParent()]))
+    }
+
+    private func layoutNodes() {
+        guard size.width > 1, size.height > 1 else { return }
+        bakeFieldIfNeeded()
+        fieldNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        for (sprite, spec) in twinkles {
+            sprite.position = CGPoint(x: spec.x * size.width, y: spec.y * size.height)
+        }
+    }
+
+    /// Renders the 80-dot field into one screen-sized texture (@2x for
+    /// pinpoint crispness — ~5–6 MB RGBA while the night scene is mounted,
+    /// released with it). Runs at init and on real size changes only.
+    private func bakeFieldIfNeeded() {
+        guard size != bakedFieldSize else { return }
+        bakedFieldSize = size
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let cg = ctx.cgContext
+            for star in fieldSpecs {
+                cg.setFillColor(UIColor.white.withAlphaComponent(star.alpha).cgColor)
+                cg.fillEllipse(in: CGRect(x: star.x * size.width - star.size,
+                                          y: star.y * size.height - star.size,
+                                          width: star.size * 2, height: star.size * 2))
+            }
+        }
+        fieldNode.texture = SKTexture(image: image)
+        fieldNode.size = size
+    }
+}
+
+/// Tiny deterministic RNG (SplitMix64) for designed-once layouts — the
+/// night scene's constellation must be identical across mounts and re-bakes.
+private struct SplitMix64: RandomNumberGenerator {
+    private var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
+}
+
+// MARK: - Morning motes scene (golden dust in the light)
+
+/// Sunlight through a window: ultra-soft gold discs (~3–6 pt) drifting
+/// lazily in every direction at 10–20 pt/s, each arcing under a barely-there
+/// downward pull. Spawned across the whole screen and faded in/out mid-air —
+/// the snow spawn pattern — so lifetimes stay short and the live count small:
+/// 2.5/s × 10 s = 25 motes (mission band 22–28), alpha peaking at 0.20.
+private final class MorningMotesScene: SKScene {
+    private let motes = SKEmitterNode()
+    private var prewarmed = false
+
+    override init() {
+        super.init(size: CGSize(width: 390, height: 850))
+        scaleMode = .resizeFill
+        backgroundColor = .clear
+
+        motes.particleTexture = AtmosphericParticleTextures.dot
+        // Warm sun-gold over the morning palette.
+        motes.particleColor = UIColor(red: 0.973, green: 0.831, blue: 0.576, alpha: 1)
+        motes.particleColorBlendFactor = 1
+        motes.particleBirthRate = 2.5
+        motes.particleLifetime = 10
+        motes.particleLifetimeRange = 3
+        motes.emissionAngle = 0
+        motes.emissionAngleRange = 2 * .pi    // each mote picks its own lazy drift
+        motes.particleSpeed = 15
+        motes.particleSpeedRange = 5          // 10–20 pt/s
+        motes.yAcceleration = -1.5            // gentle settle → slow individual arcs
+        motes.particleScale = 0.36
+        motes.particleScaleRange = 0.12       // 12 pt texture → ~2.9–5.8 pt discs
+        // Fade in, dim mid-life, glint, fade out — the 0.08–0.22 alpha band.
+        motes.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0.0, 0.20, 0.10, 0.16, 0.0],
+            times: [0, 0.2, 0.5, 0.8, 1])
+        addChild(motes)
+        layoutEmitter()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("MorningMotesScene is code-built only") }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutEmitter()
+    }
+
+    private func layoutEmitter() {
+        guard size.width > 1, size.height > 1 else { return }
+        motes.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        motes.particlePositionRange = CGVector(dx: size.width + 60,
+                                               dy: size.height + 60)
+    }
+
+    /// One-time prewarm on the first simulated frame (see RainScene.update).
+    override func update(_ currentTime: TimeInterval) {
+        guard !prewarmed else { return }
+        prewarmed = true
+        motes.advanceSimulationTime(13)
+    }
+}
+
+// MARK: - Day clouds scene (passing cloud softness)
+
+/// The Apple clear-day feel: three enormous ultra-soft white blobs (the
+/// pre-baked huge-blur disc, ~340–595 pt at scale) crossing at 4.5–7.5 pt/s
+/// with lifetimes of minutes — spawn fully offscreen left, die fully
+/// offscreen right — and a barely perceptible ≤ 4% alpha breathing over the
+/// crossing. Live count is exact by construction: lifetime = travel /
+/// slowestSpeed, birthRate = 3 / lifetime (≈ one birth every ~70 s).
+private final class DayCloudsScene: SKScene {
+    private static let targetLive: CGFloat = 3
+    private static let speed: CGFloat = 6
+    private static let speedRange: CGFloat = 1.5   // 4.5–7.5 pt/s
+    /// Half the largest cloud's visual footprint (180 pt texture × max scale
+    /// 3.3 ÷ 2) — both birth and death happen fully offscreen.
+    private static let margin: CGFloat = 300
+
+    private let clouds = SKEmitterNode()
+    private var prewarmed = false
+
+    override init() {
+        super.init(size: CGSize(width: 390, height: 850))
+        scaleMode = .resizeFill
+        backgroundColor = .clear
+
+        clouds.particleTexture = AtmosphericParticleTextures.cloud
+        clouds.particleColor = .white
+        clouds.particleColorBlendFactor = 1
+        clouds.emissionAngle = 0               // left → right
+        clouds.particleSpeed = Self.speed
+        clouds.particleSpeedRange = Self.speedRange
+        clouds.particleScale = 2.6
+        clouds.particleScaleRange = 0.7        // ~340–595 pt — screen-width scale
+        // The breathing: a slow ≤ 4% swell over the minutes-long crossing.
+        // Never zero — birth and death are already offscreen, so no pop.
+        clouds.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0.028, 0.04, 0.03, 0.04, 0.028],
+            times: [0, 0.3, 0.55, 0.8, 1])
+        addChild(clouds)
+        layoutEmitter()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("DayCloudsScene is code-built only") }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutEmitter()
+    }
+
+    /// Lifetime and birth rate follow the real width so exactly ~3 clouds
+    /// live on any device (the rain scene's construction, horizontal).
+    private func layoutEmitter() {
+        guard size.width > 1, size.height > 1 else { return }
+        let travel = size.width + Self.margin * 2
+        let lifetime = travel / (Self.speed - Self.speedRange)   // ≈ 220 s on iPhone
+        clouds.particleLifetime = lifetime
+        clouds.particleBirthRate = Self.targetLive / lifetime    // ≈ 0.0136/s
+        clouds.position = CGPoint(x: -Self.margin, y: size.height * 0.60)
+        clouds.particlePositionRange = CGVector(dx: 0, dy: size.height * 0.55)
+    }
+
+    /// One-time prewarm: without it the sky would stay empty for minutes.
+    override func update(_ currentTime: TimeInterval) {
+        guard !prewarmed else { return }
+        prewarmed = true
+        clouds.advanceSimulationTime(TimeInterval(clouds.particleLifetime))
+    }
+}
+
+// MARK: - Sunset glow scene (golden drift + once-a-day bird flock)
+
+/// Two costs, honestly separated:
+///  - CONTINUOUS golden drift — the rain scene's mist-band pattern in warm
+///    gold: 0.15/s × 20 s = 3 huge soft blobs at ≤ 5% alpha, drifting slowly.
+///  - ONE-SHOT bird flock — on the first sunset backdrop of the day (the
+///    event shimmer's per-day claim, own key), 7–9 silhouettes cross the
+///    upper third once over ~6.5–7.5 s in a loose V with per-bird offset,
+///    speed, and start jitter, flapping via a two-frame texture swap, then
+///    remove themselves. The claim is made by the host only while running;
+///    the crossing itself launches from the first simulated frame so the
+///    path always uses the real scene width.
+private final class SunsetGlowScene: SKScene {
+    private let drift = SKEmitterNode()
+    private var prewarmed = false
+    private var flockPending = false
+
+    override init() {
+        super.init(size: CGSize(width: 390, height: 850))
+        scaleMode = .resizeFill
+        backgroundColor = .clear
+
+        drift.particleTexture = AtmosphericParticleTextures.mist
+        // Deep warm gold — reads as late light, not fog.
+        drift.particleColor = UIColor(red: 1.0, green: 0.78, blue: 0.50, alpha: 1)
+        drift.particleColorBlendFactor = 1
+        drift.particleBirthRate = 0.15
+        drift.particleLifetime = 20            // 0.15 × 20 = 3 live blobs
+        drift.particleLifetimeRange = 5
+        drift.emissionAngle = 0
+        drift.particleSpeed = 12
+        drift.particleSpeedRange = 5
+        drift.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0.0, 0.05, 0.05, 0.0], times: [0, 0.25, 0.75, 1])
+        drift.particleScale = 3.2
+        drift.particleScaleRange = 0.8
+        drift.zPosition = 0
+        addChild(drift)
+        layoutEmitter()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("SunsetGlowScene is code-built only") }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutEmitter()
+    }
+
+    /// Queues the day's one crossing; it launches on the next simulated
+    /// frame, when the SpriteView has already sized the scene.
+    func runFlock() {
+        flockPending = true
+    }
+
+    private func layoutEmitter() {
+        guard size.width > 1, size.height > 1 else { return }
+        drift.position = CGPoint(x: size.width / 2, y: size.height * 0.38)
+        drift.particlePositionRange = CGVector(dx: size.width, dy: size.height * 0.28)
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        if !prewarmed {
+            prewarmed = true
+            drift.advanceSimulationTime(24)
+        }
+        if flockPending, size.width > 1 {
+            flockPending = false
+            launchFlock()
+        }
+    }
+
+    /// The loose V: a leader plus alternating-side followers, each set back
+    /// and out a row with small positional jitter, individual flap tempo,
+    /// start delay, and crossing duration. Every bird removes itself after
+    /// exiting; the scene then holds only the drift again.
+    private func launchFlock() {
+        let count = Int.random(in: 7...9)
+        let fromLeft = Bool.random()
+        let dir: CGFloat = fromLeft ? 1 : -1
+        let baseY = size.height * .random(in: 0.72...0.82)
+        let baseDuration = Double.random(in: 6.5...7.5)
+        let startX = fromLeft ? -80 : size.width + 80
+        let travel = size.width + 160
+        let silhouette = UIColor(red: 0.28, green: 0.17, blue: 0.14, alpha: 1)
+        for i in 0..<count {
+            let row = CGFloat((i + 1) / 2)
+            let side: CGFloat = i == 0 ? 0 : (i % 2 == 1 ? 1 : -1)
+            let bird = SKSpriteNode(texture: AtmosphericParticleTextures.birdFrames[i % 2])
+            bird.color = silhouette
+            bird.colorBlendFactor = 1
+            bird.alpha = 0.62
+            bird.setScale(.random(in: 0.85...1.1))
+            let setBack = row * 16 + .random(in: -4...4)
+            bird.position = CGPoint(x: startX - dir * setBack,
+                                    y: baseY + side * (row * 9 + .random(in: -3...3)))
+            bird.zPosition = 2
+            bird.run(.repeatForever(.animate(with: AtmosphericParticleTextures.birdFrames,
+                                             timePerFrame: .random(in: 0.14...0.19))))
+            let move = SKAction.moveBy(x: dir * (travel + setBack),
+                                       y: .random(in: 12...36),
+                                       duration: baseDuration + .random(in: -0.35...0.35))
+            bird.run(.sequence([.wait(forDuration: .random(in: 0...0.4)),
+                                move,
+                                .removeFromParent()]))
+            addChild(bird)
+        }
+    }
+}
+
 // MARK: - Particle textures (rendered once, cached statically)
 
 /// Tiny white @2x textures shared by every scene — rendered lazily on first
@@ -622,6 +1097,15 @@ private enum AtmosphericParticleTextures {
     static let mist = mistBlob(diameter: 96)
     /// Thin ellipse ring that expands and fades — a rain splash.
     static let splashRing = splashEllipse(size: CGSize(width: 14, height: 5))
+    /// Shooting-star streak: 90×3 pt horizontal capsule, tail (−x) fading to
+    /// nothing, bright head at +x. The stretch is baked; flight is one moveBy.
+    static let shootingStreak = horizontalStreak(length: 90, thickness: 3)
+    /// The sunset bird's two wing frames (up / down): flapping is a plain
+    /// two-frame SKAction texture swap, never live drawing.
+    static let birdFrames = [bird(wingsUp: true), bird(wingsUp: false)]
+    /// Very large extra-soft disc for the day clouds — the mist blob's
+    /// falloff is too tight once scaled to screen width.
+    static let cloud = cloudBlob(diameter: 180)
 
     private static func renderer(_ size: CGSize) -> UIGraphicsImageRenderer {
         let format = UIGraphicsImageRendererFormat()
@@ -700,6 +1184,70 @@ private enum AtmosphericParticleTextures {
                               endCenter: center, endRadius: radius, options: [])
     }
 
+    /// Horizontal capsule whose alpha ramps from nothing at the tail to full
+    /// at the head — the pre-stretched shooting-star body.
+    private static func horizontalStreak(length: CGFloat, thickness: CGFloat) -> SKTexture {
+        let canvas = CGSize(width: length + 2, height: thickness + 2)
+        let image = renderer(canvas).image { ctx in
+            let cg = ctx.cgContext
+            let rect = CGRect(x: 1, y: 1, width: length, height: thickness)
+            cg.addPath(UIBezierPath(roundedRect: rect,
+                                    cornerRadius: thickness / 2).cgPath)
+            cg.clip()
+            let alphas: [CGFloat] = [0, 0.2, 0.75, 1]
+            let colors = alphas.map { UIColor.white.withAlphaComponent($0).cgColor }
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                         colors: colors as CFArray,
+                                         locations: [0, 0.55, 0.9, 1]) {
+                cg.drawLinearGradient(gradient,
+                                      start: CGPoint(x: rect.minX, y: rect.midY),
+                                      end: CGPoint(x: rect.maxX, y: rect.midY),
+                                      options: [])
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    /// One wing frame of the bird silhouette: a 16×10 pt stroked chevron —
+    /// wings raised (deep V, tips high) or on the downstroke (shallow,
+    /// tips low). White, tinted dark by the node like every other texture.
+    private static func bird(wingsUp: Bool) -> SKTexture {
+        let canvas = CGSize(width: 16, height: 10)
+        let image = renderer(canvas).image { ctx in
+            let cg = ctx.cgContext
+            cg.setStrokeColor(UIColor.white.cgColor)
+            cg.setLineWidth(1.8)
+            cg.setLineCap(.round)
+            cg.setLineJoin(.round)
+            let bodyY: CGFloat = wingsUp ? 7.5 : 4.5
+            let tipY: CGFloat = wingsUp ? 2.5 : 6.5
+            cg.move(to: CGPoint(x: 2, y: tipY))
+            cg.addLine(to: CGPoint(x: 8, y: bodyY))
+            cg.addLine(to: CGPoint(x: 14, y: tipY))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
+    /// Softer-shouldered radial fade than `mistBlob` — at screen-width scale
+    /// the cloud must have no visible core at all.
+    private static func cloudBlob(diameter: CGFloat) -> SKTexture {
+        let image = renderer(CGSize(width: diameter, height: diameter)).image { ctx in
+            let cg = ctx.cgContext
+            let center = CGPoint(x: diameter / 2, y: diameter / 2)
+            let colors = [UIColor.white.withAlphaComponent(0.85).cgColor,
+                          UIColor.white.withAlphaComponent(0.40).cgColor,
+                          UIColor.white.withAlphaComponent(0).cgColor]
+            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                            colors: colors as CFArray,
+                                            locations: [0, 0.5, 1]) else { return }
+            cg.drawRadialGradient(gradient, startCenter: center, startRadius: 0,
+                                  endCenter: center, endRadius: diameter / 2,
+                                  options: [])
+        }
+        return SKTexture(image: image)
+    }
+
     private static func splashEllipse(size: CGSize) -> SKTexture {
         let canvas = CGSize(width: size.width + 2, height: size.height + 2)
         let image = renderer(canvas).image { ctx in
@@ -715,10 +1263,11 @@ private enum AtmosphericParticleTextures {
 // MARK: - Static hint for fixed previews (no live scenes per card)
 
 /// What the settings carousel cards show instead of a scene: a handful of
-/// pre-baked marks drawn once in a Canvas — the mood's weather signature at
-/// zero ongoing cost. Positions are deterministic (no RNG at render), in
-/// unit coordinates so the hint scales with any preview. Moods without
-/// effects render nothing at all.
+/// pre-baked marks drawn once in a Canvas — the mood's signature at zero
+/// ongoing cost. Positions are deterministic (no RNG at render), in unit
+/// coordinates so the hint scales with any preview. The day mood
+/// deliberately renders nothing: its live effect is designed to be barely
+/// perceptible, and any visible thumbnail mark would overstate it.
 struct AppBackdropEffectsHint: View {
     let mood: AppMood
 
@@ -737,17 +1286,34 @@ struct AppBackdropEffectsHint: View {
         (0.18, 0.66, 0.50), (0.32, 0.38, 0.35), (0.50, 0.72, 0.55),
         (0.66, 0.30, 0.40), (0.80, 0.58, 0.50), (0.90, 0.80, 0.30),
     ]
+    private static let starMarks: [(CGFloat, CGFloat, CGFloat)] = [
+        (0.10, 0.15, 0.70), (0.22, 0.55, 0.35), (0.30, 0.30, 0.50),
+        (0.42, 0.12, 0.40), (0.50, 0.68, 0.30), (0.58, 0.38, 0.65),
+        (0.70, 0.20, 0.45), (0.78, 0.60, 0.35), (0.88, 0.35, 0.55),
+        (0.94, 0.10, 0.40),
+    ]
+    private static let moteMarks: [(CGFloat, CGFloat, CGFloat)] = [
+        (0.15, 0.70, 0.30), (0.28, 0.40, 0.22), (0.45, 0.62, 0.35),
+        (0.60, 0.28, 0.25), (0.75, 0.55, 0.32), (0.88, 0.36, 0.22),
+    ]
+    /// (x, y) chevron centers — the flock, mid-crossing, in the upper third.
+    private static let birdMarks: [(CGFloat, CGFloat)] = [
+        (0.32, 0.24), (0.44, 0.16), (0.56, 0.26),
+    ]
 
     var body: some View {
         switch mood {
-        case .rain:   marks(kind: .rain)
-        case .winter: marks(kind: .snow)
-        case .event:  marks(kind: .spark)
-        default:      EmptyView()
+        case .rain:    marks(kind: .rain)
+        case .winter:  marks(kind: .snow)
+        case .event:   marks(kind: .spark)
+        case .night:   marks(kind: .stars)
+        case .morning: marks(kind: .motes)
+        case .sunset:  marks(kind: .birds)
+        case .day:     EmptyView()   // honest — see the type comment
         }
     }
 
-    private enum Kind { case rain, snow, spark }
+    private enum Kind { case rain, snow, spark, stars, motes, birds }
 
     private func marks(kind: Kind) -> some View {
         Canvas { context, size in
@@ -781,6 +1347,38 @@ struct AppBackdropEffectsHint: View {
                     let rect = CGRect(x: x * size.width - r, y: y * size.height - r,
                                       width: r * 2, height: r * 2)
                     context.fill(Path(ellipseIn: rect), with: .color(gold.opacity(alpha)))
+                }
+            case .stars:
+                // Pinpoint white dots over the dark night thumbnail.
+                for (x, y, alpha) in Self.starMarks {
+                    let r: CGFloat = alpha > 0.5 ? 1.1 : 0.8
+                    let rect = CGRect(x: x * size.width - r, y: y * size.height - r,
+                                      width: r * 2, height: r * 2)
+                    context.fill(Path(ellipseIn: rect),
+                                 with: .color(.white.opacity(alpha)))
+                }
+            case .motes:
+                let gold = Color(red: 0.973, green: 0.831, blue: 0.576)
+                for (x, y, alpha) in Self.moteMarks {
+                    let r: CGFloat = alpha > 0.28 ? 2.1 : 1.6
+                    let rect = CGRect(x: x * size.width - r, y: y * size.height - r,
+                                      width: r * 2, height: r * 2)
+                    context.fill(Path(ellipseIn: rect), with: .color(gold.opacity(alpha)))
+                }
+            case .birds:
+                // Three tiny chevrons — the flock's silhouette signature.
+                let ink = Color(red: 0.28, green: 0.17, blue: 0.14)
+                let span = max(7, size.width * 0.06)
+                let rise = span * 0.35
+                for (x, y) in Self.birdMarks {
+                    let c = CGPoint(x: x * size.width, y: y * size.height)
+                    var path = Path()
+                    path.move(to: CGPoint(x: c.x - span / 2, y: c.y - rise))
+                    path.addLine(to: c)
+                    path.addLine(to: CGPoint(x: c.x + span / 2, y: c.y - rise))
+                    context.stroke(path, with: .color(ink.opacity(0.5)),
+                                   style: StrokeStyle(lineWidth: 1.2, lineCap: .round,
+                                                      lineJoin: .round))
                 }
             }
         }
