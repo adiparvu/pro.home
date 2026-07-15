@@ -646,7 +646,7 @@ final class DirectMessageService {
         // ping. The real typing/dm_new handlers already ignore our own signals
         // (name != myName, from != my id), so echoing our own broadcasts back is
         // harmless to them and gives us a zero-second-device liveness probe.
-        let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)") {
+        let ch = realtimeAnon.channel("direct_messages:\(propertyId.uuidString)") {
             $0.broadcast.receiveOwnBroadcasts = true
         }
         // Incremental reconciliation: append/patch/remove the single changed row
@@ -749,7 +749,7 @@ final class DirectMessageService {
             typingSub = nil
             newMsgSub = nil
             selftestSub = nil
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             // A cancellation is NOT a real failure: it means a newer subscribe
             // or a socket reset-for-reconnect superseded this attempt. Don't
             // brand the session FAILED — leave the status for the heartbeat to
@@ -803,7 +803,7 @@ final class DirectMessageService {
 
     /// Short lowercase description of the realtime WebSocket connection.
     private var socketStatusText: String {
-        switch supabase.realtimeV2.status {
+        switch realtimeAnon.status {
         case .connected: "connected"
         case .connecting: "connecting"
         case .disconnected: "disconnected"
@@ -921,7 +921,7 @@ final class DirectMessageService {
         headsTask = nil
         subscribedPropertyId = nil
         if let ch = channel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             channel = nil
         }
     }

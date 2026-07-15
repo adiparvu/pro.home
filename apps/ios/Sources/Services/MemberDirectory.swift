@@ -86,7 +86,7 @@ final class MemberDirectory {
     /// foreground/on-appear `refreshSoon()` path still keeps avatars fresh.
     private func subscribeRealtime() {
         guard realtimeChannel == nil else { return }
-        let channel = supabase.realtimeV2.channel("profiles-directory")
+        let channel = realtimeAnon.channel("profiles-directory")
         _ = channel.onPostgresChange(AnyAction.self, schema: "public", table: "profiles") { [weak self] _ in
             Task { @MainActor in self?.refreshSoon() }
         }

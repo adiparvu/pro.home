@@ -68,11 +68,11 @@ final class TaskService {
     private func subscribeRealtime(propertyId: UUID) async {
         guard subscribedPropertyId != propertyId else { return }
         if let ch = realtimeChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
             postgresSubs.removeAll()
         }
-        let channel = supabase.realtimeV2.channel("maintenance_tasks:\(propertyId.uuidString)")
+        let channel = realtimeAnon.channel("maintenance_tasks:\(propertyId.uuidString)")
         postgresSubs.append(channel.onPostgresChange(
             AnyAction.self,
             schema: "public",

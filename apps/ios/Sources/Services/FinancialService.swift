@@ -91,11 +91,11 @@ final class FinancialService {
     private func subscribeRealtime(propertyId: UUID) async {
         guard subscribedPropertyId != propertyId else { return }
         if let ch = realtimeChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
             postgresSubs.removeAll()
         }
-        let channel = supabase.realtimeV2.channel("financial_records:\(propertyId.uuidString)")
+        let channel = realtimeAnon.channel("financial_records:\(propertyId.uuidString)")
         postgresSubs.append(channel.onPostgresChange(
             AnyAction.self,
             schema: "public",

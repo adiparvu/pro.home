@@ -111,7 +111,7 @@ final class PresenceService {
         let myId = supabase.auth.currentSession?.user.id
         // The presence key IS the auth user id, so join/leave maps arrive
         // keyed by identity and need no payload decoding.
-        let ch = supabase.realtimeV2.channel("presence:\(propertyId.uuidString)") {
+        let ch = realtimeAnon.channel("presence:\(propertyId.uuidString)") {
             $0.presence.key = myId?.uuidString ?? ""
         }
         // Callbacks must be registered before subscribing.
@@ -145,7 +145,7 @@ final class PresenceService {
     func unsubscribe() async {
         if let ch = channel {
             // Leaving the channel emits our "leave" to every peer.
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             channel = nil
         }
         presenceSub = nil

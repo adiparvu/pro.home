@@ -223,7 +223,7 @@ final class MessageService {
         // Topic includes the group scope so a community thread's channel never
         // collides with the main chat's channel for the same property.
         let scope = groupId?.uuidString ?? "main"
-        let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString):\(scope)")
+        let channel = realtimeAnon.channel("messages:\(propertyId.uuidString):\(scope)")
         // Callbacks must be registered before subscribing.
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
@@ -305,7 +305,7 @@ final class MessageService {
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
-            await supabase.realtimeV2.removeChannel(channel)
+            await realtimeAnon.removeChannel(channel)
             // A cancellation means a newer subscribe / socket reset superseded
             // this attempt — NOT a real failure. Don't brand the session FAILED.
             if error is CancellationError {
@@ -332,7 +332,7 @@ final class MessageService {
 
     /// Short lowercase description of the realtime WebSocket connection.
     private var socketStatusText: String {
-        switch supabase.realtimeV2.status {
+        switch realtimeAnon.status {
         case .connected: "connected"
         case .connecting: "connecting"
         case .disconnected: "disconnected"
@@ -408,7 +408,7 @@ final class MessageService {
     func unsubscribe() async {
         subscribedPropertyId = nil
         if let ch = realtimeChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
         }
     }
@@ -685,7 +685,7 @@ final class MessageService {
     /// dropped and its receipts never updated.
     func subscribeReads(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString):\(scope)")
+        let channel = realtimeAnon.channel("message_reads:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -708,7 +708,7 @@ final class MessageService {
 
     func unsubscribeReads() async {
         if let ch = readsChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             readsChannel = nil
         }
     }
@@ -758,7 +758,7 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribeDeliveries(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString):\(scope)")
+        let channel = realtimeAnon.channel("message_deliveries:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -781,7 +781,7 @@ final class MessageService {
 
     func unsubscribeDeliveries() async {
         if let ch = deliveriesChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             deliveriesChannel = nil
         }
     }
@@ -861,7 +861,7 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribeReactions(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString):\(scope)")
+        let channel = realtimeAnon.channel("message_reactions:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -884,7 +884,7 @@ final class MessageService {
 
     func unsubscribeReactions() async {
         if let ch = reactionsChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             reactionsChannel = nil
         }
     }
@@ -936,7 +936,7 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribePollVotes(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString):\(scope)")
+        let channel = realtimeAnon.channel("message_poll_votes:\(propertyId.uuidString):\(scope)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -959,7 +959,7 @@ final class MessageService {
 
     func unsubscribePollVotes() async {
         if let ch = pollVotesChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             pollVotesChannel = nil
         }
     }

@@ -161,7 +161,7 @@ final class NotificationService {
     /// Keeps the list and the dashboard badge live while the app is open.
     func subscribeRealtime(userId: UUID) async {
         guard realtimeChannel == nil else { return }
-        let channel = supabase.realtimeV2.channel("notifications:\(userId.uuidString)")
+        let channel = realtimeAnon.channel("notifications:\(userId.uuidString)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -177,7 +177,7 @@ final class NotificationService {
     func unsubscribe() async {
         postgresSubs.removeAll()
         if let ch = realtimeChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
         }
     }

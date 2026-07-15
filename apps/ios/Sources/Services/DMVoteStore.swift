@@ -91,7 +91,7 @@ final class DMVoteStore {
            ch.status == .subscribed { return }
         if channel != nil { await unsubscribe() }
 
-        let ch = supabase.realtimeV2.channel("dm_poll_votes:\(propertyId.uuidString)")
+        let ch = realtimeAnon.channel("dm_poll_votes:\(propertyId.uuidString)")
         // Callbacks must be registered before subscribing.
         postgresSubs.append(ch.onPostgresChange(
             InsertAction.self,
@@ -119,7 +119,7 @@ final class DMVoteStore {
             // would make the idempotent guard treat the session as live.
             debugLog("DM poll-vote realtime subscribe failed:", error)
             postgresSubs.removeAll()
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             return
         }
         channel = ch
@@ -141,7 +141,7 @@ final class DMVoteStore {
         postgresSubs.removeAll()
         subscribedPropertyId = nil
         if let ch = channel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             channel = nil
         }
     }
