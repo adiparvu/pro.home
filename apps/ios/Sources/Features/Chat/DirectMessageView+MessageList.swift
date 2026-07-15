@@ -231,6 +231,12 @@ extension DirectMessageView {
                                 if !isSearching, msg.id == unreadDividerId {
                                     UnreadDivider().id("UNREAD_DIVIDER")
                                 }
+                                // Reply focus (iMessage): the precise date + time
+                                // of the message you're answering floats above it,
+                                // sharp, while the rest of the thread recedes.
+                                if replyingTo?.id == msg.id {
+                                    ReplyFocusTimestamp(dateStr: msg.createdAt)
+                                }
 
                                 DMBubble(
                                     message: msg,

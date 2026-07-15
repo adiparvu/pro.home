@@ -198,6 +198,36 @@ struct ChatDateSeparator: View {
     }
 }
 
+/// The precise "weekday, day month, time" stamp iMessage floats above the
+/// message you're replying to while in reply focus (IMG_8495) — e.g.
+/// "lun., 6 iul., 10:57". Unlike `ChatDateSeparator` (day only, periodic), this
+/// always carries the exact minute of the focused message, and it stays sharp
+/// while the rest of the thread recedes behind the reply blur.
+struct ReplyFocusTimestamp: View {
+    let dateStr: String
+
+    private var label: String {
+        let d = ISODate.date(from: dateStr) ?? Date()
+        let out = DateFormatter()
+        out.locale = .current
+        // Template (not a fixed pattern) so the field order localizes: RO gives
+        // "lun., 6 iul., 10:57", EN "Mon, Jul 6, 10:57".
+        out.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
+        return out.string(from: d)
+    }
+
+    var body: some View {
+        Text(label)
+            .font(AppFont.caption2)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.xs)
+            .accessibilityLabel(Text(label))
+    }
+}
+
 /// The reply-preview banner shown above the composer while replying. Shared by
 /// the group and DM input bars — both pass a plain sender + snippet so it works
 /// across the two message types.

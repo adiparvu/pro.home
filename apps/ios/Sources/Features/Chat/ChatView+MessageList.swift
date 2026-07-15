@@ -259,6 +259,11 @@ extension ChatView {
                         if grouping, msg.id == unreadDividerId {
                             UnreadDivider().id("UNREAD_DIVIDER")
                         }
+                        // Reply focus (iMessage): exact date + time of the message
+                        // being answered, floated above it and kept sharp.
+                        if replyingTo?.id == msg.id {
+                            ReplyFocusTimestamp(dateStr: msg.createdAt)
+                        }
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
