@@ -211,6 +211,14 @@ final class DirectMessageService {
     @ObservationIgnored private var selftestTask: Task<Void, Never>?
     /// nil = not yet tested, true = our ping echoed back, false = timed out.
     private(set) var broadcastEcho: Bool?
+    /// True while a `subscribeRealtime` is mid-flight (across the
+    /// `subscribeWithError()` await). The open-thread `.task` AND the 3s
+    /// delivery heartbeat both drive subscription; without this, one path's
+    /// `unsubscribe()`/`removeChannel` cancels the other's in-flight subscribe
+    /// with `CancellationError`, so the channel never reaches `.subscribed`
+    /// and typing/live delivery die while the socket is up. The guard makes
+    /// concurrent callers step aside instead of tearing the subscribe down.
+    @ObservationIgnored private var isSubscribing = false
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -623,6 +631,13 @@ final class DirectMessageService {
         // which let the 3s heartbeat tear down and rebuild a healthy channel.
         if let ch = channel, subscribedPropertyId == propertyId,
            ch.status == .subscribed { return }
+        // Only ONE subscribe in flight. Both the open-thread `.task` and the 3s
+        // heartbeat call this; a second entrant must step aside rather than run
+        // `unsubscribe()` (which cancels the first's `subscribeWithError()` with
+        // CancellationError — the exact FAIL the diagnostic surfaced).
+        guard !isSubscribing else { return }
+        isSubscribing = true
+        defer { isSubscribing = false }
         if channel != nil { await unsubscribe() }
         // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
         // ping. The real typing/dm_new handlers already ignore our own signals
@@ -724,13 +739,21 @@ final class DirectMessageService {
             // A failed subscribe must leave NO trace: keeping the dead channel
             // made the idempotent guard treat the whole session as live. Surface
             // the FULL error to the diagnostic banner before cleaning up.
-            debugLog("DM realtime subscribe failed:", error)
-            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
             selftestSub = nil
             await supabase.realtimeV2.removeChannel(ch)
+            // A cancellation is NOT a real failure: it means a newer subscribe
+            // or a socket reset-for-reconnect superseded this attempt. Don't
+            // brand the session FAILED — leave the status for the heartbeat to
+            // re-establish. Only genuine errors surface as FAIL.
+            if error is CancellationError {
+                debugLog("DM realtime subscribe superseded (cancelled)")
+                return
+            }
+            debugLog("DM realtime subscribe failed:", error)
+            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
             return
         }
         channel = ch
@@ -817,19 +840,19 @@ final class DirectMessageService {
     /// dropped socket), rebuilds it and refetches — so a conversation the
     /// user is looking at can never sit silent. Free when healthy.
     func ensureLiveDelivery(propertyId: UUID, myName: String) async {
-        // Healthy ONLY when the channel is subscribed AND the socket is
-        // connected — a stale `.subscribed` channel riding a dead WebSocket is
-        // treated as unhealthy so it actually gets rebuilt. Refresh the
-        // diagnostic on the healthy path so the banner reflects the live socket.
+        // A subscribe is already in flight (the open-thread `.task`): DO NOT
+        // interfere. Tearing it down here is precisely what cancelled it with
+        // CancellationError and kept the channel from ever going live.
+        guard !isSubscribing else { return }
+        // Healthy = the channel is subscribed. Refresh the diagnostic on the
+        // healthy path so the banner reflects the current socket text.
         if subscribedPropertyId == propertyId, realtimeHealthy {
             refreshRealtimeStatus()
             return
         }
-        // Unhealthy: if we're holding a (now dead) channel, tear it down first
-        // so subscribeRealtime can't short-circuit on its stale `.subscribed`
-        // status; a nil channel means the initial subscribe still owns setup.
-        // subscribeRealtime then rebuilds and auto-reconnects the socket.
-        if channel != nil { await unsubscribe() }
+        // Genuinely unhealthy AND nothing is subscribing: rebuild. subscribeRealtime
+        // owns its own teardown (behind the isSubscribing guard), so don't
+        // pre-unsubscribe here — that reopened the very cancellation race.
         await subscribeRealtime(propertyId: propertyId, myName: myName)
         await load(propertyId: propertyId, myName: myName)
     }

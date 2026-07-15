@@ -54,6 +54,11 @@ final class MessageService {
     /// RLS-free "a new message landed" broadcast — the reliable delivery path
     /// when postgres_changes is withheld by RLS (see subscribeRealtime/send).
     private var newMsgSub: RealtimeSubscription?
+    /// True while a `subscribeRealtime` is mid-flight. The open-thread `.task`
+    /// and the 3s delivery heartbeat both drive subscription; without this,
+    /// one path's `unsubscribe()` cancels the other's in-flight subscribe with
+    /// `CancellationError`, so the channel never reaches `.subscribed`.
+    private var isSubscribing = false
     /// Coalesces bursts of realtime events so a flurry of changes triggers a
     /// single reload per quiet window instead of one reload per event (C2). Same
     /// reload code runs — just debounced — so the displayed data stays correct.
@@ -198,6 +203,13 @@ final class MessageService {
         // teardown/rebuild loop that silenced the very channel it guards.
         if let ch = realtimeChannel, subscribedPropertyId == propertyId,
            currentGroupId == groupId, ch.status == .subscribed { return }
+        // Only ONE subscribe in flight. The open-thread `.task` and the 3s
+        // heartbeat both call this; a second entrant must step aside rather than
+        // run `unsubscribe()`, which cancels the first's `subscribeWithError()`
+        // with CancellationError and keeps the channel from ever going live.
+        guard !isSubscribing else { return }
+        isSubscribing = true
+        defer { isSubscribing = false }
         if realtimeChannel != nil { await unsubscribe() }
         // The group scope arrives EXPLICITLY: this races load() (separate .task),
         // and deriving the topic from a not-yet-set currentGroupId subscribed a
@@ -285,12 +297,18 @@ final class MessageService {
             // A failed subscribe must leave NO trace: keeping the dead channel
             // made the idempotent guard treat the whole session as live. Surface
             // the FULL error to the diagnostic banner before cleaning up.
-            debugLog("Group chat realtime subscribe failed:", error)
-            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
             await supabase.realtimeV2.removeChannel(channel)
+            // A cancellation means a newer subscribe / socket reset superseded
+            // this attempt — NOT a real failure. Don't brand the session FAILED.
+            if error is CancellationError {
+                debugLog("Group chat realtime subscribe superseded (cancelled)")
+                return
+            }
+            debugLog("Group chat realtime subscribe failed:", error)
+            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
             return
         }
         realtimeChannel = channel
@@ -342,19 +360,19 @@ final class MessageService {
     /// subscribe, dropped socket), rebuilds it and refetches — so a thread
     /// the user is looking at can never sit silent. Free when healthy.
     func ensureLiveDelivery(propertyId: UUID, groupId: UUID? = nil) async {
-        // Healthy ONLY when the channel is subscribed AND the socket is
-        // connected — a stale `.subscribed` channel riding a dead WebSocket is
-        // treated as unhealthy so it actually gets rebuilt. Refresh the
-        // diagnostic on the healthy path so the banner reflects the live socket.
+        // A subscribe is already in flight (the open-thread `.task`): DO NOT
+        // interfere. Tearing it down here cancels it with CancellationError and
+        // keeps the channel from ever going live.
+        guard !isSubscribing else { return }
+        // Healthy = the channel is subscribed to THIS scope. Refresh the
+        // diagnostic on the healthy path so the banner reflects the socket text.
         if subscribedPropertyId == propertyId, currentGroupId == groupId, realtimeHealthy {
             refreshRealtimeStatus()
             return
         }
-        // Unhealthy: if we're holding a (now dead) channel, tear it down first
-        // so subscribeRealtime can't short-circuit on its stale `.subscribed`
-        // status; a nil channel means the initial subscribe still owns setup.
-        // subscribeRealtime then rebuilds and auto-reconnects the socket.
-        if realtimeChannel != nil { await unsubscribe() }
+        // Genuinely unhealthy AND nothing subscribing: rebuild. subscribeRealtime
+        // owns its own teardown behind the isSubscribing guard, so don't
+        // pre-unsubscribe here — that reopened the cancellation race.
         await subscribeRealtime(propertyId: propertyId, groupId: groupId)
         await onNewMessagesSignal(propertyId: propertyId)
     }
