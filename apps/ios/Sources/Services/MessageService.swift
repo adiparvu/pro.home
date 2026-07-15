@@ -211,6 +211,10 @@ final class MessageService {
         isSubscribing = true
         defer { isSubscribing = false }
         if realtimeChannel != nil { await unsubscribe() }
+        // Re-arm realtime with the CURRENT session JWT before joining — a socket
+        // that missed a token refresh keeps joining with a stale token, which the
+        // server rejects ("Maximum retry attempts reached"). See DirectMessageService.
+        await refreshRealtimeAuth()
         // The group scope arrives EXPLICITLY: this races load() (separate .task),
         // and deriving the topic from a not-yet-set currentGroupId subscribed a
         // community thread to the MAIN chat's topic — the realtime client
@@ -308,7 +312,7 @@ final class MessageService {
                 return
             }
             debugLog("Group chat realtime subscribe failed:", error)
-            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText)"
+            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
             return
         }
         realtimeChannel = channel
@@ -317,6 +321,21 @@ final class MessageService {
     }
 
     // MARK: - Realtime diagnostics
+
+    /// Pushes the current, valid session JWT onto the realtime socket so the
+    /// next channel join authenticates. No-op when there is no session.
+    private func refreshRealtimeAuth() async {
+        if let session = try? await supabase.auth.session {
+            await supabase.realtimeV2.setAuth(session.accessToken)
+        }
+    }
+
+    /// Compact, non-secret token description for the diagnostic banner.
+    private var tokenHint: String {
+        guard let s = supabase.auth.currentSession else { return "none" }
+        let secs = Int(s.expiresAt - Date().timeIntervalSince1970)
+        return "jwt(exp \(secs)s)"
+    }
 
     /// Short lowercase description of the realtime WebSocket connection.
     private var socketStatusText: String {
