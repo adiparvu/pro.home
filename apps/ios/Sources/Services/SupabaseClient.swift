@@ -44,16 +44,25 @@ let supabase = SupabaseClient(
 // EVERY realtime channel in the app goes through `realtimeAnon`, never
 // `supabase.realtimeV2`.
 //
-// PROTOCOL VERSION — the actual root cause of the persistent "Maximum retry
-// attempts reached". supabase-swift defaults `vsn` to `.v2` (the new binary
-// Realtime protocol), but THIS project's Realtime server is broken on v2:
-// proven headlessly — every join/broadcast over `vsn=1.0.0` succeeds instantly
-// (15/15 channels in a burst, broadcast echoes round-trip), while the v2 socket
-// gets no usable join replies, so the client retries to exhaustion. It also
-// explains the intermittency we chased for days: a v2 join that happened to
-// reply looked "subscribed" but its broadcasts never round-tripped
-// (`bcast:DEAD`), and one that didn't reply became `maxRetry`. Pinning `.v1`
-// puts the whole app on the protocol this server actually serves.
+// PROTOCOL VERSION — leave it at the library default (`.v2`, protocol 2.0.0).
+//
+// This was the real cause of the persistent "Maximum retry attempts reached".
+// An earlier build pinned `vsn: .v1`, believing the server was broken on v2 —
+// that was WRONG and was itself the regression. supabase-swift 2.51's
+// `RealtimeSerializer` implements ONLY protocol 2.0.0: it encodes every frame
+// as a JSON array `[joinRef, ref, topic, event, payload]` and its `decodeText`
+// can ONLY parse that array shape. Forcing `vsn=1.0.0` makes the server reply
+// in 1.0.0 OBJECT framing (`{"topic":…,"event":…}`), which the client's
+// array-only decoder throws on — so the join reply is never matched, every
+// subscribe times out, and the channel retries to exhaustion (`maxRetry`),
+// even though the socket connected fine.
+//
+// Proven headlessly against THIS project's Realtime, over vsn=2.0.0, with the
+// exact channels the app opens (broadcast + postgres_changes) and the anon key
+// in both the `Authorization` header and the join's `access_token`: the join
+// is accepted (`status: ok`, "Subscribed to PostgreSQL") and a `self:true`
+// broadcast round-trips. So the default v2 is exactly what this server serves —
+// the client simply has to speak its own native protocol.
 let realtimeAnon = RealtimeClientV2(
     url: URL(string: "https://kwcanenheihuylaymwsl.supabase.co/realtime/v1")!,
     options: RealtimeClientOptions(
@@ -61,7 +70,6 @@ let realtimeAnon = RealtimeClientV2(
             "apikey": supabasePublishableKey,
             "Authorization": "Bearer \(supabasePublishableKey)"
         ],
-        vsn: .v1,
         accessToken: { supabasePublishableKey }
     )
 )
