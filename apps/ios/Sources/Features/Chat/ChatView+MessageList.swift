@@ -98,6 +98,16 @@ extension ChatView {
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
+        ]
+        // Isolate the reply thread (iMessage) — offered only when this message
+        // is actually part of one (a parent or a reply is loaded).
+        if ChatThread.hasThread(anchoredAt: m.id, in: messageService.messages) {
+            items.append(ChatActionItem("View thread", "bubble.left.and.bubble.right") {
+                HapticFeedback.impact(.light)
+                withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = m.id }
+            })
+        }
+        items.append(contentsOf: [
             ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = MessageSubject.strip(b) } },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } },
@@ -106,7 +116,7 @@ extension ChatView {
             ChatActionItem("Details", "info.circle") { detailsMessage = m },
             // Enter iMessage-style multi-select, this message pre-checked.
             ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
-        ]
+        ])
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
             items.append(ChatActionItem("Edit", "pencil") {
                 // Edit the TEXT only — a subject stays untouched (re-encoded
@@ -128,6 +138,61 @@ extension ChatView {
         // One line, marker-free — a subject-bearing body reads "subject — text".
         if let b = m.body, !b.isEmpty { return MessageSubject.strip(b) }
         return String(localized: "Attachment")
+    }
+
+    // MARK: - Reply thread focus (iMessage)
+
+    /// The isolated reply-thread overlay, layered over the whole chat screen.
+    @ViewBuilder
+    var threadFocusLayer: some View {
+        if let anchor = threadFocusAnchor {
+            let ids = ChatThread.members(anchoredAt: anchor, in: messageService.messages)
+            ChatThreadFocusOverlay(
+                ids: ids,
+                accent: chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble,
+                onReply: {
+                    // Bridge back into the normal reply-focus composer, already
+                    // targeting the tapped message.
+                    if let origin = messageService.messages.first(where: { $0.id == anchor }) {
+                        withAnimation(.snappy(duration: 0.28)) {
+                            threadFocusAnchor = nil
+                            replyingTo = origin
+                        }
+                    }
+                },
+                onDismiss: { withAnimation(.snappy(duration: 0.24)) { threadFocusAnchor = nil } },
+                row: { id in threadFocusRow(id) }
+            )
+            .transition(.opacity)
+        }
+    }
+
+    /// A read-only group bubble for the focused thread — the real adapter with
+    /// its interactions omitted (no nested quote, no swipe actions).
+    @ViewBuilder
+    func threadFocusRow(_ id: UUID) -> some View {
+        if let msg = messageService.messages.first(where: { $0.id == id }) {
+            MessageBubble(
+                message: msg,
+                isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
+                members: familyService.members,
+                outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
+                readers: messageService.reads[msg.id] ?? [],
+                deliverers: messageService.deliveries[msg.id] ?? [],
+                persistedReactions: {
+                    let rows = messageService.reactions[msg.id] ?? []
+                    return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
+                }(),
+                persistedMyReaction: messageService.reactions[msg.id]?
+                    .first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
+                repliedMessage: nil,
+                pollVotes: messageService.pollVotes[msg.id] ?? [],
+                myUserId: supabase.auth.currentSession?.user.id,
+                myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
+                isGroupStart: true,
+                isGroupEnd: true
+            )
+        }
     }
 
     // MARK: - Message list
@@ -310,7 +375,16 @@ extension ChatView {
                             onLongPress: { menuMessage = msg },
                             isGroupStart: !prevSameSender,
                             isGroupEnd: !nextSameSender,
-                            onQuotedTap: { if let rid = msg.replyTo { jumpToMessage(rid) } },
+                            onQuotedTap: {
+                                guard let rid = msg.replyTo else { return }
+                                // Tapping the quote isolates the whole reply
+                                // thread (iMessage); a lone pair beyond the
+                                // loaded window falls back to a jump-flash.
+                                if ChatThread.hasThread(anchoredAt: msg.id, in: messageService.messages) {
+                                    HapticFeedback.impact(.light)
+                                    withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = msg.id }
+                                } else { jumpToMessage(rid) }
+                            },
                             isHighlighted: highlightedMessageId == msg.id
                         )
                         .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))

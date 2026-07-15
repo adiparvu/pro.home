@@ -46,6 +46,9 @@ struct ChatView: View {
     @State var scrollTarget: UUID? = nil
     @State var highlightedMessageId: UUID? = nil
     @State var menuMessage: Message?
+    /// Anchor of the reply thread currently isolated in focus (iMessage-style);
+    /// nil dismisses the thread-focus overlay.
+    @State var threadFocusAnchor: UUID? = nil
     @State var deleteCandidate: Message?
     /// Message whose details sheet is open (opened from the long-press menu).
     @State var detailsMessage: Message? = nil
@@ -233,6 +236,9 @@ struct ChatView: View {
             .overlay {
                 if let m = menuMessage { actionOverlay(m) }
             }
+            // iMessage-style isolated reply thread, layered above everything
+            // (header + composer) so the whole conversation recedes behind it.
+            .overlay { threadFocusLayer }
         .sheet(item: $forwardingMessage) { msg in
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }

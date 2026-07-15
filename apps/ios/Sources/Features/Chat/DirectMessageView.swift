@@ -74,6 +74,9 @@ struct DirectMessageView: View {
     @State var editingMessage: DirectMessage? = nil
     @State var editText = ""
     @State var menuMessage: DirectMessage? = nil
+    /// Anchor of the reply thread currently isolated in focus (iMessage-style);
+    /// nil dismisses the thread-focus overlay.
+    @State var threadFocusAnchor: UUID? = nil
     @State var deleteCandidate: DirectMessage? = nil
     /// Message whose details sheet is open (opened from the long-press menu).
     @State var detailsMessage: DirectMessage? = nil
@@ -300,6 +303,9 @@ struct DirectMessageView: View {
         .overlay {
             if let m = menuMessage { dmActionOverlay(m) }
         }
+        // iMessage-style isolated reply thread, layered above everything
+        // (header + composer) so the whole conversation recedes behind it.
+        .overlay { threadFocusLayer }
         .navigationTitle(peerName)
         .navigationBarTitleDisplayMode(.inline)
         // Search is summoned on demand (contact details / the magnifier for

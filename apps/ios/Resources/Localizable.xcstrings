@@ -89209,6 +89209,38 @@
           }
         }
       }
+    },
+    "chat_thread_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thread"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fir de conversație"
+          }
+        }
+      }
+    },
+    "View thread": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View thread"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vezi firul"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

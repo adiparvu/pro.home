@@ -94,6 +94,16 @@ extension DirectMessageView {
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
+        ]
+        // Isolate the reply thread (iMessage) — offered only when this message
+        // is actually part of one (a parent or a reply is loaded).
+        if ChatThread.hasThread(anchoredAt: m.id, in: conversationMessages) {
+            items.append(ChatActionItem("View thread", "bubble.left.and.bubble.right") {
+                HapticFeedback.impact(.light)
+                withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = m.id }
+            })
+        }
+        items.append(contentsOf: [
             ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = MessageSubject.strip(m.body) },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } },
@@ -102,7 +112,7 @@ extension DirectMessageView {
             ChatActionItem("Details", "info.circle") { detailsMessage = m },
             // Enter iMessage-style multi-select, this message pre-checked.
             ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
-        ]
+        ])
         if own, m.deletedForAll != true, !isStructured {
             // Edit the TEXT only — a subject stays untouched (re-encoded on
             // save), and the marker never enters the field.
@@ -267,10 +277,18 @@ extension DirectMessageView {
                                     onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) },
                                     onLongPress: { menuMessage = msg },
                                     onQuotedTap: {
-                                        guard let rid = msg.replyTo,
-                                              displayedMessages.contains(where: { $0.id == rid }) else { return }
-                                        withAnimation { proxy.scrollTo(rid, anchor: .center) }
-                                        flashHighlight(rid)
+                                        guard let rid = msg.replyTo else { return }
+                                        // Tapping the quote isolates the whole
+                                        // reply thread (iMessage). Only if the
+                                        // thread is a lone pair beyond the loaded
+                                        // window do we fall back to a jump-flash.
+                                        if ChatThread.hasThread(anchoredAt: msg.id, in: conversationMessages) {
+                                            HapticFeedback.impact(.light)
+                                            withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = msg.id }
+                                        } else if displayedMessages.contains(where: { $0.id == rid }) {
+                                            withAnimation { proxy.scrollTo(rid, anchor: .center) }
+                                            flashHighlight(rid)
+                                        }
                                     },
                                     isHighlighted: highlightedId == msg.id,
                                     pollVotes: DMVoteStore.shared.votes[msg.id] ?? [],
@@ -511,6 +529,58 @@ extension DirectMessageView {
                 }
             }
         }
+        }
+    }
+
+    // MARK: - Reply thread focus (iMessage)
+
+    /// The isolated reply-thread overlay, layered over the whole DM screen.
+    @ViewBuilder
+    var threadFocusLayer: some View {
+        if let anchor = threadFocusAnchor {
+            let ids = ChatThread.members(anchoredAt: anchor, in: conversationMessages)
+            ChatThreadFocusOverlay(
+                ids: ids,
+                accent: chatTheme.id == "appDefault" ? Color.imessageBlue : chatTheme.outgoingBubble,
+                onReply: {
+                    // Bridge back into the normal reply-focus composer, already
+                    // targeting the tapped message.
+                    if let origin = conversationMessages.first(where: { $0.id == anchor }) {
+                        withAnimation(.snappy(duration: 0.28)) {
+                            threadFocusAnchor = nil
+                            replyingTo = origin
+                        }
+                    }
+                },
+                onDismiss: { withAnimation(.snappy(duration: 0.24)) { threadFocusAnchor = nil } },
+                row: { id in threadFocusRow(id) }
+            )
+            .transition(.opacity)
+        }
+    }
+
+    /// A read-only DM bubble for the focused thread — the real adapter with its
+    /// interactions omitted (no nested quote, no swipe actions).
+    @ViewBuilder
+    func threadFocusRow(_ id: UUID) -> some View {
+        if let msg = conversationMessages.first(where: { $0.id == id }) {
+            DMBubble(
+                message: msg,
+                isOwn: msg.isMine(myUserId: directMessageService.myUserId, myName: myName),
+                hasTail: true,
+                isFirstInRun: true,
+                myName: myName,
+                myUserId: directMessageService.myUserId,
+                partner: member,
+                partnerAvatarURL: peerAvatarURL,
+                partnerInitials: peerInitials,
+                partnerColor: peerColor,
+                members: familyService.members,
+                myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
+                outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
+                repliedMessage: nil,
+                pollVotes: DMVoteStore.shared.votes[msg.id] ?? []
+            )
         }
     }
 
