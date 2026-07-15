@@ -47,6 +47,15 @@ struct ChatBubbleModel {
     var minClearance: CGFloat = 60
     /// Screen-edge inset the swipe glyphs center on.
     var edgeInset: CGFloat = AppSpacing.lg
+
+    /// The per-message time is no longer drawn under every bubble (iMessage
+    /// shows it only on a left-swipe peek and in the periodic date separators),
+    /// so the status row survives only when it carries a real signal: a
+    /// delivery tick, or an edited/pinned/starred marker. When it would be
+    /// empty the whole row is dropped, keeping the thread tight like Messages.
+    var hasStatusRowContent: Bool {
+        (tick != nil && !isDeleted) || (isEdited && !isDeleted) || showsPinned || showsStarred
+    }
 }
 
 /// Optional interactions; a nil closure disables its affordance.
@@ -147,7 +156,7 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
                     LinkPreviewView(url: link)
                 }
                 // Audio bubbles render their own time + ticks inside.
-                if !model.hidesStatusRow { statusRow }
+                if !model.hidesStatusRow, model.hasStatusRowContent { statusRow }
             }
 
             if !model.isMine {
@@ -302,11 +311,8 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
 
     private var statusRowContent: some View {
         HStack(spacing: 4) {
-            Text(model.timeText)
-                .font(AppFont.scaled(10))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             if model.isEdited, !model.isDeleted {
-                Text("· edited")
+                Text("Edited")
                     .font(AppFont.scaled(10))
                     .foregroundStyle(Color.primary.opacity(0.3))
             }

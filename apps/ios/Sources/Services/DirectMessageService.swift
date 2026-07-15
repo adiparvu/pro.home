@@ -702,9 +702,12 @@ final class DirectMessageService {
             }
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
-            if case let .string(name)? = json["name"] {
+            // The broadcast fields live inside the envelope's payload (see
+            // RealtimeBroadcast) — reading them off the top level is what left
+            // typing/recording dead while the channel was "subscribed".
+            if let name = broadcastString(json, "name") {
                 // Older clients broadcast no kind — treat them as typing.
-                let kind: String = if case let .string(k)? = json["kind"] { k } else { "typing" }
+                let kind = broadcastString(json, "kind") ?? "typing"
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     self.syncActivity()
@@ -718,14 +721,14 @@ final class DirectMessageService {
         newMsgSub = ch.onBroadcast(event: "dm_new") { [weak self] json in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                if case let .string(from)? = json["from"],
+                if let from = broadcastString(json, "from"),
                    from == supabase.auth.currentSession?.user.id.uuidString { return }
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
         }
         // The broadcast liveness probe's receiver: our own ping coming back.
         selftestSub = ch.onBroadcast(event: "selftest") { [weak self] json in
-            guard case let .string(nonce)? = json["nonce"] else { return }
+            guard let nonce = broadcastString(json, "nonce") else { return }
             Task { @MainActor [weak self] in
                 guard let self, nonce == self.selftestNonce else { return }
                 self.selftestTask?.cancel()

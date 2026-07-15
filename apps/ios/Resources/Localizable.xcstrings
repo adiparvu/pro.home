@@ -89193,6 +89193,22 @@
           }
         }
       }
+    },
+    "Edited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edited"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

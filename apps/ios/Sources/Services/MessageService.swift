@@ -269,9 +269,11 @@ final class MessageService {
             }
         })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
-            if case let .string(name)? = json["name"] {
+            // Fields live in the envelope's payload, not at the top level
+            // (see RealtimeBroadcast) — the bug that kept typing/recording dead.
+            if let name = broadcastString(json, "name") {
                 // Older clients broadcast no kind — treat them as typing.
-                let kind: String = if case let .string(k)? = json["kind"] { k } else { "typing" }
+                let kind = broadcastString(json, "kind") ?? "typing"
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     self.syncActivity()
@@ -286,7 +288,7 @@ final class MessageService {
         newMsgSub = channel.onBroadcast(event: "msg_new") { [weak self] json in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                if case let .string(from)? = json["from"],
+                if let from = broadcastString(json, "from"),
                    from == supabase.auth.currentSession?.user.id.uuidString { return }
                 await self.onNewMessagesSignal(propertyId: propertyId)
             }

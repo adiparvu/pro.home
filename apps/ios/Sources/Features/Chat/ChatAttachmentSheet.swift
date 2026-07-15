@@ -84,13 +84,11 @@ struct ChatAttachmentSheet: View {
             .padding(.vertical, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.xs)
             .frame(width: 300, alignment: .leading)
-            // A clean frosted panel, NOT interactive clear glass — the clear
-            // variant warped the wallpaper behind it into an ugly smear
-            // (IMG_8305). Regular material reads like Apple's own menu.
-            .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(.regularMaterial)
-            )
+            // Native Liquid Glass (iOS 26 `.glassEffect`), matching the
+            // long-press action menu — the NON-clear variant, so it reads like
+            // Apple's own menu without the wallpaper smear the interactive clear
+            // glass produced (IMG_8305). Pre-26 falls back to system material.
+            .liquidGlass(cornerRadius: 26)
             .overlay(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
