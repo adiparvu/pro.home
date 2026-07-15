@@ -639,13 +639,9 @@ final class DirectMessageService {
         isSubscribing = true
         defer { isSubscribing = false }
         if channel != nil { await unsubscribe() }
-        // Re-arm realtime with the CURRENT session JWT before joining. The join
-        // carries this token; supabase-swift only pushes it on CHANGE, so a
-        // socket that missed a refresh keeps joining with a stale token and the
-        // server rejects it ("JwtSignatureError" → the client retries to
-        // exhaustion: "Maximum retry attempts reached"). `auth.session`
-        // refreshes an expired token, so this yields a valid one.
-        await refreshRealtimeAuth()
+        // Realtime authenticates with the anon key via the client's realtime
+        // accessToken closure (see SupabaseClient) — the user's ES256 JWT is
+        // rejected by this project's Realtime, so the socket must NOT carry it.
         // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
         // ping. The real typing/dm_new handlers already ignore our own signals
         // (name != myName, from != my id), so echoing our own broadcasts back is
@@ -787,15 +783,6 @@ final class DirectMessageService {
                 self.broadcastEcho = false          // no echo in 4s → relay dead
                 self.refreshRealtimeStatus()
             }
-        }
-    }
-
-    /// Pushes the current, valid session JWT onto the realtime socket so the
-    /// next channel join authenticates. No-op (leaves the existing token) when
-    /// there is no session — a public channel still joins with the apikey.
-    private func refreshRealtimeAuth() async {
-        if let session = try? await supabase.auth.session {
-            await supabase.realtimeV2.setAuth(session.accessToken)
         }
     }
 

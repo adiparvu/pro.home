@@ -25,32 +25,20 @@ final class AuthService {
         } catch {
             session = nil
         }
-        await syncRealtimeAuth(session)
         isLoading = false
     }
 
-    /// Keeps the realtime socket's token in lock-step with the session for
-    /// EVERY channel (chat, notifications, tasks, presence, …). The SDK only
-    /// forwards the token to realtime when it CHANGES, so a socket that
-    /// connected before the session settled — or that missed a refresh — keeps
-    /// joining channels with a stale token. The server then rejects each join
-    /// with `JwtSignatureError`, and the ~dozen channels retry to exhaustion,
-    /// flooding realtime into `client_rate_limit_exceeded` — which is exactly
-    /// what the server logs showed while chat realtime was dead. Pushing the
-    /// current token on every auth event guarantees all joins authenticate.
-    private func syncRealtimeAuth(_ session: Session?) async {
-        await supabase.realtimeV2.setAuth(session?.accessToken)
-    }
-
     private func listenToAuthChanges() async {
+        // NOTE: realtime auth is intentionally NOT wired to the session token —
+        // this project signs user JWTs with ES256 (new asymmetric keys) which
+        // its Realtime service rejects, so realtime authenticates with the anon
+        // key via the client's realtime accessToken closure (see SupabaseClient).
         for await (event, session) in supabase.auth.authStateChanges {
             switch event {
             case .initialSession, .signedIn, .userUpdated:
                 self.session = session
-                await syncRealtimeAuth(session)
             case .tokenRefreshed:
                 self.session = session
-                await syncRealtimeAuth(session)
                 if let s = session {
                     AccountsStore.shared.updateTokens(
                         userId: s.user.id.uuidString,
@@ -60,7 +48,6 @@ final class AuthService {
                 }
             case .signedOut, .passwordRecovery, .userDeleted:
                 self.session = nil
-                await syncRealtimeAuth(nil)
             default:
                 break
             }
