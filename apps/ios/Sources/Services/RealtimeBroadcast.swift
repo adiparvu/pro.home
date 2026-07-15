@@ -21,13 +21,6 @@ import Supabase
 // level, so the app is correct on today's library AND on any future version
 // that decides to unwrap the envelope for us.
 
-/// The inner payload dictionary of a broadcast envelope (the object we sent),
-/// or the whole `json` when the library already unwrapped it for us.
-func broadcastPayload(_ json: [String: AnyJSON]) -> [String: AnyJSON] {
-    if case let .object(inner)? = json["payload"] { return inner }
-    return json
-}
-
 /// A string field sent inside a broadcast, resolved from the nested payload
 /// first and the top level second — robust to both envelope shapes.
 func broadcastString(_ json: [String: AnyJSON], _ key: String) -> String? {
