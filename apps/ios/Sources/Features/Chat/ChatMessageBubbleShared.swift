@@ -50,11 +50,14 @@ struct ChatBubbleModel {
 
     /// The per-message time is no longer drawn under every bubble (iMessage
     /// shows it only on a left-swipe peek and in the periodic date separators),
-    /// so the status row survives only when it carries a real signal: a
-    /// delivery tick, or an edited/pinned/starred marker. When it would be
-    /// empty the whole row is dropped, keeping the thread tight like Messages.
+    /// so the status row survives only when it carries a real signal. The
+    /// delivery TICK counts only on the run's LAST bubble (`hasTail`) — iMessage
+    /// shows Delivered/Read once, under the newest message — so a burst of
+    /// same-sender bubbles sits tight (2pt) instead of each carrying a tick row
+    /// that padded the gaps. Edited/pinned/starred still mark their own bubble.
+    var showsTick: Bool { tick != nil && hasTail && !isDeleted }
     var hasStatusRowContent: Bool {
-        (tick != nil && !isDeleted) || (isEdited && !isDeleted) || showsPinned || showsStarred
+        showsTick || (isEdited && !isDeleted) || showsPinned || showsStarred
     }
 }
 
@@ -326,7 +329,7 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
                     .font(AppFont.scaled(8))
                     .foregroundStyle(.orange.opacity(0.7))
             }
-            if let tick = model.tick, !model.isDeleted {
+            if model.showsTick, let tick = model.tick {
                 MessageTick(status: tick)
             }
         }

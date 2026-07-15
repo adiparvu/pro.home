@@ -1,6 +1,11 @@
 import Foundation
 import Supabase
 
+/// The running build number (CFBundleVersion), stamped into the realtime
+/// diagnostic banner so a FAIL/degraded string reveals EXACTLY which build
+/// produced it — ending the "are you actually on the new build?" ambiguity.
+let appBuildTag: String = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "?"
+
 // MARK: - Broadcast payload access (the fix for "bcast:DEAD")
 //
 // supabase-swift (v2.51) hands every `onBroadcast(event:) { json in … }`

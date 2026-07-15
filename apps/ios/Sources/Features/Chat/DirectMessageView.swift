@@ -357,31 +357,17 @@ struct DirectMessageView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Cancel reply"))
                 } else {
-                HStack(spacing: 8) {
-                    // Stage-1 in-chat calling: audio/video buttons that bridge
-                    // straight to FaceTime, rendered only once a handle has
-                    // resolved for this peer (see FaceTimeBridge — no dead
-                    // controls; FaceTime owns reachability from there).
-                    if let handle = faceTimeHandle {
-                        DMFaceTimeHeaderButtons(handle: handle)
-                    }
-                    if member == nil {
-                        // Identity-only peers have no contact-details page (the
-                        // usual search entry), so the magnifier keeps in-thread
-                        // search reachable now that the bar is no longer pinned.
-                        Button { showSearch = true } label: {
-                            Image(systemName: "magnifyingglass")
-                                .font(AppFont.subheadline)
-                                .foregroundStyle(Color.accentColor)
-                                .frame(width: 40, height: 34)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        // iOS 26 wraps toolbar items in system Liquid Glass —
-                        // only pre-26 draws its own capsule.
-                        .chatToolbarCapsule()
-                        .accessibilityLabel(Text("Search in conversation"))
-                    }
+                // Stage-1 in-chat calling: audio/video buttons that bridge
+                // straight to FaceTime, rendered only once a handle has resolved
+                // for this peer (see FaceTimeBridge — no dead controls; FaceTime
+                // owns reachability from there). The header is now IDENTICAL for
+                // every DM — the magnifier used to appear ONLY for identity-only
+                // peers (member == nil), so the same conversation looked
+                // different on each side (a roster peer saw no magnifier, an
+                // identity-only peer saw one). Dropped it so both ends match;
+                // in-thread search stays reachable from contact details.
+                if let handle = faceTimeHandle {
+                    DMFaceTimeHeaderButtons(handle: handle)
                 }
                 }
             }

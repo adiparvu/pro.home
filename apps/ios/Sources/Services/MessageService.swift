@@ -313,7 +313,7 @@ final class MessageService {
                 return
             }
             debugLog("Group chat realtime subscribe failed:", error)
-            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
+            realtimeStatus = "b\(appBuildTag) FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
             return
         }
         realtimeChannel = channel
@@ -364,7 +364,7 @@ final class MessageService {
     private func refreshRealtimeStatus() {
         realtimeStatus = realtimeHealthy
             ? "live"
-            : "socket:\(socketStatusText) chan:\(channelStatusText(realtimeChannel?.status))"
+            : "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(realtimeChannel?.status))"
     }
 
     /// Delivery safety net for an OPEN conversation: verifies the channel is

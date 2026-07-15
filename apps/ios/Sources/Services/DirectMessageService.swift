@@ -759,7 +759,7 @@ final class DirectMessageService {
                 return
             }
             debugLog("DM realtime subscribe failed:", error)
-            realtimeStatus = "FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
+            realtimeStatus = "b\(appBuildTag) FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
             return
         }
         channel = ch
@@ -841,13 +841,13 @@ final class DirectMessageService {
     /// state (typing/delivery ride on broadcast), so it must NOT read as live.
     private func refreshRealtimeStatus() {
         guard realtimeHealthy else {
-            realtimeStatus = "socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
+            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
             return
         }
         switch broadcastEcho {
         case .some(true):  realtimeStatus = "live"
-        case .some(false): realtimeStatus = "socket:\(socketStatusText) chan:subscribed bcast:DEAD"
-        case .none:        realtimeStatus = "socket:\(socketStatusText) chan:subscribed bcast:testing"
+        case .some(false): realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:DEAD"
+        case .none:        realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:testing"
         }
     }
 
