@@ -49,6 +49,11 @@ struct ChatView: View {
     @State var deleteCandidate: Message?
     /// Message whose details sheet is open (opened from the long-press menu).
     @State var detailsMessage: Message? = nil
+    /// iMessage-style multi-select, entered from the long-press "Select" item.
+    @State var selecting = false
+    @State var selectedIDs: Set<UUID> = []
+    /// Presents the forward picker for the whole current selection.
+    @State var forwardingSelection = false
     @State var editingMessage: Message? = nil
     @State var editText = ""
     @State var replyingTo: Message?
@@ -206,7 +211,16 @@ struct ChatView: View {
             // iMessage structure (matches the DM thread): the scroll view
             // gains the matching bottom inset automatically and the content
             // still slides under the bar's material.
-            .safeAreaInset(edge: .bottom, spacing: 0) { inputBar }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if selecting {
+                    ChatSelectionToolbar(
+                        count: selectedIDs.count,
+                        onDelete: deleteSelected,
+                        onForward: { forwardingSelection = true })
+                } else {
+                    inputBar
+                }
+            }
             .background(chatTheme.background)
             // iMessage-style header: no bar, the conversation slides under a
             // progressive blur and only glass controls float on top.
@@ -230,6 +244,12 @@ struct ChatView: View {
                                readers: messageService.reads[m.id] ?? [],
                                deliverers: messageService.deliveries[m.id] ?? [],
                                members: familyService.members)
+        }
+        .sheet(isPresented: $forwardingSelection) {
+            ForwardPicker(members: familyService.members) { dest in
+                forwardSelected(to: dest)
+                forwardingSelection = false
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         // Search is summoned on demand (group details / the magnifier for
@@ -300,7 +320,12 @@ struct ChatView: View {
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                if groupId != nil {
+                if selecting {
+                    Button { exitSelection() } label: {
+                        Text("Cancel").font(AppFont.subheadline)
+                    }
+                    .accessibilityLabel(Text("Cancel selection"))
+                } else if groupId != nil {
                     // A community group manages everything (rename, members,
                     // notifications, delete) through its settings sheet, so the
                     // trailing cluster is magnifier + gear instead of

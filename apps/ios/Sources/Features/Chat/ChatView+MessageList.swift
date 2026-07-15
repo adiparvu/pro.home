@@ -103,7 +103,9 @@ extension ChatView {
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } },
             // Message details now live in the long-press menu (moved off the
             // left-swipe, which peeks the send time iMessage-style).
-            ChatActionItem("Details", "info.circle") { detailsMessage = m }
+            ChatActionItem("Details", "info.circle") { detailsMessage = m },
+            // Enter iMessage-style multi-select, this message pre-checked.
+            ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
         ]
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
             items.append(ChatActionItem("Edit", "pencil") {
@@ -307,6 +309,10 @@ extension ChatView {
                             isHighlighted: highlightedMessageId == msg.id
                         )
                         .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
+                        .chatSelectable(active: selecting,
+                                        selected: selectedIDs.contains(msg.id)) {
+                            toggleSelect(msg.id)
+                        }
                         .id(msg.id)
                     }
                     // Pending (offline / in-flight / failed) messages — shown

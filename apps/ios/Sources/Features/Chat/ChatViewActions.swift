@@ -113,6 +113,42 @@ extension ChatView {
         }
     }
 
+    // MARK: - Multi-select (iMessage "Select")
+
+    /// Enter selection mode with the tapped message pre-checked.
+    func enterSelection(_ m: Message) {
+        selectedIDs = [m.id]
+        withAnimation(.snappy(duration: 0.2)) { selecting = true }
+    }
+
+    func toggleSelect(_ id: UUID) {
+        if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
+        HapticFeedback.impact(.light)
+    }
+
+    func exitSelection() {
+        withAnimation(.snappy(duration: 0.2)) { selecting = false }
+        selectedIDs = []
+    }
+
+    /// Bulk-remove the selection from this device's transcript (delete-for-me,
+    /// the always-permitted, non-destructive bulk action iMessage's trash maps to).
+    func deleteSelected() {
+        for id in selectedIDs { messageService.deleteForMe(id: id) }
+        HapticFeedback.success()
+        exitSelection()
+    }
+
+    /// Forward every selected message to one destination, oldest-first so the
+    /// order is preserved, then leave selection mode.
+    func forwardSelected(to dest: ForwardDestination) {
+        let ordered = messageService.messages.filter { selectedIDs.contains($0.id) }
+        Task {
+            for m in ordered { await forward(m, to: dest) }
+        }
+        exitSelection()
+    }
+
     func sendContacts(_ payloads: [SharedContactPayload]) async {
         guard !payloads.isEmpty,
               let body = SharedContactPayload.encodeGroup(payloads) else { return }

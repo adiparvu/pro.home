@@ -187,6 +187,44 @@ extension DirectMessageView {
         }
     }
 
+    // MARK: - Multi-select (iMessage "Select")
+
+    /// Enter selection mode with the tapped message pre-checked (iMessage
+    /// selects the message you invoked "Select" on).
+    func enterSelection(_ m: DirectMessage) {
+        selectedIDs = [m.id]
+        withAnimation(.snappy(duration: 0.2)) { selecting = true }
+    }
+
+    func toggleSelect(_ id: UUID) {
+        if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
+        HapticFeedback.impact(.light)
+    }
+
+    func exitSelection() {
+        withAnimation(.snappy(duration: 0.2)) { selecting = false }
+        selectedIDs = []
+    }
+
+    /// Bulk-remove the selection from this device's transcript (delete-for-me,
+    /// the always-permitted, non-destructive bulk action iMessage's trash maps
+    /// to). Deletes newest-first so the service's index math stays stable.
+    func deleteSelected() {
+        for id in selectedIDs { directMessageService.deleteForMe(id: id) }
+        HapticFeedback.success()
+        exitSelection()
+    }
+
+    /// Forward every selected message to one destination, oldest-first so the
+    /// order is preserved at the other end, then leave selection mode.
+    func forwardSelected(to dest: ForwardDestination) {
+        let ordered = conversationMessages.filter { selectedIDs.contains($0.id) }
+        Task {
+            for m in ordered { await forward(m, to: dest) }
+        }
+        exitSelection()
+    }
+
     @MainActor
     func sendDMContacts(_ payloads: [SharedContactPayload]) async {
         guard !payloads.isEmpty,

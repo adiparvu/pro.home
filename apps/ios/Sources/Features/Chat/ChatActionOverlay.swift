@@ -93,7 +93,7 @@ struct ChatActionOverlay: View {
             .accessibilityLabel("More reactions")
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-        .background(.regularMaterial, in: Capsule())
+        .glassCapsule()
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
         .sheet(isPresented: $showEmojiPicker) {
             EmojiGridPicker { e in
@@ -160,7 +160,7 @@ struct ChatActionOverlay: View {
             }
         }
         .frame(width: 240)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .liquidGlass(cornerRadius: AppRadius.lg)
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
     }
 }

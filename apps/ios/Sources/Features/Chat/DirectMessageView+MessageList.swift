@@ -99,7 +99,9 @@ extension DirectMessageView {
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } },
             // Message details now live in the long-press menu (moved off the
             // left-swipe, which peeks the send time iMessage-style).
-            ChatActionItem("Details", "info.circle") { detailsMessage = m }
+            ChatActionItem("Details", "info.circle") { detailsMessage = m },
+            // Enter iMessage-style multi-select, this message pre-checked.
+            ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
         ]
         if own, m.deletedForAll != true, !isStructured {
             // Edit the TEXT only — a subject stays untouched (re-encoded on
@@ -268,6 +270,10 @@ extension DirectMessageView {
                                     pollVotes: DMVoteStore.shared.votes[msg.id] ?? [],
                                     onRSVP: dmRSVPHandler(for: msg)
                                 )
+                                .chatSelectable(active: selecting,
+                                                selected: selectedIDs.contains(msg.id)) {
+                                    toggleSelect(msg.id)
+                                }
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in

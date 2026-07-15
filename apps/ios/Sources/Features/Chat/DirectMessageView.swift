@@ -77,6 +77,11 @@ struct DirectMessageView: View {
     @State var deleteCandidate: DirectMessage? = nil
     /// Message whose details sheet is open (opened from the long-press menu).
     @State var detailsMessage: DirectMessage? = nil
+    /// iMessage-style multi-select, entered from the long-press "Select" item.
+    @State var selecting = false
+    @State var selectedIDs: Set<UUID> = []
+    /// Presents the forward picker for the whole current selection.
+    @State var forwardingSelection = false
     /// Whether the reader is at (or within a bubble of) the bottom — the gate
     /// for auto-following incoming messages and for honest read receipts.
     /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
@@ -268,7 +273,12 @@ struct DirectMessageView: View {
         // swallow it), and the scroll view gains the matching bottom inset
         // automatically.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if ChatBlockStore.isBlocked(convId) {
+            if selecting {
+                ChatSelectionToolbar(
+                    count: selectedIDs.count,
+                    onDelete: deleteSelected,
+                    onForward: { forwardingSelection = true })
+            } else if ChatBlockStore.isBlocked(convId) {
                 blockedBanner
             } else {
                 inputBar
@@ -329,6 +339,12 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
+                if selecting {
+                    Button { exitSelection() } label: {
+                        Text("Cancel").font(AppFont.subheadline)
+                    }
+                    .accessibilityLabel(Text("Cancel selection"))
+                } else {
                 HStack(spacing: 8) {
                     // Stage-1 in-chat calling: audio/video buttons that bridge
                     // straight to FaceTime, rendered only once a handle has
@@ -354,6 +370,7 @@ struct DirectMessageView: View {
                         .chatToolbarCapsule()
                         .accessibilityLabel(Text("Search in conversation"))
                     }
+                }
                 }
             }
         }
@@ -389,6 +406,12 @@ struct DirectMessageView: View {
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }
                 forwarding = nil
+            }
+        }
+        .sheet(isPresented: $forwardingSelection) {
+            ForwardPicker(members: familyService.members) { dest in
+                forwardSelected(to: dest)
+                forwardingSelection = false
             }
         }
         .sheet(isPresented: $showStarred) {
