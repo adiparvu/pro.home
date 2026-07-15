@@ -19,17 +19,23 @@ struct RealtimeStatusBanner: View {
 
     @State private var copied = false
 
-    /// Before the first subscribe resolves there is nothing to show.
-    private var isHidden: Bool { status == "…" }
     /// Fully healthy: socket connected, channel subscribed, broadcast echoed.
     private var isLive: Bool { status == "live" }
-    private var tint: Color { isLive ? Color.brandSuccess : Color.brandWarning }
+    /// Still resolving the first subscribe (or stuck retrying).
+    private var isConnecting: Bool { status == "…" }
+    private var tint: Color {
+        if isLive { return Color.brandSuccess }
+        if isConnecting { return Color.secondaryTextColor }
+        return Color.brandWarning
+    }
 
-    // NOTE: temporarily ALWAYS visible (green when live) so the exact realtime
-    // state can be captured in a single screenshot while the typing/delivery
-    // fault is being diagnosed. Reverts to warning-only once resolved.
+    // NOTE: temporarily ALWAYS visible — green when live, grey while connecting,
+    // orange when degraded — so the exact realtime state is never blank while
+    // the typing/delivery fault is being diagnosed. A blank (hidden) banner
+    // during a stuck "…" retry is exactly what made it look absent. Reverts to
+    // warning-only once resolved.
     var body: some View {
-        if !isHidden {
+        Group {
             Button {
                 UIPasteboard.general.string = status
                 HapticFeedback.impact(.light)
@@ -40,7 +46,8 @@ struct RealtimeStatusBanner: View {
                 }
             } label: {
                 HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: isLive ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: isLive ? "checkmark.seal.fill"
+                        : isConnecting ? "arrow.triangle.2.circlepath" : "exclamationmark.triangle.fill")
                     Text("\(String(localized: "realtime_status_prefix")): \(status)")
                         .lineLimit(2)
                         .truncationMode(.middle)
