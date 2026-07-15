@@ -62,7 +62,6 @@ struct MessageBubble: View {
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
     @State private var filePreview: FilePreviewItem? = nil
-    @State private var showDetails = false
 
     private var displayReactions: [String: Int] {
         onReact != nil ? persistedReactions : localReactions
@@ -124,7 +123,6 @@ struct MessageBubble: View {
             onReply: onReply,
             onQuotedTap: onQuotedTap,
             onLongPress: onLongPress,
-            onDetails: { showDetails = true },
             // The seen-by sheet only opens once someone actually received it.
             onStatusTap: (isOwn && (seen || !deliverers.isEmpty)) ? { showReaders = true } : nil
         )
@@ -156,10 +154,6 @@ struct MessageBubble: View {
         }
         .fullScreenCover(item: $videoItem) { item in
             VideoPlayerSheet(url: item.url)
-        }
-        .sheet(isPresented: $showDetails) {
-            MessageDetailsView(message: message, readers: readers, deliverers: deliverers,
-                               members: members)
         }
     }
 

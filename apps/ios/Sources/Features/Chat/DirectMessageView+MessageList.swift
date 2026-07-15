@@ -96,7 +96,10 @@ extension DirectMessageView {
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
             ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = MessageSubject.strip(m.body) },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } }
+            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } },
+            // Message details now live in the long-press menu (moved off the
+            // left-swipe, which peeks the send time iMessage-style).
+            ChatActionItem("Details", "info.circle") { detailsMessage = m }
         ]
         if own, m.deletedForAll != true, !isStructured {
             // Edit the TEXT only — a subject stays untouched (re-encoded on

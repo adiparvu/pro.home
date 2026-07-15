@@ -100,7 +100,10 @@ extension ChatView {
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
             ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = MessageSubject.strip(b) } },
             ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
+            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } },
+            // Message details now live in the long-press menu (moved off the
+            // left-swipe, which peeks the send time iMessage-style).
+            ChatActionItem("Details", "info.circle") { detailsMessage = m }
         ]
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
             items.append(ChatActionItem("Edit", "pencil") {

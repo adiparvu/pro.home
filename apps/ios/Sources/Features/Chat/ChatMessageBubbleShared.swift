@@ -56,8 +56,6 @@ struct ChatBubbleActions {
     var onReply: (() -> Void)? = nil
     var onQuotedTap: (() -> Void)? = nil
     var onLongPress: (() -> Void)? = nil
-    /// Swipe left past the threshold (message details).
-    var onDetails: (() -> Void)? = nil
     /// Tap on an own message's status row (group: the seen-by sheet).
     var onStatusTap: (() -> Void)? = nil
     /// Quick-forward glass button beside the bubble (DM link messages).
@@ -184,10 +182,11 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
             .onEnded { v in
                 guard !model.isDeleted else { return }
                 let horizontal = abs(v.translation.width) > abs(v.translation.height) * 2
+                // Right-swipe triggers reply. Left-swipe only PEEKS the send
+                // time (iMessage) — it performs no action on release; message
+                // details live in the long-press menu now.
                 if horizontal, v.translation.width > 72 {
                     actions.onReply?(); HapticFeedback.impact(.light)
-                } else if horizontal, v.translation.width < -90 {
-                    actions.onDetails?(); HapticFeedback.impact(.light)
                 }
                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
             }
@@ -202,28 +201,26 @@ struct ChatMessageBubbleShared<Content: View, Leading: View>: View {
         let midY = bubble.map { geo[$0].midY } ?? geo.size.height / 2
         if swipeOffset > 12 {
             let progress = min(1, (swipeOffset - 12) / 60)
-            swipeGlyph("arrowshape.turn.up.left.fill", progress: progress)
-                .position(x: model.edgeInset + 17, y: midY)
-                .allowsHitTesting(false)
-        } else if swipeOffset < -12 {
-            let progress = min(1, (-swipeOffset - 12) / 60)
-            swipeGlyph("info.circle.fill", progress: progress)
-                .position(x: geo.size.width - model.edgeInset - 17, y: midY)
-                .allowsHitTesting(false)
-        }
-    }
-
-    private func swipeGlyph(_ symbol: String, progress: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(Color.primary.opacity(AppOpacity.hairline))
-                .frame(width: 34, height: 34)
-            Image(systemName: symbol)
+            // Reply affordance: the bare glyph, no circle behind it.
+            Image(systemName: "arrowshape.turn.up.left.fill")
                 .font(AppFont.subheadline)
                 .foregroundStyle(Color.accentColor)
+                .scaleEffect(0.55 + 0.45 * progress)
+                .opacity(Double(progress))
+                .position(x: model.edgeInset + 17, y: midY)
+                .allowsHitTesting(false)
+        } else if swipeOffset < -12, !model.timeText.isEmpty {
+            // iMessage: left-swipe peeks each bubble's send time, pinned to the
+            // trailing edge and revealed as the bubble slides out of the way.
+            let progress = min(1, (-swipeOffset - 12) / 40)
+            Text(model.timeText)
+                .font(AppFont.caption2)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                .fixedSize()
+                .opacity(Double(progress))
+                .position(x: geo.size.width - model.edgeInset - 18, y: midY)
+                .allowsHitTesting(false)
         }
-        .scaleEffect(0.55 + 0.45 * progress)
-        .opacity(Double(progress))
     }
 
     // MARK: Pieces

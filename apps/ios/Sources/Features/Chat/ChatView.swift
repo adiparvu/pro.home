@@ -47,6 +47,8 @@ struct ChatView: View {
     @State var highlightedMessageId: UUID? = nil
     @State var menuMessage: Message?
     @State var deleteCandidate: Message?
+    /// Message whose details sheet is open (opened from the long-press menu).
+    @State var detailsMessage: Message? = nil
     @State var editingMessage: Message? = nil
     @State var editText = ""
     @State var replyingTo: Message?
@@ -222,6 +224,12 @@ struct ChatView: View {
                 Task { await forward(msg, to: dest) }
                 forwardingMessage = nil
             }
+        }
+        .sheet(item: $detailsMessage) { m in
+            MessageDetailsView(message: m,
+                               readers: messageService.reads[m.id] ?? [],
+                               deliverers: messageService.deliveries[m.id] ?? [],
+                               members: familyService.members)
         }
         .navigationBarTitleDisplayMode(.inline)
         // Search is summoned on demand (group details / the magnifier for

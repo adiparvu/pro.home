@@ -75,6 +75,8 @@ struct DirectMessageView: View {
     @State var editText = ""
     @State var menuMessage: DirectMessage? = nil
     @State var deleteCandidate: DirectMessage? = nil
+    /// Message whose details sheet is open (opened from the long-press menu).
+    @State var detailsMessage: DirectMessage? = nil
     /// Whether the reader is at (or within a bubble of) the bottom — the gate
     /// for auto-following incoming messages and for honest read receipts.
     /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
@@ -378,6 +380,10 @@ struct DirectMessageView: View {
             if let member {
                 CallPickerSheet(members: [member], isVideo: true)
             }
+        }
+        .sheet(item: $detailsMessage) { m in
+            DMMessageDetailsView(message: m,
+                                 isOwn: m.isMine(myUserId: directMessageService.myUserId, myName: myName))
         }
         .sheet(item: $forwarding) { msg in
             ForwardPicker(members: familyService.members) { dest in

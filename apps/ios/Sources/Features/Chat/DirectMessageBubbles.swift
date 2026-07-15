@@ -127,7 +127,6 @@ struct DMBubble: View {
     /// own no-dead-controls contract).
     var onRSVP: ((Int) -> Void)? = nil
 
-    @State private var showDetails = false
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
     @State private var fileItem: FilePreviewItem? = nil
@@ -214,7 +213,6 @@ struct DMBubble: View {
             onReply: onReply,
             onQuotedTap: onQuotedTap,
             onLongPress: onLongPress,
-            onDetails: { showDetails = true },
             onQuickForward: showsQuickForward ? { onForward?() } : nil
         )
     }
@@ -227,9 +225,6 @@ struct DMBubble: View {
             content: { bubbleContent }
         )
         .padding(.vertical, 1)
-        .sheet(isPresented: $showDetails) {
-            DMMessageDetailsView(message: message, isOwn: isOwn)
-        }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)
         }
