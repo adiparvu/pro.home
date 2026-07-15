@@ -275,7 +275,9 @@ extension DirectMessageView {
                                     toggleSelect(msg.id)
                                 }
                                 .replyDimmed(active: replyingTo != nil,
-                                             isFocus: msg.id == replyingTo?.id)
+                                             isFocus: msg.id == replyingTo?.id) {
+                                    withAnimation(.snappy(duration: 0.28)) { replyingTo = nil }
+                                }
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in

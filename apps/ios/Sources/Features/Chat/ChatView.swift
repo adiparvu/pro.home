@@ -325,6 +325,17 @@ struct ChatView: View {
                         Text("Cancel").font(AppFont.subheadline)
                     }
                     .accessibilityLabel(Text("Cancel selection"))
+                } else if replyingTo != nil {
+                    // iMessage reply focus: one X leaves the mode.
+                    Button { withAnimation(.snappy(duration: 0.28)) { replyingTo = nil } } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFont.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.secondaryTextColor)
+                            .frame(width: 30, height: 30)
+                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Cancel reply"))
                 } else if groupId != nil {
                     // A community group manages everything (rename, members,
                     // notifications, delete) through its settings sheet, so the

@@ -112,16 +112,25 @@ extension View {
     /// blur cost on the normal hot path. Pair with an animated `replyingTo`
     /// mutation so the focus eases in and out.
     @ViewBuilder
-    func replyDimmed(active: Bool, isFocus: Bool) -> some View {
+    func replyDimmed(active: Bool, isFocus: Bool,
+                     onCancel: @escaping () -> Void) -> some View {
         if active {
             // Only inside reply mode do we pay for blur; the focused message
             // keeps radius 0 so switching which message you answer animates
             // smoothly, and the thread stays at zero blur cost when not replying.
             let dim = !isFocus
-            self.blur(radius: dim ? 3.5 : 0)
+            self.blur(radius: dim ? 5 : 0)
                 .opacity(dim ? AppOpacity.secondaryText : 1)
                 .saturation(dim ? 0.85 : 1)
-                .allowsHitTesting(!dim)
+                .allowsHitTesting(isFocus)
+                // Tapping any receded message leaves reply focus, exactly like
+                // Messages — the whole dimmed thread is one big "cancel" target.
+                .overlay {
+                    if dim {
+                        Color.clear.contentShape(Rectangle())
+                            .onTapGesture(perform: onCancel)
+                    }
+                }
         } else {
             self
         }

@@ -314,7 +314,9 @@ extension ChatView {
                             toggleSelect(msg.id)
                         }
                         .replyDimmed(active: replyingTo != nil,
-                                     isFocus: msg.id == replyingTo?.id)
+                                     isFocus: msg.id == replyingTo?.id) {
+                            withAnimation(.snappy(duration: 0.28)) { replyingTo = nil }
+                        }
                         .id(msg.id)
                     }
                     // Pending (offline / in-flight / failed) messages — shown

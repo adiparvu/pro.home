@@ -344,6 +344,18 @@ struct DirectMessageView: View {
                         Text("Cancel").font(AppFont.subheadline)
                     }
                     .accessibilityLabel(Text("Cancel selection"))
+                } else if replyingTo != nil {
+                    // iMessage reply focus: a single X leaves the mode, matching
+                    // the receded thread and the close affordance in Messages.
+                    Button { withAnimation(.snappy(duration: 0.28)) { replyingTo = nil } } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFont.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.secondaryTextColor)
+                            .frame(width: 30, height: 30)
+                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Cancel reply"))
                 } else {
                 HStack(spacing: 8) {
                     // Stage-1 in-chat calling: audio/video buttons that bridge
