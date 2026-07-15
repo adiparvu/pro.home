@@ -43,6 +43,17 @@ let supabase = SupabaseClient(
 //
 // EVERY realtime channel in the app goes through `realtimeAnon`, never
 // `supabase.realtimeV2`.
+//
+// PROTOCOL VERSION — the actual root cause of the persistent "Maximum retry
+// attempts reached". supabase-swift defaults `vsn` to `.v2` (the new binary
+// Realtime protocol), but THIS project's Realtime server is broken on v2:
+// proven headlessly — every join/broadcast over `vsn=1.0.0` succeeds instantly
+// (15/15 channels in a burst, broadcast echoes round-trip), while the v2 socket
+// gets no usable join replies, so the client retries to exhaustion. It also
+// explains the intermittency we chased for days: a v2 join that happened to
+// reply looked "subscribed" but its broadcasts never round-tripped
+// (`bcast:DEAD`), and one that didn't reply became `maxRetry`. Pinning `.v1`
+// puts the whole app on the protocol this server actually serves.
 let realtimeAnon = RealtimeClientV2(
     url: URL(string: "https://kwcanenheihuylaymwsl.supabase.co/realtime/v1")!,
     options: RealtimeClientOptions(
@@ -50,6 +61,7 @@ let realtimeAnon = RealtimeClientV2(
             "apikey": supabasePublishableKey,
             "Authorization": "Bearer \(supabasePublishableKey)"
         ],
+        vsn: .v1,
         accessToken: { supabasePublishableKey }
     )
 )
