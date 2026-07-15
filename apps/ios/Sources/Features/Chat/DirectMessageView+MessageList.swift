@@ -274,6 +274,8 @@ extension DirectMessageView {
                                                 selected: selectedIDs.contains(msg.id)) {
                                     toggleSelect(msg.id)
                                 }
+                                .replyDimmed(active: replyingTo != nil,
+                                             isFocus: msg.id == replyingTo?.id)
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in

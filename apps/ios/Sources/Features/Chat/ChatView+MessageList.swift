@@ -313,6 +313,8 @@ extension ChatView {
                                         selected: selectedIDs.contains(msg.id)) {
                             toggleSelect(msg.id)
                         }
+                        .replyDimmed(active: replyingTo != nil,
+                                     isFocus: msg.id == replyingTo?.id)
                         .id(msg.id)
                     }
                     // Pending (offline / in-flight / failed) messages — shown
