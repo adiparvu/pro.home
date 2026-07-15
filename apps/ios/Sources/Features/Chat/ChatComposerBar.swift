@@ -319,6 +319,12 @@ struct ChatComposerBar<Accessory: View>: View {
                         }
 
                     trailingControl
+                        // Match the field's single-line box (minHeight 26 +
+                        // 8pt padding top & bottom = 42) so the bottom-aligned
+                        // HStack centers the mic/send glyph on a single line
+                        // instead of parking it low (IMG_8492); when the text
+                        // grows multiline the control still rides the last line.
+                        .frame(height: 42)
                         .padding(.bottom, 3)
                 }
             }
