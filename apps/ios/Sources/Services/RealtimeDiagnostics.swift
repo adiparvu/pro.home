@@ -39,15 +39,19 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
 
     // MARK: SupabaseLogger
 
-    /// Keeps only the connection narrative: connect/disconnect/reconnect/close
-    /// lines and anything at warning+ severity. Message-frame debug spam is
-    /// dropped so the buffer stays a story, not a firehose.
+    /// Keeps only the connection + channel-lifecycle narrative:
+    /// connect/disconnect/reconnect/close, subscribe/unsubscribe (join/leave)
+    /// and anything at warning+ severity. Without the subscribe lines the log
+    /// showed every death but no rebirth — half the story. Message-frame debug
+    /// spam is still dropped so the buffer stays a story, not a firehose.
     func log(message: SupabaseLogMessage) {
         let text = message.message
         let relevant = message.level == .warning || message.level == .error
             || text.localizedCaseInsensitiveContains("connect")
             || text.localizedCaseInsensitiveContains("close")
             || text.localizedCaseInsensitiveContains("error")
+            || text.localizedCaseInsensitiveContains("subscrib")
+            || text.localizedCaseInsensitiveContains("channel")
         guard relevant else { return }
         append("[\(message.level)] \(text)")
     }

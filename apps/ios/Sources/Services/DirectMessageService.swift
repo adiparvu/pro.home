@@ -624,13 +624,13 @@ final class DirectMessageService {
         // thread is open). The status check matters: a channel whose initial
         // subscribe failed at launch used to satisfy `!= nil` and silence the
         // whole session — no live messages, no typing indicator.
-        // Live for this property → keep it. Trust the channel's own
-        // `.subscribed` status (supabase-swift auto-reconnects the socket under
-        // it); gating additionally on realtimeV2.status == .connected made this
-        // guard fail spuriously while the socket briefly read `.connecting`,
-        // which let the 3s heartbeat tear down and rebuild a healthy channel.
+        // Live for this property → keep it. Trust the channel's own status
+        // (supabase-swift auto-reconnects the socket under it). `.subscribing`
+        // counts as alive too: after a reconnect the SDK's rejoinChannels()
+        // resets and re-joins this very channel, and tearing it down mid-join
+        // raced that rejoin into a leave/join churn loop (the Build 1036 lag).
         if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed { return }
+           ch.status == .subscribed || ch.status == .subscribing { return }
         // Only ONE subscribe in flight. Both the open-thread `.task` and the 3s
         // heartbeat call this; a second entrant must step aside rather than run
         // `unsubscribe()` (which cancels the first's `subscribeWithError()` with
@@ -871,12 +871,24 @@ final class DirectMessageService {
             refreshRealtimeStatus()
             return
         }
-        // Genuinely unhealthy AND nothing is subscribing: surface the CURRENT
-        // state first (the banner must never sit on a stale snapshot), then
-        // rebuild. subscribeRealtime owns its own teardown (behind the
-        // isSubscribing guard), so don't pre-unsubscribe here — that reopened
-        // the very cancellation race.
+        // Surface the CURRENT state first (the banner must never sit on a
+        // stale snapshot).
         refreshRealtimeStatus()
+        // Never fight the SDK for this channel:
+        //  - while the socket is down/reconnecting, the watchdog + the SDK's
+        //    auto-reconnect own recovery, and rejoinChannels() re-subscribes
+        //    this very channel — tearing it down here raced that rejoin into
+        //    a leave/join churn loop (the Build 1036 group-chat lag);
+        //  - while the same-scope channel is mid-join/mid-leave, let it finish
+        //    (the 15s subscribe timebox bounds a hung join).
+        guard realtimeAnon.status == .connected else { return }
+        if let st = channel?.status, st == .subscribing || st == .unsubscribing,
+           subscribedPropertyId == propertyId { return }
+        // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
+        // its own teardown (behind the isSubscribing guard), so don't
+        // pre-unsubscribe here — that reopened the very cancellation race.
+        RealtimeFlightRecorder.shared.note(
+            "dm: rebuild chan=\(channelStatusText(channel?.status)) sock=\(socketStatusText)")
         await subscribeRealtime(propertyId: propertyId, myName: myName)
         await load(propertyId: propertyId, myName: myName)
     }

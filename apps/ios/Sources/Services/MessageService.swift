@@ -196,13 +196,14 @@ final class MessageService {
         // MAIN topic (same property, different group — no messages, no typing),
         // and a channel whose initial subscribe failed at launch was kept as
         // if live, silencing the whole session.
-        // Live for this scope → keep it. Trust the channel's own `.subscribed`
-        // status (supabase-swift auto-reconnects the socket under it); also
-        // gating on realtimeV2.status == .connected made this guard fail while
-        // the socket briefly read `.connecting`, turning the 3s heartbeat into a
-        // teardown/rebuild loop that silenced the very channel it guards.
+        // Live for this scope → keep it. Trust the channel's own status
+        // (supabase-swift auto-reconnects the socket under it). `.subscribing`
+        // counts as alive too: after a reconnect the SDK's rejoinChannels()
+        // resets and re-joins this very channel, and tearing it down mid-join
+        // raced that rejoin into a leave/join churn loop (the Build 1036 lag).
         if let ch = realtimeChannel, subscribedPropertyId == propertyId,
-           currentGroupId == groupId, ch.status == .subscribed { return }
+           currentGroupId == groupId,
+           ch.status == .subscribed || ch.status == .subscribing { return }
         // Only ONE subscribe in flight. The open-thread `.task` and the 3s
         // heartbeat both call this; a second entrant must step aside rather than
         // run `unsubscribe()`, which cancels the first's `subscribeWithError()`
@@ -387,12 +388,24 @@ final class MessageService {
             refreshRealtimeStatus()
             return
         }
-        // Genuinely unhealthy AND nothing subscribing: surface the CURRENT
-        // state first (the banner must never sit on a stale snapshot), then
-        // rebuild. subscribeRealtime owns its own teardown behind the
-        // isSubscribing guard, so don't pre-unsubscribe here — that reopened
-        // the cancellation race.
+        // Surface the CURRENT state first (the banner must never sit on a
+        // stale snapshot).
         refreshRealtimeStatus()
+        // Never fight the SDK for this channel:
+        //  - while the socket is down/reconnecting, the watchdog + the SDK's
+        //    auto-reconnect own recovery, and rejoinChannels() re-subscribes
+        //    this very channel — tearing it down here raced that rejoin into
+        //    a leave/join churn loop (the Build 1036 group-chat lag);
+        //  - while the same-scope channel is mid-join/mid-leave, let it finish
+        //    (the 15s subscribe timebox bounds a hung join).
+        guard realtimeAnon.status == .connected else { return }
+        if let st = realtimeChannel?.status, st == .subscribing || st == .unsubscribing,
+           subscribedPropertyId == propertyId, currentGroupId == groupId { return }
+        // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
+        // its own teardown behind the isSubscribing guard, so don't
+        // pre-unsubscribe here — that reopened the cancellation race.
+        RealtimeFlightRecorder.shared.note(
+            "group: rebuild chan=\(channelStatusText(realtimeChannel?.status)) sock=\(socketStatusText)")
         await subscribeRealtime(propertyId: propertyId, groupId: groupId)
         await onNewMessagesSignal(propertyId: propertyId)
     }
