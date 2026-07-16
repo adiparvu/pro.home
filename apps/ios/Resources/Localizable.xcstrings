@@ -90275,6 +90275,166 @@
           }
         }
       }
+    },
+    "est_scan_space": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan space (LiDAR)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanează spațiul (LiDAR)"
+          }
+        }
+      }
+    },
+    "spaces_unplaced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not on the plan yet"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încă neplasate pe plan"
+          }
+        }
+      }
+    },
+    "spaces_plan_empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The floor plan is empty — place your spaces or add rooms in Blueprints."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planul e gol — plasează spațiile sau adaugă camere în Planuri."
+          }
+        }
+      }
+    },
+    "est_dossier_journal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journal"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jurnal"
+          }
+        }
+      }
+    },
+    "est_dossier_paints": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint colors"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Culori de vopsea"
+          }
+        }
+      }
+    },
+    "est_dossier_expenses": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expenses"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cheltuieli"
+          }
+        }
+      }
+    },
+    "est_dossier_add_expense": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add expense"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă cheltuială"
+          }
+        }
+      }
+    },
+    "est_dossier_no_expenses": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No expenses tagged to this space yet."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încă nicio cheltuială etichetată pe acest spațiu."
+          }
+        }
+      }
+    },
+    "est_dossier_expenses_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expenses tagged to this space."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cheltuieli etichetate pe acest spațiu."
+          }
+        }
+      }
+    },
+    "View all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View all"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vezi toate"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

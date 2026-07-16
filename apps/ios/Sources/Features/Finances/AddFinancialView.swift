@@ -7,6 +7,10 @@ struct AddFinancialView: View {
     @Environment(AppSettings.self) private var appSettings
     @Environment(FamilyService.self) private var familyService
 
+    /// Labels stamped onto the record at save (e.g. the space dossier's
+    /// `"zone:<uuid>"`) — invisible in the form, a writer for callers that
+    /// anchor the expense to something.
+    var presetTags: [String] = []
     let onSaved: () async -> Void
 
     @State private var title = ""
@@ -268,8 +272,11 @@ struct AddFinancialView: View {
             let description: String?
             let createdAt: String
             let sharedMemberIds: [String]
+            /// nil (column default) unless the caller preset labels — the
+            /// space dossier's "zone:<uuid>" anchor rides here.
+            let tags: [String]?
             enum CodingKeys: String, CodingKey {
-                case title, amount, currency, type, category, date, description
+                case title, amount, currency, type, category, date, description, tags
                 case propertyId = "property_id"
                 case createdAt = "created_at"
                 case sharedMemberIds = "shared_member_ids"
@@ -289,7 +296,8 @@ struct AddFinancialView: View {
                     date: dateString,
                     description: notes.isEmpty ? nil : notes,
                     createdAt: now,
-                    sharedMemberIds: sharedMemberIds
+                    sharedMemberIds: sharedMemberIds,
+                    tags: presetTags.isEmpty ? nil : presetTags
                 ))
                 .execute()
 

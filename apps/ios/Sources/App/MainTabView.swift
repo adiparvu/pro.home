@@ -36,6 +36,10 @@ struct MainTabView: View {
     // Shared with SeasonalChecklistView AND the dashboard's seasonal widget —
     // one overlay store, so a check on the page moves the widget instantly.
     @State private var seasonalService = SeasonalChecklistService()
+    // Shared between Blueprints (Settings) and Tab 2's floor-plan mode —
+    // ONE geometry source of truth. Loads lazily (first plan-mode entry /
+    // first space page), never in reloadWorld.
+    @State private var floorPlanService = FloorPlanService()
     @State private var notificationService = NotificationService()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
@@ -158,6 +162,7 @@ struct MainTabView: View {
         .environment(presenceService)
         .environment(proactiveEngine)
         .environment(seasonalService)
+        .environment(floorPlanService)
         .task {
             WatchSyncService.shared.activate()
             // One socket owner: connect realtime up front (instead of ~8 services

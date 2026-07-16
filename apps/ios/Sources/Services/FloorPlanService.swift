@@ -185,6 +185,93 @@ final class FloorPlanService {
         }
     }
 
+    // MARK: Zone bridge (migration 159)
+
+    /// The room representing a zone on the plan — `zone_id` first, the
+    /// app-wide trimmed/case/diacritic-insensitive name match as the
+    /// fallback for rows created before the bridge existed.
+    func room(for zone: PropertyZone) -> RoomRecord? {
+        if let byId = rooms.first(where: { $0.zoneId == zone.id }) { return byId }
+        return rooms.first {
+            $0.name.compare(zone.name, options: [.caseInsensitive, .diacriticInsensitive])
+                == .orderedSame
+        }
+    }
+
+    /// Resolves the zone's plan room, creating one when none exists —
+    /// the entry point both "place on plan" and space-page scans use.
+    @discardableResult
+    func ensureRoom(for zone: PropertyZone, level: Int = 0) async -> RoomRecord? {
+        if let existing = room(for: zone) {
+            // A name-matched room adopts the id-link so the join is stable
+            // from here on.
+            if existing.zoneId == nil { await link(existing, to: zone) }
+            return room(for: zone)
+        }
+        guard let propertyId else { return nil }
+        struct Insert: Encodable {
+            let property_id: String
+            let name: String
+            let room_type: String
+            let floor: Int
+            let floor_plan_id: String?
+            let zone_id: String
+            let sort_order: Int
+            let created_at: String
+            let updated_at: String
+        }
+        let now = ISODate.string(from: Date())
+        do {
+            let created: RoomRecord = try await supabase
+                .from("rooms")
+                .insert(Insert(property_id: propertyId.uuidString, name: zone.name,
+                               room_type: Self.roomType(for: zone.resolvedSpaceKind),
+                               floor: level,
+                               floor_plan_id: floor(forLevel: level)?.id.uuidString,
+                               zone_id: zone.id.uuidString,
+                               sort_order: rooms.count,
+                               created_at: now, updated_at: now))
+                .select()
+                .single()
+                .execute()
+                .value
+            rooms.append(created)
+            return created
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Targeted PATCH of the id-link only.
+    func link(_ room: RoomRecord, to zone: PropertyZone) async {
+        struct Patch: Encodable { let zone_id: String; let updated_at: String }
+        do {
+            try await supabase
+                .from("rooms")
+                .update(Patch(zone_id: zone.id.uuidString,
+                              updated_at: ISODate.string(from: Date())))
+                .eq("id", value: room.id.uuidString)
+                .execute()
+            if let idx = rooms.firstIndex(where: { $0.id == room.id }) {
+                rooms[idx].zoneId = zone.id
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// The closest `room_type` enum value for a space kind — a display
+    /// default for auto-created plan rooms, freely editable in Blueprints.
+    private static func roomType(for kind: SpaceKind) -> String {
+        switch kind {
+        case .garage:              return "garage"
+        case .basement:            return "basement"
+        case .garden, .greenhouse: return "garden"
+        case .house, .pond, .forest, .custom: return "other"
+        }
+    }
+
     /// Persists a room's plan rectangle (percent coordinates, 0–100) after
     /// a drag/resize on the 2D canvas.
     func updateGeometry(_ room: RoomRecord, xPct: Double, yPct: Double,

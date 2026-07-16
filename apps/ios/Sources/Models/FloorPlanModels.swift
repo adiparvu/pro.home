@@ -47,6 +47,10 @@ struct RoomRecord: Codable, Identifiable, Hashable {
     var icon: String?
     /// Storage object path of the room's .usdz scan (documents bucket).
     var scanPath: String?
+    /// The PropertyZone this room represents on the plan (migration 159) —
+    /// the id-link that replaced the fragile name join between the two
+    /// space worlds. Optional so cached/pre-migration rows still decode.
+    var zoneId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, name, floor, color, icon
@@ -59,6 +63,7 @@ struct RoomRecord: Codable, Identifiable, Hashable {
         case widthPct    = "width_pct"
         case heightPct   = "height_pct"
         case scanPath    = "scan_path"
+        case zoneId      = "zone_id"
     }
 
     var hasScan: Bool { !(scanPath ?? "").isEmpty }

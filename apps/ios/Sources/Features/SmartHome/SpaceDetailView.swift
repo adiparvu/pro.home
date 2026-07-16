@@ -1,4 +1,5 @@
 import SwiftUI
+import RoomPlan
 
 // MARK: - Space detail page (Estate OS E2 — Liquid Glass)
 //
@@ -56,10 +57,17 @@ struct SpaceDetailView: View {
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PlantService.self) private var plantService
     @Environment(PropertyElementService.self) private var elementService
+    @Environment(FloorPlanService.self) private var floorPlanService
     @Environment(AppRouter.self) private var router
 
     /// The sensor stream whose history sheet is up (R4) — nil when none.
     @State private var historyTarget: SensorHistoryTarget? = nil
+    /// RoomPlan capture in flight (LiDAR devices only — the menu entry
+    /// exists only when RoomCaptureSession.isSupported).
+    @State private var showScanner = false
+    /// The downloaded .usdz being previewed via QuickLook.
+    @State private var scanPreviewURL: URL? = nil
+    @State private var isFetchingScan = false
 
     private let smartHome = SmartHomeService.shared
     /// Cached HomeKit indoor readings (Smart Control R3) — feeds the
@@ -127,6 +135,9 @@ struct SpaceDetailView: View {
                     if kind == .garden || kind == .greenhouse, !thirstyPlants.isEmpty {
                         plantsSection
                     }
+                    // The dossier: journal photos, paint colors and tagged
+                    // expenses recorded about THIS space (E3).
+                    SpaceDossierSections(zone: live)
                     Spacer(minLength: AppSpacing.xxl)
                 }
                 .padding(.horizontal, AppSpacing.xl)
@@ -150,6 +161,60 @@ struct SpaceDetailView: View {
         // so the system navigation bar stays hidden on the stack.
         .navigationBarBackButtonHidden(true)
         .toolbar(presentation == .push ? .hidden : .automatic, for: .navigationBar)
+        // Plan rooms hydrate lazily on first arrival — the scan menu
+        // entries need the zone's bridged room to state the truth.
+        .task(id: live.propertyId) {
+            if floorPlanService.propertyId != live.propertyId {
+                await floorPlanService.load(propertyId: live.propertyId)
+            }
+        }
+        .fullScreenCover(isPresented: $showScanner) {
+            RoomScanView { url in
+                showScanner = false
+                guard let url else { return }
+                HapticFeedback.success()
+                Task {
+                    // The scan lands on the zone's plan room, created on
+                    // demand — ONE storage slot per room, upsert on re-scan.
+                    if let room = await floorPlanService.ensureRoom(for: live) {
+                        await floorPlanService.attachScan(fileURL: url, to: room)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { scanPreviewURL != nil },
+            set: { if !$0 { scanPreviewURL = nil } }
+        )) {
+            if let url = scanPreviewURL {
+                QuickLookSheet(url: url, title: live.name)
+            }
+        }
+        .overlay {
+            if isFetchingScan {
+                ProgressView()
+                    .padding(AppSpacing.xl)
+                    .background(.ultraThinMaterial,
+                                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            }
+        }
+    }
+
+    /// The zone's plan-room projection (migration 159's id-link, name as
+    /// the pre-bridge fallback).
+    private var bridgedRoom: RoomRecord? {
+        floorPlanService.room(for: live)
+    }
+
+    private func openScan() {
+        guard !isFetchingScan, let room = bridgedRoom else { return }
+        HapticFeedback.impact(.light)
+        isFetchingScan = true
+        Task {
+            let url = await floorPlanService.localScanURL(for: room)
+            isFetchingScan = false
+            if let url { scanPreviewURL = url }
+        }
     }
 
     // MARK: Backdrop — the app-wide living mood ground
@@ -198,6 +263,25 @@ struct SpaceDetailView: View {
                         router.navigate(to: .twin)
                     } label: {
                         Label("est_open_twin", systemImage: "square.split.2x2")
+                    }
+                }
+                // RoomPlan (LiDAR) — the entry exists only on capable
+                // hardware; "view" only when a scan genuinely exists on the
+                // zone's bridged plan room.
+                if RoomCaptureSession.isSupported {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showScanner = true
+                    } label: {
+                        Label(bridgedRoom?.hasScan == true ? "room_rescan" : "est_scan_space",
+                              systemImage: "cube.transparent")
+                    }
+                }
+                if bridgedRoom?.hasScan == true {
+                    Button {
+                        openScan()
+                    } label: {
+                        Label("room_view_scan", systemImage: "eye")
                     }
                 }
             } label: {

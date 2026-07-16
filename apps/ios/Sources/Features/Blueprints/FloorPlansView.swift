@@ -12,7 +12,9 @@ struct FloorPlansView: View {
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(InventoryService.self) private var inventoryService
     @Environment(ApplianceService.self) private var applianceService
-    @State private var service = FloorPlanService()
+    // The SHARED plan service (injected in MainTabView) — Tab 2's plan mode
+    // reads the same rooms, so an edit here re-draws that page instantly.
+    @Environment(FloorPlanService.self) private var service
 
     enum DisplayMode: String, CaseIterable {
         case list, plan

@@ -26,6 +26,15 @@ struct SpacesTabView: View {
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) private var router
+    // The SHARED plan service — Blueprints' rooms drawn on this tab
+    // (read-only; editing keeps its one home in Settings → Blueprints).
+    @Environment(FloorPlanService.self) private var floorPlanService
+
+    /// Grid of photo cards ↔ the interactive floor plan (E4). Persisted so
+    /// the tab reopens the way it was left.
+    enum DisplayMode: String { case grid, plan }
+    @AppStorage("spaces.displayMode") private var displayModeRaw = DisplayMode.grid.rawValue
+    private var displayMode: DisplayMode { DisplayMode(rawValue: displayModeRaw) ?? .grid }
 
     @State private var createFlow = SpaceCreateFlow()
     /// The pushed space page's target (id, not snapshot — the destination
@@ -51,7 +60,12 @@ struct SpacesTabView: View {
                     if zoneService.zones.isEmpty {
                         emptyState
                     } else {
-                        grid
+                        modeToggle
+                        if displayMode == .plan {
+                            planContent
+                        } else {
+                            grid
+                        }
                     }
                     Spacer(minLength: AppSpacing.xxl)
                 }
@@ -85,6 +99,13 @@ struct SpacesTabView: View {
                            zoneService: zoneService,
                            propertyService: propertyService)
         .task(id: propertyService.primary?.id) { await loadData() }
+        // Plan rooms hydrate LAZILY — only when the plan mode is actually
+        // on screen (first entry or a mode flip), never in reloadWorld.
+        .task(id: displayModeRaw) {
+            guard displayMode == .plan, let pid = propertyService.primary?.id,
+                  floorPlanService.propertyId != pid else { return }
+            await floorPlanService.load(propertyId: pid)
+        }
     }
 
     // MARK: Header — the free-floating light title + honest count
@@ -158,6 +179,107 @@ struct SpacesTabView: View {
             .liquidGlass(cornerRadius: AppRadius.md)
         }
         .buttonStyle(SmartCardPressStyle())
+    }
+
+    // MARK: Mode toggle — photo grid ↔ the floor plan
+
+    private var modeToggle: some View {
+        Picker("spaces_title", selection: Binding(
+            get: { displayMode },
+            set: { displayModeRaw = $0.rawValue }
+        ).animation(.snappy(duration: 0.25))) {
+            Label("plan_mode_list", systemImage: "square.grid.2x2").tag(DisplayMode.grid)
+            Label("plan_mode_plan", systemImage: "square.split.bottomrightquarter").tag(DisplayMode.plan)
+        }
+        .pickerStyle(.segmented)
+    }
+
+    // MARK: Plan — Blueprints' canvas, read-only, zones as destinations
+
+    /// The zone a plan room stands for: the 159 id-link first, the app-wide
+    /// name match for pre-bridge rooms.
+    private func zone(for room: RoomRecord) -> PropertyZone? {
+        if let byId = zoneService.zones.first(where: { $0.id == room.zoneId }) { return byId }
+        return zoneService.zones.first {
+            $0.name.compare(room.name, options: [.caseInsensitive, .diacriticInsensitive])
+                == .orderedSame
+        }
+    }
+
+    /// Zones not yet standing on the plan — offered as one-tap placements.
+    private var unplacedZones: [PropertyZone] {
+        zoneService.zones.filter { floorPlanService.room(for: $0) == nil }
+    }
+
+    @ViewBuilder private var planContent: some View {
+        if floorPlanService.isLoading && floorPlanService.rooms.isEmpty {
+            ProgressView().tint(.accentColor).frame(maxWidth: .infinity).padding(.top, 60)
+        } else {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                ForEach(floorPlanService.levels, id: \.self) { level in
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text(floorPlanService.floor(forLevel: level)?.name
+                             ?? String(format: String(localized: "floor_level %lld"), level))
+                            .font(AppFont.label)
+                            .kerning(1.1)
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
+                        // READ-ONLY here by design: one plan editor lives in
+                        // Settings → Blueprints, so geometry can never fork.
+                        LevelPlanCanvas(
+                            rooms: floorPlanService.rooms(onLevel: level),
+                            healthFor: { zone(for: $0)?.healthScore },
+                            isEditing: false,
+                            onTap: { room in
+                                if let target = zone(for: room) {
+                                    pushedZoneId = target.id
+                                }
+                            },
+                            onGeometryChange: { _, _ in }
+                        )
+                    }
+                }
+                if !unplacedZones.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("spaces_unplaced")
+                            .font(AppFont.label)
+                            .kerning(1.1)
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: AppSpacing.sm) {
+                                ForEach(unplacedZones) { zone in
+                                    Button {
+                                        HapticFeedback.impact(.light)
+                                        Task { await floorPlanService.ensureRoom(for: zone) }
+                                    } label: {
+                                        HStack(spacing: AppSpacing.xs) {
+                                            Image(systemName: "plus")
+                                                .font(AppFont.scaled(12, weight: .semibold))
+                                                .foregroundStyle(Color.accentColor)
+                                            Text(verbatim: zone.name)
+                                                .font(AppFont.scaled(13, weight: .medium))
+                                                .foregroundStyle(.primary)
+                                                .lineLimit(1)
+                                        }
+                                        .padding(.horizontal, AppSpacing.base)
+                                        .padding(.vertical, AppSpacing.sm + 1)
+                                        .liquidGlass(cornerRadius: AppRadius.md)
+                                    }
+                                    .buttonStyle(SmartCardPressStyle())
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+                    }
+                }
+                if floorPlanService.rooms.isEmpty && unplacedZones.isEmpty {
+                    Text("spaces_plan_empty")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     // MARK: Grid — 2 columns of big space cards + the trailing "+" card
