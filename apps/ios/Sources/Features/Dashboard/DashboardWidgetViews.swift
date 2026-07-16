@@ -146,6 +146,10 @@ struct WeatherWidget: View {
 // MARK: - Calendar Large Widget (full-width, big date)
 
 struct CalendarLargeWidget: View {
+    /// The next few HOUSE agenda entries (events, tasks, deadlines) — real
+    /// data from the same aggregator the calendar page reads. Empty = the
+    /// widget honestly shows just the date, no filler rows.
+    var upcoming: [AgendaItem] = []
     var action: () -> Void
 
     var body: some View {
@@ -154,6 +158,7 @@ struct CalendarLargeWidget: View {
             action()
         } label: {
             TimelineView(.everyMinute) { ctx in
+                VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     // Big day number
                     VStack(alignment: .leading, spacing: 2) {
@@ -203,6 +208,31 @@ struct CalendarLargeWidget: View {
                     }
 
                     Spacer()
+                }
+                if !upcoming.isEmpty {
+                    VStack(spacing: AppSpacing.xs) {
+                        ForEach(upcoming) { item in
+                            HStack(spacing: AppSpacing.sm) {
+                                Circle()
+                                    .fill(item.category.color)
+                                    .frame(width: 6, height: 6)
+                                Text(verbatim: item.title)
+                                    .font(AppFont.scaled(12, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Spacer(minLength: AppSpacing.xs)
+                                Text(verbatim: item.hasTime
+                                     ? item.date.formatted(date: .omitted, time: .shortened)
+                                     : item.date.formatted(.dateTime.day().month(.abbreviated)))
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
+                }
                 }
                 .padding(.vertical, AppSpacing.lg)
                 // Inside the label so the glass scales WITH the pressed card.

@@ -56,13 +56,17 @@ enum HomeSectionType: String, CaseIterable, Identifiable {
 enum HomeWidgetType: String, CaseIterable, Identifiable {
     case tasks, finances, documents, family, healthScore, inventory,
          contractors, weather, plants, calendar, deliveries, shopping, journal,
-         briefing, presence, budget
+         briefing, presence, budget,
+         pantry, insights, propertyValue, seasonal, warranties, houseFeed
 
     var id: String { rawValue }
 
     /// The size a widget arrives in — every widget can be resized afterwards.
     var defaultSize: HomeWidgetSize {
-        self == .weather || self == .calendar || self == .briefing ? .full : .half
+        switch self {
+        case .weather, .calendar, .briefing, .insights, .houseFeed: return .full
+        default: return .half
+        }
     }
 
     var title: String {
@@ -83,6 +87,12 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .briefing:    return String(localized: "House Briefing")
         case .presence:    return String(localized: "Presence")
         case .budget:      return String(localized: "Budget")
+        case .pantry:      return String(localized: "Pantry")
+        case .insights:    return String(localized: "For you")
+        case .propertyValue: return String(localized: "Property value")
+        case .seasonal:    return String(localized: "Seasonal")
+        case .warranties:  return String(localized: "Warranties")
+        case .houseFeed:   return String(localized: "Today at home")
         }
     }
 
@@ -104,6 +114,12 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .briefing:    return "sparkles"
         case .presence:    return "person.2.wave.2.fill"
         case .budget:      return "chart.pie.fill"
+        case .pantry:      return "basket.fill"
+        case .insights:    return "lightbulb.fill"
+        case .propertyValue: return "chart.line.uptrend.xyaxis"
+        case .seasonal:    return "leaf.circle.fill"
+        case .warranties:  return "checkmark.seal.fill"
+        case .houseFeed:   return "clock.arrow.circlepath"
         }
     }
 
@@ -125,6 +141,12 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .briefing:    return Color.brandPurple
         case .presence:    return Color.brandSuccess
         case .budget:      return Color.brandWarning
+        case .pantry:      return Color(red: 1.0, green: 0.62, blue: 0.04)
+        case .insights:    return Color.brandPrimaryBlue
+        case .propertyValue: return Color.brandSuccess
+        case .seasonal:    return Color(red: 0.25, green: 0.78, blue: 0.45)
+        case .warranties:  return Color.brandSkyBlue
+        case .houseFeed:   return Color.brandPrimaryBlue
         }
     }
 }

@@ -19,7 +19,9 @@ struct DashboardView: View {
     @Environment(FamilyService.self) var familyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) var router
-    @Environment(PropertyZoneService.self) private var zoneService
+    // Not private: DashboardWidgets.swift (extension, separate file) builds
+    // the seasonal widget's honesty context from the mapped zones.
+    @Environment(PropertyZoneService.self) var zoneService
     @Environment(PlantService.self) var plantService
     // Not private: DashboardWidgets.swift (extension, separate file) renders
     // the Deliveries widget from it.
@@ -31,11 +33,17 @@ struct DashboardView: View {
     @Environment(SupplyService.self) var supplyService
     @Environment(PhotoJournalService.self) var photoJournalService
     // Feeds the hero grid's "Next up" card (warranty deadlines are part of
-    // the house agenda).
-    @Environment(ApplianceService.self) private var applianceService
+    // the house agenda). Not private: DashboardWidgets.swift builds the
+    // calendar preview + warranties widget from these.
+    @Environment(ApplianceService.self) var applianceService
     // Calendar events belong to the same agenda — without this the "Next up"
     // card silently skipped everything the user put in the house calendar.
-    @Environment(CalendarEventService.self) private var calendarEventService
+    @Environment(CalendarEventService.self) var calendarEventService
+    // The wave-2 widget services (not private — DashboardWidgets.swift, the
+    // extension in a separate file, renders their cards).
+    @Environment(PantryService.self) var pantryService
+    @Environment(PropertyValueService.self) var propertyValueService
+    @Environment(SeasonalChecklistService.self) var seasonalService
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(

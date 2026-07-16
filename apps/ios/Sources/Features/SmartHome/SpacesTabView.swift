@@ -123,6 +123,14 @@ struct SpacesTabView: View {
                 quickChip(icon: "heart.text.square.fill", titleKey: "spaces_health") {
                     activeSheet = .health
                 }
+                // Emergency mode — the quiet gate to the loud page. The chip
+                // keeps the row's glass language; the danger tint lives on
+                // the glyph (EmergencyModeView itself inverts the design
+                // rules with full-color targets).
+                quickChip(icon: "cross.case.fill", titleKey: "spaces_emergency",
+                          tint: .brandDanger) {
+                    router.navigate(to: .emergency)
+                }
             }
             // Room for the chips' press scale inside the scroll clip.
             .padding(.vertical, 1)
@@ -130,6 +138,7 @@ struct SpacesTabView: View {
     }
 
     private func quickChip(icon: String, titleKey: LocalizedStringKey,
+                           tint: Color = Color.accentColor,
                            action: @escaping () -> Void) -> some View {
         Button {
             HapticFeedback.impact(.light)
@@ -138,7 +147,7 @@ struct SpacesTabView: View {
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: icon)
                     .font(AppFont.scaled(12, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(tint)
                 Text(titleKey)
                     .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(.primary)
@@ -164,7 +173,10 @@ struct SpacesTabView: View {
                 SpaceGridCard(
                     zone: zone,
                     subline: SpaceCardModel.subline(for: zone, plantService: plantService),
-                    status: SpaceCardModel.status(for: zone)
+                    status: SpaceCardModel.status(for: zone),
+                    climate: IndoorClimateStore.shared.reading(forSpaceNamed: zone.name),
+                    attentionCount: elementService.elements(inZone: zone.id)
+                        .filter { $0.healthScore < 70 }.count
                 ) {
                     pushedZoneId = zone.id
                 }
@@ -253,6 +265,11 @@ private struct SpaceGridCard: View {
     let zone: PropertyZone
     let subline: Text?
     let status: SpaceStatus
+    /// The room's live HomeKit reading (name-matched) — a small °C badge in
+    /// the card's top-right corner, only when a real sensor reported.
+    var climate: IndoorClimateReading? = nil
+    /// Elements in this zone whose health genuinely needs attention (<70).
+    var attentionCount: Int = 0
     let onOpen: () -> Void
 
     /// Width/height of the card (taller than wide — the strip's cards are
@@ -276,6 +293,11 @@ private struct SpaceGridCard: View {
                 backdrop
                 caption
             }
+            .overlay(alignment: .topTrailing) {
+                if let climate {
+                    climateBadge(climate)
+                }
+            }
             .aspectRatio(Self.aspect, contentMode: .fit)
             .clipShape(shape)
             .overlay {
@@ -285,9 +307,76 @@ private struct SpaceGridCard: View {
             .contentShape(shape)
         }
         .buttonStyle(SmartCardPressStyle())
+        // Long-press: real controls only — power devices in this room,
+        // scenes that genuinely touch it. No targets → no menu entries
+        // beyond opening the page (the honesty law).
+        .contextMenu { contextActions }
         .accessibilityElement(children: .combine)
         .accessibilityValue(status.dotColor != nil ? Text(status.titleKey) : Text(verbatim: ""))
         .accessibilityHint(Text("spaces_open_hint"))
+    }
+
+    // MARK: Quick actions (long-press)
+
+    private var poweredDevices: [SmartDevice] {
+        SmartHomeService.shared.devices(in: zone.name).filter(\.hasPower)
+    }
+
+    @ViewBuilder private var contextActions: some View {
+        let powered = poweredDevices
+        if !powered.isEmpty {
+            Button {
+                setAll(powered, on: false)
+            } label: {
+                Label("spaces_all_off", systemImage: "lightbulb.slash.fill")
+            }
+            Button {
+                setAll(powered, on: true)
+            } label: {
+                Label("spaces_all_on", systemImage: "lightbulb.fill")
+            }
+        }
+        let scenes = HomeKitService.shared.scenes(touchingSpaceNamed: zone.name)
+        if !scenes.isEmpty {
+            Divider()
+            ForEach(scenes.prefix(4)) { scene in
+                Button {
+                    HapticFeedback.impact(.light)
+                    Task { try? await HomeKitService.shared.executeScene(scene) }
+                } label: {
+                    Label(scene.name, systemImage: "sparkles")
+                }
+            }
+        }
+        Divider()
+        Button {
+            onOpen()
+        } label: {
+            Label("Open", systemImage: "arrow.up.right")
+        }
+    }
+
+    private func setAll(_ devices: [SmartDevice], on: Bool) {
+        HapticFeedback.impact(.light)
+        Task {
+            for device in devices {
+                await SmartHomeService.shared.setPower(device, on: on)
+            }
+        }
+    }
+
+    /// "21°" over its own scrim capsule — white type on the photo, the
+    /// caption's exact legibility contract.
+    private func climateBadge(_ reading: IndoorClimateReading) -> some View {
+        Text(verbatim: "\(reading.celsius.formatted(.number.precision(.fractionLength(0))))°")
+            .font(AppFont.scaled(12, weight: .semibold))
+            .foregroundStyle(.white)
+            .monospacedDigit()
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 3)
+            .background(.black.opacity(0.35), in: Capsule())
+            .padding(AppSpacing.sm)
+            .accessibilityLabel(Text(verbatim: "\(reading.celsius.formatted(.number.precision(.fractionLength(0)))) °C"))
     }
 
     /// The kind's scene wash is also the photo's loading state.
@@ -337,6 +426,19 @@ private struct SpaceGridCard: View {
                     .foregroundStyle(.white.opacity(0.75))
                     .monospacedDigit()
                     .lineLimit(1)
+            }
+            if attentionCount > 0 {
+                HStack(spacing: AppSpacing.xxs) {
+                    Circle()
+                        .fill(Color.brandWarning)
+                        .frame(width: 5, height: 5)
+                    (attentionCount == 1
+                        ? Text("1 element needs attention")
+                        : Text("\(attentionCount) elements need attention"))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                }
             }
         }
         .padding(AppSpacing.md)

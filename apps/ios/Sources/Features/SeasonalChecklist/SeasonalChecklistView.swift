@@ -13,7 +13,10 @@ struct SeasonalChecklistView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var service = SeasonalChecklistService()
+    // The SHARED checklist service (injected in MainTabView) — the
+    // dashboard's seasonal widget reads the same overlay, so a check here
+    // moves the widget's progress instantly.
+    @Environment(SeasonalChecklistService.self) private var service
     @State private var zoneService = PropertyZoneService()
     @State var selectedSeason: Season = .current
     @State private var showAddSheet = false

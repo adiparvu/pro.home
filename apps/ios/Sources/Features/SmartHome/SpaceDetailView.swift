@@ -55,6 +55,7 @@ struct SpaceDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PlantService.self) private var plantService
+    @Environment(PropertyElementService.self) private var elementService
     @Environment(AppRouter.self) private var router
 
     /// The sensor stream whose history sheet is up (R4) — nil when none.
@@ -115,6 +116,13 @@ struct SpaceDetailView: View {
                     let scenes = spaceScenes
                     if !scenes.isEmpty {
                         scenesSection(scenes)
+                    }
+                    // The zone's mapped elements — id-linked (zone_id), so
+                    // this is the strongest link the page renders. Absent
+                    // when nothing is mapped here (never an empty section).
+                    let elements = elementService.elements(inZone: live.id)
+                    if !elements.isEmpty {
+                        elementsSection(elements)
                     }
                     if kind == .garden || kind == .greenhouse, !thirstyPlants.isEmpty {
                         plantsSection
@@ -401,6 +409,45 @@ struct SpaceDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             sectionLabel("sh_scene_section")
             SmartSceneChipRow(scenes: scenes)
+        }
+    }
+
+    // MARK: Elements — the zone's mapped inventory, health-honest rows
+
+    private func elementsSection(_ elements: [PropertyElement]) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionLabel("est_elements")
+            VStack(spacing: AppSpacing.sm) {
+                // Worst health first — the row a caretaker needs is on top.
+                ForEach(elements.sorted { $0.healthScore < $1.healthScore }) { element in
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: element.elementType.icon)
+                            .font(AppFont.headline)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(element.healthColor)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(verbatim: element.name)
+                                .font(AppFont.scaled(14, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Text(verbatim: element.technicalCondition.displayName)
+                                .font(AppFont.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: AppSpacing.xs)
+                        Text(verbatim: "\(element.healthScore)")
+                            .font(AppFont.scaled(14, weight: .semibold))
+                            .foregroundStyle(element.healthColor)
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.md)
+                    .spaceGlassRow()
+                    .accessibilityElement(children: .combine)
+                }
+            }
         }
     }
 

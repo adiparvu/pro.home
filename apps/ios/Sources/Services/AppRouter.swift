@@ -43,6 +43,14 @@ final class AppRouter {
         case notificationsChat
         case emergency
         case iotHub
+        /// The in-app house calendar (tasks + events + deadlines).
+        case calendar
+        case appliances
+        case seasonal
+        /// The primary property's own page (value history lives there).
+        case propertyDetails
+        /// The "Today at home" chronological feed.
+        case houseFeed
 
         var id: String { rawValue }
     }
@@ -92,7 +100,7 @@ final class AppRouter {
              documents(id: UUID?), finances,
              inventory, family, profile, contractors, paintColors,
              photoJournal, addSupply, communities(groupId: UUID?), emergency,
-             iotHub
+             iotHub, calendar, appliances, seasonal, propertyDetails, houseFeed
     }
 
     /// Bumped when an external entry point asks for the Communities sheet;
@@ -224,6 +232,16 @@ final class AppRouter {
             // Sensor alert / energy / cover Live Activities land here.
             selectedTab = .settings
             push(.iotHub)
+        case .calendar:
+            push(.calendar)
+        case .appliances:
+            push(.appliances)
+        case .seasonal:
+            push(.seasonal)
+        case .propertyDetails:
+            push(.propertyDetails)
+        case .houseFeed:
+            push(.houseFeed)
 
         // Self-contained tasks — sheets / covers.
         case .newTask:

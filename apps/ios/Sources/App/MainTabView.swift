@@ -33,6 +33,9 @@ struct MainTabView: View {
     @State private var directMessageService = DirectMessageService()
     @State private var presenceService = PresenceService()
     @State private var proactiveEngine = ProactiveEngine()
+    // Shared with SeasonalChecklistView AND the dashboard's seasonal widget —
+    // one overlay store, so a check on the page moves the widget instantly.
+    @State private var seasonalService = SeasonalChecklistService()
     @State private var notificationService = NotificationService()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
@@ -154,6 +157,7 @@ struct MainTabView: View {
         .environment(directMessageService)
         .environment(presenceService)
         .environment(proactiveEngine)
+        .environment(seasonalService)
         .task {
             WatchSyncService.shared.activate()
             // One socket owner: connect realtime up front (instead of ~8 services
@@ -297,6 +301,18 @@ struct MainTabView: View {
             EmergencyModeView()
         case .iotHub:
             IoTHubView()
+        case .calendar:
+            CalendarView()
+        case .appliances:
+            AppliancesView()
+        case .seasonal:
+            SeasonalChecklistView()
+        case .propertyDetails:
+            if let pid = propertyService.primary?.id {
+                PropertyDetailView(propertyId: pid)
+            }
+        case .houseFeed:
+            HouseFeedView()
         default:
             EmptyView()
         }
@@ -423,6 +439,9 @@ struct MainTabView: View {
         // the round-trips overlap instead of paying their sum, and every
         // service decodes off the main actor (PropertyRepo).
         let propId = propertyService.primary?.id
+        // The seasonal overlay is local (UserDefaults) — pointing it at the
+        // property is synchronous and must precede the widgets' first read.
+        seasonalService.configure(propertyId: propId)
         async let tasksLoad: Void = taskService.load()
         async let financialLoad: Void = financialService.load()
         async let documentsLoad: Void = documentService.load()

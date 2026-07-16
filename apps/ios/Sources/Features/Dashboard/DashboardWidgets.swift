@@ -174,11 +174,12 @@ extension DashboardView {
             ) { router.navigate(to: .plants(id: nil)) }
 
         case .calendar:
+            // The widget now belongs to OUR calendar: it previews the house
+            // agenda (events, tasks, deadlines) and opens the in-app page —
+            // no more bouncing out to Apple Calendar.
             if size == .full {
-                CalendarLargeWidget {
-                    if let url = URL(string: "calshow://") {
-                        UIApplication.shared.open(url)
-                    }
+                CalendarLargeWidget(upcoming: upcomingAgendaItems) {
+                    router.navigate(to: .calendar)
                 }
             } else {
                 HomeWidget(
@@ -186,11 +187,10 @@ extension DashboardView {
                     iconColor: Color.accentColor,
                     title: "Calendar",
                     value: "\(Calendar.current.component(.day, from: Date()))",
-                    subtitle: Date().formatted(.dateTime.weekday(.wide))
+                    subtitle: upcomingAgendaItems.first?.title
+                        ?? Date().formatted(.dateTime.weekday(.wide))
                 ) {
-                    if let url = URL(string: "calshow://") {
-                        UIApplication.shared.open(url)
-                    }
+                    router.navigate(to: .calendar)
                 }
             }
 
@@ -232,7 +232,90 @@ extension DashboardView {
 
         case .budget:
             BudgetRingWidget { router.navigate(to: .finances) }
+
+        case .pantry:
+            HomeWidget(
+                icon: "basket.fill",
+                iconColor: pantryService.lowStock.isEmpty ? Color.accentColor : .orange,
+                title: "Pantry",
+                value: pantryService.lowStock.isEmpty
+                    ? "\(pantryService.items.count)"
+                    : "\(pantryService.lowStock.count)",
+                subtitle: pantryService.lowStock.isEmpty
+                    ? String(localized: "stocked")
+                    : String(localized: "low stock"),
+                badge: pantryService.lowStock.count
+            ) { router.navigate(to: .pantry) }
+
+        case .insights:
+            ProactiveInsightsCard(compact: size == .half)
+
+        case .propertyValue:
+            PropertyValueSparkWidget { router.navigate(to: .propertyDetails) }
+
+        case .seasonal:
+            seasonalWidget
+
+        case .warranties:
+            HomeWidget(
+                icon: "checkmark.seal.fill",
+                iconColor: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? Color.brandSuccess : .orange,
+                title: "Warranties",
+                value: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? "\(applianceService.appliances.count)"
+                    : "\(applianceService.appliancesExpiringWarranty.count)",
+                subtitle: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? String(localized: "all good")
+                    : String(localized: "expiring soon"),
+                badge: applianceService.appliancesExpiringWarranty.count
+            ) { router.navigate(to: .appliances) }
+
+        case .houseFeed:
+            TodayAtHomeCard(compact: size == .half) {
+                router.navigate(to: .houseFeed)
+            }
         }
+    }
+
+    // MARK: - Agenda + seasonal widget helpers
+
+    /// The next few agenda entries the full-width calendar widget previews —
+    /// the same filter the "Next up" card applies, just more of it.
+    var upcomingAgendaItems: [AgendaItem] {
+        let cal = Calendar.current
+        let now = Date()
+        guard let end = cal.date(byAdding: .day, value: 30, to: now) else { return [] }
+        let startOfToday = cal.startOfDay(for: now)
+        return Array(HouseAgenda.items(
+            in: now...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
+            .filter { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
+            .prefix(3))
+    }
+
+    /// Current-season progress from the SHARED checklist service, computed
+    /// against the same honesty context the checklist page uses (property
+    /// kind + mapped zones).
+    private var seasonalWidget: some View {
+        let season = Season.current
+        let context = SeasonalPropertyContext(
+            kind: propertyService.primary.flatMap { PropertyKind(rawValue: $0.propertyType) },
+            mappedSpaceKinds: Set(zoneService.zones.map(\.resolvedSpaceKind)),
+            hasMappedZones: !zoneService.zones.isEmpty)
+        let rows = seasonalService.rows(for: season, context: context).filter(\.isVisible)
+        let done = rows.filter { seasonalService.isCompleted($0.id, season: season) }.count
+        return HomeWidget(
+            icon: season.icon,
+            iconColor: season.color,
+            title: "Seasonal",
+            value: rows.isEmpty ? "–" : "\(done)/\(rows.count)",
+            subtitle: season.displayName
+        ) { router.navigate(to: .seasonal) }
     }
 
     // MARK: - Helpers
