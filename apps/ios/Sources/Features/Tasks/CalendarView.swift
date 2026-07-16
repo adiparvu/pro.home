@@ -13,6 +13,8 @@ struct CalendarView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(FinancialService.self) private var financialService
     @Environment(PlantService.self) private var plantService
+    @Environment(CalendarEventService.self) private var calendarEventService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The focal date the current mode is centred on (month/week/day). Agenda
@@ -27,6 +29,12 @@ struct CalendarView: View {
     @State private var active: Set<AgendaCategory> = Self.storedActiveCategories()
     /// Mirror-to-Apple-Calendar toggle (mirrors the persisted flag).
     @State private var mirrorOn = HouseCalendarMirror.isEnabled
+    /// The event whose editor is open (tap an event row), or nil.
+    @State private var editingEvent: CalendarEvent? = nil
+    /// True while the new-event editor sheet is presented.
+    @State private var creatingEvent = false
+    /// The day a newly created event defaults to (the selected/anchored day).
+    @State private var newEventDay = Date()
 
     private let cal = Calendar.current
     private static let activeCategoriesKey = "houseCalendar.activeCategories"
@@ -62,6 +70,14 @@ struct CalendarView: View {
         .navigationTitle(Text("house_calendar_title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { optionsMenu }
+        .sheet(isPresented: $creatingEvent, onDismiss: mirrorIfEnabled) {
+            CalendarEventEditor(propertyId: propertyService.primary?.id, defaultDay: newEventDay)
+        }
+        .sheet(item: $editingEvent, onDismiss: mirrorIfEnabled) { event in
+            CalendarEventEditor(propertyId: propertyService.primary?.id,
+                                existing: event,
+                                defaultDay: event.startDate ?? Date())
+        }
         .onAppear {
             buildICS()
             if HouseCalendarMirror.isEnabled {
@@ -278,9 +294,7 @@ struct CalendarView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 8) {
                     ForEach(items) { item in
-                        let t = taskForItem(item)
-                        HouseAgendaRow(item: item, task: t,
-                                       onToggle: t.map { task in { Task { await taskService.toggleComplete(task) } } })
+                        agendaRow(for: item)
                     }
                 }
                 .padding(.horizontal, AppSpacing.xl)
@@ -304,9 +318,7 @@ struct CalendarView: View {
                             Section {
                                 VStack(spacing: 8) {
                                     ForEach(section.items) { item in
-                                        let t = taskForItem(item)
-                                        HouseAgendaRow(item: item, task: t,
-                                                       onToggle: t.map { task in { Task { await taskService.toggleComplete(task) } } })
+                                        agendaRow(for: item)
                                     }
                                 }
                             } header: {
@@ -345,6 +357,17 @@ struct CalendarView: View {
 
     @ToolbarContentBuilder
     private var optionsMenu: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                HapticFeedback.selection()
+                newEventDay = selectedDay ?? anchor
+                creatingEvent = true
+            } label: {
+                Image(systemName: "plus").font(AppFont.headline)
+            }
+            .accessibilityLabel(Text("cal_new_event"))
+            .disabled(propertyService.primary == nil)
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Toggle(isOn: $mirrorOn) { Label("cal_sync_apple", systemImage: "calendar") }
@@ -437,7 +460,8 @@ struct CalendarView: View {
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
-            leases: Array(familyService.leases.values)
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events
         ).filter { active.contains($0.category) }
     }
 
@@ -456,7 +480,15 @@ struct CalendarView: View {
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
-            leases: Array(familyService.leases.values))
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
+    }
+
+    /// After creating/editing/deleting an event, keep the Apple Calendar mirror
+    /// in step (a no-op when the mirror is off).
+    private func mirrorIfEnabled() {
+        guard HouseCalendarMirror.isEnabled else { return }
+        Task { await HouseCalendarMirror.sync(fullAgenda()) }
     }
 
     private func buildICS() {
@@ -469,6 +501,7 @@ struct CalendarView: View {
 
     private func catLabel(_ cat: AgendaCategory) -> String {
         switch cat {
+        case .event:     return String(localized: "agenda_cat_events")
         case .task:      return String(localized: "agenda_cat_tasks")
         case .document:  return String(localized: "agenda_cat_documents")
         case .warranty:  return String(localized: "agenda_cat_warranties")
@@ -511,6 +544,26 @@ struct CalendarView: View {
     private func taskForItem(_ item: AgendaItem) -> MaintenanceTask? {
         guard item.category == .task else { return nil }
         return taskService.tasks.first { $0.id.uuidString == item.sourceId }
+    }
+
+    /// The live event behind an `.event` agenda item (matched by id), so tapping
+    /// the row can open its editor. nil for every other category.
+    private func eventForItem(_ item: AgendaItem) -> CalendarEvent? {
+        guard item.category == .event else { return nil }
+        return calendarEventService.events.first { $0.id.uuidString == item.sourceId }
+    }
+
+    /// One agenda row wired to the calendar's behaviours: tasks check off, events
+    /// open their editor, everything else follows its own deep link. Shared by the
+    /// day detail and the forward Agenda so both behave identically.
+    @ViewBuilder
+    private func agendaRow(for item: AgendaItem) -> some View {
+        let task = taskForItem(item)
+        HouseAgendaRow(
+            item: item,
+            task: task,
+            onToggle: task.map { t in { Task { await taskService.toggleComplete(t) } } },
+            onTap: eventForItem(item).map { event in { editingEvent = event } })
     }
 
     private func daysInMonth() -> [Date?] {

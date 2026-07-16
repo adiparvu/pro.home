@@ -50,6 +50,9 @@ struct HouseAgendaRow: View {
     let item: AgendaItem
     var task: MaintenanceTask? = nil
     var onToggle: (() -> Void)? = nil
+    /// When set, tapping the row runs this instead of following the deep link —
+    /// e.g. a calendar event opens its editor (it has no standalone screen).
+    var onTap: (() -> Void)? = nil
     /// Reschedule a task to another day (tasks only) — surfaced as a context menu.
     var onReschedule: (() -> Void)? = nil
 
@@ -66,6 +69,7 @@ struct HouseAgendaRow: View {
 
     var body: some View {
         Button {
+            if let onTap { HapticFeedback.selection(); onTap(); return }
             guard let link = item.deepLink, let url = URL(string: link) else { return }
             HapticFeedback.selection()
             NotificationCenter.default.post(name: .prvioOpenURL, object: url)
@@ -116,7 +120,7 @@ struct HouseAgendaRow: View {
                 .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
-        .disabled(item.deepLink == nil && task == nil)
+        .disabled(item.deepLink == nil && task == nil && onTap == nil)
         .contextMenu {
             if let onReschedule {
                 Button { onReschedule() } label: {

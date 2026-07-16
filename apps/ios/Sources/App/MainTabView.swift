@@ -22,6 +22,7 @@ struct MainTabView: View {
     @State private var pantryService = PantryService()
     @State private var receiptService = ReceiptService()
     @State private var plantService = PlantService()
+    @State private var calendarEventService = CalendarEventService()
     @State private var deliveryService = DeliveryService()
     @State private var applianceService = ApplianceService()
     @State private var inventoryService = InventoryService()
@@ -142,6 +143,7 @@ struct MainTabView: View {
         .environment(pantryService)
         .environment(receiptService)
         .environment(plantService)
+        .environment(calendarEventService)
         .environment(deliveryService)
         .environment(applianceService)
         .environment(inventoryService)
@@ -431,6 +433,7 @@ struct MainTabView: View {
             async let suppliesLoad: Void = supplyService.load(propertyId: propId)
             async let receiptsLoad: Void = receiptService.load(propertyId: propId)
             async let plantsLoad: Void = plantService.load(propertyId: propId)
+            async let calendarEventsLoad: Void = calendarEventService.load(propertyId: propId)
             async let appliancesLoad: Void = applianceService.load(propertyId: propId)
             async let journalLoad: Void = photoJournalService.load(propertyId: propId)
             async let paintLoad: Void = paintColorService.load(propertyId: propId)
@@ -438,9 +441,9 @@ struct MainTabView: View {
             async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
             async let budgetLoad: Void = budgetService.load(propertyId: propId)
             await messagesLoad; await deliveriesLoad; await suppliesLoad
-            await receiptsLoad; await plantsLoad; await appliancesLoad
-            await journalLoad; await paintLoad; await valueLoad
-            await inventoryLoad; await budgetLoad
+            await receiptsLoad; await plantsLoad; await calendarEventsLoad
+            await appliancesLoad; await journalLoad; await paintLoad
+            await valueLoad; await inventoryLoad; await budgetLoad
             // DM conversation heads (one cheap aggregate row per peer) — the
             // service mirrors them into the watch's DM catalog, so the wrist
             // inbox exists without the chat tab ever being opened.
@@ -515,7 +518,8 @@ struct MainTabView: View {
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
-            leases: Array(familyService.leases.values))
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
     }
 
     private func loadProfileAndSettings() async {

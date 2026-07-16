@@ -9,11 +9,14 @@ import SwiftUI
 // yearly birthday or a monthly bill shows on every occurrence in view.
 
 enum AgendaCategory: String, CaseIterable, Identifiable {
-    case task, document, warranty, birthday, financial, plant, lease
+    // `event` first: it's the user's own events (Calendar C2) and reads as the
+    // primary category, ahead of the derived deadlines.
+    case event, task, document, warranty, birthday, financial, plant, lease
     var id: String { rawValue }
 
     var titleKey: LocalizedStringKey {
         switch self {
+        case .event:     return "agenda_cat_events"
         case .task:      return "agenda_cat_tasks"
         case .document:  return "agenda_cat_documents"
         case .warranty:  return "agenda_cat_warranties"
@@ -26,6 +29,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .event:     return "calendar"
         case .task:      return "checklist"
         case .document:  return "doc.text.fill"
         case .warranty:  return "checkmark.seal.fill"
@@ -38,6 +42,8 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
+        // The only hue not already taken by the seven derived categories.
+        case .event:     return .orange
         case .task:      return .brandPrimaryBlue
         case .document:  return .brandWarning
         case .warranty:  return .brandSuccess
@@ -85,7 +91,8 @@ enum HouseAgenda {
         members: [FamilyMember],
         financial: [FinancialRecord],
         plants: [Plant],
-        leases: [TenantLease] = []
+        leases: [TenantLease] = [],
+        events: [CalendarEvent] = []
     ) -> [AgendaItem] {
         let cal = Calendar.current
         let lo = cal.startOfDay(for: range.lowerBound)
@@ -95,6 +102,20 @@ enum HouseAgenda {
         }
 
         var out: [AgendaItem] = []
+
+        // The household's own calendar events (Calendar C2) — first-class,
+        // one-shot dates. `hasTime` follows the all-day flag so a timed event
+        // shows its clock time and an all-day one doesn't.
+        for e in events {
+            guard let d = AppDate.day(from: e.startsAt), inRange(d) else { continue }
+            let subtitle = e.location?.isEmpty == false ? (e.location ?? "")
+                : (e.notes?.isEmpty == false ? (e.notes ?? "") : "")
+            out.append(AgendaItem(
+                category: .event, date: d, hasTime: !e.allDay,
+                title: e.title, subtitle: subtitle,
+                sourceId: e.id.uuidString, isCompleted: false,
+                deepLink: nil))
+        }
 
         // Tasks — one-shot due dates (may carry a time).
         for t in tasks {
@@ -252,7 +273,8 @@ enum HouseAgenda {
         members: [FamilyMember],
         financial: [FinancialRecord],
         plants: [Plant],
-        leases: [TenantLease]
+        leases: [TenantLease],
+        events: [CalendarEvent] = []
     ) -> [AgendaItem] {
         let cal = Calendar.current
         let now = Date()
@@ -261,6 +283,7 @@ enum HouseAgenda {
         return items(
             in: start...end,
             tasks: tasks, documents: documents, appliances: appliances,
-            members: members, financial: financial, plants: plants, leases: leases)
+            members: members, financial: financial, plants: plants,
+            leases: leases, events: events)
     }
 }
