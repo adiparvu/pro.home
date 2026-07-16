@@ -14,6 +14,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "tiktok":    return "TikTok"
         case "twitter":   return "X (Twitter)"
         case "telegram":  return "Telegram"
+        case "pinterest": return "Pinterest"
         default:          return platform.capitalized
         }
     }
@@ -32,6 +33,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "tiktok":    return .primary
         case "twitter":   return .primary
         case "telegram":  return Color(red: 0.133, green: 0.620, blue: 0.851) // #229ED9
+        case "pinterest": return Color(red: 0.902, green: 0.000, blue: 0.137) // #E60023
         default:          return .blue
         }
     }
@@ -74,6 +76,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "tiktok":    return URL(string: "https://tiktok.com/@\(enc)")
         case "twitter":   return URL(string: "https://x.com/\(enc)")
         case "telegram":  return URL(string: "https://t.me/\(enc)")
+        case "pinterest": return URL(string: "https://pinterest.com/\(enc)")
         default:
             // "other" platforms: only a value that is (or clearly wants to
             // be) a web address earns a link.

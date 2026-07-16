@@ -203,7 +203,7 @@ struct VoiceRecordingPill: View {
         }
         .padding(.trailing, 6)
         .frame(height: 52)
-        .mediaGlass(in: Capsule())
+        .legibleMediaGlass(in: Capsule())
         .accessibilityElement(children: .contain)
         .accessibilityValue(Text(verbatim: recorder.durationText))
     }
@@ -233,7 +233,7 @@ struct VoiceReviewRow: View {
                     .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .mediaGlass(in: Circle(), interactive: true)
+                    .legibleMediaGlass(in: Circle(), interactive: true)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Discard recording"))
@@ -298,7 +298,7 @@ struct VoiceReviewRow: View {
             .padding(.leading, 8)
             .padding(.trailing, 6)
             .frame(height: 52)
-            .mediaGlass(in: Capsule())
+            .legibleMediaGlass(in: Capsule())
         }
         .onDisappear { player.stop() }
     }

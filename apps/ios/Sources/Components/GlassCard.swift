@@ -73,6 +73,27 @@ extension View {
                 .contentShape(shape)
         }
     }
+
+    /// REGULAR Liquid Glass for functional chrome that must stay legible
+    /// over ANY wallpaper — the chat composer's pill and its controls.
+    /// Clear glass is gorgeous over media but disappears on bright, busy
+    /// wallpapers (IMG_8532); Regular carries the HIG's adaptive
+    /// legibility layer, so the pill separates from whatever sits behind
+    /// it. A hairline stroke defines the edge the way the pre-26 fallback
+    /// always did. Fallback = the same treatment as `mediaGlass`.
+    @ViewBuilder
+    func legibleMediaGlass<S: InsettableShape>(in shape: S, interactive: Bool = false) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(interactive ? Glass.regular.interactive() : .regular, in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.7))
+                .contentShape(shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
+                .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
+                .contentShape(shape)
+        }
+    }
 }
 
 /// The pre-iOS-26 glass fallback. On iOS 26+ the native `glassEffect`

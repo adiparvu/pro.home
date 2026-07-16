@@ -37,9 +37,23 @@ struct SocialBrandIcon: View {
         .frame(width: size, height: size)
         .clipShape(badgeShape)
         .overlay {
+            // Liquid-glass finish: a specular sheen falling from the top
+            // edge and a faint lift at the bottom rim, so the brand field
+            // reads as printed under glass instead of flat ink. Static,
+            // decorative — one gradient fill, zero per-frame cost.
+            badgeShape.fill(
+                LinearGradient(stops: [
+                    .init(color: .white.opacity(0.28), location: 0),
+                    .init(color: .white.opacity(0.06), location: 0.40),
+                    .init(color: .clear, location: 0.55),
+                    .init(color: .white.opacity(0.05), location: 1.0),
+                ], startPoint: .top, endPoint: .bottom))
+                .allowsHitTesting(false)
+        }
+        .overlay {
             // Inner hairline keeps the dark badges (TikTok, X) defined on
             // dark glass and adds a subtle bezel to the colored ones.
-            badgeShape.strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
+            badgeShape.strokeBorder(.white.opacity(0.16), lineWidth: 0.5)
         }
         // Decorative by design: every call site labels its control with the
         // platform name (accessibilityLabel or an adjacent Text).
@@ -62,6 +76,7 @@ struct SocialBrandIcon: View {
         case "linkedin": Brand.linkedin
         case "telegram": Brand.telegram
         case "tiktok", "twitter": Color.black // true brand black in both schemes
+        case "pinterest": Brand.pinterest
         default: Brand.neutral
         }
     }
@@ -78,6 +93,7 @@ struct SocialBrandIcon: View {
         case "tiktok":    tiktokMark
         case "twitter":   xMark
         case "telegram":  telegramMark
+        case "pinterest": pinterestMark
         default:
             Image(systemName: "link")
                 .font(.system(size: size * 0.42, weight: .semibold))
@@ -166,6 +182,16 @@ struct SocialBrandIcon: View {
             .foregroundStyle(.white)
     }
 
+    /// Pinterest's curvy "P" letterform — a bold serif approximates the
+    /// script's weight and curves far better than a geometric sans —
+    /// white on Pinterest red.
+    private var pinterestMark: some View {
+        Text(verbatim: "P")
+            .font(.system(size: size * 0.60, weight: .bold, design: .serif))
+            .foregroundStyle(.white)
+            .offset(y: size * 0.02)
+    }
+
     /// Telegram's paper plane — the one brand whose mark a symbol genuinely
     /// matches — tilted onto the brand's sky blue.
     private var telegramMark: some View {
@@ -216,12 +242,13 @@ private enum Brand {
     static let igYellow   = Color(red: 0.988, green: 0.686, blue: 0.271) // #FCAF45
     static let tiktokCyan = Color(red: 0.145, green: 0.957, blue: 0.933) // #25F4EE
     static let tiktokRed  = Color(red: 0.996, green: 0.173, blue: 0.333) // #FE2C55
+    static let pinterest  = Color(red: 0.902, green: 0.000, blue: 0.137) // #E60023
     static let neutral    = Color(red: 0.420, green: 0.470, blue: 0.550) // "other"
 }
 
 #Preview("All platforms, all sizes") {
     let platforms = ["instagram", "facebook", "whatsapp", "linkedin",
-                     "tiktok", "twitter", "telegram", "other"]
+                     "tiktok", "twitter", "telegram", "pinterest", "other"]
     return VStack(spacing: 24) {
         ForEach([CGFloat(18), 28, 36, 48], id: \.self) { s in
             HStack(spacing: 12) {

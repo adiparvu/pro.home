@@ -322,7 +322,10 @@ struct ChatComposerBar<Accessory: View>: View {
             .animation(.spring(duration: 0.2), value: config.isResponding)
             .padding(.leading, 14)
             .padding(.trailing, 5)
-            .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+            // Regular (legible) glass, not Clear: the pill holds a text
+            // field and must separate from any wallpaper (IMG_8532 — Clear
+            // washed out completely on a bright busy image).
+            .legibleMediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.sm)
@@ -409,10 +412,9 @@ struct ChatComposerBar<Accessory: View>: View {
                 .font(AppFont.scaled(17, weight: .medium))
                 .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
-                // Clear Liquid Glass on iOS 26; legible material fallback
-                // earlier (a flat fill vanished against same-brightness
-                // wallpapers).
-                .mediaGlass(in: Circle(), interactive: true)
+                // Regular (legible) glass, matching the pill — Clear made
+                // the "+" vanish against same-brightness wallpapers.
+                .legibleMediaGlass(in: Circle(), interactive: true)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add attachment")

@@ -23,7 +23,7 @@ let kRoleDescriptions: [String: String] = [
     "guest":   "Chat only — nothing from the home",
 ]
 let kColors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
-let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter"]
+let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter", "pinterest"]
 
 // MARK: - E-mail sanity — the one client-side authority
 //

@@ -15,7 +15,7 @@ struct EditProfileView: View {
     @State private var socialLinks: [SocialLink] = []
     @State private var error: String?
 
-    private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "other"]
+    private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "pinterest", "other"]
 
     var body: some View {
         FormScaffold(title: "Edit Profile", saveLabel: "Save",
