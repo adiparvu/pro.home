@@ -51,12 +51,22 @@ jobs:
             sleep 10
           done || echo "downloadPlatform failed; continuing — platform is usually preinstalled"
 
+      # The full Ruby patch version (e.g. 3.3.12) scopes the gem cache below.
+      # Native gems (json's parser.bundle) are linked against the runner's
+      # libruby dylib; when GitHub bumps the patch (3.3.11 -> 3.3.12) a cache
+      # keyed only on Gemfile.lock restores extensions built for the old dylib,
+      # and `require 'json'` dies with "linked to incompatible libruby". Keying
+      # (and the restore-keys fallback) on the Ruby version rebuilds them.
+      - name: Ruby version for cache key
+        id: rubyver
+        run: echo "v=$(ruby -e 'print RUBY_VERSION')" >> "$GITHUB_OUTPUT"
+
       - name: Cache Gems
         uses: actions/cache@v4
         with:
           path: apps/ios/vendor/bundle
-          key: gems-${{ hashFiles('apps/ios/Gemfile.lock') }}
-          restore-keys: gems-
+          key: gems-${{ steps.rubyver.outputs.v }}-${{ hashFiles('apps/ios/Gemfile.lock') }}
+          restore-keys: gems-${{ steps.rubyver.outputs.v }}-
 
       - name: Cache SPM packages
         uses: actions/cache@v4
