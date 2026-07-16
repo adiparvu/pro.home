@@ -378,6 +378,9 @@ final class MessageService {
     /// subscribe, dropped socket), rebuilds it and refetches — so a thread
     /// the user is looking at can never sit silent. Free when healthy.
     func ensureLiveDelivery(propertyId: UUID, groupId: UUID? = nil) async {
+        // Quiet in the background — no rebuilds, no status churn (see
+        // onNewMessagesSignal). Foreground activation re-drives this.
+        guard !AppLifecycle.isBackgrounded else { return }
         // A subscribe is already in flight (the open-thread `.task`): DO NOT
         // interfere. Tearing it down here cancels it with CancellationError and
         // keeps the channel from ever going live.
@@ -416,6 +419,11 @@ final class MessageService {
     /// which may fire for the same message — loadNewer's cursor makes the
     /// second a no-op, so nothing double-counts.
     private func onNewMessagesSignal(propertyId: UUID) async {
+        // Quiet in the background: a realtime-driven refetch mutates observable
+        // state → SwiftUI scene updates while backgrounded → the exact
+        // 0x8BADF00D scene-update watchdog kill captured on Build 1036. The
+        // foreground hooks refetch everything on activation.
+        guard !AppLifecycle.isBackgrounded else { return }
         let added = await loadNewer(propertyId: propertyId)
         guard added > 0 else { return }
         let myId = supabase.auth.currentSession?.user.id
@@ -718,7 +726,7 @@ final class MessageService {
                 self.reloadTasks["reads"]?.cancel()
                 self.reloadTasks["reads"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
                     await self?.loadReads(propertyId: propertyId, groupId: groupId)
                 }
             }
@@ -791,7 +799,7 @@ final class MessageService {
                 self.reloadTasks["deliveries"]?.cancel()
                 self.reloadTasks["deliveries"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
                     await self?.loadDeliveries(propertyId: propertyId, groupId: groupId)
                 }
             }
@@ -894,7 +902,7 @@ final class MessageService {
                 self.reloadTasks["reactions"]?.cancel()
                 self.reloadTasks["reactions"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
                     await self?.loadReactions(propertyId: propertyId, groupId: groupId)
                 }
             }
@@ -969,7 +977,7 @@ final class MessageService {
                 self.reloadTasks["pollVotes"]?.cancel()
                 self.reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
                     await self?.loadPollVotes(propertyId: propertyId, groupId: groupId)
                 }
             }

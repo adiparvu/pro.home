@@ -63,6 +63,10 @@ final class CalendarEventService {
             .from("calendar_events")
             .insert(payload)
             .select().single().execute().value
+        // Upsert, not append: a concurrent load() (foreground/world tick) may
+        // already have fetched this row — a duplicate id would give SwiftUI
+        // two identical ForEach identities in the calendar.
+        events.removeAll { $0.id == inserted.id }
         events.append(inserted)
         events.sort { $0.startsAt < $1.startsAt }
         ServiceCache.save(events, entity: "calendar_events", propertyId: propertyId)

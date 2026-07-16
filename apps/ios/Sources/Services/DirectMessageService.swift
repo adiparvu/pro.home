@@ -228,7 +228,7 @@ final class DirectMessageService {
         reloadTask?.cancel()
         reloadTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(350))
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
             await self?.load(propertyId: propertyId, myName: myName)
         }
     }
@@ -431,7 +431,7 @@ final class DirectMessageService {
         headsTask?.cancel()
         headsTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
             await self?.refreshHeads(propertyId: pid)
         }
     }
@@ -783,7 +783,7 @@ final class DirectMessageService {
         selftestTask = Task { [weak self] in
             await ch.broadcast(event: "selftest", message: ["nonce": .string(nonce)])
             try? await Task.sleep(nanoseconds: 4_000_000_000)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
             await MainActor.run { [weak self] in
                 guard let self, self.broadcastEcho == nil else { return }
                 self.broadcastEcho = false          // no echo in 4s → relay dead
@@ -861,6 +861,9 @@ final class DirectMessageService {
     /// dropped socket), rebuilds it and refetches — so a conversation the
     /// user is looking at can never sit silent. Free when healthy.
     func ensureLiveDelivery(propertyId: UUID, myName: String) async {
+        // Quiet in the background — no rebuilds, no status churn: backgrounded
+        // scene updates are what the 0x8BADF00D watchdog kills (Build 1036).
+        guard !AppLifecycle.isBackgrounded else { return }
         // A subscribe is already in flight (the open-thread `.task`): DO NOT
         // interfere. Tearing it down here is precisely what cancelled it with
         // CancellationError and kept the channel from ever going live.

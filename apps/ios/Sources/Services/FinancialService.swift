@@ -113,7 +113,8 @@ final class FinancialService {
         realtimeReload?.cancel()
         realtimeReload = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
+            // Quiet in the background (0x8BADF00D scene-update watchdog, b1036).
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
             await self?.load()
         }
     }

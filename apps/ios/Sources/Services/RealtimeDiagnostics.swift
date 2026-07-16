@@ -115,10 +115,16 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
             }
         }
         // Keeper: explicit connect now, then revive on every parked-dead poll.
+        // NEVER in the background: the SDK's RealtimeLifecycleManager owns
+        // backgrounding (it deliberately lets the socket rest), and reviving
+        // it there produced connect/teardown churn while backgrounded — fuel
+        // for the 0x8BADF00D scene-update watchdog kill (Build 1036).
         Task.detached(priority: .utility) { [weak self] in
             await realtimeAnon.connect()
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 10_000_000_000)
+                let backgrounded = await AppLifecycle.isBackgrounded
+                if backgrounded { continue }
                 if realtimeAnon.status == .disconnected {
                     self?.note("watchdog: socket parked disconnected — reviving")
                     await realtimeAnon.connect()

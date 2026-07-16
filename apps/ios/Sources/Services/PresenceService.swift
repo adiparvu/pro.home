@@ -124,13 +124,21 @@ final class PresenceService {
             InsertAction.self, schema: "public", table: "presence",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in await self?.load(propertyId: propertyId) }
+            Task { @MainActor [weak self] in
+                // Quiet in the background (0x8BADF00D watchdog, b1036).
+                guard !AppLifecycle.isBackgrounded else { return }
+                await self?.load(propertyId: propertyId)
+            }
         })
         postgresSubs.append(ch.onPostgresChange(
             UpdateAction.self, schema: "public", table: "presence",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in await self?.load(propertyId: propertyId) }
+            Task { @MainActor [weak self] in
+                // Quiet in the background (0x8BADF00D watchdog, b1036).
+                guard !AppLifecycle.isBackgrounded else { return }
+                await self?.load(propertyId: propertyId)
+            }
         })
         try? await ch.subscribeWithError()
         channel = ch
