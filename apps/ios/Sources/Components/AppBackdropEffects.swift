@@ -1462,9 +1462,10 @@ private enum AtmosphericParticleTextures {
     /// The sunset bird's two wing frames (up / down): flapping is a plain
     /// two-frame SKAction texture swap, never live drawing.
     static let birdFrames = [bird(wingsUp: true), bird(wingsUp: false)]
-    /// Very large extra-soft disc for the day clouds — the mist blob's
-    /// falloff is too tight once scaled to screen width.
-    static let cloud = cloudBlob(diameter: 180)
+    /// The day cloud — a real cumulus silhouette (billowed top, flat base)
+    /// on the same 180 pt footprint the old single blob used, so every
+    /// emitter's margin and scale math still holds.
+    static let cloud = cumulus(size: 180)
     /// The moon's soft atmospheric halo (additive, tinted pale ice).
     static let moonHalo = cloudBlob(diameter: 150)
     /// A tall soft light wedge for the morning sun shafts: bright spine
@@ -1700,6 +1701,57 @@ private enum AtmosphericParticleTextures {
             }
         }
         return SKTexture(image: image)
+    }
+
+    /// A real cumulus silhouette instead of one radial blob: soft puffs
+    /// stamped along a horizontal spine (the big billows center-top, smaller
+    /// shoulders at the edges), then a destination-in vertical fade flattens
+    /// the base the way rising warm air flattens real cloud bottoms. The
+    /// stamp layout is fixed — rendered once, deterministic; per-sprite
+    /// scale/alpha jitter in the emitters keeps every cloud looking
+    /// different on screen.
+    private static func cumulus(size: CGFloat) -> SKTexture {
+        let image = renderer(CGSize(width: size, height: size)).image { ctx in
+            let cg = ctx.cgContext
+            let u = size / 180   // stamps authored on the 180 pt grid
+            // (x, y, radius, peak alpha) — y grows downward (UIKit).
+            let puffs: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
+                (90, 84, 52, 0.90),                       // central mass
+                (58, 92, 40, 0.80), (122, 93, 42, 0.80),  // inner billows
+                (34, 101, 30, 0.62), (147, 102, 29, 0.62), // shoulders
+                (73, 68, 34, 0.72), (107, 66, 31, 0.72),  // top crowns
+            ]
+            for (x, y, r, a) in puffs {
+                softPuff(cg, center: CGPoint(x: x * u, y: y * u),
+                         radius: r * u, peak: a)
+            }
+            // The flat base: everything below the spine fades out fast.
+            cg.setBlendMode(.destinationIn)
+            let fade = [UIColor.white.withAlphaComponent(1).cgColor,
+                        UIColor.white.withAlphaComponent(1).cgColor,
+                        UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                  colors: fade, locations: [0, 0.60, 0.74]) {
+                cg.drawLinearGradient(g, start: CGPoint(x: size / 2, y: 0),
+                                      end: CGPoint(x: size / 2, y: size),
+                                      options: [])
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    /// One cumulus puff: a soft-shouldered radial fade, accumulating with
+    /// its overlapping neighbors into a billowed mass.
+    private static func softPuff(_ cg: CGContext, center: CGPoint,
+                                 radius: CGFloat, peak: CGFloat) {
+        let colors = [UIColor.white.withAlphaComponent(peak).cgColor,
+                      UIColor.white.withAlphaComponent(peak * 0.45).cgColor,
+                      UIColor.white.withAlphaComponent(0).cgColor]
+        guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                        colors: colors as CFArray,
+                                        locations: [0, 0.55, 1]) else { return }
+        cg.drawRadialGradient(gradient, startCenter: center, startRadius: 0,
+                              endCenter: center, endRadius: radius, options: [])
     }
 
     /// Softer-shouldered radial fade than `mistBlob` — at screen-width scale

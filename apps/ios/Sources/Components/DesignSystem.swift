@@ -437,6 +437,19 @@ struct AppMoodPalette {
     let baseTop: Color
     let baseBottom: Color
     let accents: [Accent]
+    /// The full atmospheric wash — real skies compress color near the
+    /// horizon and change slowly at the zenith, which a 2-stop gradient
+    /// flattens into a poster. Every mood declares 4-5 stops that stay
+    /// inside the baseTop/baseBottom lightness envelope (the accent AA
+    /// contracts keep holding); an empty array falls back to the plain
+    /// two-stop wash.
+    var skyStops: [Gradient.Stop] = []
+
+    var resolvedSkyStops: [Gradient.Stop] {
+        skyStops.isEmpty
+            ? [.init(color: baseTop, location: 0), .init(color: baseBottom, location: 1)]
+            : skyStops
+    }
     /// The mood's interactive tint — what the app's accent becomes when the
     /// user picks "Automat" in Settings → Aspect. Each value is AA-legible
     /// (≥ 4.5:1) as text/tint against BOTH stops of its own ground wash in
@@ -460,6 +473,15 @@ struct AppMoodPalette {
             Accent(color: Color(red: 0.890, green: 0.635, blue: 0.616),
                    opacity: 0.20, center: UnitPoint(x: 0.90, y: 0.88), radius: 460),
         ],
+        // Sunrise physics: a cooler pale zenith, the gold arriving as a BAND
+        // (not a uniform wash), a rose flush near the ground.
+        skyStops: [
+            .init(color: Color(red: 0.973, green: 0.957, blue: 0.937), location: 0.0),
+            .init(color: Color(red: 0.984, green: 0.949, blue: 0.906), location: 0.34),
+            .init(color: Color(red: 0.982, green: 0.933, blue: 0.876), location: 0.62),
+            .init(color: Color(red: 0.976, green: 0.916, blue: 0.890), location: 0.84),
+            .init(color: Color(red: 0.965, green: 0.925, blue: 0.914), location: 1.0),
+        ],
         // Warm sunrise gold #8F5C10.
         accent: Color(red: 0.561, green: 0.361, blue: 0.063))
 
@@ -475,6 +497,17 @@ struct AppMoodPalette {
                    opacity: 0.22, center: UnitPoint(x: 0.85, y: 0.08), radius: 440),
             Accent(color: Color(red: 0.922, green: 0.863, blue: 0.753),
                    opacity: 0.20, center: UnitPoint(x: 0.10, y: 0.92), radius: 480),
+        ],
+        // Daylight: a faint blue cast high (thin air), warming toward a
+        // hazier sand tone at the ground line.
+        skyStops: [
+            .init(color: Color(red: 0.949, green: 0.961, blue: 0.973), location: 0.0),
+            .init(color: Color(red: 0.984, green: 0.980, blue: 0.969), location: 0.32),
+            .init(color: Color(red: 0.973, green: 0.965, blue: 0.949), location: 0.68),
+            // Interpolated waypoint — every palette carries exactly five
+            // stops so the mood crossfade animates instead of snapping.
+            .init(color: Color(red: 0.959, green: 0.951, blue: 0.934), location: 0.84),
+            .init(color: Color(red: 0.945, green: 0.937, blue: 0.918), location: 1.0),
         ],
         // Deep sky blue #1B6C9C.
         accent: Color(red: 0.106, green: 0.424, blue: 0.612))
@@ -492,6 +525,16 @@ struct AppMoodPalette {
                    opacity: 0.10, center: UnitPoint(x: 0.85, y: 0.06), radius: 420),
             Accent(color: Color(red: 0.431, green: 0.306, blue: 0.388),
                    opacity: 0.12, center: UnitPoint(x: 0.12, y: 0.90), radius: 460),
+        ],
+        // Real night: DARKEST at the zenith, the plum warmth living as a
+        // low band (city glow near the horizon), falling dark again at the
+        // ground. White text only gains contrast from the deeper zenith.
+        skyStops: [
+            .init(color: Color(red: 0.047, green: 0.039, blue: 0.059), location: 0.0),
+            .init(color: Color(red: 0.094, green: 0.075, blue: 0.096), location: 0.30),
+            .init(color: Color(red: 0.141, green: 0.110, blue: 0.129), location: 0.62),
+            .init(color: Color(red: 0.104, green: 0.078, blue: 0.098), location: 0.86),
+            .init(color: Color(red: 0.063, green: 0.047, blue: 0.067), location: 1.0),
         ],
         // Warm ember amber #E8A45C.
         accent: Color(red: 0.910, green: 0.643, blue: 0.361))
@@ -511,6 +554,16 @@ struct AppMoodPalette {
             Accent(color: Color(red: 0.608, green: 0.482, blue: 0.722),
                    opacity: 0.16, center: UnitPoint(x: 0.88, y: 0.10), radius: 460),
         ],
+        // Golden hour: dusk violet already claiming the zenith, the amber
+        // compressing into an intense band just above the rose horizon —
+        // the one gradient where the banding IS the subject.
+        skyStops: [
+            .init(color: Color(red: 0.902, green: 0.867, blue: 0.898), location: 0.0),
+            .init(color: Color(red: 0.953, green: 0.890, blue: 0.835), location: 0.30),
+            .init(color: Color(red: 0.969, green: 0.886, blue: 0.784), location: 0.55),
+            .init(color: Color(red: 0.976, green: 0.863, blue: 0.757), location: 0.78),
+            .init(color: Color(red: 0.937, green: 0.839, blue: 0.839), location: 1.0),
+        ],
         // Deep ember #7E430F — AA even over the ember pool's blended ground.
         accent: Color(red: 0.494, green: 0.263, blue: 0.059))
 
@@ -527,6 +580,17 @@ struct AppMoodPalette {
                    opacity: 0.22, center: UnitPoint(x: 0.15, y: 0.08), radius: 440),
             Accent(color: Color(red: 0.498, green: 0.690, blue: 0.659),
                    opacity: 0.16, center: UnitPoint(x: 0.88, y: 0.90), radius: 480),
+        ],
+        // Rain sky: the cloud deck presses down — heavier gray high, a
+        // brighter diffuse band where light scatters through, cooling again
+        // toward the wet ground.
+        skyStops: [
+            .init(color: Color(red: 0.882, green: 0.902, blue: 0.922), location: 0.0),
+            .init(color: Color(red: 0.941, green: 0.953, blue: 0.965), location: 0.36),
+            .init(color: Color(red: 0.914, green: 0.929, blue: 0.945), location: 0.70),
+            // Interpolated waypoint — five stops everywhere (see day).
+            .init(color: Color(red: 0.890, green: 0.910, blue: 0.930), location: 0.85),
+            .init(color: Color(red: 0.867, green: 0.890, blue: 0.914), location: 1.0),
         ],
         // Slate blue #3C5B74.
         accent: Color(red: 0.235, green: 0.357, blue: 0.455))
@@ -545,6 +609,16 @@ struct AppMoodPalette {
             Accent(color: Color(red: 0.843, green: 0.871, blue: 0.898),
                    opacity: 0.26, center: UnitPoint(x: 0.12, y: 0.90), radius: 480),
         ],
+        // Winter light: an icy zenith, the bright snow-lit middle, a cold
+        // blue shadow settling at the ground.
+        skyStops: [
+            .init(color: Color(red: 0.929, green: 0.953, blue: 0.973), location: 0.0),
+            .init(color: Color(red: 0.969, green: 0.980, blue: 0.988), location: 0.40),
+            .init(color: Color(red: 0.941, green: 0.957, blue: 0.973), location: 0.74),
+            // Interpolated waypoint — five stops everywhere (see day).
+            .init(color: Color(red: 0.926, green: 0.947, blue: 0.967), location: 0.87),
+            .init(color: Color(red: 0.910, green: 0.937, blue: 0.961), location: 1.0),
+        ],
         // Glacier blue #1F6580.
         accent: Color(red: 0.122, green: 0.396, blue: 0.502))
 
@@ -562,6 +636,16 @@ struct AppMoodPalette {
                    opacity: 0.12, center: UnitPoint(x: 0.15, y: 0.08), radius: 420),
             Accent(color: Color(red: 0.761, green: 0.278, blue: 0.561),
                    opacity: 0.10, center: UnitPoint(x: 0.88, y: 0.90), radius: 460),
+        ],
+        // Celebration dark: deep above, the rich plum living as a band
+        // (stage light, not a flat wall), settling dark at the floor.
+        skyStops: [
+            .init(color: Color(red: 0.086, green: 0.055, blue: 0.106), location: 0.0),
+            .init(color: Color(red: 0.165, green: 0.106, blue: 0.180), location: 0.36),
+            .init(color: Color(red: 0.125, green: 0.082, blue: 0.141), location: 0.72),
+            // Interpolated waypoint — five stops everywhere (see day).
+            .init(color: Color(red: 0.102, green: 0.066, blue: 0.118), location: 0.86),
+            .init(color: Color(red: 0.078, green: 0.051, blue: 0.094), location: 1.0),
         ],
         // Festive gold #E9C15E.
         accent: Color(red: 0.914, green: 0.757, blue: 0.369))

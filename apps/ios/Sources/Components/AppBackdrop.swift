@@ -67,12 +67,21 @@ struct AppBackdrop: View {
         let engineTone: AppWeatherTone? = fixed == nil ? AppMoodEngine.shared.weatherTone : nil
         let tone: AppWeatherTone? = (mood == .rain && engineTone == .rain) ? nil : engineTone
         ZStack {
-            LinearGradient(colors: [palette.baseTop, palette.baseBottom],
+            // The sky itself: a multi-stop atmospheric wash (horizon bands,
+            // compressed color where real skies compress it) instead of the
+            // old two-color ramp that read as a flat poster.
+            LinearGradient(stops: palette.resolvedSkyStops,
                            startPoint: .top, endPoint: .bottom)
             ForEach(Array(palette.accents.enumerated()), id: \.offset) { _, accent in
+                // Every light pool renders twice: a wide falloff (the ambient
+                // spill) plus a tighter, brighter core — real light has a
+                // source, not a uniform blob.
                 RadialGradient(colors: [accent.color.opacity(accent.opacity), .clear],
                                center: accent.center,
                                startRadius: 0, endRadius: accent.radius)
+                RadialGradient(colors: [accent.color.opacity(min(accent.opacity * 0.9, 0.5)), .clear],
+                               center: accent.center,
+                               startRadius: 0, endRadius: accent.radius * 0.38)
             }
             if fixed == nil {
                 tone?.wash(for: palette.colorScheme) ?? Color.clear
@@ -80,6 +89,16 @@ struct AppBackdrop: View {
             } else {
                 AppBackdropEffectsHint(mood: mood)
             }
+            // Photographic finish: a lens-like edge falloff pulls the eye to
+            // the center, and a whisper of film grain breaks the vector-flat
+            // banding that made the gradients read as drawings. Both layers
+            // are static — no animation, no blur, one composite each.
+            EllipticalGradient(colors: [.clear,
+                                        .black.opacity(palette.colorScheme == .dark ? 0.16 : 0.05)],
+                               center: .center,
+                               startRadiusFraction: 0.55,
+                               endRadiusFraction: 1.05)
+            BackdropGrainOverlay(scheme: palette.colorScheme)
         }
         .animation(reduceMotion ? nil : .smooth(duration: 1.2), value: mood)
         .animation(reduceMotion ? nil : .smooth(duration: 1.2), value: tone)
