@@ -334,11 +334,12 @@ struct ChatView: View {
                 } else if replyingTo != nil {
                     // iMessage reply focus: one X leaves the mode.
                     Button { withAnimation(.snappy(duration: 0.28)) { replyingTo = nil } } label: {
+                        // No manual circle: iOS 26 wraps the toolbar button in its
+                        // own Liquid Glass circle (like the back button); drawing
+                        // our own on top doubled the X (IMG_8500).
                         Image(systemName: "xmark")
                             .font(AppFont.subheadline.weight(.semibold))
                             .foregroundStyle(Color.secondaryTextColor)
-                            .frame(width: 30, height: 30)
-                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Cancel reply"))

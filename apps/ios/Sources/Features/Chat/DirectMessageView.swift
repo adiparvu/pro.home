@@ -354,11 +354,13 @@ struct DirectMessageView: View {
                     // iMessage reply focus: a single X leaves the mode, matching
                     // the receded thread and the close affordance in Messages.
                     Button { withAnimation(.snappy(duration: 0.28)) { replyingTo = nil } } label: {
+                        // No manual circle here: iOS 26 already wraps a toolbar
+                        // button in its own Liquid Glass circle (like the system
+                        // back button). Drawing our own `.background(Circle())`
+                        // on top produced the doubled/overlapping X (IMG_8500).
                         Image(systemName: "xmark")
                             .font(AppFont.subheadline.weight(.semibold))
                             .foregroundStyle(Color.secondaryTextColor)
-                            .frame(width: 30, height: 30)
-                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Cancel reply"))
