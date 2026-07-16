@@ -133,19 +133,16 @@ struct PaintColorsView: View {
     // MARK: - Room Filters
 
     private var roomFilterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                GlassFilterChip(label: String(localized: "All"), isSelected: selectedRoom == nil) {
-                    selectedRoom = nil
-                }
-                ForEach(paintColorService.roomNames, id: \.self) { room in
-                    GlassFilterChip(label: String(localized: String.LocalizationValue(room)),
-                                    isSelected: selectedRoom == room) {
-                        selectedRoom = selectedRoom == room ? nil : room
-                    }
-                }
-            }
-            .padding(.horizontal, 2)
+        HStack(spacing: AppSpacing.sm) {
+            GlassPopoverPicker(
+                options: [GlassPickerOption<String?>(value: nil,
+                                                     title: String(localized: "All"))]
+                    + paintColorService.roomNames.map {
+                        GlassPickerOption<String?>(value: $0,
+                                                   title: String(localized: String.LocalizationValue($0)))
+                    },
+                selection: $selectedRoom)
+            Spacer()
         }
     }
 

@@ -63,6 +63,8 @@ final class MessageService {
     /// single reload per quiet window instead of one reload per event (C2). Same
     /// reload code runs — just debounced — so the displayed data stays correct.
     private var reloadTasks: [String: Task<Void, Never>] = [:]
+    /// Last heartbeat-driven channel rebuild — the 30s backoff's clock.
+    private var lastRebuildAt: Date?
 
     func sendTyping() { syncActivity(); activity.sendTyping() }
 
@@ -404,6 +406,19 @@ final class MessageService {
         guard realtimeAnon.status == .connected else { return }
         if let st = realtimeChannel?.status, st == .subscribing || st == .unsubscribing,
            subscribedPropertyId == propertyId, currentGroupId == groupId { return }
+        // Rejoin grace (b1040): for ~10s after a reconnect the SDK's
+        // rejoinChannels() is re-joining every registered channel. A rebuild
+        // in that window puts a SECOND join for this topic on the socket and
+        // the server answers each new join by closing the previous one —
+        // every close re-armed the next rebuild (the 3-4s subscribe→phx_close
+        // loop in the field log). The rejoin lands on its own; stand down.
+        if let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
+           Date().timeIntervalSince(connectedAt) < 10 { return }
+        // Backoff: one rebuild per 30s. If the server keeps closing a
+        // freshly confirmed join, retrying 3s later never helps — it reads
+        // as join/leave abuse server-side and feeds the 1006 socket drops.
+        if let last = lastRebuildAt, Date().timeIntervalSince(last) < 30 { return }
+        lastRebuildAt = Date()
         // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
         // its own teardown behind the isSubscribing guard, so don't
         // pre-unsubscribe here — that reopened the cancellation race.

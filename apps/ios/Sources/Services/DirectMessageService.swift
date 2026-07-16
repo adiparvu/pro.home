@@ -219,6 +219,8 @@ final class DirectMessageService {
     /// and typing/live delivery die while the socket is up. The guard makes
     /// concurrent callers step aside instead of tearing the subscribe down.
     @ObservationIgnored private var isSubscribing = false
+    /// Last heartbeat-driven channel rebuild — the 30s backoff's clock.
+    @ObservationIgnored private var lastRebuildAt: Date?
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -887,6 +889,14 @@ final class DirectMessageService {
         guard realtimeAnon.status == .connected else { return }
         if let st = channel?.status, st == .subscribing || st == .unsubscribing,
            subscribedPropertyId == propertyId { return }
+        // Rejoin grace + backoff (b1040) — see MessageService.ensureLiveDelivery:
+        // rebuilding while the SDK's rejoinChannels() is still re-joining puts
+        // two joins for one topic on the socket; the server closes the older
+        // join and the loop feeds itself at heartbeat cadence.
+        if let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
+           Date().timeIntervalSince(connectedAt) < 10 { return }
+        if let last = lastRebuildAt, Date().timeIntervalSince(last) < 30 { return }
+        lastRebuildAt = Date()
         // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
         // its own teardown (behind the isSubscribing guard), so don't
         // pre-unsubscribe here — that reopened the very cancellation race.

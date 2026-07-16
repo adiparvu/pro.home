@@ -499,17 +499,18 @@ struct ActivityFeedView: View {
 
     private func periodRow(count: Int) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(ActivityPeriod.allCases, id: \.self) { p in
-                        GlassFilterChip(label: p.label, isSelected: period == p) {
-                            withAnimation(filterAnimation) { period = p }
-                        }
-                    }
-                }
+            // The period chips row became one popover trigger (IMG_8520).
+            GlassPopoverPicker(
+                options: ActivityPeriod.allCases.map {
+                    GlassPickerOption(value: $0, title: $0.label)
+                },
+                selection: Binding(
+                    get: { period },
+                    set: { newValue in withAnimation(filterAnimation) { period = newValue } }),
+                accessibilityLabelKey: "activity_period_picker")
                 .padding(.leading, AppSpacing.xl)
-                .padding(.trailing, AppSpacing.sm)
-            }
+
+            Spacer(minLength: AppSpacing.sm)
 
             Text(eventCountLabel(count))
                 .font(AppFont.caption2)
@@ -537,13 +538,18 @@ struct ActivityFeedView: View {
     private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
-                ForEach(ActivityCategory.allCases, id: \.self) { cat in
-                    GlassFilterChip(label: cat.label,
-                                    systemImage: cat.icon,
-                                    isSelected: selectedCategory == cat) {
-                        withAnimation(filterAnimation) { selectedCategory = cat }
-                    }
-                }
+                // Category chips → one popover trigger; the member avatar
+                // chips stay — faces are the point of that filter.
+                GlassPopoverPicker(
+                    options: ActivityCategory.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: $0.label)
+                    },
+                    selection: Binding(
+                        get: { selectedCategory },
+                        set: { newValue in
+                            withAnimation(filterAnimation) { selectedCategory = newValue }
+                        }),
+                    accessibilityLabelKey: "activity_category_picker")
 
                 Rectangle()
                     .fill(Color.hairline)
@@ -661,22 +667,28 @@ struct ActivityFeedView: View {
     }
 
     private func dayHeader(_ day: Date, eventCount: Int) -> some View {
+        // Legibility fix (IMG_8521): secondary-on-thin-material washed out
+        // over the warm mood backdrop. Primary type on a regular material
+        // band, closed by a hairline, reads at a glance in both schemes.
         HStack(spacing: AppSpacing.sm) {
             dayTitle(day)
                 .textCase(.uppercase)
-                .font(AppFont.label)
-                .foregroundStyle(.secondary)
+                .font(AppFont.scaled(12, weight: .semibold))
+                .foregroundStyle(.primary)
                 .tracking(0.5)
             Spacer()
             Text(eventCountLabel(eventCount))
                 .font(AppFont.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
         .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
+        .padding(.vertical, AppSpacing.sm)
         // Bar blur, not an opaque patch — the living backdrop would band.
-        .background(.thinMaterial)
+        .background(.regularMaterial)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.hairline).frame(height: 1)
+        }
     }
 
     /// "Today"/"Yesterday" resolve through the catalog; other days use the

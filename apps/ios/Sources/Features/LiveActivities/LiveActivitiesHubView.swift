@@ -147,24 +147,21 @@ struct LiveActivitiesHubView: View {
         }
     }
 
-    // MARK: - 2 + 3. Search & filter chips
+    // MARK: - 2 + 3. Search & filter picker
 
     private var filterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(HubFilter.allCases) { f in
-                    GlassFilterChip(label: f.labelString,
-                                    systemImage: f.icon,
-                                    count: chipCount(for: f),
-                                    isSelected: filter == f) {
-                        withAnimation(anim) { filter = f }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, AppSpacing.xxs)
+        HStack(spacing: AppSpacing.sm) {
+            GlassPopoverPicker(
+                options: HubFilter.allCases.map { f in
+                    GlassPickerOption(value: f,
+                                      icon: f.icon,
+                                      title: f.labelString,
+                                      count: chipCount(for: f))
+                },
+                selection: $filter)
+            Spacer()
         }
-        .padding(.horizontal, -AppSpacing.xl)
+        .padding(.vertical, AppSpacing.xxs)
     }
 
     /// Real counts only — nil hides the badge rather than showing a made-up 0.

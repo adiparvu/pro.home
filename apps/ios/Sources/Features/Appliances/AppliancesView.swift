@@ -287,18 +287,15 @@ struct AppliancesView: View {
     }
 
     private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                GlassFilterChip(label: String(localized: "All"), isSelected: selectedCategory == nil) {
-                    selectedCategory = nil
-                }
-                ForEach(ApplianceCategory.allCases, id: \.self) { cat in
-                    GlassFilterChip(label: cat.displayName, isSelected: selectedCategory == cat) {
-                        selectedCategory = selectedCategory == cat ? nil : cat
-                    }
-                }
-            }
-            .padding(.horizontal, 2)
+        HStack(spacing: AppSpacing.sm) {
+            GlassPopoverPicker(
+                options: [GlassPickerOption<ApplianceCategory?>(value: nil,
+                                                                title: String(localized: "All"))]
+                    + ApplianceCategory.allCases.map {
+                        GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
+                    },
+                selection: $selectedCategory)
+            Spacer()
         }
     }
 

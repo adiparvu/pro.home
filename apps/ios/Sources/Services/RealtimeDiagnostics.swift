@@ -28,7 +28,19 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
     private var lines: [String] = []
     private var transitions: [String] = []
     private var watchdogStarted = false
+    private var _lastConnectedAt: Date?
     private static let cap = 80
+
+    /// When the socket last reached `.connected`. After a reconnect the
+    /// SDK's `rejoinChannels()` owns every registered channel for a few
+    /// seconds — an app-side rebuild in that window puts TWO joins for the
+    /// same topic on one socket and the server answers each new join by
+    /// closing the previous one (the b1040 3-4s subscribe→phx_close loop).
+    /// The services' heartbeats read this to stand down during the rejoin.
+    var lastConnectedAt: Date? {
+        lock.lock(); defer { lock.unlock() }
+        return _lastConnectedAt
+    }
 
     private static let clock: DateFormatter = {
         let f = DateFormatter()
@@ -75,6 +87,7 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
         }
         let stamped = "\(name)@\(Self.clock.string(from: Date()))"
         lock.lock(); defer { lock.unlock() }
+        if status == .connected { _lastConnectedAt = Date() }
         transitions.append(stamped)
         if transitions.count > Self.cap { transitions.removeFirst(transitions.count - Self.cap) }
     }

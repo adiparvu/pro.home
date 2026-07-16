@@ -327,56 +327,46 @@ struct DocumentsView: View {
             .padding(.horizontal, AppSpacing.xxl)
     }
 
-    // MARK: - Category chips (filters, always visible — the old toolbar
-    // menu hid the categories behind a tap nobody discovered)
+    // MARK: - Category filter (always visible — the old toolbar menu hid
+    // the categories behind a tap nobody discovered)
 
     private func categoryChips(favs: Set<String>, expiringCount: Int) -> some View {
         let counts = Dictionary(grouping: documentService.documents, by: \.category)
             .mapValues(\.count)
         let favCount = documentService.documents.filter { favs.contains($0.id.uuidString) }.count
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                GlassFilterChip(label: docCategoryName("All"),
-                                systemImage: "square.grid.2x2.fill",
-                                count: documentService.documents.count,
-                                isSelected: selectedCategory == nil) {
-                    HapticFeedback.selection()
-                    withAnimation(.snappy(duration: 0.25)) { selectedCategory = nil }
-                }
-                if expiringCount > 0 {
-                    GlassFilterChip(label: String(localized: "doc_filter_expiring"),
-                                    systemImage: "exclamationmark.triangle.fill",
-                                    count: expiringCount,
-                                    isSelected: selectedCategory == "Expiring") {
-                        HapticFeedback.selection()
-                        withAnimation(.snappy(duration: 0.25)) { selectedCategory = "Expiring" }
-                    }
-                }
-                if favCount > 0 {
-                    GlassFilterChip(label: docCategoryName("Favorite"),
-                                    systemImage: "star.fill",
-                                    count: favCount,
-                                    isSelected: selectedCategory == "Favorite") {
-                        HapticFeedback.selection()
-                        withAnimation(.snappy(duration: 0.25)) { selectedCategory = "Favorite" }
-                    }
-                }
-                // Only categories that actually contain documents.
-                ForEach(categories.dropFirst(2), id: \.self) { cat in
-                    if let count = counts[cat], count > 0 {
-                        GlassFilterChip(label: docCategoryName(cat),
-                                        systemImage: categoryIcon(for: cat),
-                                        count: count,
-                                        isSelected: selectedCategory == cat) {
-                            HapticFeedback.selection()
-                            withAnimation(.snappy(duration: 0.25)) { selectedCategory = cat }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, AppSpacing.sm)
+        var options: [GlassPickerOption<String?>] = [
+            GlassPickerOption(value: nil,
+                              icon: "square.grid.2x2.fill",
+                              title: docCategoryName("All"),
+                              count: documentService.documents.count)
+        ]
+        if expiringCount > 0 {
+            options.append(GlassPickerOption(value: "Expiring",
+                                             icon: "exclamationmark.triangle.fill",
+                                             title: String(localized: "doc_filter_expiring"),
+                                             count: expiringCount))
         }
+        if favCount > 0 {
+            options.append(GlassPickerOption(value: "Favorite",
+                                             icon: "star.fill",
+                                             title: docCategoryName("Favorite"),
+                                             count: favCount))
+        }
+        // Only categories that actually contain documents.
+        for cat in categories.dropFirst(2) {
+            if let count = counts[cat], count > 0 {
+                options.append(GlassPickerOption(value: cat,
+                                                 icon: categoryIcon(for: cat),
+                                                 title: docCategoryName(cat),
+                                                 count: count))
+            }
+        }
+        return HStack(spacing: AppSpacing.sm) {
+            GlassPopoverPicker(options: options, selection: $selectedCategory)
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.sm)
     }
 
     // MARK: - Sort menu

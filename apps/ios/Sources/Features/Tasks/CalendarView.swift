@@ -62,8 +62,7 @@ struct CalendarView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 periodHeader
-                modeSwitcher
-                categoryFilterRow
+                filterBar
                 content
             }
         }
@@ -177,46 +176,35 @@ struct CalendarView: View {
         .accessibilityLabel(label)
     }
 
-    // MARK: - Mode switcher
+    // MARK: - Filter bar (mode picker + category multi-filter, one glass row)
 
-    private var modeSwitcher: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(CalendarMode.allCases) { m in
-                    GlassFilterChip(
-                        label: modeLabel(m),
-                        systemImage: m.icon,
-                        isSelected: mode == m
-                    ) {
-                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { mode = m }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-        }
-        .padding(.bottom, AppSpacing.xs)
-    }
-
-    // MARK: - Category filter
-
-    private var categoryFilterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(AgendaCategory.allCases) { cat in
-                    GlassFilterChip(
-                        label: catLabel(cat),
-                        systemImage: cat.icon,
-                        isSelected: active.contains(cat)
-                    ) {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            if active.contains(cat) { active.remove(cat) } else { active.insert(cat) }
+    /// Two chip rows became two compact popover triggers (IMG_8519): the
+    /// view-mode picker and the category filter, side by side.
+    private var filterBar: some View {
+        HStack(spacing: AppSpacing.sm) {
+            GlassPopoverPicker(
+                options: CalendarMode.allCases.map {
+                    GlassPickerOption(value: $0, icon: $0.icon, title: modeLabel($0))
+                },
+                selection: Binding(
+                    get: { mode },
+                    set: { newMode in
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                            mode = newMode
                         }
-                        persistActiveCategories()
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
+                    }),
+                accessibilityLabelKey: "cal_mode_picker")
+            GlassPopoverMultiPicker(
+                options: AgendaCategory.allCases.map {
+                    GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
+                },
+                selection: $active,
+                allTitle: String(localized: "cal_filter_all"),
+                accessibilityLabelKey: "cal_filter_all",
+                onChange: { persistActiveCategories() })
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, AppSpacing.xl)
         .padding(.bottom, AppSpacing.xs)
     }
 
