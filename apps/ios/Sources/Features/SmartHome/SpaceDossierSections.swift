@@ -13,6 +13,7 @@ import SwiftUI
 // `SpaceDossierModel` is the one pure filter authority — the page and any
 // future surface (cards, search) read the same functions and can't drift.
 
+@MainActor
 enum SpaceDossierModel {
     static func journalEntries(for zone: PropertyZone,
                                in service: PhotoJournalService) -> [PhotoJournalEntry] {

@@ -650,7 +650,9 @@ private struct SpaceDeviceRow: View {
 
 // MARK: - Slim glass row backing (shared by the rows above)
 
-private extension View {
+// Internal, not fileprivate: the dossier sections (SpaceDossierSections.swift,
+// the same page's E3 file) render the same row surface.
+extension View {
     func spaceGlassRow() -> some View {
         liquidGlass(cornerRadius: AppRadius.lg)
     }
