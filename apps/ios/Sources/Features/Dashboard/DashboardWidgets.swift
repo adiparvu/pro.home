@@ -221,6 +221,17 @@ extension DashboardView {
                 value: "\(photoJournalService.entries.count)",
                 subtitle: String(localized: "memories")
             ) { router.navigate(to: .photoJournal) }
+
+        case .briefing:
+            // The composed "state of the home" card; at half width it keeps
+            // the lead sentence and the single most useful fact.
+            HouseBriefingCard(nextItem: nextAgendaItem, compact: size == .half)
+
+        case .presence:
+            FamilyPresenceWidget { router.navigate(to: .family) }
+
+        case .budget:
+            BudgetRingWidget { router.navigate(to: .finances) }
         }
     }
 

@@ -33,6 +33,9 @@ struct DashboardView: View {
     // Feeds the hero grid's "Next up" card (warranty deadlines are part of
     // the house agenda).
     @Environment(ApplianceService.self) private var applianceService
+    // Calendar events belong to the same agenda — without this the "Next up"
+    // card silently skipped everything the user put in the house calendar.
+    @Environment(CalendarEventService.self) private var calendarEventService
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -386,7 +389,9 @@ struct DashboardView: View {
     /// next 30 days — built from the exact services the in-app calendar
     /// reads, skipping completed tasks. Timed items compare against the
     /// clock; day-precision items count from the start of today.
-    private var nextAgendaItem: AgendaItem? {
+    /// Not private: DashboardWidgets.swift (extension, separate file) feeds
+    /// it to the House Briefing widget.
+    var nextAgendaItem: AgendaItem? {
         let cal = Calendar.current
         let now = Date()
         guard let end = cal.date(byAdding: .day, value: 30, to: now) else { return nil }
@@ -396,7 +401,8 @@ struct DashboardView: View {
             tasks: taskService.tasks, documents: documentService.documents,
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
-            leases: Array(familyService.leases.values))
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
             .first { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
     }
 }

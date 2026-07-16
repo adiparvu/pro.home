@@ -55,13 +55,14 @@ enum HomeSectionType: String, CaseIterable, Identifiable {
 
 enum HomeWidgetType: String, CaseIterable, Identifiable {
     case tasks, finances, documents, family, healthScore, inventory,
-         contractors, weather, plants, calendar, deliveries, shopping, journal
+         contractors, weather, plants, calendar, deliveries, shopping, journal,
+         briefing, presence, budget
 
     var id: String { rawValue }
 
     /// The size a widget arrives in — every widget can be resized afterwards.
     var defaultSize: HomeWidgetSize {
-        self == .weather || self == .calendar ? .full : .half
+        self == .weather || self == .calendar || self == .briefing ? .full : .half
     }
 
     var title: String {
@@ -79,6 +80,9 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .deliveries:  return String(localized: "Deliveries")
         case .shopping:    return String(localized: "Shopping list")
         case .journal:     return String(localized: "Photo Journal")
+        case .briefing:    return String(localized: "House Briefing")
+        case .presence:    return String(localized: "Presence")
+        case .budget:      return String(localized: "Budget")
         }
     }
 
@@ -97,6 +101,9 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .deliveries:  return "shippingbox.and.arrow.backward.fill"
         case .shopping:    return "cart.fill"
         case .journal:     return "photo.stack.fill"
+        case .briefing:    return "sparkles"
+        case .presence:    return "person.2.wave.2.fill"
+        case .budget:      return "chart.pie.fill"
         }
     }
 
@@ -115,6 +122,9 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .deliveries:  return Color.brandSkyBlue
         case .shopping:    return Color(red: 1.0, green: 0.62, blue: 0.04)
         case .journal:     return Color.brandPurple
+        case .briefing:    return Color.brandPurple
+        case .presence:    return Color.brandSuccess
+        case .budget:      return Color.brandWarning
         }
     }
 }
