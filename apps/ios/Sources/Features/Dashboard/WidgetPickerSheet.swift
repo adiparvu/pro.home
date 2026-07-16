@@ -57,7 +57,8 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
     case tasks, finances, documents, family, healthScore, inventory,
          contractors, weather, plants, calendar, deliveries, shopping, journal,
          briefing, presence, budget,
-         pantry, insights, propertyValue, seasonal, warranties, houseFeed
+         pantry, insights, propertyValue, seasonal, warranties, houseFeed,
+         whoHome
 
     var id: String { rawValue }
 
@@ -93,6 +94,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .seasonal:    return String(localized: "Seasonal")
         case .warranties:  return String(localized: "Warranties")
         case .houseFeed:   return String(localized: "Today at home")
+        case .whoHome:     return String(localized: "Who's home")
         }
     }
 
@@ -120,6 +122,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .seasonal:    return "leaf.circle.fill"
         case .warranties:  return "checkmark.seal.fill"
         case .houseFeed:   return "clock.arrow.circlepath"
+        case .whoHome:     return "location.fill.viewfinder"
         }
     }
 
@@ -147,6 +150,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .seasonal:    return Color(red: 0.25, green: 0.78, blue: 0.45)
         case .warranties:  return Color.brandSkyBlue
         case .houseFeed:   return Color.brandPrimaryBlue
+        case .whoHome:     return Color.brandSkyBlue
         }
     }
 }

@@ -90435,6 +90435,118 @@
           }
         }
       }
+    },
+    "homepresence_toggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home presence (who's home)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezența acasă (cine e acasă)"
+          }
+        }
+      }
+    },
+    "homepresence_needs_coords": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your property's location first — the home area comes from it."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă mai întâi locația proprietății — zona casei vine din ea."
+          }
+        }
+      }
+    },
+    "homepresence_needs_always": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Works only with 'Always' location access."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funcționează doar cu acces la locație „Întotdeauna”."
+          }
+        }
+      }
+    },
+    "Who's home": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who's home"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cine e acasă"
+          }
+        }
+      }
+    },
+    "whohome_enable_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on home presence in Chat settings"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează prezența acasă din setările de chat"
+          }
+        }
+      }
+    },
+    "home since ~%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "home since ~%@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "acasă de la ~%@"
+          }
+        }
+      }
+    },
+    "nobody home now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nobody home right now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nimeni acasă acum"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

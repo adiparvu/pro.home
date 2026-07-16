@@ -447,6 +447,16 @@ struct MainTabView: View {
         // The seasonal overlay is local (UserDefaults) — pointing it at the
         // property is synchronous and must precede the widgets' first read.
         seasonalService.configure(propertyId: propId)
+        // Home presence (wave 3B): point the geofence at the primary home.
+        // The service persists its write context so a background region
+        // relaunch can still record the transition; arming stays gated on
+        // the user's opt-in + Always authorization inside the service.
+        HomePresenceService.shared.configure(
+            propertyId: propId,
+            latitude: propertyService.primary?.latitude,
+            longitude: propertyService.primary?.longitude,
+            userName: profileService.profile?.preferredName
+                ?? profileService.profile?.fullName ?? "")
         async let tasksLoad: Void = taskService.load()
         async let financialLoad: Void = financialService.load()
         async let documentsLoad: Void = documentService.load()

@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 // MARK: - Chat hub (Profil › Chat)
 //
@@ -20,6 +21,10 @@ struct ChatSettingsView: View {
     @Environment(AppRouter.self) private var router
 
     @AppStorage("presence.shareStatus") private var shareStatus = true
+    /// Geofenced home presence (wave 3B) — the toggle mirrors the service's
+    /// stored opt-in; side effects (auth ladder, region arming, row erase on
+    /// opt-out) run through setSharing below.
+    @AppStorage(HomePresenceService.shareKey) private var homePresenceShare = false
     /// iMessage's "Show Subject Field" (Settings → Messages): an optional
     /// subject line in the composer of the family chat and DMs. Default OFF;
     /// AI surfaces (Yuna) never show it.
@@ -68,6 +73,21 @@ struct ChatSettingsView: View {
                 SettingsGroup(title: "Confidențialitate") {
                     ToggleSettingsRow(icon: "eye.fill", color: .blue,
                                       label: "Arată online și văzut ultima dată", value: $shareStatus)
+                    ToggleSettingsRow(icon: "location.fill.viewfinder", color: Color.brandSkyBlue,
+                                      label: "homepresence_toggle", value: $homePresenceShare)
+                    if homePresenceShare, !HomePresenceService.shared.hasCoordinates {
+                        Text("homepresence_needs_coords")
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.bottom, AppSpacing.xs)
+                    } else if homePresenceShare, HomePresenceService.shared.authorization != .authorizedAlways {
+                        Text("homepresence_needs_always")
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.bottom, AppSpacing.xs)
+                    }
                     NavSettingsRow(icon: "shield.lefthalf.filled", color: .indigo, label: "Confidențialitate avansată") {
                         AdvancedPrivacyView(convId: "group")
                     }
@@ -100,6 +120,12 @@ struct ChatSettingsView: View {
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Chat")
+        // The home-presence opt-in has real side effects (the Always-auth
+        // ladder, region arming, erasing the member's row on opt-out) —
+        // they run through the service, not through raw AppStorage.
+        .onChange(of: homePresenceShare) { _, on in
+            HomePresenceService.shared.setSharing(on)
+        }
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showTheme, onDismiss: { themeRefresh += 1 }) { ChatThemePicker() }
         .sheet(isPresented: $showStarred) {

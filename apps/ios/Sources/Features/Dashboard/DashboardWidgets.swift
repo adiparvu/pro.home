@@ -275,6 +275,9 @@ extension DashboardView {
             TodayAtHomeCard(compact: size == .half) {
                 router.navigate(to: .houseFeed)
             }
+
+        case .whoHome:
+            WhoIsHomeCard { router.navigate(to: .family) }
         }
     }
 
