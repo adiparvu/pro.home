@@ -86,7 +86,10 @@ final class NotificationScheduler {
         case .warranty:  return warrantyAlerts
         case .financial: return financialAlerts
         case .lease:     return leaseAlerts
-        case .birthday, .plant: return false
+        // Events, birthdays and plant watering each have their own schedule
+        // (events reach the wrist/phone via the Apple Calendar mirror), so they
+        // don't produce a second, configurable deadline reminder here.
+        case .event, .birthday, .plant: return false
         }
     }
 
@@ -97,7 +100,7 @@ final class NotificationScheduler {
         case .warranty:  return warrantyLeadDays
         case .financial: return financialLeadDays
         case .lease:     return leaseLeadDays
-        case .birthday, .plant: return 0
+        case .event, .birthday, .plant: return 0
         }
     }
 
