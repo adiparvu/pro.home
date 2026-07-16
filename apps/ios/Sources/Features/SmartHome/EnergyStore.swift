@@ -164,9 +164,13 @@ final class EnergyStore {
             : nil
         producedToday = produced
 
-        var zones = namedZones
-            .map { (zone: $0.key, kWh: $0.value) }
-            .sorted { $0.kWh == $1.kWh ? $0.zone < $1.zone : $0.kWh > $1.kWh }
+        var zones: [(zone: String, kWh: Double)] = namedZones.map { entry in
+            (zone: entry.key, kWh: entry.value)
+        }
+        zones.sort { lhs, rhs in
+            if lhs.kWh == rhs.kWh { return lhs.zone < rhs.zone }
+            return lhs.kWh > rhs.kWh
+        }
         if let unzoned {
             zones.append((zone: String(localized: "energy_zone_other"), kWh: unzoned))
         }
