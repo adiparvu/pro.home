@@ -2,6 +2,7 @@ import SwiftUI
 import Observation
 import AVFoundation
 import CoreMedia
+import UIKit
 
 // MARK: - Audio Recorder
 
@@ -654,11 +655,13 @@ final class AudioPlayer {
     @ObservationIgnored private var player: AVPlayer?
     @ObservationIgnored private var timeObserverToken: Any?
     @ObservationIgnored private var endObserver: NSObjectProtocol?
+    @ObservationIgnored private var proximityObserver: NSObjectProtocol?
 
     func play(url: URL) {
         stop()
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
+        startProximityRouting()
 
         let item = AVPlayerItem(url: url)
         let avPlayer = AVPlayer(playerItem: item)
@@ -711,6 +714,7 @@ final class AudioPlayer {
         isPlaying = false
         progress = 0
         position = 0
+        stopProximityRouting()
         // Rewind so a subsequent resume() replays instead of idling at the end.
         player?.seek(to: .zero)
     }
@@ -718,6 +722,9 @@ final class AudioPlayer {
     func pause() {
         player?.pause()
         isPlaying = false
+        // No dimming while nothing plays; the speaker route is restored so
+        // a later non-ear resume starts loud as expected.
+        stopProximityRouting()
     }
 
     /// A paused item is still loaded and can pick up where it left off.
@@ -728,6 +735,7 @@ final class AudioPlayer {
         guard let player else { return }
         player.playImmediately(atRate: rate)
         isPlaying = true
+        startProximityRouting()
     }
 
     func stop() {
@@ -741,10 +749,68 @@ final class AudioPlayer {
         }
         player?.pause()
         player = nil
+        stopProximityRouting()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isPlaying = false
         progress = 0
         position = 0
+    }
+
+    // MARK: - Raise-to-ear (the WhatsApp gesture)
+    //
+    // While a voice message plays, the proximity sensor is live: raising the
+    // phone to the ear re-routes playback to the RECEIVER (the call earpiece)
+    // and the screen dims — a voice note becomes as private as a phone call.
+    // Lowering the phone puts it back on the loudspeaker, mid-playback.
+    // External audio (headphones/Bluetooth/CarPlay) is already private, so
+    // the sensor is never armed and the route is never touched there.
+
+    /// True when audio is leaving through anything other than the phone's
+    /// own speaker/receiver — never re-route someone's headphones.
+    private var hasExternalRoute: Bool {
+        let external: Set<AVAudioSession.Port> = [
+            .headphones, .bluetoothA2DP, .bluetoothHFP, .bluetoothLE,
+            .airPlay, .carAudio, .usbAudio,
+        ]
+        return AVAudioSession.sharedInstance().currentRoute.outputs
+            .contains { external.contains($0.portType) }
+    }
+
+    private func startProximityRouting() {
+        guard !hasExternalRoute, proximityObserver == nil else { return }
+        UIDevice.current.isProximityMonitoringEnabled = true
+        proximityObserver = NotificationCenter.default.addObserver(
+            forName: UIDevice.proximityStateDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // Delivered on .main (queue above), so main-actor access is valid.
+            MainActor.assumeIsolated { self?.applyProximityRoute() }
+        }
+    }
+
+    private func applyProximityRoute() {
+        guard isPlaying, !hasExternalRoute else { return }
+        let session = AVAudioSession.sharedInstance()
+        if UIDevice.current.proximityState {
+            // At the ear: .playAndRecord routes to the receiver by default.
+            try? session.setCategory(.playAndRecord, mode: .default, options: [])
+            try? session.overrideOutputAudioPort(.none)
+        } else {
+            // Lowered: back to the loudspeaker.
+            try? session.setCategory(.playback, mode: .default)
+        }
+        try? session.setActive(true)
+    }
+
+    private func stopProximityRouting() {
+        if let obs = proximityObserver {
+            NotificationCenter.default.removeObserver(obs)
+            proximityObserver = nil
+        }
+        UIDevice.current.isProximityMonitoringEnabled = false
+        // Leave the session on the media route for whatever plays next.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
     }
 
     deinit {
@@ -753,6 +819,9 @@ final class AudioPlayer {
         }
         player?.pause()
         if let obs = endObserver {
+            NotificationCenter.default.removeObserver(obs)
+        }
+        if let obs = proximityObserver {
             NotificationCenter.default.removeObserver(obs)
         }
     }
