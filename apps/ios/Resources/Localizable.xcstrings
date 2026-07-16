@@ -91203,6 +91203,758 @@
           }
         }
       }
+    },
+    "Two-step verification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two-step verification"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificare în doi pași"
+          }
+        }
+      }
+    },
+    "Enter one of your one-time backup codes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter one of your one-time backup codes."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introdu unul dintre codurile tale de rezervă de unică folosință."
+          }
+        }
+      }
+    },
+    "Enter the 6-digit code from your authenticator app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the 6-digit code from your authenticator app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introdu codul de 6 cifre din aplicația de autentificare."
+          }
+        }
+      }
+    },
+    "That backup code is invalid or was already used.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That backup code is invalid or was already used."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codul de rezervă e invalid sau a fost deja folosit."
+          }
+        }
+      }
+    },
+    "Verify": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifică"
+          }
+        }
+      }
+    },
+    "Use the authenticator app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the authenticator app"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosește aplicația de autentificare"
+          }
+        }
+      }
+    },
+    "Use a backup code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a backup code"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosește un cod de rezervă"
+          }
+        }
+      }
+    },
+    "Sign out": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deconectare"
+          }
+        }
+      }
+    },
+    "Security checkup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security checkup"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificare securitate"
+          }
+        }
+      }
+    },
+    "Everything on this page is switched on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything on this page is switched on."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Totul de pe această pagină este activat."
+          }
+        }
+      }
+    },
+    "Each recommendation below maps to a control on this page.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each recommendation below maps to a control on this page."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiecare recomandare de mai jos corespunde unui control de pe această pagină."
+          }
+        }
+      }
+    },
+    "Turn on the authenticator app (two-step sign-in)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the authenticator app (two-step sign-in)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează aplicația de autentificare (verificare în doi pași)"
+          }
+        }
+      }
+    },
+    "Generate backup codes for your account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate backup codes for your account"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generează coduri de rezervă pentru contul tău"
+          }
+        }
+      }
+    },
+    "Require Face ID to open PRVIO": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Require Face ID to open PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cere Face ID pentru a deschide PRVIO"
+          }
+        }
+      }
+    },
+    "Set an auto-lock interval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set an auto-lock interval"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setează un interval de blocare automată"
+          }
+        }
+      }
+    },
+    "Lock at least one sensitive section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock at least one sensitive section"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blochează cel puțin o secțiune sensibilă"
+          }
+        }
+      }
+    },
+    "Add an emergency trusted contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an emergency trusted contact"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă un contact de încredere pentru urgențe"
+          }
+        }
+      }
+    },
+    "Locks PRVIO every time you leave the app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locks PRVIO every time you leave the app"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blochează PRVIO de fiecare dată când ieși din aplicație"
+          }
+        }
+      }
+    },
+    "Account (all devices)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account (all devices)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cont (toate dispozitivele)"
+          }
+        }
+      }
+    },
+    "Sign-in on a new device": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in on a new device"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autentificare pe un dispozitiv nou"
+          }
+        }
+      }
+    },
+    "Device removed from sessions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device removed from sessions"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispozitiv eliminat din sesiuni"
+          }
+        }
+      }
+    },
+    "Password reset requested": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password reset requested"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resetare de parolă solicitată"
+          }
+        }
+      }
+    },
+    "Authenticator app enabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authenticator app enabled"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplicația de autentificare activată"
+          }
+        }
+      }
+    },
+    "Authenticator app disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authenticator app disabled"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplicația de autentificare dezactivată"
+          }
+        }
+      }
+    },
+    "Backup codes generated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup codes generated"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coduri de rezervă generate"
+          }
+        }
+      }
+    },
+    "A backup code was used": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A backup code was used"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A fost folosit un cod de rezervă"
+          }
+        }
+      }
+    },
+    "Security event": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security event"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eveniment de securitate"
+          }
+        }
+      }
+    },
+    "Requires an additional security check at sign-in. If you can't pass it, a one-time backup code unlocks the app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires an additional security check at sign-in. If you can't pass it, a one-time backup code unlocks the app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cere o verificare de securitate suplimentară la autentificare. Dacă nu o poți trece, un cod de rezervă de unică folosință deblochează aplicația."
+          }
+        }
+      }
+    },
+    "One-time codes that unlock two-step sign-in": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One-time codes that unlock two-step sign-in"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coduri de unică folosință care deblochează verificarea în doi pași"
+          }
+        }
+      }
+    },
+    "See all devices and sessions that have accessed your account. You can check active sessions, remove trusted devices, or use \"Sign out of all devices\" to end all sessions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all devices and sessions that have accessed your account. You can check active sessions, remove trusted devices, or use \"Sign out of all devices\" to end all sessions."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vezi toate dispozitivele și sesiunile care au accesat contul tău. Poți verifica sesiunile active, elimina dispozitive sau folosi „Deconectează toate celelalte sesiuni” pentru a le încheia."
+          }
+        }
+      }
+    },
+    "Active now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activ acum"
+          }
+        }
+      }
+    },
+    "No active sessions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active sessions"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio sesiune activă"
+          }
+        }
+      }
+    },
+    "Devices appear here after they sign in to your account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devices appear here after they sign in to your account."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispozitivele apar aici după ce se autentifică în contul tău."
+          }
+        }
+      }
+    },
+    "Remove this device?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this device?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimini acest dispozitiv?"
+          }
+        }
+      }
+    },
+    "Remove device": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove device"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină dispozitivul"
+          }
+        }
+      }
+    },
+    "This removes the device from the registry. It does not sign the device out — use \"Sign out all other sessions\" for that.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the device from the registry. It does not sign the device out — use \"Sign out all other sessions\" for that."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceasta elimină dispozitivul din registru. Nu îl deconectează — folosește „Deconectează toate celelalte sesiuni” pentru asta."
+          }
+        }
+      }
+    },
+    "Removing a device only clears it from this list. \"Sign out all other sessions\" actually invalidates their access.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing a device only clears it from this list. \"Sign out all other sessions\" actually invalidates their access."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminarea unui dispozitiv doar îl șterge din această listă. „Deconectează toate celelalte sesiuni” le invalidează efectiv accesul."
+          }
+        }
+      }
+    },
+    "trusted_persons_footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trusted people are saved to your account. Capability toggles are stored, but no backend flow enforces them yet — enforcement arrives in a future update."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persoanele de încredere sunt salvate în contul tău. Permisiunile sunt stocate, dar nu sunt încă aplicate de niciun flux — aplicarea lor va sosi într-o actualizare viitoare."
+          }
+        }
+      }
+    },
+    "trusted_persons_error_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load trusted people"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu s-au putut încărca persoanele de încredere"
+          }
+        }
+      }
+    },
+    "trusted_persons_error_msg": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifică conexiunea și încearcă din nou."
+          }
+        }
+      }
+    },
+    "trusted_persons_sync_error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sync with your account. Check your connection and try again."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu s-a putut sincroniza cu contul tău. Verifică conexiunea și încearcă din nou."
+          }
+        }
+      }
+    },
+    "trusted_person_edit_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit person"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editează persoana"
+          }
+        }
+      }
+    },
+    "emg_trusted_contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trusted contact"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact de încredere"
+          }
+        }
+      }
+    },
+    "emg_trusted_configure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up a trusted contact"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurează un contact de încredere"
+          }
+        }
+      }
+    },
+    "emg_trusted_configure_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the person to call in an emergency"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă persoana pe care să o suni în caz de urgență"
+          }
+        }
+      }
+    },
+    "Full name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nume complet"
+          }
+        }
+      }
+    },
+    "Relationship (e.g. spouse, mother, friend)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relationship (e.g. spouse, mother, friend)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relație (ex. soț/soție, mamă, prieten)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

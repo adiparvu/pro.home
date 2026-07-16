@@ -36,6 +36,12 @@ struct EmergencyModeView: View {
     @State private var familyAlert: FamilyAlertState = .idle
     @State private var showAlertConfirm = false
 
+    // Trusted emergency contact — the person TrustedContactView saved
+    // (device-local, same @AppStorage keys it writes).
+    @AppStorage("prvio.trustedContact.name")         private var trustedName: String = ""
+    @AppStorage("prvio.trustedContact.phone")        private var trustedPhone: String = ""
+    @AppStorage("prvio.trustedContact.relationship") private var trustedRelationship: String = ""
+
     // Editable gas number (per property, device-local)
     private static let defaultGasNumber = "0800-001122"
     @State private var gasNumber = EmergencyModeView.defaultGasNumber
@@ -128,6 +134,7 @@ struct EmergencyModeView: View {
                 )
                 addressCard
                 gasCard
+                trustedContactCard
                 ForEach(contacts) { c in
                     customContactCard(c)
                 }
@@ -213,6 +220,78 @@ struct EmergencyModeView: View {
             } label: {
                 Label("emg_gas_edit_title", systemImage: "pencil")
             }
+        }
+    }
+
+    // MARK: Trusted contact — the person Settings → Trusted Contact saved
+    //
+    // Rendered ONLY when a contact actually exists (honest data: no
+    // placeholder person). Same full-color, whole-surface-dials treatment as
+    // the other call cards — purple, so it's never mistaken for 112 or gas.
+    // Without a contact, a small quiet row routes toward Profile settings,
+    // where TrustedContactView lives.
+
+    @ViewBuilder
+    private var trustedContactCard: some View {
+        if !trustedName.isEmpty {
+            Button {
+                HapticFeedback.impact(.heavy)
+                call(trustedPhone)
+            } label: {
+                HStack(spacing: AppSpacing.base) {
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(AppFont.scaled(30, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(trustedName)
+                            .font(AppFont.scaled(22, weight: .heavy, design: .rounded))
+                            .lineLimit(1)
+                        Text(verbatim: trustedRelationship.isEmpty
+                             ? String(localized: "emg_trusted_contact")
+                             : "\(String(localized: "emg_trusted_contact")) · \(trustedRelationship)")
+                            .font(AppFont.footnoteEmphasis)
+                            .opacity(0.9)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "phone.fill")
+                        .font(AppFont.scaled(28, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.vertical, AppSpacing.lg)
+                .frame(maxWidth: .infinity)
+                .background(Color.brandPurple, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("emergency_call_a11y \(trustedName)"))
+        } else {
+            Button {
+                HapticFeedback.impact(.light)
+                router.navigate(to: .profile)
+            } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "person.badge.shield.checkmark.fill", color: Color.brandSkyBlue)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("emg_trusted_configure")
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                        Text("emg_trusted_configure_hint")
+                            .font(AppFont.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .liquidGlass(cornerRadius: AppRadius.lg)
+            .accessibilityLabel(Text("emg_trusted_configure"))
         }
     }
 

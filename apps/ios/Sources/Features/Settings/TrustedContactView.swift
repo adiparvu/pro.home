@@ -107,7 +107,9 @@ struct TrustedContactView: View {
         }
     }
 
-    private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+    // `placeholder` is a LocalizedStringKey, not String — a String parameter
+    // reaches TextField's verbatim initializer and Romanian never applies.
+    private func fieldRow(icon: String, color: Color, placeholder: LocalizedStringKey, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             TextField(placeholder, text: text)
