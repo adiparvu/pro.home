@@ -192,7 +192,6 @@ struct ChatComposerBar<Accessory: View>: View {
         // mediaGlass, the "+"'s glass circle), and both go opaque under Reduce
         // Transparency, so dropping the band costs no readability.
         .animation(.snappy(duration: 0.25), value: anyFieldFocused)
-        .animation(.spring(duration: 0.3), value: reply?.snippet)
         .animation(.spring(duration: 0.3), value: edit?.snippet)
         .animation(.snappy(duration: 0.25), value: audioRecorder.isRecording)
         .animation(.snappy(duration: 0.25), value: audioRecorder.preview)
