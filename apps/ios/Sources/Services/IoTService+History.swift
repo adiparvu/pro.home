@@ -64,6 +64,23 @@ extension IoTService {
         return rows.reversed()
     }
 
+    /// Every event for one sensor since `since` (bounded SERVER-side, so the
+    /// energy store's two-day window never pays for the full 30-day slice),
+    /// oldest-first, capped at `historyQueryLimit` NEWEST rows — the exact
+    /// query of `sensorHistory(sensorId:)` with a caller-chosen lower bound.
+    func sensorHistory(sensorId: String, since: Date) async throws -> [IoTHistoryPoint] {
+        guard let uid = supabase.auth.currentSession?.user.id else { return [] }
+        let rows: [IoTHistoryPoint] = try await supabase.from("iot_events")
+            .select("id, value, unit, created_at")
+            .eq("user_id", value: uid.uuidString)
+            .eq("sensor_id", value: sensorId)
+            .gte("created_at", value: ISODate.string(from: since))
+            .order("created_at", ascending: false)
+            .limit(Self.historyQueryLimit)
+            .execute().value
+        return rows.reversed()
+    }
+
     /// The `iot_events.sensor_id` under which a HomeKit accessory's metric
     /// accrues history — stable because `HMAccessory.uniqueIdentifier` is.
     static func homeKitSensorId(accessory id: UUID, metric: String) -> String {

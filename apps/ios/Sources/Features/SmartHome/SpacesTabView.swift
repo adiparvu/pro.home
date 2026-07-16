@@ -57,6 +57,7 @@ struct SpacesTabView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     header
                     quickRow
+                    EnergyCard()
                     if zoneService.zones.isEmpty {
                         emptyState
                     } else {
