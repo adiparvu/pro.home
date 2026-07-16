@@ -9,6 +9,8 @@ import UserNotifications
 //   each showing its current value;
 // - the weather path appears only while real cached weather exists, and
 //   only the states the cache can answer;
+// - the presence path is greyed (with the reason, Save held) while home
+//   presence monitoring isn't armed — no dead saves;
 // - the scene action is offered only when HomeKit scenes exist;
 // - Save stays disabled until the rule is fully valid.
 struct PropertyRuleBuilderSheet: View {
@@ -20,8 +22,11 @@ struct PropertyRuleBuilderSheet: View {
 
     private let store = PropertyRulesStore.shared
     private let homeKit = HomeKitService.shared
+    private let presence = HomePresenceService.shared
 
-    private enum ConditionKind: Hashable { case sensor, weather }
+    private enum ConditionKind: Hashable {
+        case sensor, weather, schedule, docExpiry, presence
+    }
 
     @State private var name: String
     @State private var kind: ConditionKind
@@ -32,6 +37,15 @@ struct PropertyRuleBuilderSheet: View {
     /// and a new rule must start without a pretended default threshold.
     @State private var thresholdText: String
     @State private var weatherState: RuleWeatherState
+    @State private var scheduleFrequency: RuleScheduleFrequency
+    /// Calendar weekday number (1 = Sunday … 7 = Saturday, Gregorian) — the
+    /// numbering the vocabulary stores.
+    @State private var scheduleWeekday: Int
+    /// Only the hour:minute components matter — the calendar day is
+    /// irrelevant scaffolding for the wheels.
+    @State private var scheduleTime: Date
+    @State private var docDays: Int
+    @State private var presenceEvent: RulePresenceEvent
     @State private var notifyOn: Bool
     @State private var taskOn: Bool
     @State private var taskTitle: String
@@ -54,6 +68,13 @@ struct PropertyRuleBuilderSheet: View {
         var comparator: RuleComparator = .lt
         var thresholdText = ""
         var weatherState: RuleWeatherState = .rain
+        var scheduleFrequency: RuleScheduleFrequency = .daily
+        // Today's weekday feels like the natural weekly starting point.
+        var scheduleWeekday = Calendar.current.component(.weekday, from: Date())
+        var scheduleTime = Calendar.current.date(bySettingHour: 9, minute: 0,
+                                                 second: 0, of: Date()) ?? Date()
+        var docDays = 14
+        var presenceEvent: RulePresenceEvent = .arrive
         var notifyOn = existing == nil // new rules start with the free action
         var taskOn = false
         var taskTitle = ""
@@ -74,6 +95,20 @@ struct PropertyRuleBuilderSheet: View {
             case .weather(let state):
                 kind = .weather
                 weatherState = state
+            case .schedule(let schedule):
+                kind = .schedule
+                scheduleFrequency = schedule.frequency
+                scheduleWeekday = schedule.weekday ?? scheduleWeekday
+                scheduleTime = Calendar.current.date(bySettingHour: schedule.hour,
+                                                     minute: schedule.minute,
+                                                     second: 0,
+                                                     of: Date()) ?? scheduleTime
+            case .docExpiry(let days):
+                kind = .docExpiry
+                docDays = days
+            case .geofence(let event):
+                kind = .presence
+                presenceEvent = event
             case .unknown:
                 break // unreachable: unknown rows are not editable
             }
@@ -99,6 +134,11 @@ struct PropertyRuleBuilderSheet: View {
         _comparator = State(initialValue: comparator)
         _thresholdText = State(initialValue: thresholdText)
         _weatherState = State(initialValue: weatherState)
+        _scheduleFrequency = State(initialValue: scheduleFrequency)
+        _scheduleWeekday = State(initialValue: scheduleWeekday)
+        _scheduleTime = State(initialValue: scheduleTime)
+        _docDays = State(initialValue: docDays)
+        _presenceEvent = State(initialValue: presenceEvent)
         _notifyOn = State(initialValue: notifyOn)
         _taskOn = State(initialValue: taskOn)
         _taskTitle = State(initialValue: taskTitle)
@@ -175,7 +215,26 @@ struct PropertyRuleBuilderSheet: View {
             return sensorId != nil && sensorId == storedSensorCondition?.sensorId
         case .weather:
             return weatherPathAvailable
+        case .schedule:
+            return true // the wheels always hold a complete time
+        case .docExpiry:
+            return docDaysRange.contains(docDays)
+        case .presence:
+            // No dead saves: a geofence rule needs armed monitoring.
+            return presence.isArmed
         }
+    }
+
+    /// The stepper's horizon. 1...60 for new rules; an existing row written
+    /// with a wider horizon keeps its value reachable instead of being
+    /// silently clamped on the next save.
+    private var docDaysRange: ClosedRange<Int> {
+        var lower = 1, upper = 60
+        if case .docExpiry(let days)? = existing?.condition {
+            lower = min(lower, max(0, days))
+            upper = max(upper, days)
+        }
+        return lower...upper
     }
 
     // MARK: Body
@@ -197,6 +256,14 @@ struct PropertyRuleBuilderSheet: View {
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             notificationsDenied = settings.authorizationStatus == .denied
         }
+        .onChange(of: kind) { _, newKind in
+            // Suggest a 24 h cooldown for document expiry — it should nag
+            // once a day, not on every evaluation pass. Suggestion only:
+            // creating, and freely overridable afterwards.
+            if newKind == .docExpiry, existing == nil {
+                cooldown = .day
+            }
+        }
     }
 
     // MARK: Name
@@ -215,25 +282,42 @@ struct PropertyRuleBuilderSheet: View {
     private var conditionGroup: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             FormGroup(title: "rule_section_condition") {
-                if weatherPathAvailable {
-                    FormRow(icon: "slider.horizontal.3", tint: .accentColor) {
-                        Picker("rule_section_condition", selection: $kind) {
-                            Text("rule_kind_sensor").tag(ConditionKind.sensor)
+                FormRow(icon: "slider.horizontal.3", tint: .accentColor) {
+                    // Five kinds no longer fit a segmented control — the
+                    // kind picker is a menu now, and always visible.
+                    Picker("rule_section_condition", selection: $kind) {
+                        Text("rule_kind_sensor").tag(ConditionKind.sensor)
+                        if weatherPathAvailable {
                             Text("rule_kind_weather").tag(ConditionKind.weather)
                         }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+                        Text("rule_kind_schedule").tag(ConditionKind.schedule)
+                        Text("rule_kind_documents").tag(ConditionKind.docExpiry)
+                        Text("rule_kind_presence").tag(ConditionKind.presence)
                     }
-                    FormDivider()
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                FormDivider()
                 switch kind {
-                case .sensor:  sensorRows
-                case .weather: weatherRows
+                case .sensor:    sensorRows
+                case .weather:   weatherRows
+                case .schedule:  scheduleRows
+                case .docExpiry: documentRows
+                case .presence:  presenceRows
                 }
             }
             if !weatherPathAvailable {
                 // Why there is no weather option right now — honest, quiet.
                 Text("rule_weather_unavailable")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, AppSpacing.xxs)
+            }
+            if kind == .presence, !presence.isArmed {
+                // The pane is greyed and Save held — say why, honestly.
+                Text("rule_presence_disarmed")
                     .font(AppFont.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -322,6 +406,66 @@ struct PropertyRuleBuilderSheet: View {
             Text(verbatim: " Apple Weather")
                 .font(AppFont.caption2)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private var scheduleRows: some View {
+        FormRow(icon: "repeat", tint: .accentColor) {
+            Picker("rule_kind_schedule", selection: $scheduleFrequency) {
+                ForEach(RuleScheduleFrequency.allCases) { frequency in
+                    Text(LocalizedStringKey(frequency.titleKey)).tag(frequency)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+        if scheduleFrequency == .weekly {
+            FormDivider()
+            FormRow(icon: "calendar", tint: .accentColor) {
+                // Calendar weekday numbers, presented in the locale's own
+                // week order with localized names.
+                Picker("rule_schedule_weekday", selection: $scheduleWeekday) {
+                    ForEach(RuleWeekday.displayOrder, id: \.self) { weekday in
+                        Text(verbatim: RuleWeekday.name(weekday)).tag(weekday)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        FormDivider()
+        FormRow(icon: "clock", tint: .accentColor) {
+            DatePicker(selection: $scheduleTime, displayedComponents: .hourAndMinute) {
+                Text("rule_schedule_time")
+                    .font(AppFont.scaled(15))
+            }
+        }
+    }
+
+    @ViewBuilder private var documentRows: some View {
+        FormRow(icon: "doc.badge.clock", tint: .accentColor) {
+            Stepper(value: $docDays, in: docDaysRange) {
+                // Same copy the rule row will show — no surprises later.
+                Text(verbatim: String(format: String(localized: "rule_summary_doc_expiry"),
+                                      docDays))
+                    .font(AppFont.scaled(15))
+            }
+        }
+    }
+
+    @ViewBuilder private var presenceRows: some View {
+        FormRow(icon: "location.fill", tint: presence.isArmed ? .accentColor : .secondary) {
+            Picker("rule_kind_presence", selection: $presenceEvent) {
+                ForEach(RulePresenceEvent.allCases) { event in
+                    Text(LocalizedStringKey(event.titleKey)).tag(event)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            // Greyed until home presence monitoring is armed in Settings —
+            // the note under the group says so, and Save stays held.
+            .disabled(!presence.isArmed)
         }
     }
 
@@ -432,6 +576,21 @@ struct PropertyRuleBuilderSheet: View {
             }
         case .weather:
             condition = .weather(weatherState)
+        case .schedule:
+            // Only the wall-clock components leave the wheels — the
+            // scaffolding Date's calendar day is deliberately dropped.
+            let components = Calendar.current.dateComponents([.hour, .minute],
+                                                             from: scheduleTime)
+            condition = .schedule(RuleScheduleCondition(
+                frequency: scheduleFrequency,
+                weekday: scheduleFrequency == .weekly ? scheduleWeekday : nil,
+                hour: components.hour ?? 0,
+                minute: components.minute ?? 0))
+        case .docExpiry:
+            condition = .docExpiry(days: docDays)
+        case .presence:
+            guard presence.isArmed else { return } // canSave already holds this
+            condition = .geofence(presenceEvent)
         }
 
         var actions: [RuleAction] = []

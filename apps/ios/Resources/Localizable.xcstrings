@@ -90723,6 +90723,470 @@
           }
         }
       }
+    },
+    "rules_routines_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Routines"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rutine"
+          }
+        }
+      }
+    },
+    "rule_kind_schedule": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Program"
+          }
+        }
+      }
+    },
+    "rule_kind_documents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documente"
+          }
+        }
+      }
+    },
+    "rule_kind_presence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presence"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezență"
+          }
+        }
+      }
+    },
+    "rule_schedule_daily": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zilnic"
+          }
+        }
+      }
+    },
+    "rule_schedule_weekly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Săptămânal"
+          }
+        }
+      }
+    },
+    "rule_schedule_weekday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day of week"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziua săptămânii"
+          }
+        }
+      }
+    },
+    "rule_schedule_time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora"
+          }
+        }
+      }
+    },
+    "rule_presence_arrive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrive"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sosire"
+          }
+        }
+      }
+    },
+    "rule_presence_leave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plecare"
+          }
+        }
+      }
+    },
+    "rule_presence_disarmed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home presence is off. Turn it on in Settings to use this trigger."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezența acasă este dezactivată. Activeaz-o din Setări pentru a folosi acest declanșator."
+          }
+        }
+      }
+    },
+    "rule_summary_schedule_daily": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily at %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zilnic la %@"
+          }
+        }
+      }
+    },
+    "rule_summary_schedule_weekly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly, %1$@ at %2$@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Săptămânal, %1$@ la %2$@"
+          }
+        }
+      }
+    },
+    "rule_summary_doc_expiry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents expiring within %d days"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documente care expiră în %d zile"
+          }
+        }
+      }
+    },
+    "rule_summary_geofence_arrive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you arrive home"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Când ajungi acasă"
+          }
+        }
+      }
+    },
+    "rule_summary_geofence_leave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you leave home"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Când pleci de acasă"
+          }
+        }
+      }
+    },
+    "rule_notif_schedule": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled for %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programată pentru %@"
+          }
+        }
+      }
+    },
+    "rule_notif_doc_expiry_today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expires today"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expiră astăzi"
+          }
+        }
+      }
+    },
+    "rule_notif_doc_expiry_tomorrow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expires tomorrow"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expiră mâine"
+          }
+        }
+      }
+    },
+    "rule_notif_doc_expiry_days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ expires in %2$d days"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ expiră în %2$d zile"
+          }
+        }
+      }
+    },
+    "rule_notif_arrive": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You arrived home."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai ajuns acasă."
+          }
+        }
+      }
+    },
+    "rule_notif_leave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You left home."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai plecat de acasă."
+          }
+        }
+      }
+    },
+    "rule_docs_unavailable_short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents not loaded — not evaluating right now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentele nu sunt încărcate — nu se evaluează acum"
+          }
+        }
+      }
+    },
+    "rule_presence_unavailable_short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home presence off — not evaluating"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezența acasă dezactivată — nu se evaluează"
+          }
+        }
+      }
+    },
+    "rule_template_weekend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend prep"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregătire de weekend"
+          }
+        }
+      }
+    },
+    "rule_template_weekend_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every Friday at 18:00 — a task to get the house ready."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În fiecare vineri la 18:00 — o sarcină pentru pregătirea casei."
+          }
+        }
+      }
+    },
+    "rule_template_weekend_task": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare the house for the weekend"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregătește casa pentru weekend"
+          }
+        }
+      }
+    },
+    "rule_template_presence_leave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaving home"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La plecarea de acasă"
+          }
+        }
+      }
+    },
+    "rule_template_presence_leave_caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get notified when you leave home."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primește o notificare când pleci de acasă."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

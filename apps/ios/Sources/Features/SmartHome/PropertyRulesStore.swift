@@ -20,8 +20,23 @@ import UserNotifications
 // - after every IndoorClimateStore refresh and IoTService poll, via ONE
 //   Observation tracking on `IndoorClimateStore.readings` and
 //   `IoTService.sensors` — the exact signals R4's history mirroring rides.
+//   The same tracking also reads `HomePresenceService.lastTransition` (the
+//   geofence signal) and the documents list once a source exists.
 //   Bursts coalesce through a short debounce; one evaluation pass runs at
 //   a time.
+// - a minute-aligned foreground tick, armed ONLY while at least one enabled
+//   schedule rule exists and the app is foreground (AppLifecycle) — it just
+//   calls `evaluateSoon()`. No BGTaskScheduler; the engine stays honest
+//   about being app-open-only.
+//
+// Schedule semantics (catch-up, not pretend-background):
+// - the most recent occurrence ≤ now is computed with Calendar.current date
+//   components (never epoch arithmetic — DST);
+// - the rule matches iff that occurrence is within a 24 h grace window AND
+//   `last_fired_at` predates it (nil = match). Opening the app Saturday
+//   morning fires Friday-18:00 once, honestly late; opening Monday finds
+//   the grace expired and stays quiet. The server-side claim below still
+//   dedups devices.
 //
 // Cooldown semantics — `cooldown_minutes` vs `last_fired_at`:
 // - a rule fires only when `last_fired_at` is NULL or older than the
@@ -77,6 +92,12 @@ final class PropertyRulesStore {
     private static let weatherMaxAge: TimeInterval = 3 * 3600
     /// Poll/refresh bursts coalesce into one evaluation pass.
     private static let evaluateDebounce: Duration = .milliseconds(1200)
+    /// How long a missed schedule occurrence stays worth firing (the honest
+    /// catch-up window described in the header).
+    private static let scheduleGraceWindow: TimeInterval = 24 * 3600
+    /// A geofence transition older than this is history, not a signal — a
+    /// stale arrive/leave must never fire on a later app-open.
+    private static let presenceFreshWindow: TimeInterval = 600
 
     // MARK: Private plumbing
 
@@ -91,6 +112,18 @@ final class PropertyRulesStore {
     /// instance whose `addTask` insert reaches every device via realtime.
     private var adoptedTaskService: TaskService?
     private var fallbackTaskService: TaskService?
+    /// Same adoption pattern for documents (the docExpiry condition's data
+    /// source): the environment's DocumentService when a surface handed it
+    /// over — usually already loaded — otherwise a private instance loaded
+    /// on demand.
+    private var adoptedDocumentService: DocumentService?
+    private var fallbackDocumentService: DocumentService?
+    /// One-shot document load bookkeeping — `ensureDocumentsLoaded()`.
+    private var documentsLoadTask: Task<Void, Never>?
+    private var documentsLoadedOnce = false
+    /// The foreground minute tick that keeps schedule rules punctual while
+    /// the app is open — nil whenever it isn't needed (or backgrounded).
+    private var scheduleTickTask: Task<Void, Never>?
 
     private init() {
         firingLog = Self.loadLog()
@@ -102,12 +135,36 @@ final class PropertyRulesStore {
         adoptedTaskService = taskService
     }
 
+    /// Lets a surface hand over the environment's DocumentService instance —
+    /// docExpiry rules then evaluate the very list the Documents tab shows.
+    func adopt(documentService: DocumentService) {
+        adoptedDocumentService = documentService
+    }
+
     private var taskService: TaskService {
         if let adoptedTaskService { return adoptedTaskService }
         if let fallbackTaskService { return fallbackTaskService }
         let created = TaskService()
         fallbackTaskService = created
         return created
+    }
+
+    private var documentService: DocumentService {
+        if let adoptedDocumentService { return adoptedDocumentService }
+        if let fallbackDocumentService { return fallbackDocumentService }
+        let created = DocumentService()
+        fallbackDocumentService = created
+        return created
+    }
+
+    /// Whether a docExpiry condition can be answered honestly RIGHT NOW: a
+    /// documents source already holds rows, or a load attempt completed (an
+    /// empty list after a completed load is known-empty, exactly what the
+    /// Documents tab would show).
+    private var documentsKnown: Bool {
+        if let service = adoptedDocumentService ?? fallbackDocumentService,
+           !service.documents.isEmpty { return true }
+        return documentsLoadedOnce
     }
 
     // MARK: - Loading
@@ -316,13 +373,58 @@ final class PropertyRulesStore {
     // MARK: - Evaluation triggers
 
     /// Debounced entry point — safe to call from every signal; bursts
-    /// coalesce into one pass.
+    /// coalesce into one pass. Every call is also the moment the schedule
+    /// tick re-checks whether it should run: the existing scene-active hook
+    /// funnels through here, so foreground re-activation re-arms the tick
+    /// with zero new lifecycle plumbing.
     func evaluateSoon() {
+        updateScheduleTick()
         evaluateTask?.cancel()
         evaluateTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: Self.evaluateDebounce)
             guard !Task.isCancelled else { return }
             await self?.evaluate()
+        }
+    }
+
+    private var hasEnabledScheduleRule: Bool {
+        rules.contains { rule in
+            if case .schedule = rule.condition { return rule.enabled }
+            return false
+        }
+    }
+
+    /// Arms ONE minute-aligned repeating tick while at least one enabled
+    /// schedule rule exists AND the app is foreground; cancels it otherwise.
+    /// The tick only calls `evaluateSoon()` — evaluation stays single-path.
+    /// On backgrounding it stands itself down at the next wake (the app
+    /// must go QUIET in the background — see AppLifecycle); the foreground
+    /// scene-active hook re-arms it through `evaluateSoon()`.
+    private func updateScheduleTick() {
+        guard hasEnabledScheduleRule, !AppLifecycle.isBackgrounded else {
+            scheduleTickTask?.cancel()
+            scheduleTickTask = nil
+            return
+        }
+        guard scheduleTickTask == nil else { return }
+        scheduleTickTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                // Sleep to the NEXT minute boundary via Calendar (not a
+                // fixed 60 s stride), so hh:mm rules fire at hh:mm.
+                let now = Date()
+                let boundary = Calendar.current.nextDate(
+                    after: now,
+                    matching: DateComponents(second: 0),
+                    matchingPolicy: .nextTime) ?? now.addingTimeInterval(60)
+                try? await Task.sleep(for: .seconds(max(1, boundary.timeIntervalSince(now))))
+                if Task.isCancelled { return }
+                guard let self else { return }
+                if AppLifecycle.isBackgrounded || !self.hasEnabledScheduleRule {
+                    self.scheduleTickTask = nil
+                    return
+                }
+                self.evaluateSoon()
+            }
         }
     }
 
@@ -339,6 +441,14 @@ final class PropertyRulesStore {
         withObservationTracking {
             _ = IoTService.shared.sensors
             _ = IndoorClimateStore.shared.readings
+            // Geofence transitions observed on THIS device — same
+            // composition, no Services edits.
+            _ = HomePresenceService.shared.lastTransition?.at
+            // Documents (docExpiry) — only once a source exists; never
+            // instantiate a service just to watch it.
+            if let documents = adoptedDocumentService ?? fallbackDocumentService {
+                _ = documents.documents
+            }
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -354,11 +464,12 @@ final class PropertyRulesStore {
         guard !isEvaluating, loadedPropertyId != nil, !rules.isEmpty else { return }
         isEvaluating = true
         defer { isEvaluating = false }
+        ensureDocumentsLoaded()
         let now = Date()
         for rule in rules where rule.enabled {
             // Resolve against LIVE data; nil = not matched OR honestly not
             // evaluatable right now (absent sensor, stale weather) — both skip.
-            guard let detail = liveMatchDetail(for: rule.condition) else { continue }
+            guard let detail = liveMatchDetail(for: rule, now: now) else { continue }
             // Cooldown: server timestamp first, session shadow as fallback.
             let cooldown = TimeInterval(max(1, rule.cooldownMinutes)) * 60
             let lastFired = [rule.lastFiredAt, localLastFired[rule.id]]
@@ -368,11 +479,32 @@ final class PropertyRulesStore {
         }
     }
 
+    /// Loads documents once when an enabled docExpiry rule needs them and
+    /// no adopted source has them yet — the on-demand half of the adoption
+    /// pattern (mirrors the fallback TaskService, plus the load).
+    private func ensureDocumentsLoaded() {
+        guard documentsLoadTask == nil, !documentsKnown else { return }
+        let needsDocuments = rules.contains { rule in
+            if case .docExpiry = rule.condition { return rule.enabled }
+            return false
+        }
+        guard needsDocuments else { return }
+        documentsLoadTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.documentService.load()
+            // A completed attempt makes the source "known" — the same
+            // cached-paint + refresh trust the Documents tab itself shows.
+            self.documentsLoadedOnce = true
+            self.documentsLoadTask = nil
+            self.evaluateSoon()
+        }
+    }
+
     /// The composed live-value line when the condition currently HOLDS,
     /// nil otherwise. This exact text becomes the notification body, the
     /// task description's second half, and the log detail.
-    private func liveMatchDetail(for condition: RuleCondition) -> String? {
-        switch condition {
+    private func liveMatchDetail(for rule: PropertyRule, now: Date) -> String? {
+        switch rule.condition {
         case .sensor(let sensor):
             guard let reading = resolvedReading(sensorId: sensor.sensorId) else { return nil }
             let matched = switch sensor.comparator {
@@ -396,9 +528,78 @@ final class PropertyRulesStore {
                 return String(format: String(localized: "rule_notif_frost"),
                               RuleValueText.text(min(weather.temp, weather.lo), unit: "°C"))
             }
+        case .schedule(let schedule):
+            guard let occurrence = Self.latestOccurrence(of: schedule, before: now) else {
+                return nil
+            }
+            // Grace window: a missed occurrence fires once, honestly late,
+            // on app open — but never an ancient one.
+            guard now.timeIntervalSince(occurrence) <= Self.scheduleGraceWindow else {
+                return nil
+            }
+            // Once per occurrence: the fire stamp (server or session
+            // shadow) must PREDATE the occurrence.
+            let lastFired = [rule.lastFiredAt, localLastFired[rule.id]]
+                .compactMap { $0 }.max()
+            if let lastFired, lastFired >= occurrence { return nil }
+            return String(format: String(localized: "rule_notif_schedule"),
+                          occurrence.formatted(date: .abbreviated, time: .shortened))
+        case .docExpiry(let days):
+            guard documentsKnown else { return nil }
+            // The soonest-expiring document inside the horizon carries the
+            // detail line (0 = expires today; negatives are already past).
+            let candidates: [(doc: DocumentModel, left: Int)] =
+                documentService.documents.compactMap { doc in
+                    guard let left = doc.daysUntilExpiry,
+                          (0...days).contains(left) else { return nil }
+                    return (doc, left)
+                }
+            guard let soonest = candidates.min(by: { $0.left < $1.left }) else { return nil }
+            switch soonest.left {
+            case 0:
+                return String(format: String(localized: "rule_notif_doc_expiry_today"),
+                              soonest.doc.name)
+            case 1:
+                return String(format: String(localized: "rule_notif_doc_expiry_tomorrow"),
+                              soonest.doc.name)
+            default:
+                return String(format: String(localized: "rule_notif_doc_expiry_days"),
+                              soonest.doc.name, soonest.left)
+            }
+        case .geofence(let event):
+            // Only a FRESH transition of the watched kind, and only while
+            // monitoring is actually armed — a stale arrive/leave must not
+            // fire on a later app-open.
+            guard HomePresenceService.shared.isArmed,
+                  let transition = HomePresenceService.shared.lastTransition,
+                  transition.kind.rawValue == event.rawValue,
+                  now.timeIntervalSince(transition.at) < Self.presenceFreshWindow else {
+                return nil
+            }
+            let key: String.LocalizationValue = event == .arrive
+                ? "rule_notif_arrive" : "rule_notif_leave"
+            return String(localized: key)
         case .unknown:
             return nil // decodes honestly, never evaluated
         }
+    }
+
+    /// The most recent occurrence of a schedule at or before `now`, walked
+    /// with Calendar date components (NEVER epoch arithmetic) so DST
+    /// transitions keep the user's wall-clock time.
+    static func latestOccurrence(of schedule: RuleScheduleCondition,
+                                 before now: Date) -> Date? {
+        // Decode guarantees weekly rows carry a weekday; stay defensive.
+        guard schedule.frequency == .daily || schedule.weekday != nil else { return nil }
+        var components = DateComponents()
+        components.hour = schedule.hour
+        components.minute = schedule.minute
+        if schedule.frequency == .weekly { components.weekday = schedule.weekday }
+        return Calendar.current.nextDate(after: now,
+                                         matching: components,
+                                         matchingPolicy: .nextTime,
+                                         repeatedTimePolicy: .first,
+                                         direction: .backward)
     }
 
     // MARK: - Firing
@@ -592,18 +793,44 @@ final class PropertyRulesStore {
             return String(format: String(localized: key), name, threshold)
         case .weather(let state):
             return String(localized: String.LocalizationValue(state.titleKey))
+        case .schedule(let schedule):
+            // Format the wall-clock time through a real Date so it follows
+            // the user's 12/24-hour preference.
+            let calendar = Calendar.current
+            let time = calendar.date(bySettingHour: schedule.hour,
+                                     minute: schedule.minute,
+                                     second: 0, of: Date()) ?? Date()
+            let timeText = time.formatted(date: .omitted, time: .shortened)
+            switch schedule.frequency {
+            case .daily:
+                return String(format: String(localized: "rule_summary_schedule_daily"),
+                              timeText)
+            case .weekly:
+                return String(format: String(localized: "rule_summary_schedule_weekly"),
+                              RuleWeekday.name(schedule.weekday ?? 1), timeText)
+            }
+        case .docExpiry(let days):
+            return String(format: String(localized: "rule_summary_doc_expiry"), days)
+        case .geofence(let event):
+            let key: String.LocalizationValue = event == .arrive
+                ? "rule_summary_geofence_arrive" : "rule_summary_geofence_leave"
+            return String(localized: key)
         case .unknown:
             return String(localized: "rule_condition_unknown")
         }
     }
 
     /// Whether the rule's condition can be answered RIGHT NOW — drives the
-    /// quiet "nu se evaluează" note on rows whose sensor is absent or whose
-    /// weather cache is missing/stale.
+    /// quiet "nu se evaluează" note on rows whose sensor is absent, whose
+    /// weather cache is missing/stale, whose documents never loaded, or
+    /// whose presence monitoring is disarmed.
     func isConditionEvaluatable(_ rule: PropertyRule) -> Bool {
         switch rule.condition {
         case .sensor(let sensor): resolvedReading(sensorId: sensor.sensorId) != nil
         case .weather:            weatherAvailable
+        case .schedule:           true // the clock is always live
+        case .docExpiry:          documentsKnown
+        case .geofence:           HomePresenceService.shared.isArmed
         case .unknown:            false
         }
     }
@@ -682,6 +909,32 @@ final class PropertyRulesStore {
                 actions: [.notify,
                           .task(title: String(localized: "rule_template_frost_task"))],
                 cooldownMinutes: RuleCooldown.day.rawValue))
+        }
+
+        // "Weekend prep" needs only the clock — always offerable. Friday is
+        // Calendar weekday 6 (1 = Sunday … 7 = Saturday, Gregorian).
+        out.append(RuleTemplate(
+            id: "weekend-prep",
+            icon: "calendar.badge.clock",
+            titleKey: "rule_template_weekend",
+            captionKey: "rule_template_weekend_caption",
+            condition: .schedule(RuleScheduleCondition(frequency: .weekly,
+                                                       weekday: 6,
+                                                       hour: 18, minute: 0)),
+            actions: [.task(title: String(localized: "rule_template_weekend_task"))],
+            cooldownMinutes: RuleCooldown.day.rawValue))
+
+        // The geofence starter only while presence monitoring is actually
+        // armed — same capability gating as the weather starters.
+        if HomePresenceService.shared.isArmed {
+            out.append(RuleTemplate(
+                id: "presence-leave",
+                icon: "figure.walk.departure",
+                titleKey: "rule_template_presence_leave",
+                captionKey: "rule_template_presence_leave_caption",
+                condition: .geofence(.leave),
+                actions: [.notify],
+                cooldownMinutes: RuleCooldown.oneHour.rawValue))
         }
 
         return out

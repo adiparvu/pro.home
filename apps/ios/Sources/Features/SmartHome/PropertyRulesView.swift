@@ -17,6 +17,7 @@ struct PropertyRulesView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
 
     private let store = PropertyRulesStore.shared
 
@@ -68,6 +69,7 @@ struct PropertyRulesView: View {
         }
         .task {
             store.adopt(taskService: taskService)
+            store.adopt(documentService: documentService)
             await store.loadIfNeeded()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -88,7 +90,7 @@ struct PropertyRulesView: View {
 
     private var topBar: some View {
         HStack(alignment: .center, spacing: AppSpacing.sm) {
-            Text("rule_hub_title")
+            Text("rules_routines_title")
                 .font(AppFont.scaled(26, weight: .light))
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
@@ -221,8 +223,10 @@ struct PropertyRulesView: View {
 
     private func unevaluatableNote(for rule: PropertyRule) -> LocalizedStringKey {
         switch rule.condition {
-        case .weather: "rule_weather_unavailable_short"
-        default:       "rule_sensor_unavailable_short"
+        case .weather:   "rule_weather_unavailable_short"
+        case .docExpiry: "rule_docs_unavailable_short"
+        case .geofence:  "rule_presence_unavailable_short"
+        default:         "rule_sensor_unavailable_short"
         }
     }
 

@@ -11,6 +11,21 @@ import Foundation
 //   {"v":1,"kind":"sensor","sensorId":"…","metric":"temperature",
 //    "comparator":"lt"|"gt","threshold":5.0}
 //   {"v":1,"kind":"weather","state":"rain"|"snow"|"frost"}
+//   {"v":1,"kind":"schedule","freq":"daily"|"weekly","weekday":1-7,
+//    "hour":0-23,"minute":0-59}
+//   {"v":1,"kind":"docExpiry","days":N}
+//   {"v":1,"kind":"geofence","event":"arrive"|"leave"}
+//
+//   `schedule` carries `weekday` ONLY when freq=="weekly", in
+//   `Calendar.current` weekday numbering (1 = Sunday … 7 = Saturday in the
+//   Gregorian calendar — the numbering `DateComponents.weekday` uses).
+//   Occurrences are always resolved through Calendar date math, never epoch
+//   arithmetic, so DST transitions land on the wall-clock time the user set.
+//
+//   `docExpiry` matches while ANY document's days-until-expiry sits in
+//   0...N (today counts). `geofence` rides the on-device HomePresenceService
+//   transition signal and only fires on a FRESH transition — a stale one
+//   must never fire on a later app-open.
 //
 //   `sensorId` spans both sensor worlds with the identities R4 already made
 //   durable:
@@ -42,6 +57,14 @@ import Foundation
 //   reads kind=="sensor", all four fields present → identical .sensor.
 // - .weather(.frost) encodes {"v":1,"kind":"weather","state":"frost"};
 //   decoding reads kind=="weather", state known → identical .weather.
+// - .schedule(weekly, weekday:6, 18:00) encodes {"v":1,"kind":"schedule",
+//   "freq":"weekly","weekday":6,"hour":18,"minute":0}; decoding reads
+//   kind=="schedule", freq known, weekday/hour/minute integral and in
+//   range → identical .schedule. Daily omits "weekday" entirely.
+// - .docExpiry(days:14) encodes {"v":1,"kind":"docExpiry","days":14} →
+//   integral non-negative days → identical .docExpiry.
+// - .geofence(.arrive) encodes {"v":1,"kind":"geofence","event":"arrive"}
+//   → event known → identical .geofence.
 // - .notify encodes {"type":"notify"} → decodes to .notify.
 // - .task(title:"T") encodes {"type":"task","title":"T"} → .task("T").
 // - .scene(home:H, actionSet:A) encodes {"type":"scene","home":"<H>",
@@ -110,6 +133,13 @@ enum RuleJSONValue: Codable, Equatable, Sendable {
         guard case .number(let value) = self else { return nil }
         return value
     }
+
+    /// Integral numbers only — a fractional hour/weekday/day count is not a
+    /// well-formed shape and falls through to `.unknown` preservation.
+    var intValue: Int? {
+        guard case .number(let value) = self else { return nil }
+        return Int(exactly: value)
+    }
 }
 
 // MARK: - Condition
@@ -164,10 +194,71 @@ struct RuleSensorCondition: Equatable, Sendable {
     var threshold: Double
 }
 
+/// How often a schedule condition recurs.
+enum RuleScheduleFrequency: String, Codable, CaseIterable, Identifiable, Sendable {
+    case daily, weekly
+    var id: String { rawValue }
+
+    var titleKey: String {
+        switch self {
+        case .daily:  "rule_schedule_daily"
+        case .weekly: "rule_schedule_weekly"
+        }
+    }
+}
+
+/// The schedule half of the vocabulary — a wall-clock recurrence.
+struct RuleScheduleCondition: Equatable, Sendable {
+    var frequency: RuleScheduleFrequency
+    /// `Calendar.current` weekday numbering (1 = Sunday … 7 = Saturday in
+    /// the Gregorian calendar); present ONLY for `.weekly`.
+    var weekday: Int?
+    var hour: Int
+    var minute: Int
+}
+
+/// The geofence transition a rule can watch — mirrors
+/// `HomePresenceService.Transition` raw values exactly.
+enum RulePresenceEvent: String, Codable, CaseIterable, Identifiable, Sendable {
+    case arrive, leave
+    var id: String { rawValue }
+
+    /// "Sosire" / "Plecare" — the builder's segmented labels.
+    var titleKey: String {
+        switch self {
+        case .arrive: "rule_presence_arrive"
+        case .leave:  "rule_presence_leave"
+        }
+    }
+}
+
+/// Weekday display helpers shared by the store's summaries and the builder's
+/// picker — always `Calendar.current`, so names and ordering follow the
+/// user's locale while the STORED number stays calendar-canonical.
+enum RuleWeekday {
+    /// Weekday numbers in the user's display order (starting at the
+    /// locale's first weekday), each in Calendar numbering.
+    static var displayOrder: [Int] {
+        let first = Calendar.current.firstWeekday
+        return (0..<7).map { (first - 1 + $0) % 7 + 1 }
+    }
+
+    /// The localized standalone name for a Calendar weekday number.
+    static func name(_ weekday: Int) -> String {
+        let symbols = Calendar.current.standaloneWeekdaySymbols
+        let index = weekday - 1
+        guard symbols.indices.contains(index) else { return "\(weekday)" }
+        return symbols[index]
+    }
+}
+
 /// One rule's watched condition — the jsonb `condition` column.
 enum RuleCondition: Codable, Equatable, Sendable {
     case sensor(RuleSensorCondition)
     case weather(RuleWeatherState)
+    case schedule(RuleScheduleCondition)
+    case docExpiry(days: Int)
+    case geofence(RulePresenceEvent)
     /// A shape this app version doesn't know — preserved raw, rendered as
     /// "necunoscut", never evaluated.
     case unknown(RuleJSONValue)
@@ -205,6 +296,47 @@ enum RuleCondition: Codable, Equatable, Sendable {
                 return
             }
             self = .unknown(raw)
+        case "schedule":
+            // Ranges are validated on decode: an out-of-range row (written
+            // by a newer/looser client) is preserved, never mis-evaluated.
+            if let freqRaw = raw["freq"]?.stringValue,
+               let frequency = RuleScheduleFrequency(rawValue: freqRaw),
+               let hour = raw["hour"]?.intValue, (0...23).contains(hour),
+               let minute = raw["minute"]?.intValue, (0...59).contains(minute) {
+                switch frequency {
+                case .daily:
+                    self = .schedule(RuleScheduleCondition(frequency: .daily,
+                                                           weekday: nil,
+                                                           hour: hour,
+                                                           minute: minute))
+                    return
+                case .weekly:
+                    if let weekday = raw["weekday"]?.intValue,
+                       (1...7).contains(weekday) {
+                        self = .schedule(RuleScheduleCondition(frequency: .weekly,
+                                                               weekday: weekday,
+                                                               hour: hour,
+                                                               minute: minute))
+                        return
+                    }
+                }
+            }
+            self = .unknown(raw)
+        case "docExpiry":
+            // Any non-negative horizon evaluates honestly, even beyond the
+            // builder's own 1...60 offer — never destroy a wider row.
+            if let days = raw["days"]?.intValue, days >= 0 {
+                self = .docExpiry(days: days)
+                return
+            }
+            self = .unknown(raw)
+        case "geofence":
+            if let eventRaw = raw["event"]?.stringValue,
+               let event = RulePresenceEvent(rawValue: eventRaw) {
+                self = .geofence(event)
+                return
+            }
+            self = .unknown(raw)
         default:
             self = .unknown(raw)
         }
@@ -214,6 +346,11 @@ enum RuleCondition: Codable, Equatable, Sendable {
         case v, kind, sensorId, metric, comparator, threshold
     }
     private enum WeatherKeys: String, CodingKey { case v, kind, state }
+    private enum ScheduleKeys: String, CodingKey {
+        case v, kind, freq, weekday, hour, minute
+    }
+    private enum DocExpiryKeys: String, CodingKey { case v, kind, days }
+    private enum GeofenceKeys: String, CodingKey { case v, kind, event }
 
     func encode(to encoder: Encoder) throws {
         switch self {
@@ -230,6 +367,27 @@ enum RuleCondition: Codable, Equatable, Sendable {
             try container.encode(Self.version, forKey: .v)
             try container.encode("weather", forKey: .kind)
             try container.encode(state.rawValue, forKey: .state)
+        case .schedule(let condition):
+            var container = encoder.container(keyedBy: ScheduleKeys.self)
+            try container.encode(Self.version, forKey: .v)
+            try container.encode("schedule", forKey: .kind)
+            try container.encode(condition.frequency.rawValue, forKey: .freq)
+            // `weekday` exists on the wire only for weekly rows.
+            if condition.frequency == .weekly {
+                try container.encodeIfPresent(condition.weekday, forKey: .weekday)
+            }
+            try container.encode(condition.hour, forKey: .hour)
+            try container.encode(condition.minute, forKey: .minute)
+        case .docExpiry(let days):
+            var container = encoder.container(keyedBy: DocExpiryKeys.self)
+            try container.encode(Self.version, forKey: .v)
+            try container.encode("docExpiry", forKey: .kind)
+            try container.encode(days, forKey: .days)
+        case .geofence(let event):
+            var container = encoder.container(keyedBy: GeofenceKeys.self)
+            try container.encode(Self.version, forKey: .v)
+            try container.encode("geofence", forKey: .kind)
+            try container.encode(event.rawValue, forKey: .event)
         case .unknown(let raw):
             // Replay the preserved tree verbatim — never invent a shape.
             try raw.encode(to: encoder)
