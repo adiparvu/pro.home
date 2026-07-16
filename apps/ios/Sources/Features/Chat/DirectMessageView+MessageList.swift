@@ -92,7 +92,7 @@ extension DirectMessageView {
         let isStructured = ChatMedia.dmBodyKind(m.body) != .text
             || m.isContactShare || DMRich.decode(m.body) != nil
         var items: [ChatActionItem] = [
-            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
+            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.snappy(duration: 0.28)) { replyingTo = m } },
             ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
         ]
         // Isolate the reply thread (iMessage) — offered only when this message
@@ -268,7 +268,7 @@ extension DirectMessageView {
                                     onReact: { emoji in
                                         Task { await directMessageService.toggleReaction(msg, emoji: emoji, myName: myName) }
                                     },
-                                    onReply: { withAnimation { replyingTo = msg } },
+                                    onReply: { withAnimation(.snappy(duration: 0.28)) { replyingTo = msg } },
                                     onForward: { forwarding = msg },
                                     onEdit: isOwn ? { editingMessage = msg; editText = MessageSubject.parse(msg.body).text } : nil,
                                     onPin: { Task { await directMessageService.togglePin(msg) } },

@@ -228,40 +228,6 @@ struct ReplyFocusTimestamp: View {
     }
 }
 
-/// The reply-preview banner shown above the composer while replying. Shared by
-/// the group and DM input bars — both pass a plain sender + snippet so it works
-/// across the two message types.
-struct ChatReplyBanner: View {
-    let sender: String
-    let snippet: String
-    var onCancel: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 38)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(String(format: String(localized: "Reply to %@"), sender))
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.accentColor)
-                Text(snippet)
-                    .font(AppFont.scaled(14))
-                    .foregroundStyle(Color.primary.opacity(0.6))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Button(action: onCancel) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(AppFont.scaled(18))
-                    .foregroundStyle(Color.primary.opacity(0.35))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Cancel reply")
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-        .background(.regularMaterial)
-    }
-}
-
 /// The "unread messages" marker shown at the point the reader left off, tinted
 /// with the accent colour to stand apart from the neutral date separators.
 struct UnreadDivider: View {

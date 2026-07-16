@@ -32,11 +32,6 @@ extension ChatView {
                 disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl("group")),
                 showsSubject: showSubjectField
             ),
-            reply: replyingTo.map { m in
-                ChatComposerReply(sender: m.senderName, snippet: pinnedSnippet(m)) {
-                    withAnimation { replyingTo = nil }
-                }
-            },
             edit: editingMessage.map { m in
                 // Editing rewrites the TEXT; a subject on the original message
                 // is preserved verbatim through re-encoding on confirm.

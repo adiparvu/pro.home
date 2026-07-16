@@ -60,13 +60,6 @@ struct ChatComposerDictation {
     let onTap: () -> Void
 }
 
-/// Reply-to context shown as the strip above the field.
-struct ChatComposerReply {
-    let sender: String
-    let snippet: String
-    let onCancel: () -> Void
-}
-
 /// Inline edit context (the group chat edits in the composer): the strip
 /// above the field plus the checkmark confirm control inside it.
 struct ChatComposerEdit {
@@ -84,7 +77,6 @@ struct ChatComposerBar<Accessory: View>: View {
     var focused: FocusState<Bool>.Binding
     var isSending: Bool = false
     let config: ChatComposerConfig
-    var reply: ChatComposerReply? = nil
     var edit: ChatComposerEdit? = nil
     /// The subject line's text — owned by the surface (like `text`), so the
     /// send closure can read/clear it. nil hides the subject row regardless
@@ -151,11 +143,10 @@ struct ChatComposerBar<Accessory: View>: View {
                 editStrip(edit)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            if let reply {
-                ChatReplyBanner(sender: reply.sender, snippet: reply.snippet,
-                                onCancel: reply.onCancel)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            // No "Reply to X" strip above the composer — iMessage never shows
+            // one. The message being answered stays sharp in the thread (reply
+            // focus dims the rest) with its date/time floated above it, and the
+            // toolbar X cancels. A banner here was redundant and un-native.
             accessory()
             if let label = config.disappearingLabel {
                 disappearingChip(label)
@@ -523,11 +514,10 @@ extension ChatComposerBar where Accessory == EmptyView {
          focused: FocusState<Bool>.Binding,
          isSending: Bool = false,
          config: ChatComposerConfig,
-         reply: ChatComposerReply? = nil,
          edit: ChatComposerEdit? = nil,
          subject: Binding<String>? = nil) {
         self.init(text: text, focused: focused, isSending: isSending,
-                  config: config, reply: reply, edit: edit,
+                  config: config, edit: edit,
                   subject: subject) { EmptyView() }
     }
 }

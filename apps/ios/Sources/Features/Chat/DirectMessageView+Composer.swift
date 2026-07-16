@@ -58,11 +58,6 @@ extension DirectMessageView {
                 disappearingLabel: chatDisappearingChipLabel(ttl: ChatDisappearStore.ttl(disappearKey)),
                 showsSubject: showSubjectField
             ),
-            reply: replyingTo.map { m in
-                ChatComposerReply(sender: m.senderName, snippet: m.previewSnippet) {
-                    withAnimation { replyingTo = nil }
-                }
-            },
             subject: showSubjectField ? $subject : nil
         )
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
