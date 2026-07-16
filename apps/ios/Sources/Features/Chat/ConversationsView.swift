@@ -567,8 +567,7 @@ struct ConversationsView: View {
                     if !showArchived && searchText.isEmpty && !archivedList.isEmpty {
                         Button { withAnimation { showArchived = true } } label: { archivedRow }
                             .buttonStyle(.plain)
-                            .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                            .liquidGlass(cornerRadius: AppRadius.lg)
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)

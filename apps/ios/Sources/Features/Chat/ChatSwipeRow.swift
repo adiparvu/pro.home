@@ -43,8 +43,12 @@ struct SwipeableRow<Content: View>: View {
             }
 
             content()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                // Native Liquid Glass card (iOS 26) with a system-material
+                // fallback — replaces the flat opaque fill so each conversation
+                // row reads as glass over the live mood background, matching the
+                // rest of the app. The outer clipShape keeps the swipe offset
+                // inside the rounded rect.
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .offset(x: offset)
                 .overlay {
                     if offset != 0 {
