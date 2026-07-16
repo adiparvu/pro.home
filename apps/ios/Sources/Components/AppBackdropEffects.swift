@@ -8,15 +8,22 @@ import UIKit
 // every one of the seven atmospheres now carries one:
 //   rain    — two streak depths (the near one with a bright leading bead) + a
 //             sparse very-fast third, crown splashes, a drifting mist band,
-//             probabilistic lightning
+//             probabilistic lightning, and slow WIND GUSTS that lean the whole
+//             fall harder and let it relax (a sine pair, no extra particles)
 //   winter  — two parallax layers of real six-armed crystal flakes with
-//             rotation drift and a mid-fall twinkle
+//             rotation drift, a mid-fall twinkle, and the same slow gusts
+//             carrying the layers in opposing waves
 //   night   — a pre-baked star field (one static sprite) faintly colour-varied
-//             with glints on the brightest, ~20 four-point twinkling sparkles,
-//             and a rare shooting star (60–180 s scheduler); when it actually
-//             rains at night, the rain wins and the stars stay away
-//   morning — golden dust motes drifting lazily through the light
-//   day     — three enormous ultra-soft clouds crossing over minutes
+//             with glints on the brightest, a barely-there milky-way band
+//             baked into the same texture, THE MOON at its real astronomical
+//             phase (terminator + maria + soft halo, one baked sprite pair),
+//             ~20 four-point twinkling sparkles, and a rare shooting star
+//             (60–180 s scheduler); when it actually rains at night, the rain
+//             wins and the sky stays behind the clouds
+//   morning — golden dust motes drifting lazily through two soft sun shafts
+//             (baked light wedges, additive, breathing over ~8 s)
+//   day     — three enormous ultra-soft clouds crossing over minutes, over a
+//             farther, slower, dimmer pair — real depth parallax
 //   sunset  — a continuous warm low sun-glow + faint golden drift, with a
 //             once-a-day bird flock crossing above
 //   event   — the once-a-day ~2.5 s shimmer: soft gold motes + bright
@@ -43,10 +50,12 @@ import UIKit
 // streak/cloud layers lifetime is derived from the actual scene size so the
 // live count holds by construction on every device):
 //   Rain    ≈ 45 far + 44 near + 14 fast + ~4 splashes + ~5 mist ≈ 112 < 150
-//   Snow    = 54 far + 28 near = 82 < 100
-//   Night   = 1 baked star-field sprite + 20 twinkles + ≤1 shooting streak ≤ 22
-//   Morning = 2.5/s × 10 s = 25 motes
-//   Day     = 3 clouds (birthRate = 3 / lifetime — exact by construction)
+//             (gusts modulate three xAcceleration values — zero particles)
+//   Snow    = 54 far + 28 near = 82 < 100 (gusts: two property writes/frame)
+//   Night   = 1 baked star-field sprite + 2 moon sprites + 20 twinkles
+//             + ≤1 shooting streak ≤ 24
+//   Morning = 2.5/s × 10 s = 25 motes + 2 static shaft sprites
+//   Day     = 3 near + 2 far clouds (birthRate = live/lifetime — exact)
 //   Sunset  = 0.15/s × 20 s = 3 drift blobs + ≤9 bird sprites for ~7 s, once a day
 //   Event   = 30 total, one-shot, dead ≤ 2.6 s after appear — then nothing.
 // The SpriteView renders at 60 fps on its own CADisplayLink (particle motion
@@ -519,15 +528,27 @@ final class RainScene: SKScene {
 
     /// Prewarm on the first simulated frame — by then the SpriteView has
     /// already sized the scene, so the very first RENDERED frame shows a
-    /// full rain field with no visible fill-in. Runs exactly once.
+    /// full rain field with no visible fill-in — then drive the WIND GUSTS:
+    /// a slow two-sine breathing (periods ~33 s and ~2 min, never in phase)
+    /// bends every live streak via xAcceleration, so the whole fall leans
+    /// harder and relaxes the way real rain does. Three property writes per
+    /// frame — no particles, no nodes, no timers.
     override func update(_ currentTime: TimeInterval) {
-        guard !prewarmed else { return }
-        prewarmed = true
-        for (emitter, _) in streaks {
-            emitter.advanceSimulationTime(TimeInterval(emitter.particleLifetime))
+        if !prewarmed {
+            prewarmed = true
+            for (emitter, _) in streaks {
+                emitter.advanceSimulationTime(TimeInterval(emitter.particleLifetime))
+            }
+            mist.advanceSimulationTime(20)
+            splash.advanceSimulationTime(1)
         }
-        mist.advanceSimulationTime(20)
-        splash.advanceSimulationTime(1)
+        let gust = sin(currentTime * 0.19) * 0.6 + sin(currentTime * 0.053) * 0.4
+        for (emitter, spec) in streaks {
+            // Faster (nearer) layers feel the wind more — depth stays honest.
+            emitter.xAcceleration = CGFloat(gust) * spec.speed * 0.10
+        }
+        // The mist band rides the same wind, drifting faster on the gust.
+        mist.particleSpeed = 14 + CGFloat(gust) * 6
     }
 }
 
@@ -623,12 +644,21 @@ final class SnowScene: SKScene {
         }
     }
 
-    /// One-time prewarm on the first simulated frame (see RainScene.update).
+    /// One-time prewarm (see RainScene.update), then the winter wind: the
+    /// same slow two-sine gusting as the rain, phase-shifted per layer so the
+    /// two depths are carried in opposing waves — flakes visibly swept
+    /// sideways in gusts instead of falling uniformly. Two writes per frame.
     override func update(_ currentTime: TimeInterval) {
-        guard !prewarmed else { return }
-        prewarmed = true
-        farFlakes.advanceSimulationTime(9)
-        nearFlakes.advanceSimulationTime(8)
+        if !prewarmed {
+            prewarmed = true
+            farFlakes.advanceSimulationTime(9)
+            nearFlakes.advanceSimulationTime(8)
+        }
+        let gust = sin(currentTime * 0.16) * 0.6 + sin(currentTime * 0.047) * 0.4
+        // Around each layer's base sway (+6 / −7), so the cross-drift
+        // survives calm moments and both layers surge together in a gust.
+        farFlakes.xAcceleration = 6 + CGFloat(gust) * 11
+        nearFlakes.xAcceleration = -7 + CGFloat(gust) * 15
     }
 }
 
@@ -743,6 +773,11 @@ private final class NightStarsScene: SKScene {
     /// The scene size the field texture was last baked for — re-baked only
     /// on a real size change (rotation), never per frame.
     private var bakedFieldSize: CGSize = .zero
+    /// The moon at tonight's REAL phase: one baked disc sprite (terminator +
+    /// maria) over one soft halo sprite. Nil within ~a day of new moon — an
+    /// honest sky has no moon to show then.
+    private var moonDisc: SKSpriteNode?
+    private var moonHalo: SKSpriteNode?
 
     override init() {
         super.init(size: CGSize(width: 390, height: 850))
@@ -791,11 +826,133 @@ private final class NightStarsScene: SKScene {
 
         fieldNode.zPosition = 0
         addChild(fieldNode)
+
+        // The moon, at its real astronomical phase tonight. Within ~a day of
+        // new moon there is honestly nothing to draw. The halo breathes very
+        // slowly (±25% of its 8% alpha); the disc itself is static.
+        let phase = Self.moonPhase()
+        let illuminated = (1 - cos(2 * .pi * phase)) / 2
+        if illuminated > 0.03 {
+            let halo = SKSpriteNode(texture: AtmosphericParticleTextures.moonHalo)
+            halo.color = UIColor(red: 0.88, green: 0.91, blue: 0.97, alpha: 1)
+            halo.colorBlendFactor = 1
+            halo.blendMode = .add
+            halo.alpha = 0.08
+            halo.zPosition = 0.4
+            let dim = SKAction.fadeAlpha(to: 0.06, duration: 5.5)
+            dim.timingMode = .easeInEaseOut
+            let lift = SKAction.fadeAlpha(to: 0.10, duration: 5.5)
+            lift.timingMode = .easeInEaseOut
+            halo.run(.repeatForever(.sequence([dim, lift])))
+            addChild(halo)
+            moonHalo = halo
+
+            let disc = SKSpriteNode(texture: Self.moonTexture(phase: phase, diameter: 44))
+            disc.alpha = 0.85
+            disc.zPosition = 0.5
+            addChild(disc)
+            moonDisc = disc
+        }
         layoutNodes()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("NightStarsScene is code-built only") }
+
+    /// The lunar phase now, in [0, 1): 0 = new, 0.5 = full. Derived from the
+    /// mean synodic month (29.530589 d) against a known new-moon epoch
+    /// (2000-01-06 18:14 UTC) — within ±½ day over decades, which is exactly
+    /// the fidelity a backdrop needs.
+    private static func moonPhase(on date: Date = .now) -> Double {
+        let epoch = Date(timeIntervalSince1970: 947_182_440)   // 2000-01-06 18:14 UTC
+        let synodic = 29.530589 * 86_400.0
+        let raw = date.timeIntervalSince(epoch).truncatingRemainder(dividingBy: synodic)
+        return (raw < 0 ? raw + synodic : raw) / synodic
+    }
+
+    /// Bakes the moon disc for a given phase: the dark side as faint
+    /// earthshine, the lit region bounded by the circle's limb on the lit
+    /// side and the terminator half-ellipse (semi-axis = R·cos 2πp — signed,
+    /// so crescent and gibbous fall out of the same path), a few soft maria
+    /// blotches clipped to the lit shape, and a touch of limb darkening.
+    /// Waxing lights the right side, waning the left (northern-sky reading).
+    private static func moonTexture(phase: Double, diameter: CGFloat) -> SKTexture {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 3   // the terminator's curve deserves the extra crispness
+        let canvas = CGSize(width: diameter + 4, height: diameter + 4)
+        let r = diameter / 2
+        let c = CGPoint(x: canvas.width / 2, y: canvas.height / 2)
+        let waxing = phase < 0.5
+        // Signed terminator semi-axis: +R at new → 0 at quarter → −R at full.
+        let terminator = r * CGFloat(cos(2 * .pi * phase))
+        let lit = UIColor(red: 0.93, green: 0.94, blue: 0.96, alpha: 1)
+
+        let image = UIGraphicsImageRenderer(size: canvas, format: format).image { ctx in
+            let cg = ctx.cgContext
+            // Earthshine: the whole disc, barely there.
+            cg.setFillColor(lit.withAlphaComponent(0.10).cgColor)
+            cg.fillEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+
+            // The lit region: limb semicircle on the lit side + terminator
+            // half-ellipse back. Built in a unit-friendly transform so the
+            // signed semi-axis draws crescents and gibbous phases alike;
+            // mirrored horizontally for waning.
+            cg.saveGState()
+            cg.translateBy(x: c.x, y: c.y)
+            if !waxing { cg.scaleBy(x: -1, y: 1) }
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: 0, y: -r))
+            path.addArc(center: .zero, radius: r,
+                        startAngle: -.pi / 2, endAngle: .pi / 2, clockwise: false)
+            if abs(terminator) > 0.5 {
+                let t = CGAffineTransform(scaleX: terminator / r, y: 1)
+                path.addPath(Self.halfEllipseBackUp(radius: r), transform: t)
+            } else {
+                path.addLine(to: CGPoint(x: 0, y: -r))
+            }
+            path.closeSubpath()
+            cg.addPath(path)
+            cg.clip()
+            cg.setFillColor(lit.cgColor)
+            cg.fill(CGRect(x: -r, y: -r, width: r * 2, height: r * 2))
+            // Maria: a few soft grey blotches, fixed positions (the same face
+            // always shows), visible only where the clip lets them through.
+            cg.setFillColor(UIColor(red: 0.72, green: 0.75, blue: 0.80, alpha: 0.55).cgColor)
+            for (mx, my, mr) in [(-0.22, -0.18, 0.30), (0.18, 0.05, 0.24),
+                                 (-0.05, 0.32, 0.18), (0.30, -0.30, 0.13)] {
+                let br = r * CGFloat(mr)
+                cg.fillEllipse(in: CGRect(x: r * CGFloat(mx) - br, y: r * CGFloat(my) - br,
+                                          width: br * 2, height: br * 2))
+            }
+            cg.restoreGState()
+
+            // Limb darkening: a soft inward shadow ring so the disc reads as
+            // a sphere, not a sticker.
+            cg.saveGState()
+            cg.addEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+            cg.clip()
+            let edge = [UIColor.clear.cgColor,
+                        UIColor(white: 0.1, alpha: 0.18).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                  colors: edge, locations: [0.78, 1]) {
+                cg.drawRadialGradient(g, startCenter: c, startRadius: 0,
+                                      endCenter: c, endRadius: r, options: [])
+            }
+            cg.restoreGState()
+        }
+        return SKTexture(image: image)
+    }
+
+    /// The right half-ellipse of radius `radius`, traversed bottom → top —
+    /// the terminator's return path (scaled by the caller's signed transform).
+    private static func halfEllipseBackUp(radius: CGFloat) -> CGPath {
+        let p = CGMutablePath()
+        p.move(to: CGPoint(x: 0, y: radius))
+        p.addArc(center: .zero, radius: radius,
+                 startAngle: .pi / 2, endAngle: -.pi / 2, clockwise: false)
+        return p
+    }
 
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
@@ -837,6 +994,13 @@ private final class NightStarsScene: SKScene {
         for (sprite, spec) in twinkles {
             sprite.position = CGPoint(x: spec.x * size.width, y: spec.y * size.height)
         }
+        // The moon rides high in the upper-right sky, clear of the title area.
+        let moonCenter = CGPoint(x: size.width * 0.78, y: size.height * 0.84)
+        moonDisc?.position = moonCenter
+        if let halo = moonHalo {
+            halo.position = moonCenter
+            halo.size = CGSize(width: 150, height: 150)
+        }
     }
 
     /// Renders the 80-dot field into one screen-sized texture (@2x for
@@ -856,6 +1020,43 @@ private final class NightStarsScene: SKScene {
         let cool = UIColor(red: 0.86, green: 0.91, blue: 1.0, alpha: 1)
         let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             let cg = ctx.cgContext
+            // A barely-there milky-way band: a wide soft luminance ribbon on a
+            // fixed diagonal, dusted with ~70 pinpoint micro-stars along it
+            // (deterministic — same seed family as the field). ≤ 3% alpha:
+            // presence you sense before you see it.
+            cg.saveGState()
+            cg.translateBy(x: size.width * 0.5, y: size.height * 0.5)
+            cg.rotate(by: -.pi / 5.2)
+            let bandLen = max(size.width, size.height) * 1.6
+            let bandColors = [UIColor.white.withAlphaComponent(0.030).cgColor,
+                              UIColor.white.withAlphaComponent(0.012).cgColor,
+                              UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                  colors: bandColors, locations: [0, 0.55, 1]) {
+                // Two mirrored half-fades from the band's spine outward.
+                for sign in [CGFloat(1), -1] {
+                    cg.saveGState()
+                    cg.clip(to: CGRect(x: -bandLen / 2, y: sign > 0 ? 0 : -110,
+                                       width: bandLen, height: 110))
+                    cg.drawLinearGradient(g,
+                                          start: CGPoint(x: 0, y: 0),
+                                          end: CGPoint(x: 0, y: sign * 110),
+                                          options: [])
+                    cg.restoreGState()
+                }
+            }
+            var bandRng = SplitMix64(seed: 0x1AC7EA_11)
+            cg.setFillColor(UIColor.white.withAlphaComponent(0.16).cgColor)
+            for _ in 0..<70 {
+                let x = CGFloat.random(in: -bandLen / 2...bandLen / 2, using: &bandRng)
+                // Denser near the spine: average two uniforms toward 0.
+                let y = (CGFloat.random(in: -80...80, using: &bandRng)
+                       + CGFloat.random(in: -80...80, using: &bandRng)) / 2
+                let d = CGFloat.random(in: 0.4...0.9, using: &bandRng)
+                cg.fillEllipse(in: CGRect(x: x - d / 2, y: y - d / 2, width: d, height: d))
+            }
+            cg.restoreGState()
+
             for (i, star) in fieldSpecs.enumerated() {
                 let base: UIColor = i % 7 == 0 ? warm : (i % 5 == 0 ? cool : .white)
                 let c = CGPoint(x: star.x * size.width, y: star.y * size.height)
@@ -905,12 +1106,35 @@ private struct SplitMix64: RandomNumberGenerator {
 /// 2.5/s × 10 s = 25 motes (mission band 22–28), alpha peaking at 0.20.
 private final class MorningMotesScene: SKScene {
     private let motes = SKEmitterNode()
+    /// Two soft sun shafts falling from the upper-left — the light the motes
+    /// are drifting THROUGH. Baked wedges, additive, breathing out of phase
+    /// over ~8–11 s; two static sprites, zero per-frame work.
+    private let shafts: [SKSpriteNode] = (0..<2).map { _ in
+        SKSpriteNode(texture: AtmosphericParticleTextures.lightShaft)
+    }
     private var prewarmed = false
 
     override init() {
         super.init(size: CGSize(width: 390, height: 850))
         scaleMode = .resizeFill
         backgroundColor = .clear
+
+        for (i, shaft) in shafts.enumerated() {
+            shaft.color = UIColor(red: 1.0, green: 0.88, blue: 0.66, alpha: 1)
+            shaft.colorBlendFactor = 1
+            shaft.blendMode = .add
+            shaft.zRotation = i == 0 ? -0.34 : -0.46   // leaning from upper-left
+            shaft.alpha = i == 0 ? 0.075 : 0.055
+            shaft.zPosition = -1                        // behind the motes
+            let low = SKAction.fadeAlpha(to: shaft.alpha * 0.55,
+                                         duration: i == 0 ? 8.0 : 11.0)
+            low.timingMode = .easeInEaseOut
+            let high = SKAction.fadeAlpha(to: shaft.alpha,
+                                          duration: i == 0 ? 8.0 : 11.0)
+            high.timingMode = .easeInEaseOut
+            shaft.run(.repeatForever(.sequence([low, high])))
+            addChild(shaft)
+        }
 
         motes.particleTexture = AtmosphericParticleTextures.dot
         // Warm sun-gold over the morning palette.
@@ -947,6 +1171,14 @@ private final class MorningMotesScene: SKScene {
         motes.position = CGPoint(x: size.width / 2, y: size.height / 2)
         motes.particlePositionRange = CGVector(dx: size.width + 60,
                                                dy: size.height + 60)
+        // Shafts span most of the height, anchored toward the upper-left
+        // where the morning light enters; the second sits deeper and wider.
+        let span = size.height * 1.1
+        for (i, shaft) in shafts.enumerated() {
+            shaft.size = CGSize(width: i == 0 ? 110 : 170, height: span)
+            shaft.position = CGPoint(x: size.width * (i == 0 ? 0.30 : 0.58),
+                                     y: size.height * 0.62)
+        }
     }
 
     /// One-time prewarm on the first simulated frame (see RainScene.update).
@@ -969,11 +1201,17 @@ private final class DayCloudsScene: SKScene {
     private static let targetLive: CGFloat = 3
     private static let speed: CGFloat = 6
     private static let speedRange: CGFloat = 1.5   // 4.5–7.5 pt/s
+    private static let farTargetLive: CGFloat = 2
+    private static let farSpeed: CGFloat = 3.2
+    private static let farSpeedRange: CGFloat = 0.8   // 2.4–4.0 pt/s — half tempo
     /// Half the largest cloud's visual footprint (180 pt texture × max scale
     /// 3.3 ÷ 2) — both birth and death happen fully offscreen.
     private static let margin: CGFloat = 300
 
     private let clouds = SKEmitterNode()
+    /// A farther, slower, dimmer pair behind the near layer — the depth
+    /// parallax that makes the sky read as a volume, not a flat drift.
+    private let farClouds = SKEmitterNode()
     private var prewarmed = false
 
     override init() {
@@ -994,7 +1232,22 @@ private final class DayCloudsScene: SKScene {
         clouds.particleAlphaSequence = SKKeyframeSequence(
             keyframeValues: [0.028, 0.04, 0.03, 0.04, 0.028],
             times: [0, 0.3, 0.55, 0.8, 1])
+        clouds.zPosition = 1
         addChild(clouds)
+
+        farClouds.particleTexture = AtmosphericParticleTextures.cloud
+        farClouds.particleColor = .white
+        farClouds.particleColorBlendFactor = 1
+        farClouds.emissionAngle = 0
+        farClouds.particleSpeed = Self.farSpeed
+        farClouds.particleSpeedRange = Self.farSpeedRange
+        farClouds.particleScale = 1.5
+        farClouds.particleScaleRange = 0.4     // ~200–340 pt — visibly farther
+        farClouds.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0.018, 0.026, 0.02, 0.026, 0.018],
+            times: [0, 0.3, 0.55, 0.8, 1])
+        farClouds.zPosition = 0
+        addChild(farClouds)
         layoutEmitter()
     }
 
@@ -1016,6 +1269,13 @@ private final class DayCloudsScene: SKScene {
         clouds.particleBirthRate = Self.targetLive / lifetime    // ≈ 0.0136/s
         clouds.position = CGPoint(x: -Self.margin, y: size.height * 0.60)
         clouds.particlePositionRange = CGVector(dx: 0, dy: size.height * 0.55)
+
+        let farLifetime = travel / (Self.farSpeed - Self.farSpeedRange)
+        farClouds.particleLifetime = farLifetime
+        farClouds.particleBirthRate = Self.farTargetLive / farLifetime
+        // The far band rides higher — distance in a sky reads as altitude.
+        farClouds.position = CGPoint(x: -Self.margin, y: size.height * 0.74)
+        farClouds.particlePositionRange = CGVector(dx: 0, dy: size.height * 0.40)
     }
 
     /// One-time prewarm: without it the sky would stay empty for minutes.
@@ -1023,6 +1283,7 @@ private final class DayCloudsScene: SKScene {
         guard !prewarmed else { return }
         prewarmed = true
         clouds.advanceSimulationTime(TimeInterval(clouds.particleLifetime))
+        farClouds.advanceSimulationTime(TimeInterval(farClouds.particleLifetime))
     }
 }
 
@@ -1204,6 +1465,11 @@ private enum AtmosphericParticleTextures {
     /// Very large extra-soft disc for the day clouds — the mist blob's
     /// falloff is too tight once scaled to screen width.
     static let cloud = cloudBlob(diameter: 180)
+    /// The moon's soft atmospheric halo (additive, tinted pale ice).
+    static let moonHalo = cloudBlob(diameter: 150)
+    /// A tall soft light wedge for the morning sun shafts: bright spine
+    /// fading to nothing sideways, and fading out toward both ends.
+    static let lightShaft = shaft(width: 90, height: 300)
 
     private static func renderer(_ size: CGSize) -> UIGraphicsImageRenderer {
         let format = UIGraphicsImageRendererFormat()
@@ -1405,6 +1671,37 @@ private enum AtmosphericParticleTextures {
         return SKTexture(image: image)
     }
 
+    /// A soft light shaft: horizontal falloff from a bright spine to nothing
+    /// at the sides, multiplied by a vertical fade at both ends — a beam of
+    /// light with no edges anywhere. White; tinted warm gold by the sprite.
+    private static func shaft(width: CGFloat, height: CGFloat) -> SKTexture {
+        let image = renderer(CGSize(width: width, height: height)).image { ctx in
+            let cg = ctx.cgContext
+            let cs = CGColorSpaceCreateDeviceRGB()
+            // Horizontal profile: bright spine → transparent sides.
+            let across = [UIColor.white.withAlphaComponent(0).cgColor,
+                          UIColor.white.withAlphaComponent(0.9).cgColor,
+                          UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: cs, colors: across,
+                                  locations: [0, 0.5, 1]) {
+                cg.drawLinearGradient(g, start: CGPoint(x: 0, y: height / 2),
+                                      end: CGPoint(x: width, y: height / 2), options: [])
+            }
+            // Vertical envelope: destination-in fade at both ends.
+            cg.setBlendMode(.destinationIn)
+            let along = [UIColor.white.withAlphaComponent(0).cgColor,
+                         UIColor.white.withAlphaComponent(1).cgColor,
+                         UIColor.white.withAlphaComponent(1).cgColor,
+                         UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: cs, colors: along,
+                                  locations: [0, 0.25, 0.75, 1]) {
+                cg.drawLinearGradient(g, start: CGPoint(x: width / 2, y: 0),
+                                      end: CGPoint(x: width / 2, y: height), options: [])
+            }
+        }
+        return SKTexture(image: image)
+    }
+
     /// Softer-shouldered radial fade than `mistBlob` — at screen-width scale
     /// the cloud must have no visible core at all.
     private static func cloudBlob(diameter: CGFloat) -> SKTexture {
@@ -1550,6 +1847,12 @@ struct AppBackdropEffectsHint: View {
                     context.fill(Path(ellipseIn: rect), with: .color(gold.opacity(alpha)))
                 }
             case .stars:
+                // The moon first — matching the live scene's upper-right seat.
+                let moon = CGPoint(x: size.width * 0.80, y: size.height * 0.22)
+                let mr: CGFloat = max(3.5, size.width * 0.035)
+                context.fill(Path(ellipseIn: CGRect(x: moon.x - mr, y: moon.y - mr,
+                                                    width: mr * 2, height: mr * 2)),
+                             with: .color(Color(red: 0.93, green: 0.94, blue: 0.96).opacity(0.75)))
                 // Pinpoint stars; the brighter ones get a tiny four-point
                 // glint, matching the live field's diffraction spikes.
                 for (x, y, alpha) in Self.starMarks {

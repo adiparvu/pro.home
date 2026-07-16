@@ -328,7 +328,11 @@ struct SeasonalChecklistView: View {
                         .padding(.horizontal, AppSpacing.xs)
                         .padding(.vertical, 2)
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-                } else if let taskId = service.linkedTaskId(for: row.id, season: selectedSeason) {
+                } else if let taskId = service.linkedTaskId(for: row.id, season: selectedSeason),
+                          taskService.tasks.contains(where: { $0.id == taskId }) {
+                    // Only while the linked task still EXISTS — a deleted task
+                    // must take its "Task creat" chip with it (IMG_8511), and
+                    // the row menu regains "Creează task" below.
                     linkedTaskChip(taskId)
                 }
             }
@@ -369,7 +373,11 @@ struct SeasonalChecklistView: View {
             Button { editingRow = row } label: {
                 Label("Edit", systemImage: "pencil")
             }
-            if service.linkedTaskId(for: row.id, season: selectedSeason) == nil {
+            // Offer creation when there is no link OR the linked task was
+            // deleted (the id no longer resolves) — creating again simply
+            // overwrites the stale link.
+            if service.linkedTaskId(for: row.id, season: selectedSeason)
+                .flatMap({ id in taskService.tasks.first { $0.id == id } }) == nil {
                 Button { createTask(for: row) } label: {
                     Label("seasonal_create_task", systemImage: "checklist")
                 }

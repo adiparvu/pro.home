@@ -111,7 +111,7 @@ struct ExpenseDashboardView: View {
                 Spacer()
                 Text(receiptService.monthDisplayName(selectedMonth))
                     .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                 Spacer()
                 monthNavButton("chevron.right", enabled: !isCurrent) {
@@ -126,7 +126,7 @@ struct ExpenseDashboardView: View {
             VStack(spacing: 8) {
                 Text(verbatim: money(total))
                     .font(AppFont.scaled(46, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
@@ -134,20 +134,23 @@ struct ExpenseDashboardView: View {
                 HStack(spacing: 10) {
                     Text("\(count) \(String(localized: "expense_receipts"))")
                         .font(AppFont.scaled(13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(Color.secondaryTextColor)
 
                     if prevTotal > 0 {
                         let delta = total - prevTotal
                         let pct = abs(delta / prevTotal * 100)
+                        // Spending direction gets an honest tint: up costs
+                        // more (warning), down costs less (success).
+                        let trend: Color = delta >= 0 ? .brandWarning : .brandSuccess
                         HStack(spacing: 3) {
                             Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
                                 .font(AppFont.scaled(10, weight: .bold))
                             Text(String(format: "%.0f%%", pct))
                                 .font(AppFont.captionStrong)
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(trend)
                         .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
-                        .background(.white.opacity(0.2), in: Capsule())
+                        .background(trend.opacity(0.14), in: Capsule())
                     }
                 }
 
@@ -157,7 +160,7 @@ struct ExpenseDashboardView: View {
                     VStack(spacing: 10) {
                         Text(String(localized: "expense_month_empty"))
                             .font(AppFont.scaled(12))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(Color.secondaryTextColor)
                             .multilineTextAlignment(.center)
                         if isCurrent {
                             Button {
@@ -170,7 +173,7 @@ struct ExpenseDashboardView: View {
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, AppSpacing.lg)
                                     .padding(.vertical, 9)
-                                    .background(.white.opacity(0.2), in: Capsule())
+                                    .background(Color.accentColor, in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
@@ -182,34 +185,23 @@ struct ExpenseDashboardView: View {
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 22)
         .frame(maxWidth: .infinity)
-        // A ZStack isn't a ShapeStyle, so the `.background(_:in:)` form can't take
-        // it — build the rounded card as a filled shape and clip the sheen to it.
-        .background(
+        // Native glass, not a foreign saturated gradient (IMG_8512): the hero
+        // card sits in the app's own material language, and the mood backdrop
+        // breathes through it like every other surface.
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(red: 0.15, green: 0.34, blue: 0.76),
-                                 Color(red: 0.40, green: 0.22, blue: 0.70)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    )
-                )
-                // Soft highlight sheen in the top-right for depth.
-                .overlay(
-                    RadialGradient(colors: [.white.opacity(0.18), .clear],
-                                   center: .topTrailing, startRadius: 8, endRadius: 220)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
         )
-        .shadow(color: Color(red: 0.25, green: 0.2, blue: 0.6).opacity(0.28), radius: 18, y: 10)
     }
 
     private func monthNavButton(_ icon: String, enabled: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(AppFont.scaled(13, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 0.95 : 0.35))
+                .foregroundStyle(Color.primary.opacity(enabled ? AppOpacity.emphasis : AppOpacity.disabled))
                 .frame(width: 32, height: 32)
-                .background(.white.opacity(enabled ? 0.16 : 0.06), in: Circle())
+                .background(Color.primary.opacity(enabled ? AppOpacity.subtleFill : 0.03), in: Circle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)

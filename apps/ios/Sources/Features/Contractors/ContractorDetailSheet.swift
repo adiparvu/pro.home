@@ -4,11 +4,17 @@ struct ContractorDetailSheet: View {
     let contractor: ContractorModel
     var service: ContractorService
     @Environment(AppRouter.self) private var router
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(DirectMessageService.self) private var directMessageService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
     @State private var localRating: Int
+    @State private var dmMember: FamilyMember?
+    @State private var callMember: FamilyMember?
 
     init(contractor: ContractorModel, service: ContractorService) {
         self.contractor = contractor
@@ -18,6 +24,13 @@ struct ContractorDetailSheet: View {
 
     var currentContractor: ContractorModel {
         service.contractors.first(where: { $0.id == contractor.id }) ?? contractor
+    }
+
+    /// The household member whose PRVIO account matches this contractor's
+    /// phone/email — powers the badge and the in-app message/call bridge,
+    /// exactly like the list rows (ContractorAccountMatch is pure and cheap).
+    private var matchedMember: FamilyMember? {
+        ContractorAccountMatch.member(for: currentContractor, in: familyService.members)
     }
 
     var body: some View {
@@ -69,6 +82,26 @@ struct ContractorDetailSheet: View {
             .sheet(isPresented: $showEdit) {
                 EditContractorSheet(contractor: currentContractor, service: service)
             }
+            // Full-height in-app DM with the matched member — the same
+            // construction + bootstrap the contractors list uses, so the
+            // thread has history and realtime even when the chat tab was
+            // never visited this session.
+            .sheet(item: $dmMember) { member in
+                NavigationStack {
+                    DirectMessageView(member: member)
+                }
+                .task {
+                    guard let pid = propertyService.primary?.id else { return }
+                    let myName = profileService.profile?.preferredName
+                        ?? profileService.profile?.fullName ?? "Me"
+                    directMessageService.myName = myName
+                    await directMessageService.load(propertyId: pid, myName: myName)
+                    await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+                }
+            }
+            .sheet(item: $callMember) { member in
+                CallPickerSheet(members: [member], isVideo: false)
+            }
         }
         .presentationBackground(.thinMaterial)
     }
@@ -87,9 +120,16 @@ struct ContractorDetailSheet: View {
             }
 
             VStack(spacing: 4) {
-                Text(currentContractor.name)
-                    .font(AppFont.scaled(20, weight: .bold))
-                    .foregroundStyle(.primary)
+                HStack(spacing: 8) {
+                    Text(currentContractor.name)
+                        .font(AppFont.scaled(20, weight: .bold))
+                        .foregroundStyle(.primary)
+                    // Same badge the list rows wear when the contractor's
+                    // phone/email matches a household PRVIO account.
+                    if matchedMember != nil {
+                        PRVIOAccountBadge()
+                    }
+                }
 
                 Text(LocalizedStringKey(currentContractor.specialty.capitalized))
                     .font(AppFont.scaled(13))
@@ -199,13 +239,28 @@ struct ContractorDetailSheet: View {
 
     private var actionsSection: some View {
         VStack(spacing: 10) {
+            // A contractor with a PRVIO account gets first-class in-app
+            // reach: message and call ride the household chat, exactly like
+            // the members hub — the phone dialer stays for everyone else.
+            if let member = matchedMember {
+                actionButton(
+                    icon: "bubble.left.fill",
+                    label: "mem_send_message",
+                    color: .brandSkyBlue
+                ) {
+                    dmMember = member
+                }
+            }
+
             if let phone = currentContractor.phone, !phone.isEmpty {
                 actionButton(
                     icon: "phone.fill",
                     label: "Call",
                     color: .green
                 ) {
-                    if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                    if let member = matchedMember {
+                        callMember = member
+                    } else if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
                         UIApplication.shared.open(url)
                     }
                 }

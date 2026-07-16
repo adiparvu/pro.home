@@ -89,13 +89,11 @@ struct DocumentFilesSection: View {
         .fullScreenCover(isPresented: $showCamera) {
             CameraCapture { image in Task { await addImage(image) } }.ignoresSafeArea()
         }
-        .fullScreenCover(isPresented: $showScanner) {
-            DocumentScannerView { result in
-                showScanner = false
-                guard let result else { return }
-                Task { await addScan(result) }
-            }
-            .ignoresSafeArea()
+        // Native UIKit modal — VisionKit's camera controls only work in its
+        // real presentation environment (see DocumentScannerView).
+        .documentScanner(isPresented: $showScanner) { result in
+            guard let result else { return }
+            Task { await addScan(result) }
         }
         .fileImporter(isPresented: $showFileImporter,
                       allowedContentTypes: [.pdf, .jpeg, .png, .webP, .heic, .plainText, .data],

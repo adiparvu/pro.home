@@ -181,13 +181,11 @@ struct AddDocumentSheet: View {
                 }
                 .ignoresSafeArea()
         }
-        .fullScreenCover(isPresented: $showDocScanner) {
-            DocumentScannerView { result in
-                showDocScanner = false
-                guard let result else { return }
-                applyScan(result)
-            }
-            .ignoresSafeArea()
+        // Native UIKit modal — VisionKit's camera controls only work in its
+        // real presentation environment (see DocumentScannerView).
+        .documentScanner(isPresented: $showDocScanner) { result in
+            guard let result else { return }
+            applyScan(result)
         }
     }
 

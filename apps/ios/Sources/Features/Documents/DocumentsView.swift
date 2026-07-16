@@ -209,16 +209,12 @@ struct DocumentsView: View {
                 .environment(documentService)
             }
         }
-        .fullScreenCover(isPresented: $showScanner, onDismiss: {
-            // Present the add sheet only once the scanner cover is fully gone —
-            // presenting while dismissing gets silently dropped by UIKit.
-            if pendingScan != nil { showAdd = true }
-        }) {
-            DocumentScannerView { result in
-                pendingScan = result   // nil on cancel → nothing opens
-                showScanner = false
-            }
-            .ignoresSafeArea()
+        // Native UIKit modal (not a hosted cover): VisionKit's own camera
+        // controls only work in its real presentation environment. onFinish
+        // fires after the camera is fully gone, so the add sheet opens safely.
+        .documentScanner(isPresented: $showScanner) { result in
+            pendingScan = result   // nil on cancel → nothing opens
+            if result != nil { showAdd = true }
         }
         .navigationDestination(item: $selectedDoc) { doc in
             DocumentDetailView(doc: doc).environment(documentService)

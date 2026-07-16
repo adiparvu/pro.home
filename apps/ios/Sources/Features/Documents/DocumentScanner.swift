@@ -21,47 +21,103 @@ struct DocumentScanResult {
     var lines: [String] = []
 }
 
+// The camera is presented NATIVELY (a UIKit full-screen modal from an
+// invisible host), never embedded as a hosted subview inside a SwiftUI
+// cover. VisionKit wires its bottom camera controls (flash / filters /
+// shutter mode) to its own presentation environment; hosting the controller
+// as a representable's view left those exact buttons dead on iOS 26
+// (IMG_8509) while capture itself kept working.
 struct DocumentScannerView: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
     /// nil on cancel or failure — the caller simply stays where it was.
+    /// Called only after the camera has fully dismissed, so presenting a
+    /// follow-up sheet from inside the callback is safe.
     let onFinish: (DocumentScanResult?) -> Void
 
     static var isSupported: Bool { VNDocumentCameraViewController.isSupported }
 
-    func makeUIViewController(context: Context) -> VNDocumentCameraViewController {
-        let controller = VNDocumentCameraViewController()
-        controller.delegate = context.coordinator
-        return controller
+    func makeUIViewController(context: Context) -> UIViewController {
+        let host = UIViewController()
+        host.view.backgroundColor = .clear
+        host.view.isUserInteractionEnabled = false
+        return host
     }
 
-    func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
+    func updateUIViewController(_ host: UIViewController, context: Context) {
+        context.coordinator.isPresented = $isPresented
+        context.coordinator.onFinish = onFinish
+        if isPresented, context.coordinator.camera == nil {
+            let camera = VNDocumentCameraViewController()
+            camera.delegate = context.coordinator
+            camera.modalPresentationStyle = .fullScreen
+            context.coordinator.camera = camera
+            // Present from the host's nearest presentation context — the
+            // exact modal environment VisionKit is built and tested against.
+            // Deferred one hop: presenting inside SwiftUI's update pass is
+            // an update-during-update hazard.
+            DispatchQueue.main.async { [weak host] in
+                host?.present(camera, animated: true)
+            }
+        } else if !isPresented, let camera = context.coordinator.camera {
+            context.coordinator.camera = nil
+            camera.dismiss(animated: true)
+        }
+    }
 
-    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
-        let onFinish: (DocumentScanResult?) -> Void
-        init(onFinish: @escaping (DocumentScanResult?) -> Void) { self.onFinish = onFinish }
+        var isPresented: Binding<Bool>?
+        var onFinish: ((DocumentScanResult?) -> Void)?
+        var camera: VNDocumentCameraViewController?
+
+        /// Dismisses the camera, resets the binding, and delivers the result
+        /// AFTER the dismissal completes — a follow-up sheet presented from
+        /// the callback is never swallowed by an in-flight dismissal.
+        private func close(with result: DocumentScanResult?,
+                           from controller: VNDocumentCameraViewController) {
+            camera = nil
+            isPresented?.wrappedValue = false
+            let finish = onFinish
+            controller.dismiss(animated: true) {
+                finish?(result)
+            }
+        }
 
         func documentCameraViewController(_ controller: VNDocumentCameraViewController,
                                           didFinishWith scan: VNDocumentCameraScan) {
             let images = (0..<scan.pageCount).map { scan.imageOfPage(at: $0) }
-            controller.dismiss(animated: true)
+            camera = nil
+            isPresented?.wrappedValue = false
             let finish = onFinish
-            Task.detached(priority: .userInitiated) {
-                let result = DocumentScanIntelligence.process(pages: images)
-                await MainActor.run { finish(result) }
+            // OCR + PDF assembly off-main while the camera animates away; the
+            // result is delivered on the main actor afterwards.
+            controller.dismiss(animated: true) {
+                Task.detached(priority: .userInitiated) {
+                    let result = DocumentScanIntelligence.process(pages: images)
+                    await MainActor.run { finish?(result) }
+                }
             }
         }
 
         func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-            controller.dismiss(animated: true)
-            onFinish(nil)
+            close(with: nil, from: controller)
         }
 
         func documentCameraViewController(_ controller: VNDocumentCameraViewController,
                                           didFailWithError error: Error) {
-            controller.dismiss(animated: true)
-            onFinish(nil)
+            close(with: nil, from: controller)
         }
+    }
+}
+
+extension View {
+    /// Presents the system document scanner as a NATIVE full-screen modal
+    /// while `isPresented` is true. `onFinish` receives nil on cancel/failure
+    /// and fires only after the camera is fully gone.
+    func documentScanner(isPresented: Binding<Bool>,
+                         onFinish: @escaping (DocumentScanResult?) -> Void) -> some View {
+        background(DocumentScannerView(isPresented: isPresented, onFinish: onFinish))
     }
 }
 
