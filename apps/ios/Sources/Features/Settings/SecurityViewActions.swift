@@ -20,6 +20,7 @@ extension SecurityView {
         do {
             try await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: id))
             totpFactorId = nil
+            await AccountSecurityService.shared.recordEvent("totp_disabled")
             HapticFeedback.success()
         } catch {
             alertMessage = String(localized: "Could not disable. Please try again.")
@@ -51,6 +52,7 @@ extension SecurityView {
         guard let email = auth.session?.user.email else { return }
         do {
             try await supabase.auth.resetPasswordForEmail(email)
+            await AccountSecurityService.shared.recordEvent("password_reset_requested")
             passwordResetSent = true
             alertMessage = String(format: String(localized: "Reset email sent to %@. Check your inbox."), email)
             showPasswordAlert = true

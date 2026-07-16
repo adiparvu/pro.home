@@ -28,6 +28,7 @@ struct SecurityView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
+                checkupSection
                 mfaSection
                 sessionsSection
                 advancedSection
@@ -44,6 +45,7 @@ struct SecurityView: View {
         .navigationBarTitleDisplayMode(.large)
         .task { checkBiometrics() }
         .task { await loadFactors() }
+        .task { await AccountSecurityService.shared.refreshBackupCodeCount() }
         .sheet(isPresented: $showTOTPEnroll) {
             TOTPEnrollView { Task { await loadFactors() } }
         }
@@ -78,10 +80,109 @@ struct SecurityView: View {
         }
     }
 
+    // MARK: - Security checkup
+    //
+    // A real score from real signals only — every point maps to a switch the
+    // user can actually flip on this page. Nothing is estimated or guessed.
+
+    private struct CheckupSignal {
+        let passed: Bool
+        let weight: Int
+        let recommendation: LocalizedStringKey
+    }
+
+    @AppStorage("prvio.trustedContact.name") private var trustedContactName = ""
+
+    private var checkupSignals: [CheckupSignal] {
+        [
+            .init(passed: totpFactorId != nil, weight: 30,
+                  recommendation: "Turn on the authenticator app (two-step sign-in)"),
+            .init(passed: (AccountSecurityService.shared.unusedBackupCodes ?? 0) > 0, weight: 15,
+                  recommendation: "Generate backup codes for your account"),
+            .init(passed: biometricsEnabled, weight: 20,
+                  recommendation: "Require Face ID to open PRVIO"),
+            .init(passed: autoLockMinutes != 0, weight: 10,
+                  recommendation: "Set an auto-lock interval"),
+            .init(passed: !sectionLock.protectedSections.isEmpty, weight: 10,
+                  recommendation: "Lock at least one sensitive section"),
+            .init(passed: !trustedContactName.isEmpty, weight: 15,
+                  recommendation: "Add an emergency trusted contact"),
+        ]
+    }
+
+    private var checkupScore: Int {
+        checkupSignals.filter(\.passed).reduce(0) { $0 + $1.weight }
+    }
+
+    private var checkupColor: Color {
+        switch checkupScore {
+        case ..<50:  return .brandDanger
+        case ..<80:  return .brandWarning
+        default:     return .brandSuccess
+        }
+    }
+
+    private var checkupSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.base) {
+            HStack(spacing: AppSpacing.lg) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.primary.opacity(AppOpacity.hairline), lineWidth: 6)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(checkupScore) / 100)
+                        .stroke(checkupColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text(verbatim: "\(checkupScore)")
+                        .font(AppFont.scaled(20, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .monospacedDigit()
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Security checkup")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                    Text(checkupScore == 100
+                         ? "Everything on this page is switched on."
+                         : "Each recommendation below maps to a control on this page.")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.top, AppSpacing.base)
+
+            let missing = checkupSignals.filter { !$0.passed }.prefix(3)
+            if !missing.isEmpty {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    ForEach(Array(missing.enumerated()), id: \.offset) { _, signal in
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(AppFont.footnote)
+                                .foregroundStyle(checkupColor)
+                                .symbolRenderingMode(.hierarchical)
+                            Text(signal.recommendation)
+                                .font(AppFont.scaled(13))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, AppSpacing.base)
+            }
+            Color.clear.frame(height: AppSpacing.xs)
+        }
+        .liquidGlass(cornerRadius: AppRadius.xl)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Security checkup"))
+        .accessibilityValue(Text(verbatim: "\(checkupScore)/100"))
+    }
+
     // MARK: - MFA
 
     private var mfaSection: some View {
-        secGroup(title: "Multi-factor authentication (MFA)", footer: "Requires an additional security check at sign-in. If you fail this check, you will have the option to recover your account.") {
+        secGroup(title: "Multi-factor authentication (MFA)", footer: "Requires an additional security check at sign-in. If you can't pass it, a one-time backup code unlocks the app.") {
             Button {
                 if totpFactorId != nil { showRemoveTOTP = true } else { showTOTPEnroll = true }
             } label: {
@@ -116,7 +217,7 @@ struct SecurityView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Backup codes")
                             .font(AppFont.scaled(15)).foregroundStyle(.primary)
-                        Text("Emergency access codes for account recovery")
+                        Text("One-time codes that unlock two-step sign-in")
                             .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
@@ -217,7 +318,9 @@ struct SecurityView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lockdown mode")
                         .font(AppFont.scaled(15)).foregroundStyle(.primary)
-                    Text("Requires more secure sign-in methods")
+                    // Honest subtitle: this is what the toggle actually does
+                    // (AppLockManager forces the lock on every background).
+                    Text("Locks PRVIO every time you leave the app")
                         .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
@@ -366,7 +469,10 @@ struct SecurityView: View {
         }
     }
 
-    private func statusRow(icon: String, color: Color, title: String, status: String) -> some View {
+    // LocalizedStringKey, NOT String — plain String parameters rendered the
+    // literals verbatim and silently skipped the Romanian translations that
+    // already existed for them (IMG_8534).
+    private func statusRow(icon: String, color: Color, title: LocalizedStringKey, status: LocalizedStringKey) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(title)

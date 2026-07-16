@@ -168,6 +168,26 @@ struct PRVIOApp: App {
                     .environment(auth)
                     .interactiveDismissDisabled()
             }
+            // The MFA gate: accounts with a verified authenticator sign in at
+            // AAL1 and stay covered until the 6-digit code (or a one-time
+            // backup code) verifies. Re-derived from the REAL assurance level
+            // on every session change — never guessed from local state.
+            .fullScreenCover(isPresented: Binding(
+                get: { auth.session != nil && AccountSecurityService.shared.needsMFAChallenge },
+                set: { _ in }
+            )) {
+                MFAChallengeView()
+                    .environment(auth)
+                    .interactiveDismissDisabled()
+            }
+            .task(id: auth.session?.user.id) {
+                await AccountSecurityService.shared.refreshMFAStatus()
+                // Register this device in the account's session registry once
+                // the gate state is known (throttled inside the service).
+                if auth.session != nil {
+                    await DeviceSessionService.shared.registerCurrentDevice()
+                }
+            }
             .onContinueUserActivity("com.prvio.task")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.plants")   { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.chat")     { router.handle(userActivity: $0) }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AuditLogView: View {
     @State private var events: [AuditLogService.AuditEvent] = []
+    @State private var security = AccountSecurityService.shared
     @State private var showClearConfirm = false
     @State private var searchText = ""
 
@@ -19,6 +20,12 @@ struct AuditLogView: View {
             // The log is unbounded — a lazy stack keeps offscreen days
             // unmaterialized instead of building every row up front.
             LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
+                // Account-level events come from the server journal
+                // (`account_security_events`), so sign-ins and security
+                // changes made on OTHER devices show up here too.
+                if searchText.isEmpty, !security.recentEvents.isEmpty {
+                    accountSection
+                }
                 if events.isEmpty {
                     emptyState
                 } else {
@@ -58,6 +65,105 @@ struct AuditLogView: View {
             Button("Anulează", role: .cancel) {}
         }
         .onAppear { events = AuditLogService.shared.events }
+        .task { await security.loadRecentEvents() }
+    }
+
+    // MARK: - Account (server) events
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Account (all devices)")
+                .textCase(.uppercase)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
+
+            VStack(spacing: 0) {
+                ForEach(Array(security.recentEvents.prefix(10).enumerated()), id: \.element.id) { idx, event in
+                    if idx > 0 {
+                        Rectangle()
+                            .fill(Color.primary.opacity(AppOpacity.hairline))
+                            .frame(height: 0.4)
+                            .padding(.leading, 52)
+                    }
+                    accountEventRow(event)
+                }
+            }
+            .liquidGlass(cornerRadius: AppRadius.xl)
+        }
+    }
+
+    private func accountEventRow(_ event: AccountSecurityEvent) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(accountEventColor(event.type).opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: accountEventIcon(event.type))
+                    .font(AppFont.headline)
+                    .foregroundStyle(accountEventColor(event.type))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(accountEventTitle(event.type))
+                    .font(AppFont.footnote)
+                    .foregroundStyle(.primary)
+                HStack(spacing: 4) {
+                    if let date = ISODate.date(from: event.createdAt) {
+                        Text(date, format: .dateTime.day().month().hour().minute())
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(0.38))
+                    }
+                    if let device = event.payload?["device_name"], !device.isEmpty {
+                        Text(verbatim: "· \(device)")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(0.38))
+                            .lineLimit(1)
+                    }
+                }
+            }
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+    }
+
+    private func accountEventTitle(_ type: String) -> LocalizedStringKey {
+        switch type {
+        case "new_device_login":          return "Sign-in on a new device"
+        case "session_revoked":           return "Device removed from sessions"
+        case "password_reset_requested":  return "Password reset requested"
+        case "totp_enabled":              return "Authenticator app enabled"
+        case "totp_disabled":             return "Authenticator app disabled"
+        case "backup_codes_generated":    return "Backup codes generated"
+        case "backup_code_used":          return "A backup code was used"
+        default:                          return "Security event"
+        }
+    }
+
+    private func accountEventIcon(_ type: String) -> String {
+        switch type {
+        case "new_device_login":         return "iphone.badge.exclamationmark"
+        case "session_revoked":          return "iphone.slash"
+        case "password_reset_requested": return "key.fill"
+        case "totp_enabled":             return "lock.shield.fill"
+        case "totp_disabled":            return "lock.open.fill"
+        case "backup_codes_generated":   return "key.horizontal.fill"
+        case "backup_code_used":         return "key.viewfinder"
+        default:                         return "shield.fill"
+        }
+    }
+
+    private func accountEventColor(_ type: String) -> Color {
+        switch type {
+        case "new_device_login":         return .orange
+        case "session_revoked":          return .red
+        case "password_reset_requested": return .orange
+        case "totp_enabled":             return .indigo
+        case "totp_disabled":            return .gray
+        case "backup_codes_generated":   return .teal
+        case "backup_code_used":         return .brandWarning
+        default:                         return .purple
+        }
     }
 
     // MARK: - Grouped data

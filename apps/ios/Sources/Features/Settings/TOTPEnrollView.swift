@@ -166,6 +166,7 @@ struct TOTPEnrollView: View {
                 params: MFAChallengeAndVerifyParams(factorId: factorId, code: code)
             )
             verified = true
+            await AccountSecurityService.shared.recordEvent("totp_enabled")
             HapticFeedback.success()
             onEnrolled()
             dismiss()

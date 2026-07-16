@@ -1,9 +1,14 @@
 import SwiftUI
-import CryptoKit
 
+// Backup codes live SERVER-SIDE as SHA-256 hashes (`backup_codes` table) and
+// each unlocks the two-step sign-in gate exactly once — the honest recovery
+// path for a lost authenticator app. They are NOT password recovery; the
+// copy below says exactly what they do.
 struct BackupCodesView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var security = AccountSecurityService.shared
     @State private var codes: [String] = []
+    @State private var isWorking = false
     @State private var showCopyConfirm = false
     @State private var showRegenerateConfirm = false
 
@@ -34,9 +39,9 @@ struct BackupCodesView: View {
             }
         }
         .presentationBackground(.thinMaterial)
-        .onAppear { generateCodesIfNeeded() }
+        .task { await loadState() }
         .confirmationDialog("Generează coduri noi?", isPresented: $showRegenerateConfirm, titleVisibility: .visible) {
-            Button("Generează coduri noi", role: .destructive) { generateNewCodes() }
+            Button("Generează coduri noi", role: .destructive) { Task { await generateNewCodes() } }
             Button("Anulează", role: .cancel) {}
         } message: {
             Text("Codurile existente vor fi invalidate imediat.")
@@ -54,7 +59,7 @@ struct BackupCodesView: View {
                 Text("Păstrează-le în siguranță")
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
-                Text("Stochează aceste coduri undeva sigur. Fiecare cod poate fi folosit o singură dată.")
+                Text("Un cod deblochează verificarea în doi pași o singură dată, dacă rămâi fără aplicația de autentificare. Nu recuperează parola.")
                     .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.55))
             }
@@ -114,6 +119,10 @@ struct BackupCodesView: View {
 
     // MARK: - Action buttons
 
+    /// Copy/share only make sense while the plaintext is on screen — the
+    /// redacted rows after a relaunch have nothing real to hand out.
+    private var codesAreRedacted: Bool { codes.first?.contains("•") ?? true }
+
     private var actionButtons: some View {
         HStack(spacing: 12) {
             Button { copyAll() } label: {
@@ -126,6 +135,8 @@ struct BackupCodesView: View {
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)
+            .disabled(codesAreRedacted)
+            .opacity(codesAreRedacted ? AppOpacity.disabled : 1)
 
             Button { shareAll() } label: {
                 Label("Descarcă", systemImage: "square.and.arrow.up.fill")
@@ -137,6 +148,8 @@ struct BackupCodesView: View {
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)
+            .disabled(codesAreRedacted)
+            .opacity(codesAreRedacted ? AppOpacity.disabled : 1)
         }
     }
 
@@ -159,44 +172,31 @@ struct BackupCodesView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Code generation
+    // MARK: - Server-backed state
 
-    private func generateCodesIfNeeded() {
-        // Don't regenerate if codes are already visible in this session.
+    /// First open: no codes on the account → generate a fresh set and show
+    /// it (the only moment plaintext exists). Later opens: only hashes exist
+    /// anywhere, so show redacted placeholders for the unused count — the
+    /// user either wrote them down or regenerates.
+    private func loadState() async {
         guard codes.isEmpty else { return }
-        if UserDefaults.standard.data(forKey: "prvio.backupCodesHash") == nil {
-            // First time: generate fresh codes.
-            generateNewCodes()
-        } else {
-            // Codes were generated in a previous session; codes aren't stored in
-            // plain text (only hashes). Show redacted placeholders so the user
-            // can either use them (if written down) or regenerate.
-            codes = (0..<8).map { _ in "•••••-•••••" }
+        isWorking = true
+        defer { isWorking = false }
+        await security.refreshBackupCodeCount()
+        if let unused = security.unusedBackupCodes {
+            if unused == 0 {
+                await generateNewCodes()
+            } else {
+                codes = (0..<unused).map { _ in "•••••-•••••" }
+            }
         }
     }
 
-    private func generateNewCodes() {
-        codes = (0..<8).map { _ in makeCode() }
-        saveHashes()
-        AuditLogService.AuditEvent.record("backup_codes_generated", String(localized: "Coduri de rezervă generate"))
-    }
-
-    private func makeCode() -> String {
-        let chars = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
-        let part1 = String((0..<5).map { _ in chars[Int.random(in: 0..<chars.count)] })
-        let part2 = String((0..<5).map { _ in chars[Int.random(in: 0..<chars.count)] })
-        return "\(part1)-\(part2)"
-    }
-
-    private func saveHashes() {
-        let hashes = codes.map { code -> String in
-            let data = Data(code.utf8)
-            let digest = SHA256.hash(data: data)
-            return digest.compactMap { String(format: "%02x", $0) }.joined()
-        }
-        if let encoded = try? JSONEncoder().encode(hashes) {
-            UserDefaults.standard.set(encoded, forKey: "prvio.backupCodesHash")
-        }
+    private func generateNewCodes() async {
+        do {
+            codes = try await security.regenerateBackupCodes()
+            AuditLogService.AuditEvent.record("backup_codes_generated", String(localized: "Coduri de rezervă generate"))
+        } catch { /* keep whatever was on screen — never show fake codes */ }
     }
 
     // MARK: - Actions
