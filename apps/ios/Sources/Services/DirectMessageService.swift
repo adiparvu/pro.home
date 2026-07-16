@@ -639,9 +639,9 @@ final class DirectMessageService {
         isSubscribing = true
         defer { isSubscribing = false }
         if channel != nil { await unsubscribe() }
-        // Realtime authenticates with the anon key via the client's realtime
-        // accessToken closure (see SupabaseClient) — the user's ES256 JWT is
-        // rejected by this project's Realtime, so the socket must NOT carry it.
+        // Channel auth rides the client's accessToken closure (see
+        // SupabaseClient): the user's session JWT, so RLS-scoped
+        // postgres_changes actually deliver member rows.
         // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
         // ping. The real typing/dm_new handlers already ignore our own signals
         // (name != myName, from != my id), so echoing our own broadcasts back is
@@ -737,10 +737,13 @@ final class DirectMessageService {
             }
         }
         do {
-            // Note: with the default `connectOnSubscribe` option (true), this
-            // auto-connects the WebSocket when it's disconnected — so no
-            // explicit `realtimeV2.connect()` is needed here.
-            try await ch.subscribeWithError()
+            // Timeboxed: a subscribe awaiting a never-recovering socket would
+            // otherwise latch `isSubscribing` forever, freezing both the 3s
+            // heartbeat's recovery and the banner. (connectOnSubscribe still
+            // auto-connects the socket; the watchdog owns long-term revival.)
+            try await withRealtimeTimeout(seconds: 15) {
+                try await ch.subscribeWithError()
+            }
         } catch {
             // A failed subscribe must leave NO trace: keeping the dead channel
             // made the idempotent guard treat the whole session as live. Surface
@@ -841,7 +844,9 @@ final class DirectMessageService {
     /// state (typing/delivery ride on broadcast), so it must NOT read as live.
     private func refreshRealtimeStatus() {
         guard realtimeHealthy else {
-            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(channel?.status))"
+            // Carry the socket's recent transition history so a single
+            // screenshot shows how it died, not just where it sits now.
+            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(channel?.status)) · \(RealtimeFlightRecorder.shared.tail)"
             return
         }
         switch broadcastEcho {
@@ -866,9 +871,12 @@ final class DirectMessageService {
             refreshRealtimeStatus()
             return
         }
-        // Genuinely unhealthy AND nothing is subscribing: rebuild. subscribeRealtime
-        // owns its own teardown (behind the isSubscribing guard), so don't
-        // pre-unsubscribe here — that reopened the very cancellation race.
+        // Genuinely unhealthy AND nothing is subscribing: surface the CURRENT
+        // state first (the banner must never sit on a stale snapshot), then
+        // rebuild. subscribeRealtime owns its own teardown (behind the
+        // isSubscribing guard), so don't pre-unsubscribe here — that reopened
+        // the very cancellation race.
+        refreshRealtimeStatus()
         await subscribeRealtime(propertyId: propertyId, myName: myName)
         await load(propertyId: propertyId, myName: myName)
     }

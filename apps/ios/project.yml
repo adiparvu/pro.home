@@ -12,7 +12,11 @@ options:
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
-    from: "2.0.0"
+    # Pinned EXACTLY: `from:` re-resolved the latest 2.x on every CI build, so
+    # the SDK could drift silently between builds mid-diagnosis. 2.52.0 is the
+    # release whose Realtime source this app's connection handling was audited
+    # against (one-shot reconnect → app-side watchdog). Upgrades are deliberate.
+    exactVersion: "2.52.0"
 
 targets:
   PRVIO:
@@ -117,7 +121,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1035"
+        CURRENT_PROJECT_VERSION: "1036"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -205,7 +209,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1035"
+        CURRENT_PROJECT_VERSION: "1036"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -242,7 +246,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1035"
+        CURRENT_PROJECT_VERSION: "1036"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -280,7 +284,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1035"
+        CURRENT_PROJECT_VERSION: "1036"
         # Full manual plist (the proven widgets pattern) — no generate+merge
         # behavior to trust; NSUserActivityTypes is guaranteed in the build.
         INFOPLIST_FILE: Watch/Info.plist
@@ -324,7 +328,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1035"
+        CURRENT_PROJECT_VERSION: "1036"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"

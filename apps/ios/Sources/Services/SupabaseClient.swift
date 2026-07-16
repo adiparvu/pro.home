@@ -17,52 +17,43 @@ let supabase = SupabaseClient(
     )
 )
 
-// MARK: - Realtime authenticates with the ANON key, via a STANDALONE client
-//
-// This project signs user JWTs with ES256 (Supabase's new asymmetric keys — the
-// `sb_publishable_` key format), which this project's Realtime service rejects
-// with `JwtSignatureError` on channel join. Proven both ways: a headless anon-key
-// websocket join succeeds instantly, and the app failed with "Maximum retry
-// attempts reached".
-//
-// The subtle trap: setting `RealtimeClientOptions(accessToken:)` on the MAIN
-// SupabaseClient is NOT enough. Because `AuthOptions.accessToken` is nil, the
-// SDK runs `listenForAuthEvents()` and, on every initialSession/signedIn/
-// tokenRefreshed, calls `realtimeV2.setAuth(sessionJWT)` — which overwrites the
-// stored token and PUSHES the ES256 JWT onto already-subscribed channels
-// (`access_token` event), so the channel joins with the anon key, then gets
-// killed the instant auth propagates. That is the intermittent "subscribed then
-// dead / maxRetry" we saw (verified against supabase-swift v2.51 source).
-//
-// The only leak-proof fix that keeps PostgREST/Storage/Functions on the user's
-// authed JWT (for RLS) is a SEPARATE RealtimeClientV2 that the SupabaseClient's
-// auth→realtime wiring never touches. Nothing ever calls setAuth(jwt) on it, so
-// every join carries the anon key and nothing overrides it. All of the app's
-// realtime rides on PUBLIC broadcast + property-scoped channels that need no
-// user identity, so the anon key is the correct and sufficient credential.
+// MARK: - The app's ONE realtime client (standalone, deliberately)
 //
 // EVERY realtime channel in the app goes through `realtimeAnon`, never
-// `supabase.realtimeV2`.
+// `supabase.realtimeV2`. A standalone client keeps channel auth EXPLICIT: the
+// main SupabaseClient's internal auth→realtime wiring (`listenForAuthEvents` →
+// `setAuth`) never touches it, so what rides each join is exactly what the
+// `accessToken` closure below returns — nothing races it.
+//
+// AUTH MODEL (verified headlessly against THIS project's Realtime, 2026-07-16):
+//  - Handshake identity: the publishable key (apikey query/header). Constant.
+//  - Channel credential: the user's SESSION JWT when signed in, falling back
+//    to the publishable key when signed out. The SDK calls the closure on
+//    every join and pushes `access_token` refreshes over the socket, so token
+//    rotation is handled.
+//  - The user JWT is REQUIRED for delivery, not just accepted: RLS-protected
+//    postgres_changes (messages/direct_messages are member-only) deliver rows
+//    per the subscriber's claims — an anon subscription is accepted but every
+//    row is withheld. Migration 156's realtime authorization policies are
+//    also granted TO authenticated.
+//  - An earlier build concluded the ES256 JWT was rejected on join
+//    ("JwtSignatureError") and forced the anon key here. That conclusion was
+//    contaminated by the v1-framing bug below (an undecodable reply and a
+//    rejected join look identical from the app). Re-proven 2026-07-16 with a
+//    real ES256 session JWT: join ok, "Subscribed to PostgreSQL" ok,
+//    broadcast echo ok.
 //
 // PROTOCOL VERSION — leave it at the library default (`.v2`, protocol 2.0.0).
-//
-// This was the real cause of the persistent "Maximum retry attempts reached".
 // An earlier build pinned `vsn: .v1`, believing the server was broken on v2 —
-// that was WRONG and was itself the regression. supabase-swift 2.51's
-// `RealtimeSerializer` implements ONLY protocol 2.0.0: it encodes every frame
-// as a JSON array `[joinRef, ref, topic, event, payload]` and its `decodeText`
-// can ONLY parse that array shape. Forcing `vsn=1.0.0` makes the server reply
-// in 1.0.0 OBJECT framing (`{"topic":…,"event":…}`), which the client's
-// array-only decoder throws on — so the join reply is never matched, every
-// subscribe times out, and the channel retries to exhaustion (`maxRetry`),
-// even though the socket connected fine.
+// that was WRONG and was itself a regression. supabase-swift's
+// `RealtimeSerializer` implements ONLY protocol 2.0.0 (array framing); forcing
+// v1 makes the server reply in object framing the client can't decode, so
+// every subscribe times out to maxRetry even though the socket is healthy.
 //
-// Proven headlessly against THIS project's Realtime, over vsn=2.0.0, with the
-// exact channels the app opens (broadcast + postgres_changes) and the anon key
-// in both the `Authorization` header and the join's `access_token`: the join
-// is accepted (`status: ok`, "Subscribed to PostgreSQL") and a `self:true`
-// broadcast round-trips. So the default v2 is exactly what this server serves —
-// the client simply has to speak its own native protocol.
+// CONNECTION LIFETIME — `RealtimeFlightRecorder.startWatchdog()` (called from
+// MainTabView) owns connect/reconnect. The SDK's auto-reconnect is ONE-SHOT:
+// a dropped socket schedules a single retry, and if that attempt fails the
+// client parks in `.disconnected` forever. The watchdog revives it.
 let realtimeAnon = RealtimeClientV2(
     url: URL(string: "https://kwcanenheihuylaymwsl.supabase.co/realtime/v1")!,
     options: RealtimeClientOptions(
@@ -70,6 +61,13 @@ let realtimeAnon = RealtimeClientV2(
             "apikey": supabasePublishableKey,
             "Authorization": "Bearer \(supabasePublishableKey)"
         ],
-        accessToken: { supabasePublishableKey }
+        // Session JWT when signed in (RLS-scoped postgres_changes delivery +
+        // migration 156's authenticated-only realtime authorization);
+        // publishable key when signed out. `auth.session` refreshes an
+        // expired token before returning, so joins never carry a stale JWT.
+        accessToken: { (try? await supabase.auth.session)?.accessToken ?? supabasePublishableKey },
+        // Flight recorder: SDK-internal close codes and reconnect decisions
+        // land in the same timeline the diagnostic banner exports.
+        logger: RealtimeFlightRecorder.shared
     )
 )

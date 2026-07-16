@@ -211,9 +211,9 @@ final class MessageService {
         isSubscribing = true
         defer { isSubscribing = false }
         if realtimeChannel != nil { await unsubscribe() }
-        // Realtime authenticates with the anon key via the client's realtime
-        // accessToken closure (see SupabaseClient) — the user's ES256 JWT is
-        // rejected by this project's Realtime, so the socket must NOT carry it.
+        // Channel auth rides the client's accessToken closure (see
+        // SupabaseClient): the user's session JWT, so RLS-scoped
+        // postgres_changes actually deliver member rows.
         // The group scope arrives EXPLICITLY: this races load() (separate .task),
         // and deriving the topic from a not-yet-set currentGroupId subscribed a
         // community thread to the MAIN chat's topic — the realtime client
@@ -294,10 +294,13 @@ final class MessageService {
             }
         }
         do {
-            // Note: with the default `connectOnSubscribe` option (true), this
-            // auto-connects the WebSocket when it's disconnected — so no
-            // explicit `realtimeV2.connect()` is needed here.
-            try await channel.subscribeWithError()
+            // Timeboxed: a subscribe awaiting a never-recovering socket would
+            // otherwise latch `isSubscribing` forever, freezing both the 3s
+            // heartbeat's recovery and the banner. (connectOnSubscribe still
+            // auto-connects the socket; the watchdog owns long-term revival.)
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
         } catch {
             // A failed subscribe must leave NO trace: keeping the dead channel
             // made the idempotent guard treat the whole session as live. Surface
@@ -360,11 +363,13 @@ final class MessageService {
         realtimeChannel?.status == .subscribed
     }
 
-    /// Recomputes `realtimeStatus` from current socket + channel health.
+    /// Recomputes `realtimeStatus` from current socket + channel health. The
+    /// unhealthy string carries the socket's recent transition history so a
+    /// single screenshot shows how it died, not just where it sits now.
     private func refreshRealtimeStatus() {
         realtimeStatus = realtimeHealthy
             ? "live"
-            : "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(realtimeChannel?.status))"
+            : "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(realtimeChannel?.status)) · \(RealtimeFlightRecorder.shared.tail)"
     }
 
     /// Delivery safety net for an OPEN conversation: verifies the channel is
@@ -382,9 +387,12 @@ final class MessageService {
             refreshRealtimeStatus()
             return
         }
-        // Genuinely unhealthy AND nothing subscribing: rebuild. subscribeRealtime
-        // owns its own teardown behind the isSubscribing guard, so don't
-        // pre-unsubscribe here — that reopened the cancellation race.
+        // Genuinely unhealthy AND nothing subscribing: surface the CURRENT
+        // state first (the banner must never sit on a stale snapshot), then
+        // rebuild. subscribeRealtime owns its own teardown behind the
+        // isSubscribing guard, so don't pre-unsubscribe here — that reopened
+        // the cancellation race.
+        refreshRealtimeStatus()
         await subscribeRealtime(propertyId: propertyId, groupId: groupId)
         await onNewMessagesSignal(propertyId: propertyId)
     }

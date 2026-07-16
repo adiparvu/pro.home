@@ -37,7 +37,10 @@ struct RealtimeStatusBanner: View {
     var body: some View {
         Group {
             Button {
-                UIPasteboard.general.string = status
+                // Export the WHOLE flight recorder, not just the one-line
+                // status: transitions + SDK close codes + watchdog events —
+                // one paste pinpoints the failing layer.
+                UIPasteboard.general.string = "\(status)\n\n\(RealtimeFlightRecorder.shared.fullLog)"
                 HapticFeedback.impact(.light)
                 withAnimation(.snappy) { copied = true }
                 Task {

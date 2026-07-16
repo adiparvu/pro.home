@@ -156,6 +156,11 @@ struct MainTabView: View {
         .environment(proactiveEngine)
         .task {
             WatchSyncService.shared.activate()
+            // One socket owner: connect realtime up front (instead of ~8 services
+            // racing connect-on-subscribe) and keep reviving it — supabase-swift's
+            // auto-reconnect is one-shot, so a single failed retry otherwise parks
+            // the socket in .disconnected forever.
+            RealtimeFlightRecorder.shared.startWatchdog()
             // Now that the user is signed in, make sure the device is registered
             // for push (requests permission the first time) — without a device
             // token the backend has nowhere to deliver chat notifications.
