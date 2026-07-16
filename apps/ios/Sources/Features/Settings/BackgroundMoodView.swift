@@ -405,10 +405,13 @@ struct BackgroundMoodView: View {
             && engine.latitude != nil && engine.longitude != nil
     }
 
-    /// Why the icon can(not) follow the mood, stated plainly: the default
-    /// primary icon already day/night-switches with the SYSTEM; singles have
-    /// no faces to switch; pairs get the full explanation.
+    /// Why the icon can(not) follow the mood, stated plainly: the OS may
+    /// have dropped the alert-free switch (every flip would pop the system
+    /// modal — the exact interruption this option promises to avoid); the
+    /// default primary icon already day/night-switches with the SYSTEM;
+    /// singles have no faces to switch; pairs get the full explanation.
     private var iconCaptionKey: LocalizedStringKey {
+        if !UIApplication.supportsSilentIconSwitching { return "mood_icon_follow_no_silent" }
         if iconManager.canFollowMood { return "mood_icon_follow_caption" }
         return iconManager.selected.isDefault ? "mood_icon_follow_default"
                                               : "mood_icon_follow_unavailable"

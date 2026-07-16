@@ -91187,6 +91187,22 @@
           }
         }
       }
+    },
+    "mood_icon_follow_no_silent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This iOS version shows a system alert on every icon change, so automatic switching stays off. You can still pick any icon manually."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Această versiune de iOS afișează o alertă de sistem la fiecare schimbare de iconiță, așa că comutarea automată rămâne oprită. Poți alege oricând manual orice iconiță."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

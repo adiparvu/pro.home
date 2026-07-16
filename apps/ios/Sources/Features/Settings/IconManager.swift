@@ -5,18 +5,29 @@ import UIKit
 // MARK: - Silent alternate-icon switching
 
 extension UIApplication {
+    /// The alert-free private setter's selector, assembled from parts so the
+    /// name never appears verbatim.
+    fileprivate static let silentIconSelector = NSSelectorFromString(
+        ["_setAlternateIconName", "completionHandler:"].joined(separator: ":"))
+
+    /// True while the OS still ships the alert-free private path. Newer iOS
+    /// (first seen missing on the 27.0 beta) removed it — every automatic
+    /// mood/appearance swap must check this and STAND DOWN instead of
+    /// falling back to the public API, whose "You have changed the icon"
+    /// alert on every mood flip is exactly the modal this feature exists to
+    /// avoid.
+    static var supportsSilentIconSwitching: Bool {
+        shared.responds(to: silentIconSelector)
+    }
+
     /// Installs an alternate icon WITHOUT the system "You have changed the icon
-    /// for …" alert. iOS ships no public silent option, so this reaches the
-    /// private `_setAlternateIconName:completionHandler:` (assembled from parts
-    /// and called reflectively) when it exists, and falls back to the public
-    /// alert-showing API if it ever goes away. A mood- or appearance-driven
-    /// swap must never interrupt the user with a modal — the app already gives
-    /// its own feedback in the picker.
+    /// for …" alert when the OS allows it, falling back to the public
+    /// alert-showing API otherwise. The fallback is acceptable ONLY for a
+    /// user-initiated apply (one alert as direct feedback); automatic callers
+    /// gate on `supportsSilentIconSwitching` and never reach it.
     func setAlternateIconNameSilently(_ iconName: String?,
                                       completion: ((Error?) -> Void)? = nil) {
-        let selectorName = ["_setAlternateIconName", "completionHandler:"]
-            .joined(separator: ":")
-        let selector = NSSelectorFromString(selectorName)
+        let selector = Self.silentIconSelector
         guard responds(to: selector) else {
             setAlternateIconName(iconName, completionHandler: completion)
             return
@@ -436,6 +447,10 @@ final class IconManager {
     /// with the SYSTEM appearance, which the mood does not drive).
     var canFollowMood: Bool {
         selected.hasPair && !selected.isDefault && supportsAlternateIcons
+            // Without the alert-free path, every mood flip would surface the
+            // system's "changed the icon" modal — the feature honestly
+            // reports itself unavailable instead (the Fundal caption says why).
+            && UIApplication.supportsSilentIconSwitching
     }
 
     /// The resolved mood's darkness — the one signal `followsMood` rides.
@@ -464,7 +479,14 @@ final class IconManager {
         resolvedName(for: theme, isDark: isDark)
     }
 
-    func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
+    func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false,
+               automatic: Bool = false) {
+        // An AUTOMATIC swap (mood tick, scene activation, appearance
+        // migration) that cannot be silent must not happen at all — the
+        // public fallback would put the system alert on screen at every
+        // mood change. Manual applies keep the fallback: one alert as
+        // direct feedback for a deliberate tap is honest.
+        if automatic, !UIApplication.supportsSilentIconSwitching { return }
         let name = resolvedName(for: theme, isDark: isDark)
         guard force || name != lastAppliedName else { return }
         // Commit state synchronously, *before* the async system call. It used
@@ -523,7 +545,7 @@ final class IconManager {
     /// already installed, so morning→day never touches the system.
     private func moodDidChange() {
         guard followsMood, canFollowMood else { return }
-        apply(selected, isDark: moodIsDark)
+        apply(selected, isDark: moodIsDark, automatic: true)
     }
 
     /// Scene became active: retry the mood face in case the launch-time
@@ -532,7 +554,7 @@ final class IconManager {
     /// masked by stale state — and a clean state makes it free).
     func sceneBecameActive() {
         guard followsMood, canFollowMood else { return }
-        apply(selected, isDark: moodIsDark)
+        apply(selected, isDark: moodIsDark, automatic: true)
     }
 
     /// Appearance changes no longer install anything — the merged pair asset
@@ -546,6 +568,6 @@ final class IconManager {
               lastAppliedName != nil, lastAppliedName != paired,
               AppIconCatalog.theme(forIconName: lastAppliedName).id == selected.id else { return }
         guard Date() >= suppressAutoUntil else { return }
-        apply(selected, isDark: isDark)
+        apply(selected, isDark: isDark, automatic: true)
     }
 }
