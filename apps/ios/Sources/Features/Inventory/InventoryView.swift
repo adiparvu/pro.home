@@ -278,28 +278,36 @@ struct InventoryView: View {
     private var filterButton: some View {
         let counts = filterCounts
         return GlassFilterButton(isActive: hasActiveFilter, inToolbar: true) {
-            GlassFilterSection(title: "Status",
-                               options: statusOptions(counts), selection: $status)
-            GlassFilterSectionDivider()
-            GlassFilterSection(title: "Category",
-                               options: categoryOptions(counts), selection: $selectedCategory)
-            GlassFilterSectionDivider()
-            GlassFilterSection(title: "Location",
-                               options: locationOptions(counts), selection: $selectedLocation)
-            GlassFilterSectionDivider()
-            GlassFilterSection(title: "inv_sort_by",
-                               options: sortOptions, selection: $sortRaw)
-            // Share/export live in the SAME popover (IMG_8546) — one button
-            // holds everything the page can do to its list.
-            GlassFilterSectionDivider()
-            GlassFilterSectionLabel(titleKey: "inv_share_print")
-            GlassFilterActionRow(icon: "doc.richtext",
-                                 title: String(localized: "inv_report_action")) {
-                shareReport()
-            }
-            GlassFilterActionRow(icon: "qrcode",
-                                 title: String(localized: "inv_qr_labels_action")) {
-                printQRLabels()
+            // Prototype (menu-in-menu): the four facets each drill in to their
+            // options instead of stacking as four scrolling sections. The root
+            // shows each facet's current value at a glance; share/print stay in
+            // the footer, one tap from the root.
+            GlassDrillMenu(entries: [
+                .facet(id: "status", icon: "circle.lefthalf.filled", title: "Status",
+                       options: statusOptions(counts), selection: $status,
+                       isNarrowed: status != nil),
+                .facet(id: "category", icon: "square.grid.2x2", title: "Category",
+                       options: categoryOptions(counts), selection: $selectedCategory,
+                       isNarrowed: selectedCategory != nil),
+                .facet(id: "location", icon: "mappin", title: "Location",
+                       options: locationOptions(counts), selection: $selectedLocation,
+                       isNarrowed: selectedLocation != nil),
+                .facet(id: "sort", icon: "arrow.up.arrow.down", title: "inv_sort_by",
+                       options: sortOptions, selection: $sortRaw,
+                       isNarrowed: false)
+            ]) {
+                // Share/export live in the SAME popover (IMG_8546) — one button
+                // holds everything the page can do to its list.
+                GlassFilterSectionDivider()
+                GlassFilterSectionLabel(titleKey: "inv_share_print")
+                GlassFilterActionRow(icon: "doc.richtext",
+                                     title: String(localized: "inv_report_action")) {
+                    shareReport()
+                }
+                GlassFilterActionRow(icon: "qrcode",
+                                     title: String(localized: "inv_qr_labels_action")) {
+                    printQRLabels()
+                }
             }
         }
     }
