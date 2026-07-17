@@ -10,16 +10,17 @@ struct ConvSwipeAction: Identifiable {
     let action: () -> Void
 }
 
-struct SwipeableRow<Content: View>: View {
-    /// How the row dresses: `.card` = its own Liquid Glass rounded card
-    /// (Send Later queue); `.plain` = naked content in a continuous list —
-    /// the iOS-Messages look the conversation list uses (IMG_8556), where
-    /// hairline dividers, not cards, separate rows.
-    enum RowStyle { case card, plain }
+/// How a swipe row dresses: `.card` = its own Liquid Glass rounded card
+/// (Send Later queue); `.plain` = naked content in a continuous list —
+/// the iOS-Messages look the conversation list uses (IMG_8556), where
+/// hairline dividers, not cards, separate rows. Top-level (not nested in
+/// the generic row) so the helper modifiers reference one concrete type.
+enum SwipeRowStyle { case card, plain }
 
+struct SwipeableRow<Content: View>: View {
     var leading: [ConvSwipeAction] = []
     var trailing: [ConvSwipeAction] = []
-    var style: RowStyle = .card
+    var style: SwipeRowStyle = .card
     @ViewBuilder var content: () -> Content
 
     @State private var offset: CGFloat = 0
@@ -112,7 +113,7 @@ struct SwipeableRow<Content: View>: View {
 /// `.card` keeps the row's own Liquid Glass; `.plain` adds no chrome at
 /// rest and backs the content with the bar material only mid-swipe.
 private struct SwipeRowDress: ViewModifier {
-    let style: SwipeableRow<EmptyView>.RowStyle
+    let style: SwipeRowStyle
     let isSwiping: Bool
 
     @ViewBuilder
@@ -132,7 +133,7 @@ private struct SwipeRowDress: ViewModifier {
 /// rectangle so the swipe offset stays contained without rounding a
 /// continuous list's edges.
 private struct SwipeRowClip: Shape {
-    let style: SwipeableRow<EmptyView>.RowStyle
+    let style: SwipeRowStyle
 
     func path(in rect: CGRect) -> Path {
         switch style {
