@@ -18,6 +18,7 @@ struct NotificationCenterView: View {
     @State private var filter: String?   // nil = All, "unread", or a module
     @State private var searchText = ""
     @State private var expandedIds: Set<UUID> = []
+    @State private var showClearAllConfirm = false
 
     /// `initialFilter` pre-selects a module chip — the conversations bell
     /// opens the panel scoped to chat activity; All stays one tap away.
@@ -101,13 +102,24 @@ struct NotificationCenterView: View {
                             }
                         }
                         GlassFilterActionRow(icon: "trash",
-                                             title: String(localized: "Clear all")) {
-                            guard let uid = userId else { return }
-                            Task { await service.clearAll(userId: uid) }
+                                             title: String(localized: "Clear all"),
+                                             role: .destructive) {
+                            // Destructive and irreversible — confirm first.
+                            // The mailbox runs this after the popover is
+                            // gone, so the dialog never races the dismissal.
+                            showClearAllConfirm = true
                         }
                     }
                 }
             }
+        }
+        .confirmationDialog("Clear all", isPresented: $showClearAllConfirm,
+                            titleVisibility: .visible) {
+            Button("Clear all", role: .destructive) {
+                guard let uid = userId else { return }
+                Task { await service.clearAll(userId: uid) }
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .task {
             if let uid = userId {

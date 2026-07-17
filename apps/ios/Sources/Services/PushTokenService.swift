@@ -80,7 +80,10 @@ enum PushTokenService {
     /// Fire-and-forget diagnostics row so we can see, from the server, why APNs
     /// registration succeeds or fails on TestFlight (the device-side error is
     /// otherwise silent in Release). Temporary — remove once push is confirmed.
+    /// Debug builds only: Release compiles this to a no-op so shipping builds
+    /// never write diagnostics rows.
     static func logDebug(_ event: String, detail: String? = nil) {
+        #if DEBUG
         struct DebugRow: Encodable {
             let user_id: String?
             let event: String
@@ -94,6 +97,7 @@ enum PushTokenService {
             app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         )
         Task { try? await supabase.from("push_debug").insert(row).execute() }
+        #endif
     }
 
     /// The device's current APNs token, kept so account switches can bind the

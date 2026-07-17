@@ -121,31 +121,6 @@ struct SmartPillToggle: View {
     }
 }
 
-// MARK: - "+" chip
-
-/// The square-ish "+" glass chip that ends the room-chip row — a real
-/// control: it starts the existing Connect-HomeKit flow (adding devices
-/// happens in the Home app; this is the app's honest entry point to more
-/// devices).
-struct SmartPlusChip: View {
-    var action: () -> Void
-
-    var body: some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            Image(systemName: "plus")
-                .font(AppFont.scaled(13, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 34, height: 34)
-                .glassRoundedRect(AppRadius.md)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("sh_connect_homekit"))
-    }
-}
-
 // MARK: - Thin level slider (brightness)
 
 /// The brightness control: a 4pt track with a 22pt white round thumb.

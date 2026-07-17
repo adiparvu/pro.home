@@ -139,14 +139,14 @@ struct PaintColorsView: View {
                 selection: $selectedRoom)
             GlassFilterSectionDivider()
             GlassFilterActionRow(icon: "square.and.arrow.up",
-                                 title: Locale.appIsRomanian ? "Partajează" : "Share") {
+                                 title: String(localized: "paint_share")) {
                 if let image = renderSpecSheet() { SystemActions.share([image]) }
             }
             GlassFilterActionRow(icon: "printer",
-                                 title: Locale.appIsRomanian ? "Printează" : "Print") {
+                                 title: String(localized: "paint_print")) {
                 if let image = renderSpecSheet() {
                     SystemActions.print(image: image,
-                                        jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors")
+                                        jobName: String(localized: "paint_colors_title"))
                 }
             }
         }
@@ -267,7 +267,7 @@ private struct PaintColorsSpecSheet: View {
                 Image(systemName: "paintpalette.fill")
                     .font(AppFont.scaled(18))
                     .foregroundStyle(Color(red: 0.30, green: 0.20, blue: 0.62))
-                Text(Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors")
+                Text("paint_colors_title")
                     .font(AppFont.scaled(22, weight: .heavy))
                     .foregroundStyle(ink)
             }

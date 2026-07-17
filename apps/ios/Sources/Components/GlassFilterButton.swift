@@ -391,6 +391,9 @@ struct GlassFilterMultiSection<Value: Hashable>: View {
 struct GlassFilterActionRow: View {
     let icon: String
     let title: String
+    /// `.destructive` renders icon and title in the danger tint, so rows
+    /// like "Clear all" read as destructive before they're tapped.
+    var role: ButtonRole? = nil
     let action: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -405,23 +408,24 @@ struct GlassFilterActionRow: View {
                 mailbox.pending = action
                 dismiss()
             } else {
-                // Outside a GlassFilterButton popover — best-effort delay.
+                // Outside a GlassFilterButton popover (no mailbox): dismiss
+                // and run immediately. Non-popover hosts whose action
+                // presents UI must provide their own deferral — a
+                // presentation started mid-dismissal is silently dropped
+                // by UIKit.
                 dismiss()
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    action()
-                }
+                action()
             }
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
                     .font(AppFont.scaled(14, weight: .medium))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(role == .destructive ? Color.brandDanger : Color.accentColor)
                     .frame(width: 24)
                 Text(verbatim: title)
                     .font(AppFont.scaled(15))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(role == .destructive ? Color.brandDanger : Color.primary)
                     .lineLimit(1)
                 Spacer(minLength: AppSpacing.lg)
             }

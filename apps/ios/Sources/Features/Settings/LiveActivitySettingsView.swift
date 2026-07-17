@@ -354,6 +354,14 @@ struct LiveActivityKindDetailView: View {
                     }
                 }
 
+                // Favorite — the SAME pinned set the hub's active-card swipe
+                // and context menu toggle (LiveActivityHubStore.favoriteKinds),
+                // so idle kinds can be favorited from here too. The hub's
+                // onAppear refresh picks the change up immediately.
+                group {
+                    favoriteRow
+                }
+
                 group {
                     LAToggleRow(icon: "slider.horizontal.3", color: .indigo,
                                 title: "Custom appearance",
@@ -490,6 +498,36 @@ struct LiveActivityKindDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+    }
+
+    private var isFavorite: Bool {
+        LiveActivityHubStore.shared.isFavorite(kind)
+    }
+
+    /// Star row mirroring the hub's favorite action for kinds with no
+    /// active card to swipe.
+    private var favoriteRow: some View {
+        Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.25)) {
+                LiveActivityHubStore.shared.toggleFavorite(kind)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: "star.fill", color: Color.brandGold)
+                Text(isFavorite ? "la_hub_unfavorite" : "la_hub_favorite")
+                    .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: isFavorite ? "star.fill" : "star")
+                    .font(AppFont.scaled(16, weight: .semibold))
+                    .foregroundStyle(isFavorite ? Color.brandGold : Color.primary.opacity(0.25))
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isFavorite ? [.isSelected] : [])
     }
 
     private var statusCard: some View {

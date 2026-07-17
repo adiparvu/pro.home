@@ -40,6 +40,7 @@ struct SuppliesView: View {
     @State private var showReports = false
     @State private var searchText = ""
     @State private var priceHistoryTarget: PriceHistoryTarget? = nil
+    @State private var editingItem: SupplyItem? = nil
 
     private var filteredLists: [SupplyList] {
         supplyService.lists.filter { $0.name.matchesSearch(searchText) }
@@ -116,10 +117,21 @@ struct SuppliesView: View {
             ProductPriceHistorySheet(productName: target.name)
                 .environment(receiptService)
         }
+        .sheet(item: $editingItem) { item in
+            AddSupplyItemSheet(list: supplyService.lists.first { $0.id == item.listId },
+                               editingItem: item)
+                .environment(supplyService)
+                .environment(propertyService)
+                .environment(receiptService)
+        }
         .task {
             if let id = propertyService.primary?.id {
-                async let _ = supplyService.load(propertyId: id)
-                async let _ = receiptService.load(propertyId: id)
+                // Both loads in parallel, both awaited — un-awaited `async let`s
+                // are cancelled when the task scope exits, so the lists could
+                // arrive empty.
+                async let supplies: Void = supplyService.load(propertyId: id)
+                async let receipts: Void = receiptService.load(propertyId: id)
+                _ = await (supplies, receipts)
             }
         }
         .userActivity("com.prvio.shopping") { activity in
@@ -138,24 +150,33 @@ struct SuppliesView: View {
     /// reports) — a single aggregated popover, same pattern as Inventory.
     /// Nothing here narrows a list — switching views navigates and the rows
     /// are one-shot — so the trigger never claims the "filtered" accent dot.
+    /// View rows are `GlassFilterActionRow`s (not a picker section): picking
+    /// a view is navigation, so the popover must dismiss — the mailbox runs
+    /// the switch after the dismissal transition. Counts survive as a
+    /// " · N" title suffix; no checkmark, the large title already names the
+    /// current view.
     private var filterButton: some View {
         GlassFilterButton(inToolbar: true) {
-            GlassFilterSection(
-                title: "View",
-                options: [
-                    GlassPickerOption(value: ExpenseTab.overview, icon: "chart.bar.fill",
-                                      title: String(localized: "expense_tab_overview")),
-                    GlassPickerOption(value: ExpenseTab.lists, icon: "list.bullet",
-                                      title: String(localized: "expense_tab_lists"),
-                                      count: supplyService.lists.count),
-                    GlassPickerOption(value: ExpenseTab.toBuy, icon: "cart.fill",
-                                      title: String(localized: "De cumpărat"),
-                                      count: supplyService.totalPending),
-                    GlassPickerOption(value: ExpenseTab.completed, icon: "checkmark.circle.fill",
-                                      title: String(localized: "Finalizate"),
-                                      count: supplyService.totalCompleted)
-                ],
-                selection: $activeTab)
+            GlassFilterSectionLabel(titleKey: "View")
+            GlassFilterActionRow(icon: "chart.bar.fill",
+                                 title: String(localized: "expense_tab_overview")) {
+                activeTab = .overview
+            }
+            GlassFilterActionRow(icon: "list.bullet",
+                                 title: String(localized: "expense_tab_lists")
+                                    + " · \(supplyService.lists.count)") {
+                activeTab = .lists
+            }
+            GlassFilterActionRow(icon: "cart.fill",
+                                 title: String(localized: "De cumpărat")
+                                    + " · \(supplyService.totalPending)") {
+                activeTab = .toBuy
+            }
+            GlassFilterActionRow(icon: "checkmark.circle.fill",
+                                 title: String(localized: "Finalizate")
+                                    + " · \(supplyService.totalCompleted)") {
+                activeTab = .completed
+            }
             GlassFilterSectionDivider()
             GlassFilterActionRow(icon: "camera.viewfinder",
                                  title: String(localized: "expense_scan_receipt")) {
@@ -336,7 +357,7 @@ struct SuppliesView: View {
                                             item: item,
                                             isLast: idx == pending.count - 1,
                                             onToggle: { Task { await supplyService.toggleComplete(item) } },
-                                            onEdit: {},
+                                            onEdit: { editingItem = item },
                                             onDelete: { Task { await supplyService.deleteItem(item) } },
                                             onPriceHistory: receiptService.receiptItems.isEmpty
                                                 ? nil
@@ -381,7 +402,7 @@ struct SuppliesView: View {
                                             item: item,
                                             isLast: idx == done.count - 1,
                                             onToggle: { Task { await supplyService.toggleComplete(item) } },
-                                            onEdit: {},
+                                            onEdit: { editingItem = item },
                                             onDelete: { Task { await supplyService.deleteItem(item) } },
                                             onPriceHistory: receiptService.receiptItems.isEmpty
                                                 ? nil
@@ -479,66 +500,149 @@ struct SupplyItemRow: View {
     /// caller can actually present the history (real receipt data).
     var onPriceHistory: (() -> Void)? = nil
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // Custom horizontal-drag reveal (same pattern as HubActivityCard): the
+    // row lives inside ScrollView-hosted cards, where `.swipeActions`
+    // silently no-ops — it only works in List.
+    @State private var offsetX: CGFloat = 0
+    @State private var revealed = false
+
+    /// Three 46pt buttons + 2×sm spacing + breathing room.
+    private let actionSpan: CGFloat = 170
+
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button(action: onToggle) {
-                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(AppFont.scaled(22))
-                        .foregroundStyle(item.isCompleted
-                            ? Color.brandSuccess
-                            : Color.primary.opacity(0.28))
-                        .symbolEffect(.bounce, value: item.isCompleted)
-                }
-                .buttonStyle(.plain)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(item.name)
-                            .font(AppFont.scaled(15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
-                            .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
-                        if let qty = item.quantity, !qty.isEmpty {
-                            QuantityBadge(text: qty)
-                        }
+            ZStack(alignment: .trailing) {
+                swipeActionButtons
+                    .opacity(offsetX < -12 ? 1 : 0)
+                    .accessibilityHidden(offsetX >= -12)
+                rowContent
+                    .offset(x: offsetX)
+                    .gesture(swipeGesture)
+                    .onTapGesture {
+                        if revealed { close() }
                     }
-                    if let loc = item.location, !loc.isEmpty {
-                        Label(SupplyLocation.displayName(for: loc), systemImage: "mappin")
-                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    }
-                }
-                Spacer()
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(item.isCompleted ? Color.clear : item.priorityColor).frame(width: 3, height: 24)
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-            .contentShape(Rectangle())
-            .contextMenu {
-                Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
-                Button { onToggle() } label: {
-                    Label(LocalizedStringKey(item.isCompleted ? "Mark as incomplete" : "Mark as complete"),
-                          systemImage: item.isCompleted ? "circle" : "checkmark.circle")
-                }
-                if let onPriceHistory {
-                    Button { onPriceHistory() } label: {
-                        Label(String(localized: "price_history_title"),
-                              systemImage: "chart.line.uptrend.xyaxis")
-                    }
-                }
-                Divider()
-                Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }
             }
             if !isLast { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 58) }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            Button { onToggle() } label: {
-                Label(LocalizedStringKey(item.isCompleted ? "Undo" : "Complete"),
-                      systemImage: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 12) {
+            Button(action: onToggle) {
+                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(AppFont.scaled(22))
+                    .foregroundStyle(item.isCompleted
+                        ? Color.brandSuccess
+                        : Color.primary.opacity(0.28))
+                    .symbolEffect(.bounce, value: item.isCompleted)
             }
-            .tint(item.isCompleted ? .orange : Color.brandSuccess)
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(item.name)
+                        .font(AppFont.scaled(15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
+                        .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
+                    if let qty = item.quantity, !qty.isEmpty {
+                        QuantityBadge(text: qty)
+                    }
+                }
+                if let loc = item.location, !loc.isEmpty {
+                    Label(SupplyLocation.displayName(for: loc), systemImage: "mappin")
+                        .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+            }
+            Spacer()
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(item.isCompleted ? Color.clear : item.priorityColor).frame(width: 3, height: 24)
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
+            Button { onToggle() } label: {
+                Label(LocalizedStringKey(item.isCompleted ? "Mark as incomplete" : "Mark as complete"),
+                      systemImage: item.isCompleted ? "circle" : "checkmark.circle")
+            }
+            if let onPriceHistory {
+                Button { onPriceHistory() } label: {
+                    Label(String(localized: "price_history_title"),
+                          systemImage: "chart.line.uptrend.xyaxis")
+                }
+            }
+            Divider()
             Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }
-            Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }.tint(.accentColor)
+        }
+    }
+
+    private var swipeActionButtons: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Button {
+                onToggle()
+                close()
+            } label: {
+                Image(systemName: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
+                    .font(AppFont.scaled(15, weight: .semibold))
+                    .foregroundStyle(item.isCompleted ? Color.orange : Color.brandSuccess)
+                    .frame(width: 46, height: 46)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(LocalizedStringKey(item.isCompleted ? "Undo" : "Complete")))
+
+            Button {
+                onEdit()
+                close()
+            } label: {
+                Image(systemName: "pencil")
+                    .font(AppFont.scaled(15, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 46, height: 46)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Edit"))
+
+            Button(role: .destructive) {
+                onDelete()
+                close()
+            } label: {
+                Image(systemName: "trash")
+                    .font(AppFont.scaled(15, weight: .semibold))
+                    .foregroundStyle(Color.brandDanger)
+                    .frame(width: 46, height: 46)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Delete"))
+        }
+        .padding(.trailing, AppSpacing.xxs)
+    }
+
+    /// Horizontal-only swipe that reveals the actions; vertical drags stay
+    /// with the ScrollView.
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 16)
+            .onChanged { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                let base: CGFloat = revealed ? -actionSpan : 0
+                offsetX = max(-actionSpan - 20, min(0, base + value.translation.width))
+            }
+            .onEnded { _ in
+                let open = offsetX < -actionSpan / 2
+                withAnimation(reduceMotion ? nil : AppMotion.state) {
+                    revealed = open
+                    offsetX = open ? -actionSpan : 0
+                }
+            }
+    }
+
+    private func close() {
+        withAnimation(reduceMotion ? nil : AppMotion.state) {
+            revealed = false
+            offsetX = 0
         }
     }
 }
