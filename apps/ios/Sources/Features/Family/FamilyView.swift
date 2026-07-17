@@ -9,9 +9,18 @@ struct FamilyView: View {
     @State private var selectedMember: FamilyMember?
     @State private var searchText = ""
 
+    /// The roles that belong on the FAMILY page. Tenants, workers and
+    /// guests are household contacts — they live in Members/Tenants, never
+    /// here (IMG_8551: a "guest" was showing up as family).
+    private static let familyRoles: Set<String> = ["owner", "partner", "member", "teen", "child"]
+
+    private var familyMembers: [FamilyMember] {
+        familyService.members.filter { Self.familyRoles.contains($0.role) }
+    }
+
     private var filteredMembers: [FamilyMember] {
-        guard !searchText.isEmpty else { return familyService.members }
-        return familyService.members.filter {
+        guard !searchText.isEmpty else { return familyMembers }
+        return familyMembers.filter {
             $0.name.matchesSearch(searchText)
                 || $0.role.matchesSearch(searchText)
                 || ($0.email ?? "").matchesSearch(searchText)
@@ -24,7 +33,7 @@ struct FamilyView: View {
             VStack(spacing: 0) {
                 if familyService.isLoading && familyService.members.isEmpty {
                     Spacer(); ProgressView().tint(.white); Spacer()
-                } else if familyService.members.isEmpty {
+                } else if familyMembers.isEmpty {
                     emptyState
                 } else {
                     ScrollView(showsIndicators: false) {
@@ -32,6 +41,40 @@ struct FamilyView: View {
                             ForEach(filteredMembers) { member in
                                 FamilyMemberRow(member: member)
                                     .onTapGesture { selectedMember = member }
+                                    // Long-press: a real profile PEEK plus the
+                                    // quick actions, Contacts-style (IMG_8551).
+                                    .contextMenu {
+                                        Button {
+                                            selectedMember = member
+                                        } label: {
+                                            Label("View profile", systemImage: "person.crop.circle")
+                                        }
+                                        if let phone = member.phone, !phone.isEmpty {
+                                            Button {
+                                                if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                                                    UIApplication.shared.open(url)
+                                                }
+                                            } label: {
+                                                Label("Call member", systemImage: "phone.fill")
+                                            }
+                                        }
+                                        if let email = member.email, !email.isEmpty {
+                                            Button {
+                                                if let url = URL(string: "mailto:\(email)") {
+                                                    UIApplication.shared.open(url)
+                                                }
+                                            } label: {
+                                                Label("Email member", systemImage: "envelope.fill")
+                                            }
+                                        }
+                                        Divider()
+                                        Button(role: .destructive) {
+                                            HapticFeedback.warning()
+                                            Task { await familyService.delete(member) }
+                                        } label: { Label("Remove", systemImage: "trash") }
+                                    } preview: {
+                                        MemberPeekCard(member: member)
+                                    }
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
@@ -102,6 +145,56 @@ struct FamilyView: View {
             Text("Add family members to collaborate on tasks and chat.").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Add first member") { showAdd = true }.font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
             Spacer()
+        }
+    }
+}
+
+// MARK: - Long-press peek
+
+/// The compact profile card shown as the context-menu PREVIEW: the fast
+/// "who is this" read — live avatar, name, role, birthday and the contact
+/// lines — without committing to the full profile sheet.
+private struct MemberPeekCard: View {
+    let member: FamilyMember
+
+    var body: some View {
+        VStack(spacing: AppSpacing.md) {
+            MemberAvatar(member: member, size: 76)
+            VStack(spacing: 3) {
+                Text(member.name)
+                    .font(AppFont.title3)
+                    .foregroundStyle(.primary)
+                Text(LocalizedStringKey(member.roleLabel))
+                    .font(AppFont.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                if let phone = member.phone, !phone.isEmpty {
+                    peekLine(icon: "phone.fill", text: phone)
+                }
+                if let email = member.email, !email.isEmpty {
+                    peekLine(icon: "envelope.fill", text: email)
+                }
+                if let bd = member.birthdayDate {
+                    peekLine(icon: "gift.fill",
+                             text: bd.formatted(.dateTime.day().month(.wide)))
+                }
+            }
+        }
+        .padding(AppSpacing.xl)
+        .frame(width: 290)
+    }
+
+    private func peekLine(icon: String, text: String) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(AppFont.scaled(12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+            Text(verbatim: text)
+                .font(AppFont.scaled(13))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
         }
     }
 }

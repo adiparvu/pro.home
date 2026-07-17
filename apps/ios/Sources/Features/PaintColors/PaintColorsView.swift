@@ -130,7 +130,7 @@ struct PaintColorsView: View {
     private var filterButton: some View {
         GlassFilterButton(isActive: selectedRoom != nil, inToolbar: true) {
             GlassFilterSection(
-                title: "paint_filter_room",
+                title: "Room",
                 options: [GlassPickerOption<String?>(value: nil,
                                                      title: String(localized: "All"))]
                     + paintColorService.roomNames.map {

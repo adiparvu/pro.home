@@ -156,7 +156,6 @@ struct TasksView: View {
         Group {
             if taskService.isLoading && taskService.tasks.isEmpty {
                 VStack {
-                    header
                     Spacer()
                     ProgressView().scaleEffect(1.2)
                     Spacer()
@@ -166,7 +165,57 @@ struct TasksView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationBarHidden(true)
+        // The standard large navigation title, like every other page — the
+        // custom in-body header with the property-name eyebrow was the one
+        // exception left, and the user retired it (IMG_8555). Actions live
+        // in the system toolbar (system glass — no manual circles).
+        .navigationTitle("task_screen_title")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 5) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showAdd = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.scaled(16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel("task_new")
+                    GlassFilterButton(isActive: filter != .all || historyPeriod != .month,
+                                      inToolbar: true) {
+                        GlassFilterSection(
+                            title: "View",
+                            options: TaskFilter.allCases.map {
+                                GlassPickerOption(value: $0, icon: $0.icon,
+                                                  title: $0.title, count: countFor($0))
+                            },
+                            selection: $filter)
+                        GlassFilterSectionDivider()
+                        // Scopes the Completed view ("Finalizate"); hosted here
+                        // so the retired chip row under that list stays retired.
+                        GlassFilterSection(
+                            title: "History",
+                            options: HistoryPeriod.allCases.map {
+                                GlassPickerOption(value: $0, title: $0.title)
+                            },
+                            selection: $historyPeriod)
+                    }
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showCalendar = true
+                    } label: {
+                        Image(systemName: "calendar")
+                            .font(AppFont.scaled(16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel("Calendar")
+                }
+            }
+        }
         // The running work session stays pinned above the list, always visible
         // however far you scroll — with its live clock, Pause and Finish.
         .safeAreaInset(edge: .top, spacing: 0) { SessionBanner() }
@@ -251,7 +300,6 @@ struct TasksView: View {
 
         return LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
             Section {
-                header   // PageHeader carries its own horizontal + top padding
                 // The progress line is the page's filter system, so it stays
                 // whenever there is (or was) work to filter — but on a fully
                 // quiet day with no filter engaged it is pure noise and hides.
@@ -350,69 +398,8 @@ struct TasksView: View {
     }
 
     // MARK: - Header
-
-    // The one sanctioned page header (Components/PageHeader): 34pt rounded
-    // title with a short uppercase eyebrow and the actions trailing — the same
-    // principle every other hub uses (Property Map, etc.). This page used a
-    // one-off smaller title + long sentence + heavy 44pt shadowed buttons
-    // (IMG_8310); it now matches.
-    private var header: some View {
-        PageHeader(title: String(localized: "task_screen_title"),
-                   subtitle: propertyService.primary?.name) {
-            EmptyView()
-        } trailing: {
-            HStack(spacing: 10) {
-                headerButton("plus", label: "task_new") { showAdd = true }
-                // The system Menu became the page's ONE aggregated filter
-                // (IMG_8540): task view + history window in a single popover,
-                // honest counts on every row, an accent dot when either state
-                // leaves its default (.all / .month — the @State initials).
-                // Standalone placement — it draws the same 38pt glass circle
-                // as the hand-rolled header pucks beside it.
-                GlassFilterButton(isActive: filter != .all || historyPeriod != .month) {
-                    GlassFilterSection(
-                        title: "View",
-                        options: TaskFilter.allCases.map {
-                            GlassPickerOption(value: $0, icon: $0.icon,
-                                              title: $0.title, count: countFor($0))
-                        },
-                        selection: $filter)
-                    GlassFilterSectionDivider()
-                    // Scopes the Completed view ("Finalizate"); hosted here so
-                    // the retired chip row under that list stays retired.
-                    GlassFilterSection(
-                        title: "History",
-                        options: HistoryPeriod.allCases.map {
-                            GlassPickerOption(value: $0, title: $0.title)
-                        },
-                        selection: $historyPeriod)
-                }
-
-                headerButton("calendar", label: "Calendar") { showCalendar = true }
-            }
-        }
-    }
-
-    private func headerButton(_ icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            headerButtonLabel(icon)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-    }
-
-    // A lighter glass circle than before — 38pt, no heavy drop shadow — so the
-    // actions read as a set of native toolbar controls, not floating pucks.
-    private func headerButtonLabel(_ icon: String) -> some View {
-        Image(systemName: icon)
-            .font(AppFont.scaled(16, weight: .semibold))
-            .foregroundStyle(Color.primary.opacity(0.8))
-            .frame(width: 38, height: 38)
-            .glassCircle()
-    }
+    // Retired (IMG_8555): the page now carries the standard large
+    // navigation title with system-toolbar actions, like every other page.
 
 
     // MARK: - Progress line
@@ -467,14 +454,15 @@ struct TasksView: View {
                 else { collapsed.insert(kind) }
             }
         } label: {
-            // A floating glass chip, never a full-width material band that
-            // slices the living backdrop (IMG_8541) — pinned rows scroll
-            // past on naked backdrop, Journal-style.
+            // The ORIGINAL header, restored on request (IMG_8554): title
+            // leading, count/see-all trailing, on the bar blur that masks
+            // pinned scrolling — no glass chip.
             HStack {
-                HStack(spacing: AppSpacing.sm) {
-                    Text(kind.title)
-                        .font(AppFont.title3)
-                        .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
+                Text(kind.title)
+                    .font(AppFont.title3)
+                    .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
+                Spacer()
+                HStack(spacing: 6) {
                     if let count {
                         Text(verbatim: "\(count)")
                             .font(AppFont.captionStrong)
@@ -494,14 +482,11 @@ struct TasksView: View {
                         .foregroundStyle(Color.secondaryTextColor)
                         .rotationEffect(.degrees(collapsed.contains(kind) ? 90 : 0))
                 }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.xs + 2)
-                .liquidGlass(cornerRadius: AppRadius.xl)
-                Spacer(minLength: 0)
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
+            .background(.thinMaterial)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

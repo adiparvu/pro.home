@@ -6,10 +6,13 @@ import ActivityKit
 // The command center for every Live Activity: a real-time dashboard over
 // LiveActivityHubStore (which enumerates ActivityKit directly and keeps the
 // persistent lifecycle log), rich cards for everything running right now,
-// the nine activity categories, the power tools, and the master switches
-// preserved from the legacy settings screen. HONESTY LAW: every number on
-// this page is computed from the store's real snapshot or the real event
-// log — zero activities reads as zero, no history reads as "none yet".
+// the power tools, and the master switches preserved from the legacy
+// settings screen. The filter capsule and the nine-category grid fold into
+// ONE aggregated toolbar popover (IMG_8549/8550): filters on top, one
+// action row per category that pushes its detail page. HONESTY LAW: every
+// number on this page is computed from the store's real snapshot or the
+// real event log — zero activities reads as zero, no history reads as
+// "none yet", and a category row only claims "LIVE" while it truly runs.
 
 struct LiveActivitiesHubView: View {
     // Master preferences — the same keys and rows as the legacy settings
@@ -25,6 +28,9 @@ struct LiveActivitiesHubView: View {
     @State private var searchText = ""
     @State private var filter: HubFilter = .all
     @State private var systemEnabled = true
+    /// Category chosen from the toolbar popover — pushed programmatically
+    /// because the action row fires after the popover has dismissed.
+    @State private var pushedKind: LiveActivityKind?
 
     /// Resolved in body (main actor); @Observable tracking hooks in on read.
     private var store: LiveActivityHubStore { .shared }
@@ -37,9 +43,13 @@ struct LiveActivitiesHubView: View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: AppSpacing.lg) {
                 heroSection
-                filterChips
-                if !visibleActive.isEmpty { activeSection }
-                categoriesSection
+                if !visibleActive.isEmpty {
+                    activeSection
+                } else if !query.isEmpty || filter != .all {
+                    // A search or a narrowed filter that matches nothing must
+                    // say so — silently hiding the section would read as a bug.
+                    noResultsHint
+                }
                 toolsSection
                 settingsSection
                 Spacer(minLength: 64)
@@ -53,6 +63,14 @@ struct LiveActivitiesHubView: View {
         .navigationTitle("la_hub_title")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, prompt: Text("la_hub_search_prompt"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                filterButton
+            }
+        }
+        .navigationDestination(item: $pushedKind) { kind in
+            LiveActivityKindDetailView(kind: kind)
+        }
         .refreshable {
             store.refresh()
             store.reloadEvents()
@@ -147,11 +165,16 @@ struct LiveActivitiesHubView: View {
         }
     }
 
-    // MARK: - 2 + 3. Search & filter picker
+    // MARK: - 2. Toolbar filter & category menu
 
-    private var filterChips: some View {
-        HStack(spacing: AppSpacing.sm) {
-            GlassPopoverPicker(
+    /// One circle, everything (IMG_8549/8550): the filter that used to sit
+    /// as a permanent capsule and the whole category grid merge into a
+    /// single aggregated popover — same pattern as Appliances and Inventory.
+    /// Filter rows keep the popover open (adjust several in one visit);
+    /// category rows are one-shot — they close it, then push the detail.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: filter != .all, inToolbar: true) {
+            GlassFilterSection(
                 options: HubFilter.allCases.map { f in
                     GlassPickerOption(value: f,
                                       icon: f.icon,
@@ -159,9 +182,34 @@ struct LiveActivitiesHubView: View {
                                       count: chipCount(for: f))
                 },
                 selection: $filter)
-            Spacer()
+            GlassFilterSectionDivider()
+            GlassFilterSectionLabel(titleKey: "la_hub_categories")
+            ForEach(LiveActivityKind.allCases) { kind in
+                GlassFilterActionRow(icon: kind.icon,
+                                     title: categoryRowTitle(kind)) {
+                    pushedKind = kind
+                }
+            }
         }
-        .padding(.vertical, AppSpacing.xxs)
+    }
+
+    /// Category row title — same localized name as the old grid card, and
+    /// the card's green "running" pulse survives as a "· LIVE" suffix that
+    /// only appears while the kind genuinely has an activity up.
+    private func categoryRowTitle(_ kind: LiveActivityKind) -> String {
+        let isRunning = store.active.contains { $0.kind == kind }
+        return isRunning
+            ? kind.searchableTitle + " · " + String(localized: "la_hub_live")
+            : kind.searchableTitle
+    }
+
+    /// Shown when a search or a narrowed filter leaves no active cards.
+    private var noResultsHint: some View {
+        Text("la_hub_no_results")
+            .font(AppFont.caption)
+            .foregroundStyle(Color.secondaryTextColor)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.xl)
     }
 
     /// Real counts only — nil hides the badge rather than showing a made-up 0.
@@ -179,10 +227,6 @@ struct LiveActivitiesHubView: View {
 
     private var query: String {
         hubFold(searchText.trimmingCharacters(in: .whitespacesAndNewlines))
-    }
-
-    private func matchesSearch(_ kind: LiveActivityKind) -> Bool {
-        query.isEmpty || hubFold(kind.searchableTitle).contains(query)
     }
 
     private func matchesSearch(_ item: LiveActivityHubStore.HubActivity) -> Bool {
@@ -228,17 +272,8 @@ struct LiveActivitiesHubView: View {
         }
     }
 
-    private func priorityDotColor(_ kind: LiveActivityKind) -> Color? {
-        switch priorityValue(kind) {
-        case "critical": return .brandDanger
-        case "high":     return .brandWarning
-        case "silent":   return .secondary
-        default:         return nil
-        }
-    }
-
-    /// Active cards, filtered by chip + search, ordered by the user's
-    /// priority (critical → high → normal → silent), then newest first.
+    /// Active cards, filtered by the toolbar filter + search, ordered by the
+    /// user's priority (critical → high → normal → silent), then newest first.
     private var visibleActive: [LiveActivityHubStore.HubActivity] {
         let kinds = Set(kindsForFilter)
         return store.active
@@ -255,21 +290,7 @@ struct LiveActivitiesHubView: View {
             }
     }
 
-    /// Category cells: favorites first, then priority, then canonical order.
-    private var visibleKinds: [LiveActivityKind] {
-        let all = LiveActivityKind.allCases
-        return kindsForFilter
-            .filter { matchesSearch($0) }
-            .sorted { a, b in
-                let fa = store.isFavorite(a), fb = store.isFavorite(b)
-                if fa != fb { return fa }
-                let pa = priorityRank(a), pb = priorityRank(b)
-                if pa != pb { return pa < pb }
-                return (all.firstIndex(of: a) ?? 0) < (all.firstIndex(of: b) ?? 0)
-            }
-    }
-
-    // MARK: - 4. Active now
+    // MARK: - 3. Active now
 
     /// Property groups, only when the running activities genuinely span more
     /// than one named property.
@@ -332,39 +353,7 @@ struct LiveActivitiesHubView: View {
             })
     }
 
-    // MARK: - 5. Categories
-
-    private var categoriesSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            sectionHeader("la_hub_categories")
-            if visibleKinds.isEmpty {
-                Text("la_hub_no_results")
-                    .font(AppFont.caption)
-                    .foregroundStyle(Color.secondaryTextColor)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.xl)
-            } else {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: AppSpacing.md),
-                                    GridItem(.flexible(), spacing: AppSpacing.md)],
-                          spacing: AppSpacing.md) {
-                    ForEach(visibleKinds) { kind in
-                        HubKindCell(
-                            kind: kind,
-                            activeCount: store.active.filter { $0.kind == kind }.count,
-                            isFavorite: store.isFavorite(kind),
-                            isAuto: isAutoOn(kind),
-                            priorityDot: priorityDotColor(kind),
-                            onToggleFavorite: {
-                                HapticFeedback.selection()
-                                withAnimation(anim) { store.toggleFavorite(kind) }
-                            })
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - 6. Tools (built by the hub's companion views)
+    // MARK: - 4. Tools (built by the hub's companion views)
 
     private var toolsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -385,7 +374,7 @@ struct LiveActivitiesHubView: View {
         }
     }
 
-    // MARK: - 7. Settings (master toggles preserved from the legacy screen)
+    // MARK: - 5. Settings (master toggles preserved from the legacy screen)
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -677,87 +666,6 @@ private struct HubActivityCard: View {
     }
 }
 
-// MARK: - Category cell
-
-private struct HubKindCell: View {
-    let kind: LiveActivityKind
-    let activeCount: Int
-    let isFavorite: Bool
-    let isAuto: Bool
-    let priorityDot: Color?
-    var onToggleFavorite: () -> Void
-
-    var body: some View {
-        NavigationLink {
-            LiveActivityKindDetailView(kind: kind)
-        } label: {
-            GlassCard(padding: AppSpacing.base, cornerRadius: AppRadius.xl) {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    HStack(alignment: .top) {
-                        Image(systemName: kind.icon)
-                            .font(AppFont.scaled(15, weight: .semibold))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(kind.color)
-                            .frame(width: 38, height: 38)
-                            .glassCircle()
-                            .overlay(alignment: .topTrailing) {
-                                if let priorityDot {
-                                    Circle().fill(priorityDot)
-                                        .frame(width: 7, height: 7)
-                                        .offset(x: 1, y: -1)
-                                }
-                            }
-                        Spacer()
-                        Button {
-                            onToggleFavorite()
-                        } label: {
-                            Image(systemName: isFavorite ? "star.fill" : "star")
-                                .font(AppFont.scaled(13, weight: .semibold))
-                                .foregroundStyle(isFavorite ? Color.brandGold
-                                                            : Color.primary.opacity(AppOpacity.disabled))
-                                .frame(width: 30, height: 30)
-                                .contentShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(isFavorite ? "la_hub_unfavorite" : "la_hub_favorite"))
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(kind.title)
-                            .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        HStack(spacing: AppSpacing.xs) {
-                            if activeCount > 0 {
-                                Text("la_hub_kind_active \(activeCount)")
-                                    .font(AppFont.scaled(11, weight: .semibold))
-                                    .foregroundStyle(Color.brandSuccess)
-                                    .contentTransition(.numericText())
-                            } else {
-                                Text("la_hub_none_running")
-                                    .font(AppFont.scaled(11))
-                                    .foregroundStyle(Color.secondaryTextColor)
-                            }
-                            if isAuto {
-                                Text(verbatim: "AUTO")
-                                    .font(AppFont.scaled(9, weight: .bold))
-                                    .foregroundStyle(kind.color)
-                                    .padding(.horizontal, AppSpacing.xs)
-                                    .padding(.vertical, 1.5)
-                                    .background(Capsule().strokeBorder(kind.color.opacity(0.45), lineWidth: 1))
-                            }
-                        }
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Tool row
 
 private struct HubToolRow<Destination: View>: View {
@@ -796,8 +704,9 @@ private func hubFold(_ s: String) -> String {
 }
 
 private extension LiveActivityKind {
-    /// `title` as a plain String for search folding — same localization keys
-    /// as the LocalizedStringKey `title`, which can't be folded or compared.
+    /// `title` as a plain String — same localization keys as the
+    /// LocalizedStringKey `title`, which can't be folded or concatenated.
+    /// Used for search folding and as the popover category-row titles.
     var searchableTitle: String {
         switch self {
         case .shopping:    return String(localized: "Shopping list")

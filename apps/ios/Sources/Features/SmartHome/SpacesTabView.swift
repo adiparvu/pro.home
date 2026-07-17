@@ -56,7 +56,6 @@ struct SpacesTabView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     header
-                    quickRow
                     EnergyCard()
                     if zoneService.zones.isEmpty {
                         emptyState
@@ -112,74 +111,54 @@ struct SpacesTabView: View {
     // MARK: Header — the free-floating light title + honest count
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text("spaces_title")
-                .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
-                .kerning(SpaceHero.nameTracking)
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-            if !zoneService.zones.isEmpty {
-                (zoneService.zones.count == 1
-                    ? Text("spaces_one")
-                    : Text("spaces_count \(zoneService.zones.count)"))
-                    .font(AppFont.footnote)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-        }
-    }
-
-    // MARK: Quick row — three real destinations, glass chips
-
-    private var quickRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                quickChip(icon: "square.grid.2x2", titleKey: "hub_devices") {
-                    activeSheet = .allDevices
-                }
-                quickChip(icon: "video.fill", titleKey: "hub_cameras") {
-                    // Cameras is a pushed content page (AppRoute.cameras) —
-                    // the router lands it on THIS tab's stack.
-                    router.navigate(to: .cameras)
-                }
-                quickChip(icon: "heart.text.square.fill", titleKey: "spaces_health") {
-                    activeSheet = .health
-                }
-                // Emergency mode — the quiet gate to the loud page. The chip
-                // keeps the row's glass language; the danger tint lives on
-                // the glyph (EmergencyModeView itself inverts the design
-                // rules with full-color targets).
-                quickChip(icon: "cross.case.fill", titleKey: "spaces_emergency",
-                          tint: .brandDanger) {
-                    router.navigate(to: .emergency)
-                }
-            }
-            // Room for the chips' press scale inside the scroll clip.
-            .padding(.vertical, 1)
-        }
-    }
-
-    private func quickChip(icon: String, titleKey: LocalizedStringKey,
-                           tint: Color = Color.accentColor,
-                           action: @escaping () -> Void) -> some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: icon)
-                    .font(AppFont.scaled(12, weight: .semibold))
-                    .foregroundStyle(tint)
-                Text(titleKey)
-                    .font(AppFont.scaled(13, weight: .medium))
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text("spaces_title")
+                    .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
+                    .kerning(SpaceHero.nameTracking)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+                if !zoneService.zones.isEmpty {
+                    (zoneService.zones.count == 1
+                        ? Text("spaces_one")
+                        : Text("spaces_count \(zoneService.zones.count)"))
+                        .font(AppFont.footnote)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
             }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.sm + 1)
-            .liquidGlass(cornerRadius: AppRadius.md)
+            Spacer(minLength: AppSpacing.base)
+            quickMenu
         }
-        .buttonStyle(SmartCardPressStyle())
+    }
+
+    // MARK: Quick menu — the old chip row's four destinations, one More
+    // circle (IMG_8553). Navigation rows, so the trigger wears Apple's
+    // ellipsis, never the filter glyph.
+
+    private var quickMenu: some View {
+        GlassFilterButton(icon: "ellipsis", accessibilityLabelKey: "More") {
+            GlassFilterActionRow(icon: "square.grid.2x2",
+                                 title: String(localized: "hub_devices")) {
+                activeSheet = .allDevices
+            }
+            GlassFilterActionRow(icon: "video.fill",
+                                 title: String(localized: "hub_cameras")) {
+                // Cameras is a pushed content page (AppRoute.cameras) —
+                // the router lands it on THIS tab's stack.
+                router.navigate(to: .cameras)
+            }
+            GlassFilterActionRow(icon: "heart.text.square.fill",
+                                 title: String(localized: "spaces_health")) {
+                activeSheet = .health
+            }
+            // Emergency mode — the quiet gate to the loud page
+            // (EmergencyModeView itself inverts the design rules).
+            GlassFilterActionRow(icon: "cross.case.fill",
+                                 title: String(localized: "spaces_emergency")) {
+                router.navigate(to: .emergency)
+            }
+        }
     }
 
     // MARK: Mode toggle — photo grid ↔ the floor plan

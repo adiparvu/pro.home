@@ -81,43 +81,39 @@ struct ActivityAvatarView: View {
     }
 }
 
-// MARK: - Member filter chip
+// MARK: - Member popover row
 
-/// A member filter chip — real avatar + name on the sanctioned filter-capsule
-/// glass, matching `GlassFilterChip`'s selected/unselected treatment.
-struct ActivityMemberChip: View {
+/// One member row inside the aggregated filter popover (IMG_8547) — the
+/// real avatar the old chips carried, on `GlassPopoverRow`'s exact rhythm
+/// so it sits flush with the Period/Category rows above it: the 24pt
+/// avatar occupies the same leading column as the SF-symbol rows' 24pt
+/// icon frame, and the trailing checkmark mirrors selection identically.
+struct ActivityMemberPopoverRow: View {
+    /// Already display-resolved (localized "You" or the member's name).
     let name: String
     let member: FamilyMember?
     let isCurrentUser: Bool
     let isSelected: Bool
-    let action: () -> Void
-
-    private var tint: Color {
-        isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.emphasis)
-    }
 
     var body: some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            HStack(spacing: AppSpacing.xs) {
-                ActivityAvatarView(member: member,
-                                   fallbackName: name,
-                                   isCurrentUser: isCurrentUser,
-                                   size: 20)
-                Text(verbatim: name)
-                    .font(AppFont.scaled(13, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(tint)
-            }
-            .padding(.leading, AppSpacing.xs)
-            .padding(.trailing, AppSpacing.base)
-            .padding(.vertical, AppSpacing.xxs)
-            .glassFilterCapsule(selected: isSelected)
+        HStack(spacing: AppSpacing.sm) {
+            ActivityAvatarView(member: member,
+                               fallbackName: name,
+                               isCurrentUser: isCurrentUser,
+                               size: 24)
+            Text(verbatim: name)
+                .font(AppFont.scaled(15, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Spacer(minLength: AppSpacing.lg)
+            Image(systemName: "checkmark")
+                .font(AppFont.scaled(12, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .opacity(isSelected ? 1 : 0)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: name))
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
+        .contentShape(Rectangle())
     }
 }
 

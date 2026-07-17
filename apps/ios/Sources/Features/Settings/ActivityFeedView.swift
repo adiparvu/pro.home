@@ -250,6 +250,9 @@ struct ActivityFeedView: View {
     @State private var selectedCategory: ActivityCategory = .all
     /// Aggregate rows the user opened up into their individual events.
     @State private var expandedAggregates: Set<String> = []
+    /// Local filter for the People section's member rows; reset on every
+    /// popover presentation so each visit starts from the full roster.
+    @State private var memberSearch = ""
 
     /// Internal sentinel for "the signed-in user" — kept stable for filter
     /// equality; presented through the localized "You" catalog key.
@@ -475,7 +478,7 @@ struct ActivityFeedView: View {
         let snapshot = feedSnapshot
         VStack(spacing: 0) {
 
-            filterRow(count: snapshot.visibleCount)
+            countLine(snapshot.visibleCount)
                 .padding(.top, AppSpacing.sm)
 
             Divider().opacity(0.3).padding(.top, AppSpacing.sm)
@@ -489,80 +492,144 @@ struct ActivityFeedView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Activity")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                filterButton
+            }
+        }
         .task { await MemberDirectory.shared.loadIfNeeded() }
     }
 
-    // MARK: Filter row (aggregated filter + event count + member avatars)
+    // MARK: Aggregated filter (toolbar) + event count line
 
-    /// The period and category capsules folded into ONE aggregated glass
-    /// trigger (IMG_8540); the member avatar chips stay exactly as they are —
-    /// faces are the point of that filter. The explicit event count sits
-    /// pinned beside the trigger, outside the scrolling avatars, so it never
-    /// disappears while the filters that produce it are being adjusted.
-    private func filterRow(count: Int) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            // Accent dot when either hosted filter leaves its default
-            // (.month / .all — the @State initials). The member filter is
-            // not hosted here, so it never lights the dot; its own chips
-            // carry that state.
-            GlassFilterButton(isActive: period != .month || selectedCategory != .all) {
-                GlassFilterSection(
-                    title: "Period",
-                    options: ActivityPeriod.allCases.map {
-                        GlassPickerOption(value: $0, title: $0.label)
-                    },
-                    selection: Binding(
-                        get: { period },
-                        set: { newValue in withAnimation(filterAnimation) { period = newValue } }))
-                GlassFilterSectionDivider()
-                GlassFilterSection(
-                    title: "Category",
-                    options: ActivityCategory.allCases.map {
-                        GlassPickerOption(value: $0, icon: $0.icon, title: $0.label)
-                    },
-                    selection: Binding(
-                        get: { selectedCategory },
-                        set: { newValue in
-                            withAnimation(filterAnimation) { selectedCategory = newValue }
-                        }))
+    /// The one aggregated filter, moved to the nav bar (IMG_8547): Period,
+    /// Category and the member filter share a single popover. `inToolbar`
+    /// because iOS 26 wraps toolbar controls in system glass (no double
+    /// circle, IMG_8315). The accent dot reflects every hosted filter
+    /// honestly — including the member filter, now that it lives here.
+    private var filterButton: some View {
+        GlassFilterButton(
+            isActive: period != .month || selectedCategory != .all || selectedMember != nil,
+            inToolbar: true
+        ) {
+            GlassFilterSection(
+                title: "Period",
+                options: ActivityPeriod.allCases.map {
+                    GlassPickerOption(value: $0, title: $0.label)
+                },
+                selection: Binding(
+                    get: { period },
+                    set: { newValue in withAnimation(filterAnimation) { period = newValue } }))
+            GlassFilterSectionDivider()
+            GlassFilterSection(
+                title: "Category",
+                options: ActivityCategory.allCases.map {
+                    GlassPickerOption(value: $0, icon: $0.icon, title: $0.label)
+                },
+                selection: Binding(
+                    get: { selectedCategory },
+                    set: { newValue in
+                        withAnimation(filterAnimation) { selectedCategory = newValue }
+                    }))
+            GlassFilterSectionDivider()
+            peopleSection
+        }
+    }
+
+    /// The member avatar chips folded into the popover as its third section:
+    /// the same faces, now on popover rows. "Everyone" clears the filter;
+    /// tapping the selected member again clears it too — the chips' exact
+    /// toggle. The compact search field narrows the roster by display name,
+    /// so the localized "You" matches exactly as shown.
+    private var peopleSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            GlassFilterSectionLabel(titleKey: "People")
+
+            memberSearchField
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.xs)
+
+            Button {
+                HapticFeedback.selection()
+                withAnimation(filterAnimation) { selectedMember = nil }
+            } label: {
+                GlassPopoverRow(icon: "person.2",
+                                title: String(localized: "Everyone"),
+                                count: nil,
+                                isSelected: selectedMember == nil)
             }
+            .buttonStyle(.plain)
 
-            Text(eventCountLabel(count))
-                .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .fixedSize()
-                .contentTransition(.numericText())
-                .animation(filterAnimation, value: count)
-
-            Rectangle()
-                .fill(Color.hairline)
-                .frame(width: 1, height: 20)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(allMembers, id: \.self) { name in
-                        let isSelected = selectedMember == name
-                        ActivityMemberChip(
-                            name: displayName(name),
-                            member: familyMember(named: name, id: nil),
-                            isCurrentUser: name == currentUser,
-                            isSelected: isSelected
-                        ) {
-                            // Tap toggles: tapping the selected member clears
-                            // the filter, so no extra "All" chip competes with
-                            // the category "All" in the popover.
-                            withAnimation(filterAnimation) {
-                                selectedMember = isSelected ? nil : name
-                            }
-                        }
+            ForEach(filteredMembers, id: \.self) { name in
+                let isSelected = selectedMember == name
+                Divider().padding(.leading, AppSpacing.lg)
+                Button {
+                    HapticFeedback.selection()
+                    // Tap toggles, exactly like the chips did: tapping the
+                    // selected member clears the filter.
+                    withAnimation(filterAnimation) {
+                        selectedMember = isSelected ? nil : name
                     }
+                } label: {
+                    ActivityMemberPopoverRow(
+                        name: displayName(name),
+                        member: familyMember(named: name, id: nil),
+                        isCurrentUser: name == currentUser,
+                        isSelected: isSelected)
                 }
-                .padding(.trailing, AppSpacing.xl)
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? [.isSelected] : [])
             }
         }
-        .padding(.leading, AppSpacing.xl)
+        // Popover content is built fresh per presentation, so each visit
+        // starts from the full, unfiltered roster.
+        .onAppear { memberSearch = "" }
+    }
+
+    /// Compact in-popover search field — plain fill, no glass (the popover
+    /// already sits on system material), and not auto-focused: filtering is
+    /// optional here, the roster is usually short.
+    private var memberSearchField: some View {
+        HStack(spacing: AppSpacing.xs) {
+            Image(systemName: "magnifyingglass")
+                .font(AppFont.scaled(13, weight: .medium))
+                .foregroundStyle(.secondary)
+            TextField("Search…", text: $memberSearch)
+                .font(AppFont.scaled(15))
+                .foregroundStyle(.primary)
+                .autocorrectionDisabled()
+            if !memberSearch.isEmpty {
+                Button { memberSearch = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(14))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(Color.subtleFill, in: RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+
+    /// Roster narrowed by the popover search — case- and diacritic-
+    /// insensitive over the display name (the shared `matchesSearch`).
+    private var filteredMembers: [String] {
+        allMembers.filter { displayName($0).matchesSearch(memberSearch) }
+    }
+
+    /// The honest event count stays on the page (where the filter row used
+    /// to be) while the filters that produce it live in the toolbar popover.
+    private func countLine(_ count: Int) -> some View {
+        Text(eventCountLabel(count))
+            .font(AppFont.caption)
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .contentTransition(.numericText())
+            .animation(filterAnimation, value: count)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.xl)
     }
 
     /// "12 events" — explicit wording instead of a bare number pill. The

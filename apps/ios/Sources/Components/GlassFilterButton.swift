@@ -22,6 +22,10 @@ struct GlassFilterButton<Content: View>: View {
     var isActive: Bool = false
     /// True when placed in a `.toolbar` — the system supplies the glass.
     var inToolbar: Bool = false
+    /// Trigger glyph. The filter lines by default; pages that host quick
+    /// NAVIGATION rows instead of filters pass Apple's More glyph
+    /// ("ellipsis") so the icon never lies about what's inside.
+    var icon: String = "line.3.horizontal.decrease"
     var accessibilityLabelKey: LocalizedStringKey = "filter_picker"
     /// Standalone trigger diameter — headers whose round actions use a
     /// larger circle (the chat header's 44pt) pass theirs so the trigger
@@ -42,7 +46,7 @@ struct GlassFilterButton<Content: View>: View {
             HapticFeedback.impact(.light)
             isPresented = true
         } label: {
-            Image(systemName: "line.3.horizontal.decrease")
+            Image(systemName: icon)
                 .font(AppFont.scaled(glyphSize, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: inToolbar ? 28 : standaloneSize,

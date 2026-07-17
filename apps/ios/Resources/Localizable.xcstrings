@@ -92003,6 +92003,38 @@
           }
         }
       }
+    },
+    "Everyone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toată lumea"
+          }
+        }
+      }
+    },
+    "View profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View profile"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vezi profilul"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
