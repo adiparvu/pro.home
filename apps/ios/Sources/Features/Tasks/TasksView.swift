@@ -49,12 +49,14 @@ struct TasksView: View {
 
         /// Localized display name — the raw values are storage identifiers,
         /// never UI ("Nicio sarcină overdue" was this leaking to the screen).
-        var title: LocalizedStringKey {
+        /// String (not LocalizedStringKey) because `GlassPickerOption` rows
+        /// carry resolved text.
+        var title: String {
             switch self {
-            case .all:     return "task_filter_all"
-            case .open:    return "task_stat_in_progress"
-            case .overdue: return "task_stat_overdue"
-            case .done:    return "task_stat_completed"
+            case .all:     return String(localized: "task_filter_all")
+            case .open:    return String(localized: "task_stat_in_progress")
+            case .overdue: return String(localized: "task_stat_overdue")
+            case .done:    return String(localized: "task_stat_completed")
             }
         }
 
@@ -76,6 +78,12 @@ struct TasksView: View {
         case quarter = "3 months"
         case year    = "1 year"
         case all     = "All time"
+
+        /// The raw values double as catalog keys (the retired chip row used
+        /// the same lookup), resolved here for `GlassPickerOption` rows.
+        var title: String {
+            String(localized: String.LocalizationValue(rawValue))
+        }
 
         // ISO8601DateFormatter construction is among Foundation's costliest
         // allocations, and this filter runs twice per render — the
@@ -114,8 +122,8 @@ struct TasksView: View {
         }
     }
 
-    // MARK: - Filtering (one system: chips, the header menu and search all
-    // drive this same state)
+    // MARK: - Filtering (one system: chips, the header filter button and
+    // search all drive this same state)
 
     private var filtered: [MaintenanceTask] {
         let base: [MaintenanceTask]
@@ -257,7 +265,6 @@ struct TasksView: View {
 
             if filter == .done {
                 Section {
-                    historyPeriodBar
                     if filtered.isEmpty {
                         inlineEmpty
                     } else {
@@ -356,22 +363,30 @@ struct TasksView: View {
         } trailing: {
             HStack(spacing: 10) {
                 headerButton("plus", label: "task_new") { showAdd = true }
-                Menu {
-                    ForEach(TaskFilter.allCases, id: \.self) { f in
-                        Button {
-                            withAnimation(.taskSpring) { filter = f }
-                        } label: {
-                            Label {
-                                Text(f.title) + Text(verbatim: "  (\(countFor(f)))")
-                            } icon: {
-                                Image(systemName: filter == f ? "checkmark" : f.icon)
-                            }
-                        }
-                    }
-                } label: {
-                    headerButtonLabel("slider.horizontal.3")
+                // The system Menu became the page's ONE aggregated filter
+                // (IMG_8540): task view + history window in a single popover,
+                // honest counts on every row, an accent dot when either state
+                // leaves its default (.all / .month — the @State initials).
+                // Standalone placement — it draws the same 38pt glass circle
+                // as the hand-rolled header pucks beside it.
+                GlassFilterButton(isActive: filter != .all || historyPeriod != .month) {
+                    GlassFilterSection(
+                        title: "View",
+                        options: TaskFilter.allCases.map {
+                            GlassPickerOption(value: $0, icon: $0.icon,
+                                              title: $0.title, count: countFor($0))
+                        },
+                        selection: $filter)
+                    GlassFilterSectionDivider()
+                    // Scopes the Completed view ("Finalizate"); hosted here so
+                    // the retired chip row under that list stays retired.
+                    GlassFilterSection(
+                        title: "History",
+                        options: HistoryPeriod.allCases.map {
+                            GlassPickerOption(value: $0, title: $0.title)
+                        },
+                        selection: $historyPeriod)
                 }
-                .accessibilityLabel("Filter tasks")
 
                 headerButton("calendar", label: "Calendar") { showCalendar = true }
             }
@@ -523,24 +538,6 @@ struct TasksView: View {
             TaskSection(kind: .week,  tasks: weekTasks),
             TaskSection(kind: .later, tasks: laterTasks)
         ].filter { !$0.tasks.isEmpty }
-    }
-
-    // MARK: - History bar (completed filter)
-
-    private var historyPeriodBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(HistoryPeriod.allCases, id: \.self) { period in
-                    GlassFilterChip(label: String(localized: String.LocalizationValue(period.rawValue)),
-                                    isSelected: historyPeriod == period) {
-                        withAnimation(.taskSpring) { historyPeriod = period }
-                        HapticFeedback.selection()
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, AppSpacing.xs)
-        }
     }
 
     // MARK: - Empty state

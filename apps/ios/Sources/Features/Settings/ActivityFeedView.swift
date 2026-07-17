@@ -475,10 +475,7 @@ struct ActivityFeedView: View {
         let snapshot = feedSnapshot
         VStack(spacing: 0) {
 
-            periodRow(count: snapshot.visibleCount)
-                .padding(.top, AppSpacing.sm)
-
-            filterRow
+            filterRow(count: snapshot.visibleCount)
                 .padding(.top, AppSpacing.sm)
 
             Divider().opacity(0.3).padding(.top, AppSpacing.sm)
@@ -495,22 +492,40 @@ struct ActivityFeedView: View {
         .task { await MemberDirectory.shared.loadIfNeeded() }
     }
 
-    // MARK: Period row (period chips + explicit event count)
+    // MARK: Filter row (aggregated filter + event count + member avatars)
 
-    private func periodRow(count: Int) -> some View {
+    /// The period and category capsules folded into ONE aggregated glass
+    /// trigger (IMG_8540); the member avatar chips stay exactly as they are —
+    /// faces are the point of that filter. The explicit event count sits
+    /// pinned beside the trigger, outside the scrolling avatars, so it never
+    /// disappears while the filters that produce it are being adjusted.
+    private func filterRow(count: Int) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            // The period chips row became one popover trigger (IMG_8520).
-            GlassPopoverPicker(
-                options: ActivityPeriod.allCases.map {
-                    GlassPickerOption(value: $0, title: $0.label)
-                },
-                selection: Binding(
-                    get: { period },
-                    set: { newValue in withAnimation(filterAnimation) { period = newValue } }),
-                accessibilityLabelKey: "activity_period_picker")
-                .padding(.leading, AppSpacing.xl)
-
-            Spacer(minLength: AppSpacing.sm)
+            // Accent dot when either hosted filter leaves its default
+            // (.month / .all — the @State initials). The member filter is
+            // not hosted here, so it never lights the dot; its own chips
+            // carry that state.
+            GlassFilterButton(isActive: period != .month || selectedCategory != .all) {
+                GlassFilterSection(
+                    title: "Period",
+                    options: ActivityPeriod.allCases.map {
+                        GlassPickerOption(value: $0, title: $0.label)
+                    },
+                    selection: Binding(
+                        get: { period },
+                        set: { newValue in withAnimation(filterAnimation) { period = newValue } }))
+                GlassFilterSectionDivider()
+                GlassFilterSection(
+                    title: "Category",
+                    options: ActivityCategory.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: $0.label)
+                    },
+                    selection: Binding(
+                        get: { selectedCategory },
+                        set: { newValue in
+                            withAnimation(filterAnimation) { selectedCategory = newValue }
+                        }))
+            }
 
             Text(eventCountLabel(count))
                 .font(AppFont.caption2)
@@ -518,10 +533,36 @@ struct ActivityFeedView: View {
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
-                .padding(.trailing, AppSpacing.xl)
                 .contentTransition(.numericText())
                 .animation(filterAnimation, value: count)
+
+            Rectangle()
+                .fill(Color.hairline)
+                .frame(width: 1, height: 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(allMembers, id: \.self) { name in
+                        let isSelected = selectedMember == name
+                        ActivityMemberChip(
+                            name: displayName(name),
+                            member: familyMember(named: name, id: nil),
+                            isCurrentUser: name == currentUser,
+                            isSelected: isSelected
+                        ) {
+                            // Tap toggles: tapping the selected member clears
+                            // the filter, so no extra "All" chip competes with
+                            // the category "All" in the popover.
+                            withAnimation(filterAnimation) {
+                                selectedMember = isSelected ? nil : name
+                            }
+                        }
+                    }
+                }
+                .padding(.trailing, AppSpacing.xl)
+            }
         }
+        .padding(.leading, AppSpacing.xl)
     }
 
     /// "12 events" — explicit wording instead of a bare number pill. The
@@ -531,49 +572,6 @@ struct ActivityFeedView: View {
         count == 1
             ? String(localized: "activity_event_count_one")
             : String.localizedStringWithFormat(String(localized: "activity_event_count_many"), count)
-    }
-
-    // MARK: Category + member row (one scrollable line)
-
-    private var filterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                // Category chips → one popover trigger; the member avatar
-                // chips stay — faces are the point of that filter.
-                GlassPopoverPicker(
-                    options: ActivityCategory.allCases.map {
-                        GlassPickerOption(value: $0, icon: $0.icon, title: $0.label)
-                    },
-                    selection: Binding(
-                        get: { selectedCategory },
-                        set: { newValue in
-                            withAnimation(filterAnimation) { selectedCategory = newValue }
-                        }),
-                    accessibilityLabelKey: "activity_category_picker")
-
-                Rectangle()
-                    .fill(Color.hairline)
-                    .frame(width: 1, height: 20)
-
-                ForEach(allMembers, id: \.self) { name in
-                    let isSelected = selectedMember == name
-                    ActivityMemberChip(
-                        name: displayName(name),
-                        member: familyMember(named: name, id: nil),
-                        isCurrentUser: name == currentUser,
-                        isSelected: isSelected
-                    ) {
-                        // Tap toggles: tapping the selected member clears the
-                        // filter, so no extra "All" chip competes with the
-                        // category "All" on the same line.
-                        withAnimation(filterAnimation) {
-                            selectedMember = isSelected ? nil : name
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-        }
     }
 
     // MARK: Timeline

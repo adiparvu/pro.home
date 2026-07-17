@@ -63,9 +63,15 @@ struct ObjectsListView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                filterChipsRow
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.base)
+                // The scrolling chip row (favorites + mode toggle + per-mode
+                // chips) folded into ONE aggregated glass filter (IMG_8540),
+                // trailing where the row used to sit.
+                HStack {
+                    Spacer(minLength: 0)
+                    filterButton
+                }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.base)
 
                 if filteredElements.isEmpty {
                     emptyState
@@ -121,60 +127,71 @@ struct ObjectsListView: View {
                 .environment(taskService)
         }
         .presentationBackground(.thinMaterial)
+        // Switching vocabulary clears the other mode's narrowing (as the old
+        // toggle did), so no hidden filter keeps constraining the list.
+        .onChange(of: filterMode) {
+            filter = .all
+            categoryFilter = nil
+        }
     }
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Button {
-                    withAnimation(.spring(response: 0.3)) { favoritesOnly.toggle() }
-                    HapticFeedback.selection()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: favoritesOnly ? "star.fill" : "star")
-                            .font(AppFont.label)
-                        Text("Favorites").font(AppFont.captionEmphasis)
-                    }
-                    .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
-                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
-                    .background(favoritesOnly ? Color.yellow : Color.smartGlassFill, in: Capsule())
-                }
-                .buttonStyle(.plain)
+    // MARK: - Aggregated filter (one glass circle, IMG_8540)
 
-                // Mode toggle: Categories <-> Layers
-                Button {
-                    withAnimation(.spring(response: 0.3)) {
-                        filterMode = filterMode == .categories ? .layers : .categories
-                        categoryFilter = nil; filter = .all
-                    }
-                    HapticFeedback.selection()
-                } label: {
-                    Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.smartAmber)
-                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.sm)
-                        .background(Color.smartAmber.opacity(AppOpacity.tintedFill), in: Capsule())
-                }
-                .buttonStyle(.plain)
+    /// Any hosted filter away from its default — favorites, or the current
+    /// mode's narrowing. The other mode's state is always default (reset on
+    /// every mode switch), so it can't secretly light the dot.
+    private var hasActiveFilter: Bool {
+        favoritesOnly || (filterMode == .categories ? categoryFilter != nil : filter != .all)
+    }
 
-                if filterMode == .layers {
-                    ForEach(ObjectFilter.allCases, id: \.self) { f in
-                        CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                            withAnimation(.spring(response: 0.3)) { filter = f }
-                        }
-                    }
-                } else {
-                    CategoryFilterChip(label: "All", isActive: categoryFilter == nil) {
-                        withAnimation(.spring(response: 0.3)) { categoryFilter = nil }
-                    }
-                    ForEach(ElementCategory.allCases) { cat in
-                        CategoryFilterChip(label: LocalizedStringKey(cat.displayName), isActive: categoryFilter == cat) {
-                            withAnimation(.spring(response: 0.3)) { categoryFilter = cat }
-                        }
-                    }
-                }
+    private var filterButton: some View {
+        GlassFilterButton(isActive: hasActiveFilter) {
+            GlassFilterToggleRow(icon: "star",
+                                 title: String(localized: "Favorites"),
+                                 isOn: $favoritesOnly)
+            GlassFilterSectionDivider()
+            GlassFilterSection(
+                title: "Filter by",
+                options: [
+                    GlassPickerOption(value: FilterMode.categories,
+                                      icon: "square.grid.2x2.fill",
+                                      title: String(localized: "Categories")),
+                    GlassPickerOption(value: FilterMode.layers,
+                                      icon: "square.3.layers.3d",
+                                      title: String(localized: "Layers"))
+                ],
+                selection: $filterMode)
+            GlassFilterSectionDivider()
+            // The popover content is a ViewBuilder, so only the current
+            // mode's vocabulary renders — mirroring the old chip row.
+            if filterMode == .categories {
+                GlassFilterSection(title: "Category",
+                                   options: categoryOptions,
+                                   selection: $categoryFilter)
+            } else {
+                GlassFilterSection(title: "Layer",
+                                   options: layerOptions,
+                                   selection: $filter)
             }
-            .padding(.vertical, 2)
+        }
+    }
+
+    /// "All" + the nine type groups; the Optional value keeps "no category
+    /// narrowing" a real, selectable state.
+    private var categoryOptions: [GlassPickerOption<ElementCategory?>] {
+        [GlassPickerOption<ElementCategory?>(value: nil, icon: "square.grid.2x2",
+                                             title: String(localized: "All"))]
+            + ElementCategory.allCases.map {
+                GlassPickerOption<ElementCategory?>(value: $0, icon: $0.icon,
+                                                    title: $0.displayName)
+            }
+    }
+
+    private var layerOptions: [GlassPickerOption<ObjectFilter>] {
+        ObjectFilter.allCases.map {
+            GlassPickerOption(value: $0,
+                              icon: $0.layer?.icon ?? "square.grid.2x2",
+                              title: String(localized: String.LocalizationValue($0.rawValue)))
         }
     }
 

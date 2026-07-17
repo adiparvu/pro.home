@@ -176,10 +176,12 @@ struct CalendarView: View {
         .accessibilityLabel(label)
     }
 
-    // MARK: - Filter bar (mode picker + category multi-filter, one glass row)
+    // MARK: - Filter bar (mode picker + aggregated category filter)
 
-    /// Two chip rows became two compact popover triggers (IMG_8519): the
-    /// view-mode picker and the category filter, side by side.
+    /// The mode capsule stays a capsule — it's primary navigation and must
+    /// read its current value at a glance. The category multi-capsule folded
+    /// into the aggregated glass filter circle (IMG_8540), which shows an
+    /// accent dot whenever any category is switched off.
     private var filterBar: some View {
         HStack(spacing: AppSpacing.sm) {
             GlassPopoverPicker(
@@ -194,14 +196,16 @@ struct CalendarView: View {
                         }
                     }),
                 accessibilityLabelKey: "cal_mode_picker")
-            GlassPopoverMultiPicker(
-                options: AgendaCategory.allCases.map {
-                    GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
-                },
-                selection: $active,
-                allTitle: String(localized: "cal_filter_all"),
-                accessibilityLabelKey: "cal_filter_all",
-                onChange: { persistActiveCategories() })
+            GlassFilterButton(isActive: active.count < AgendaCategory.allCases.count,
+                              accessibilityLabelKey: "cal_filter_all") {
+                GlassFilterMultiSection(
+                    title: "Categories",
+                    options: AgendaCategory.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
+                    },
+                    selection: $active,
+                    onChange: { persistActiveCategories() })
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppSpacing.xl)
