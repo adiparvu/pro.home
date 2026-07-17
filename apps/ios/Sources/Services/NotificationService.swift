@@ -70,14 +70,19 @@ struct AppNotification: Identifiable, Codable, Hashable {
 
 struct NotificationCategory: Identifiable, Hashable {
     let module: String
-    let label: LocalizedStringKey
+    /// Raw string-catalog key for the display name. Kept as the key (not a
+    /// resolved value) so both `Text` paths and plain-`String` contexts
+    /// (`GlassPickerOption.title`) localize through the exact same entry.
+    let labelKey: String
     let icon: String
     let color: Color
 
     var id: String { module }
 
-    // LocalizedStringKey isn't Hashable, so synthesis can't be used — identity
-    // is the module slug alone.
+    var label: LocalizedStringKey { LocalizedStringKey(labelKey) }
+    var title: String { String(localized: String.LocalizationValue(labelKey)) }
+
+    // Identity is the module slug alone.
     static func == (lhs: NotificationCategory, rhs: NotificationCategory) -> Bool {
         lhs.module == rhs.module
     }
@@ -92,34 +97,34 @@ struct NotificationCategory: Identifiable, Hashable {
         // alias the panel grew two chips both labelled "Tasks".
         if m == "maintenance" { m = "tasks" }
         if let known = known[m] { return known }
-        return NotificationCategory(module: m, label: LocalizedStringKey(m.capitalized),
+        return NotificationCategory(module: m, labelKey: m.capitalized,
                                     icon: "bell.fill", color: .blue)
     }
 
     private static let known: [String: NotificationCategory] = [
-        "chat":        .init(module: "chat", label: "Chat",
+        "chat":        .init(module: "chat", labelKey: "Chat",
                              icon: "bubble.left.and.bubble.right.fill", color: .blue),
-        "tasks":       .init(module: "tasks", label: "Tasks",
+        "tasks":       .init(module: "tasks", labelKey: "Tasks",
                              icon: "checklist", color: .orange),
-        "garden":      .init(module: "garden", label: "Garden",
+        "garden":      .init(module: "garden", labelKey: "Garden",
                              icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)),
-        "documents":   .init(module: "documents", label: "Documents",
+        "documents":   .init(module: "documents", labelKey: "Documents",
                              icon: "doc.fill", color: .orange),
-        "document":    .init(module: "document", label: "Documents",
+        "document":    .init(module: "document", labelKey: "Documents",
                              icon: "doc.fill", color: .orange),
-        "finance":     .init(module: "finance", label: "Finances",
+        "finance":     .init(module: "finance", labelKey: "Finances",
                              icon: "creditcard.fill", color: Color(red: 0.20, green: 0.78, blue: 0.35)),
-        "inventory":   .init(module: "inventory", label: "Inventory",
+        "inventory":   .init(module: "inventory", labelKey: "Inventory",
                              icon: "archivebox.fill", color: .brown),
-        "security":    .init(module: "security", label: "Security",
+        "security":    .init(module: "security", labelKey: "Security",
                              icon: "lock.shield.fill", color: .red),
-        "family":      .init(module: "family", label: "Family",
+        "family":      .init(module: "family", labelKey: "Family",
                              icon: "person.2.fill", color: .purple),
-        "aria":        .init(module: "aria", label: "System",
+        "aria":        .init(module: "aria", labelKey: "System",
                              icon: "sparkles", color: Color(red: 0.45, green: 0.30, blue: 0.95)),
-        "system":      .init(module: "system", label: "System",
+        "system":      .init(module: "system", labelKey: "System",
                              icon: "gearshape.fill", color: Color(.systemGray)),
-        "delivery":    .init(module: "delivery", label: "Deliveries",
+        "delivery":    .init(module: "delivery", labelKey: "Deliveries",
                              icon: "shippingbox.fill", color: .orange),
     ]
 }

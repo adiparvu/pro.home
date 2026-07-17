@@ -1,7 +1,7 @@
 // Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 
-// MARK: - Zones List — matches dark mockup (filter chips + zone rows)
+// MARK: - Zones List — matches dark mockup (aggregated toolbar filter + zone rows)
 
 struct ZonesListView: View {
     @Environment(PropertyZoneService.self) var zoneService
@@ -31,6 +31,17 @@ struct ZonesListView: View {
             case .utilities: return .utility
             }
         }
+
+        /// Same catalog keys the chips resolved (`LocalizedStringKey(rawValue)`),
+        /// as plain strings for `GlassPickerOption.title`.
+        var title: String {
+            switch self {
+            case .all:       return String(localized: "All")
+            case .general:   return String(localized: "General")
+            case .buildings: return String(localized: "Buildings")
+            case .utilities: return String(localized: "Utilities")
+            }
+        }
     }
 
     private var filteredZones: [PropertyZone] {
@@ -51,10 +62,6 @@ struct ZonesListView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                filterChipsRow
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.base)
-
                 if filteredZones.isEmpty {
                     emptyState
                         .padding(.top, 60)
@@ -106,6 +113,13 @@ struct ZonesListView: View {
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(.regularMaterial, in: Capsule())
 
+                    // The one aggregated filter — replaces the chip row that
+                    // sat above the list. `inToolbar` because iOS 26 wraps
+                    // toolbar controls in system glass (IMG_8315 class).
+                    GlassFilterButton(isActive: filter != .all, inToolbar: true) {
+                        GlassFilterSection(options: zoneFilterOptions, selection: $filter)
+                    }
+
                     Button {
                         HapticFeedback.impact(.light)
                         router.selectedTab = .digitalTwin
@@ -124,19 +138,11 @@ struct ZonesListView: View {
         }
     }
 
-    // MARK: - Filter chips
+    // MARK: - Filter options
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(ZoneFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                        withAnimation(.spring(response: 0.3)) { filter = f }
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
+    /// The exact filters the chip row drove, for the aggregated popover.
+    private var zoneFilterOptions: [GlassPickerOption<ZoneFilter>] {
+        ZoneFilter.allCases.map { GlassPickerOption(value: $0, title: $0.title) }
     }
 
     // MARK: - Empty state

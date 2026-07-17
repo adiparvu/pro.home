@@ -34,12 +34,14 @@ struct InventoryView: View {
     enum InvSort: String, CaseIterable {
         case recent, name, value, location
 
-        var labelKey: LocalizedStringKey {
+        /// Same catalog keys the sort menu resolved, as plain strings for
+        /// `GlassPickerOption.title`.
+        var title: String {
             switch self {
-            case .recent:   return "inv_sort_recent"
-            case .name:     return "inv_sort_name"
-            case .value:    return "inv_sort_value"
-            case .location: return "inv_sort_location"
+            case .recent:   return String(localized: "inv_sort_recent")
+            case .name:     return String(localized: "inv_sort_name")
+            case .value:    return String(localized: "inv_sort_value")
+            case .location: return String(localized: "inv_sort_location")
             }
         }
         var icon: String {
@@ -113,8 +115,7 @@ struct InventoryView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.top, 10).padding(.bottom, AppSpacing.xs)
-                    filterChips.padding(.bottom, AppSpacing.sm)
+                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.top, 10).padding(.bottom, AppSpacing.sm)
                 }
                 if service.items.isEmpty {
                     emptyState
@@ -206,9 +207,11 @@ struct InventoryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    sortMenu
-                    if !service.items.isEmpty { exportMenu }
-                    Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
+                    if !service.items.isEmpty {
+                        filterButton
+                        exportMenu
+                        Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
+                    }
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                         Image(systemName: "plus").font(AppFont.subheadline).frame(width: 38, height: 32)
                     }.buttonStyle(.plain)
@@ -266,18 +269,26 @@ struct InventoryView: View {
 
     // MARK: - Toolbar menus
 
-    private var sortMenu: some View {
-        Menu {
-            Picker("inv_sort_by", selection: $sortRaw) {
-                ForEach(InvSort.allCases, id: \.rawValue) { s in
-                    Label(s.labelKey, systemImage: s.icon).tag(s.rawValue)
-                }
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(AppFont.subheadline).frame(width: 38, height: 32)
+    /// ONE aggregated control replaces both the chip row and the old sort
+    /// menu: every slice (status / category / location) plus the sort order,
+    /// in a single popover visit. The accent dot reflects narrowing filters
+    /// only — a non-default sort reorders the same items, it never narrows
+    /// the list, so it must not claim "filtered".
+    private var filterButton: some View {
+        let counts = filterCounts
+        return GlassFilterButton(isActive: hasActiveFilter, inToolbar: true) {
+            GlassFilterSection(title: "Status",
+                               options: statusOptions(counts), selection: $status)
+            GlassFilterSectionDivider()
+            GlassFilterSection(title: "Category",
+                               options: categoryOptions(counts), selection: $selectedCategory)
+            GlassFilterSectionDivider()
+            GlassFilterSection(title: "Location",
+                               options: locationOptions(counts), selection: $selectedLocation)
+            GlassFilterSectionDivider()
+            GlassFilterSection(title: "inv_sort_by",
+                               options: sortOptions, selection: $sortRaw)
         }
-        .accessibilityLabel(Text("inv_sort_by"))
     }
 
     private var exportMenu: some View {
@@ -390,68 +401,49 @@ struct InventoryView: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    // MARK: - Filter chips
+    // MARK: - Filter options
 
-    /// Everything the list can be sliced by, in one scrollable row: the three
-    /// status slices, then the categories and locations that actually hold
-    /// items (real counts, never a dead chip). Category + location + status
-    /// + search all combine.
-    private var filterChips: some View {
-        let counts = chipCounts
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                GlassFilterChip(label: String(localized: "inv_filter_all"),
-                                isSelected: !hasActiveFilter) {
-                    withAnimation(.spring(response: 0.25)) {
-                        status = nil; selectedCategory = nil; selectedLocation = nil
-                    }
-                }
-                GlassFilterChip(label: String(localized: "inv_filter_favorites"),
-                                systemImage: "star.fill",
-                                count: counts.favorites,
-                                isSelected: status == .favorites) { toggleStatus(.favorites) }
-                GlassFilterChip(label: String(localized: "inv_filter_loaned"),
-                                systemImage: "arrow.uturn.right.circle",
-                                count: counts.loaned,
-                                isSelected: status == .loaned) { toggleStatus(.loaned) }
-                GlassFilterChip(label: String(localized: "inv_filter_warranty"),
-                                systemImage: "checkmark.shield",
-                                count: counts.warranty,
-                                isSelected: status == .warranty) { toggleStatus(.warranty) }
-                if !counts.categories.isEmpty { chipDivider }
-                ForEach(InventoryCatalog.categories.filter { counts.categories[$0] != nil }, id: \.self) { cat in
-                    GlassFilterChip(label: InventoryLabels.category(cat),
-                                    systemImage: InventoryCatalog.icon(for: cat),
-                                    count: counts.categories[cat],
-                                    isSelected: selectedCategory == cat) {
-                        withAnimation(.spring(response: 0.25)) {
-                            selectedCategory = selectedCategory == cat ? nil : cat
-                        }
-                    }
-                }
-                if !counts.locations.isEmpty { chipDivider }
-                ForEach(orderedLocations(counts.locations), id: \.self) { loc in
-                    GlassFilterChip(label: InventoryLabels.location(loc),
-                                    systemImage: "mappin",
-                                    count: counts.locations[loc],
-                                    isSelected: selectedLocation == loc) {
-                        withAnimation(.spring(response: 0.25)) {
-                            selectedLocation = selectedLocation == loc ? nil : loc
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, 2)
+    /// Everything the chip row could slice by, unchanged: the three status
+    /// slices, then the categories and locations that actually hold items
+    /// (real counts, never a dead row). Each section's "All" row carries the
+    /// nil selection that clearing a chip used to produce, so status +
+    /// category + location + search still combine freely.
+    private func statusOptions(_ counts: FilterCounts) -> [GlassPickerOption<StatusFilter?>] {
+        [.init(value: nil, title: String(localized: "inv_filter_all")),
+         .init(value: .favorites, icon: "star.fill",
+               title: String(localized: "inv_filter_favorites"), count: counts.favorites),
+         .init(value: .loaned, icon: "arrow.uturn.right.circle",
+               title: String(localized: "inv_filter_loaned"), count: counts.loaned),
+         .init(value: .warranty, icon: "checkmark.shield",
+               title: String(localized: "inv_filter_warranty"), count: counts.warranty)]
+    }
+
+    private func categoryOptions(_ counts: FilterCounts) -> [GlassPickerOption<String?>] {
+        var options: [GlassPickerOption<String?>] = [
+            .init(value: nil, title: String(localized: "inv_filter_all"))
+        ]
+        for cat in InventoryCatalog.categories where counts.categories[cat] != nil {
+            options.append(.init(value: cat, icon: InventoryCatalog.icon(for: cat),
+                                 title: InventoryLabels.category(cat),
+                                 count: counts.categories[cat]))
         }
+        return options
     }
 
-    private var chipDivider: some View {
-        Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
+    private func locationOptions(_ counts: FilterCounts) -> [GlassPickerOption<String?>] {
+        var options: [GlassPickerOption<String?>] = [
+            .init(value: nil, title: String(localized: "inv_filter_all"))
+        ]
+        for loc in orderedLocations(counts.locations) {
+            options.append(.init(value: loc, icon: "mappin",
+                                 title: InventoryLabels.location(loc),
+                                 count: counts.locations[loc]))
+        }
+        return options
     }
 
-    private func toggleStatus(_ target: StatusFilter) {
-        withAnimation(.spring(response: 0.25)) { status = status == target ? nil : target }
+    private var sortOptions: [GlassPickerOption<String>] {
+        InvSort.allCases.map { .init(value: $0.rawValue, icon: $0.icon, title: $0.title) }
     }
 
     /// Known locations keep their canonical order; free-form ones (from older
@@ -463,7 +455,7 @@ struct InventoryView: View {
         return known + extra
     }
 
-    private struct ChipCounts {
+    private struct FilterCounts {
         var favorites = 0
         var loaned = 0
         var warranty = 0
@@ -471,9 +463,9 @@ struct InventoryView: View {
         var locations: [String: Int] = [:]
     }
 
-    /// One pass over the items builds every chip badge.
-    private var chipCounts: ChipCounts {
-        var c = ChipCounts()
+    /// One pass over the items builds every option badge.
+    private var filterCounts: FilterCounts {
+        var c = FilterCounts()
         for item in service.items {
             if favorites.isFavorite(item.id) { c.favorites += 1 }
             if item.isLoaned { c.loaned += 1 }

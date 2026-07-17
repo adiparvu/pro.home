@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - PRVIO Timeline — matches dark mockup (chronological events + filter chips)
+// MARK: - PRVIO Timeline — matches dark mockup (chronological events + aggregated toolbar filter)
 
 struct PRVIOTimelineView: View {
     @Environment(TaskService.self) var taskService
@@ -19,6 +19,17 @@ struct PRVIOTimelineView: View {
             case .fiveMin:  return 5 * 60
             case .thirtyMin: return 30 * 60
             case .day:      return 24 * 3600
+            }
+        }
+
+        /// Same catalog keys the chips resolved (`LocalizedStringKey(rawValue)`),
+        /// as plain strings for `GlassPickerOption.title`.
+        var title: String {
+            switch self {
+            case .today:     return String(localized: "Today")
+            case .fiveMin:   return String(localized: "5m")
+            case .thirtyMin: return String(localized: "30m")
+            case .day:       return String(localized: "24h")
             }
         }
     }
@@ -54,11 +65,6 @@ struct PRVIOTimelineView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                filterChipsRow
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.xxs)
-                    .padding(.bottom, 10)
-
                 if groupedEvents.isEmpty {
                     emptyState
                         .padding(.top, 60)
@@ -109,26 +115,29 @@ struct PRVIOTimelineView: View {
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Text("\(filteredEvents.count)")
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(.regularMaterial, in: Capsule())
+                HStack(spacing: 10) {
+                    Text("\(filteredEvents.count)")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(.regularMaterial, in: Capsule())
+
+                    // The one aggregated filter — replaces the chip row that
+                    // sat above the list. `inToolbar` because iOS 26 wraps
+                    // toolbar controls in system glass (IMG_8315 class).
+                    GlassFilterButton(isActive: filter != .today, inToolbar: true) {
+                        GlassFilterSection(options: timeFilterOptions, selection: $filter)
+                    }
+                }
             }
         }
     }
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(TimeFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                        withAnimation(.spring(response: 0.3)) { filter = f }
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
+    // MARK: - Filter options
+
+    /// The exact time ranges the chip row drove, for the aggregated popover.
+    private var timeFilterOptions: [GlassPickerOption<TimeFilter>] {
+        TimeFilter.allCases.map { GlassPickerOption(value: $0, title: $0.title) }
     }
 
     private var emptyState: some View {

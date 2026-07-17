@@ -102,34 +102,6 @@ struct PropertySection: Identifiable {
     ]
 }
 
-// MARK: - CategoryFilterChip (used across Zones, Objects screens)
-
-struct CategoryFilterChip: View {
-    let label: LocalizedStringKey
-    var isActive: Bool
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: { HapticFeedback.selection(); action() }) {
-            Text(label)
-                .font(AppFont.scaled(13, weight: isActive ? .semibold : .medium))
-                .foregroundStyle(isActive ? .primary : Color.primary.opacity(0.55))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.sm)
-        }
-        .buttonStyle(.plain)
-        .background {
-            Capsule()
-                .fill(isActive ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.primary.opacity(AppOpacity.hairline)))
-                .overlay {
-                    if isActive {
-                        Capsule().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
-                    }
-                }
-        }
-    }
-}
-
 // MARK: - Proactive Insights Strip
 
 struct ProactiveInsightsStrip: View {

@@ -77,6 +77,16 @@ struct NotificationCenterView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
+            if !service.notifications.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // The one aggregated filter — hosts everything the old
+                    // chip row offered. `inToolbar` because iOS 26 wraps the
+                    // control in system glass (no double circle, IMG_8315).
+                    GlassFilterButton(isActive: filter != nil, inToolbar: true) {
+                        GlassFilterSection(options: filterOptions, selection: $filter)
+                    }
+                }
+            }
             if service.unreadCount > 0 {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -125,30 +135,25 @@ struct NotificationCenterView: View {
     // MARK: - Content
 
     private var content: some View {
-        VStack(spacing: 0) {
-            filterChips
-                .padding(.vertical, AppSpacing.sm)
-
-            List {
-                ForEach(sections) { section in
-                    Section {
-                        ForEach(section.groups) { group in
-                            row(group)
-                        }
-                    } header: {
-                        Text(section.title)
-                            .font(AppFont.label)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                            .textCase(nil)
+        List {
+            ForEach(sections) { section in
+                Section {
+                    ForEach(section.groups) { group in
+                        row(group)
                     }
+                } header: {
+                    Text(section.title)
+                        .font(AppFont.label)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        .textCase(nil)
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .refreshable {
-                if let uid = userId {
-                    await service.load(userId: uid)
-                }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .refreshable {
+            if let uid = userId {
+                await service.load(userId: uid)
             }
         }
     }
@@ -185,57 +190,29 @@ struct NotificationCenterView: View {
             }
     }
 
-    private var filterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                chip(label: Text("All"), icon: nil, color: .accentColor, key: nil,
-                     count: service.notifications.count)
-                if service.unreadCount > 0 {
-                    chip(label: Text("Unread"), icon: "circle.fill", color: .blue,
-                         key: "unread", count: service.unreadCount)
-                }
-                ForEach(categories) { cat in
-                    chip(label: Text(cat.label), icon: cat.icon, color: cat.color,
-                         key: cat.module,
-                         count: service.notifications.filter {
-                             NotificationCategory.forModule($0.module).module == cat.module
-                         }.count)
-                }
-            }
-            .padding(.horizontal, AppSpacing.lg)
+    /// The options the chip row used to render, unchanged: All, Unread (only
+    /// while something is unread — same disappearing rule the chip had), then
+    /// every module that actually holds notifications, all with honest counts.
+    private var filterOptions: [GlassPickerOption<String?>] {
+        var moduleCounts: [String: Int] = [:]
+        for n in service.notifications {
+            moduleCounts[NotificationCategory.forModule(n.module).module, default: 0] += 1
         }
-    }
-
-    private func chip(label: Text, icon: String?, color: Color, key: String?, count: Int) -> some View {
-        let selected = filter == key
-        return Button {
-            HapticFeedback.selection()
-            withAnimation(.smooth(duration: 0.22)) { filter = key }
-        } label: {
-            let content = HStack(spacing: 5) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(AppFont.scaled(10, weight: .semibold))
-                }
-                label.font(AppFont.captionEmphasis)
-                Text("\(count)")
-                    .font(AppFont.caption2)
-                    .opacity(0.65)
-            }
-            .foregroundStyle(selected ? Color.white : color)
-            .padding(.horizontal, 12).padding(.vertical, 7)
-
-            // Selected keeps a solid tint for unmistakable state; the resting
-            // chips are Liquid Glass so the row adapts to whatever scrolls
-            // beneath instead of painting opaque pastel pills.
-            if selected {
-                content.background(color.gradient, in: Capsule())
-            } else {
-                content.glassCapsule()
-            }
+        var options: [GlassPickerOption<String?>] = [
+            .init(value: nil, title: String(localized: "All"),
+                  count: service.notifications.count)
+        ]
+        if service.unreadCount > 0 {
+            options.append(.init(value: "unread", icon: "circle.fill",
+                                 title: String(localized: "Unread"),
+                                 count: service.unreadCount))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        for cat in categories {
+            options.append(.init(value: cat.module, icon: cat.icon,
+                                 title: cat.title,
+                                 count: moduleCounts[cat.module] ?? 0))
+        }
+        return options
     }
 
     private var emptyState: some View {

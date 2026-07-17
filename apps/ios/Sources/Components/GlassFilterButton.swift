@@ -23,9 +23,19 @@ struct GlassFilterButton<Content: View>: View {
     /// True when placed in a `.toolbar` — the system supplies the glass.
     var inToolbar: Bool = false
     var accessibilityLabelKey: LocalizedStringKey = "filter_picker"
+    /// Standalone trigger diameter — headers whose round actions use a
+    /// larger circle (the chat header's 44pt) pass theirs so the trigger
+    /// sits flush with its siblings. Ignored in toolbars (system metrics).
+    var standaloneSize: CGFloat = 38
     @ViewBuilder var content: () -> Content
 
     @State private var isPresented = false
+
+    /// Glyph tracks the circle (15pt at the 38pt default) so a larger
+    /// standalone trigger doesn't render a visibly under-weight icon.
+    private var glyphSize: CGFloat {
+        inToolbar ? 15 : (standaloneSize * 15 / 38).rounded()
+    }
 
     var body: some View {
         Button {
@@ -33,9 +43,10 @@ struct GlassFilterButton<Content: View>: View {
             isPresented = true
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .font(AppFont.scaled(15, weight: .semibold))
+                .font(AppFont.scaled(glyphSize, weight: .semibold))
                 .foregroundStyle(.primary)
-                .frame(width: inToolbar ? 28 : 38, height: inToolbar ? 28 : 38)
+                .frame(width: inToolbar ? 28 : standaloneSize,
+                       height: inToolbar ? 28 : standaloneSize)
                 .overlay(alignment: .topTrailing) {
                     if isActive {
                         Circle()

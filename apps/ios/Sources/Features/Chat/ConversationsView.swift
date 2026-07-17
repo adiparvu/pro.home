@@ -47,13 +47,15 @@ struct ConversationsView: View {
 
     enum ConvFilter: CaseIterable {
         case all, unread, favorites, groups, family
-        var label: LocalizedStringKey {
+        /// Same catalog keys the chip row resolved, as plain strings for
+        /// `GlassPickerOption.title`.
+        var title: String {
             switch self {
-            case .all: return "convo_filter_all"
-            case .unread: return "convo_filter_unread"
-            case .favorites: return "convo_filter_favorites"
-            case .groups: return "convo_filter_groups"
-            case .family: return "convo_filter_family"
+            case .all: return String(localized: "convo_filter_all")
+            case .unread: return String(localized: "convo_filter_unread")
+            case .favorites: return String(localized: "convo_filter_favorites")
+            case .groups: return String(localized: "convo_filter_groups")
+            case .family: return String(localized: "convo_filter_family")
             }
         }
     }
@@ -402,6 +404,10 @@ struct ConversationsView: View {
                     Button { router.navigate(to: .profile) } label: { Label("Profile", systemImage: "person.crop.circle") }
                     Button { showCommunities = true } label: { Label("chat_groups_title", systemImage: "person.3") }
                     Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
+                    // The ARIA shortcut used to ride along in the filter-chip
+                    // row; the row is gone, so — like everything else on this
+                    // screen — the entry point lives on in the avatar menu.
+                    Button { router.navigate(to: .aria) } label: { Label("AI Assistant", systemImage: "sparkles") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
                         Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
@@ -417,6 +423,16 @@ struct ConversationsView: View {
                     .lineLimit(1)
 
                 Spacer()
+
+                // The one aggregated filter — replaces the chip row that sat
+                // above the list. Standalone here (custom header, not a
+                // toolbar) at the header's 44pt action size. Hidden in the
+                // archived drill-in, where the filter honestly doesn't apply.
+                if !showArchived {
+                    GlassFilterButton(isActive: filter != .all, standaloneSize: 44) {
+                        GlassFilterSection(options: convFilterOptions, selection: $filter)
+                    }
+                }
 
                 Button { showNewConversation = true } label: {
                     Image(systemName: "plus")
@@ -490,8 +506,6 @@ struct ConversationsView: View {
             VStack(spacing: 14) {
                 if showArchived {
                     archivedTopBar
-                } else {
-                    filterChips
                 }
 
                 let entries = showArchived ? archivedList : searchedConversations
@@ -763,57 +777,9 @@ struct ConversationsView: View {
         )
     }
 
-    private var filterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                // Selected chip stays a solid pill (the reference's white
-                // "All" — maximum contrast); the resting chips are Liquid
-                // Glass like every other floating control on this screen.
-                ForEach(ConvFilter.allCases, id: \.self) { f in
-                    if filter == f {
-                        Button {
-                            HapticFeedback.selection()
-                            withAnimation(.snappy(duration: 0.25)) { filter = f }
-                        } label: {
-                            Text(f.label)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color(.systemBackground))
-                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
-                                .background(Color.primary, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Button {
-                            HapticFeedback.selection()
-                            withAnimation(.snappy(duration: 0.25)) { filter = f }
-                        } label: {
-                            Text(f.label)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color.primary.opacity(0.65))
-                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
-                        }
-                        .buttonStyle(.plain)
-                        .glassCapsule()
-                    }
-                }
-                // Action chip, not a filter: jumps straight to ARIA — glass
-                // with an indigo wash so it reads as the AI entry point.
-                Button {
-                    HapticFeedback.impact(.light)
-                    router.navigate(to: .aria)
-                } label: {
-                    Text(verbatim: "AI")
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color.brandIndigo)
-                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 9)
-                        .background(Color.brandIndigo.opacity(AppOpacity.tintedFill), in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .glassCapsule()
-                .accessibilityLabel("AI Assistant")
-            }
-            .padding(.horizontal, AppSpacing.lg)
-        }
+    /// The exact filters the chip row drove, for the aggregated popover.
+    private var convFilterOptions: [GlassPickerOption<ConvFilter>] {
+        ConvFilter.allCases.map { GlassPickerOption(value: $0, title: $0.title) }
     }
 
     private var archivedTopBar: some View {
