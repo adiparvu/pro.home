@@ -31,6 +31,110 @@ struct PopoverArrowKiller: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
+// MARK: - Menu chrome — the Apple menu presentation language
+//
+// Every popover menu wears the same dressing:
+//  • Liquid Glass card — on iOS 26 the system material carries the real
+//    refraction, dynamic (content-adaptive) blur, adaptive tint and
+//    specular response; earlier systems get regular material + hairline,
+//    Reduce Transparency an opaque elevated surface.
+//  • 24pt continuous corners (AppRadius.xxl), soft two-layer shadow lift.
+//  • The entrance: scale 0.95 → 1.00 with a fast fade on a ~0.35s spring,
+//    anchored at the top edge where the trigger sits — the menu reads as
+//    the button morphing open, not as a new element appearing.
+//  • A faint specular band sweeps across once during the entrance, like
+//    light moving over glass. Reduce Motion keeps only the fade.
+
+struct GlassMenuChrome: ViewModifier {
+    @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .clipShape(shape)
+            .modifier(GlassMenuSurface(shape: shape))
+            .overlay {
+                if !reduceMotion {
+                    GeometryReader { geo in
+                        LinearGradient(colors: [.clear, .white.opacity(0.14), .clear],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                            .frame(width: geo.size.width * 0.9)
+                            .offset(x: appeared ? geo.size.width : -geo.size.width * 0.9)
+                            .animation(.easeOut(duration: 0.55), value: appeared)
+                    }
+                    .allowsHitTesting(false)
+                    .clipShape(shape)
+                }
+            }
+            .scaleEffect(appeared || reduceMotion ? 1 : 0.95, anchor: .top)
+            .opacity(appeared ? 1 : 0)
+            .onAppear {
+                withAnimation(reduceMotion
+                              ? .easeOut(duration: 0.18)
+                              : .spring(duration: 0.35, bounce: 0.18)) {
+                    appeared = true
+                }
+            }
+            .onDisappear { appeared = false }
+            // The system bubble disappears entirely — the glass card above
+            // IS the menu surface, so corners, tint and translucency are
+            // ours to guarantee.
+            .presentationBackground(.clear)
+            .presentationCompactAdaptation(.popover)
+    }
+}
+
+/// The card surface behind a menu's rows. The shadow lift travels INSIDE
+/// the shape style (`ShapeStyle.shadow`) where it can't halo the row text
+/// and can't force the material offscreen — a `.compositingGroup()` +
+/// `.shadow` over live glass flattens the backdrop and kills the blur.
+/// The iOS 26 glass draws its own depth; extra shadow there would fight
+/// the system's lighting model.
+private struct GlassMenuSurface: ViewModifier {
+    let shape: RoundedRectangle
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(Color(.secondarySystemBackground)
+                    .shadow(.drop(color: .black.opacity(0.18), radius: 14, y: 6)),
+                            in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+        } else if #available(iOS 26, *) {
+            content
+                .glassEffect(in: shape)
+                // Static specular edge: brightest toward the light (top
+                // leading), fading out — the glass reads lit, not outlined.
+                .overlay(shape.strokeBorder(
+                    LinearGradient(colors: [.white.opacity(0.35),
+                                            .white.opacity(0.06),
+                                            .clear],
+                                   startPoint: .topLeading,
+                                   endPoint: .bottomTrailing),
+                    lineWidth: 0.8))
+        } else {
+            content
+                .background(.regularMaterial
+                    .shadow(.drop(color: .black.opacity(0.16), radius: 16, y: 7)),
+                            in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.7))
+        }
+    }
+}
+
+extension View {
+    /// The shared menu presentation: glass card + morph-open entrance.
+    /// Includes `presentationBackground(.clear)` and the popover compact
+    /// adaptation — callers apply nothing else presentation-related.
+    func glassMenuChrome() -> some View { modifier(GlassMenuChrome()) }
+}
+
 // MARK: - GlassFilterButton — one circle, every filter (IMG_8540)
 //
 // The page-level consolidation of filters: ONE circular Liquid Glass button
@@ -151,7 +255,7 @@ struct GlassFilterButton<Content: View>: View {
                     action()
                 }
             }
-            .presentationCompactAdaptation(.popover)
+            .glassMenuChrome()
         }
     }
 }

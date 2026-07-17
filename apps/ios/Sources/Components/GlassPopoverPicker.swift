@@ -72,7 +72,7 @@ struct GlassPopoverPicker<Value: Hashable>: View {
             optionList
                 // Clean floating card, no anchor tail (IMG_8566).
                 .background(PopoverArrowKiller())
-                .presentationCompactAdaptation(.popover)
+                .glassMenuChrome()
         }
     }
 
@@ -179,7 +179,7 @@ struct GlassPopoverMultiPicker<Value: Hashable>: View {
             .frame(minWidth: 230, maxHeight: 380)
             // Clean floating card, no anchor tail (IMG_8566).
             .background(PopoverArrowKiller())
-            .presentationCompactAdaptation(.popover)
+            .glassMenuChrome()
         }
     }
 }
