@@ -181,8 +181,11 @@ struct GlassPopoverMultiPicker<Value: Hashable>: View {
 }
 
 // MARK: - Shared option row
+//
+// Internal (not private): GlassFilterButton's aggregated sections render
+// the exact same row, so every filter option in the app looks identical.
 
-private struct GlassPopoverRow: View {
+struct GlassPopoverRow: View {
     let icon: String?
     let title: String
     let count: Int?
