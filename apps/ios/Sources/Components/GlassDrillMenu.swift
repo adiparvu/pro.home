@@ -158,7 +158,10 @@ private struct GlassDrillDisclosureRow: View {
             // indicator (Apple's ⌄), so the same glyph reads both states.
             Image(systemName: "chevron.right")
                 .font(AppFont.scaled(12, weight: .semibold))
-                .foregroundStyle(isOpen ? Color.accentColor : .tertiary)
+                // Ternary needs one concrete style type: Color on both sides
+                // (`.tertiary` alone is a ShapeStyle, not a Color).
+                .foregroundStyle(isOpen ? Color.accentColor
+                                        : Color.primary.opacity(AppOpacity.disabled))
                 .rotationEffect(.degrees(isOpen ? 90 : 0))
         }
         .padding(.horizontal, AppSpacing.lg)
