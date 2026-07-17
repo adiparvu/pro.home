@@ -352,7 +352,11 @@ struct BackgroundMoodView: View {
                           title: "mood_icon_follow",
                           caption: Text(iconCaptionKey),
                           isOn: Binding(
-                              get: { iconManager.followsMood },
+                              // Show the EFFECTIVE state: with the alert-free
+                              // switch gone the feature is off no matter what
+                              // the stored preference says — a disabled row
+                              // that still reads "on" would be a lie.
+                              get: { iconManager.followsMood && canFollow },
                               set: { on in
                                   HapticFeedback.selection()
                                   iconManager.setFollowsMood(on)

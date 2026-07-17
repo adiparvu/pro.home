@@ -197,6 +197,11 @@ struct DirectMessageView: View {
         // time-relative disappearing cutoff between data changes.
         var hasher = Hasher()
         hasher.combine(directMessageService.revision)
+        // The identity is part of the derivation: `inThread` matches on
+        // myUserId, and a restored identity used to serve the stale EMPTY
+        // slot from the cache until something else bumped the revision
+        // (IMG_8539). Different identity → different cache key.
+        hasher.combine(directMessageService.myUserId)
         hasher.combine(ConversationClearStore.clearedAt(convId))
         hasher.combine(ChatDisappearStore.ttl(disappearKey))
         hasher.combine(Int(Date().timeIntervalSince1970 / 30))

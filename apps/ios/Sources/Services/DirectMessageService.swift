@@ -571,7 +571,13 @@ final class DirectMessageService {
         isLoading = true
         defer { isLoading = false }
         guard !myName.isEmpty else { return }
-        myUserId = supabase.auth.currentSession?.user.id
+        // Never NULL a known identity: `load()` reruns on every dm_new
+        // broadcast and every foreground, and a transiently-nil session
+        // (mid token refresh) used to wipe `myUserId` — which silently
+        // emptied every identity-matched thread until the next clean load
+        // (IMG_8539: "messages jump, disappear"). A stale id for a few
+        // seconds is harmless; a nil one blanks the UI.
+        if let uid = supabase.auth.currentSession?.user.id { myUserId = uid }
         do {
             // Fetch the most recent 1000 (newest first), then show oldest→newest.
             // Previously this ordered ascending, which returned the *oldest* 1000
@@ -580,8 +586,27 @@ final class DirectMessageService {
             // this was the last big main-thread JSON decode in the app.
             let rows = try await Self.fetchRecent(propertyId: propertyId, myName: myName,
                                                   myUserId: myUserId)
-            dms = rows.reversed()
-            exhaustedOlder.removeAll()
+            // MERGE, never replace: a wholesale `dms = rows` threw away the
+            // older pages "Load older" had prepended, so history vanished and
+            // the scroll anchor died (the viewport jumped to the bottom) every
+            // time a reload landed mid-conversation. Fresh rows win on
+            // conflict — they carry newer edits/reactions/receipts.
+            var byId = Dictionary(dms.map { ($0.id, $0) },
+                                  uniquingKeysWith: { _, new in new })
+            for row in rows { byId[row.id] = row }
+            // ISO-8601 timestamps sort lexicographically; id breaks the
+            // (rare) same-instant tie so the order is fully deterministic.
+            dms = byId.values.sorted {
+                $0.createdAt == $1.createdAt
+                    ? $0.id.uuidString < $1.id.uuidString
+                    : $0.createdAt < $1.createdAt
+            }
+            // exhaustedOlder stays: reaching the beginning of a thread is a
+            // fact about the SERVER's history — a refresh of the recent
+            // window doesn't un-reach it. Entries are keyed per-thread
+            // (storeKey), so flags from another property/account are simply
+            // never consulted; history only grows forward, so a kept flag
+            // can't hide anything.
             // The conversation list derives from the server-side heads, not
             // from the roster — refresh them alongside the message window.
             await refreshHeads(propertyId: propertyId)

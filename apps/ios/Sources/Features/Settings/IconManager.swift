@@ -2,40 +2,27 @@ import SwiftUI
 import Observation
 import UIKit
 
-// MARK: - Silent alternate-icon switching
+// MARK: - Alternate-icon switching (alert-free path retired)
 
 extension UIApplication {
-    /// The alert-free private setter's selector, assembled from parts so the
-    /// name never appears verbatim.
-    fileprivate static let silentIconSelector = NSSelectorFromString(
-        ["_setAlternateIconName", "completionHandler:"].joined(separator: ":"))
+    /// There is NO reliable alert-free icon switch anymore. The old probe
+    /// (`responds(to:)` on the private setter) proved untrustworthy in the
+    /// field: on current iOS the selector still EXISTS — so the probe said
+    /// yes — but invoking it presents the same "You have changed the icon"
+    /// system alert as the public API (observed on device in build 1049,
+    /// IMG_8538). "The selector exists" is not "the alert is suppressed",
+    /// so every automatic mood/appearance swap now stands down permanently;
+    /// only a user-initiated apply may switch the icon, with Apple's
+    /// standard one-time alert as direct feedback.
+    static var supportsSilentIconSwitching: Bool { false }
 
-    /// True while the OS still ships the alert-free private path. Newer iOS
-    /// (first seen missing on the 27.0 beta) removed it — every automatic
-    /// mood/appearance swap must check this and STAND DOWN instead of
-    /// falling back to the public API, whose "You have changed the icon"
-    /// alert on every mood flip is exactly the modal this feature exists to
-    /// avoid.
-    static var supportsSilentIconSwitching: Bool {
-        shared.responds(to: silentIconSelector)
-    }
-
-    /// Installs an alternate icon WITHOUT the system "You have changed the icon
-    /// for …" alert when the OS allows it, falling back to the public
-    /// alert-showing API otherwise. The fallback is acceptable ONLY for a
-    /// user-initiated apply (one alert as direct feedback); automatic callers
-    /// gate on `supportsSilentIconSwitching` and never reach it.
+    /// Public-API passthrough, kept so the manual apply path reads the same.
+    /// The private-selector invocation is gone for good — it stopped being
+    /// silent, and shipping a `unsafeBitCast` onto a private setter is an
+    /// App Store risk with zero remaining benefit.
     func setAlternateIconNameSilently(_ iconName: String?,
                                       completion: ((Error?) -> Void)? = nil) {
-        let selector = Self.silentIconSelector
-        guard responds(to: selector) else {
-            setAlternateIconName(iconName, completionHandler: completion)
-            return
-        }
-        typealias SilentSetter = @convention(c)
-            (NSObject, Selector, NSString?, @escaping (NSError?) -> Void) -> Void
-        let callable = unsafeBitCast(method(for: selector), to: SilentSetter.self)
-        callable(self, selector, iconName as NSString?) { error in completion?(error) }
+        setAlternateIconName(iconName, completionHandler: completion)
     }
 }
 
