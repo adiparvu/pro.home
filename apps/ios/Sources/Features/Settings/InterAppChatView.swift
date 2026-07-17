@@ -30,7 +30,7 @@ struct InterAppChatView: View {
                             guard let pid = propertyId else { return }
                             Task { await service.setEnabled(on, propertyId: pid) }
                         }
-                    ).animation()) {
+                    ).animation(AppMotion.state)) {
                         Text("Enable")
                             .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)

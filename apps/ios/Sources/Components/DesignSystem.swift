@@ -677,3 +677,22 @@ enum AppRadius {
     /// Large sheet/panel corners (iMessage-style translucent menus).
     static let sheet: CGFloat = 28
 }
+
+// MARK: - Motion
+
+/// The app's motion vocabulary — the "iOS 27" feel: every UI response is
+/// fast and springy with restrained bounce; nothing UI-driven may feel
+/// slow or heavy. Pick by what moves, not by taste:
+///  • `tap`      — press feedback, toggles, checkmarks (instant response)
+///  • `state`    — selection/filter changes, small layout shifts
+///  • `springy`  — element entrances, menu/card morphs (the menu spring)
+///  • `emphasis` — hero moments that deserve a touch more bounce
+/// Long-running CONTENT motion (backdrop crossfades, shimmer loops,
+/// progress rings, story experiences) is exempt — it is content, not a
+/// UI response, and keeps its own timing.
+enum AppMotion {
+    static let tap: Animation = .snappy(duration: 0.2)
+    static let state: Animation = .snappy(duration: 0.25)
+    static let springy: Animation = .spring(duration: 0.35, bounce: 0.15)
+    static let emphasis: Animation = .spring(duration: 0.45, bounce: 0.22)
+}

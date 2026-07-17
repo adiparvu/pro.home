@@ -385,7 +385,7 @@ struct EmergencyModeView: View {
         withAnimation(.snappy) { addressCopied = true }
         Task {
             try? await Task.sleep(nanoseconds: 2_500_000_000)
-            withAnimation(.smooth) { addressCopied = false }
+            withAnimation(AppMotion.state) { addressCopied = false }
         }
     }
 

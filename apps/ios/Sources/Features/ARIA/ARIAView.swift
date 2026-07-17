@@ -96,7 +96,7 @@ struct ARIAView: View {
             }
             .onAppear { themeRefresh &+= 1 }
             .onReceive(NotificationCenter.default.publisher(for: .ariaHistoryCleared)) { _ in
-                withAnimation { messages = ARIAMessage.welcome }
+                withAnimation(AppMotion.state) { messages = ARIAMessage.welcome }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -257,7 +257,7 @@ struct ARIAView: View {
                 ARIAActionBanner(
                     action: action,
                     onConfirm: { confirmAction(action) },
-                    onCancel: { withAnimation { proposedAction = nil } }
+                    onCancel: { withAnimation(AppMotion.state) { proposedAction = nil } }
                 )
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.top, AppSpacing.sm)
@@ -360,7 +360,7 @@ struct ARIAView: View {
                     if let replyText, !replyText.isEmpty {
                         messages.append(ARIAMessage(role: .aria, content: replyText))
                     }
-                    withAnimation {
+                    withAnimation(AppMotion.springy) {
                         proposedAction = buildProposedAction(tool: tool, input: actionInput)
                     }
                 } else if let reply = json["reply"] as? String {

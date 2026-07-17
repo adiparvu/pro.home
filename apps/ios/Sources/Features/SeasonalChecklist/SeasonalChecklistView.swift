@@ -222,7 +222,7 @@ struct SeasonalChecklistView: View {
             if reduceMotion {
                 sealBloomed = true
             } else {
-                withAnimation(.smooth(duration: 0.55)) { sealBloomed = true }
+                withAnimation(AppMotion.emphasis) { sealBloomed = true }
             }
         }
         .onDisappear { sealBloomed = false }
@@ -368,7 +368,7 @@ struct SeasonalChecklistView: View {
     private func rowMenu(_ row: SeasonalRow) -> some View {
         if row.hiddenReason == .byUser {
             Button {
-                withAnimation(reduceMotion ? nil : .smooth) { service.restoreTemplateItem(row.id) }
+                withAnimation(reduceMotion ? nil : AppMotion.state) { service.restoreTemplateItem(row.id) }
             } label: {
                 Label("seasonal_restore", systemImage: "arrow.uturn.backward")
             }
@@ -394,14 +394,14 @@ struct SeasonalChecklistView: View {
             }
             if let custom = row.customItem {
                 Button(role: .destructive) {
-                    withAnimation(reduceMotion ? nil : .smooth) { service.deleteCustomItem(custom) }
+                    withAnimation(reduceMotion ? nil : AppMotion.state) { service.deleteCustomItem(custom) }
                     HapticFeedback.warning()
                 } label: {
                     Label("Delete", systemImage: "trash")
                 }
             } else {
                 Button(role: .destructive) {
-                    withAnimation(reduceMotion ? nil : .smooth) { service.hideTemplateItem(row.id) }
+                    withAnimation(reduceMotion ? nil : AppMotion.state) { service.hideTemplateItem(row.id) }
                     HapticFeedback.warning()
                 } label: {
                     Label("seasonal_hide_item", systemImage: "eye.slash")
@@ -427,7 +427,7 @@ struct SeasonalChecklistView: View {
         Task {
             do {
                 let created = try await taskService.addTask(payload)
-                withAnimation(reduceMotion ? nil : .smooth) {
+                withAnimation(reduceMotion ? nil : AppMotion.state) {
                     service.linkTask(created.id, itemId: row.id, season: selectedSeason)
                 }
                 HapticFeedback.success()
@@ -444,7 +444,7 @@ struct SeasonalChecklistView: View {
             Toggle(isOn: Binding(
                 get: { service.showAllChecks },
                 set: { newValue in
-                    withAnimation(reduceMotion ? nil : .smooth) { service.showAllChecks = newValue }
+                    withAnimation(reduceMotion ? nil : AppMotion.state) { service.showAllChecks = newValue }
                     HapticFeedback.selection()
                 })
             ) {
@@ -594,7 +594,7 @@ struct SeasonalItemEditorSheet: View {
                                     HStack(spacing: 8) {
                                         ForEach(existingCategories, id: \.self) { cat in
                                             Button {
-                                                withAnimation { category = cat }
+                                                withAnimation(AppMotion.state) { category = cat }
                                             } label: {
                                                 Text(LocalizedStringKey(cat))
                                                     .font(AppFont.scaled(12, weight: category == cat ? .semibold : .regular))

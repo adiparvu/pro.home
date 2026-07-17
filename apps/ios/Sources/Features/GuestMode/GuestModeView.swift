@@ -276,7 +276,7 @@ struct GuestModeView: View {
         withAnimation(.snappy) { passwordCopied = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.6))
-            withAnimation(.smooth) { passwordCopied = false }
+            withAnimation(AppMotion.state) { passwordCopied = false }
         }
     }
 

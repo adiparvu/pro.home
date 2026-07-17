@@ -12,11 +12,16 @@ import SwiftUI
 // determines the visual result automatically.
 
 extension View {
+    /// `interactive: true` — for glass that IS a button's chrome: on iOS 26
+    /// the material deforms and shimmers under the finger like system
+    /// controls. Identical at rest; pre-26 fallback unchanged.
     @ViewBuilder
-    func liquidGlass(cornerRadius: CGFloat = 24, thick: Bool = false) -> some View {
+    func liquidGlass(cornerRadius: CGFloat = 24, thick: Bool = false,
+                     interactive: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if #available(iOS 26, *) {
-            self.glassEffect(in: shape).contentShape(shape)
+            self.glassEffect(interactive ? Glass.regular.interactive() : .regular, in: shape)
+                .contentShape(shape)
         } else {
             self.modifier(LegacyGlass(shape: shape, thick: thick, shadowed: true))
         }
@@ -25,10 +30,13 @@ extension View {
     /// Native Liquid Glass for circular icon buttons (iOS 26+), with a
     /// system-material fallback on older versions. Use instead of manually
     /// layering `.ultraThinMaterial` + a stroke border.
+    /// Pass `interactive: true` when the circle is tappable button chrome —
+    /// the glass then responds to touch like system Liquid Glass buttons.
     @ViewBuilder
-    func glassCircle() -> some View {
+    func glassCircle(interactive: Bool = false) -> some View {
         if #available(iOS 26, *) {
-            self.glassEffect(in: Circle()).contentShape(Circle())
+            self.glassEffect(interactive ? Glass.regular.interactive() : .regular, in: Circle())
+                .contentShape(Circle())
         } else {
             self.modifier(LegacyGlass(shape: Circle(), stroked: true))
         }
@@ -152,7 +160,7 @@ struct GlassActionButton: View {
                     .font(AppFont.scaled(17, weight: .semibold))
                     .foregroundStyle(.primary)
                     .frame(width: 52, height: 52)
-                    .glassCircle()
+                    .glassCircle(interactive: true)
                 Text(label)
                     .font(AppFont.caption2)
                     .foregroundStyle(.secondary)

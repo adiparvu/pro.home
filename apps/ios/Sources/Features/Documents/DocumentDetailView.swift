@@ -211,7 +211,7 @@ struct DocumentDetailView: View {
     private func authenticate() async {
         let ok = await PrivacyAuth.authenticate(
             reason: String(localized: "Unlock \"\(live.name)\""))
-        if ok { await MainActor.run { withAnimation(.smooth) { unlocked = true } } }
+        if ok { await MainActor.run { withAnimation(AppMotion.state) { unlocked = true } } }
     }
 
     // MARK: Security (D6)

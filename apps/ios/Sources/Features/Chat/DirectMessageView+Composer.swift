@@ -107,7 +107,7 @@ extension DirectMessageView {
         isSending = true
         defer { isSending = false }
         let replyUUID = replyingTo?.id
-        withAnimation { replyingTo = nil }
+        withAnimation(AppMotion.state) { replyingTo = nil }
         HapticFeedback.impact(.light)
         MessageSounds.sent()
         await performDMSend(body: body, kind: .text, replyTo: replyUUID)

@@ -450,7 +450,7 @@ struct CameraDetailView: View {
             let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
             guard status == .authorized || status == .limited else {
                 HapticFeedback.error()
-                withAnimation(.smooth) { saveFeedback = .denied }
+                withAnimation(AppMotion.state) { saveFeedback = .denied }
                 return
             }
             do {
@@ -458,7 +458,7 @@ struct CameraDetailView: View {
                     PHAssetChangeRequest.creationRequestForAsset(from: image)
                 }
                 HapticFeedback.success()
-                withAnimation(.smooth) { saveFeedback = .saved }
+                withAnimation(AppMotion.state) { saveFeedback = .saved }
             } catch {
                 HapticFeedback.error()
                 debugLog("Snapshot save failed:", error)

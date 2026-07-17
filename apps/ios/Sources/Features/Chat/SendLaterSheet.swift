@@ -332,7 +332,7 @@ struct SendLaterSheet: View {
         if reduceMotion {
             sendAt = target
         } else {
-            withAnimation(.smooth) { sendAt = target }
+            withAnimation(AppMotion.state) { sendAt = target }
         }
     }
 
@@ -369,8 +369,8 @@ struct SendLaterSheet: View {
                     }
                 }
             }
-            .animation(reduceMotion ? nil : .smooth, value: repeatRule)
-            .animation(reduceMotion ? nil : .smooth, value: hasEndDate)
+            .animation(reduceMotion ? nil : AppMotion.state, value: repeatRule)
+            .animation(reduceMotion ? nil : AppMotion.state, value: hasEndDate)
         }
     }
 
@@ -590,7 +590,7 @@ struct SendLaterSheet: View {
             activeChip = nil
             chipAppliedDate = nil
         }
-        if reduceMotion { apply() } else { withAnimation(.smooth) { apply() } }
+        if reduceMotion { apply() } else { withAnimation(AppMotion.state) { apply() } }
     }
 
     private func cancelEditing() {
@@ -603,7 +603,7 @@ struct SendLaterSheet: View {
             activeChip = nil
             chipAppliedDate = nil
         }
-        if reduceMotion { apply() } else { withAnimation(.smooth) { apply() } }
+        if reduceMotion { apply() } else { withAnimation(AppMotion.state) { apply() } }
     }
 
     // MARK: - Save

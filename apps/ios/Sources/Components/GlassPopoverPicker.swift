@@ -63,7 +63,7 @@ struct GlassPopoverPicker<Value: Hashable>: View {
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.sm + 1)
-            .liquidGlass(cornerRadius: AppRadius.md)
+            .liquidGlass(cornerRadius: AppRadius.md, interactive: true)
         }
         .buttonStyle(SmartCardPressStyle())
         .accessibilityLabel(Text(accessibilityLabelKey))
@@ -144,7 +144,7 @@ struct GlassPopoverMultiPicker<Value: Hashable>: View {
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.sm + 1)
-            .liquidGlass(cornerRadius: AppRadius.md)
+            .liquidGlass(cornerRadius: AppRadius.md, interactive: true)
         }
         .buttonStyle(SmartCardPressStyle())
         .accessibilityLabel(Text(accessibilityLabelKey))

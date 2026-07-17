@@ -121,7 +121,7 @@ struct PlantDetailSheet: View {
                     if isEditing {
                         Button("Cancel") {
                             editedPlant = plant
-                            withAnimation { isEditing = false }
+                            withAnimation(AppMotion.state) { isEditing = false }
                         }
                     } else {
                         Button("Close") { dismiss() }
@@ -155,7 +155,7 @@ struct PlantDetailSheet: View {
                         .disabled(editedPlant.name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                     } else {
                         Button {
-                            withAnimation { isEditing = true }
+                            withAnimation(AppMotion.state) { isEditing = true }
                         } label: {
                             Text("Edit")
                                 .font(AppFont.scaled(15))

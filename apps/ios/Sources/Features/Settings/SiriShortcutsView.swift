@@ -164,7 +164,7 @@ struct SiriShortcutsView: View {
                         showActivatedBanner = true
                     }
                     try? await Task.sleep(for: .seconds(3))
-                    withAnimation { donated = false; showActivatedBanner = false }
+                    withAnimation(AppMotion.state) { donated = false; showActivatedBanner = false }
                 }
             }
 

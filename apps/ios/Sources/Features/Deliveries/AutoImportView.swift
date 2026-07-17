@@ -85,7 +85,7 @@ struct AutoImportView: View {
                         UIPasteboard.general.string = address
                         HapticFeedback.success()
                         withAnimation(.snappy) { copied = true }
-                        Task { try? await Task.sleep(for: .seconds(2)); withAnimation { copied = false } }
+                        Task { try? await Task.sleep(for: .seconds(2)); withAnimation(AppMotion.state) { copied = false } }
                     } label: {
                         Label(copied ? "Copied" : "Copy address",
                               systemImage: copied ? "checkmark" : "doc.on.doc")

@@ -205,8 +205,8 @@ struct BackupCodesView: View {
         let text = codes.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
         UIPasteboard.general.string = text
         HapticFeedback.success()
-        withAnimation { showCopyConfirm = true }
-        Task { try? await Task.sleep(for: .milliseconds(2000)); withAnimation { showCopyConfirm = false } }
+        withAnimation(AppMotion.state) { showCopyConfirm = true }
+        Task { try? await Task.sleep(for: .milliseconds(2000)); withAnimation(AppMotion.state) { showCopyConfirm = false } }
     }
 
     private func shareAll() {

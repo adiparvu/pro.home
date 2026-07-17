@@ -410,7 +410,7 @@ struct ConversationsView: View {
                     Button { router.navigate(to: .aria) } label: { Label("AI Assistant", systemImage: "sparkles") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
-                        Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
+                        Button { withAnimation(AppMotion.state) { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
                     }
                 } label: {
                     myAvatar
@@ -516,11 +516,11 @@ struct ConversationsView: View {
                     if hasLockedChats && !showArchived && searchText.isEmpty {
                         Button {
                             if lockedRevealed {
-                                withAnimation { lockedRevealed = false }
+                                withAnimation(AppMotion.state) { lockedRevealed = false }
                             } else {
                                 Task {
                                     if await BiometricAuth.authenticate(reason: "Unlock secured chats") {
-                                        withAnimation { lockedRevealed = true }
+                                        withAnimation(AppMotion.state) { lockedRevealed = true }
                                     }
                                 }
                             }
@@ -587,7 +587,7 @@ struct ConversationsView: View {
 
                     if !showArchived && searchText.isEmpty && !archivedList.isEmpty {
                         conversationDivider
-                        Button { withAnimation { showArchived = true } } label: { archivedRow }
+                        Button { withAnimation(AppMotion.state) { showArchived = true } } label: { archivedRow }
                             .buttonStyle(.plain)
                     }
                 }
@@ -801,7 +801,7 @@ struct ConversationsView: View {
 
     private var archivedTopBar: some View {
         HStack(spacing: 10) {
-            Button { withAnimation { showArchived = false } } label: {
+            Button { withAnimation(AppMotion.state) { showArchived = false } } label: {
                 Image(systemName: "chevron.left")
                     .font(AppFont.headline)
                     .foregroundStyle(Color.accentColor)

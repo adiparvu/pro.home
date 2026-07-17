@@ -67,8 +67,8 @@ struct PlantHealthView: View {
         }
         .navigationTitle(Text("plant_health_title"))
         .navigationBarTitleDisplayMode(.inline)
-        .animation(.smooth, value: selectedTags)
-        .animation(.smooth, value: mode)
+        .animation(AppMotion.state, value: selectedTags)
+        .animation(AppMotion.state, value: mode)
         .task { await service.loadAll() }
     }
 

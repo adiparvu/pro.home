@@ -247,7 +247,7 @@ struct DocumentsView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 110)
                     .onAppear {
-                        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation { errorToast = nil } }
+                        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation(AppMotion.state) { errorToast = nil } }
                     }
             }
         }

@@ -64,13 +64,13 @@ struct EditProfileView: View {
                     DatePicker("", selection: $birthDate, in: ...Date(), displayedComponents: .date)
                         .labelsHidden()
                     Spacer()
-                    Button { withAnimation { hasBirthDate = false } } label: {
+                    Button { withAnimation(AppMotion.state) { hasBirthDate = false } } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text("Clear date"))
                 } else {
-                    Button { withAnimation { hasBirthDate = true } } label: {
+                    Button { withAnimation(AppMotion.state) { hasBirthDate = true } } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundStyle(.tint)
                             Text("Add date of birth").foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))

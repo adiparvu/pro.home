@@ -194,7 +194,7 @@ struct NFCWalletView: View {
 
                 Button(role: .destructive) {
                     HapticFeedback.warning()
-                    withAnimation {
+                    withAnimation(AppMotion.state) {
                         tags.removeAll { $0.id == tag.id }
                         saveTags()
                     }

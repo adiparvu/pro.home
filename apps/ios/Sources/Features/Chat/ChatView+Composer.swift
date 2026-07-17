@@ -37,7 +37,7 @@ extension ChatView {
                 // is preserved verbatim through re-encoding on confirm.
                 let original = MessageSubject.parse(m.body ?? "")
                 return ChatComposerEdit(snippet: original.text) {
-                    withAnimation { editingMessage = nil; editText = "" }
+                    withAnimation(AppMotion.state) { editingMessage = nil; editText = "" }
                 } onConfirm: {
                     let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !newText.isEmpty, newText != original.text {

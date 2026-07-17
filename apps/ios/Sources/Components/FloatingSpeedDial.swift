@@ -101,7 +101,7 @@ struct FloatingSpeedDial: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .glassCircle()
+        .glassCircle(interactive: true)
         .shadow(color: Color.primary.opacity(0.22), radius: 20, y: 6)
         .accessibilityLabel(isMenu ? String(localized: "Quick actions") : (actions.first?.title ?? ""))
         .accessibilityHint(isMenu ? String(localized: "Opens the quick actions menu") : "")
@@ -130,7 +130,7 @@ struct FloatingSpeedDial: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .frame(width: 44, height: 44)
-                    .glassCircle()
+                    .glassCircle(interactive: true)
                     .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
             }
         }

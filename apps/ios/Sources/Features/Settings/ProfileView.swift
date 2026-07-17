@@ -482,8 +482,8 @@ struct ProfileView: View {
 
     private func showToast(_ message: String, isError: Bool = false) {
         toastIsError = isError
-        withAnimation { toast = message }
-        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation { toast = nil } }
+        withAnimation(AppMotion.state) { toast = message }
+        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation(AppMotion.state) { toast = nil } }
     }
 
     private func toastView(_ message: String, isError: Bool) -> some View {

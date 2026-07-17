@@ -37,7 +37,7 @@ struct SearchIconButton: View {
                 .font(AppFont.headline)
                 .foregroundStyle(isActive ? Color.smartAmber : Color.primary.opacity(0.75))
                 .frame(width: 40, height: 40)
-                .glassCircle()
+                .glassCircle(interactive: true)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Search")

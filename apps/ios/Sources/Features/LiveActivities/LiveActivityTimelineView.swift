@@ -39,7 +39,7 @@ struct LiveActivityTimelineView: View {
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.sm)
-            .animation(reduceMotion ? nil : .spring(duration: 0.45), value: store.events)
+            .animation(reduceMotion ? nil : AppMotion.springy, value: store.events)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("la_timeline_title")

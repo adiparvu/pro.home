@@ -184,7 +184,7 @@ struct ItemDetailView: View {
                 }
                 if !live.loanHistory.isEmpty {
                     rowDiv
-                    Button { withAnimation { showHistory.toggle() } } label: {
+                    Button { withAnimation(AppMotion.state) { showHistory.toggle() } } label: {
                         dRow("clock.arrow.trianglehead.counterclockwise.rotate.90", "Loan History", "\(live.loanHistory.count)")
                     }.buttonStyle(.plain)
                     if showHistory {

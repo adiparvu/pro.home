@@ -134,9 +134,9 @@ struct PropertyReportView: View {
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
                     .opacity(includesDocuments ? 1 : AppOpacity.disabled)
             }
-            .animation(.smooth, value: includesTasks)
-            .animation(.smooth, value: includesFinances)
-            .animation(.smooth, value: includesDocuments)
+            .animation(AppMotion.state, value: includesTasks)
+            .animation(AppMotion.state, value: includesFinances)
+            .animation(AppMotion.state, value: includesDocuments)
             .padding(.vertical, AppSpacing.base)
             .background(Color.primary.opacity(0.04))
         }

@@ -233,7 +233,7 @@ struct EditFamilyMemberSheet: View {
 
     private var birthdayRow: some View {
         VStack(spacing: 0) {
-            Button { withAnimation { showBirthday.toggle() } } label: {
+            Button { withAnimation(AppMotion.state) { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "gift.fill").font(AppFont.scaled(14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")

@@ -291,7 +291,7 @@ extension PlantDetailSheet {
             await plantService.update(toSave)
             HapticFeedback.success()
             isSaving = false
-            withAnimation { isEditing = false }
+            withAnimation(AppMotion.state) { isEditing = false }
         }
     }
 

@@ -46,7 +46,7 @@ struct SmartCardPressStyle: ButtonStyle {
         configuration.label
             .scaleEffect(!reduceMotion && configuration.isPressed
                          ? Self.pressedScale : 1)
-            .animation(reduceMotion ? nil : .snappy(duration: 0.25),
+            .animation(reduceMotion ? nil : AppMotion.tap,
                        value: configuration.isPressed)
     }
 }

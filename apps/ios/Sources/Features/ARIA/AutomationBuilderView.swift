@@ -632,7 +632,7 @@ struct AutomationBuilderView: View {
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             HapticFeedback.warning()
-                            withAnimation {
+                            withAnimation(AppMotion.state) {
                                 automations.remove(at: i)
                                 if activeFlowIndex >= automations.count {
                                     activeFlowIndex = max(0, automations.count - 1)

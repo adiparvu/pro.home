@@ -44,7 +44,7 @@ struct SplashView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) {
+            withAnimation(AppMotion.emphasis) {
                 scale   = 1.0
                 opacity = 1.0
                 logoY   = 0

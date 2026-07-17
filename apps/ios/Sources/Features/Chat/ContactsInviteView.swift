@@ -309,10 +309,10 @@ struct ContactsInviteView: View {
     }
 
     private func show(_ message: String) {
-        withAnimation { banner = message }
+        withAnimation(AppMotion.state) { banner = message }
         Task {
             try? await Task.sleep(for: .seconds(2.5))
-            withAnimation { if banner == message { banner = nil } }
+            withAnimation(AppMotion.state) { if banner == message { banner = nil } }
         }
     }
 

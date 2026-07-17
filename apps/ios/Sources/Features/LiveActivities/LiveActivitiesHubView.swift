@@ -36,7 +36,7 @@ struct LiveActivitiesHubView: View {
     private var store: LiveActivityHubStore { .shared }
 
     private var anim: Animation? {
-        reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.18)
+        reduceMotion ? nil : AppMotion.springy
     }
 
     var body: some View {

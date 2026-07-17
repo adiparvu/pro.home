@@ -37,7 +37,7 @@ struct OnboardingView: View {
                     ReadyStep().tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: step)
+                .animation(AppMotion.springy, value: step)
 
                 navigationButtons
                     .padding(.horizontal, 32)
@@ -71,7 +71,7 @@ struct OnboardingView: View {
             if step > 0 {
                 Button {
                     HapticFeedback.impact(.light)
-                    withAnimation { step -= 1 }
+                    withAnimation(AppMotion.springy) { step -= 1 }
                 } label: {
                     Text("Back")
                         .font(AppFont.body)
@@ -86,7 +86,7 @@ struct OnboardingView: View {
             Button {
                 if step < 3 {
                     HapticFeedback.impact(.medium)
-                    withAnimation { step += 1 }
+                    withAnimation(AppMotion.springy) { step += 1 }
                 } else {
                     Task { await finish() }
                 }

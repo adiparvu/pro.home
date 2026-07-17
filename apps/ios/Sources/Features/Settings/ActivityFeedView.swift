@@ -258,7 +258,7 @@ struct ActivityFeedView: View {
     /// equality; presented through the localized "You" catalog key.
     private let currentUser = "You"
 
-    private var filterAnimation: Animation? { reduceMotion ? nil : .smooth }
+    private var filterAnimation: Animation? { reduceMotion ? nil : AppMotion.state }
     private var expandAnimation: Animation? { reduceMotion ? nil : .snappy }
 
     // MARK: Event synthesis

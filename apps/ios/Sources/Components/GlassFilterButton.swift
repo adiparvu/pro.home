@@ -266,7 +266,10 @@ private struct StandaloneGlassCircle: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if enabled {
-            content.glassCircle()
+            // Interactive: the standalone trigger is button chrome, so the
+            // glass itself deforms under the finger like system controls
+            // (in toolbars the system's own glass already does this).
+            content.glassCircle(interactive: true)
         } else {
             content
         }

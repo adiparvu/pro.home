@@ -172,11 +172,11 @@ struct TrustedContactView: View {
         savedPhone = phone.trimmingCharacters(in: .whitespaces)
         savedRelationship = relationship.trimmingCharacters(in: .whitespaces)
         Task {
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(150))
             isSaving = false
-            withAnimation { saved = true }
+            withAnimation(AppMotion.state) { saved = true }
             try? await Task.sleep(for: .milliseconds(2500))
-            withAnimation { saved = false }
+            withAnimation(AppMotion.state) { saved = false }
         }
     }
 
