@@ -147,6 +147,60 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
     }
 }
 
+// MARK: - Storm breaker (orphaned server-side joins)
+
+/// Escalation for the join/close storm a stale `phx_close` sustains.
+///
+/// Phoenix closes the PREVIOUS join when a new join for the same topic
+/// arrives on the same socket, and that close carries the OLD join_ref.
+/// realtime-js drops lifecycle events whose ref doesn't match the current
+/// join; supabase-swift (2.52.0) does no ref check — the stale close tears
+/// down the just-confirmed subscription and deregisters the channel. From
+/// there every rebuild sends a fresh join with NO leave for the orphaned
+/// previous one (`removeChannel` only sends leave from `.subscribed`, and
+/// the stale close already flipped the state), so each rebuild manufactures
+/// the NEXT stale close: confirmed → closed, forever — the b1066 group log
+/// (23:24:18/19/22), with postgres_changes for the newest, orphaned join
+/// still flowing while the banner read `chan:unsubscribed`.
+///
+/// No app-side join sequence converges out of that (the close is always one
+/// join behind), but a socket bounce does: disconnecting kills EVERY
+/// server-side channel process — orphans included — and the SDK's reconnect
+/// + rejoinChannels() then joins each registered channel exactly once,
+/// cleanly. The chat engines report every server-closed-channel rebuild
+/// here; the second one without an intervening stretch of health escalates
+/// to one bounce, rate-limited so a genuinely sick server can't turn the
+/// cure into its own storm.
+@MainActor
+enum RealtimeStormBreaker {
+    private static var closeRebuilds = 0
+    private static var lastBounceAt: Date?
+
+    /// The caller is rebuilding a channel the server closed while the socket
+    /// stayed connected. Returns true when the pattern has repeated and the
+    /// caller should bounce the socket instead of feeding another doomed join.
+    static func shouldBounceSocket() -> Bool {
+        closeRebuilds += 1
+        guard closeRebuilds >= 2 else { return false }
+        if let last = lastBounceAt, Date().timeIntervalSince(last) < 120 { return false }
+        closeRebuilds = 0
+        lastBounceAt = Date()
+        return true
+    }
+
+    /// A rebuilt channel survived a full backoff window — the storm is over.
+    static func noteStable() { closeRebuilds = 0 }
+
+    /// Drops the socket (shedding every orphaned join server-side) and
+    /// reconnects; registered channels rejoin through the SDK's own path.
+    /// The caller re-subscribes its own (deregistered) topic afterwards.
+    static func bounceSocket(reason: String) async {
+        RealtimeFlightRecorder.shared.note("storm-breaker: socket bounce — \(reason)")
+        realtimeAnon.disconnect()
+        await realtimeAnon.connect()
+    }
+}
+
 // MARK: - Subscribe timebox
 
 struct RealtimeSubscribeTimeout: Error, CustomStringConvertible {

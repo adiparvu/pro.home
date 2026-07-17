@@ -36,12 +36,18 @@ final class MessageService {
     private var readsChannel: RealtimeChannelV2?
     private var deliveriesChannel: RealtimeChannelV2?
     private var reactionsChannel: RealtimeChannelV2?
-    /// Retained postgres-change subscription handles. `onPostgresChange`
-    /// (which replaced the removed async-stream `postgresChange`) returns a
-    /// handle whose deinit removes the callback, so it must be held for the
-    /// callback to keep firing. Cleared in `unsubscribeAll`; per-channel
-    /// removeChannel also tears the callbacks down.
+    /// Retained postgres-change subscription handles for the MAIN messages
+    /// channel. `onPostgresChange` (which replaced the removed async-stream
+    /// `postgresChange`) returns a handle whose deinit removes the callback,
+    /// so it must be held for the callback to keep firing. Each channel owns
+    /// its handles: the main channel's failed-subscribe cleanup runs
+    /// `postgresSubs.removeAll()`, and when the receipt channels shared this
+    /// array that cleanup left them subscribed but deaf.
     private var postgresSubs: [RealtimeSubscription] = []
+    private var readsSubs: [RealtimeSubscription] = []
+    private var deliveriesSubs: [RealtimeSubscription] = []
+    private var reactionsSubs: [RealtimeSubscription] = []
+    private var pollVotesSubs: [RealtimeSubscription] = []
 
     // MARK: - Typing indicator (shared subsystem — chat unification P3a)
     /// The shared typing/recording indicator; the engine syncs channel/name
@@ -406,6 +412,11 @@ final class MessageService {
         // Healthy = the channel is subscribed to THIS scope. Refresh the
         // diagnostic on the healthy path so the banner reflects the socket text.
         if subscribedPropertyId == propertyId, currentGroupId == groupId, realtimeHealthy {
+            // A channel that outlived a full backoff window since its last
+            // rebuild proves the join/close storm (if any) has passed.
+            if lastRebuildAt.map({ Date().timeIntervalSince($0) > 45 }) ?? true {
+                RealtimeStormBreaker.noteStable()
+            }
             refreshRealtimeStatus()
             return
         }
@@ -435,6 +446,18 @@ final class MessageService {
         // as join/leave abuse server-side and feeds the 1006 socket drops.
         if let last = lastRebuildAt, Date().timeIntervalSince(last) < 30 { return }
         lastRebuildAt = Date()
+        // Reaching here with an .unsubscribed channel on a connected socket
+        // means the SERVER closed a confirmed join. Once is a blip; twice
+        // without an intervening stretch of health is the stale-phx_close
+        // storm (see RealtimeStormBreaker) — another plain rejoin would only
+        // manufacture the next close. Bounce the socket to shed the orphaned
+        // server-side joins, then rebuild on the clean connection (our topic
+        // was deregistered by the close, so the SDK's rejoin skips it and
+        // subscribeRealtime below owns it without competition).
+        if realtimeChannel?.status == .unsubscribed, RealtimeStormBreaker.shouldBounceSocket() {
+            await unsubscribe()
+            await RealtimeStormBreaker.bounceSocket(reason: "group messages join/close loop")
+        }
         // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
         // its own teardown behind the isSubscribing guard, so don't
         // pre-unsubscribe here — that reopened the cancellation race.
@@ -746,7 +769,7 @@ final class MessageService {
     func subscribeReads(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
         let channel = realtimeAnon.channel("message_reads:\(propertyId.uuidString):\(scope)")
-        postgresSubs.append(channel.onPostgresChange(
+        readsSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reads",
@@ -767,6 +790,7 @@ final class MessageService {
     }
 
     func unsubscribeReads() async {
+        readsSubs.removeAll()
         if let ch = readsChannel {
             await realtimeAnon.removeChannel(ch)
             readsChannel = nil
@@ -819,7 +843,7 @@ final class MessageService {
     func subscribeDeliveries(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
         let channel = realtimeAnon.channel("message_deliveries:\(propertyId.uuidString):\(scope)")
-        postgresSubs.append(channel.onPostgresChange(
+        deliveriesSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_deliveries",
@@ -840,6 +864,7 @@ final class MessageService {
     }
 
     func unsubscribeDeliveries() async {
+        deliveriesSubs.removeAll()
         if let ch = deliveriesChannel {
             await realtimeAnon.removeChannel(ch)
             deliveriesChannel = nil
@@ -922,7 +947,7 @@ final class MessageService {
     func subscribeReactions(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
         let channel = realtimeAnon.channel("message_reactions:\(propertyId.uuidString):\(scope)")
-        postgresSubs.append(channel.onPostgresChange(
+        reactionsSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reactions",
@@ -943,6 +968,7 @@ final class MessageService {
     }
 
     func unsubscribeReactions() async {
+        reactionsSubs.removeAll()
         if let ch = reactionsChannel {
             await realtimeAnon.removeChannel(ch)
             reactionsChannel = nil
@@ -997,7 +1023,7 @@ final class MessageService {
     func subscribePollVotes(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
         let channel = realtimeAnon.channel("message_poll_votes:\(propertyId.uuidString):\(scope)")
-        postgresSubs.append(channel.onPostgresChange(
+        pollVotesSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_poll_votes",
@@ -1018,6 +1044,7 @@ final class MessageService {
     }
 
     func unsubscribePollVotes() async {
+        pollVotesSubs.removeAll()
         if let ch = pollVotesChannel {
             await realtimeAnon.removeChannel(ch)
             pollVotesChannel = nil

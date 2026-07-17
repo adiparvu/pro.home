@@ -909,6 +909,11 @@ final class DirectMessageService {
         // Healthy = the channel is subscribed. Refresh the diagnostic on the
         // healthy path so the banner reflects the current socket text.
         if subscribedPropertyId == propertyId, realtimeHealthy {
+            // A channel that outlived a full backoff window since its last
+            // rebuild proves the join/close storm (if any) has passed.
+            if lastRebuildAt.map({ Date().timeIntervalSince($0) > 45 }) ?? true {
+                RealtimeStormBreaker.noteStable()
+            }
             refreshRealtimeStatus()
             return
         }
@@ -933,6 +938,14 @@ final class DirectMessageService {
            Date().timeIntervalSince(connectedAt) < 10 { return }
         if let last = lastRebuildAt, Date().timeIntervalSince(last) < 30 { return }
         lastRebuildAt = Date()
+        // Server closed a confirmed join on a connected socket, repeatedly?
+        // That's the stale-phx_close storm (see RealtimeStormBreaker): another
+        // plain rejoin only manufactures the next close. Bounce the socket to
+        // shed the orphaned server-side joins, then rebuild cleanly.
+        if channel?.status == .unsubscribed, RealtimeStormBreaker.shouldBounceSocket() {
+            await unsubscribe()
+            await RealtimeStormBreaker.bounceSocket(reason: "dm join/close loop")
+        }
         // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
         // its own teardown (behind the isSubscribing guard), so don't
         // pre-unsubscribe here — that reopened the very cancellation race.
