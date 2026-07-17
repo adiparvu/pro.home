@@ -147,26 +147,18 @@ extension FinancesView {
 
     // MARK: KPI Strip
 
-    /// Income and Expenses are buttons: tapping one filters the month's
-    /// transaction list below to that type (tap again to clear).
-    func kpiStrip(income: Double, expenses: Double,
-                  onFilter: @escaping (String) -> Void) -> some View {
+    /// The month's three numbers as pure data content — the tap-to-filter
+    /// these tiles used to carry lives in the toolbar's one filter circle
+    /// now (one-circle law), so the strip is a dashboard, never chrome.
+    func kpiStrip(income: Double, expenses: Double) -> some View {
         HStack(spacing: 0) {
-            Button { onFilter("income") } label: {
-                kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess,
-                        icon: "arrow.down.left", selected: selectedType == "income")
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("fin_kpi_filter_hint"))
+            kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess,
+                    icon: "arrow.down.left")
 
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
 
-            Button { onFilter("expense") } label: {
-                kpiCell(label: "Expenses", value: fmt(expenses), color: .red,
-                        icon: "arrow.up.right", selected: selectedType == "expense")
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("fin_kpi_filter_hint"))
+            kpiCell(label: "Expenses", value: fmt(expenses), color: .red,
+                    icon: "arrow.up.right")
 
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
 
@@ -181,7 +173,7 @@ extension FinancesView {
     }
 
     private func kpiCell(label: LocalizedStringKey, value: String, color: Color,
-                         icon: String, selected: Bool = false) -> some View {
+                         icon: String) -> some View {
         VStack(spacing: 5) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -195,16 +187,11 @@ extension FinancesView {
             }
             Text(label)
                 .font(AppFont.scaled(11))
-                .foregroundStyle(Color.primary.opacity(selected ? 0.8 : 0.4))
+                .foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xs)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(color.opacity(selected ? 0.12 : 0))
-                .padding(.horizontal, AppSpacing.xs)
-        )
-        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Quick Actions

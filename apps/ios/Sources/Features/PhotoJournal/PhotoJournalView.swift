@@ -5,8 +5,9 @@ import Supabase
 // MARK: - PhotoJournalView
 //
 // The house's visual diary: photos grouped by month, the newest photo as a
-// featured tile, honest filter chips (tags by frequency + contributors when
-// more than one person has added photos), an "Acum un an" anniversary strip
+// featured tile, honest filters (tags by frequency + contributors when
+// more than one person has added photos) aggregated in the page's single
+// toolbar filter circle, an "Acum un an" anniversary strip
 // (only when such photos exist), long-press PreviewCard previews, and a
 // full-screen viewer that swipes between the photos of the tapped group.
 //
@@ -20,7 +21,6 @@ struct PhotoJournalView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(FamilyService.self) private var familyService
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var showAdd = false
     @State private var viewerContext: JournalViewerContext? = nil
@@ -61,6 +61,11 @@ struct PhotoJournalView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
+            if !topTags.isEmpty || !contributors.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAdd = true
@@ -222,9 +227,6 @@ struct PhotoJournalView: View {
     private var journalContent: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: AppSpacing.lg, pinnedViews: []) {
-                if !topTags.isEmpty || !contributors.isEmpty {
-                    filterChipsRow
-                }
                 if showsFeaturedTile && !anniversaryEntries.isEmpty {
                     anniversarySection
                 }
@@ -403,49 +405,42 @@ struct PhotoJournalView: View {
         .accessibilityLabel(cellAccessibilityLabel(entry))
     }
 
-    // MARK: - Filter chips (tags by frequency + contributors)
+    // MARK: - Filter circle (tags by frequency + contributors)
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.xs) {
-                GlassFilterChip(label: String(localized: "All"),
-                                isSelected: !hasActiveFilters) {
-                    setFilters(tag: nil, owner: nil)
-                }
-                ForEach(topTags, id: \.tag) { item in
-                    GlassFilterChip(label: "#\(item.tag)",
-                                    count: item.count,
-                                    isSelected: isActiveTag(item.tag)) {
-                        setFilters(tag: isActiveTag(item.tag) ? nil : item.tag,
-                                   owner: activeOwner)
-                    }
-                }
-                ForEach(contributors, id: \.ownerId) { person in
-                    GlassFilterChip(label: person.name,
-                                    systemImage: "person.fill",
-                                    count: person.count,
-                                    isSelected: activeOwner == person.ownerId) {
-                        setFilters(tag: activeTag,
-                                   owner: activeOwner == person.ownerId ? nil : person.ownerId)
-                    }
-                }
+    /// One circle, every filter (the one-circle law): the tag and
+    /// contributor chips that used to sit as a permanent row above the grid,
+    /// aggregated into the page's single filter popover. Each section keeps
+    /// its nil "All" row, so tag + contributor + search combine freely, and
+    /// the accent dot lights only when the grid is genuinely narrowed.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: hasActiveFilters, inToolbar: true) {
+            if !topTags.isEmpty {
+                GlassFilterSection(
+                    title: "journal_tags_label",
+                    options: [GlassPickerOption<String?>(value: nil,
+                                                         title: String(localized: "All"))]
+                        + topTags.map {
+                            GlassPickerOption<String?>(value: $0.tag,
+                                                       title: "#\($0.tag)",
+                                                       count: $0.count)
+                        },
+                    selection: $activeTag)
             }
-            .padding(.horizontal, AppSpacing.lg)
-        }
-    }
-
-    private func isActiveTag(_ tag: String) -> Bool {
-        activeTag?.caseInsensitiveCompare(tag) == .orderedSame
-    }
-
-    private func setFilters(tag: String?, owner: UUID?) {
-        if reduceMotion {
-            activeTag = tag
-            activeOwner = owner
-        } else {
-            withAnimation(.snappy(duration: 0.25)) {
-                activeTag = tag
-                activeOwner = owner
+            if !contributors.isEmpty {
+                if !topTags.isEmpty {
+                    GlassFilterSectionDivider()
+                }
+                GlassFilterSection(
+                    title: "People",
+                    options: [GlassPickerOption<UUID?>(value: nil,
+                                                       title: String(localized: "All"))]
+                        + contributors.map {
+                            GlassPickerOption<UUID?>(value: $0.ownerId,
+                                                     icon: "person.fill",
+                                                     title: $0.name,
+                                                     count: $0.count)
+                        },
+                    selection: $activeOwner)
             }
         }
     }

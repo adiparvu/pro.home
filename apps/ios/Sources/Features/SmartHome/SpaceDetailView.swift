@@ -207,8 +207,9 @@ struct SpaceDetailView: View {
     }
 
     private func openScan() {
+        // No haptic here — the invoking GlassFilterActionRow already fired
+        // the tap haptic before dismissing the popover.
         guard !isFetchingScan, let room = bridgedRoom else { return }
-        HapticFeedback.impact(.light)
         isFetchingScan = true
         Task {
             let url = await floorPlanService.localScanURL(for: room)
@@ -223,7 +224,7 @@ struct SpaceDetailView: View {
         appBackground.ignoresSafeArea()
     }
 
-    // MARK: Top bar — back + the edit menu
+    // MARK: Top bar — back + the page's one circle
 
     private var topBar: some View {
         HStack {
@@ -242,56 +243,55 @@ struct SpaceDetailView: View {
 
             Spacer(minLength: AppSpacing.sm)
 
-            Menu {
-                Picker("est_kind_menu", selection: kindBinding) {
-                    ForEach(SpaceKind.allCases) { option in
-                        Label {
-                            Text(LocalizedStringKey(option.titleKey))
-                        } icon: {
-                            Image(systemName: option.icon)
-                        }
-                        .tag(option)
-                    }
+            // The page's ONE circle (one-circle law), presenting through
+            // the sanctioned GlassMenuChrome: the kind picker as a
+            // single-select section, the navigation/scan entries as
+            // one-shot action rows. Apple's More glyph — the menu hosts
+            // actions, not list filters, and setting a kind narrows
+            // nothing, so no accent dot ever.
+            GlassFilterButton(icon: "ellipsis",
+                              accessibilityLabelKey: "est_kind_menu",
+                              standaloneSize: 36) {
+                GlassFilterSection(
+                    title: "est_kind_menu",
+                    options: SpaceKind.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: $0.title)
+                    },
+                    selection: kindBinding)
+                // Hairline only when at least one action row follows —
+                // never a divider hanging under the last section.
+                if presentation == .sheet || RoomCaptureSession.isSupported
+                    || bridgedRoom?.hasScan == true {
+                    GlassFilterSectionDivider()
                 }
                 if presentation == .sheet {
                     // From the home strip's sheet this jumps to tab 2 (the
                     // Spaces page). Pushed FROM that tab it would route to
                     // itself, so it doesn't exist there — no dead controls.
-                    Button {
-                        HapticFeedback.impact(.light)
+                    GlassFilterActionRow(icon: "square.split.2x2",
+                                         title: String(localized: "est_open_twin")) {
                         dismiss()
                         router.navigate(to: .twin)
-                    } label: {
-                        Label("est_open_twin", systemImage: "square.split.2x2")
                     }
                 }
                 // RoomPlan (LiDAR) — the entry exists only on capable
                 // hardware; "view" only when a scan genuinely exists on the
                 // zone's bridged plan room.
                 if RoomCaptureSession.isSupported {
-                    Button {
-                        HapticFeedback.impact(.light)
+                    GlassFilterActionRow(icon: "cube.transparent",
+                                         title: bridgedRoom?.hasScan == true
+                                             ? String(localized: "room_rescan")
+                                             : String(localized: "est_scan_space")) {
                         showScanner = true
-                    } label: {
-                        Label(bridgedRoom?.hasScan == true ? "room_rescan" : "est_scan_space",
-                              systemImage: "cube.transparent")
                     }
                 }
                 if bridgedRoom?.hasScan == true {
-                    Button {
+                    GlassFilterActionRow(icon: "eye",
+                                         title: String(localized: "room_view_scan")) {
                         openScan()
-                    } label: {
-                        Label("room_view_scan", systemImage: "eye")
                     }
                 }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
             }
-            .glassCircle()
-            .accessibilityLabel(Text("est_kind_menu"))
         }
     }
 
@@ -302,7 +302,8 @@ struct SpaceDetailView: View {
             get: { kind },
             set: { newKind in
                 guard newKind != kind else { return }
-                HapticFeedback.impact(.light)
+                // No haptic here — the hosting GlassFilterSection already
+                // fires the selection haptic on the row tap.
                 let current = live
                 Task { @MainActor in
                     await zoneService.setSpaceKind(newKind, for: current,

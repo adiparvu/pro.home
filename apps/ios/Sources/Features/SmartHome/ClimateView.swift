@@ -4,10 +4,11 @@ import HomeKit
 // MARK: - Climate page (Smart Home — Liquid Glass)
 //
 // Opened by tapping the dashboard's temperature dial card — ALWAYS
-// available. The app's mood backdrop, room pills (real rooms), the big
-// dotted-arc dial (48 dots over 270°, lit in the climate orange up to the
-// current position), −/+ steppers, four mode buttons, and the shared
-// Schedule card when a real thermostat exists.
+// available. The app's mood backdrop, the page's one room-filter circle
+// (real rooms, one-circle law), the big dotted-arc dial (48 dots over
+// 270°, lit in the climate orange up to the current position), −/+
+// steppers, four mode buttons, and the shared Schedule card when a real
+// thermostat exists.
 //
 // Honesty contract:
 // - With a thermostat (with the .targetTemperature capability) in scope,
@@ -166,8 +167,12 @@ struct ClimateView: View {
         }
     }
 
-    // MARK: Top bar — back + room pills
+    // MARK: Top bar — back + the one room-filter circle
 
+    /// The old room chip row folded into the page's ONE circle (the
+    /// one-circle law): a single-select room section behind a standalone
+    /// glass trigger, sized to sit flush with the back circle. The accent
+    /// dot is honest — lit only when a specific room narrows the scope.
     private var topBar: some View {
         HStack(spacing: AppSpacing.sm) {
             Button {
@@ -183,25 +188,26 @@ struct ClimateView: View {
             .glassCircle()
             .accessibilityLabel(Text("sh_close"))
 
-            if rooms.isEmpty {
-                Spacer(minLength: 0)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppSpacing.sm) {
-                        GlassFilterChip(label: String(localized: "sh_room_all"),
-                                        isSelected: effectiveRoom == nil) {
-                            select(nil)
-                        }
-                        ForEach(rooms, id: \.self) { room in
-                            GlassFilterChip(label: room, isSelected: effectiveRoom == room) {
-                                select(room)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.xxs)
+            Spacer(minLength: 0)
+
+            if !rooms.isEmpty {
+                GlassFilterButton(isActive: effectiveRoom != nil,
+                                  standaloneSize: 36) {
+                    GlassFilterSection(
+                        title: "Room",
+                        options: roomOptions,
+                        selection: Binding(get: { effectiveRoom },
+                                           set: { select($0) }))
                 }
             }
         }
+    }
+
+    /// "All" + every real room, in the providers' order.
+    private var roomOptions: [GlassPickerOption<String?>] {
+        [GlassPickerOption<String?>(value: nil,
+                                    title: String(localized: "sh_room_all"))]
+            + rooms.map { GlassPickerOption<String?>(value: $0, title: $0) }
     }
 
     private func select(_ room: String?) {

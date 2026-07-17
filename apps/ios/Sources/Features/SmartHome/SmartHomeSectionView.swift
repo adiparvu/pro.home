@@ -5,9 +5,9 @@ import WeatherKit
 // MARK: - Smart Home dashboard section (Smart Home S2.6 — Liquid Glass)
 //
 // The home tab's smart-home-first page, bound entirely to the S1 aggregation
-// layer (`SmartHomeService` + `HomeKitService`): a room filter chip row
-// (devices ∪ Digital Twin zones) ending in the "+" connect chip, a HomeKit
-// scene chip row, the now-playing media card, and a two-column STAGGERED
+// layer (`SmartHomeService` + `HomeKitService`): ONE room-filter circle
+// (devices ∪ Digital Twin zones, plus the connect action — one-circle law),
+// a HomeKit scene chip row, the now-playing media card, and a two-column STAGGERED
 // hero grid — per-DEVICE cards followed by the always-present
 // agenda/temperature/network cards. Every card control writes real provider
 // state (`setPower`); thermostats draw a mini target-temperature dial
@@ -15,8 +15,8 @@ import WeatherKit
 // language (adaptive glass over the mood backdrop the dashboard renders).
 //
 // Honest states throughout:
-// - Room chips union the smart-home providers' rooms with the property's
-//   Digital Twin zones, so the row exists even with zero smart devices.
+// - The room filter unions the smart-home providers' rooms with the
+//   property's Digital Twin zones, so it exists even with zero smart devices.
 // - No devices at all → the grid's FIRST slot is a "Connect HomeKit" hero
 //   card styled like a device tile (never an empty grid, never mock tiles)
 //   whose button triggers the real HomeKit permission flow.
@@ -124,7 +124,7 @@ struct SmartHomeSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            if !allRooms.isEmpty { roomChips }
+            if !allRooms.isEmpty { roomFilter }
             let scenes = homeKitScenes
             if !scenes.isEmpty { SmartSceneChipRow(scenes: scenes) }
             NowPlayingCard()
@@ -204,11 +204,11 @@ struct SmartHomeSection: View {
         }
     }
 
-    // MARK: - Room filter chips (+ the connect chip)
+    // MARK: - Room filter — the section's one circle (one-circle law)
 
     /// Room name → the Digital Twin zone's stored SF Symbol, when the room
     /// corresponds to a real zone that carries one. Rooms known only to the
-    /// smart-home providers have no icon anywhere — their chips honestly
+    /// smart-home providers have no icon anywhere — their rows honestly
     /// stay text-only rather than guessing a glyph.
     private var zoneIcons: [String: String] {
         var out: [String: String] = [:]
@@ -221,28 +221,40 @@ struct SmartHomeSection: View {
         return out
     }
 
-    private var roomChips: some View {
-        let icons = zoneIcons
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                GlassFilterChip(label: String(localized: "sh_room_all"),
-                                isSelected: effectiveRoom == nil) {
-                    select(nil)
+    /// The old permanent chip row (rooms + the trailing "+" connect chip)
+    /// folded into ONE standalone glass circle: a single-select room
+    /// section, then the connect flow as a one-shot action row. The accent
+    /// dot is honest — lit only when a specific room narrows the grid.
+    private var roomFilter: some View {
+        HStack {
+            Spacer(minLength: 0)
+            GlassFilterButton(isActive: effectiveRoom != nil) {
+                GlassFilterSection(
+                    title: "Room",
+                    options: roomOptions,
+                    selection: Binding(get: { effectiveRoom },
+                                       set: { select($0) }))
+                GlassFilterSectionDivider()
+                // The reference's trailing "+" chip — the same REAL action:
+                // the Connect-HomeKit flow (the import wizard follows), or
+                // the wizard directly once HomeKit is already authorized.
+                GlassFilterActionRow(icon: "plus",
+                                     title: String(localized: "sh_connect_homekit")) {
+                    connectOrImport()
                 }
-                ForEach(allRooms, id: \.self) { room in
-                    GlassFilterChip(label: room,
-                                    systemImage: icons[room],
-                                    isSelected: effectiveRoom == room) {
-                        select(room)
-                    }
-                }
-                // The reference's trailing "+" chip — a REAL action: the
-                // Connect-HomeKit flow (the import wizard follows), or the
-                // wizard directly once HomeKit is already authorized.
-                SmartPlusChip { connectOrImport() }
             }
-            .padding(.horizontal, AppSpacing.xxs)
         }
+    }
+
+    /// "All" + every room (devices ∪ Digital Twin zones), zone icons where
+    /// a real zone carries one.
+    private var roomOptions: [GlassPickerOption<String?>] {
+        let icons = zoneIcons
+        return [GlassPickerOption<String?>(value: nil,
+                                           title: String(localized: "sh_room_all"))]
+            + allRooms.map {
+                GlassPickerOption<String?>(value: $0, icon: icons[$0], title: $0)
+            }
     }
 
     private func select(_ room: String?) {

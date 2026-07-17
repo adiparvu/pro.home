@@ -34,9 +34,6 @@ struct FloorPlansView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
-                if !(service.rooms.isEmpty && service.floors.isEmpty) {
-                    modePicker
-                }
                 if service.isLoading {
                     ProgressView().tint(.accentColor).padding(.top, 80)
                 } else if service.rooms.isEmpty && service.floors.isEmpty {
@@ -74,6 +71,11 @@ struct FloorPlansView: View {
                         Text(isEditingPlan ? "plan_edit_done" : "plan_edit")
                             .font(AppFont.footnoteEmphasis)
                     }
+                }
+            }
+            if !(service.rooms.isEmpty && service.floors.isEmpty) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -177,16 +179,28 @@ struct FloorPlansView: View {
         } message: { Text(service.error ?? "") }
     }
 
-    // MARK: Mode picker (list ↔ plan)
+    // MARK: Mode circle (list ↔ plan)
 
-    private var modePicker: some View {
-        Picker("floors_title", selection: $displayMode.animation(.snappy(duration: 0.25))) {
-            Label("plan_mode_list", systemImage: "list.bullet").tag(DisplayMode.list)
-            Label("plan_mode_plan", systemImage: "square.split.bottomrightquarter").tag(DisplayMode.plan)
-        }
-        .pickerStyle(.segmented)
-        .onChange(of: displayMode) { _, mode in
-            if mode == .list { isEditingPlan = false }
+    /// One circle (the one-circle law): the segmented list ↔ plan control
+    /// that used to sit on the page body, as a single-select view-mode
+    /// section. A view mode never narrows the list, so the trigger never
+    /// claims the filtered accent dot.
+    private var filterButton: some View {
+        GlassFilterButton(inToolbar: true) {
+            GlassFilterSection(
+                title: "cal_mode_picker",
+                options: [
+                    GlassPickerOption(value: DisplayMode.list,
+                                      icon: "list.bullet",
+                                      title: String(localized: "plan_mode_list")),
+                    GlassPickerOption(value: DisplayMode.plan,
+                                      icon: "square.split.bottomrightquarter",
+                                      title: String(localized: "plan_mode_plan"))
+                ],
+                selection: $displayMode,
+                onChange: {
+                    if displayMode == .list { isEditingPlan = false }
+                })
         }
     }
 

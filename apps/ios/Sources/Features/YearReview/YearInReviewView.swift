@@ -8,10 +8,11 @@ import SwiftUI
 // doesn't exist simply never render; the page is different in every home
 // and gets richer the more the app is lived in.
 //
-// Structure: hero (year selector) → headline stats (with honest
-// vs-last-year deltas) → „Vezi povestea" (full-screen wrapped mode) →
-// the 12-month activity strip → the story chapters → share (two rendered
-// cards, numbers + highlights).
+// Structure: hero → headline stats (with honest vs-last-year deltas) →
+// „Vezi povestea" (full-screen wrapped mode) → the 12-month activity
+// strip → the story chapters. The year selector and the share action
+// (two rendered cards, numbers + highlights) live in the toolbar's one
+// filter circle.
 
 struct YearInReviewView: View {
     @Environment(PropertyService.self) private var propertyService
@@ -73,9 +74,6 @@ struct YearInReviewView: View {
                     )
                 }
                 storySection(story)
-                if story.hasAnyData {
-                    shareSection
-                }
                 Spacer(minLength: 90)
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -85,7 +83,7 @@ struct YearInReviewView: View {
         .navigationTitle("Year of Your Home")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { yearMenu }
+            ToolbarItem(placement: .topBarTrailing) { optionsButton }
         }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: selectedYear)
         .fullScreenCover(isPresented: $showWrapped) {
@@ -117,36 +115,30 @@ struct YearInReviewView: View {
         }
     }
 
-    // MARK: Year selector (only years that actually hold data)
+    // MARK: Options (one circle: year + share)
 
-    private var yearMenu: some View {
-        Menu {
-            ForEach(builder.availableYears, id: \.self) { year in
-                Button {
-                    selectedYear = year
-                } label: {
-                    HStack {
-                        Text(verbatim: String(year))
-                        if year == selectedYear {
-                            Image(systemName: "checkmark")
-                        }
-                    }
+    /// ONE circle for the whole page (one-circle law): the year selector
+    /// that used to sit as its own glass capsule menu — only years that
+    /// actually hold data — plus the share action that used to be a
+    /// page-body ShareLink capsule. The year is the page's period, not a
+    /// narrowing filter, so the trigger never claims the accent dot.
+    private var optionsButton: some View {
+        GlassFilterButton(inToolbar: true,
+                          accessibilityLabelKey: "year_pick_year") {
+            GlassFilterSection(
+                title: "year_pick_year",
+                options: builder.availableYears.map {
+                    GlassPickerOption(value: $0, title: String($0))
+                },
+                selection: $selectedYear)
+            if !shareURLs.isEmpty {
+                GlassFilterSectionDivider()
+                GlassFilterActionRow(icon: "square.and.arrow.up",
+                                     title: String(localized: "Share your year")) {
+                    SystemActions.share(shareURLs)
                 }
             }
-        } label: {
-            HStack(spacing: 4) {
-                Text(verbatim: String(selectedYear))
-                    .font(AppFont.footnoteEmphasis)
-                    .monospacedDigit()
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(AppFont.scaled(9, weight: .semibold))
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, 7)
         }
-        .glassCapsule()
-        .accessibilityLabel(Text("year_pick_year"))
     }
 
     // MARK: - Hero
@@ -529,25 +521,10 @@ struct YearInReviewView: View {
     }
 
     // MARK: - Share (two rendered cards: numbers + highlights)
-
-    @ViewBuilder private var shareSection: some View {
-        if !shareURLs.isEmpty {
-            ShareLink(items: shareURLs,
-                      preview: { _ in SharePreview("Year of Your Home") }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(AppFont.subheadline)
-                    Text("Share your year")
-                        .font(AppFont.subheadline)
-                }
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .mediaGlass(in: Capsule(), interactive: true)
-            }
-            .buttonStyle(.plain)
-        }
-    }
+    //
+    // The share entry point lives in the toolbar circle's popover
+    // (`optionsButton`) as a one-shot action row; the cards themselves are
+    // still rendered here, ahead of time, from the story's real numbers.
 
     /// Renders the share cards off-screen from the story's real numbers.
     @MainActor

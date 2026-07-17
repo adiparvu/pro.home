@@ -56,12 +56,6 @@ struct SuppliesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            tabBar
-                .padding(.horizontal, AppSpacing.xl)
-                .padding(.bottom, AppSpacing.xxs)
-
-            Divider().opacity(0.2)
-
             switch activeTab {
             case .overview:
                 ExpenseDashboardView(
@@ -91,13 +85,12 @@ struct SuppliesView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
+                    filterButton
                     if activeTab == .lists {
                         Button { showAddList = true; HapticFeedback.impact(.light) } label: {
                             Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                         }
                         .accessibilityLabel("Add list")
-                    } else {
-                        addMenu
                     }
                 }
             }
@@ -135,61 +128,49 @@ struct SuppliesView: View {
         }
     }
 
-    private var addMenu: some View {
-        Menu {
-            Button { showScanner = true; HapticFeedback.impact(.light) } label: {
-                Label(String(localized: "expense_scan_receipt"), systemImage: "camera.viewfinder")
-            }
-            Button { showAddReceipt = true; HapticFeedback.impact(.light) } label: {
-                Label(String(localized: "expense_add_manual"), systemImage: "plus.circle")
-            }
-            Divider()
-            Button { showBudgets = true } label: {
-                Label(String(localized: "expense_manage_budgets"), systemImage: "target")
-            }
-            Button { showReports = true } label: {
-                Label(String(localized: "expense_reports"), systemImage: "chart.bar.doc.horizontal")
-            }
-        } label: {
-            Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
-        }
-    }
+    // MARK: - Toolbar
 
-    // MARK: - Tab bar
-
-    private var tabBar: some View {
-        let tabs: [(ExpenseTab, String, String)] = [
-            (.overview,  "chart.bar.fill",   String(localized: "expense_tab_overview")),
-            (.lists,     "list.bullet",       String(localized: "expense_tab_lists")),
-            (.toBuy,     "cart.fill",         String(localized: "De cumpărat")),
-            (.completed, "checkmark.circle.fill", String(localized: "Finalizate")),
-        ]
-        return HStack(spacing: 0) {
-            ForEach(tabs, id: \.0) { tab, icon, label in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) { activeTab = tab }
-                    HapticFeedback.selection()
-                } label: {
-                    VStack(spacing: 5) {
-                        HStack(spacing: 5) {
-                            Image(systemName: icon)
-                                .font(AppFont.scaled(10, weight: .semibold))
-                            Text(label)
-                                .font(AppFont.scaled(12, weight: activeTab == tab ? .semibold : .regular))
-                        }
-                        .foregroundStyle(activeTab == tab ? Color.accentColor : Color.primary.opacity(0.4))
-                        Rectangle()
-                            .fill(activeTab == tab ? Color.accentColor : Color.clear)
-                            .frame(height: 2).clipShape(Capsule())
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.sm)
-                }
-                .buttonStyle(.plain)
+    /// One circle, everything (the one-circle law): the four views that used
+    /// to sit as a permanent underline strip on the page body, plus the old
+    /// "+" menu's one-shot actions (scan / manual receipt / budgets /
+    /// reports) — a single aggregated popover, same pattern as Inventory.
+    /// Nothing here narrows a list — switching views navigates and the rows
+    /// are one-shot — so the trigger never claims the "filtered" accent dot.
+    private var filterButton: some View {
+        GlassFilterButton(inToolbar: true) {
+            GlassFilterSection(
+                title: "View",
+                options: [
+                    GlassPickerOption(value: ExpenseTab.overview, icon: "chart.bar.fill",
+                                      title: String(localized: "expense_tab_overview")),
+                    GlassPickerOption(value: ExpenseTab.lists, icon: "list.bullet",
+                                      title: String(localized: "expense_tab_lists"),
+                                      count: supplyService.lists.count),
+                    GlassPickerOption(value: ExpenseTab.toBuy, icon: "cart.fill",
+                                      title: String(localized: "De cumpărat"),
+                                      count: supplyService.totalPending),
+                    GlassPickerOption(value: ExpenseTab.completed, icon: "checkmark.circle.fill",
+                                      title: String(localized: "Finalizate"),
+                                      count: supplyService.totalCompleted)
+                ],
+                selection: $activeTab)
+            GlassFilterSectionDivider()
+            GlassFilterActionRow(icon: "camera.viewfinder",
+                                 title: String(localized: "expense_scan_receipt")) {
+                showScanner = true
             }
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 1)
+            GlassFilterActionRow(icon: "plus.circle",
+                                 title: String(localized: "expense_add_manual")) {
+                showAddReceipt = true
+            }
+            GlassFilterActionRow(icon: "target",
+                                 title: String(localized: "expense_manage_budgets")) {
+                showBudgets = true
+            }
+            GlassFilterActionRow(icon: "chart.bar.doc.horizontal",
+                                 title: String(localized: "expense_reports")) {
+                showReports = true
+            }
         }
     }
 

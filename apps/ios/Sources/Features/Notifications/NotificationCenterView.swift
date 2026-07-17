@@ -79,45 +79,28 @@ struct NotificationCenterView: View {
         .toolbar {
             if !service.notifications.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // The one aggregated filter — hosts everything the old
-                    // chip row offered. `inToolbar` because iOS 26 wraps the
-                    // control in system glass (no double circle, IMG_8315).
+                    // ONE circle for the whole page (one-circle law): the
+                    // module filter the old chip row offered, plus what used
+                    // to be the separate checkmark button and "…" menu —
+                    // mark-all-read and clear-all ride as one-shot action
+                    // rows through the popover's mailbox. `inToolbar`
+                    // because iOS 26 wraps the control in system glass
+                    // (no double circle, IMG_8315).
                     GlassFilterButton(isActive: filter != nil, inToolbar: true) {
                         GlassFilterSection(options: filterOptions, selection: $filter)
-                    }
-                }
-            }
-            if service.unreadCount > 0 {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        guard let uid = userId else { return }
-                        Task { await service.markAllRead(userId: uid) }
-                    } label: {
-                        // No .glassCircle() here — iOS 26 already wraps a
-                        // toolbar control in its own glass, so adding one drew
-                        // a second overlapping circle (IMG_8315).
-                        Image(systemName: "checkmark.circle")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Mark all read")
-                }
-            }
-            if !service.notifications.isEmpty {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button(role: .destructive) {
+                        GlassFilterSectionDivider()
+                        if service.unreadCount > 0 {
+                            GlassFilterActionRow(icon: "checkmark.circle",
+                                                 title: String(localized: "Mark all read")) {
+                                guard let uid = userId else { return }
+                                Task { await service.markAllRead(userId: uid) }
+                            }
+                        }
+                        GlassFilterActionRow(icon: "trash",
+                                             title: String(localized: "Clear all")) {
                             guard let uid = userId else { return }
                             Task { await service.clearAll(userId: uid) }
-                        } label: {
-                            Label("Clear all", systemImage: "trash")
                         }
-                    } label: {
-                        // The toolbar supplies the glass; no custom circle.
-                        Image(systemName: "ellipsis")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -138,14 +121,22 @@ struct NotificationCenterView: View {
         List {
             ForEach(sections) { section in
                 Section {
-                    ForEach(section.groups) { group in
-                        row(group)
-                    }
-                } header: {
+                    // Naked text that scrolls WITH its rows (headers law):
+                    // a plain List pins real section headers, so the label
+                    // rides as an ordinary row instead — no band, nothing
+                    // for cards to slide beneath.
                     Text(section.title)
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .textCase(nil)
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets(top: 12, leading: AppSpacing.lg,
+                                                  bottom: 2, trailing: AppSpacing.lg))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    ForEach(section.groups) { group in
+                        row(group)
+                    }
                 }
             }
         }

@@ -124,11 +124,34 @@ struct SensorHistorySection: View {
 
     @State private var model: SensorHistoryModel
     @State private var selected: SensorHistoryPeriod? = nil
+    /// Non-nil when the presenting PAGE owns the period selection — folded
+    /// into its one filter circle (one-circle law) — so the card header
+    /// stays naked. Embedded cards (space page tiles) keep their own
+    /// in-card chips: there the row is a segment tied to one chart card,
+    /// not page chrome.
+    private let externalSelection: Binding<SensorHistoryPeriod?>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(target: SensorHistoryTarget) {
         self.target = target
         _model = State(initialValue: SensorHistoryModel(sensorId: target.id))
+        externalSelection = nil
+    }
+
+    /// The sheet's variant: the page injects the model it observes (its
+    /// filter circle needs the honest available periods) and the selection
+    /// binding its circle drives.
+    init(target: SensorHistoryTarget, model: SensorHistoryModel,
+         selection: Binding<SensorHistoryPeriod?>) {
+        self.target = target
+        _model = State(initialValue: model)
+        externalSelection = selection
+    }
+
+    /// The window the card renders before falling back to the first
+    /// honestly available period.
+    private var chosenPeriod: SensorHistoryPeriod? {
+        externalSelection?.wrappedValue ?? selected
     }
 
     var body: some View {
@@ -139,7 +162,7 @@ struct SensorHistorySection: View {
                 case .loading: loadingState
                 case .failed:  failedState
                 case .loaded:
-                    if let period = selected ?? model.availablePeriods.first {
+                    if let period = chosenPeriod ?? model.availablePeriods.first {
                         loadedContent(period)
                     } else {
                         emptyState
@@ -166,11 +189,14 @@ struct SensorHistorySection: View {
                 .font(AppFont.scaled(16, weight: .semibold))
                 .foregroundStyle(.primary)
             Spacer(minLength: 0)
-            if model.phase == .loaded, model.availablePeriods.count > 1 {
+            // Chips only in the EMBEDDED card — the sheet's page circle
+            // hosts the same periods, so the header stays naked there.
+            if externalSelection == nil, model.phase == .loaded,
+               model.availablePeriods.count > 1 {
                 HStack(spacing: AppSpacing.xs) {
                     ForEach(model.availablePeriods) { period in
                         GlassFilterChip(label: period.title,
-                                        isSelected: period == (selected ?? model.availablePeriods.first)) {
+                                        isSelected: period == (chosenPeriod ?? model.availablePeriods.first)) {
                             withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
                                 selected = period
                             }
@@ -350,6 +376,16 @@ struct SensorHistorySheet: View {
     let target: SensorHistoryTarget
 
     @Environment(\.dismiss) private var dismiss
+    /// Page-owned model + selection: the header's ONE filter circle reads
+    /// the honest available periods from the same model the card renders
+    /// (one-circle law — the period row is this page's range selector).
+    @State private var model: SensorHistoryModel
+    @State private var selectedPeriod: SensorHistoryPeriod? = nil
+
+    init(target: SensorHistoryTarget) {
+        self.target = target
+        _model = State(initialValue: SensorHistoryModel(sensorId: target.id))
+    }
 
     var body: some View {
         ZStack {
@@ -370,6 +406,22 @@ struct SensorHistorySheet: View {
                         .glassCircle()
                         .accessibilityLabel(Text("sh_close"))
                         Spacer(minLength: 0)
+                        // The circle exists only when >1 window honestly
+                        // holds data — the chips' exact contract. A period
+                        // re-frames the chart, it doesn't narrow a list, so
+                        // it never claims the "filtered" accent dot.
+                        if model.phase == .loaded, model.availablePeriods.count > 1 {
+                            GlassFilterButton(standaloneSize: 36) {
+                                GlassFilterSection(
+                                    title: "Period",
+                                    options: model.availablePeriods.map {
+                                        GlassPickerOption(value: $0, title: $0.title)
+                                    },
+                                    selection: Binding(
+                                        get: { selectedPeriod ?? model.availablePeriods.first ?? .day },
+                                        set: { selectedPeriod = $0 }))
+                            }
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -386,7 +438,8 @@ struct SensorHistorySheet: View {
                     }
                     .accessibilityElement(children: .combine)
 
-                    SensorHistorySection(target: target)
+                    SensorHistorySection(target: target, model: model,
+                                         selection: $selectedPeriod)
                     Spacer(minLength: AppSpacing.xxl)
                 }
                 .padding(.horizontal, AppSpacing.xl)

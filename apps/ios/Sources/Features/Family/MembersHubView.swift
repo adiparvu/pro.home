@@ -51,6 +51,17 @@ struct MembersHubView: View {
             case .invitations: return "envelope.badge.clock.fill"
             }
         }
+
+        /// Same catalog entries as `title`, resolved for the segment
+        /// popover's `GlassPickerOption` (String titles).
+        var titleText: String {
+            switch self {
+            case .family:      return String(localized: "Family")
+            case .others:      return String(localized: "Others")
+            case .accounts:    return String(localized: "Accounts")
+            case .invitations: return String(localized: "Invitations")
+            }
+        }
     }
 
     // Tenants are NOT family — they belong to the Tenants page and to the
@@ -122,8 +133,6 @@ struct MembersHubView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                segmentPicker
-
                 switch segment {
                 case .family:      familySection
                 case .others:      othersSection
@@ -152,6 +161,9 @@ struct MembersHubView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                segmentButton
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     HapticFeedback.impact(.light)
@@ -197,34 +209,25 @@ struct MembersHubView: View {
         }
     }
 
-    // MARK: Segment picker
+    // MARK: Segment circle
 
-    private var segmentPicker: some View {
-        HStack(spacing: 6) {
-            ForEach(Segment.allCases) { seg in
-                let selected = segment == seg
-                Button {
-                    HapticFeedback.selection()
-                    withAnimation(.snappy) { segment = seg }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: seg.icon).font(AppFont.label)
-                        Text(seg.title).font(AppFont.captionEmphasis)
-                        if seg == .invitations, pendingInviteCount > 0 {
-                            Text("\(pendingInviteCount)")
-                                .font(AppFont.scaled(10, weight: .bold, design: .rounded))
-                                .padding(.horizontal, 5).padding(.vertical, 1)
-                                .background(Color.orange.opacity(0.25), in: Capsule())
-                        }
-                    }
-                    .foregroundStyle(selected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
-                    .frame(maxWidth: .infinity)
-                    .background(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.primary.opacity(0.05)),
-                                in: Capsule())
-                }
-                .buttonStyle(.plain)
-            }
+    /// One circle (the one-circle law): the four-capsule segment row that
+    /// used to sit at the top of the page, as a single-select view section
+    /// in the page's one glass trigger. A segment switches the view, it
+    /// never narrows a list — so the trigger never claims the filtered
+    /// accent dot; the invitations row keeps its honest pending count.
+    private var segmentButton: some View {
+        GlassFilterButton(inToolbar: true) {
+            GlassFilterSection(
+                title: "cal_mode_picker",
+                options: Segment.allCases.map { seg in
+                    GlassPickerOption(value: seg,
+                                      icon: seg.icon,
+                                      title: seg.titleText,
+                                      count: seg == .invitations && pendingInviteCount > 0
+                                          ? pendingInviteCount : nil)
+                },
+                selection: $segment)
         }
     }
 

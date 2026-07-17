@@ -28,12 +28,6 @@ struct SupplyListDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            categoryChips
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.sm)
-
-            Divider().opacity(0.3)
-
             if listItems.isEmpty {
                 emptyListState
             } else if filtered.isEmpty {
@@ -50,12 +44,17 @@ struct SupplyListDetailView: View {
                     prompt: Text("Search items…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
-                    Image(systemName: "plus")
-                        .font(AppFont.title3)
-                        .foregroundStyle(.primary)
+                HStack(spacing: 12) {
+                    if !listItems.isEmpty {
+                        filterButton
+                    }
+                    Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.title3)
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityLabel("Add item")
                 }
-                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddItem) {
@@ -77,38 +76,44 @@ struct SupplyListDetailView: View {
         .floatingSpeedDial(.supplies)
     }
 
-    // MARK: Category chips
+    // MARK: Toolbar filter
 
-    private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Spacer(minLength: 20)
-                GlassFilterChip(label: String(localized: "All"),
-                                isSelected: selectedCategory == nil) {
-                    withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = nil }
-                    HapticFeedback.selection()
-                }
-                ForEach(supplyCategories, id: \.id) { cat in
-                    let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
-                    if count > 0 || selectedCategory == cat.id {
-                        GlassFilterChip(label: String(localized: String.LocalizationValue(cat.label)),
-                                        count: count,
-                                        isSelected: selectedCategory == cat.id) {
-                            withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = cat.id }
-                            HapticFeedback.selection()
-                        }
-                    }
-                }
-                Spacer(minLength: 20)
+    /// The permanent category chip row folded into the page's one circle
+    /// (the one-circle law) — same aggregated popover as Inventory. Options
+    /// mirror the retired chips exactly: only categories that actually hold
+    /// pending items (or the one currently selected, so it can be cleared)
+    /// appear, with their honest counts.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: selectedCategory != nil, inToolbar: true) {
+            GlassFilterSection(title: "Category",
+                               options: categoryOptions,
+                               selection: $selectedCategory)
+        }
+    }
+
+    private var categoryOptions: [GlassPickerOption<String?>] {
+        var options: [GlassPickerOption<String?>] = [
+            .init(value: nil, title: String(localized: "All"))
+        ]
+        for cat in supplyCategories {
+            let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
+            if count > 0 || selectedCategory == cat.id {
+                options.append(.init(value: cat.id,
+                                     title: String(localized: String.LocalizationValue(cat.label)),
+                                     count: count))
             }
         }
+        return options
     }
 
     // MARK: Items scroll
 
     private var itemsScroll: some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+            // Headers are NOT pinned: they carry no background at all, so
+            // they must scroll with their rows instead of floating naked
+            // over them (IMG_8562 "nici aici, nici nicăieri").
+            LazyVStack(spacing: 0) {
                 if !pending.isEmpty {
                     Section {
                         GlassCard(padding: 0) {
@@ -160,25 +165,24 @@ struct SupplyListDetailView: View {
                             withAnimation(.spring(response: 0.35)) { showCompleted.toggle() }
                             HapticFeedback.selection()
                         } label: {
-                            // Floating glass chip — a full-width material
-                            // band would slice the living backdrop (IMG_8541).
-                            HStack {
-                                HStack(spacing: 6) {
-                                    Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
-                                        .font(AppFont.scaled(10, weight: .semibold))
-                                    Text("COMPLETED · \(completed.count)")
-                                        .font(AppFont.label)
-                                        .tracking(0.5)
-                                }
-                                .foregroundStyle(Color.brandSuccess)
-                                .padding(.horizontal, AppSpacing.base)
-                                .padding(.vertical, AppSpacing.xs + 2)
-                                .liquidGlass(cornerRadius: AppRadius.xl)
-                                Spacer(minLength: 0)
+                            // Naked text — headers wear no chip, band or
+                            // material, ever; the chevron alone carries the
+                            // disclosure affordance.
+                            HStack(spacing: 6) {
+                                Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
+                                    .font(AppFont.scaled(10, weight: .semibold))
+                                Text("COMPLETED · \(completed.count)")
+                                    .font(AppFont.label)
+                                    .tracking(0.5)
                             }
-                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
+                            .foregroundStyle(Color.brandSuccess)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, AppSpacing.xl + AppSpacing.xxs)
+                            .padding(.vertical, AppSpacing.xs)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(.isHeader)
                     }
                 }
 
@@ -189,19 +193,15 @@ struct SupplyListDetailView: View {
     }
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
-        // Floating glass chip — a full-width material band would slice the
-        // living backdrop (IMG_8541).
-        HStack {
-            Text(title)
-                .font(AppFont.label)
-                .foregroundStyle(.primary)
-                .tracking(0.5)
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.xs + 2)
-                .liquidGlass(cornerRadius: AppRadius.xl)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
+        // Naked text — headers wear no chip, band or material, ever.
+        Text(title)
+            .font(AppFont.label)
+            .foregroundStyle(.secondary)
+            .tracking(0.5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.xl + AppSpacing.xxs)
+            .padding(.vertical, AppSpacing.xs)
+            .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: States

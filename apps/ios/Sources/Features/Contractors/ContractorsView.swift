@@ -367,25 +367,32 @@ struct ContractorsView: View {
                     prompt: Text("Search…"))
         .floatingSpeedDial(.contractors)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    Button {
-                        withAnimation(.snappy) { favoritesOnly.toggle() }
-                        HapticFeedback.selection()
-                    } label: {
-                        Image(systemName: favoritesOnly ? "star.fill" : "star")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(favoritesOnly ? .yellow : .primary)
-                            .frame(width: 34, height: 32)
-                    }
-                    .accessibilityLabel(favoritesOnly ? "Show all contractors" : "Show favorites")
-                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus").font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(.primary)
-                            .frame(width: 34, height: 32)
-                    }
-                    .accessibilityLabel("Add contractor")
+            if !service.contractors.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus").font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(.primary)
+                        .frame(width: 34, height: 32)
+                }
+                .accessibilityLabel("Add contractor")
+            }
+        }
+    }
+
+    // MARK: - Toolbar
+
+    /// One circle, everything (the one-circle law): the favorites star that
+    /// used to sit as its own toolbar toggle folds into the page's single
+    /// aggregated filter popover. The accent dot is honest — it lights only
+    /// when the list is genuinely narrowed to favorites.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: favoritesOnly, inToolbar: true) {
+            GlassFilterToggleRow(icon: "star.fill",
+                                 title: String(localized: "Favorites"),
+                                 isOn: $favoritesOnly)
         }
     }
 

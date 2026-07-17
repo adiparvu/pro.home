@@ -102,14 +102,23 @@ struct GuestModeView: View {
         .onChange(of: wifiPass) { _, newVal in GuestWiFiKeychain.save(newVal) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    shareGuestInfo()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-                .accessibilityLabel(Text("Share Guest Info"))
+                moreButton
+            }
+        }
+    }
+
+    // MARK: - Toolbar
+
+    /// One circle (the one-circle law): the page's one-shot share action
+    /// lives in the single glass trigger. Action rows, not filters — so the
+    /// trigger wears Apple's More glyph, and the share sheet runs through
+    /// the popover's action mailbox (after the dismissal transition).
+    private var moreButton: some View {
+        GlassFilterButton(inToolbar: true, icon: "ellipsis",
+                          accessibilityLabelKey: "More") {
+            GlassFilterActionRow(icon: "square.and.arrow.up",
+                                 title: String(localized: "Share Guest Info")) {
+                shareGuestInfo()
             }
         }
     }

@@ -225,22 +225,13 @@ struct FinancesView: View {
         if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         heroSection(net: income - expenses,
                                     insight: insight(expenses: expenses, month: month))
-                        kpiStrip(income: income, expenses: expenses) { type in
-                            HapticFeedback.selection()
-                            withAnimation(.spring(response: 0.3)) {
-                                selectedType = selectedType == type ? nil : type
-                            }
-                            if selectedType != nil {
-                                withAnimation(.spring(response: 0.35)) {
-                                    proxy.scrollTo("fin_transactions", anchor: .top)
-                                }
-                            }
-                        }
+                        // The KPI strip is pure data now — its old
+                        // tap-to-filter lives in the toolbar circle.
+                        kpiStrip(income: income, expenses: expenses)
                         quickActionsRow
                             .padding(.top, AppSpacing.xl)
                             .padding(.horizontal, AppSpacing.xl)
@@ -263,7 +254,6 @@ struct FinancesView: View {
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         transactionList(filtered)
-                            .id("fin_transactions")
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
@@ -280,7 +270,6 @@ struct FinancesView: View {
                     tabBarVis.scrollOffset = y
                 }
                 .refreshable { await financialService.load() }
-                }
         }
         }
         .background(appBackground.ignoresSafeArea())
@@ -333,24 +322,32 @@ struct FinancesView: View {
         }
     }
 
+    /// ONE circle for the page (one-circle law): the type filter that used
+    /// to live in a bare toolbar `Menu` — and the tap-to-filter the KPI
+    /// tiles used to carry — in a single aggregated popover, with honest
+    /// counts from the displayed month. The accent dot only lights for a
+    /// narrowed type, never for the default "All".
     private var filterMenu: some View {
-        Menu {
-            Button { withAnimation(.spring(response: 0.25)) { selectedType = nil } } label: {
-                Label("All", systemImage: "tray.full")
-            }
-            Button { withAnimation(.spring(response: 0.25)) { selectedType = "income" } } label: {
-                Label("Income", systemImage: "arrow.down.left")
-            }
-            Button { withAnimation(.spring(response: 0.25)) { selectedType = "expense" } } label: {
-                Label("Expenses", systemImage: "arrow.up.right")
-            }
-        } label: {
-            Image(systemName: selectedType == nil
-                  ? "line.3.horizontal.decrease"
-                  : (selectedType == "income" ? "arrow.down.left" : "arrow.up.right"))
-                .font(AppFont.headline)
-                .foregroundStyle(.primary)
+        let month = monthRecords
+        let incomeCount = month.filter { $0.type == "income" }.count
+        let expenseCount = month.filter { $0.type == "expense" }.count
+        return GlassFilterButton(isActive: selectedType != nil,
+                                 inToolbar: true,
+                                 accessibilityLabelKey: "fin_filter_transactions") {
+            GlassFilterSection(
+                title: "Type",
+                options: [
+                    GlassPickerOption<String?>(value: nil, icon: "tray.full",
+                                               title: String(localized: "All"),
+                                               count: month.count),
+                    GlassPickerOption<String?>(value: "income", icon: "arrow.down.left",
+                                               title: String(localized: "Income"),
+                                               count: incomeCount),
+                    GlassPickerOption<String?>(value: "expense", icon: "arrow.up.right",
+                                               title: String(localized: "Expenses"),
+                                               count: expenseCount)
+                ],
+                selection: $selectedType)
         }
-        .accessibilityLabel("fin_filter_transactions")
     }
 }
