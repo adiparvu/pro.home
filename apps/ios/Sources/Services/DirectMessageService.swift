@@ -658,6 +658,17 @@ final class DirectMessageService {
         // raced that rejoin into a leave/join churn loop (the Build 1036 lag).
         if let ch = channel, subscribedPropertyId == propertyId,
            ch.status == .subscribed || ch.status == .subscribing { return }
+        // REJOIN GRACE at the single choke point (see MessageService — the
+        // group channel's field log): moments after a socket reconnect the
+        // SDK's rejoinChannels() owns this channel while its state flickers
+        // through .unsubscribed; a view-path entrant in that flicker tears it
+        // down mid-rejoin and double-joins the topic, which the server
+        // answers with close after close until the socket dies (1006).
+        // Holding a channel for this property right after a reconnect means
+        // the rejoin owns it: stand down; the heartbeat retries post-grace.
+        if channel != nil, subscribedPropertyId == propertyId,
+           let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
+           Date().timeIntervalSince(connectedAt) < 10 { return }
         // Only ONE subscribe in flight. Both the open-thread `.task` and the 3s
         // heartbeat call this; a second entrant must step aside rather than run
         // `unsubscribe()` (which cancels the first's `subscribeWithError()` with

@@ -206,6 +206,22 @@ final class MessageService {
         if let ch = realtimeChannel, subscribedPropertyId == propertyId,
            currentGroupId == groupId,
            ch.status == .subscribed || ch.status == .subscribing { return }
+        // REJOIN GRACE at the single choke point (field log 23:21:44 → 1006):
+        // right after a socket reconnect the SDK's rejoinChannels() owns every
+        // registered channel, and a channel's state flickers through
+        // .unsubscribed before the rejoin's own subscribe starts. The VIEW
+        // paths (.task on appear, scenePhase-active) land exactly in that
+        // flicker — the heartbeat already had this grace, they didn't — pass
+        // the liveness check above, tear the channel down mid-rejoin and put
+        // a SECOND join for the topic on the socket; the server answers each
+        // new join by closing the previous one until it drops the whole
+        // socket (code 1006). Holding a channel for this scope moments after
+        // a reconnect means the rejoin owns it: stand down and let it land —
+        // the 3s heartbeat retries after the grace if it genuinely died.
+        if realtimeChannel != nil, subscribedPropertyId == propertyId,
+           currentGroupId == groupId,
+           let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
+           Date().timeIntervalSince(connectedAt) < 10 { return }
         // Only ONE subscribe in flight. The open-thread `.task` and the 3s
         // heartbeat both call this; a second entrant must step aside rather than
         // run `unsubscribe()`, which cancels the first's `subscribeWithError()`
