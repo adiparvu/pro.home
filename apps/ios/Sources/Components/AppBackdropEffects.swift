@@ -200,6 +200,15 @@ struct AppBackdropEffectsLayer: View {
                 .id(effect)   // mood/scheme change = a fresh scene, old one released
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)   // pure atmosphere
+        } else if mood == .night {
+            // Low Power / Reduce Motion / toggle off: the sky must still be
+            // DESIGNED — Weather's night is never a bare gradient (IMG_8579).
+            // One static Canvas draw (the same seeded constellation as the
+            // live scene + tonight's real-phase moon), zero animation, zero
+            // timers — compatible with every gate by construction.
+            NightSkyStaticLayer()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 }
@@ -778,6 +787,11 @@ private final class NightStarsScene: SKScene {
     /// honest sky has no moon to show then.
     private var moonDisc: SKSpriteNode?
     private var moonHalo: SKSpriteNode?
+    /// Wispy night clouds crossing over minutes — the Weather-app signature
+    /// (IMG_8579). Two depths; exact live counts by construction (2 + 2).
+    private let wisps = SKEmitterNode()
+    private let farWisps = SKEmitterNode()
+    private var wispsPrewarmed = false
 
     override init() {
         super.init(size: CGSize(width: 390, height: 850))
@@ -828,42 +842,94 @@ private final class NightStarsScene: SKScene {
         addChild(fieldNode)
 
         // The moon, at its real astronomical phase tonight. Within ~a day of
-        // new moon there is honestly nothing to draw. The halo breathes very
-        // slowly (±25% of its 8% alpha); the disc itself is static.
-        let phase = Self.moonPhase()
+        // new moon there is honestly nothing to draw. Sized and haloed to the
+        // Weather-app presence (IMG_8578/8579) — a subject in the sky, not a
+        // speck; the halo breathes very slowly, the disc itself is static.
+        let phase = NightSkyArt.moonPhase()
         let illuminated = (1 - cos(2 * .pi * phase)) / 2
         if illuminated > 0.03 {
             let halo = SKSpriteNode(texture: AtmosphericParticleTextures.moonHalo)
             halo.color = UIColor(red: 0.88, green: 0.91, blue: 0.97, alpha: 1)
             halo.colorBlendFactor = 1
             halo.blendMode = .add
-            halo.alpha = 0.08
+            halo.alpha = 0.12
             halo.zPosition = 0.4
-            let dim = SKAction.fadeAlpha(to: 0.06, duration: 5.5)
+            let dim = SKAction.fadeAlpha(to: 0.09, duration: 5.5)
             dim.timingMode = .easeInEaseOut
-            let lift = SKAction.fadeAlpha(to: 0.10, duration: 5.5)
+            let lift = SKAction.fadeAlpha(to: 0.15, duration: 5.5)
             lift.timingMode = .easeInEaseOut
             halo.run(.repeatForever(.sequence([dim, lift])))
             addChild(halo)
             moonHalo = halo
 
-            let disc = SKSpriteNode(texture: Self.moonTexture(phase: phase, diameter: 44))
-            disc.alpha = 0.85
+            let disc = SKSpriteNode(
+                texture: SKTexture(image: NightSkyArt.moonImage(phase: phase, diameter: 54)))
+            disc.alpha = 0.92
             disc.zPosition = 0.5
             addChild(disc)
             moonDisc = disc
         }
+
+        // The Weather signature over all of it: wispy night clouds crossing
+        // slowly ABOVE stars and moon (z 1.1–1.2) — the moon glows through
+        // their ≤6% alpha, stars dim honestly behind them. Same exact-count
+        // construction as the day scene: lifetime from real width, birthRate
+        // = live/lifetime; 2 near + 2 far ≈ 4 extra live sprites.
+        for (emitter, scale, scaleRange, peak, z) in [
+            (wisps, CGFloat(2.2), CGFloat(0.5), CGFloat(0.06), CGFloat(1.2)),
+            (farWisps, 1.3, 0.3, 0.04, 1.1)
+        ] {
+            emitter.particleTexture = AtmosphericParticleTextures.nightWisp
+            // Pale moonlit slate — Weather's wisps read slightly lighter than
+            // the sky they cross, never darker smears.
+            emitter.particleColor = UIColor(red: 0.62, green: 0.68, blue: 0.80, alpha: 1)
+            emitter.particleColorBlendFactor = 1
+            emitter.emissionAngle = 0            // left → right, minutes long
+            emitter.particleScale = scale
+            emitter.particleScaleRange = scaleRange
+            emitter.particleAlphaSequence = SKKeyframeSequence(
+                keyframeValues: [peak * 0.7, peak, peak * 0.8, peak, peak * 0.7],
+                times: [0, 0.3, 0.55, 0.8, 1])
+            emitter.zPosition = z
+            addChild(emitter)
+        }
+        wisps.particleSpeed = 5
+        wisps.particleSpeedRange = 1.2
+        farWisps.particleSpeed = 2.8
+        farWisps.particleSpeedRange = 0.7
         layoutNodes()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("NightStarsScene is code-built only") }
 
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutNodes()
+    }
+
+    /// One-time prewarm for the wisp layers (the day scene's pattern): the
+    /// first simulated frame advances both emitters a full lifetime, so the
+    /// sky opens with clouds mid-crossing instead of empty for minutes.
+    override func update(_ currentTime: TimeInterval) {
+        guard !wispsPrewarmed else { return }
+        wispsPrewarmed = true
+        wisps.advanceSimulationTime(TimeInterval(wisps.particleLifetime))
+        farWisps.advanceSimulationTime(TimeInterval(farWisps.particleLifetime))
+    }
+}
+
+// MARK: - Night sky art (shared by the live scene and the static layer)
+
+/// The moon drawing + phase math, shared verbatim between `NightStarsScene`
+/// (as a baked SKTexture) and `NightSkyStaticLayer` (as a Canvas image) so
+/// the two paths can never drift apart visually.
+enum NightSkyArt {
     /// The lunar phase now, in [0, 1): 0 = new, 0.5 = full. Derived from the
     /// mean synodic month (29.530589 d) against a known new-moon epoch
     /// (2000-01-06 18:14 UTC) — within ±½ day over decades, which is exactly
     /// the fidelity a backdrop needs.
-    private static func moonPhase(on date: Date = .now) -> Double {
+    static func moonPhase(on date: Date = .now) -> Double {
         let epoch = Date(timeIntervalSince1970: 947_182_440)   // 2000-01-06 18:14 UTC
         let synodic = 29.530589 * 86_400.0
         let raw = date.timeIntervalSince(epoch).truncatingRemainder(dividingBy: synodic)
@@ -876,7 +942,7 @@ private final class NightStarsScene: SKScene {
     /// so crescent and gibbous fall out of the same path), a few soft maria
     /// blotches clipped to the lit shape, and a touch of limb darkening.
     /// Waxing lights the right side, waning the left (northern-sky reading).
-    private static func moonTexture(phase: Double, diameter: CGFloat) -> SKTexture {
+    static func moonImage(phase: Double, diameter: CGFloat) -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.opaque = false
         format.scale = 3   // the terminator's curve deserves the extra crispness
@@ -941,7 +1007,7 @@ private final class NightStarsScene: SKScene {
             }
             cg.restoreGState()
         }
-        return SKTexture(image: image)
+        return image
     }
 
     /// The right half-ellipse of radius `radius`, traversed bottom → top —
@@ -953,11 +1019,11 @@ private final class NightStarsScene: SKScene {
                  startAngle: .pi / 2, endAngle: -.pi / 2, clockwise: false)
         return p
     }
+}
 
-    override func didChangeSize(_ oldSize: CGSize) {
-        super.didChangeSize(oldSize)
-        layoutNodes()
-    }
+// The scene's remaining plumbing — same file, so the extension keeps full
+// access to the private stored nodes.
+extension NightStarsScene {
 
     /// One shooting star, on demand from the host's scheduler. A single
     /// transient sprite: the stretched streak texture (head at local +x)
@@ -999,7 +1065,22 @@ private final class NightStarsScene: SKScene {
         moonDisc?.position = moonCenter
         if let halo = moonHalo {
             halo.position = moonCenter
-            halo.size = CGSize(width: 150, height: 150)
+            halo.size = CGSize(width: 190, height: 190)
+        }
+        // Wisps: the day-cloud construction, horizontal — spawn fully off the
+        // left edge, die fully off the right, exact live counts (2 + 2) by
+        // lifetime = travel / slowestSpeed, birthRate = live / lifetime.
+        let wispMargin: CGFloat = 340   // half the widest wisp's footprint
+        let travel = size.width + wispMargin * 2
+        for (emitter, live, band, spread) in [
+            (wisps, CGFloat(2), CGFloat(0.55), CGFloat(0.45)),
+            (farWisps, 2, 0.76, 0.30)
+        ] {
+            let lifetime = travel / (emitter.particleSpeed - emitter.particleSpeedRange)
+            emitter.particleLifetime = lifetime
+            emitter.particleBirthRate = live / lifetime
+            emitter.position = CGPoint(x: -wispMargin, y: size.height * band)
+            emitter.particlePositionRange = CGVector(dx: 0, dy: size.height * spread)
         }
     }
 
@@ -1468,6 +1549,10 @@ private enum AtmosphericParticleTextures {
     static let cloud = cumulus(size: 180)
     /// The moon's soft atmospheric halo (additive, tinted pale ice).
     static let moonHalo = cloudBlob(diameter: 150)
+    /// A wispy night cloud: soft lobes strung along a horizontal axis —
+    /// flatter and far softer than the day cumulus, the streaky look of
+    /// Weather's night sky (IMG_8579). 240×90 pt footprint before scale.
+    static let nightWisp = wisp(size: CGSize(width: 240, height: 90))
     /// A tall soft light wedge for the morning sun shafts: bright spine
     /// fading to nothing sideways, and fading out toward both ends.
     static let lightShaft = shaft(width: 90, height: 300)
@@ -1611,6 +1696,32 @@ private enum AtmosphericParticleTextures {
             drawRadialFade(ctx.cgContext,
                            center: CGPoint(x: diameter / 2, y: diameter / 2),
                            radius: diameter / 2, peak: 0.9)
+        }
+        return SKTexture(image: image)
+    }
+
+    /// The night wisp: seven overlapping ultra-soft radial fades strung along
+    /// a horizontal spine with slight vertical scatter and shrinking radii
+    /// toward the tips — a streaky, elongated veil rather than a puffy cloud.
+    /// Deterministic layout (baked once); softness comes entirely from the
+    /// radial fades, so nothing is ever blurred live.
+    private static func wisp(size: CGSize) -> SKTexture {
+        let image = renderer(size).image { ctx in
+            let cg = ctx.cgContext
+            let midY = size.height / 2
+            let lobes: [(x: CGFloat, dy: CGFloat, r: CGFloat, peak: CGFloat)] = [
+                (0.10, 6, 0.30, 0.30), (0.24, -4, 0.42, 0.50),
+                (0.40, 3, 0.50, 0.70), (0.52, -6, 0.46, 0.85),
+                (0.66, 4, 0.50, 0.70), (0.80, -3, 0.40, 0.50),
+                (0.92, 5, 0.28, 0.30)
+            ]
+            for lobe in lobes {
+                drawRadialFade(cg,
+                               center: CGPoint(x: size.width * lobe.x,
+                                               y: midY + lobe.dy),
+                               radius: size.height * lobe.r,
+                               peak: lobe.peak)
+            }
         }
         return SKTexture(image: image)
     }
@@ -1961,5 +2072,72 @@ struct AppBackdropEffectsHint: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Static night sky (the designed fallback)
+
+/// The night backdrop when the live scene may NOT mount (Low Power, Reduce
+/// Motion, or the effects toggle off): the same seeded constellation the
+/// live scene bakes — identical star positions, sizes, tints and diffraction
+/// glints — plus tonight's real-phase moon inside a soft glow, drawn ONCE in
+/// a single Canvas pass. Nothing animates, nothing schedules, nothing blurs
+/// live: this honors every gate by construction while keeping the sky a
+/// designed place (IMG_8579 — Weather's night is never a bare gradient).
+struct NightSkyStaticLayer: View {
+    /// Tonight's moon, baked once per process (the phase drifts ~daily; a
+    /// session never straddles enough of it to matter).
+    private static let moon: UIImage? = {
+        let phase = NightSkyArt.moonPhase()
+        let illuminated = (1 - cos(2 * .pi * phase)) / 2
+        guard illuminated > 0.03 else { return nil }
+        return NightSkyArt.moonImage(phase: phase, diameter: 54)
+    }()
+
+    var body: some View {
+        Canvas { context, size in
+            // The live scene's exact star field: same seed, same spec order,
+            // y flipped once (SpriteKit is bottom-up, Canvas top-down).
+            var rng = SplitMix64(seed: 0x5EED_57A2_F1E1D)
+            let warm = Color(red: 1.0, green: 0.94, blue: 0.85)
+            let cool = Color(red: 0.86, green: 0.91, blue: 1.0)
+            for i in 0..<80 {
+                let ux = CGFloat.random(in: 0.01...0.99, using: &rng)
+                let uy = CGFloat.random(in: 0.01...0.99, using: &rng)
+                let r = CGFloat.random(in: 0.5...1.3, using: &rng)
+                let alpha = CGFloat.random(in: 0.12...0.55, using: &rng)
+                let tint: Color = i % 7 == 0 ? warm : (i % 5 == 0 ? cool : .white)
+                let c = CGPoint(x: ux * size.width, y: (1 - uy) * size.height)
+                context.fill(
+                    Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r,
+                                           width: r * 2, height: r * 2)),
+                    with: .color(tint.opacity(alpha)))
+                if r > 1.1 {
+                    // The brightest few keep their thin diffraction spikes.
+                    var spikes = Path()
+                    let reach = r * 3.2
+                    for a in stride(from: CGFloat(0), to: .pi * 2, by: .pi / 2) {
+                        spikes.move(to: c)
+                        spikes.addLine(to: CGPoint(x: c.x + cos(a) * reach,
+                                                   y: c.y + sin(a) * reach))
+                    }
+                    context.stroke(spikes, with: .color(tint.opacity(alpha * 0.6)),
+                                   lineWidth: 0.5)
+                }
+            }
+            // The moon, where the live scene keeps it (upper right), with a
+            // static version of its glow.
+            if let moon = Self.moon {
+                let center = CGPoint(x: size.width * 0.78, y: size.height * 0.16)
+                context.fill(
+                    Path(ellipseIn: CGRect(x: center.x - 95, y: center.y - 95,
+                                           width: 190, height: 190)),
+                    with: .radialGradient(
+                        Gradient(colors: [Color(red: 0.88, green: 0.91, blue: 0.97)
+                                            .opacity(0.10), .clear]),
+                        center: center, startRadius: 0, endRadius: 95))
+                context.draw(Image(uiImage: moon), at: center)
+            }
+        }
     }
 }
