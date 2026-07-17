@@ -509,7 +509,10 @@ struct ConversationsView: View {
                 }
 
                 let entries = showArchived ? archivedList : searchedConversations
-                LazyVStack(spacing: 8) {
+                // iOS-Messages anatomy (IMG_8556): one continuous list, rows
+                // separated by a hairline inset past the avatar — never
+                // distanced cards.
+                LazyVStack(spacing: 0) {
                     if hasLockedChats && !showArchived && searchText.isEmpty {
                         Button {
                             if lockedRevealed {
@@ -538,7 +541,7 @@ struct ConversationsView: View {
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                         }
                         .buttonStyle(.plain)
-                        .liquidGlass(cornerRadius: AppRadius.lg)
+                        conversationDivider
                     }
 
                     if !showArchived && !searchText.isEmpty && entries.isEmpty {
@@ -548,7 +551,8 @@ struct ConversationsView: View {
                     ForEach(entries) { entry in
                         SwipeableRow(
                             leading: leadingActions(entry),
-                            trailing: trailingActions(entry)
+                            trailing: trailingActions(entry),
+                            style: .plain
                         ) {
                             Button { navTarget = entry.id } label: {
                                 ConversationRowView(
@@ -576,12 +580,15 @@ struct ConversationsView: View {
                                 conversationPreview(entry)
                             }
                         }
+                        if entry.id != entries.last?.id {
+                            conversationDivider
+                        }
                     }
 
                     if !showArchived && searchText.isEmpty && !archivedList.isEmpty {
+                        conversationDivider
                         Button { withAnimation { showArchived = true } } label: { archivedRow }
                             .buttonStyle(.plain)
-                            .liquidGlass(cornerRadius: AppRadius.lg)
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -589,6 +596,16 @@ struct ConversationsView: View {
             .padding(.top, AppSpacing.sm)
             .padding(.bottom, AppSpacing.xxl)
         }
+    }
+
+    /// The Messages-style separator: a hairline starting where the text
+    /// column starts (past the 54pt avatar + its 14pt gap + the row's own
+    /// leading inset), never full-bleed.
+    private var conversationDivider: some View {
+        Rectangle()
+            .fill(Color.hairline)
+            .frame(height: 0.5)
+            .padding(.leading, AppSpacing.xxs + 54 + 14)
     }
 
     // MARK: - Long-press preview

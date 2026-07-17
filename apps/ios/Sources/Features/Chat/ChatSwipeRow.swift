@@ -11,8 +11,15 @@ struct ConvSwipeAction: Identifiable {
 }
 
 struct SwipeableRow<Content: View>: View {
+    /// How the row dresses: `.card` = its own Liquid Glass rounded card
+    /// (Send Later queue); `.plain` = naked content in a continuous list —
+    /// the iOS-Messages look the conversation list uses (IMG_8556), where
+    /// hairline dividers, not cards, separate rows.
+    enum RowStyle { case card, plain }
+
     var leading: [ConvSwipeAction] = []
     var trailing: [ConvSwipeAction] = []
+    var style: RowStyle = .card
     @ViewBuilder var content: () -> Content
 
     @State private var offset: CGFloat = 0
@@ -43,12 +50,11 @@ struct SwipeableRow<Content: View>: View {
             }
 
             content()
-                // Native Liquid Glass card (iOS 26) with a system-material
-                // fallback — replaces the flat opaque fill so each conversation
-                // row reads as glass over the live mood background, matching the
-                // rest of the app. The outer clipShape keeps the swipe offset
-                // inside the rounded rect.
-                .liquidGlass(cornerRadius: AppRadius.lg)
+                // `.card`: native Liquid Glass rounded card. `.plain`: naked
+                // content on the page background (iOS-Messages look) — the
+                // bar material backs it ONLY mid-swipe, so the revealed
+                // action buttons never show through the sliding row.
+                .modifier(SwipeRowDress(style: style, isSwiping: offset != 0))
                 .offset(x: offset)
                 .overlay {
                     if offset != 0 {
@@ -75,7 +81,7 @@ struct SwipeableRow<Content: View>: View {
                         }
                 )
         }
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .clipShape(SwipeRowClip(style: style))
     }
 
     private func actionButton(_ a: ConvSwipeAction) -> some View {
@@ -100,5 +106,40 @@ struct SwipeableRow<Content: View>: View {
             .padding(.horizontal, 3).padding(.vertical, 2)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// `.card` keeps the row's own Liquid Glass; `.plain` adds no chrome at
+/// rest and backs the content with the bar material only mid-swipe.
+private struct SwipeRowDress: ViewModifier {
+    let style: SwipeableRow<EmptyView>.RowStyle
+    let isSwiping: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch style {
+        case .card:
+            content.liquidGlass(cornerRadius: AppRadius.lg)
+        case .plain:
+            content.background {
+                if isSwiping { Rectangle().fill(.thinMaterial) }
+            }
+        }
+    }
+}
+
+/// Card rows clip to their rounded rect; plain rows clip to a plain
+/// rectangle so the swipe offset stays contained without rounding a
+/// continuous list's edges.
+private struct SwipeRowClip: Shape {
+    let style: SwipeableRow<EmptyView>.RowStyle
+
+    func path(in rect: CGRect) -> Path {
+        switch style {
+        case .card:
+            return RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).path(in: rect)
+        case .plain:
+            return Rectangle().path(in: rect)
+        }
     }
 }
