@@ -8,6 +8,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        // Crash breadcrumb (the 23:24 SIGABRT, b1066): an ObjC exception on a
+        // non-main thread aborts with only raw offsets in the .ips — useless
+        // without the dSYM. This handler runs BEFORE the abort and captures
+        // the exception name/reason plus `callStackSymbols`, which the
+        // runtime symbolicates with our own function names. The report waits
+        // in UserDefaults; the next launch copies it into the realtime
+        // flight recorder, so the banner's copy action exports it.
+        NSSetUncaughtExceptionHandler { exception in
+            let report = """
+            \(exception.name.rawValue): \(exception.reason ?? "?")
+            \(exception.callStackSymbols.joined(separator: "\n"))
+            """
+            UserDefaults.standard.set(report, forKey: "prvio.lastUncaughtException")
+        }
+        if let pending = UserDefaults.standard.string(forKey: "prvio.lastUncaughtException") {
+            RealtimeFlightRecorder.shared.note("CRASH LAST SESSION:\n\(pending)")
+            debugLog("[Crash] previous session uncaught exception:\n\(pending)")
+            UserDefaults.standard.removeObject(forKey: "prvio.lastUncaughtException")
+        }
         ProactiveEngine.registerBackgroundTask()
         ProactiveEngine.scheduleBackgroundRefresh()
         // Apple's own crash/hang/battery telemetry, persisted on-device —
