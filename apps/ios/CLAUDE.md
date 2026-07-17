@@ -63,6 +63,14 @@ older iOS convention disagree, always choose the newest.
 - Popover height is measured once and FIXED for the presentation; a popover
   that keeps re-measuring its scrolling content re-anchors every frame and
   the page appears to jump.
+- Menu-in-menu (the iOS 27 way): when a page has 4+ facets that would stack
+  as a flat scroll, a facet EXPANDS its options INLINE, indented, right below
+  its row — the chevron rotates down, the card grows and shrinks — exactly
+  like the native Photos filter menu (IMG_8576). NEVER a slide-to-a-new-page
+  drill. Use `GlassDrillMenu` (Components/GlassDrillMenu.swift): one facet
+  open at a time (accordion), each row shows its current value collapsed,
+  selecting applies and collapses. Flat sections stay the default for menus
+  with only 2–3 groups.
 
 ### Headers — no borders, ever (permanent, user-decreed)
 
