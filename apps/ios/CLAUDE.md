@@ -26,11 +26,14 @@ evolution. Build for the future, not only for the current feature.
 
 ## Apple design philosophy
 
-Every screen must feel like it belongs on iOS 26+, using Apple's latest
-design language, at a visual quality comparable to Apple's own apps. Use
-Liquid Glass thoughtfully throughout. The app should always feel premium,
-elegant, minimal, immersive, refined, fluid, modern, and native. Never ship
-generic UI — every component should look intentionally designed.
+The bar is "iOS 27" — the user's shorthand for one step AHEAD of Apple's
+current design language. Every screen must feel like it belongs on the
+newest iOS (26+) and anticipates the next one, at a visual quality
+comparable to Apple's own apps. Use Liquid Glass thoughtfully throughout.
+The app should always feel premium, elegant, minimal, immersive, refined,
+fluid, modern, and native. Never ship generic UI — every component should
+look intentionally designed. When Apple's newest visual language and an
+older iOS convention disagree, always choose the newest.
 
 ### Liquid Glass rules
 
@@ -39,6 +42,34 @@ generic UI — every component should look intentionally designed.
 - Glass must never reduce readability.
 - Spacing should always feel balanced.
 - Every screen should immediately communicate premium quality.
+
+### Menus — the one-circle law (permanent, user-decreed)
+
+- Each page exposes ONE circular glass trigger (toolbar-preferred, top
+  trailing) that aggregates EVERYTHING: view modes, filters, sorts, one-shot
+  actions (share/print/export), and anything that would otherwise live in an
+  "…" menu, a capsule row, or stat tiles. No permanent chip rows, capsules,
+  or tile strips on the page body.
+- Menus present through `GlassMenuChrome` (Components/GlassFilterButton.swift)
+  and NOTHING else: Liquid Glass card, 24pt continuous corners
+  (`AppRadius.xxl`), morph-open scale 0.95→1.00 on a ~0.35s spring anchored
+  at the trigger edge, entrance specular sweep, shadow lift inside the shape
+  style, Reduce Motion → fade only, Reduce Transparency → opaque card.
+- Popovers NEVER show the UIKit anchor arrow ("codiță") — `PopoverArrowKiller`
+  rides in every menu popover.
+- One-shot action rows run through the popover's action mailbox (executed
+  from `onDisappear`), never via a timed delay — a presentation started
+  mid-dismissal is silently dropped by UIKit.
+- Popover height is measured once and FIXED for the presentation; a popover
+  that keeps re-measuring its scrolling content re-anchors every frame and
+  the page appears to jump.
+
+### Headers — no borders, ever (permanent, user-decreed)
+
+Day headers and section headers are NAKED text: no glass chip, no capsule,
+no material band, no background of any kind, on any page (IMG_8554 →
+IMG_8559 → IMG_8562 "nici aici, nici nicăieri"). Unpin such headers so
+rows never scroll beneath bare glyphs.
 
 ### Motion design
 
