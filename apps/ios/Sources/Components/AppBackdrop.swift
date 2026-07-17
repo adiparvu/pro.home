@@ -118,3 +118,33 @@ struct AppBackdrop: View {
 // backdrop — same call sites (`appBackground.ignoresSafeArea()`,
 // `.background(appBackground)`), zero per-screen edits.
 var appBackground: some View { AppBackdrop() }
+
+// MARK: - Sheet backdrop (transient chrome)
+
+/// Lightweight backdrop for SHEETS and other transient surfaces: the mood's
+/// sky gradient alone — no light pools, no weather wash, no effects layer,
+/// no grain, no vignette, no animation, no engine callbacks. The full
+/// `appBackground` stacks ~8 composited layers (grain blends over the whole
+/// screen, the effects layer animates), and iOS re-composites all of it on
+/// every frame of a sheet's present/dismiss transition — which visibly
+/// stuttered (IMG_8573, Notifications). One static gradient keeps the
+/// mood's color identity at one-layer cost.
+struct AppSheetBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        // Same scheme-safety substitution as AppBackdrop: never render a
+        // light ground under a dark scheme (or vice versa).
+        let desired = AppMoodEngine.shared.resolved
+        let mood: AppMood = switch (desired.palette.colorScheme, colorScheme) {
+        case (.light, .dark): .night
+        case (.dark, .light): .day
+        default:              desired
+        }
+        return LinearGradient(stops: mood.palette.resolvedSkyStops,
+                              startPoint: .top, endPoint: .bottom)
+            .accessibilityHidden(true)
+    }
+}
+
+var sheetBackground: some View { AppSheetBackdrop() }

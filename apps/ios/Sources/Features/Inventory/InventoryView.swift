@@ -206,17 +206,18 @@ struct InventoryView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 5) {
-                    if !service.items.isEmpty {
-                        filterButton
-                        Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
-                    }
-                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus").font(AppFont.subheadline).frame(width: 38, height: 32)
-                    }.buttonStyle(.plain)
-                    .accessibilityLabel("Add item")
+            if !service.items.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAdd) { AddInventorySheet { item in Task { await service.add(item) } } }

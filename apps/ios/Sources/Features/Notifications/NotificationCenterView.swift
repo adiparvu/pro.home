@@ -70,7 +70,11 @@ struct NotificationCenterView: View {
                 content
             }
         }
-        .background(appBackground.ignoresSafeArea())
+        // Presented as a SHEET: the full living backdrop (~8 composited
+        // layers, animated effects, blended grain) made every present/
+        // dismiss transition stutter (IMG_8573). Sheets get the one-layer
+        // static mood gradient instead.
+        .background(sheetBackground.ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,

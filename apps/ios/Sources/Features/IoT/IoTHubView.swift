@@ -61,25 +61,27 @@ struct IoTHubView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 14) {
-                    GuideInfoButton(topic: tab.guide)
-                    if service.isPolling {
-                        ProgressView().tint(Color.accentColor).scaleEffect(0.85)
-                    } else {
-                        Button { Task { await service.pollAllDevices() } } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(AppFont.body)
-                                .foregroundStyle(.primary)
-                        }
-                        .accessibilityLabel("Refresh devices")
-                    }
-                    Button { addAction() } label: {
-                        Image(systemName: "plus")
+                GuideInfoButton(topic: tab.guide)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if service.isPolling {
+                    ProgressView().tint(Color.accentColor).scaleEffect(0.85)
+                } else {
+                    Button { Task { await service.pollAllDevices() } } label: {
+                        Image(systemName: "arrow.clockwise")
                             .font(AppFont.scaled(17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
-                    .accessibilityLabel("Add item")
+                    .accessibilityLabel("Refresh devices")
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { addAction() } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add item")
             }
         }
         .onAppear { service.startPolling() }

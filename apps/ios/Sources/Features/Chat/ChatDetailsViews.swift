@@ -435,30 +435,34 @@ struct GroupDetailsView: View {
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 14) {
-                        if !inviteLink.isEmpty {
-                            NavigationLink {
-                                InviteLinkView(title: groupName, link: inviteLink)
-                            } label: {
-                                Image(systemName: "qrcode").font(AppFont.headline)
-                            }
-                        }
-                        Menu {
-                            Button { showEditDetails = true } label: {
-                                Label("Editează numele și imaginea", systemImage: "pencil")
-                            }
-                            Button { showEditDescription = true } label: {
-                                Label("Editează descrierea", systemImage: "square.and.pencil")
-                            }
-                            if !exportText.isEmpty {
-                                ShareLink(item: exportText) {
-                                    Label("Exportă conversația", systemImage: "square.and.arrow.up")
-                                }
-                            }
+                if !inviteLink.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            InviteLinkView(title: groupName, link: inviteLink)
                         } label: {
-                            Image(systemName: "ellipsis").font(AppFont.headline)
+                            Image(systemName: "qrcode")
+                                .font(AppFont.scaled(17, weight: .semibold))
+                                .foregroundStyle(.primary)
                         }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { showEditDetails = true } label: {
+                            Label("Editează numele și imaginea", systemImage: "pencil")
+                        }
+                        Button { showEditDescription = true } label: {
+                            Label("Editează descrierea", systemImage: "square.and.pencil")
+                        }
+                        if !exportText.isEmpty {
+                            ShareLink(item: exportText) {
+                                Label("Exportă conversația", systemImage: "square.and.arrow.up")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
                 }
             }

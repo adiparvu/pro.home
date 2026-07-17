@@ -47,7 +47,7 @@ struct DeliveriesView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "envelope.badge")
-                        .font(AppFont.title3)
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Auto-import from email")
@@ -58,7 +58,7 @@ struct DeliveriesView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.title3)
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add delivery")

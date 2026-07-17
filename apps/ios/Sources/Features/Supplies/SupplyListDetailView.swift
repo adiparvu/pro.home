@@ -43,18 +43,18 @@ struct SupplyListDetailView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search items…"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    if !listItems.isEmpty {
-                        filterButton
-                    }
-                    Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.title3)
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Add item")
+            if !listItems.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddItem) {

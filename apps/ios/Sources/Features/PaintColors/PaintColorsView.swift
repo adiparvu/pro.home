@@ -52,25 +52,24 @@ struct PaintColorsView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    // One circle for everything (IMG_8544/8546): the room
-                    // filter that used to sit as a permanent capsule plus
-                    // share/print, in a single aggregated popover.
-                    if !paintColorService.colors.isEmpty {
-                        filterButton
-                    }
-                    Button {
-                        showAdd = true
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.scaled(17, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 34, height: 32)
-                    }
-                    .accessibilityLabel("Add paint color")
+            // One circle for everything (IMG_8544/8546): the room
+            // filter that used to sit as a permanent capsule plus
+            // share/print, in a single aggregated popover.
+            if !paintColorService.colors.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showAdd = true
+                    HapticFeedback.impact(.light)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add paint color")
             }
         }
         .sheet(isPresented: $showAdd) {

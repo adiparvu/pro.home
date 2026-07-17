@@ -92,7 +92,7 @@ struct FloorPlansView: View {
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.headline)
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("room_add")

@@ -106,27 +106,27 @@ struct ZoneDetailView: View {
         .onDisappear { isRippleActive = false }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    ShareLink(item: shareText, preview: SharePreview(zone.name)) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(AppFont.scaled(15))
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Share")
-                    Menu {
-                        Button { editingZone = zone } label: {
-                            Label("Edit Zone", systemImage: "pencil")
-                        }
-                        Button(role: .destructive) { showDeleteConfirm = true } label: {
-                            Label("Delete Zone", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(AppFont.scaled(15))
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("More")
+                ShareLink(item: shareText, preview: SharePreview(zone.name)) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Share")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button { editingZone = zone } label: {
+                        Label("Edit Zone", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) { showDeleteConfirm = true } label: {
+                        Label("Delete Zone", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("More")
             }
         }
         .sheet(item: $editingZone) { z in

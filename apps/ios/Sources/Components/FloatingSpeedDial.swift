@@ -99,9 +99,11 @@ struct FloatingSpeedDial: View {
             .animation(dialAnimation, value: expanded)
             .frame(width: 58, height: 58)
             .contentShape(Circle())
+            // Inside the label, not on the Button: an interactive glass
+            // layer wrapping the Button swallows the first tap (IMG_8572).
+            .glassCircle(interactive: true)
         }
         .buttonStyle(.plain)
-        .glassCircle(interactive: true)
         .shadow(color: Color.primary.opacity(0.22), radius: 20, y: 6)
         .accessibilityLabel(isMenu ? String(localized: "Quick actions") : (actions.first?.title ?? ""))
         .accessibilityHint(isMenu ? String(localized: "Opens the quick actions menu") : "")

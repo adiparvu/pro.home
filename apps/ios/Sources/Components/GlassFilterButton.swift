@@ -224,9 +224,13 @@ struct GlassFilterButton<Content: View>: View {
                     }
                 }
                 .contentShape(Circle())
+                // Glass rides INSIDE the label: applied outside the Button,
+                // the interactive glass layer competes for the touch and the
+                // first tap only deforms the glass instead of firing the
+                // action (IMG_8572 "trebuie să apăs de două ori").
+                .modifier(StandaloneGlassCircle(enabled: !inToolbar))
         }
         .buttonStyle(.plain)
-        .modifier(StandaloneGlassCircle(enabled: !inToolbar))
         .accessibilityLabel(Text(accessibilityLabelKey))
         .accessibilityAddTraits(isActive ? [.isSelected] : [])
         .popover(isPresented: $isPresented, arrowEdge: .top) {

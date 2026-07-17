@@ -151,45 +151,39 @@ struct DocumentsView: View {
                     prompt: Text("Search documents..."))
         .floatingSpeedDial(.documents)
         .toolbar {
+            // Category filter + sort in one circle (IMG_8544).
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 5) {
-                    // Category filter + sort in one circle (IMG_8544).
-                    filterButton(favs: favs, expiringCount: expiringCount)
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(width: 0.5, height: 18)
-                    if DocumentScannerView.isSupported {
-                        Button {
-                            if propertyService.primary == nil {
-                                errorToast = "Please set up your property first in Settings."
-                            } else {
-                                showScanner = true
-                            }
-                        } label: {
-                            Image(systemName: "doc.viewfinder")
-                                .font(AppFont.subheadline)
-                                .frame(width: 38, height: 32)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text("doc_scan_pdf"))
-                        Rectangle()
-                            .fill(Color.primary.opacity(0.15))
-                            .frame(width: 0.5, height: 18)
-                    }
+                filterButton(favs: favs, expiringCount: expiringCount)
+            }
+            if DocumentScannerView.isSupported {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         if propertyService.primary == nil {
                             errorToast = "Please set up your property first in Settings."
                         } else {
-                            showAdd = true
+                            showScanner = true
                         }
                     } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.subheadline)
-                            .frame(width: 38, height: 32)
+                        Image(systemName: "doc.viewfinder")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add document")
+                    .accessibilityLabel(Text("doc_scan_pdf"))
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if propertyService.primary == nil {
+                        errorToast = "Please set up your property first in Settings."
+                    } else {
+                        showAdd = true
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add document")
             }
         }
         // Fetch only after a cold cache — re-appearances (navigation pops,

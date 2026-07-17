@@ -106,34 +106,31 @@ struct ZonesListView: View {
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    Text("\(filteredZones.count)")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.smartTextSecondary)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(.regularMaterial, in: Capsule())
-
-                    // The one aggregated filter — replaces the chip row that
-                    // sat above the list. `inToolbar` because iOS 26 wraps
-                    // toolbar controls in system glass (IMG_8315 class).
-                    GlassFilterButton(isActive: filter != .all, inToolbar: true) {
-                        GlassFilterSection(options: zoneFilterOptions, selection: $filter)
-                    }
-
-                    Button {
-                        HapticFeedback.impact(.light)
-                        router.selectedTab = .digitalTwin
-                    } label: {
-                        // No .glassCircle() in a toolbar — iOS 26 wraps the
-                        // control in its own glass, so a custom circle doubled
-                        // it (IMG_8315 class).
-                        Image(systemName: "map.fill")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.smartTextPrimary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Open Digital Twin")
+                Text("\(filteredZones.count)")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.smartTextSecondary)
+            }
+            // The one aggregated filter — replaces the chip row that
+            // sat above the list. `inToolbar` because iOS 26 wraps
+            // toolbar controls in system glass (IMG_8315 class).
+            ToolbarItem(placement: .topBarTrailing) {
+                GlassFilterButton(isActive: filter != .all, inToolbar: true) {
+                    GlassFilterSection(options: zoneFilterOptions, selection: $filter)
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.selectedTab = .digitalTwin
+                } label: {
+                    // No .glassCircle() in a toolbar — iOS 26 wraps the
+                    // control in its own glass, so a custom circle doubled
+                    // it (IMG_8315 class).
+                    Image(systemName: "map.fill")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(Color.smartTextPrimary)
+                }
+                .accessibilityLabel("Open Digital Twin")
             }
         }
     }

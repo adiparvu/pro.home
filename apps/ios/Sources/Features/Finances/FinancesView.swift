@@ -297,7 +297,8 @@ struct FinancesView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.headline)
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("fin_add_transaction")
             }

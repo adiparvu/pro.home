@@ -84,14 +84,16 @@ struct SuppliesView: View {
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    filterButton
-                    if activeTab == .lists {
-                        Button { showAddList = true; HapticFeedback.impact(.light) } label: {
-                            Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
-                        }
-                        .accessibilityLabel("Add list")
+                filterButton
+            }
+            if activeTab == .lists {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showAddList = true; HapticFeedback.impact(.light) } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Add list")
                 }
             }
         }

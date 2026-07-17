@@ -374,8 +374,9 @@ struct ContractorsView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus").font(AppFont.scaled(17, weight: .semibold)).foregroundStyle(.primary)
-                        .frame(width: 34, height: 32)
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add contractor")
             }

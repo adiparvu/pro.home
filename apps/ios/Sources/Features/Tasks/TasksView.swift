@@ -173,47 +173,47 @@ struct TasksView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 5) {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        showAdd = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                    }
-                    .accessibilityLabel("task_new")
-                    GlassFilterButton(isActive: filter != .all || historyPeriod != .month,
-                                      inToolbar: true) {
-                        GlassFilterSection(
-                            title: "View",
-                            options: TaskFilter.allCases.map {
-                                GlassPickerOption(value: $0, icon: $0.icon,
-                                                  title: $0.title, count: countFor($0))
-                            },
-                            selection: $filter)
-                        GlassFilterSectionDivider()
-                        // Scopes the Completed view ("Finalizate"); hosted here
-                        // so the retired chip row under that list stays retired.
-                        GlassFilterSection(
-                            title: "History",
-                            options: HistoryPeriod.allCases.map {
-                                GlassPickerOption(value: $0, title: $0.title)
-                            },
-                            selection: $historyPeriod)
-                    }
-                    Button {
-                        HapticFeedback.impact(.light)
-                        showCalendar = true
-                    } label: {
-                        Image(systemName: "calendar")
-                            .font(AppFont.scaled(16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                    }
-                    .accessibilityLabel("Calendar")
+                Button {
+                    HapticFeedback.impact(.light)
+                    showAdd = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("task_new")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                GlassFilterButton(isActive: filter != .all || historyPeriod != .month,
+                                  inToolbar: true) {
+                    GlassFilterSection(
+                        title: "View",
+                        options: TaskFilter.allCases.map {
+                            GlassPickerOption(value: $0, icon: $0.icon,
+                                              title: $0.title, count: countFor($0))
+                        },
+                        selection: $filter)
+                    GlassFilterSectionDivider()
+                    // Scopes the Completed view ("Finalizate"); hosted here
+                    // so the retired chip row under that list stays retired.
+                    GlassFilterSection(
+                        title: "History",
+                        options: HistoryPeriod.allCases.map {
+                            GlassPickerOption(value: $0, title: $0.title)
+                        },
+                        selection: $historyPeriod)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    showCalendar = true
+                } label: {
+                    Image(systemName: "calendar")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Calendar")
             }
         }
         // The running work session stays pinned above the list, always visible

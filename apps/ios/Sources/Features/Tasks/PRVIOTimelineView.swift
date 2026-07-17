@@ -115,19 +115,16 @@ struct PRVIOTimelineView: View {
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    Text("\(filteredEvents.count)")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(.regularMaterial, in: Capsule())
-
-                    // The one aggregated filter — replaces the chip row that
-                    // sat above the list. `inToolbar` because iOS 26 wraps
-                    // toolbar controls in system glass (IMG_8315 class).
-                    GlassFilterButton(isActive: filter != .today, inToolbar: true) {
-                        GlassFilterSection(options: timeFilterOptions, selection: $filter)
-                    }
+                Text("\(filteredEvents.count)")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(.secondary)
+            }
+            // The one aggregated filter — replaces the chip row that
+            // sat above the list. `inToolbar` because iOS 26 wraps
+            // toolbar controls in system glass (IMG_8315 class).
+            ToolbarItem(placement: .topBarTrailing) {
+                GlassFilterButton(isActive: filter != .today, inToolbar: true) {
+                    GlassFilterSection(options: timeFilterOptions, selection: $filter)
                 }
             }
         }

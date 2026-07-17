@@ -48,25 +48,25 @@ struct PropertySettingsView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 12) {
-                    if propertyService.primary != nil {
-                        // The dossier: everything the property has become,
-                        // as one shareable PDF.
-                        Button { showPassport = true } label: {
-                            Image(systemName: "doc.richtext")
-                                .font(AppFont.subheadline)
-                                .foregroundStyle(Color.accentColor)
-                        }
-                        .accessibilityLabel(Text("passport_title"))
+            if propertyService.primary != nil {
+                // The dossier: everything the property has become,
+                // as one shareable PDF.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showPassport = true } label: {
+                        Image(systemName: "doc.richtext")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
-                    Button { showAdd = true } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .accessibilityLabel("Add property")
+                    .accessibilityLabel(Text("passport_title"))
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Add property")
             }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }

@@ -46,17 +46,15 @@ struct PlantsView: View {
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    Button {
-                        showAddPlant = true
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.title3)
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Add plant")
+                Button {
+                    showAddPlant = true
+                    HapticFeedback.impact(.light)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add plant")
             }
         }
         .sheet(isPresented: $showAddPlant) {

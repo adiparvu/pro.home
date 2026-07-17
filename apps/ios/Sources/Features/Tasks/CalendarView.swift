@@ -323,7 +323,9 @@ struct CalendarView: View {
                 newEventDay = selectedDay ?? anchor
                 creatingEvent = true
             } label: {
-                Image(systemName: "plus").font(AppFont.headline)
+                Image(systemName: "plus")
+                    .font(AppFont.scaled(17, weight: .semibold))
+                    .foregroundStyle(.primary)
             }
             .accessibilityLabel(Text("cal_new_event"))
             .disabled(propertyService.primary == nil)
