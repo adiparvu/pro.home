@@ -203,17 +203,20 @@ struct AuditLogView: View {
             }
             .liquidGlass(cornerRadius: AppRadius.xl)
         } header: {
-            // Same construction as the activity feed's pinned day headers:
-            // the bar blur masks rows scrolling beneath while blending with
-            // the living mood backdrop (an opaque patch would band on it).
-            Text(day)
-                .textCase(.uppercase)
-                .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, AppSpacing.sm)
-                .padding(.vertical, AppSpacing.xs)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.thinMaterial)
+            // Same treatment as the activity feed's day headers (IMG_8541):
+            // a floating glass chip, never a full-width material band that
+            // slices the living backdrop.
+            HStack {
+                Text(day)
+                    .textCase(.uppercase)
+                    .font(AppFont.label)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.xs + 2)
+                    .liquidGlass(cornerRadius: AppRadius.xl)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, AppSpacing.xs)
         }
     }
 

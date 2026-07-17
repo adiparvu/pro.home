@@ -452,12 +452,14 @@ struct TasksView: View {
                 else { collapsed.insert(kind) }
             }
         } label: {
+            // A floating glass chip, never a full-width material band that
+            // slices the living backdrop (IMG_8541) — pinned rows scroll
+            // past on naked backdrop, Journal-style.
             HStack {
-                Text(kind.title)
-                    .font(AppFont.title3)
-                    .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
-                Spacer()
-                HStack(spacing: 6) {
+                HStack(spacing: AppSpacing.sm) {
+                    Text(kind.title)
+                        .font(AppFont.title3)
+                        .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
                     if let count {
                         Text(verbatim: "\(count)")
                             .font(AppFont.captionStrong)
@@ -477,15 +479,14 @@ struct TasksView: View {
                         .foregroundStyle(Color.secondaryTextColor)
                         .rotationEffect(.degrees(collapsed.contains(kind) ? 90 : 0))
                 }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.xs + 2)
+                .liquidGlass(cornerRadius: AppRadius.xl)
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
-            // Pinned headers mask the rows scrolling beneath them. The old
-            // flat appBackground became a living gradient — re-rendered at
-            // this small frame it reads as a foreign band, so pinned masks
-            // use the native bar blur instead (blends over any mood).
-            .background(.thinMaterial)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

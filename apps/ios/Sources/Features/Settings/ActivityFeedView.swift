@@ -667,28 +667,34 @@ struct ActivityFeedView: View {
     }
 
     private func dayHeader(_ day: Date, eventCount: Int) -> some View {
-        // Legibility fix (IMG_8521): secondary-on-thin-material washed out
-        // over the warm mood backdrop. Primary type on a regular material
-        // band, closed by a hairline, reads at a glance in both schemes.
-        HStack(spacing: AppSpacing.sm) {
-            dayTitle(day)
-                .textCase(.uppercase)
-                .font(AppFont.scaled(12, weight: .semibold))
-                .foregroundStyle(.primary)
-                .tracking(0.5)
-            Spacer()
-            Text(eventCountLabel(eventCount))
-                .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+        // A floating glass CHIP, not a band (IMG_8541): the full-width
+        // material strip read as a gray bar slicing the living backdrop.
+        // The chip carries the same primary-type legibility fix (IMG_8521)
+        // while pinned rows scroll past on naked backdrop — the Journal-app
+        // pattern. Leading-aligned; the count lives inside the same chip.
+        HStack {
+            HStack(spacing: AppSpacing.xs) {
+                dayTitle(day)
+                    .textCase(.uppercase)
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .tracking(0.5)
+                Text(verbatim: "·")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.tertiary)
+                Text(eventCountLabel(eventCount))
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs + 2)
+            .liquidGlass(cornerRadius: AppRadius.xl)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
-        .padding(.vertical, AppSpacing.sm)
-        // Bar blur, not an opaque patch — the living backdrop would band.
-        .background(.regularMaterial)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.hairline).frame(height: 1)
-        }
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.xs)
+        .accessibilityElement(children: .combine)
     }
 
     /// "Today"/"Yesterday" resolve through the catalog; other days use the

@@ -160,18 +160,23 @@ struct SupplyListDetailView: View {
                             withAnimation(.spring(response: 0.35)) { showCompleted.toggle() }
                             HapticFeedback.selection()
                         } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
-                                    .font(AppFont.scaled(10, weight: .semibold))
-                                Text("COMPLETED · \(completed.count)")
-                                    .font(AppFont.label)
-                                    .tracking(0.5)
-                                Spacer()
+                            // Floating glass chip — a full-width material
+                            // band would slice the living backdrop (IMG_8541).
+                            HStack {
+                                HStack(spacing: 6) {
+                                    Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
+                                        .font(AppFont.scaled(10, weight: .semibold))
+                                    Text("COMPLETED · \(completed.count)")
+                                        .font(AppFont.label)
+                                        .tracking(0.5)
+                                }
+                                .foregroundStyle(Color.brandSuccess)
+                                .padding(.horizontal, AppSpacing.base)
+                                .padding(.vertical, AppSpacing.xs + 2)
+                                .liquidGlass(cornerRadius: AppRadius.xl)
+                                Spacer(minLength: 0)
                             }
-                            .foregroundStyle(Color.brandSuccess)
-                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
-                            // Bar blur — the living backdrop would band here.
-                            .background(.thinMaterial)
+                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
                         }
                         .buttonStyle(.plain)
                     }
@@ -184,16 +189,19 @@ struct SupplyListDetailView: View {
     }
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
+        // Floating glass chip — a full-width material band would slice the
+        // living backdrop (IMG_8541).
         HStack {
             Text(title)
                 .font(AppFont.label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .tracking(0.5)
-            Spacer()
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.xs + 2)
+                .liquidGlass(cornerRadius: AppRadius.xl)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
-        // Bar blur — the living backdrop would band here.
-        .background(.thinMaterial)
     }
 
     // MARK: States
