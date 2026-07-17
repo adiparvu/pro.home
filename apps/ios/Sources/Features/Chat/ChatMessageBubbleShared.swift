@@ -392,6 +392,12 @@ struct ChatTextBubbleView: View {
         return useDefaultBlueGradient ? .white : fill.readableText
     }
 
+    /// A body this long (a pasted log/document, never hand-typed) wraps into a
+    /// bubble thousands of points tall — past the GPU texture ceiling where
+    /// blur/glass silently stops rendering, which left raw text floating on
+    /// the wallpaper (IMG_8557). Such bubbles take the opaque fill instead.
+    private var oversized: Bool { text.count > 2000 }
+
     var body: some View {
         // A subject-bearing body (see MessageSubject) renders iMessage-style:
         // the subject as a semibold title line above the message text, in one
@@ -412,6 +418,7 @@ struct ChatTextBubbleView: View {
         .tint(isOwn ? foreground : Color.accentColor)
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
         .chatBubbleBackground(isOwn: isOwn, hasTail: hasTail, fill: fill,
-                              gradient: useDefaultBlueGradient)
+                              gradient: useDefaultBlueGradient,
+                              forcesOpaque: oversized)
     }
 }

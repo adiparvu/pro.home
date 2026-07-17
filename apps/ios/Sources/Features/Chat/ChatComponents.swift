@@ -372,16 +372,20 @@ extension View {
     /// Transparency — the opaque iMessage gray, all in the tail-aware bubble
     /// shape. Text over it stays `.primary`, which the system keeps legible on
     /// glass and material in both light and dark.
-    func incomingBubbleGlass(hasTail: Bool) -> some View {
-        modifier(IncomingBubbleGlass(hasTail: hasTail))
+    func incomingBubbleGlass(hasTail: Bool, forcesOpaque: Bool = false) -> some View {
+        modifier(IncomingBubbleGlass(hasTail: hasTail, forcesOpaque: forcesOpaque))
     }
 
     /// The one bubble-background entry point shared by the text and voice
     /// bubbles: incoming → Liquid Glass; outgoing → the themed solid fill, or
     /// the default iMessage-blue gradient when `gradient` is set.
+    /// `forcesOpaque` swaps the incoming glass for the opaque iMessage gray —
+    /// required for very long bodies, whose bubble outgrows the GPU texture
+    /// ceiling where blur/glass silently stops rendering (IMG_8557).
     @ViewBuilder
     func chatBubbleBackground(isOwn: Bool, hasTail: Bool, fill: Color,
-                              gradient: Bool = false) -> some View {
+                              gradient: Bool = false,
+                              forcesOpaque: Bool = false) -> some View {
         if isOwn {
             if gradient {
                 background(Color.imessageBlueGradient,
@@ -390,7 +394,7 @@ extension View {
                 background(fill, in: ChatBubbleShape(isOwn: true, hasTail: hasTail))
             }
         } else {
-            incomingBubbleGlass(hasTail: hasTail)
+            incomingBubbleGlass(hasTail: hasTail, forcesOpaque: forcesOpaque)
         }
     }
 }
@@ -398,16 +402,25 @@ extension View {
 private struct IncomingBubbleGlass: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let hasTail: Bool
+    /// Solid gray instead of glass. Blur-backed effects render through a GPU
+    /// texture with a hard size ceiling; a pasted-log bubble thousands of
+    /// points tall exceeds it and the glass drops out entirely, leaving raw
+    /// text on the wallpaper (IMG_8557). Solid color has no ceiling.
+    var forcesOpaque: Bool = false
 
     private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: false, hasTail: hasTail) }
 
     func body(content: Content) -> some View {
-        if reduceTransparency {
+        if reduceTransparency || forcesOpaque {
             // Honor the accessibility request explicitly: an opaque elevated
             // surface with the exact iMessage gray, never a blur to read through.
             content.background(Color.imessageIncoming, in: shape)
         } else if #available(iOS 26, *) {
+            // Hairline edge on top of the glass: photo wallpapers washed the
+            // bare glass out (same legibility gap the composer bar had —
+            // IMG_8532), so the bubble keeps a defined boundary everywhere.
             content.glassEffect(in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(0.12), lineWidth: 0.7))
         } else {
             content
                 .background(.ultraThinMaterial, in: shape)
