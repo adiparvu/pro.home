@@ -1,4 +1,35 @@
 import SwiftUI
+import UIKit
+
+// MARK: - Arrowless popovers (IMG_8566)
+//
+// SwiftUI's `.popover` always draws the UIKit anchor arrow; the app's menus
+// must present as clean floating glass cards with no tail — the native
+// iOS 26 Menu look. SwiftUI has no public switch, but the presentation is
+// backed by `UIPopoverPresentationController`, whose `permittedArrowDirections`
+// is public API. This helper rides inside the popover content, finds its own
+// hosting controller through the responder chain the moment the view joins
+// the window (early in the presentation transition, before final layout),
+// and turns the arrow off.
+
+private final class PopoverArrowKillerView: UIView {
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let vc = current as? UIViewController {
+                vc.popoverPresentationController?.permittedArrowDirections = []
+                break
+            }
+            responder = current.next
+        }
+    }
+}
+
+struct PopoverArrowKiller: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView { PopoverArrowKillerView() }
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
 
 // MARK: - GlassFilterButton — one circle, every filter (IMG_8540)
 //
@@ -17,6 +48,27 @@ import SwiftUI
 // from its default) shows a small accent dot — the page computes it from
 // its own state, honestly, or omits it.
 
+/// Popover-scoped mailbox for one-shot actions (share, print, navigate):
+/// a row deposits its work here and closes the popover; the button runs it
+/// from the content's `onDisappear` — i.e. AFTER the dismissal transition —
+/// so a share sheet or print panel never races the dying presentation.
+/// (The previous fixed 350ms guess lost that race on device: UIKit dropped
+/// the presentation silently and the rows "did nothing" — IMG_8560.)
+final class GlassPopoverActionMailbox {
+    var pending: (() -> Void)?
+}
+
+private struct GlassPopoverMailboxKey: EnvironmentKey {
+    static let defaultValue: GlassPopoverActionMailbox? = nil
+}
+
+extension EnvironmentValues {
+    var glassPopoverMailbox: GlassPopoverActionMailbox? {
+        get { self[GlassPopoverMailboxKey.self] }
+        set { self[GlassPopoverMailboxKey.self] = newValue }
+    }
+}
+
 struct GlassFilterButton<Content: View>: View {
     /// Accent dot when any hosted filter is narrowed from its default.
     var isActive: Bool = false
@@ -34,6 +86,14 @@ struct GlassFilterButton<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     @State private var isPresented = false
+    @State private var mailbox = GlassPopoverActionMailbox()
+    /// Content's measured height. Once known, the popover height is FIXED
+    /// (never re-derived from the scroll's ideal size), because a popover
+    /// that keeps re-measuring a scrolling ScrollView re-anchors on every
+    /// frame and the whole page appears to jump under it (IMG_8561).
+    @State private var contentHeight: CGFloat?
+
+    private static var maxPopoverHeight: CGFloat { 440 }
 
     /// Glyph tracks the circle (15pt at the 38pt default) so a larger
     /// standalone trigger doesn't render a visibly under-weight icon.
@@ -71,8 +131,26 @@ struct GlassFilterButton<Content: View>: View {
                     content()
                 }
                 .padding(.vertical, AppSpacing.xs)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                    contentHeight = $0
+                }
             }
-            .frame(minWidth: 250, maxHeight: 440)
+            .frame(minWidth: 250)
+            .frame(height: contentHeight.map { min($0, Self.maxPopoverHeight) })
+            .frame(maxHeight: contentHeight == nil ? Self.maxPopoverHeight : nil)
+            .scrollBounceBehavior(.basedOnSize)
+            .background(PopoverArrowKiller())
+            .environment(\.glassPopoverMailbox, mailbox)
+            .onDisappear {
+                // The popover is gone — presentation is safe again. The short
+                // hop lets UIKit finish tearing the hosting controller down.
+                guard let action = mailbox.pending else { return }
+                mailbox.pending = nil
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    action()
+                }
+            }
             .presentationCompactAdaptation(.popover)
         }
     }
@@ -205,14 +283,23 @@ struct GlassFilterActionRow: View {
     let action: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.glassPopoverMailbox) private var mailbox
 
     var body: some View {
         Button {
             HapticFeedback.impact(.light)
-            dismiss()
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(350))
-                action()
+            if let mailbox {
+                // Deterministic: the popover's onDisappear runs this once the
+                // dismissal transition is truly over (IMG_8560).
+                mailbox.pending = action
+                dismiss()
+            } else {
+                // Outside a GlassFilterButton popover — best-effort delay.
+                dismiss()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(350))
+                    action()
+                }
             }
         } label: {
             HStack(spacing: AppSpacing.sm) {

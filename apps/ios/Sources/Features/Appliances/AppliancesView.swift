@@ -59,14 +59,6 @@ struct AppliancesView: View {
         }
     }
 
-    /// Average age across the appliances that actually have a purchase date;
-    /// nil when none do — the tile then simply doesn't exist.
-    private var averageAgeYears: Double? {
-        let ages = applianceService.appliances.compactMap(\.ageYears)
-        guard !ages.isEmpty else { return nil }
-        return ages.reduce(0, +) / Double(ages.count)
-    }
-
     /// Group-by-location is only offered when the data can carry it:
     /// at least half the appliances have a location.
     private var locationGroupingAvailable: Bool {
@@ -189,7 +181,8 @@ struct AppliancesView: View {
     /// sit as a permanent capsule and the old ↑↓ sort menu merge into a
     /// single aggregated filter popover — same pattern as Inventory.
     private var filterButton: some View {
-        GlassFilterButton(isActive: selectedCategory != nil, inToolbar: true) {
+        GlassFilterButton(isActive: selectedCategory != nil || warrantySlice != nil,
+                          inToolbar: true) {
             GlassFilterSection(
                 title: "Category",
                 options: [GlassPickerOption<ApplianceCategory?>(value: nil,
@@ -198,6 +191,24 @@ struct AppliancesView: View {
                         GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
                     },
                 selection: $selectedCategory)
+            GlassFilterSectionDivider()
+            // The warranty stat tiles folded in here (IMG_8563) — same
+            // honest counts, same toggle-off-by-reselecting "All".
+            GlassFilterSection(
+                title: "Warranty",
+                options: [
+                    GlassPickerOption<WarrantySlice?>(value: nil,
+                                                      title: String(localized: "All")),
+                    GlassPickerOption<WarrantySlice?>(value: .inWarranty,
+                                                      icon: "checkmark.seal",
+                                                      title: String(localized: "appliance_stat_in_warranty"),
+                                                      count: inWarranty.count),
+                    GlassPickerOption<WarrantySlice?>(value: .expiringSoon,
+                                                      icon: "clock.badge.exclamationmark",
+                                                      title: String(localized: "appliance_stat_expiring"),
+                                                      count: expiringSoon.count)
+                ],
+                selection: $warrantySlice)
             GlassFilterSectionDivider()
             // A non-default sort reorders, it doesn't narrow — so it never
             // claims the "filtered" accent dot.
@@ -220,7 +231,6 @@ struct AppliancesView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                statsStrip
                 if filtered.isEmpty {
                     EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else if groupByLocation && locationGroupingAvailable {
@@ -238,69 +248,6 @@ struct AppliancesView: View {
                 await applianceService.load(propertyId: id)
             }
         }
-    }
-
-    // MARK: - Stats strip (tiles double as filters, inventory-bar language)
-
-    private var statsStrip: some View {
-        HStack(spacing: AppSpacing.sm) {
-            statFilterTile(value: "\(inWarranty.count)",
-                           label: "appliance_stat_in_warranty",
-                           slice: .inWarranty,
-                           highlight: inWarranty.isEmpty ? nil : .brandSuccess)
-            statFilterTile(value: "\(expiringSoon.count)",
-                           label: "appliance_stat_expiring",
-                           slice: .expiringSoon,
-                           highlight: expiringSoon.isEmpty ? nil : .brandWarning)
-            if let avg = averageAgeYears {
-                VStack(spacing: 3) {
-                    Text(verbatim: String(format: String(localized: "appliance_avg_age_value %@"),
-                                          avg.formatted(.number.precision(.fractionLength(0...1)))))
-                        .font(AppFont.scaled(15, weight: .bold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                    Text("appliance_stat_avg_age")
-                        .font(AppFont.scaled(10, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(10)
-                .glassFilterRoundedRect(selected: false, cornerRadius: AppRadius.xxl)
-                .accessibilityElement(children: .combine)
-            }
-        }
-    }
-
-    /// A summary tile that doubles as a filter: tap narrows the list to this
-    /// slice, tap again returns to all — the same selection language as the
-    /// inventory summary bar.
-    private func statFilterTile(value: String, label: LocalizedStringKey,
-                                slice: WarrantySlice, highlight: Color?) -> some View {
-        let isSelected = warrantySlice == slice
-        return Button {
-            HapticFeedback.impact(.light)
-            withAnimation(.spring(response: 0.25)) {
-                warrantySlice = isSelected ? nil : slice
-            }
-        } label: {
-            VStack(spacing: 3) {
-                Text(verbatim: value)
-                    .font(AppFont.scaled(15, weight: .bold))
-                    .foregroundStyle(isSelected ? Color.accentColor : (highlight ?? .primary))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Text(label)
-                    .font(AppFont.scaled(10, weight: isSelected ? .semibold : .medium))
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.secondaryText))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(10)
-            .glassFilterRoundedRect(selected: isSelected, cornerRadius: AppRadius.xxl)
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Lists

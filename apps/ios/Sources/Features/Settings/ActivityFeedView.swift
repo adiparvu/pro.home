@@ -645,7 +645,10 @@ struct ActivityFeedView: View {
 
     private func timeline(_ groups: [ActivityDayGroup]) -> some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: AppSpacing.xl, pinnedViews: .sectionHeaders) {
+            // Headers are NOT pinned: they are naked text (no chip, no band —
+            // IMG_8559 "fără chenar"), so they must scroll with their rows
+            // rather than have content slide beneath bare glyphs.
+            LazyVStack(spacing: AppSpacing.xl) {
                 ForEach(groups) { group in
                     Section {
                         GlassCard(padding: 0) {
@@ -732,11 +735,9 @@ struct ActivityFeedView: View {
     }
 
     private func dayHeader(_ day: Date, eventCount: Int) -> some View {
-        // A floating glass CHIP, not a band (IMG_8541): the full-width
-        // material strip read as a gray bar slicing the living backdrop.
-        // The chip carries the same primary-type legibility fix (IMG_8521)
-        // while pinned rows scroll past on naked backdrop — the Journal-app
-        // pattern. Leading-aligned; the count lives inside the same chip.
+        // Naked text — no chip, no band, no background of any kind
+        // (IMG_8541 → IMG_8559): the label sits directly on the living
+        // backdrop and scrolls with its rows, the Journal-app pattern.
         HStack {
             HStack(spacing: AppSpacing.xs) {
                 dayTitle(day)
@@ -752,9 +753,6 @@ struct ActivityFeedView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, AppSpacing.xs + 2)
-            .liquidGlass(cornerRadius: AppRadius.xl)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppSpacing.xl)

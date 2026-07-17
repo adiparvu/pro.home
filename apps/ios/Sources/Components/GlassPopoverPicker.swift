@@ -70,6 +70,8 @@ struct GlassPopoverPicker<Value: Hashable>: View {
         .accessibilityValue(Text(verbatim: selected?.title ?? ""))
         .popover(isPresented: $isPresented, arrowEdge: .top) {
             optionList
+                // Clean floating card, no anchor tail (IMG_8566).
+                .background(PopoverArrowKiller())
                 .presentationCompactAdaptation(.popover)
         }
     }
@@ -175,6 +177,8 @@ struct GlassPopoverMultiPicker<Value: Hashable>: View {
                 .padding(.vertical, AppSpacing.xs)
             }
             .frame(minWidth: 230, maxHeight: 380)
+            // Clean floating card, no anchor tail (IMG_8566).
+            .background(PopoverArrowKiller())
             .presentationCompactAdaptation(.popover)
         }
     }

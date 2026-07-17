@@ -298,7 +298,10 @@ struct TasksView: View {
         let openSections = sections(excluding: hero?.id)
         let doneToday = filter == .all ? applySearch(to: doneTodayTasks) : []
 
-        return LazyVStack(spacing: 14, pinnedViews: [.sectionHeaders]) {
+        // Headers are NOT pinned: they carry no background at all (no chip,
+        // no material band — IMG_8562 "nici aici, nici nicăieri"), so they
+        // must scroll with their rows instead of floating naked over them.
+        return LazyVStack(spacing: 14) {
             Section {
                 // The progress line is the page's filter system, so it stays
                 // whenever there is (or was) work to filter — but on a fully
@@ -486,7 +489,6 @@ struct TasksView: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
-            .background(.thinMaterial)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

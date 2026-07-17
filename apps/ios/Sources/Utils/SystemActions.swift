@@ -59,7 +59,12 @@ enum SystemActions {
             ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         guard var top = scene?.windows.first(where: { $0.isKeyWindow })?.rootViewController
                 ?? scene?.windows.first?.rootViewController else { return nil }
-        while let presented = top.presentedViewController { top = presented }
+        // Never land on a controller mid-dismissal (a closing popover/sheet):
+        // presenting from one is silently dropped by UIKit — the caller's
+        // share sheet or print panel would simply never appear.
+        while let presented = top.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
         return top
     }
 }

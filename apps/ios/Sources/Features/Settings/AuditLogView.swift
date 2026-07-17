@@ -19,7 +19,9 @@ struct AuditLogView: View {
         ScrollView(showsIndicators: false) {
             // The log is unbounded — a lazy stack keeps offscreen days
             // unmaterialized instead of building every row up front.
-            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
+            // Headers are naked text (IMG_8559) — unpinned, so rows never
+            // slide beneath bare glyphs.
+            LazyVStack(alignment: .leading, spacing: 24) {
                 // Account-level events come from the server journal
                 // (`account_security_events`), so sign-ins and security
                 // changes made on OTHER devices show up here too.
@@ -203,17 +205,14 @@ struct AuditLogView: View {
             }
             .liquidGlass(cornerRadius: AppRadius.xl)
         } header: {
-            // Same treatment as the activity feed's day headers (IMG_8541):
-            // a floating glass chip, never a full-width material band that
-            // slices the living backdrop.
+            // Same treatment as the activity feed's day headers (IMG_8559):
+            // naked text, no chip or band of any kind — the label sits
+            // directly on the backdrop and scrolls with its rows.
             HStack {
                 Text(day)
                     .textCase(.uppercase)
                     .font(AppFont.label)
                     .foregroundStyle(.primary)
-                    .padding(.horizontal, AppSpacing.base)
-                    .padding(.vertical, AppSpacing.xs + 2)
-                    .liquidGlass(cornerRadius: AppRadius.xl)
                 Spacer(minLength: 0)
             }
             .padding(.vertical, AppSpacing.xs)

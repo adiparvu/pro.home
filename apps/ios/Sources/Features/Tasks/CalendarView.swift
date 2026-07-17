@@ -62,12 +62,13 @@ struct CalendarView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 periodHeader
-                filterBar
                 content
             }
         }
         .navigationTitle(Text("house_calendar_title"))
-        .navigationBarTitleDisplayMode(.inline)
+        // Large, like every other page (IMG_8565) — the calendar is not an
+        // exception to the app's title language.
+        .navigationBarTitleDisplayMode(.large)
         .toolbar { optionsMenu }
         .sheet(isPresented: $creatingEvent, onDismiss: mirrorIfEnabled) {
             CalendarEventEditor(propertyId: propertyService.primary?.id, defaultDay: newEventDay)
@@ -176,42 +177,6 @@ struct CalendarView: View {
         .accessibilityLabel(label)
     }
 
-    // MARK: - Filter bar (mode picker + aggregated category filter)
-
-    /// The mode capsule stays a capsule — it's primary navigation and must
-    /// read its current value at a glance. The category multi-capsule folded
-    /// into the aggregated glass filter circle (IMG_8540), which shows an
-    /// accent dot whenever any category is switched off.
-    private var filterBar: some View {
-        HStack(spacing: AppSpacing.sm) {
-            GlassPopoverPicker(
-                options: CalendarMode.allCases.map {
-                    GlassPickerOption(value: $0, icon: $0.icon, title: modeLabel($0))
-                },
-                selection: Binding(
-                    get: { mode },
-                    set: { newMode in
-                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
-                            mode = newMode
-                        }
-                    }),
-                accessibilityLabelKey: "cal_mode_picker")
-            GlassFilterButton(isActive: active.count < AgendaCategory.allCases.count,
-                              accessibilityLabelKey: "cal_filter_all") {
-                GlassFilterMultiSection(
-                    title: "Categories",
-                    options: AgendaCategory.allCases.map {
-                        GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
-                    },
-                    selection: $active,
-                    onChange: { persistActiveCategories() })
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, AppSpacing.xl)
-        .padding(.bottom, AppSpacing.xs)
-    }
-
     // MARK: - Weekday labels (Month grid)
 
     private var weekdayRow: some View {
@@ -305,7 +270,9 @@ struct CalendarView: View {
                 CalendarEmptyDay()
             } else {
                 ScrollView(showsIndicators: false) {
-                    LazyVStack(alignment: .leading, spacing: AppSpacing.md, pinnedViews: [.sectionHeaders]) {
+                    // Headers are naked text (IMG_8559) — unpinned, so rows
+                    // never slide beneath bare glyphs.
+                    LazyVStack(alignment: .leading, spacing: AppSpacing.md) {
                         ForEach(sections) { section in
                             Section {
                                 VStack(spacing: 8) {
@@ -327,17 +294,13 @@ struct CalendarView: View {
     }
 
     private func agendaSectionHeader(_ day: Date) -> some View {
-        // A floating glass chip, never a full-width band (IMG_8542): the old
-        // header re-sampled `appBackground` at its own screen position, which
-        // read as a tinted stripe slicing the living backdrop. The chip is
-        // its own pinned mask; rows scroll past on naked backdrop.
+        // Naked text — no chip, no band, no background of any kind
+        // (IMG_8542 → IMG_8559): the label sits directly on the living
+        // backdrop and scrolls with its rows.
         HStack {
             Text(agendaHeaderLabel(day))
                 .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(cal.isDateInToday(day) ? Color.accentColor : .primary)
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.xs + 2)
-                .liquidGlass(cornerRadius: AppRadius.xl)
             Spacer(minLength: 0)
         }
         .padding(.vertical, AppSpacing.xxs)
@@ -366,20 +329,48 @@ struct CalendarView: View {
             .disabled(propertyService.primary == nil)
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Toggle(isOn: $mirrorOn) { Label("cal_sync_apple", systemImage: "calendar") }
+            // ONE menu for the whole page (IMG_8564): the mode capsule, the
+            // category filter circle and the old "…" options all live here.
+            GlassFilterButton(isActive: active.count < AgendaCategory.allCases.count,
+                              inToolbar: true,
+                              accessibilityLabelKey: "cal_filter_all") {
+                GlassFilterSection(
+                    title: "cal_mode_picker",
+                    options: CalendarMode.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: modeLabel($0))
+                    },
+                    selection: Binding(
+                        get: { mode },
+                        set: { newMode in
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                                mode = newMode
+                            }
+                        }))
+                GlassFilterSectionDivider()
+                GlassFilterMultiSection(
+                    title: "Categories",
+                    options: AgendaCategory.allCases.map {
+                        GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
+                    },
+                    selection: $active,
+                    onChange: { persistActiveCategories() })
+                GlassFilterSectionDivider()
+                GlassFilterToggleRow(icon: "calendar",
+                                     title: String(localized: "cal_sync_apple"),
+                                     isOn: $mirrorOn)
                 if mirrorOn {
-                    Button { Task { await HouseCalendarMirror.sync(fullAgenda()) } } label: {
-                        Label("cal_sync_now", systemImage: "arrow.triangle.2.circlepath")
+                    GlassFilterActionRow(icon: "arrow.triangle.2.circlepath",
+                                         title: String(localized: "cal_sync_now")) {
+                        Task { await HouseCalendarMirror.sync(fullAgenda()) }
                     }
                 }
                 if let icsURL {
-                    ShareLink(item: icsURL) { Label("cal_export_ics", systemImage: "square.and.arrow.up") }
+                    GlassFilterActionRow(icon: "square.and.arrow.up",
+                                         title: String(localized: "cal_export_ics")) {
+                        SystemActions.share([icsURL])
+                    }
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle").font(AppFont.headline)
             }
-            .accessibilityLabel(Text("Calendar options"))
         }
     }
 
