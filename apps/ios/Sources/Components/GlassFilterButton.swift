@@ -191,6 +191,46 @@ struct GlassFilterMultiSection<Value: Hashable>: View {
     }
 }
 
+/// One ACTION row (share, export, print…) — unlike the filter rows it is
+/// one-shot: it closes the popover, then runs the action once the popover
+/// is gone (a share sheet presented while the popover is still dismissing
+/// would lose the presentation race). No checkmark — actions have no state.
+struct GlassFilterActionRow: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            dismiss()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                action()
+            }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: icon)
+                    .font(AppFont.scaled(14, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 24)
+                Text(verbatim: title)
+                    .font(AppFont.scaled(15))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer(minLength: AppSpacing.lg)
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// One boolean row (e.g. "Favorites only") — checkmark mirrors the toggle.
 struct GlassFilterToggleRow: View {
     var icon: String? = nil

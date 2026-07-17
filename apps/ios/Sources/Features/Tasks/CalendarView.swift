@@ -327,15 +327,20 @@ struct CalendarView: View {
     }
 
     private func agendaSectionHeader(_ day: Date) -> some View {
-        HStack(spacing: 8) {
+        // A floating glass chip, never a full-width band (IMG_8542): the old
+        // header re-sampled `appBackground` at its own screen position, which
+        // read as a tinted stripe slicing the living backdrop. The chip is
+        // its own pinned mask; rows scroll past on naked backdrop.
+        HStack {
             Text(agendaHeaderLabel(day))
                 .font(AppFont.scaled(13, weight: .bold))
                 .foregroundStyle(cal.isDateInToday(day) ? Color.accentColor : .primary)
-            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.xs + 2)
+                .liquidGlass(cornerRadius: AppRadius.xl)
+            Spacer(minLength: 0)
         }
         .padding(.vertical, AppSpacing.xxs)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background { appBackground }
     }
 
     private func agendaHeaderLabel(_ day: Date) -> String {

@@ -101,7 +101,6 @@ struct DocumentsView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                categoryChips(favs: favs, expiringCount: expiringCount)
                 if documentService.isLoading {
                     Spacer()
                     ProgressView().tint(.white)
@@ -154,8 +153,8 @@ struct DocumentsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    sortMenu
-                        .frame(width: 38, height: 32)
+                    // Category filter + sort in one circle (IMG_8544).
+                    filterButton(favs: favs, expiringCount: expiringCount)
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))
                         .frame(width: 0.5, height: 18)
@@ -327,10 +326,9 @@ struct DocumentsView: View {
             .padding(.horizontal, AppSpacing.xxl)
     }
 
-    // MARK: - Category filter (always visible — the old toolbar menu hid
-    // the categories behind a tap nobody discovered)
+    // MARK: - Filter circle (category + sort in one aggregated popover)
 
-    private func categoryChips(favs: Set<String>, expiringCount: Int) -> some View {
+    private func filterButton(favs: Set<String>, expiringCount: Int) -> some View {
         let counts = Dictionary(grouping: documentService.documents, by: \.category)
             .mapValues(\.count)
         let favCount = documentService.documents.filter { favs.contains($0.id.uuidString) }.count
@@ -361,29 +359,23 @@ struct DocumentsView: View {
                                                  count: count))
             }
         }
-        return HStack(spacing: AppSpacing.sm) {
-            GlassPopoverPicker(options: options, selection: $selectedCategory)
-            Spacer()
+        return GlassFilterButton(isActive: selectedCategory != nil, inToolbar: true) {
+            GlassFilterSection(title: "Category",
+                               options: options, selection: $selectedCategory)
+            GlassFilterSectionDivider()
+            // Sorting reorders, it doesn't narrow — no accent-dot claim.
+            GlassFilterSection(
+                title: "doc_sort_menu",
+                options: [
+                    GlassPickerOption(value: DocSort.recent, icon: "clock",
+                                      title: String(localized: "doc_sort_recent")),
+                    GlassPickerOption(value: DocSort.name, icon: "textformat",
+                                      title: String(localized: "doc_sort_name")),
+                    GlassPickerOption(value: DocSort.expiry, icon: "calendar.badge.exclamationmark",
+                                      title: String(localized: "doc_sort_expiry")),
+                ],
+                selection: $sortOrder)
         }
-        .padding(.horizontal, AppSpacing.xl)
-        .padding(.vertical, AppSpacing.sm)
-    }
-
-    // MARK: - Sort menu
-
-    private var sortMenu: some View {
-        Menu {
-            Picker("doc_sort_menu", selection: $sortOrder) {
-                Label("doc_sort_recent", systemImage: "clock").tag(DocSort.recent)
-                Label("doc_sort_name", systemImage: "textformat").tag(DocSort.name)
-                Label("doc_sort_expiry", systemImage: "calendar.badge.exclamationmark").tag(DocSort.expiry)
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(AppFont.headline)
-                .foregroundStyle(.primary)
-        }
-        .accessibilityLabel("doc_sort_menu")
     }
 
     private func categoryIcon(for cat: String) -> String {

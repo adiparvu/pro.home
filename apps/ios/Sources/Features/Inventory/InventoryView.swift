@@ -114,9 +114,10 @@ struct InventoryView: View {
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.top, 10).padding(.bottom, AppSpacing.sm)
-                }
+                // The old stat-tile row (value/items/loaned/warranties) is
+                // gone (IMG_8548) — its filter shortcuts live in the filter
+                // circle's popover now, and the page opens straight on the
+                // list.
                 if service.items.isEmpty {
                     emptyState
                 } else if filtered.isEmpty {
@@ -209,7 +210,6 @@ struct InventoryView: View {
                 HStack(spacing: 5) {
                     if !service.items.isEmpty {
                         filterButton
-                        exportMenu
                         Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     }
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
@@ -288,28 +288,19 @@ struct InventoryView: View {
             GlassFilterSectionDivider()
             GlassFilterSection(title: "inv_sort_by",
                                options: sortOptions, selection: $sortRaw)
-        }
-    }
-
-    private var exportMenu: some View {
-        Menu {
-            Button {
-                HapticFeedback.impact(.light)
+            // Share/export live in the SAME popover (IMG_8546) — one button
+            // holds everything the page can do to its list.
+            GlassFilterSectionDivider()
+            GlassFilterSectionLabel(titleKey: "inv_share_print")
+            GlassFilterActionRow(icon: "doc.richtext",
+                                 title: String(localized: "inv_report_action")) {
                 shareReport()
-            } label: {
-                Label("inv_report_action", systemImage: "doc.richtext")
             }
-            Button {
-                HapticFeedback.impact(.light)
+            GlassFilterActionRow(icon: "qrcode",
+                                 title: String(localized: "inv_qr_labels_action")) {
                 printQRLabels()
-            } label: {
-                Label("inv_qr_labels_action", systemImage: "qrcode")
             }
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .font(AppFont.subheadline).frame(width: 38, height: 32)
         }
-        .accessibilityLabel(Text("inv_share_print"))
     }
 
     /// Full inventory, grouped by category with subtotals — the document you
@@ -341,64 +332,6 @@ struct InventoryView: View {
             return service.items.first { $0.id == id }
         }
         return nil
-    }
-
-    // MARK: - Sub-views
-
-    private var summaryBar: some View {
-        HStack(spacing: 8) {
-            // Honest value: until at least one item carries a price, there is
-            // no total to report — show a dash, not a misleading "0 €".
-            infoTile(service.items.contains(where: { $0.purchasePrice > 0 })
-                        ? CurrencyService.money(service.totalValue, code: "EUR", whole: true)
-                        : "—",
-                     "Value")
-            infoTile("\(service.items.count)", "Items")
-            filterTile("\(service.loanedCount)", "Loaned", target: .loaned,
-                       highlight: service.loanedCount > 0 ? .orange : nil)
-            filterTile("\(service.warrantyCount)", "inv_stat_warranties", target: .warranty,
-                       highlight: service.expiringWarrantyCount > 0 ? Color.brandDanger : nil)
-        }
-    }
-
-    private func infoTile(_ value: String, _ label: LocalizedStringKey) -> some View {
-        GlassCard(padding: 10) {
-            VStack(spacing: 3) {
-                // Was `.white`, which is invisible on the light-mode card. Use
-                // `.primary` so it's readable in both light and dark.
-                Text(value).font(AppFont.scaled(15, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(AppFont.scaled(10, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            }.frame(maxWidth: .infinity)
-        }
-    }
-
-    /// A summary tile that doubles as a filter: tap filters the list to this
-    /// slice, tap again returns to All. Selection speaks the GlassFilterChip
-    /// language (accent-tinted glass / accent ring) so it reads instantly.
-    private func filterTile(_ value: String, _ label: LocalizedStringKey,
-                            target: StatusFilter, highlight: Color? = nil) -> some View {
-        let isSelected = status == target
-        return Button {
-            HapticFeedback.impact(.light)
-            withAnimation(.spring(response: 0.25)) { status = isSelected ? nil : target }
-        } label: {
-            VStack(spacing: 3) {
-                Text(value).font(AppFont.scaled(15, weight: .bold))
-                    .foregroundStyle(isSelected ? Color.accentColor : (highlight ?? .primary))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(AppFont.scaled(10, weight: isSelected ? .semibold : .medium))
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary.opacity(AppOpacity.secondaryText))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(10)
-            .glassFilterRoundedRect(selected: isSelected, cornerRadius: 24)
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Filter options

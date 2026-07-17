@@ -30,6 +30,16 @@ struct AppliancesView: View {
             case .warranty: return "appliance_sort_warranty"
             }
         }
+
+        /// Same catalog entries as `labelKey`, resolved for the filter
+        /// popover's `GlassPickerOption` (String titles).
+        var title: String {
+            switch self {
+            case .newest:   return String(localized: "appliance_sort_newest")
+            case .name:     return String(localized: "appliance_sort_name")
+            case .warranty: return String(localized: "appliance_sort_warranty")
+            }
+        }
     }
 
     /// The two stat tiles that filter: real warranty math, nothing else.
@@ -143,7 +153,7 @@ struct AppliancesView: View {
                     prompt: Text("Search appliances…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                sortMenu
+                filterButton
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -175,26 +185,34 @@ struct AppliancesView: View {
 
     // MARK: - Toolbar
 
-    private var sortMenu: some View {
-        Menu {
-            Picker("appliance_sort", selection: $sort) {
-                ForEach(ApplianceSort.allCases, id: \.self) { option in
-                    Text(option.labelKey).tag(option)
-                }
-            }
+    /// One circle, everything (IMG_8544): the category filter that used to
+    /// sit as a permanent capsule and the old ↑↓ sort menu merge into a
+    /// single aggregated filter popover — same pattern as Inventory.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: selectedCategory != nil, inToolbar: true) {
+            GlassFilterSection(
+                title: "Category",
+                options: [GlassPickerOption<ApplianceCategory?>(value: nil,
+                                                                title: String(localized: "All"))]
+                    + ApplianceCategory.allCases.map {
+                        GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
+                    },
+                selection: $selectedCategory)
+            GlassFilterSectionDivider()
+            // A non-default sort reorders, it doesn't narrow — so it never
+            // claims the "filtered" accent dot.
+            GlassFilterSection(title: "inv_sort_by",
+                               options: ApplianceSort.allCases.map {
+                                   GlassPickerOption(value: $0, title: $0.title)
+                               },
+                               selection: $sort)
             if locationGroupingAvailable {
-                Divider()
-                Toggle(isOn: $groupByLocation.animation(.smooth(duration: 0.3))) {
-                    Label("appliance_group_location", systemImage: "mappin.and.ellipse")
-                }
+                GlassFilterSectionDivider()
+                GlassFilterToggleRow(icon: "mappin.and.ellipse",
+                                     title: String(localized: "appliance_group_location"),
+                                     isOn: $groupByLocation.animation(.smooth(duration: 0.3)))
             }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(AppFont.scaled(15, weight: .semibold))
-                .foregroundStyle(.primary)
         }
-        .onChange(of: sort) { HapticFeedback.selection() }
-        .accessibilityLabel(Text("appliance_sort"))
     }
 
     // MARK: - Content
@@ -203,7 +221,6 @@ struct AppliancesView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
                 statsStrip
-                categoryChips
                 if filtered.isEmpty {
                     EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else if groupByLocation && locationGroupingAvailable {
@@ -284,19 +301,6 @@ struct AppliancesView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    }
-
-    private var categoryChips: some View {
-        HStack(spacing: AppSpacing.sm) {
-            GlassPopoverPicker(
-                options: [GlassPickerOption<ApplianceCategory?>(value: nil,
-                                                                title: String(localized: "All"))]
-                    + ApplianceCategory.allCases.map {
-                        GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
-                    },
-                selection: $selectedCategory)
-            Spacer()
-        }
     }
 
     // MARK: - Lists

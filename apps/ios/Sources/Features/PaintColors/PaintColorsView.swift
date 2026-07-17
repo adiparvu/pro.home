@@ -54,15 +54,11 @@ struct PaintColorsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
+                    // One circle for everything (IMG_8544/8546): the room
+                    // filter that used to sit as a permanent capsule plus
+                    // share/print, in a single aggregated popover.
                     if !paintColorService.colors.isEmpty {
-                        SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",
-                                       render: renderSpecSheet) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(AppFont.headline)
-                                .foregroundStyle(.primary)
-                                .frame(width: 34, height: 32)
-                        }
-                        .accessibilityLabel(Locale.appIsRomanian ? "Partajează sau printează" : "Share or print")
+                        filterButton
                     }
                     Button {
                         showAdd = true
@@ -112,7 +108,6 @@ struct PaintColorsView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                roomFilterChips
                 if !searchText.trimmingCharacters(in: .whitespaces).isEmpty && sortedRooms.isEmpty {
                     EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else {
@@ -130,11 +125,12 @@ struct PaintColorsView: View {
         }
     }
 
-    // MARK: - Room Filters
+    // MARK: - Filter + actions (one toolbar circle)
 
-    private var roomFilterChips: some View {
-        HStack(spacing: AppSpacing.sm) {
-            GlassPopoverPicker(
+    private var filterButton: some View {
+        GlassFilterButton(isActive: selectedRoom != nil, inToolbar: true) {
+            GlassFilterSection(
+                title: "paint_filter_room",
                 options: [GlassPickerOption<String?>(value: nil,
                                                      title: String(localized: "All"))]
                     + paintColorService.roomNames.map {
@@ -142,7 +138,18 @@ struct PaintColorsView: View {
                                                    title: String(localized: String.LocalizationValue($0)))
                     },
                 selection: $selectedRoom)
-            Spacer()
+            GlassFilterSectionDivider()
+            GlassFilterActionRow(icon: "square.and.arrow.up",
+                                 title: Locale.appIsRomanian ? "Partajează" : "Share") {
+                if let image = renderSpecSheet() { SystemActions.share([image]) }
+            }
+            GlassFilterActionRow(icon: "printer",
+                                 title: Locale.appIsRomanian ? "Printează" : "Print") {
+                if let image = renderSpecSheet() {
+                    SystemActions.print(image: image,
+                                        jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors")
+                }
+            }
         }
     }
 
