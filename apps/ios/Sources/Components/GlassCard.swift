@@ -1,12 +1,16 @@
 import SwiftUI
 
-// MARK: - liquidGlass() — universal adaptive glass modifier
+// MARK: - liquidGlass() — the content-layer card surface
 //
-// On iOS 26+: uses native Liquid Glass (.glassEffect) which automatically
-//   adapts to the content beneath, respects dark/light mode, reduceTransparency,
-//   increaseContrast, and any future Liquid Glass updates from Apple.
-// On iOS 17–25: falls back to .ultraThinMaterial / .regularMaterial which are
-//   system-managed and equally respect all accessibility and appearance settings.
+// THE LAYERING CONTRACT (HIG Materials, WWDC26): Liquid Glass belongs to
+// the FUNCTIONAL layer — controls and navigation floating above content
+// (toolbars, FABs, the composer, filter chips). Passive content surfaces —
+// cards, tiles, list rows — use standard system Materials. So the
+// non-interactive path here renders material on EVERY OS version (the
+// same treatment pre-26 devices always had), and `.glassEffect` is
+// reserved for `interactive: true` button chrome. Dozens of simultaneous
+// glass effects also carry a real per-frame compositor cost Apple warns
+// about — content cards were paying it for nothing.
 //
 // Never use fixed opacity, blur, or colour values for glass — the system
 // determines the visual result automatically.
@@ -14,13 +18,14 @@ import SwiftUI
 extension View {
     /// `interactive: true` — for glass that IS a button's chrome: on iOS 26
     /// the material deforms and shimmers under the finger like system
-    /// controls. Identical at rest; pre-26 fallback unchanged.
+    /// controls. Non-interactive callers are content-layer surfaces and
+    /// render standard material by contract (see the layering note above).
     @ViewBuilder
     func liquidGlass(cornerRadius: CGFloat = 24, thick: Bool = false,
                      interactive: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        if #available(iOS 26, *) {
-            self.glassEffect(interactive ? Glass.regular.interactive() : .regular, in: shape)
+        if #available(iOS 26, *), interactive {
+            self.glassEffect(Glass.regular.interactive(), in: shape)
                 .contentShape(shape)
         } else {
             self.modifier(LegacyGlass(shape: shape, thick: thick, shadowed: true))

@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - The app's one empty-state voice
 //
 // Every list, gallery and feed speaks the same way when it has nothing to
-// show: the feature's symbol on a clear Liquid Glass disc, a calm title,
+// show: the feature's symbol on a quiet material disc, a calm title,
 // one optional explanatory line, and (when there's an obvious next step) a
 // single glass capsule action. Monochrome and adaptive — the glyph renders
 // hierarchically in the label color, never in an accent tint, so the state
@@ -19,12 +19,15 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            // A passive glyph disc is content, not chrome — standard
+            // material, never Liquid Glass (the HIG layering contract).
             Image(systemName: icon)
                 .font(AppFont.scaled(30, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.primary)
                 .frame(width: 76, height: 76)
-                .glassCircle()
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.hairline, lineWidth: 0.5))
 
             Text(title)
                 .font(AppFont.headline)
