@@ -122,9 +122,11 @@ extension DirectMessageView {
         }
         if !own {
             // UGC compliance (Guideline 1.2): someone else's message can be
-            // reported; the reason sheet + insert live on the surface.
+            // reported; the reason dialog + insert live in ReportMessageDialogs.
             items.append(ChatActionItem("Report", "exclamationmark.bubble") {
-                reportCandidate = m
+                reportCandidate = ReportTarget(
+                    messageId: m.id, propertyId: propertyService.primary?.id,
+                    kind: "dm", snapshot: MessageSubject.strip(m.body))
             })
         }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })

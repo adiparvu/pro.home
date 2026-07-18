@@ -51,7 +51,7 @@ struct ChatView: View {
     @State var threadFocusAnchor: UUID? = nil
     @State var deleteCandidate: Message?
     /// Message being reported (Guideline 1.2) — the reason dialog consumes it.
-    @State var reportCandidate: Message?
+    @State var reportCandidate: ReportTarget?
     @State var reportOutcome: String?
     /// Message whose details sheet is open (opened from the long-press menu).
     @State var detailsMessage: Message? = nil
@@ -616,40 +616,9 @@ struct ChatView: View {
                 Button("Cancel", role: .cancel) { deleteCandidate = nil }
             }
         }
-        // UGC report (Guideline 1.2): reason picker → write-only insert into
-        // content_reports; the outcome is surfaced honestly either way.
-        .confirmationDialog("report_reason_title", isPresented: .init(
-            get: { reportCandidate != nil },
-            set: { if !$0 { reportCandidate = nil } }
-        ), titleVisibility: .visible) {
-            if let m = reportCandidate {
-                ForEach(["report_spam", "report_abuse", "report_other"], id: \.self) { key in
-                    Button(LocalizedStringKey(key)) {
-                        reportCandidate = nil
-                        Task {
-                            do {
-                                try await ReportMessageService.report(
-                                    messageId: m.id,
-                                    propertyId: propertyId,
-                                    kind: "group",
-                                    reason: String(localized: String.LocalizationValue(key)),
-                                    snapshot: m.body.map { MessageSubject.strip($0) })
-                                reportOutcome = String(localized: "report_sent")
-                            } catch {
-                                reportOutcome = String(localized: "report_failed")
-                            }
-                        }
-                    }
-                }
-                Button("Cancel", role: .cancel) { reportCandidate = nil }
-            }
-        }
-        .alert(reportOutcome ?? "", isPresented: .init(
-            get: { reportOutcome != nil },
-            set: { if !$0 { reportOutcome = nil } }
-        )) {
-            Button("OK", role: .cancel) { reportOutcome = nil }
-        }
+        // UGC report (Guideline 1.2) — one cheap modifier; inlining the
+        // dialogs here pushed the body past the type-checker (red 1076).
+        .reportMessageDialogs(target: $reportCandidate, outcome: $reportOutcome)
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
