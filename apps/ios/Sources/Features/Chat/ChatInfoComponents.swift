@@ -104,6 +104,167 @@ struct InfoSection<Content: View>: View {
     }
 }
 
+/// The details pages' hero surface: the conversation's OWN theme —
+/// wallpaper, animated preset or gradient — behind the avatar and name.
+/// Renders `previewBackground` (the screen-anchored variant would inflate
+/// the card past the page margins, IMG_8592), bounded by the content's
+/// size, with a soft bottom scrim when the theme is photographic or dark
+/// so the type stays legible. The content closure receives the text color
+/// to use: white over wallpapered/dark themes, primary over light ones.
+struct InfoHeroCanvas<Content: View>: View {
+    let theme: ChatTheme
+    @ViewBuilder let content: (Color) -> Content
+
+    private var wallpapered: Bool {
+        theme.backgroundImage != nil || theme.backgroundAnimation != nil || theme.isDark
+    }
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+    }
+
+    var body: some View {
+        content(wallpapered ? .white : .primary)
+            .padding(.vertical, AppSpacing.xl)
+            .padding(.horizontal, AppSpacing.lg)
+            .frame(maxWidth: .infinity)
+            .background {
+                ZStack {
+                    theme.previewBackground
+                    if wallpapered {
+                        LinearGradient(colors: [.clear, .black.opacity(0.28)],
+                                       startPoint: .center, endPoint: .bottom)
+                    }
+                }
+            }
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(Color.hairline, lineWidth: 0.5))
+            .padding(.horizontal, AppSpacing.lg)
+    }
+}
+
+/// "Theme & wallpaper" row for a conversation's details page. The value
+/// states the SOURCE — "Global" while the conversation follows the global
+/// theme live, "Custom" once it pinned its own — and the row opens the
+/// per-conversation picker (whose first row is the way back).
+struct InfoThemeRow: View {
+    let scope: String
+    /// Fired when the picker closes — the page re-reads the theme (its hero
+    /// renders on it, so it must repaint with the new choice).
+    var onChanged: () -> Void = {}
+    @State private var showPicker = false
+    /// Bumped on sheet dismiss so the Global/Custom value re-reads.
+    @State private var tick = 0
+
+    private var sourceLabel: String {
+        _ = tick
+        return String(localized: ChatTheme.hasOverride(scope: scope)
+                      ? "chat_theme_custom" : "chat_theme_global")
+    }
+
+    var body: some View {
+        InfoRow(icon: "paintbrush", label: "chat_theme_row", value: sourceLabel) {
+            showPicker = true
+        }
+        .sheet(isPresented: $showPicker, onDismiss: { tick += 1; onChanged() }) {
+            ChatThemePicker(scope: scope)
+        }
+    }
+}
+
+/// Media as a GALLERY, not a count: the newest photo thumbnails in a
+/// horizontal strip with "See all" opening the full grid — the Messages/
+/// WhatsApp anatomy. Starred lives here too. With no media yet the strip
+/// stays a quiet navigation row.
+struct InfoMediaStrip: View {
+    let paths: [String]
+    var onStarred: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Media, links, docs")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !paths.isEmpty {
+                    NavigationLink {
+                        MediaGalleryView(paths: paths)
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text("info_see_all")
+                            Image(systemName: "chevron.right").font(AppFont.caption)
+                        }
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, AppSpacing.sm)
+
+            VStack(spacing: 0) {
+                if paths.isEmpty {
+                    NavigationLink {
+                        MediaGalleryView(paths: paths)
+                    } label: {
+                        InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs")
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: AppSpacing.sm) {
+                            // Newest first; offset identity tolerates the
+                            // same storage path appearing twice.
+                            ForEach(Array(paths.suffix(12).reversed().enumerated()),
+                                    id: \.offset) { _, stored in
+                                NavigationLink {
+                                    MediaGalleryView(paths: paths)
+                                } label: {
+                                    InfoMediaThumb(stored: stored)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
+                    }
+                }
+                Divider().padding(.leading, 52)
+                InfoRow(icon: "star", label: "Starred", action: onStarred)
+            }
+            .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+    }
+}
+
+/// One strip thumbnail: signed-URL resolution off the storage path, the
+/// gallery's own pattern at strip size.
+private struct InfoMediaThumb: View {
+    let stored: String
+    @State private var url: URL?
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+    }
+
+    var body: some View {
+        ZStack {
+            shape.fill(Color.subtleFill)
+            if let url {
+                StorageImage(url: url, targetSize: 152) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    }
+                }
+            }
+        }
+        .frame(width: 76, height: 76)
+        .clipShape(shape)
+        .task(id: stored) { url = await ChatMedia.resolve(stored) }
+    }
+}
+
 /// Circular member avatar with the chat-thread resolution order: directory
 /// photo (or contact photo URL) via StorageImage, initials fallback — never
 /// a blank circle.

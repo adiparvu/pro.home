@@ -50,8 +50,16 @@ struct ContactDetailsView: View {
     @State private var reported = false
     @State private var showEditContact = false
     @State private var showClearConfirm = false
+    /// Bumped when the theme picker closes so the hero repaints on the
+    /// (possibly) new conversation theme.
+    @State private var themeTick = 0
 
     private var convId: String { member.id.uuidString }
+
+    private var heroTheme: ChatTheme {
+        _ = themeTick
+        return .effective(scope: convId)
+    }
 
     /// Saved social profiles from the freshest roster copy (the edit sheet
     /// reachable from this page may have just changed them), filtered to
@@ -65,6 +73,10 @@ struct ContactDetailsView: View {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
 
+    // Approved redesign (IMG_8592 turn): hero on the conversation's theme,
+    // actions, a REAL contact card, media as a gallery strip, the theme row,
+    // ONE notifications+privacy section, destructive actions last — the
+    // same skeleton GroupDetailsView follows.
     var body: some View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -77,85 +89,17 @@ struct ContactDetailsView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg)
 
-                    if !socialProfiles.isEmpty {
-                        InfoSection(title: "soc_section_title") {
-                            SocialLinksRow(links: socialProfiles)
-                                .padding(.horizontal, AppSpacing.base)
-                                .padding(.vertical, AppSpacing.md)
-                        }
-                    }
+                    contactSection
 
-                    InfoSection(title: "General") {
-                        NavigationLink {
-                            MediaGalleryView(paths: mediaPaths)
-                        } label: {
-                            InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
-                                         value: mediaPaths.isEmpty ? nil : "\(mediaPaths.count)")
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
-                    }
-
-                    InfoSection(title: "Settings") {
-                        NavigationLink {
-                            ConversationNotificationsView(convId: convId, subtitle: member.name)
-                        } label: {
-                            InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
-                                         label: "Notifications",
-                                         value: muted ? String(localized: "Off") : nil)
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        NavigationLink {
-                            // Keyed by peer NAME (matching the send-path stamp),
-                            // and synced so the peer's client applies it too.
-                            DisappearingMessagesView(
-                                convId: member.name,
-                                serverKey: ChatDisappearStore.dmServerKey(myDisplayName, member.name))
-                        } label: {
-                            InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: disappearingDurationLabel(member.name))
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        NavigationLink {
-                            AdvancedPrivacyView(convId: convId)
-                        } label: {
-                            InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
-                                         value: ChatPrivacyStore.label(convId))
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    InfoSection(title: "Securitate") {
-                        SecureChatToggle(convId: convId)
-                        Divider().padding(.leading, 52)
-                        NavigationLink { EncryptionInfoView() } label: {
-                            InfoRowLabel(icon: "lock.fill", label: "Encryption",
-                                         value: String(localized: "Encrypted"))
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    InfoMediaStrip(paths: mediaPaths) { dismiss(); onStarred() }
 
                     InfoSection {
-                        Button {
-                            blocked.toggle()
-                            ChatBlockStore.setBlocked(convId, blocked)
-                            HapticFeedback.warning()
-                        } label: {
-                            destructiveRow(icon: blocked ? "hand.raised.slash.fill" : "hand.raised.fill",
-                                           label: blocked ? "Unblock \(member.name)" : "Block \(member.name)")
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        Button { showReport = true } label: {
-                            destructiveRow(icon: "exclamationmark.bubble.fill",
-                                           label: reported ? "Reported" : "Report \(member.name)")
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(reported)
+                        InfoThemeRow(scope: convId) { themeTick += 1 }
                     }
+
+                    notificationsPrivacySection
+
+                    destructiveSection
 
                     Spacer(minLength: 30)
                 }
@@ -195,49 +139,46 @@ struct ContactDetailsView: View {
             }
     }
 
-    // MARK: - Hero (photo, name, role + presence)
+    // MARK: - Hero (photo, name, role + presence — on the conversation's theme)
 
     private var hero: some View {
-        VStack(spacing: 10) {
-            MemberPhotoAvatar(color: member.swiftColor,
-                              initials: member.initials,
-                              avatarURL: memberAvatarURL(member),
-                              size: 96)
-            Text(member.name)
-                .font(AppFont.scaled(26, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-            heroSubtitle
-            if let phone = member.phone, !phone.isEmpty {
-                Text(phone)
-                    .font(AppFont.scaled(14))
-                    .foregroundStyle(Color.primary.opacity(0.38))
+        InfoHeroCanvas(theme: heroTheme) { textColor in
+            VStack(spacing: 10) {
+                MemberPhotoAvatar(color: member.swiftColor,
+                                  initials: member.initials,
+                                  avatarURL: memberAvatarURL(member),
+                                  size: 96)
+                Text(member.name)
+                    .font(AppFont.scaled(26, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(textColor)
+                heroSubtitle(textColor)
             }
+            .accessibilityElement(children: .combine)
+            .frame(maxWidth: .infinity)
         }
-        .accessibilityElement(children: .combine)
-        .padding(.horizontal, AppSpacing.xl)
-        .frame(maxWidth: .infinity)
     }
 
     /// Role label, joined with live presence (online / last seen) when the
     /// partner shares it — the same source the thread header uses.
-    private var heroSubtitle: some View {
+    private func heroSubtitle(_ textColor: Color) -> some View {
         HStack(spacing: 6) {
             Text(member.roleLabel)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .foregroundStyle(textColor.opacity(0.75))
             // Presence keys on the linked auth user id (names drift and carry
             // stray whitespace); the ticker keeps the relative time counting.
             PresenceTicker { now in
                 switch presenceService.status(userId: member.userId, name: member.name, at: now) {
                 case .online:
                     HStack(spacing: 6) {
-                        Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                        Text("·").foregroundStyle(textColor.opacity(0.4))
                         Text("online").foregroundStyle(Color.brandSuccess)
                     }
                 case .lastSeen(let date):
                     HStack(spacing: 6) {
-                        Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                        Text("·").foregroundStyle(textColor.opacity(0.4))
                         Text("last seen \(date, format: .relative(presentation: .named))")
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .foregroundStyle(textColor.opacity(0.75))
                     }
                 case .hidden:
                     EmptyView()
@@ -247,6 +188,112 @@ struct ContactDetailsView: View {
         .font(AppFont.scaled(15))
     }
 
+    // MARK: - Contact (tappable phone / e-mail / social profiles)
+
+    @ViewBuilder private var contactSection: some View {
+        let phone = member.phone ?? ""
+        let email = member.email ?? ""
+        if !phone.isEmpty || !email.isEmpty || !socialProfiles.isEmpty {
+            InfoSection(title: "Contact") {
+                if !phone.isEmpty {
+                    InfoRow(icon: "phone.fill", label: phone, showChevron: false) {
+                        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    if !email.isEmpty || !socialProfiles.isEmpty {
+                        Divider().padding(.leading, 52)
+                    }
+                }
+                if !email.isEmpty {
+                    InfoRow(icon: "envelope.fill", label: email, showChevron: false) {
+                        if let url = URL(string: "mailto:\(email)") { UIApplication.shared.open(url) }
+                    }
+                    if !socialProfiles.isEmpty { Divider().padding(.leading, 52) }
+                }
+                if !socialProfiles.isEmpty {
+                    SocialLinksRow(links: socialProfiles)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
+                }
+            }
+        }
+    }
+
+    // MARK: - Notifications & privacy (one home)
+
+    private var notificationsPrivacySection: some View {
+        InfoSection(title: "info_notifications_privacy") {
+            NavigationLink {
+                ConversationNotificationsView(convId: convId, subtitle: member.name)
+            } label: {
+                InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
+                             label: "Notifications",
+                             value: muted ? String(localized: "Off") : nil)
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            NavigationLink {
+                // Keyed by peer NAME (matching the send-path stamp),
+                // and synced so the peer's client applies it too.
+                DisappearingMessagesView(
+                    convId: member.name,
+                    serverKey: ChatDisappearStore.dmServerKey(myDisplayName, member.name))
+            } label: {
+                InfoRowLabel(icon: "timer", label: "Disappearing messages",
+                             value: disappearingDurationLabel(member.name))
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            NavigationLink {
+                AdvancedPrivacyView(convId: convId)
+            } label: {
+                InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
+                             value: ChatPrivacyStore.label(convId))
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            SecureChatToggle(convId: convId)
+            Divider().padding(.leading, 52)
+            NavigationLink { EncryptionInfoView() } label: {
+                InfoRowLabel(icon: "lock.fill", label: "Encryption",
+                             value: String(localized: "Encrypted"))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Destructive actions (on the page, with real roles)
+
+    private var destructiveSection: some View {
+        InfoSection {
+            Button { showClearConfirm = true } label: {
+                destructiveRow(icon: "xmark.circle",
+                               label: String(localized: "Golește conversația"))
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            Button {
+                blocked.toggle()
+                ChatBlockStore.setBlocked(convId, blocked)
+                HapticFeedback.warning()
+            } label: {
+                destructiveRow(icon: blocked ? "hand.raised.slash.fill" : "hand.raised.fill",
+                               label: blocked ? "Unblock \(member.name)" : "Block \(member.name)")
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            Button { showReport = true } label: {
+                destructiveRow(icon: "exclamationmark.bubble.fill",
+                               label: reported ? "Reported" : "Report \(member.name)")
+            }
+            .buttonStyle(.plain)
+            .disabled(reported)
+        }
+    }
+
+    // "Clear conversation" moved onto the page's destructive section — the
+    // menu keeps only what has no home on the page.
     @ToolbarContentBuilder
     private var infoToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigationBarTrailing) {
@@ -258,9 +305,6 @@ struct ContactDetailsView: View {
                     ShareLink(item: exportText) {
                         Label("Exportă conversația", systemImage: "square.and.arrow.up")
                     }
-                }
-                Button(role: .destructive) { showClearConfirm = true } label: {
-                    Label("Golește conversația", systemImage: "xmark.circle")
                 }
             } label: {
                 Image(systemName: "ellipsis").font(AppFont.headline)
@@ -313,6 +357,15 @@ struct GroupDetailsView: View {
     /// timer they can no longer reach.
     @State private var disappearTTL: TimeInterval = 0
     @State private var showDisappearOffConfirm = false
+    @State private var showClearConfirm = false
+    /// Bumped when the theme picker closes so the hero repaints on the
+    /// (possibly) new conversation theme.
+    @State private var themeTick = 0
+
+    private var heroTheme: ChatTheme {
+        _ = themeTick
+        return .effective(scope: "group")
+    }
 
     /// Who is actually IN the family chat: the family core minus anyone just
     /// removed. The raw roster also carries tenants/guests/contacts, which the
@@ -327,6 +380,10 @@ struct GroupDetailsView: View {
         propertyService.role?.canManageMembers ?? false
     }
 
+    // Approved redesign (IMG_8592 turn): the same skeleton as
+    // ContactDetailsView — hero on the conversation's theme, actions, media
+    // as a gallery strip, the theme row, members, ONE notifications+privacy
+    // section, destructive actions last.
     var body: some View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -340,86 +397,26 @@ struct GroupDetailsView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg)
 
-                    InfoSection(title: "\(chatMembers.count + 1) members") {
-                        memberRow(name: String(localized: "You"), member: nil, admin: true)
-                        ForEach(chatMembers) { m in
-                            Divider().padding(.leading, 64)
-                            memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
-                        }
-                        Divider().padding(.leading, 52)
-                        NavigationLink { MemberChangesView() } label: {
-                            InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes", adminBadge: true)
-                        }
-                        .buttonStyle(.plain)
+                    InfoMediaStrip(paths: mediaPaths) { dismiss(); onStarred() }
+
+                    InfoSection {
+                        InfoThemeRow(scope: "group") { themeTick += 1 }
                     }
 
-                    InfoSection(title: "General") {
-                        NavigationLink {
-                            MediaGalleryView(paths: mediaPaths)
-                        } label: {
-                            InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
-                                         value: mediaPaths.isEmpty ? nil : "\(mediaPaths.count)")
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        if !inviteLink.isEmpty {
-                            NavigationLink {
-                                InviteLinkView(title: groupName, link: inviteLink)
-                            } label: {
-                                InfoRowLabel(icon: "link", label: "Invite via link or QR")
+                    membersSection
+
+                    notificationsPrivacySection
+
+                    InfoSection {
+                        Button { showClearConfirm = true } label: {
+                            HStack(spacing: 14) {
+                                Image(systemName: "xmark.circle")
+                                    .font(AppFont.scaled(16)).foregroundStyle(.red).frame(width: 26)
+                                Text("Golește conversația").font(AppFont.scaled(16)).foregroundStyle(.red)
+                                Spacer()
                             }
-                            .buttonStyle(.plain)
-                            Divider().padding(.leading, 52)
-                        }
-                        InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
-                    }
-
-                    InfoSection(title: "Settings") {
-                        NavigationLink {
-                            GroupPermissionsView(
-                                adminNames: ["You"] + chatMembers.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
-                            )
-                        } label: {
-                            InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions", adminBadge: true)
-                        }
-                        .buttonStyle(.plain)
-                        Divider().padding(.leading, 52)
-                        NavigationLink {
-                            ConversationNotificationsView(convId: "group", subtitle: groupName)
-                        } label: {
-                            InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
-                                         label: "Notifications",
-                                         value: muted ? String(localized: "Off") : nil)
-                        }
-                        .buttonStyle(.plain)
-                        // New disappearing-message timers can't be set on the
-                        // family chat anymore (DMs and groups keep theirs). An
-                        // already-active timer stays visible — with an explicit
-                        // off switch — until it's turned off.
-                        if disappearTTL > 0 {
-                            Divider().padding(.leading, 52)
-                            InfoRow(icon: "timer", label: "Disappearing messages",
-                                    value: disappearingDurationLabel("group"),
-                                    showChevron: false, adminBadge: true) {
-                                showDisappearOffConfirm = true
-                            }
-                        }
-                        Divider().padding(.leading, 52)
-                        NavigationLink {
-                            AdvancedPrivacyView(convId: "group")
-                        } label: {
-                            InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
-                                         value: ChatPrivacyStore.label("group"), adminBadge: true)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    InfoSection(title: "Securitate") {
-                        SecureChatToggle(convId: "group")
-                        Divider().padding(.leading, 52)
-                        NavigationLink { EncryptionInfoView() } label: {
-                            InfoRowLabel(icon: "lock.fill", label: "Encryption",
-                                         value: String(localized: "Encrypted"))
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -430,22 +427,21 @@ struct GroupDetailsView: View {
                 // header controls and never sits under the top progressive blur.
                 .padding(.top, AppSpacing.xxl + AppSpacing.md)
             }
+            .confirmationDialog("Golești conversația?", isPresented: $showClearConfirm, titleVisibility: .visible) {
+                Button("Golește", role: .destructive) {
+                    ConversationClearStore.clear("group"); HapticFeedback.success(); dismiss()
+                }
+                Button("Anulează", role: .cancel) {}
+            } message: {
+                Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
+            }
             .task { await MemberDirectory.shared.loadIfNeeded() }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
+            // The invite QR lives in the members section now — one home, no
+            // toolbar duplicate.
             .toolbar {
-                if !inviteLink.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            InviteLinkView(title: groupName, link: inviteLink)
-                        } label: {
-                            Image(systemName: "qrcode")
-                                .font(AppFont.scaled(17, weight: .semibold))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { showEditDetails = true } label: {
@@ -557,39 +553,119 @@ struct GroupDetailsView: View {
         }
     }
 
-    // MARK: - Hero (group photo, name, member count, description)
+    // MARK: - Hero (group photo, name, member count, description — on the
+    // family chat's own theme)
 
     private var hero: some View {
-        VStack(spacing: 10) {
+        InfoHeroCanvas(theme: heroTheme) { textColor in
             VStack(spacing: 10) {
-                GroupChatAvatarLarge(members: chatMembers, photoUrl: photoUrl)
-                    .frame(width: 96, height: 96)
-                Text(groupName)
-                    .font(AppFont.scaled(26, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                Text("Group · \(chatMembers.count + 1) members")
-                    .font(AppFont.scaled(15))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            }
-            .accessibilityElement(children: .combine)
-
-            Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
-                if description.isEmpty {
-                    Label("Add group description", systemImage: "pencil")
-                        .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
-                } else {
-                    (Text(description).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                     + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
-                        .font(AppFont.scaled(14))
+                VStack(spacing: 10) {
+                    GroupChatAvatarLarge(members: chatMembers, photoUrl: photoUrl)
+                        .frame(width: 96, height: 96)
+                    Text(groupName)
+                        .font(AppFont.scaled(26, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
-                        .lineLimit(2)
+                        .foregroundStyle(textColor)
+                    Text("Group · \(chatMembers.count + 1) members")
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(textColor.opacity(0.75))
                 }
+                .accessibilityElement(children: .combine)
+
+                Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
+                    if description.isEmpty {
+                        Label("Add group description", systemImage: "pencil")
+                            .font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
+                    } else {
+                        (Text(description).foregroundStyle(textColor.opacity(0.85))
+                         + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
+                            .font(AppFont.scaled(14))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, AppSpacing.lg)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Members (list, invite, changes — one home)
+
+    private var membersSection: some View {
+        InfoSection(title: "\(chatMembers.count + 1) members") {
+            memberRow(name: String(localized: "You"), member: nil, admin: true)
+            ForEach(chatMembers) { m in
+                Divider().padding(.leading, 64)
+                memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
+            }
+            Divider().padding(.leading, 52)
+            if !inviteLink.isEmpty {
+                NavigationLink {
+                    InviteLinkView(title: groupName, link: inviteLink)
+                } label: {
+                    InfoRowLabel(icon: "qrcode", label: "Invite via link or QR")
+                }
+                .buttonStyle(.plain)
+                Divider().padding(.leading, 52)
+            }
+            NavigationLink { MemberChangesView() } label: {
+                InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes", adminBadge: true)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, AppSpacing.xxl)
         }
-        .padding(.horizontal, AppSpacing.xl)
-        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Notifications & privacy (one home)
+
+    private var notificationsPrivacySection: some View {
+        InfoSection(title: "info_notifications_privacy") {
+            NavigationLink {
+                GroupPermissionsView(
+                    adminNames: ["You"] + chatMembers.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
+                )
+            } label: {
+                InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions", adminBadge: true)
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            NavigationLink {
+                ConversationNotificationsView(convId: "group", subtitle: groupName)
+            } label: {
+                InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
+                             label: "Notifications",
+                             value: muted ? String(localized: "Off") : nil)
+            }
+            .buttonStyle(.plain)
+            // New disappearing-message timers can't be set on the family
+            // chat anymore (DMs and groups keep theirs). An already-active
+            // timer stays visible — with an explicit off switch.
+            if disappearTTL > 0 {
+                Divider().padding(.leading, 52)
+                InfoRow(icon: "timer", label: "Disappearing messages",
+                        value: disappearingDurationLabel("group"),
+                        showChevron: false, adminBadge: true) {
+                    showDisappearOffConfirm = true
+                }
+            }
+            Divider().padding(.leading, 52)
+            NavigationLink {
+                AdvancedPrivacyView(convId: "group")
+            } label: {
+                InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
+                             value: ChatPrivacyStore.label("group"), adminBadge: true)
+            }
+            .buttonStyle(.plain)
+            Divider().padding(.leading, 52)
+            SecureChatToggle(convId: "group")
+            Divider().padding(.leading, 52)
+            NavigationLink { EncryptionInfoView() } label: {
+                InfoRowLabel(icon: "lock.fill", label: "Encryption",
+                             value: String(localized: "Encrypted"))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     @ViewBuilder
