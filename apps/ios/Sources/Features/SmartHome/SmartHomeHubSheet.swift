@@ -27,6 +27,12 @@ struct SmartHomeHubSheet: View {
 
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
+    /// Cached HomeKit indoor readings — the room rows show each room's real
+    /// temperature next to its device count (IMG_8602).
+    private let indoorClimate = IndoorClimateStore.shared
+    /// Live connectivity for the diagnostics row (the Wi-Fi grid card
+    /// retired in IMG_8601 lands here as a status line).
+    @State private var network = NetworkStatusModel()
 
     /// One nested-presentation slot — the same single-`sheet(item:)`
     /// discipline the dashboard itself uses, so presentations never race.
@@ -85,6 +91,9 @@ struct SmartHomeHubSheet: View {
         /// function icon.
         let icon: String?
         let deviceCount: Int
+        /// The room's real cached indoor temperature, when a sensor in it
+        /// reported one — nil renders nothing, never a placeholder.
+        let celsius: Double?
         var id: String { name }
     }
 
@@ -126,18 +135,19 @@ struct SmartHomeHubSheet: View {
         }
 
         return names.map { name in
-            HubRoom(name: name, icon: icons[name], deviceCount: counts[name] ?? 0)
+            HubRoom(name: name, icon: icons[name], deviceCount: counts[name] ?? 0,
+                    celsius: indoorClimate.reading(forSpaceNamed: name)?.celsius)
         }
     }
 
     // MARK: Body
 
     var body: some View {
-        ZStack {
-            appBackground.ignoresSafeArea()
+        // The rest of the app's chrome (IMG_8602): a real navigation stack
+        // with the system large title instead of the hand-drawn header.
+        NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    topBar
                     searchRow
 
                     // Settings-style value: the row title already says
@@ -150,6 +160,11 @@ struct SmartHomeHubSheet: View {
                         openCameras()
                     }
                     scenesRow
+                    // Run a scene straight from the menu — the same shared
+                    // chip row (and execution contract) the dashboard uses.
+                    if homeKit.isAuthorized, !homeKit.scenes.isEmpty {
+                        SmartSceneChipRow(scenes: homeKit.scenes)
+                    }
                     rulesRow
 
                     sectionHeader("hub_rooms")
@@ -165,6 +180,7 @@ struct SmartHomeHubSheet: View {
                             activeSheet = .importWizard
                         }
                     }
+                    networkRow
                     if homeKit.isMissingHomeHub {
                         // Honest info, only when the absence is genuinely
                         // detected — never scare copy.
@@ -174,14 +190,34 @@ struct SmartHomeHubSheet: View {
                     Spacer(minLength: AppSpacing.xxl)
                 }
                 .padding(.horizontal, AppSpacing.xl)
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("hub_title")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFont.footnoteEmphasis)
+                    }
+                    .accessibilityLabel(Text("sh_close"))
+                }
             }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         // The rules row's enabled-count detail needs the store filled (a
-        // cheap no-op when the dashboard already loaded it).
-        .task { await PropertyRulesStore.shared.loadIfNeeded() }
+        // cheap no-op when the dashboard already loaded it), and the room
+        // rows' temperatures come from the same indoor cache the dashboard
+        // dial reads — refreshed here only when stale.
+        .task {
+            await PropertyRulesStore.shared.loadIfNeeded()
+            await indoorClimate.refreshIfStale()
+        }
         .sheet(item: $activeSheet, onDismiss: nestedSheetDismissed) { sheet in
             switch sheet {
             case .search:
@@ -236,30 +272,6 @@ struct SmartHomeHubSheet: View {
     /// hamburger's direct search presentation used to get for free.
     private func nestedSheetDismissed() {
         if router.pendingRoute != nil { dismiss() }
-    }
-
-    // MARK: Top bar
-
-    private var topBar: some View {
-        HStack(alignment: .center, spacing: AppSpacing.sm) {
-            Text("hub_title")
-                .font(AppFont.scaled(26, weight: .light))
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 0)
-            Button {
-                HapticFeedback.impact(.light)
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(Text("sh_close"))
-        }
     }
 
     // MARK: Search row (the preserved hamburger job, top of the hub)
@@ -361,9 +373,7 @@ struct SmartHomeHubSheet: View {
             ForEach(hubRooms) { room in
                 hubRow(icon: room.icon ?? "door.left.hand.closed",
                        title: Text(verbatim: room.name),
-                       detail: room.deviceCount == 1
-                           ? Text("sh_device_one")
-                           : Text("sh_device_count \(room.deviceCount)")) {
+                       detail: roomDetail(room)) {
                     activeSheet = .room(room.name)
                 }
             }
@@ -374,6 +384,51 @@ struct SmartHomeHubSheet: View {
             showCreateRoom = true
         }
         .disabled(isCreatingRoom)
+    }
+
+    /// "21,5° · 2 dispozitive" when the room's sensor reported — the
+    /// temperature is real cached data, never guessed for sensorless rooms.
+    private func roomDetail(_ room: HubRoom) -> Text {
+        let devices = room.deviceCount == 1
+            ? Text("sh_device_one")
+            : Text("sh_device_count \(room.deviceCount)")
+        guard let celsius = room.celsius else { return devices }
+        let degrees = "\(celsius.formatted(.number.precision(.fractionLength(0...1))))° · "
+        return Text(verbatim: degrees) + devices
+    }
+
+    // MARK: Network — the live diagnostics line (ex-grid Wi-Fi card)
+
+    private var networkRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: network.status.isOnline ? "wifi" : "wifi.slash")
+                .font(AppFont.headline)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 26)
+                .accessibilityHidden(true)
+            Text("sh_network")
+                .font(AppFont.footnoteEmphasis)
+                .foregroundStyle(.primary)
+            Spacer(minLength: AppSpacing.sm)
+            Circle()
+                .fill(network.status.isOnline ? Color.brandSuccess : Color.brandDanger)
+                .frame(width: 7, height: 7)
+            if network.status == .wifi, let ssid = network.ssid, !ssid.isEmpty {
+                Text(verbatim: ssid)
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            } else {
+                Text(network.status.labelKey)
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .liquidGlass(cornerRadius: AppRadius.lg)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Add device / Connect HomeKit (never a dead button)
