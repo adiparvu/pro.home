@@ -87,6 +87,9 @@ struct PRVIOWidgetBundle: WidgetBundle {
             DocumentsControl()
             DigitalTwinControl()
             AssistantControl()
+            // The one stateful control — a real device toggle (see
+            // ActuatorToggleControl).
+            ActuatorToggleControl()
         }
     }
 }

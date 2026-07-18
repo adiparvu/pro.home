@@ -74,3 +74,85 @@ struct OpenPRVIODestination: OpenIntent {
         return .result()
     }
 }
+
+// MARK: - Actuator toggle (real state in Control Center, iOS 18)
+//
+// The flagship ControlWidget capability: a toggle BOUND to a device's real
+// on/off state, not a launch button. The entity list is the same actuator
+// catalog the watch face reads (App Group); flipping the toggle parks the
+// command on the exact pending pipeline the wrist uses (drained on the
+// app's next active beat) and echoes the state optimistically so Control
+// Center reflects the tap instantly.
+
+@available(iOS 18.0, *)
+struct ActuatorEntity: AppEntity {
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Smart Device")
+    static let defaultQuery = ActuatorEntityQuery()
+
+    var id: UUID
+    var name: String
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(name)")
+    }
+}
+
+@available(iOS 18.0, *)
+struct ActuatorEntityQuery: EntityQuery {
+    /// Only relays make honest toggles; covers speak open/close/stop.
+    private func relays() -> [ActuatorEntity] {
+        SharedDataStore.readActuatorCatalog()
+            .filter { $0.kind == "relay" }
+            .map { ActuatorEntity(id: $0.id, name: $0.name) }
+    }
+
+    func entities(for identifiers: [UUID]) async throws -> [ActuatorEntity] {
+        relays().filter { identifiers.contains($0.id) }
+    }
+
+    func suggestedEntities() async throws -> [ActuatorEntity] {
+        relays()
+    }
+
+    func defaultResult() async -> ActuatorEntity? {
+        relays().first
+    }
+}
+
+@available(iOS 18.0, *)
+struct SelectActuatorControlIntent: ControlConfigurationIntent {
+    static let title: LocalizedStringResource = "Select Device"
+    static var isDiscoverable: Bool { false }
+
+    @Parameter(title: "Device")
+    var actuator: ActuatorEntity?
+}
+
+@available(iOS 18.0, *)
+struct ToggleActuatorIntent: SetValueIntent {
+    static let title: LocalizedStringResource = "Toggle Device"
+    static var isDiscoverable: Bool { false }
+
+    @Parameter(title: "Device")
+    var actuator: ActuatorEntity?
+
+    @Parameter(title: "On")
+    var value: Bool
+
+    init() {}
+
+    init(actuator: ActuatorEntity?) {
+        self.actuator = actuator
+    }
+
+    func perform() async throws -> some IntentResult {
+        guard let actuator else { return .result() }
+        // Same contract as a wrist toggle: park the real command for the
+        // app's next active beat, echo the state so the control reads true
+        // to the tap right away.
+        SharedDataStore.appendPendingIoTCommand(actuatorId: actuator.id,
+                                                command: value ? "on" : "off")
+        SharedDataStore.applyLocalActuatorState(id: actuator.id, isOn: value)
+        return .result()
+    }
+}

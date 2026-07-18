@@ -172,3 +172,60 @@ struct AssistantControl: ControlWidget {
         .description("Ask your assistant in PRVIO.")
     }
 }
+
+// MARK: - Smart Device Toggle (real state, configurable — iOS 18)
+//
+// Unlike every launch-button control above, this one is BOUND to a device:
+// long-press Control Center → configure → pick any relay from the same
+// actuator catalog the watch face reads. The provider reports the device's
+// current on/off, and the toggle flips it through the wrist's own pending
+// pipeline (optimistic echo now, real device write on the app's next beat).
+
+@available(iOS 18.0, *)
+struct ActuatorToggleControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        AppIntentControlConfiguration(kind: "com.prvio.control.device",
+                                      provider: ActuatorControlProvider()) { value in
+            ControlWidgetToggle(value.name,
+                                isOn: value.isOn,
+                                action: ToggleActuatorIntent(actuator: value.entity)) { isOn in
+                Label(isOn ? "On" : "Off",
+                      systemImage: isOn ? "power.circle.fill" : "power.circle")
+            }
+        }
+        .displayName("Smart Device")
+        .description("Toggle a PRVIO smart device.")
+    }
+}
+
+@available(iOS 18.0, *)
+struct ActuatorControlProvider: AppIntentControlValueProvider {
+    struct Value {
+        var name: String
+        var isOn: Bool
+        var entity: ActuatorEntity?
+    }
+
+    func previousValue(configuration: SelectActuatorControlIntent) -> Value {
+        resolve(configuration)
+    }
+
+    func currentValue(configuration: SelectActuatorControlIntent) async throws -> Value {
+        resolve(configuration)
+    }
+
+    /// The chosen relay's live catalog row; the first relay when none is
+    /// configured; an honest inert placeholder when the home has no relays.
+    private func resolve(_ configuration: SelectActuatorControlIntent) -> Value {
+        let relays = SharedDataStore.readActuatorCatalog().filter { $0.kind == "relay" }
+        let chosen = configuration.actuator
+            .flatMap { selected in relays.first { $0.id == selected.id } }
+            ?? relays.first
+        guard let chosen else {
+            return Value(name: String(localized: "control_no_device"), isOn: false, entity: nil)
+        }
+        return Value(name: chosen.name,
+                     isOn: chosen.isOn ?? false,
+                     entity: ActuatorEntity(id: chosen.id, name: chosen.name))
+    }
+}
