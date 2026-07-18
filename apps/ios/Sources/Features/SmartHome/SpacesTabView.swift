@@ -55,7 +55,6 @@ struct SpacesTabView: View {
             appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    header
                     EnergyCard()
                     if zoneService.zones.isEmpty {
                         emptyState
@@ -70,12 +69,19 @@ struct SpacesTabView: View {
                     Spacer(minLength: AppSpacing.xxl)
                 }
                 .padding(.horizontal, AppSpacing.xl)
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
             }
         }
-        // The page owns its chrome (free-floating title over the scene) —
-        // the stack's system bar stays hidden, like the Tasks tab root.
-        .toolbar(.hidden, for: .navigationBar)
+        // The standard large navigation title + system-toolbar circle, like
+        // every other page — the free-floating in-body header was the last
+        // custom page chrome left, and the user retired it (IMG_8590).
+        .navigationTitle("spaces_title")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                quickMenu
+            }
+        }
         .navigationDestination(item: $pushedZoneId) { id in
             // Re-resolve the live zone; a space deleted mid-navigation
             // simply has no page (the pop gesture returns to the grid).
@@ -108,36 +114,12 @@ struct SpacesTabView: View {
         }
     }
 
-    // MARK: Header — the free-floating light title + honest count
-
-    private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("spaces_title")
-                    .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
-                    .kerning(SpaceHero.nameTracking)
-                    .foregroundStyle(.primary)
-                    .accessibilityAddTraits(.isHeader)
-                if !zoneService.zones.isEmpty {
-                    (zoneService.zones.count == 1
-                        ? Text("spaces_one")
-                        : Text("spaces_count \(zoneService.zones.count)"))
-                        .font(AppFont.footnote)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-            Spacer(minLength: AppSpacing.base)
-            quickMenu
-        }
-    }
-
     // MARK: Quick menu — the old chip row's four destinations, one More
-    // circle (IMG_8553). Navigation rows, so the trigger wears Apple's
-    // ellipsis, never the filter glyph.
+    // circle (IMG_8553) in the system toolbar. Navigation rows, so the
+    // trigger wears Apple's ellipsis, never the filter glyph.
 
     private var quickMenu: some View {
-        GlassFilterButton(icon: "ellipsis", accessibilityLabelKey: "More") {
+        GlassFilterButton(inToolbar: true, icon: "ellipsis", accessibilityLabelKey: "More") {
             GlassFilterActionRow(icon: "square.grid.2x2",
                                  title: String(localized: "hub_devices")) {
                 activeSheet = .allDevices

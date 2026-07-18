@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import CoreLocation
 
 struct ProfileView: View {
     @Environment(AuthService.self) private var auth
@@ -24,6 +25,10 @@ struct ProfileView: View {
     @State private var toastIsError = false
     @State private var copiedAccountId = false
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    /// Geofenced home presence (moved here from the chat hub, IMG_8591) —
+    /// the toggle mirrors the service's stored opt-in; side effects (auth
+    /// ladder, region arming, row erase on opt-out) run through setSharing.
+    @AppStorage(HomePresenceService.shareKey) private var homePresenceShare = false
     /// Bumped on every appearance so the chat card re-reads the (non-observable,
     /// UserDefaults-backed) global chat theme after it was changed inside the hub.
     @State private var themeTick = 0
@@ -37,6 +42,7 @@ struct ProfileView: View {
                 infoCard
                 socialCard
                 chatCard
+                presenceSection
                 accountSection
                 Spacer(minLength: 110)
             }
@@ -417,6 +423,36 @@ struct ProfileView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text("\(value)"))
+    }
+
+    // MARK: - Home presence
+    //
+    // "Who's home" sharing is an identity-level choice, so it lives on the
+    // profile page (IMG_8591), not in the chat hub. The opt-in has real side
+    // effects (the Always-auth ladder, region arming, erasing the member's
+    // row on opt-out) — they run through the service, not raw AppStorage.
+
+    private var presenceSection: some View {
+        SettingsGroup(title: "Confidențialitate") {
+            ToggleSettingsRow(icon: "location.fill.viewfinder", color: Color.brandSkyBlue,
+                              label: "homepresence_toggle", value: $homePresenceShare)
+            if homePresenceShare, !HomePresenceService.shared.hasCoordinates {
+                Text("homepresence_needs_coords")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.bottom, AppSpacing.xs)
+            } else if homePresenceShare, HomePresenceService.shared.authorization != .authorizedAlways {
+                Text("homepresence_needs_always")
+                    .font(AppFont.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.bottom, AppSpacing.xs)
+            }
+        }
+        .onChange(of: homePresenceShare) { _, on in
+            HomePresenceService.shared.setSharing(on)
+        }
     }
 
     // MARK: - Account actions

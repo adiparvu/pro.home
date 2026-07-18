@@ -10,9 +10,16 @@ struct NotificationsSettingsView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(FinancialService.self) private var financialService
     @Environment(PlantService.self) private var plantService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showOpenSettings = false
+
+    /// The household conversation the per-chat tones/mute screen scopes to —
+    /// same resolution the chat hub used before the row moved here (IMG_8591).
+    private var groupName: String {
+        (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup")
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -149,6 +156,13 @@ struct NotificationsSettingsView: View {
                                title: "Mentions",
                                subtitle: "When you are mentioned with @",
                                value: bind(\.mentions))
+                divider
+                // Per-conversation mute + tones, moved here from the chat
+                // hub (IMG_8591) — notification preferences live together.
+                NavSettingsRow(icon: "bell.fill", color: .red,
+                               label: "Notificări chat", value: groupName) {
+                    ConversationNotificationsView(convId: "group", subtitle: groupName)
+                }
             }
 
             group("AUTOMATIONS") {
