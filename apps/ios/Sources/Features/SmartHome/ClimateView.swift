@@ -28,8 +28,14 @@ struct ClimateView: View {
 
     private let smartHome = SmartHomeService.shared
     private let homeKit = HomeKitService.shared
+    /// The cached HomeKit indoor readings the "Now in the house" rows bind
+    /// to — @Observable, so the section repaints when a refresh lands.
+    private let indoorClimate = IndoorClimateStore.shared
 
     @State private var selectedRoom: String? = nil
+    /// Row tap → the sensor's real history chart (same sheet the space
+    /// page's tiles present).
+    @State private var historyTarget: SensorHistoryTarget? = nil
 
     /// Comfort target shown when NO thermostat exists — persisted locally,
     /// clearly labeled as display-only.
@@ -144,6 +150,8 @@ struct ClimateView: View {
                     }
                     modeRow
                     if mode == .humid { humidityLine }
+                    outdoorSection
+                    indoorSection
                     if let thermostat, thermostat.hasPower {
                         SmartScheduleCard(device: thermostat)
                     }
@@ -155,6 +163,9 @@ struct ClimateView: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .sheet(item: $historyTarget) { target in
+            SensorHistorySheet(target: target)
+        }
         // Fresh-enough indoor readings on arrival (R3): the same fan-out
         // that feeds the dial also refreshes the characteristic cache the
         // humidity line reads from.
@@ -394,6 +405,181 @@ struct ClimateView: View {
         .accessibilityValue(Text(verbatim: humidity.map {
             "\($0.formatted(.number.precision(.fractionLength(0))))%"
         } ?? ""))
+    }
+
+    // MARK: Outside — the property's real weather as context
+
+    /// The real outdoor reading: the cached property weather first, then a
+    /// live WeatherKit value; nil renders nothing (honesty law).
+    private var outdoorCelsius: Double? {
+        if let cached = PropertyWeather.cached() { return cached.temp }
+        return WeatherKitService.shared.currentWeather?
+            .temperature.converted(to: .celsius).value
+    }
+
+    @ViewBuilder
+    private var outdoorSection: some View {
+        if let outdoor = outdoorCelsius {
+            let delta = outdoor - displayedTarget
+            VStack(spacing: AppSpacing.xs) {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "thermometer.sun.fill")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(Color.brandWarning)
+                    Text("sh_climate_outside")
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: temperatureText(outdoor))
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.primary)
+                        .monospacedDigit()
+                    Text(verbatim: "·")
+                        .foregroundStyle(.secondary)
+                    deltaText(delta)
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                }
+                // Honest hint, only when the numbers actually support it:
+                // cooling intent + genuinely cooler air outside.
+                if mode == .cold, delta < -0.5 {
+                    Text("sh_climate_open_window")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// "1.5° above target" / "at your target" — vs the dial's value.
+    private func deltaText(_ delta: Double) -> Text {
+        if abs(delta) < 0.5 { return Text("sh_climate_at_target") }
+        let amount = temperatureText(abs(delta))
+        return delta > 0
+            ? Text(String(format: String(localized: "sh_climate_above"), amount))
+            : Text(String(format: String(localized: "sh_climate_below"), amount))
+    }
+
+    // MARK: Now in the house — real per-room rows
+
+    private struct ClimateRow: Identifiable {
+        let id: String
+        let name: String
+        let celsius: Double
+        let humidity: Double?
+        /// The row's real history stream, when one accrues for it.
+        let history: SensorHistoryTarget?
+    }
+
+    /// Every real indoor reading in scope: the cached HomeKit rows (room-
+    /// filtered when the page's circle narrows it) plus the IoT hub's
+    /// degree-unit sensors. Empty means no sensor reported — the section
+    /// simply doesn't render.
+    private var indoorRows: [ClimateRow] {
+        var rows: [ClimateRow] = indoorClimate.readings
+            .filter { reading in
+                guard let room = effectiveRoom else { return true }
+                return reading.roomName?.compare(
+                    room, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            }
+            .map { reading in
+                ClimateRow(
+                    id: reading.id.uuidString,
+                    name: reading.roomName ?? reading.accessoryName,
+                    celsius: reading.celsius,
+                    humidity: reading.humidity,
+                    history: SensorHistoryTarget(
+                        id: IoTService.homeKitSensorId(accessory: reading.id,
+                                                       metric: "temperature"),
+                        name: reading.roomName ?? reading.accessoryName,
+                        unit: "°C",
+                        tint: IoTSensor.SensorType.temperature.color))
+            }
+        for device in smartHome.devices(in: effectiveRoom) where device.kind == .sensor {
+            guard let value = device.readingValue,
+                  let unit = device.readingUnit, unit.contains("°") else { continue }
+            let celsius = unit.contains("F") ? (value - 32) * 5 / 9 : value
+            var history: SensorHistoryTarget?
+            if case .iotSensor(let sensor) = device.backing {
+                history = SensorHistoryTarget(id: sensor.id.uuidString,
+                                              name: sensor.name,
+                                              unit: sensor.unit,
+                                              tint: sensor.type.color)
+            }
+            rows.append(ClimateRow(id: device.id,
+                                   name: device.room ?? device.name,
+                                   celsius: celsius,
+                                   humidity: nil,
+                                   history: history))
+        }
+        return rows
+    }
+
+    @ViewBuilder
+    private var indoorSection: some View {
+        let rows = indoorRows
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                Text("sh_climate_now_home")
+                    .font(AppFont.label)
+                    .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+                GlassCard {
+                    VStack(spacing: 0) {
+                        ForEach(rows) { row in
+                            climateRowView(row)
+                            if row.id != rows.last?.id {
+                                Rectangle()
+                                    .fill(Color.hairline)
+                                    .frame(height: 0.5)
+                                    .padding(.leading, AppSpacing.lg)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func climateRowView(_ row: ClimateRow) -> some View {
+        Button {
+            guard let history = row.history else { return }
+            HapticFeedback.impact(.light)
+            historyTarget = history
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Text(row.name)
+                    .font(AppFont.scaled(14))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer(minLength: AppSpacing.sm)
+                if let humidity = row.humidity {
+                    Text(verbatim: "\(humidity.formatted(.number.precision(.fractionLength(0))))%")
+                        .font(AppFont.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Text(verbatim: temperatureText(row.celsius))
+                    .font(AppFont.metricSmall)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                if row.history != nil {
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.35))
+                }
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(row.history == nil)
+        .accessibilityLabel(Text(verbatim: row.name))
+        .accessibilityValue(Text(verbatim: temperatureText(row.celsius)))
+        .accessibilityHint(row.history == nil ? Text(verbatim: "") : Text("sh_climate_row_hint"))
     }
 
     // MARK: Formatting
