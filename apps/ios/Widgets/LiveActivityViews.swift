@@ -82,17 +82,21 @@ private struct MaintenanceDoneButton: View {
 
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        // watchOS 11+ mirrors iPhone Live Activities into the Smart Stack by
-        // default, using the compact presentations. A custom small layout
-        // (supplementalActivityFamilies) is iOS 18-only and Widget.body can't
-        // branch on availability - it lands when the deployment target does.
-        configuration
+        // The widget extension targets iOS 18 precisely so every activity can
+        // declare the Apple Watch Smart Stack presentation unconditionally
+        // (Widget.body has no result builder, so this can't be
+        // #available-gated at a lower target).
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
-            ShoppingLockView(context: context)
-                .widgetURL(LiveActivityKind.shopping.deepLink)
+            ActivityFamilyGate {
+                ShoppingSmallView(context: context)
+            } full: {
+                ShoppingLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.shopping.deepLink)
         } dynamicIsland: { context in
             let bought = context.state.itemsBought
             let total = context.state.totalItems
@@ -152,6 +156,26 @@ struct ShoppingLiveActivity: Widget {
     }
 }
 
+private struct ShoppingSmallView: View {
+    let context: ActivityViewContext<ShoppingActivityAttributes>
+
+    var body: some View {
+        let bought = context.state.itemsBought
+        let total = context.state.totalItems
+        let done = total > 0 && bought >= total
+        SmallStackCard(title: Text(context.attributes.listName),
+                       progress: total > 0 ? Double(bought) / Double(total) : 0,
+                       progressTint: done ? .brandSuccess : LiveActivityKind.shopping.color) {
+            IslandStateIcon(kind: .shopping, isComplete: done)
+        } trailing: {
+            IslandMetric(Text(verbatim: "\(bought)/\(total)"),
+                         tint: done ? .brandSuccess : LiveActivityKind.shopping.color,
+                         size: .expanded)
+                .accessibilityLabel(Text(String(format: String(localized: "%d of %d items"), bought, total)))
+        }
+    }
+}
+
 private struct ShoppingLockView: View {
     let context: ActivityViewContext<ShoppingActivityAttributes>
 
@@ -200,13 +224,17 @@ private struct ShoppingLockView: View {
 
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
-            MaintenanceLockView(context: context)
-                .widgetURL(LiveActivityKind.maintenance.deepLink)
+            ActivityFamilyGate {
+                MaintenanceSmallView(context: context)
+            } full: {
+                MaintenanceLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.maintenance.deepLink)
         } dynamicIsland: { context in
             let done = context.state.isComplete
             let percentText = Text(verbatim: "\(Int(context.state.progress * 100))%")
@@ -266,6 +294,24 @@ struct MaintenanceLiveActivity: Widget {
     }
 }
 
+private struct MaintenanceSmallView: View {
+    let context: ActivityViewContext<MaintenanceActivityAttributes>
+
+    var body: some View {
+        let done = context.state.isComplete
+        SmallStackCard(title: Text(context.attributes.taskTitle),
+                       detail: Text(context.state.stepDescription),
+                       progress: context.state.progress,
+                       progressTint: done ? .brandSuccess : LiveActivityKind.maintenance.color) {
+            IslandStateIcon(kind: .maintenance, isComplete: done)
+        } trailing: {
+            IslandMetric(Text(verbatim: "\(Int(context.state.progress * 100))%"),
+                         tint: done ? .brandSuccess : LiveActivityKind.maintenance.color,
+                         size: .expanded)
+        }
+    }
+}
+
 private struct MaintenanceLockView: View {
     let context: ActivityViewContext<MaintenanceActivityAttributes>
 
@@ -311,13 +357,17 @@ private struct MaintenanceLockView: View {
 
 struct WorkSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: WorkSessionActivityAttributes.self) { context in
-            WorkSessionLockView(context: context)
-                .widgetURL(LiveActivityKind.workSession.deepLink)
+            ActivityFamilyGate {
+                WorkSessionSmallView(context: context)
+            } full: {
+                WorkSessionLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.workSession.deepLink)
         } dynamicIsland: { context in
             let done = context.state.isComplete
             let timer = Text(context.attributes.startedAt, style: .timer)
@@ -366,6 +416,23 @@ struct WorkSessionLiveActivity: Widget {
                 IslandStateIcon(kind: .workSession, isComplete: done)
                     .accessibilityLabel(Text(LiveActivityKind.workSession.title))
             }
+        }
+    }
+}
+
+private struct WorkSessionSmallView: View {
+    let context: ActivityViewContext<WorkSessionActivityAttributes>
+
+    var body: some View {
+        let done = context.state.isComplete
+        SmallStackCard(title: Text(context.attributes.taskTitle)) {
+            IslandStateIcon(kind: .workSession, isComplete: done)
+        } trailing: {
+            IslandMetric(Text(context.attributes.startedAt, style: .timer),
+                         tint: done ? .brandSuccess : LiveActivityKind.workSession.color,
+                         size: .expanded)
+                .frame(maxWidth: 60)
+                .multilineTextAlignment(.trailing)
         }
     }
 }
@@ -513,13 +580,17 @@ private struct DeliveryETALine: View {
 
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
-            DeliveryLockView(context: context)
-                .widgetURL(LiveActivityKind.delivery.deepLink)
+            ActivityFamilyGate {
+                DeliverySmallView(context: context)
+            } full: {
+                DeliveryLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.delivery.deepLink)
         } dynamicIsland: { context in
             let state = context.state
             let delivered = state.status == "delivered"
@@ -585,6 +656,23 @@ struct DeliveryLiveActivity: Widget {
     }
 }
 
+private struct DeliverySmallView: View {
+    let context: ActivityViewContext<DeliveryActivityAttributes>
+
+    var body: some View {
+        let state = context.state
+        let delivered = state.status == "delivered"
+        SmallStackCard(title: Text(context.attributes.description),
+                       detail: Text(verbatim: DeliveryFace.label(state.status, fallback: state.statusLabel)),
+                       progress: Double(DeliveryFace.milestone(state)) / 3.0,
+                       progressTint: DeliveryFace.tint(state)) {
+            IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: state.isProblem == true)
+        } trailing: {
+            EmptyView()
+        }
+    }
+}
+
 private struct DeliveryLockView: View {
     let context: ActivityViewContext<DeliveryActivityAttributes>
 
@@ -638,13 +726,17 @@ private struct DeliveryLockView: View {
 
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
-            PlantCareLockView(context: context)
-                .widgetURL(LiveActivityKind.plantCare.deepLink)
+            ActivityFamilyGate {
+                PlantCareSmallView(context: context)
+            } full: {
+                PlantCareLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.plantCare.deepLink)
         } dynamicIsland: { context in
             let watered = context.state.wateredCount
             let total = context.state.totalCount
@@ -702,6 +794,26 @@ struct PlantCareLiveActivity: Widget {
     }
 }
 
+private struct PlantCareSmallView: View {
+    let context: ActivityViewContext<PlantCareActivityAttributes>
+
+    var body: some View {
+        let watered = context.state.wateredCount
+        let total = context.state.totalCount
+        let done = total > 0 && watered >= total
+        SmallStackCard(title: Text("Plant watering"),
+                       progress: total > 0 ? Double(watered) / Double(total) : 0,
+                       progressTint: done ? .brandSuccess : LiveActivityKind.plantCare.color) {
+            IslandStateIcon(kind: .plantCare, isComplete: done)
+        } trailing: {
+            IslandMetric(Text(verbatim: "\(watered)/\(total)"),
+                         tint: done ? .brandSuccess : LiveActivityKind.plantCare.color,
+                         size: .expanded)
+                .accessibilityLabel(Text(String(format: String(localized: "%d of %d plants watered"), watered, total)))
+        }
+    }
+}
+
 private struct PlantCareLockView: View {
     let context: ActivityViewContext<PlantCareActivityAttributes>
 
@@ -755,13 +867,17 @@ private struct PlantCareLockView: View {
 
 struct EmergencyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: EmergencyActivityAttributes.self) { context in
-            EmergencyLockView(context: context)
-                .widgetURL(LiveActivityKind.emergency.deepLink)
+            ActivityFamilyGate {
+                EmergencySmallView(context: context)
+            } full: {
+                EmergencyLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.emergency.deepLink)
         } dynamicIsland: { context in
             let timer = Text(context.attributes.startedAt, style: .timer)
 
@@ -810,6 +926,22 @@ struct EmergencyLiveActivity: Widget {
                 IslandStateIcon(kind: .emergency, pulses: true)
                     .accessibilityLabel(Text(LiveActivityKind.emergency.title))
             }
+        }
+    }
+}
+
+private struct EmergencySmallView: View {
+    let context: ActivityViewContext<EmergencyActivityAttributes>
+
+    var body: some View {
+        SmallStackCard(title: Text("la_emergency_active")) {
+            IslandStateIcon(kind: .emergency, pulses: true)
+        } trailing: {
+            IslandMetric(Text(context.attributes.startedAt, style: .timer),
+                         tint: LiveActivityKind.emergency.color,
+                         size: .expanded)
+                .frame(maxWidth: 60)
+                .multilineTextAlignment(.trailing)
         }
     }
 }
@@ -877,13 +1009,17 @@ private struct AlertSymbol: View {
 
 struct IoTAlertLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: IoTAlertActivityAttributes.self) { context in
-            IoTAlertLockView(context: context)
-                .widgetURL(LiveActivityKind.iotAlert.deepLink)
+            ActivityFamilyGate {
+                IoTAlertSmallView(context: context)
+            } full: {
+                IoTAlertLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.iotAlert.deepLink)
         } dynamicIsland: { context in
             let active = context.state.isActive
             let tint: Color = active
@@ -952,6 +1088,27 @@ struct IoTAlertLiveActivity: Widget {
                 AlertSymbol(name: context.attributes.icon, tint: tint, pulses: active)
                     .accessibilityLabel(Text(context.attributes.sensorName))
             }
+        }
+    }
+}
+
+private struct IoTAlertSmallView: View {
+    let context: ActivityViewContext<IoTAlertActivityAttributes>
+
+    private var tint: Color {
+        context.state.isActive
+            ? (context.attributes.isCritical ? .brandDanger : .brandWarning)
+            : .brandSuccess
+    }
+
+    var body: some View {
+        SmallStackCard(title: Text(context.attributes.sensorName),
+                       detail: context.attributes.zone.map { Text($0) }) {
+            AlertSymbol(name: context.attributes.icon, tint: tint,
+                        pulses: context.state.isActive)
+        } trailing: {
+            IslandMetric(Text(verbatim: context.state.valueDisplay),
+                         tint: tint, size: .expanded)
         }
     }
 }
@@ -1032,13 +1189,17 @@ private enum EnergyFace {
 
 struct EnergyLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: EnergyActivityAttributes.self) { context in
-            EnergyLockView(context: context)
-                .widgetURL(LiveActivityKind.energy.deepLink)
+            ActivityFamilyGate {
+                EnergySmallView(context: context)
+            } full: {
+                EnergyLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.energy.deepLink)
         } dynamicIsland: { context in
             let headline = EnergyFace.watts(context.state.consumptionW)
                 ?? EnergyFace.watts(context.state.productionW) ?? "—"
@@ -1104,6 +1265,20 @@ struct EnergyLiveActivity: Widget {
                 IslandStateIcon(kind: .energy)
                     .accessibilityLabel(Text(LiveActivityKind.energy.title))
             }
+        }
+    }
+}
+
+private struct EnergySmallView: View {
+    let context: ActivityViewContext<EnergyActivityAttributes>
+
+    var body: some View {
+        SmallStackCard(title: Text(LiveActivityKind.energy.title)) {
+            IslandStateIcon(kind: .energy)
+        } trailing: {
+            IslandMetric(Text(verbatim: EnergyFace.watts(context.state.consumptionW)
+                              ?? EnergyFace.watts(context.state.productionW) ?? "—"),
+                         tint: LiveActivityKind.energy.color, size: .expanded)
         }
     }
 }
@@ -1195,13 +1370,17 @@ private struct CoverSymbol: View {
 
 struct CoverLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        configuration
+        configuration.supplementalActivityFamilies([.small])
     }
 
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: CoverActivityAttributes.self) { context in
-            CoverLockView(context: context)
-                .widgetURL(LiveActivityKind.cover.deepLink)
+            ActivityFamilyGate {
+                CoverSmallView(context: context)
+            } full: {
+                CoverLockView(context: context)
+            }
+            .widgetURL(LiveActivityKind.cover.deepLink)
         } dynamicIsland: { context in
             let stage = context.state.stage
             let tint = CoverFace.tint(stage)
@@ -1257,6 +1436,20 @@ struct CoverLiveActivity: Widget {
                 CoverSymbol(stage: stage, tint: tint)
                     .accessibilityLabel(Text(context.attributes.deviceName))
             }
+        }
+    }
+}
+
+private struct CoverSmallView: View {
+    let context: ActivityViewContext<CoverActivityAttributes>
+
+    var body: some View {
+        let stage = context.state.stage
+        SmallStackCard(title: Text(context.attributes.deviceName),
+                       detail: Text(CoverFace.label(stage))) {
+            CoverSymbol(stage: stage, tint: CoverFace.tint(stage))
+        } trailing: {
+            EmptyView()
         }
     }
 }

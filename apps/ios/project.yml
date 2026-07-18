@@ -125,7 +125,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1099"
+        CURRENT_PROJECT_VERSION: "1100"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -207,13 +207,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.widgets
         SWIFT_VERSION: "5.10"
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
-        IPHONEOS_DEPLOYMENT_TARGET: "17.1"
+        # 18.0 (app stays 17.1): supplementalActivityFamilies — the Watch
+        # Smart Stack presentation for Live Activities — is iOS 18-only and
+        # Widget.body has no result builder, so it cannot be #available-gated.
+        # An embedded extension may require a newer OS than its container
+        # (the classic WidgetKit-on-iOS-12-apps pattern); every iOS 17 device
+        # can run iOS 18, so only not-yet-updated devices lose widget surfaces.
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         INFOPLIST_FILE: Widgets/Info.plist
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1099"
+        CURRENT_PROJECT_VERSION: "1100"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -250,7 +256,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1099"
+        CURRENT_PROJECT_VERSION: "1100"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -288,7 +294,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1099"
+        CURRENT_PROJECT_VERSION: "1100"
         # Full manual plist (the proven widgets pattern) — no generate+merge
         # behavior to trust; NSUserActivityTypes is guaranteed in the build.
         INFOPLIST_FILE: Watch/Info.plist
@@ -332,7 +338,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1099"
+        CURRENT_PROJECT_VERSION: "1100"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"

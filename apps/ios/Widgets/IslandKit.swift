@@ -236,6 +236,68 @@ struct IslandContextLine: View {
     }
 }
 
+// MARK: - Apple Watch Smart Stack (activityFamily .small)
+//
+// Every Live Activity declares `supplementalActivityFamilies([.small])`, so
+// watchOS 11+ renders these compact cards in the Smart Stack instead of
+// falling back to the Dynamic Island compact strip. One shared card layout
+// keeps all nine activities reading as one family on the wrist.
+
+/// Routes an activity's content between the phone Lock Screen presentation
+/// and the Apple Watch Smart Stack small presentation.
+struct ActivityFamilyGate<Small: View, Full: View>: View {
+    @Environment(\.activityFamily) private var family
+    @ViewBuilder var small: () -> Small
+    @ViewBuilder var full: () -> Full
+
+    var body: some View {
+        switch family {
+        case .small: small()
+        default: full()
+        }
+    }
+}
+
+/// The one Smart Stack card: leading state glyph · title + context line or
+/// progress · trailing metric. Sized for the watch card — single rows,
+/// caption type, no buttons (Smart Stack Live Activities are not
+/// interactive; tapping opens the activity on the phone).
+struct SmallStackCard<Icon: View, Trailing: View>: View {
+    let title: Text
+    var detail: Text? = nil
+    var progress: Double? = nil
+    var progressTint: Color = .accentColor
+    @ViewBuilder var icon: Icon
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm + 2) {
+            icon
+                .font(AppFont.subheadline)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                title
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if let detail {
+                    detail
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if let progress {
+                    IslandProgressBar(value: progress, tint: progressTint)
+                }
+            }
+            Spacer(minLength: 0)
+            trailing
+        }
+        .padding(AppSpacing.md)
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(.primary)
+    }
+}
+
 // MARK: - Minimal lock-screen row (details toggled off)
 struct MinimalLockRow: View {
     let kind: LiveActivityKind
