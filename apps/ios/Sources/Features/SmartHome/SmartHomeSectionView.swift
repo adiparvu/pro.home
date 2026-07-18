@@ -32,14 +32,11 @@ import WeatherKit
 //   that opens the full device list — never an endless dashboard.
 
 struct SmartHomeSection: View {
-    /// The house agenda's next upcoming item (≥ now, next 30 days), computed
-    /// by the dashboard from the same services the calendar reads.
-    var nextAgendaItem: AgendaItem? = nil
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(TaskService.self) private var taskService
+    @Environment(AppRouter.self) private var router
 
     @State private var selectedRoom: String? = nil
 
@@ -88,6 +85,9 @@ struct SmartHomeSection: View {
     private let homeKit = HomeKitService.shared
     /// Cached HomeKit indoor readings (R3) — the dial's first truth.
     private let indoorClimate = IndoorClimateStore.shared
+    /// Daily kWh from the account's own power/energy sensors — the grid's
+    /// energy card exists only when such sensors exist (honesty law).
+    private let energyStore = EnergyStore.shared
     /// The rules engine (R5) — loaded here so the dashboard is the moment
     /// rules start evaluating; its compact row renders only when ≥1 exists.
     private let rulesStore = PropertyRulesStore.shared
@@ -130,7 +130,9 @@ struct SmartHomeSection: View {
             NowPlayingCard()
             heroGrid
             if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
-            if smartHome.hasAnyDevice, !smartHome.homeKitAuthorized { connectHomeKitRow }
+            // The one connect surface left on the page (IMG_8601 removed the
+            // hero card): the slim row, shown until HomeKit is authorized.
+            if !smartHome.homeKitAuthorized { connectHomeKitRow }
             // R5: only once at least one rule genuinely exists — never a
             // promotional slot for an empty feature.
             if !rulesStore.rules.isEmpty { rulesRow }
@@ -296,18 +298,16 @@ struct SmartHomeSection: View {
     /// cheap across aggregation rebuilds.
     private enum GridEntry: Identifiable {
         case device(SmartDevice)
-        case connectHomeKit
-        case nextUp
+        case whoHome
         case temperature
-        case network
+        case energy
 
         var id: String {
             switch self {
             case .device(let device): "device-\(device.id)"
-            case .connectHomeKit:     "connect-homekit"
-            case .nextUp:             "next-up"
+            case .whoHome:            "who-home"
             case .temperature:        "temperature"
-            case .network:            "network"
+            case .energy:             "energy"
             }
         }
 
@@ -315,32 +315,32 @@ struct SmartHomeSection: View {
         /// each card's actual paddings/frames (card padding 14×2 everywhere):
         /// - tall device (thermostat/light): 90pt visual + 12 + 52pt toggle
         ///   row ≈ 185; compact device: 40pt visual + 12 + 52 ≈ 135
-        /// - connect hero: 90pt glow + 12 + ~35pt title block ≈ 165
         /// - temperature: 90pt dial + 12 + title block/toggle row ≈ 185
-        /// - next up (cream): header ~16 + 8 + 42pt big line + 8 + 13 ≈ 125
-        /// - network: 48pt visual + 12 + ~37pt title block ≈ 130
+        /// - who's home: 34pt avatars + 10 + ~40pt count block + caption ≈ 150
+        /// - energy: header ~16 + 8 + value row + paddings ≈ 110
         /// Only the RELATIVE weights matter — they steer which column each
         /// card lands in; the cards still take their natural heights.
         var estimatedHeight: CGFloat {
             switch self {
             case .device(let device):
                 (device.kind == .thermostat || device.kind == .light) ? 185 : 135
-            case .connectHomeKit: 165
-            case .nextUp:         125
-            case .temperature:    185
-            case .network:        130
+            case .whoHome:     150
+            case .temperature: 185
+            case .energy:      110
             }
         }
     }
 
-    /// The reference's fixed rhythm: device tiles first (or, with zero
-    /// devices anywhere, the Connect HomeKit hero in the first slot), then
-    /// the agenda, temperature, and network cards — the grid is NEVER empty.
+    /// Device tiles first, then the cards only the smart zone can honestly
+    /// show (IMG_8601): the geofenced "Who's home", the temperature dial,
+    /// and — only when power/energy sensors exist — today's kWh. The old
+    /// Connect-HomeKit hero, agenda, and Wi-Fi cards are gone: connecting
+    /// stays on the slim row below, the agenda lives in the Tasks tab, and
+    /// network state moved into the house menu.
     private var gridEntries: [GridEntry] {
-        var entries: [GridEntry] = []
-        if !smartHome.hasAnyDevice { entries.append(.connectHomeKit) }
-        entries += visibleDevices.map(GridEntry.device)
-        entries += [.nextUp, .temperature, .network]
+        var entries: [GridEntry] = visibleDevices.map(GridEntry.device)
+        entries += [.whoHome, .temperature]
+        if energyStore.hasEnergySensors { entries.append(.energy) }
         return entries
     }
 
@@ -401,10 +401,8 @@ struct SmartHomeSection: View {
             SmartDeviceHeroCard(device: device) {
                 activeSheet = .device(device)
             }
-        case .connectHomeKit:
-            ConnectHomeKitHeroCard { connectOrImport() }
-        case .nextUp:
-            NextUpCard(item: nextAgendaItem)
+        case .whoHome:
+            WhoIsHomeCard { router.navigate(to: .family) }
         case .temperature:
             let temperature = homeTemperature
             TemperatureDialCard(celsius: temperature.celsius,
@@ -412,8 +410,8 @@ struct SmartHomeSection: View {
                                 thermostat: primaryThermostat) {
                 activeSheet = .climate
             }
-        case .network:
-            NetworkStatusCard()
+        case .energy:
+            EnergyCard()
         }
     }
 

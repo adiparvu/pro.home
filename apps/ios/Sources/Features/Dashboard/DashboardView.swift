@@ -161,7 +161,7 @@ struct DashboardView: View {
 
                 // ── Smart Home (S2.6): room/scene chips, the now-playing
                 //    media card, and the always-populated hero grid ────────
-                SmartHomeSection(nextAgendaItem: nextAgendaItem)
+                SmartHomeSection()
                     .padding(.horizontal, AppSpacing.lg)
 
                 // ── Estate OS (E1): the "Domeniul" strip — the property's
@@ -377,7 +377,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Next agenda item (feeds the hero grid's "Next up" card)
+    // MARK: - Next agenda item (feeds the House Briefing widget)
 
     /// The house agenda's next upcoming entry — at/after now, within the
     /// next 30 days — built from the exact services the in-app calendar
