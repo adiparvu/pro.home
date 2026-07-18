@@ -221,6 +221,27 @@ struct ChatTheme: Identifiable {
                          bgImage: img, bgAnim: anim)
     }
 
+    /// True when this conversation has pinned ANY of its own theme keys —
+    /// i.e. it no longer follows the global theme live. Mirrors exactly
+    /// what `effective(scope:)` treats as an override ("" = unset).
+    static func hasOverride(scope: String, defaults d: UserDefaults = .standard) -> Bool {
+        ["prvio.chatTheme.", "prvio.chatBubbleHex.",
+         "prvio.chatBgID.", "prvio.chatBgImage.", "prvio.chatBgAnim."].contains {
+            d.string(forKey: $0 + scope).map { !$0.isEmpty } ?? false
+        }
+    }
+
+    /// Re-links a conversation to the global theme by REMOVING its scoped
+    /// keys (not copying values — a copy is exactly the "background never
+    /// follows the global again" bug the user hit). After this,
+    /// `effective(scope:)` falls through to the global keys live.
+    static func clearOverride(scope: String, defaults d: UserDefaults = .standard) {
+        for prefix in ["prvio.chatTheme.", "prvio.chatBubbleHex.",
+                       "prvio.chatBgID.", "prvio.chatBgImage.", "prvio.chatBgAnim."] {
+            d.removeObject(forKey: prefix + scope)
+        }
+    }
+
     // The wallpaper must be anchored to the SCREEN, not to the message list's
     // keyboard-shrunk frame. Ignoring the `.all` safe-area regions (container
     // + keyboard) keeps the layer's bounds full-bleed — and the explicit
@@ -381,6 +402,43 @@ struct ChatThemePicker: View {
                 Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 10) {
+                        // Per-conversation pickers lead with the way BACK:
+                        // once any scoped key was ever written, only this
+                        // row re-links the conversation to the global theme
+                        // (the keys are removed, not copied).
+                        if let scope {
+                            Button {
+                                ChatTheme.clearOverride(scope: scope)
+                                HapticFeedback.success()
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 14) {
+                                    Image(systemName: "globe")
+                                        .font(AppFont.scaled(16))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                                        .frame(width: 26)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("chat_theme_use_global")
+                                            .font(AppFont.scaled(16)).foregroundStyle(.primary)
+                                        Text("chat_theme_use_global_footer")
+                                            .font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer()
+                                    if !ChatTheme.hasOverride(scope: scope) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(AppFont.scaled(18))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
+                            .padding(.horizontal, AppSpacing.lg)
+                        }
+
                         Text("Themes")
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))

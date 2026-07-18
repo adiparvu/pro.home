@@ -95919,6 +95919,86 @@
           }
         }
       }
+    },
+    "chat_theme_custom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizată"
+          }
+        }
+      }
+    },
+    "chat_theme_global" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Global"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Globală"
+          }
+        }
+      }
+    },
+    "chat_theme_row" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme & wallpaper"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temă și fundal"
+          }
+        }
+      }
+    },
+    "chat_theme_use_global" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use global theme"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folosește tema globală"
+          }
+        }
+      }
+    },
+    "chat_theme_use_global_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follows Profile › Chat › Themes live until you pick something here."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urmează live Profil › Chat › Teme până alegi ceva aici."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
