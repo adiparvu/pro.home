@@ -190,9 +190,17 @@ extension ChatView {
         // and videos are both supported by the picker.
         let ids = mentionedIds
         for (index, item) in items.enumerated() {
-            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            guard var data = try? await item.loadTransferable(type: Data.self) else { continue }
             let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
             let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
+            // Same pipeline the camera path uses: a gallery original is
+            // full sensor resolution (often HEIC despite the jpg path) —
+            // recompress to the chat-display cap so the upload and every
+            // recipient's download are megabytes smaller, not tens.
+            if !isVideo, let image = UIImage(data: data),
+               let jpeg = image.uploadJPEG(quality: 0.8, maxDimension: 2048) {
+                data = jpeg
+            }
             let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
             let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
             // Images and videos → private chat-media bucket (signed URL at display).

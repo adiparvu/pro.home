@@ -288,7 +288,10 @@ extension DirectMessageView {
                                          contentType: isQuickTime ? "video/quicktime" : "video/mp4",
                                          kind: .video)
             } else {
-                await uploadAndSendMedia(data: data, subdir: "dm",
+                // Recompress like the camera path — gallery originals are
+                // full sensor resolution and made both directions slow.
+                let jpeg = UIImage(data: data)?.uploadJPEG(quality: 0.85, maxDimension: 2048) ?? data
+                await uploadAndSendMedia(data: jpeg, subdir: "dm",
                                          ext: "jpg", contentType: "image/jpeg", kind: .image)
             }
         }

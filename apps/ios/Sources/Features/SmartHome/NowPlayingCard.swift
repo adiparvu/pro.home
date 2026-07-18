@@ -11,9 +11,10 @@ import MediaPlayer
 //
 // Honest states throughout:
 // - Library access `.notDetermined` → requested once on appear.
-// - Denied/restricted, or simply nothing queued → the SAME card layout with
-//   a music-note placeholder, a "Nothing playing" title and a real
-//   "Open Music" button. The card never disappears and never fakes a track.
+// - Denied/restricted, or simply nothing queued → the card is NOT shown at
+//   all (IMG_8618: a permanent "Nothing playing" placeholder is furniture,
+//   not information). The empty-state layout below remains for the brief
+//   window while a queued item's metadata resolves; it never fakes a track.
 // - Play/pause reflects the player's real `playbackState`, kept fresh by
 //   `playbackStateDidChange` / `nowPlayingItemDidChange` notifications
 //   (via `beginGeneratingPlaybackNotifications`) plus a lightweight elapsed
@@ -27,6 +28,11 @@ import MediaPlayer
 @MainActor
 @Observable
 final class SystemMusicModel {
+    /// One shared listener: the Smart section observes it to decide whether
+    /// the media card exists at all, and the card renders from the same
+    /// instance — the two can never disagree.
+    static let shared = SystemMusicModel()
+
     struct NowPlaying {
         var title: String?
         var artist: String?
@@ -160,9 +166,8 @@ final class SystemMusicModel {
 // MARK: - Card view
 
 struct NowPlayingCard: View {
-    @State private var model = SystemMusicModel()
+    private let model = SystemMusicModel.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.scenePhase) private var scenePhase
 
     /// Artwork footprint / corner radius on the media card, and the soft
     /// shadow that lifts the artwork off the glass.
@@ -194,11 +199,9 @@ struct NowPlayingCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onAppear { model.activate() }
-        .onDisappear { model.deactivate() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.sync() }
-        }
+        // Lifecycle lives at the SECTION level (SmartHomeSectionView): the
+        // card only exists while something plays, so its own appearance can
+        // never be the thing that starts or stops the listener.
     }
 
     // MARK: Artwork (real, or the honest placeholder)

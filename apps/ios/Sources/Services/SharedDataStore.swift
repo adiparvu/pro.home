@@ -507,39 +507,64 @@ enum SharedDataStore {
         guard let container = FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: suiteName) else { return nil }
         let dir = container.appendingPathComponent("Queues", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            // Queue contents are opaque action ids — never sensitive — and
+            // they must stay writable while the device is locked (watch
+            // commands and Live Activity buttons arrive exactly then).
+            try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.none],
+                                                   ofItemAtPath: dir.path)
+        }
         return dir
     }
 
     /// Atomically read-modify-write one queue. `body` mutates the queue in
     /// place; the file is rewritten only when it actually changed (and
     /// removed when it empties, so the directory never accumulates husks).
+    ///
+    /// Cross-process exclusion is a kernel `flock` on a stable sidecar
+    /// lockfile — NOT `NSFileCoordinator`. The coordinator arbitrates through
+    /// filecoordinationd, and a peer process suspended mid-claim (a widget /
+    /// intent extension parked by the system) leaves every other caller
+    /// blocked indefinitely — the build-1115 field crash: the app's main
+    /// thread stuck in `coordinateWritingItemAtURL` while backgrounding,
+    /// until UIKit's snapshot machinery aborted the process. A flock has no
+    /// daemon and no callbacks: the kernel releases it the moment its holder
+    /// exits, and hold times here are single-digit milliseconds (read +
+    /// mutate + write of a tiny JSON array). The lock rides the sidecar, not
+    /// the data file, because the atomic replace below swaps the data file's
+    /// inode — a lock on the old inode would no longer exclude anyone.
     @discardableResult
     fileprivate static func coordinateQueue<T>(_ name: String,
                                            legacyKey: String?,
                                            _ body: (inout [String]) -> T) -> T? {
-        guard let url = queuesDirectory?.appendingPathComponent(name + ".json") else { return nil }
-        var result: T?
-        let coordinator = NSFileCoordinator()
-        var coordError: NSError?
-        coordinator.coordinate(writingItemAt: url, options: [], error: &coordError) { url in
-            var queue = (try? Data(contentsOf: url))
-                .flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
-            var dirty = false
-            if let legacyKey, let ud = UserDefaults(suiteName: suiteName),
-               let legacy = ud.array(forKey: legacyKey) as? [String], !legacy.isEmpty {
-                queue = legacy + queue
-                ud.removeObject(forKey: legacyKey)
-                dirty = true
-            }
-            let before = queue
-            result = body(&queue)
-            if queue != before { dirty = true }
-            guard dirty else { return }
+        guard let dir = queuesDirectory else { return nil }
+        let url = dir.appendingPathComponent(name + ".json")
+        let lockURL = dir.appendingPathComponent(name + ".lock")
+
+        let fd = open(lockURL.path, O_RDWR | O_CREAT, 0o644)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        guard flock(fd, LOCK_EX) == 0 else { return nil }
+        defer { flock(fd, LOCK_UN) }
+
+        var queue = (try? Data(contentsOf: url))
+            .flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
+        var dirty = false
+        if let legacyKey, let ud = UserDefaults(suiteName: suiteName),
+           let legacy = ud.array(forKey: legacyKey) as? [String], !legacy.isEmpty {
+            queue = legacy + queue
+            ud.removeObject(forKey: legacyKey)
+            dirty = true
+        }
+        let before = queue
+        let result = body(&queue)
+        if queue != before { dirty = true }
+        if dirty {
             if queue.isEmpty {
                 try? FileManager.default.removeItem(at: url)
             } else if let data = try? JSONEncoder().encode(queue) {
-                try? data.write(to: url, options: .atomic)
+                try? data.write(to: url, options: [.atomic, .noFileProtection])
             }
         }
         return result

@@ -37,6 +37,8 @@ struct SmartHomeSection: View {
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(TaskService.self) private var taskService
     @Environment(AppRouter.self) private var router
+    /// The system-music listener behind the media card's existence check.
+    private var music = SystemMusicModel.shared
 
     @State private var selectedRoom: String? = nil
 
@@ -127,7 +129,10 @@ struct SmartHomeSection: View {
             if !allRooms.isEmpty { roomFilter }
             let scenes = homeKitScenes
             if !scenes.isEmpty { SmartSceneChipRow(scenes: scenes) }
-            NowPlayingCard()
+            // Media card only while something REALLY plays (IMG_8618) — the
+            // shared model listens from the section level below, so the card
+            // appears the moment playback starts and folds away when it ends.
+            if music.nowPlaying != nil { NowPlayingCard() }
             heroGrid
             if scopedDevices.count > Self.maxVisibleDevices { seeAllRow }
             // The one connect surface left on the page (IMG_8601 removed the
@@ -155,6 +160,8 @@ struct SmartHomeSection: View {
         // scene re-activation — never a polling loop.
         // Rules engine (R5): load the property's rules alongside, and adopt
         // the app's TaskService so rule-created tasks land in the live list.
+        .onAppear { music.activate() }
+        .onDisappear { music.deactivate() }
         .task {
             rulesStore.adopt(taskService: taskService)
             await rulesStore.loadIfNeeded()
