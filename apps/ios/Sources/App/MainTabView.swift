@@ -69,7 +69,10 @@ struct MainTabView: View {
                         }
                     }
                 }
-                .tabItem { Image(systemName: AppTab.home.icon).accessibilityLabel(Text(verbatim: AppTab.home.label)) }
+                // Threads-style rounded house (user-decreed, IMG_8595) — a
+                // template vector PDF in Assets, tinted by the tab bar like
+                // any symbol. The SF fallback stays in AppTab.icon.
+                .tabItem { Image("ThreadsHome").accessibilityLabel(Text(verbatim: AppTab.home.label)) }
                 .tag(AppTab.home)
             }
 
