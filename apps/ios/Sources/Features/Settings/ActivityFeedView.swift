@@ -510,7 +510,11 @@ struct ActivityFeedView: View {
     private var filterButton: some View {
         GlassFilterButton(
             isActive: period != .month || selectedCategory != .all || selectedMember != nil,
-            inToolbar: true
+            inToolbar: true,
+            // The People section hosts a SEARCH FIELD and avatar rows —
+            // content a native Menu cannot render, the one sanctioned
+            // popover exception in the menu system.
+            richContent: true
         ) {
             GlassFilterSection(
                 title: "Period",

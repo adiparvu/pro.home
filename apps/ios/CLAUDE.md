@@ -43,35 +43,35 @@ older iOS convention disagree, always choose the newest.
 - Spacing should always feel balanced.
 - Every screen should immediately communicate premium quality.
 
-### Menus — the one-circle law (permanent, user-decreed)
+### Menus — the one-circle law, on the SYSTEM menu (permanent, user-decreed)
 
 - Each page exposes ONE circular glass trigger (toolbar-preferred, top
   trailing) that aggregates EVERYTHING: view modes, filters, sorts, one-shot
   actions (share/print/export), and anything that would otherwise live in an
   "…" menu, a capsule row, or stat tiles. No permanent chip rows, capsules,
   or tile strips on the page body.
-- Menus present through `GlassMenuChrome` (Components/GlassFilterButton.swift)
-  and NOTHING else: Liquid Glass card, 24pt continuous corners
-  (`AppRadius.xxl`), morph-open scale 0.95→1.00 on a ~0.35s spring anchored
-  at the trigger edge, entrance specular sweep, shadow lift inside the shape
-  style, Reduce Motion → fade only, Reduce Transparency → opaque card.
-- Popovers NEVER show the UIKit anchor arrow ("codiță") — `PopoverArrowKiller`
-  rides in every menu popover.
-- One-shot action rows run through the popover's action mailbox (executed
-  from `onDisappear`), never via a timed delay — a presentation started
-  mid-dismissal is silently dropped by UIKit.
-- Popover height is measured once and FIXED for the presentation; a popover
-  that keeps re-measuring its scrolling content re-anchors every frame and
-  the page appears to jump.
-- Menu-in-menu (the iOS 27 way, IMG_8580–8582): when a page has 4+ facets
-  that would stack as a flat scroll, a facet row (RIGHT chevron + current
-  value) opens its submenu as a CARD STACKED OVER the parent — the parent
-  stays mounted behind, dimmed, its top rows peeking above; the child's
-  header row is the facet title + a DOWN chevron that folds it back.
-  Picking a leaf option applies and dismisses the WHOLE menu (the Photos
-  behavior). NEVER a slide-to-a-new-page drill, never an inline accordion.
-  Use `GlassDrillMenu` (Components/GlassDrillMenu.swift). Flat sections
-  stay the default for menus with only 2–3 groups.
+- The presentation is the NATIVE SwiftUI `Menu` (per Apple's WWDC26
+  guidance: the morph-from-trigger entrance, the glass card, the stacked
+  submenu are the system's, "out of the box" — never rebuild them, and
+  never paint a custom background over system Liquid Glass). The trigger
+  and blocks live in Components/GlassFilterButton.swift: single-select
+  groups are inline `Picker`s, booleans are `Toggle`s, one-shot actions are
+  `Button(role:)` — the system runs them after dismissal, no mailbox.
+- HIG row anatomy is law: icons uniformly per group (all rows or none),
+  icon trailing the label, destructive actions carry the REAL
+  `.destructive` role and sit at the END, counts/badges stay on page
+  content — they are not menu anatomy.
+- Menu-in-menu (IMG_8580–8582): a facet with its options is a NESTED
+  `Menu` whose label is the facet title + current value — the system
+  presents it as the stacked card over the dimmed parent, exactly Photos.
+  Use `GlassDrillMenu` (Components/GlassDrillMenu.swift) for pages with 4+
+  facets; flat sections stay the default for 2–3 groups. Keep a submenu to
+  roughly five options (HIG) — beyond that, prefer flat sections.
+- The ONE sanctioned exception: content a menu cannot host (a search
+  field, avatar rows — Activity's People section). That page passes
+  `richContent: true`, which keeps the popover presentation (arrowless,
+  glass card via `GlassMenuChrome`, action mailbox, measured-once height).
+  Do not add new rich popovers without exhausting the native menu first.
 
 ### Headers — no borders, ever (permanent, user-decreed)
 
