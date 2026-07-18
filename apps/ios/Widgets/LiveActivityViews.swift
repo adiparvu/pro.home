@@ -1288,28 +1288,42 @@ private struct EnergyLockView: View {
 
     var body: some View {
         if LA.lockDetails(.energy) {
-            IslandLockCard(kind: .energy, title: Text(LiveActivityKind.energy.title)) {
-                HStack(spacing: AppSpacing.xxs) {
-                    if let consumption = EnergyFace.watts(context.state.consumptionW) {
-                        Text("la_energy_consumption") + Text(verbatim: " \(consumption)")
+            VStack(spacing: 0) {
+                IslandLockCard(kind: .energy, title: Text(LiveActivityKind.energy.title)) {
+                    HStack(spacing: AppSpacing.xxs) {
+                        if let consumption = EnergyFace.watts(context.state.consumptionW) {
+                            Text("la_energy_consumption") + Text(verbatim: " \(consumption)")
+                        }
+                        if context.state.consumptionW != nil, context.state.productionW != nil {
+                            Text(verbatim: "·")
+                        }
+                        if let production = EnergyFace.watts(context.state.productionW) {
+                            Text("la_energy_production") + Text(verbatim: " \(production)")
+                        }
                     }
-                    if context.state.consumptionW != nil, context.state.productionW != nil {
-                        Text(verbatim: "·")
-                    }
-                    if let production = EnergyFace.watts(context.state.productionW) {
-                        Text("la_energy_production") + Text(verbatim: " \(production)")
-                    }
+                    .font(AppFont.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    IslandContextLine(kind: .energy, text: Text(verbatim: ""),
+                                      propertyName: context.attributes.propertyName)
+                } trailing: {
+                    IslandMetric(Text(verbatim: EnergyFace.watts(context.state.consumptionW)
+                                      ?? EnergyFace.watts(context.state.productionW) ?? "—"),
+                                 tint: LiveActivityKind.energy.color, size: .hero)
                 }
-                .font(AppFont.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                IslandContextLine(kind: .energy, text: Text(verbatim: ""),
-                                  propertyName: context.attributes.propertyName)
-            } trailing: {
-                IslandMetric(Text(verbatim: EnergyFace.watts(context.state.consumptionW)
-                                  ?? EnergyFace.watts(context.state.productionW) ?? "—"),
-                             tint: LiveActivityKind.energy.color, size: .hero)
+                // Parity with the expanded island: the session can be ended
+                // from the Lock Screen too, not only from the Dynamic Island.
+                Button(intent: EndEnergySessionIntent()) {
+                    Text("la_session_end")
+                        .font(AppFont.captionEmphasis)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
             }
+            .activityBackgroundTint(Color.clear)
+            .activitySystemActionForegroundColor(.primary)
         } else {
             MinimalLockRow(kind: .energy, title: Text(LiveActivityKind.energy.title))
         }
@@ -1417,6 +1431,14 @@ struct CoverLiveActivity: Widget {
                                 .font(AppFont.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
+                            if let actuatorId = context.attributes.actuatorId {
+                                Button(intent: StopCoverIntent(actuatorId: actuatorId)) {
+                                    Label("iot_cmd_stop", systemImage: "stop.fill")
+                                        .font(AppFont.captionStrong)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(LiveActivityKind.cover.color)
+                            }
                         }
                     }
                 }
@@ -1460,26 +1482,39 @@ private struct CoverLockView: View {
     var body: some View {
         let stage = context.state.stage
         if LA.lockDetails(.cover) {
-            HStack(spacing: AppSpacing.base) {
-                ZStack {
-                    Circle()
-                        .fill(CoverFace.tint(stage).opacity(AppOpacity.tintedFill))
-                        .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
-                    CoverSymbol(stage: stage, tint: CoverFace.tint(stage))
-                        .font(AppFont.title3)
+            VStack(spacing: 0) {
+                HStack(spacing: AppSpacing.base) {
+                    ZStack {
+                        Circle()
+                            .fill(CoverFace.tint(stage).opacity(AppOpacity.tintedFill))
+                            .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
+                        CoverSymbol(stage: stage, tint: CoverFace.tint(stage))
+                            .font(AppFont.title3)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.attributes.deviceName)
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(CoverFace.label(stage))
+                            .font(AppFont.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(context.attributes.deviceName)
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(CoverFace.label(stage))
-                        .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                .padding(AppSpacing.lg)
+                if CoverFace.isBusy(stage), let actuatorId = context.attributes.actuatorId {
+                    Button(intent: StopCoverIntent(actuatorId: actuatorId)) {
+                        Label("iot_cmd_stop", systemImage: "stop.fill")
+                            .font(AppFont.captionEmphasis)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(LiveActivityKind.cover.color)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.lg)
                 }
-                Spacer()
             }
-            .padding(AppSpacing.lg)
             .activityBackgroundTint(Color.clear)
             .activitySystemActionForegroundColor(.primary)
         } else {

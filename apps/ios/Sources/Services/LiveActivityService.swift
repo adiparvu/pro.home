@@ -504,7 +504,7 @@ final class LiveActivityService {
 
     private var coverActivity: Activity<CoverActivityAttributes>?
 
-    func startCoverOperation(deviceName: String) {
+    func startCoverOperation(deviceName: String, actuatorId: UUID? = nil) {
         guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
         // One operation at a time — a new command replaces the old island.
         Task {
@@ -512,7 +512,8 @@ final class LiveActivityService {
                 await a.end(nil, dismissalPolicy: .immediate)
             }
         }
-        let attrs = CoverActivityAttributes(deviceName: deviceName, startedAt: Date())
+        let attrs = CoverActivityAttributes(deviceName: deviceName, startedAt: Date(),
+                                            actuatorId: actuatorId)
         coverActivity = try? Activity.request(
             attributes: attrs,
             content: .init(state: .init(stage: "sent"), staleDate: stale(hours: 0.25)),

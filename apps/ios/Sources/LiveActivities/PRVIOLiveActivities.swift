@@ -327,6 +327,10 @@ struct CoverActivityAttributes: ActivityAttributes {
     }
     let deviceName: String
     let startedAt: Date
+    /// The real actuator behind this operation — lets the island's Stop
+    /// button target the device. nil (e.g. the simulator page) renders no
+    /// button, so a Stop can never be offered without a device to stop.
+    var actuatorId: UUID?
 }
 
 // MARK: - Work session buttons (run in the app's process)

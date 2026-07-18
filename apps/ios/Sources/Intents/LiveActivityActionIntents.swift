@@ -151,6 +151,41 @@ struct MarkDeliveryReceivedIntent: LiveActivityIntent {
     }
 }
 
+// MARK: - Cover (garage / gate) → "Stop" while moving
+//
+// Queues the REAL `stop` command onto the same App Group queue the watch's
+// cover buttons ride (`appendPendingIoTCommand`); the app's drain runs it
+// through `IoTService.perform(.stop, on:)` — the actual controller write
+// (HTTP `{"command":"stop"}` / Modbus register 0) — which then drives the
+// island through the honest sent → moving → stopped choreography. No
+// optimistic island mutation here: the activity only changes state when the
+// real command path runs. `prvio.processPending` drains it immediately while
+// the app process is resident (it always is moments after issuing the
+// open/close, when the travel poll task is alive); if the process was gone,
+// the parked stop executes on next activation — physically a no-op once the
+// travel window has ended.
+
+struct StopCoverIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Stop cover"
+
+    @Parameter(title: "Actuator ID")
+    var actuatorId: String
+
+    init() {}
+    init(actuatorId: UUID) { self.actuatorId = actuatorId.uuidString }
+
+    func perform() async throws -> some IntentResult {
+        guard let id = UUID(uuidString: actuatorId) else { return .result() }
+        HapticFeedback.impact(.medium)
+        // "stop" is ActuatorCommand.stop.rawValue — the model type is
+        // app-target-only, so the raw string crosses the App Group boundary
+        // and the drain validates it (`ActuatorCommand(rawValue:)`).
+        SharedDataStore.appendPendingIoTCommand(actuatorId: id, command: "stop")
+        NotificationCenter.default.post(name: processPendingNotification, object: nil)
+        return .result()
+    }
+}
+
 // MARK: - Maintenance / Task → "Done"
 //
 // Completes the real task carried in the attributes. Reuses the completion

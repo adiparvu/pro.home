@@ -147,7 +147,8 @@ final class IoTService {
     /// through sent → moving → confirmed/finished.
     func perform(_ command: ActuatorCommand, on actuator: IoTActuator) {
         if actuator.kind == .cover {
-            LiveActivityService.shared.startCoverOperation(deviceName: actuator.name)
+            LiveActivityService.shared.startCoverOperation(deviceName: actuator.name,
+                                                           actuatorId: actuator.id)
         }
         Task { await execute(command, on: actuator) }
     }
