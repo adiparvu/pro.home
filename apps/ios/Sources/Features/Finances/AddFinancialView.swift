@@ -11,6 +11,10 @@ struct AddFinancialView: View {
     /// `"zone:<uuid>"`) — invisible in the form, a writer for callers that
     /// anchor the expense to something.
     var presetTags: [String] = []
+    /// Editing an existing record (audit fix: records were write-once —
+    /// no edit UI, no service update — a typo lived forever). The same
+    /// form serves both; nil keeps the add flow exactly as before.
+    var editing: FinancialRecord? = nil
     let onSaved: () async -> Void
 
     @State private var title = ""
@@ -19,6 +23,10 @@ struct AddFinancialView: View {
     @State private var category = "other"
     @State private var date = Date()
     @State private var notes = ""
+    /// "none" | "monthly" | "yearly" — mirrored to migration 015's
+    /// recurrence columns, which pg_cron advances server-side. iOS could
+    /// only CONSUME recurring rows until now (audit fix).
+    @State private var repeatInterval = "none"
     @State private var sharedMemberIds: [String] = []
     @State private var sharedMemberNames: [String] = []
     @State private var isSaving = false
@@ -30,6 +38,29 @@ struct AddFinancialView: View {
     @State private var autoSuggestedCategory: String? = nil
 
     private let types = ["income", "expense"]
+    private let repeatOptions = ["none", "monthly", "yearly"]
+
+    init(presetTags: [String] = [], editing: FinancialRecord? = nil,
+         onSaved: @escaping () async -> Void) {
+        self.presetTags = presetTags
+        self.editing = editing
+        self.onSaved = onSaved
+        guard let record = editing else { return }
+        _title = State(initialValue: record.title)
+        _amount = State(initialValue: Self.plainAmount(record.amount))
+        _type = State(initialValue: record.type)
+        _category = State(initialValue: record.category)
+        _date = State(initialValue: AppDate.day(from: record.date) ?? Date())
+        _notes = State(initialValue: record.description ?? "")
+        _repeatInterval = State(initialValue: (record.isRecurring ?? false)
+            ? (record.recurrenceInterval ?? "monthly") : "none")
+        _sharedMemberIds = State(initialValue: record.sharedMemberIds)
+    }
+
+    /// "12.5" not "12.500000" — the decimal pad's own vocabulary.
+    private static func plainAmount(_ value: Double) -> String {
+        value == value.rounded() ? String(Int(value)) : String(value)
+    }
 
     private var categories: [String] {
         type == "income"
@@ -40,7 +71,7 @@ struct AddFinancialView: View {
     }
 
     var body: some View {
-        FormScaffold(title: "Add Record",
+        FormScaffold(title: editing == nil ? "Add Record" : "Edit Record",
                      canSave: !title.isEmpty && !amount.isEmpty,
                      isSaving: isSaving,
                      error: Binding(
@@ -180,6 +211,26 @@ struct AddFinancialView: View {
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.xs)
+
+            divider
+
+            // Repeat — writes migration 015's recurrence columns, the rows
+            // Upcoming payments / forecast / agenda already consume.
+            HStack(spacing: 14) {
+                ColoredIconBadge(icon: "repeat", color: .green)
+                Text("Repeat")
+                    .font(AppFont.scaled(15))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Picker("", selection: $repeatInterval) {
+                    Text("Never").tag("none")
+                    Text("Monthly").tag("monthly")
+                    Text("Yearly").tag("yearly")
+                }
+                .tint(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs)
         }
     }
 
@@ -260,6 +311,13 @@ struct AddFinancialView: View {
 
         let dateString = AppDate.dayString(from: date)
         let now = ISO8601DateFormatter().string(from: Date())
+        let isRecurring = repeatInterval != "none"
+        // The server's pg_cron clones the record ON next_occurrence and
+        // advances it (+1 month / +1 year, migration 015) — seed the first
+        // FUTURE occurrence of the record's own day.
+        let nextOccurrence = isRecurring
+            ? Self.firstOccurrence(after: Date(), base: date, interval: repeatInterval)
+            : nil
 
         struct NewRecord: Encodable {
             let propertyId: UUID
@@ -275,31 +333,83 @@ struct AddFinancialView: View {
             /// nil (column default) unless the caller preset labels — the
             /// space dossier's "zone:<uuid>" anchor rides here.
             let tags: [String]?
+            let isRecurring: Bool
+            let recurrenceInterval: String?
+            let nextOccurrence: String?
             enum CodingKeys: String, CodingKey {
                 case title, amount, currency, type, category, date, description, tags
                 case propertyId = "property_id"
                 case createdAt = "created_at"
                 case sharedMemberIds = "shared_member_ids"
+                case isRecurring = "is_recurring"
+                case recurrenceInterval = "recurrence_interval"
+                case nextOccurrence = "next_occurrence"
+            }
+        }
+
+        /// The edit patch touches only what the form owns: never the
+        /// property, creation stamp, tags — and never the CURRENCY, which
+        /// the form doesn't expose (re-stamping the preferred currency on
+        /// edit would silently re-denominate an old record).
+        struct RecordPatch: Encodable {
+            let title: String
+            let amount: Double
+            let type: String
+            let category: String
+            let date: String
+            let description: String?
+            let sharedMemberIds: [String]
+            let isRecurring: Bool
+            let recurrenceInterval: String?
+            let nextOccurrence: String?
+            enum CodingKeys: String, CodingKey {
+                case title, amount, type, category, date, description
+                case sharedMemberIds = "shared_member_ids"
+                case isRecurring = "is_recurring"
+                case recurrenceInterval = "recurrence_interval"
+                case nextOccurrence = "next_occurrence"
             }
         }
 
         do {
-            try await supabase
-                .from("financial_records")
-                .insert(NewRecord(
-                    propertyId: propertyId,
-                    title: title,
-                    amount: amountDouble,
-                    currency: appSettings.preferredCurrency,
-                    type: type,
-                    category: category,
-                    date: dateString,
-                    description: notes.isEmpty ? nil : notes,
-                    createdAt: now,
-                    sharedMemberIds: sharedMemberIds,
-                    tags: presetTags.isEmpty ? nil : presetTags
-                ))
-                .execute()
+            if let editing {
+                try await supabase
+                    .from("financial_records")
+                    .update(RecordPatch(
+                        title: title,
+                        amount: amountDouble,
+                        type: type,
+                        category: category,
+                        date: dateString,
+                        description: notes.isEmpty ? nil : notes,
+                        sharedMemberIds: sharedMemberIds,
+                        isRecurring: isRecurring,
+                        recurrenceInterval: isRecurring ? repeatInterval : nil,
+                        nextOccurrence: nextOccurrence
+                    ))
+                    .eq("id", value: editing.id.uuidString)
+                    .execute()
+            } else {
+                try await supabase
+                    .from("financial_records")
+                    .insert(NewRecord(
+                        propertyId: propertyId,
+                        title: title,
+                        amount: amountDouble,
+                        currency: appSettings.preferredCurrency,
+                        type: type,
+                        category: category,
+                        date: dateString,
+                        description: notes.isEmpty ? nil : notes,
+                        createdAt: now,
+                        sharedMemberIds: sharedMemberIds,
+                        tags: presetTags.isEmpty ? nil : presetTags,
+                        isRecurring: isRecurring,
+                        recurrenceInterval: isRecurring ? repeatInterval : nil,
+                        nextOccurrence: nextOccurrence
+                    ))
+                    .execute()
+            }
 
             await onSaved()
             dismiss()
@@ -307,6 +417,25 @@ struct AddFinancialView: View {
             errorMessage = error.localizedDescription
             showError = true
         }
+    }
+
+    /// First occurrence of `base`'s pattern STRICTLY after `after` — the
+    /// day-of-month for monthly, month+day for yearly. A future base date
+    /// is itself the first occurrence.
+    private static func firstOccurrence(after: Date, base: Date,
+                                        interval: String) -> String {
+        let cal = Calendar.current
+        if base > after { return AppDate.dayString(from: base) }
+        let step = DateComponents(month: interval == "yearly" ? 12 : 1)
+        var next = base
+        // Bounded: at most ~13 hops cover a year of catch-up per step size;
+        // the guard keeps a degenerate calendar from ever spinning.
+        for _ in 0..<600 {
+            guard let advanced = cal.date(byAdding: step, to: next) else { break }
+            next = advanced
+            if next > after { break }
+        }
+        return AppDate.dayString(from: next)
     }
 }
 

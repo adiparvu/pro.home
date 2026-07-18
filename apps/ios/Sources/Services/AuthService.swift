@@ -123,6 +123,11 @@ final class AuthService {
         // The next account must never see this household's cached data.
         ServiceCache.clear()
         SignedStorage.clearCache()
+        // Spotlight indexed this household's tasks/plants/supplies/documents
+        // into SYSTEM search; indexing is additive and nothing ever pruned
+        // it, so a logged-out household stayed searchable on the device —
+        // and the next account inherited it (audit: privacy gap).
+        await SpotlightService.shared.deindexAll()
         // Logout bypasses reloadWorld (session is now nil), so the watch would
         // keep its last owner payload forever — wipe the App Group glance data
         // and tell the wrist to clear its own cache.
@@ -139,6 +144,9 @@ final class AuthService {
         // Account switch = different household visibility; drop the old cache.
         ServiceCache.clear()
         SignedStorage.clearCache()
+        // …and the old household's Spotlight index — reloadWorld(.accountSwitch)
+        // re-indexes exactly the new account's world right after.
+        await SpotlightService.shared.deindexAll()
         // Wipe the wrist immediately; reloadWorld(.accountSwitch) then re-pushes
         // the new account's role-scoped payload, so the watch never briefly
         // shows the previous account's glance data.

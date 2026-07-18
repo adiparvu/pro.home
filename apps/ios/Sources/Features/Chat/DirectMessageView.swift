@@ -393,7 +393,7 @@ struct DirectMessageView: View {
                     onVideo: { showVideoSheet = true },
                     onSearch: { showSearch = true },
                     onStarred: { showStarred = true },
-                    mediaURLs: sharedMediaURLs,
+                    mediaPaths: sharedMediaPaths,
                     exportText: exportTranscript,
                     propertyId: propertyService.primary?.id
                 )

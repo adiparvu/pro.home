@@ -213,14 +213,19 @@ struct InviteLinkView: View {
 
 // MARK: - Media gallery (images shared in a conversation)
 
+/// The grid takes the RAW stored attachment paths, not URLs: chat media
+/// lives in the private bucket, so a path only loads through the signer
+/// (`ChatMedia.resolve`). The old grids did `URL(string:)` on the bare
+/// path — a relative URL that can never load — so every image uploaded
+/// since the private-bucket migration rendered broken here.
 struct MediaGalleryView: View {
-    let urls: [URL]
+    let paths: [String]
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 3)
     @State private var viewer: ImageViewerItem?
 
     var body: some View {
         Group {
-            if urls.isEmpty {
+            if paths.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "photo.on.rectangle.angled").font(AppFont.scaled(34)).foregroundStyle(.secondary)
                     Text("No media yet").font(AppFont.scaled(14)).foregroundStyle(.secondary)
@@ -229,18 +234,10 @@ struct MediaGalleryView: View {
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 3) {
-                        ForEach(urls, id: \.self) { url in
-                            StorageImage(url: url) { phase in
-                                if case .success(let img) = phase {
-                                    img.resizable().scaledToFill()
-                                } else {
-                                    Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
-                                }
+                        ForEach(paths, id: \.self) { stored in
+                            ChatMediaThumb(stored: stored) { url in
+                                viewer = ImageViewerItem(url: url)
                             }
-                            .frame(height: 120)
-                            .frame(maxWidth: .infinity)
-                            .clipped()
-                            .onTapGesture { viewer = ImageViewerItem(url: url) }
                         }
                     }
                     .padding(2)
@@ -251,6 +248,34 @@ struct MediaGalleryView: View {
         .navigationTitle("Media")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(item: $viewer) { item in FullScreenImageViewer(url: item.url) }
+    }
+}
+
+/// One grid cell: resolves its signed URL exactly like the chat bubbles do
+/// (ChatMedia.resolve rides the SignedURLCache), then decodes downsampled
+/// through StorageImage so the grid never holds full-size images.
+private struct ChatMediaThumb: View {
+    let stored: String
+    let onOpen: (URL) -> Void
+
+    @State private var url: URL?
+
+    var body: some View {
+        StorageImage(url: url, targetSize: 120) { phase in
+            if case .success(let img) = phase {
+                img.resizable().scaledToFill()
+            } else {
+                Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
+            }
+        }
+        .frame(height: 120)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let url { onOpen(url) }
+        }
+        .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
 

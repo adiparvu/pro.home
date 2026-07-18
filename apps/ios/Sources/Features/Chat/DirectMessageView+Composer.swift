@@ -11,10 +11,13 @@ import UniformTypeIdentifiers
 extension DirectMessageView {
     // MARK: - Input Bar
 
-    var sharedMediaURLs: [URL] {
+    /// RAW stored paths — private-bucket media only loads through the
+    /// signer, so the gallery resolves each cell itself (audit fix: the
+    /// old `URL(string:)` on a bare path produced dead relative URLs).
+    var sharedMediaPaths: [String] {
         conversationMessages.compactMap { m in
             guard ChatMedia.dmBodyKind(m.body) == .image else { return nil }
-            return URL(string: m.body)
+            return m.body
         }
     }
 

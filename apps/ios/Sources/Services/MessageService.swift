@@ -102,6 +102,19 @@ final class MessageService {
         // Unsubscribe from any previous property's channels before loading new data.
         await unsubscribeAll()
         currentGroupId = groupId
+        // Offline hydration (audit: the flagship feature opened EMPTY
+        // offline while every record module hydrated from disk). Paint the
+        // last cached page instantly — guarded on empty, so a refresh never
+        // clobbers richer live state — then let the network win below. The
+        // group scope folds into the entity key because ServiceCache only
+        // scopes by property. Receipts/reactions stay network-only.
+        let cacheEntity = "messages.\(groupId?.uuidString ?? "main")"
+        if messages.isEmpty,
+           let cached = ServiceCache.load([Message].self, entity: cacheEntity,
+                                          propertyId: propertyId) {
+            let hidden = hiddenIds()
+            messages = cached.filter { !hidden.contains($0.id) }
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -125,6 +138,9 @@ final class MessageService {
             hasMoreOlder = rows.count == Self.pageSize
             // rows are newest-first, so rows.first is the newest server row.
             if let newest = rows.first?.createdAt { lastSyncedCreatedAt = newest }
+            // Snapshot the fresh page for the next cold/offline open —
+            // naturally bounded at pageSize rows.
+            ServiceCache.save(messages, entity: cacheEntity, propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
         }

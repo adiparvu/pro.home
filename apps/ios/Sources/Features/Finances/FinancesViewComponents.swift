@@ -297,6 +297,21 @@ extension FinancesView {
                             ForEach(Array(group.records.enumerated()), id: \.element.id) { idx, record in
                                 let displayAmt = currencyService.formatted(record.amount, from: record.currency, preferred: preferred)
                                 FinancialRecordRow(record: record, displayAmount: displayAmt)
+                                    // Long-press menu: rows live in a VStack, where
+                                    // swipeActions is a List-only no-op — this is
+                                    // the interaction that actually fires. Edit
+                                    // opens the shared form seeded with the row
+                                    // (audit fix: records were write-once).
+                                    .contentShape(Rectangle())
+                                    .contextMenu {
+                                        Button {
+                                            editingRecord = record
+                                        } label: { Label("Edit", systemImage: "pencil") }
+                                        Button(role: .destructive) {
+                                            HapticFeedback.warning()
+                                            Task { await financialService.delete(record) }
+                                        } label: { Label("Delete", systemImage: "trash") }
+                                    }
                                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()

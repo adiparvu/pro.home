@@ -578,6 +578,15 @@ final class DirectMessageService {
         // (IMG_8539: "messages jump, disappear"). A stale id for a few
         // seconds is harmless; a nil one blanks the UI.
         if let uid = supabase.auth.currentSession?.user.id { myUserId = uid }
+        // Offline hydration (audit): paint the last cached window instantly
+        // on a cold open. Guarded on empty — load() reruns on every dm_new
+        // and foreground, and its MERGE below builds on richer in-memory
+        // state that a stale snapshot must never overwrite.
+        if dms.isEmpty,
+           let cached = ServiceCache.load([DirectMessage].self, entity: "dms",
+                                          propertyId: propertyId) {
+            dms = cached
+        }
         do {
             // Fetch the most recent 1000 (newest first), then show oldest→newest.
             // Previously this ordered ascending, which returned the *oldest* 1000
@@ -601,6 +610,10 @@ final class DirectMessageService {
                     ? $0.id.uuidString < $1.id.uuidString
                     : $0.createdAt < $1.createdAt
             }
+            // Snapshot the recent window for the next cold/offline open
+            // (bounded: cache only the newest fetch-window's worth).
+            ServiceCache.save(Array(dms.suffix(1000)), entity: "dms",
+                              propertyId: propertyId)
             // exhaustedOlder stays: reaching the beginning of a thread is a
             // fact about the SERVER's history — a refresh of the recent
             // window doesn't un-reach it. Entries are keyed per-thread

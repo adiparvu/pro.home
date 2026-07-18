@@ -37,7 +37,7 @@ struct ContactDetailsView: View {
     var onVideo: () -> Void
     var onSearch: () -> Void
     var onStarred: () -> Void
-    var mediaURLs: [URL] = []
+    var mediaPaths: [String] = []
     var exportText: String = ""
     var propertyId: UUID? = nil
     @Environment(FamilyService.self) private var familyService
@@ -87,10 +87,10 @@ struct ContactDetailsView: View {
 
                     InfoSection(title: "General") {
                         NavigationLink {
-                            MediaGalleryView(urls: mediaURLs)
+                            MediaGalleryView(paths: mediaPaths)
                         } label: {
                             InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
-                                         value: mediaURLs.isEmpty ? nil : "\(mediaURLs.count)")
+                                         value: mediaPaths.isEmpty ? nil : "\(mediaPaths.count)")
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -290,7 +290,7 @@ struct GroupDetailsView: View {
     var onAddMember: () -> Void
     var onSearch: () -> Void
     var onStarred: () -> Void
-    var mediaURLs: [URL] = []
+    var mediaPaths: [String] = []
     var inviteLink: String = ""
     var propertyId: UUID? = nil
     var exportText: String = ""
@@ -355,10 +355,10 @@ struct GroupDetailsView: View {
 
                     InfoSection(title: "General") {
                         NavigationLink {
-                            MediaGalleryView(urls: mediaURLs)
+                            MediaGalleryView(paths: mediaPaths)
                         } label: {
                             InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
-                                         value: mediaURLs.isEmpty ? nil : "\(mediaURLs.count)")
+                                         value: mediaPaths.isEmpty ? nil : "\(mediaPaths.count)")
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)

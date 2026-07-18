@@ -24,6 +24,9 @@ struct FinancesView: View {
     @Environment(AppRouter.self) private var router
 
     @State private var showAddSheet    = false
+    /// Row being edited via the long-press menu (nil = none). Not private:
+    /// the row menu lives in the FinancesViewComponents extension.
+    @State var editingRecord: FinancialRecord?
     @State var selectedType: String? = nil
     @State var displayedMonth: Date   = Calendar.current.startOfMonth(Date())
     @State private var searchText = ""
@@ -305,6 +308,9 @@ struct FinancesView: View {
         }
         .sheet(isPresented: $showAddSheet) {
             AddFinancialView { await financialService.load() }
+        }
+        .sheet(item: $editingRecord) { record in
+            AddFinancialView(editing: record) { await financialService.load() }
         }
         .alert("Error", isPresented: Binding(
             get: { financialService.error != nil },

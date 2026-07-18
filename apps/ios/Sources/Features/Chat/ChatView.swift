@@ -178,10 +178,13 @@ struct ChatView: View {
         if online.count == 2 { return String(format: String(localized: "%@ and %@ online"), first, online[1]) }
         return String(format: String(localized: "%d online"), online.count)
     }
-    private var sharedMediaURLs: [URL] {
+    /// RAW stored paths — private-bucket media only loads through the
+    /// signer, so the gallery resolves each cell itself (audit fix: the
+    /// old `URL(string:)` on a bare path produced dead relative URLs).
+    private var sharedMediaPaths: [String] {
         messageService.messages.compactMap { m in
             guard m.isImageMessage, let s = m.attachmentUrl else { return nil }
-            return URL(string: s)
+            return s
         }
     }
     private var exportTranscript: String {
@@ -541,7 +544,7 @@ struct ChatView: View {
                 onAddMember: { showAddMember = true },
                 onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
-                mediaURLs: sharedMediaURLs,
+                mediaPaths: sharedMediaPaths,
                 inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
                 propertyId: propertyId,
                 exportText: exportTranscript

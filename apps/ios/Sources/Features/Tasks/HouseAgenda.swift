@@ -175,15 +175,23 @@ enum HouseAgenda {
             }
         }
 
-        // Financial — a recurring record projects monthly across the range on
-        // its day-of-month; a one-shot record is included when it lands inside.
+        // Financial — a recurring record projects across the range at ITS
+        // OWN cadence: monthly on the day-of-month, yearly once on its
+        // month+day (mirroring the server's pg_cron advance in migration
+        // 015). The interval was previously ignored, so an annual bill —
+        // insurance, road tax — flooded the agenda, the notifications and
+        // the Apple Calendar mirror with 12 entries a year (audit fix).
+        // A one-shot record is included when it lands inside the range.
         for r in financial {
             guard let base = AppDate.day(from: r.date) else { continue }
             let subtitle = CurrencyService.money(r.amount, code: r.currency)
             if r.isRecurring ?? false {
                 let dom = cal.component(.day, from: base)
+                let months: [Int] = r.recurrenceInterval == "yearly"
+                    ? [cal.component(.month, from: base)]
+                    : Array(1...12)
                 for y in years {
-                    for month in 1...12 {
+                    for month in months {
                         var comps = DateComponents(); comps.year = y; comps.month = month; comps.day = dom
                         guard let d = cal.date(from: comps), inRange(d), d >= base else { continue }
                         out.append(AgendaItem(
