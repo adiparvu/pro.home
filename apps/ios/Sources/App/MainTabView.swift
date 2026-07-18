@@ -78,7 +78,9 @@ struct MainTabView: View {
 
             if visibleTabs.contains(.digitalTwin) {
                 NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
-                    .tabItem { Image(systemName: AppTab.digitalTwin.icon).accessibilityLabel(Text(verbatim: AppTab.digitalTwin.label)) }
+                    // Threads-style outlined grid (approved: the whole bar
+                    // wears one stroke language) — template vector PDF.
+                    .tabItem { Image("ThreadsGrid").accessibilityLabel(Text(verbatim: AppTab.digitalTwin.label)) }
                     .tag(AppTab.digitalTwin)
             }
 
@@ -104,7 +106,9 @@ struct MainTabView: View {
                         .environment(router)
                 }
             }
-            .tabItem { Image(systemName: AppTab.chat.icon).accessibilityLabel(Text(verbatim: AppTab.chat.label)) }
+            // Threads-style outlined bubble with tail (approved: one stroke
+            // language across the bar) — template vector PDF.
+            .tabItem { Image("ThreadsChat").accessibilityLabel(Text(verbatim: AppTab.chat.label)) }
             .tag(AppTab.chat)
 
             NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
