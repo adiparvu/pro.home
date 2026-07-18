@@ -336,27 +336,40 @@ struct CalendarView: View {
             GlassFilterButton(isActive: active.count < AgendaCategory.allCases.count,
                               inToolbar: true,
                               accessibilityLabelKey: "cal_filter_all") {
-                GlassFilterSection(
-                    title: "cal_mode_picker",
-                    options: CalendarMode.allCases.map {
-                        GlassPickerOption(value: $0, icon: $0.icon, title: modeLabel($0))
-                    },
-                    selection: Binding(
-                        get: { mode },
-                        set: { newMode in
-                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
-                                mode = newMode
-                            }
-                        }))
-                GlassFilterSectionDivider()
-                GlassFilterMultiSection(
-                    title: "Categories",
-                    options: AgendaCategory.allCases.map {
-                        GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
-                    },
-                    selection: $active,
-                    onChange: { persistActiveCategories() })
-                GlassFilterSectionDivider()
+                // Menu-in-menu (the 4-facet rule): the view mode drills into
+                // its own native submenu with the current value on the row.
+                GlassDrillMenu(entries: [
+                    .facet(id: "mode", icon: "calendar.day.timeline.left",
+                           title: "cal_mode_picker",
+                           options: CalendarMode.allCases.map {
+                               GlassPickerOption(value: $0, icon: $0.icon, title: modeLabel($0))
+                           },
+                           selection: Binding(
+                               get: { mode },
+                               set: { newMode in
+                                   withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                                       mode = newMode
+                                   }
+                               }),
+                           isNarrowed: false)
+                ]) {
+                    // Categories are MULTI-select — a facet the drill model
+                    // can't erase into one value, so it nests as its own
+                    // native submenu card of toggles (the Photos multi facet),
+                    // with the honest narrowed count on the row.
+                    Menu {
+                        GlassFilterMultiSection(
+                            options: AgendaCategory.allCases.map {
+                                GlassPickerOption(value: $0, icon: $0.icon, title: catLabel($0))
+                            },
+                            selection: $active,
+                            onChange: { persistActiveCategories() })
+                    } label: {
+                        Text("Categories")
+                        Text(verbatim: "\(active.count)/\(AgendaCategory.allCases.count)")
+                        Image(systemName: "square.grid.2x2")
+                    }
+                    Divider()
                 GlassFilterToggleRow(icon: "calendar",
                                      title: String(localized: "cal_sync_apple"),
                                      isOn: $mirrorOn)
@@ -371,6 +384,7 @@ struct CalendarView: View {
                                          title: String(localized: "cal_export_ics")) {
                         SystemActions.share([icsURL])
                     }
+                }
                 }
             }
         }

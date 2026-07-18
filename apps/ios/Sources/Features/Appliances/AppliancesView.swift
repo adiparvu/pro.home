@@ -181,47 +181,48 @@ struct AppliancesView: View {
     /// sit as a permanent capsule and the old ↑↓ sort menu merge into a
     /// single aggregated filter popover — same pattern as Inventory.
     private var filterButton: some View {
+        // Menu-in-menu (the constitution's 4-facet rule): Category, Warranty
+        // and Sort stack as native submenus with the current value on each
+        // row — the Photos anatomy — instead of three flat scrolling
+        // sections. The location toggle stays at the root: a boolean is a
+        // row, not a facet.
         GlassFilterButton(isActive: selectedCategory != nil || warrantySlice != nil,
                           inToolbar: true) {
-            GlassFilterSection(
-                title: "Category",
-                options: [GlassPickerOption<ApplianceCategory?>(value: nil,
-                                                                title: String(localized: "All"))]
-                    + ApplianceCategory.allCases.map {
-                        GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
-                    },
-                selection: $selectedCategory)
-            GlassFilterSectionDivider()
-            // The warranty stat tiles folded in here (IMG_8563) — same
-            // honest counts, same toggle-off-by-reselecting "All".
-            GlassFilterSection(
-                title: "Warranty",
-                options: [
-                    GlassPickerOption<WarrantySlice?>(value: nil,
-                                                      title: String(localized: "All")),
-                    GlassPickerOption<WarrantySlice?>(value: .inWarranty,
-                                                      icon: "checkmark.seal",
-                                                      title: String(localized: "appliance_stat_in_warranty"),
-                                                      count: inWarranty.count),
-                    GlassPickerOption<WarrantySlice?>(value: .expiringSoon,
-                                                      icon: "clock.badge.exclamationmark",
-                                                      title: String(localized: "appliance_stat_expiring"),
-                                                      count: expiringSoon.count)
-                ],
-                selection: $warrantySlice)
-            GlassFilterSectionDivider()
-            // A non-default sort reorders, it doesn't narrow — so it never
-            // claims the "filtered" accent dot.
-            GlassFilterSection(title: "inv_sort_by",
-                               options: ApplianceSort.allCases.map {
-                                   GlassPickerOption(value: $0, title: $0.title)
-                               },
-                               selection: $sort)
-            if locationGroupingAvailable {
-                GlassFilterSectionDivider()
-                GlassFilterToggleRow(icon: "mappin.and.ellipse",
-                                     title: String(localized: "appliance_group_location"),
-                                     isOn: $groupByLocation.animation(.smooth(duration: 0.3)))
+            GlassDrillMenu(entries: [
+                .facet(id: "category", icon: "square.grid.2x2", title: "Category",
+                       options: [GlassPickerOption<ApplianceCategory?>(value: nil,
+                                                                       title: String(localized: "All"))]
+                           + ApplianceCategory.allCases.map {
+                               GlassPickerOption<ApplianceCategory?>(value: $0, title: $0.displayName)
+                           },
+                       selection: $selectedCategory,
+                       isNarrowed: selectedCategory != nil),
+                // The warranty stat tiles folded in here (IMG_8563).
+                .facet(id: "warranty", icon: "checkmark.seal", title: "Warranty",
+                       options: [
+                           GlassPickerOption<WarrantySlice?>(value: nil,
+                                                             title: String(localized: "All")),
+                           GlassPickerOption<WarrantySlice?>(value: .inWarranty,
+                                                             title: String(localized: "appliance_stat_in_warranty")),
+                           GlassPickerOption<WarrantySlice?>(value: .expiringSoon,
+                                                             title: String(localized: "appliance_stat_expiring"))
+                       ],
+                       selection: $warrantySlice,
+                       isNarrowed: warrantySlice != nil),
+                // A non-default sort reorders, it doesn't narrow — so it
+                // never claims the "filtered" accent dot.
+                .facet(id: "sort", icon: "arrow.up.arrow.down", title: "inv_sort_by",
+                       options: ApplianceSort.allCases.map {
+                           GlassPickerOption(value: $0, title: $0.title)
+                       },
+                       selection: $sort,
+                       isNarrowed: false)
+            ]) {
+                if locationGroupingAvailable {
+                    GlassFilterToggleRow(icon: "mappin.and.ellipse",
+                                         title: String(localized: "appliance_group_location"),
+                                         isOn: $groupByLocation.animation(.smooth(duration: 0.3)))
+                }
             }
         }
     }
