@@ -24,6 +24,12 @@ struct InventoryView: View {
     @State private var scannedUnknown = false
     @State private var didAutoScan = false
     @State private var didAutoAdd = false
+    /// QR-label picker (IMG_8588): printing opens a selection step —
+    /// individual items + Select All — instead of printing the current
+    /// slice blind.
+    @State private var showQRPicker = false
+    /// The picker's confirmed choice, printed from the sheet's onDismiss.
+    @State private var qrPendingSelection: [InventoryItem]?
     private let favorites = InventoryFavorites.shared
 
     /// Cross-cutting slices (favorites / loaned / warranty). One at a time —
@@ -221,6 +227,19 @@ struct InventoryView: View {
             }
         }
         .sheet(isPresented: $showAdd) { AddInventorySheet { item in Task { await service.add(item) } } }
+        // QR labels go through an explicit SELECTION step (IMG_8588):
+        // individual items or Select All. The print panel presents from
+        // onDismiss — after the sheet's dismissal transition, so UIKit
+        // never drops the presentation.
+        .sheet(isPresented: $showQRPicker, onDismiss: {
+            guard let chosen = qrPendingSelection else { return }
+            qrPendingSelection = nil
+            printQRLabels(chosen)
+        }) {
+            QRLabelPickerSheet(items: service.items,
+                               preselected: Set(filtered.map(\.id)),
+                               pending: $qrPendingSelection)
+        }
         .fullScreenCover(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
                 showScanner = false
@@ -306,7 +325,7 @@ struct InventoryView: View {
                 }
                 GlassFilterActionRow(icon: "qrcode",
                                      title: String(localized: "inv_qr_labels_action")) {
-                    printQRLabels()
+                    showQRPicker = true
                 }
             }
         }
@@ -322,10 +341,11 @@ struct InventoryView: View {
         SystemActions.share([url])
     }
 
-    /// One printable A4 sheet of QR labels for what's currently listed —
-    /// filter first to print a subset, or leave "Toate" for everything.
-    private func printQRLabels() {
-        guard let data = InventoryExport.makeQRLabelsPDF(items: filtered) else { return }
+    /// Prints one A4 sheet of QR labels for an EXPLICIT selection — the
+    /// picker seeds it with the current slice, then the user narrows or
+    /// selects all (IMG_8588).
+    private func printQRLabels(_ items: [InventoryItem]) {
+        guard let data = InventoryExport.makeQRLabelsPDF(items: items) else { return }
         SystemActions.print(data: data, jobName: String(localized: "inv_qr_labels_job"))
     }
 
@@ -427,5 +447,94 @@ struct InventoryView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - QR label selection (IMG_8588)
+
+/// The explicit selection step before printing QR labels: every item with a
+/// native checkmark row, Select All / Deselect All in one toggle, and a
+/// prominent Print carrying the honest count. Seeded with the page's current
+/// slice so the old "filter, then print" flow is still one tap.
+private struct QRLabelPickerSheet: View {
+    let items: [InventoryItem]
+    let preselected: Set<UUID>
+    /// The parent prints this from onDismiss (a print panel presented while
+    /// the sheet is still dismissing is silently dropped by UIKit).
+    @Binding var pending: [InventoryItem]?
+
+    @State private var selection: Set<UUID> = []
+    @Environment(\.dismiss) private var dismiss
+
+    private var allSelected: Bool { selection.count == items.count && !items.isEmpty }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(items) { item in
+                        Button {
+                            HapticFeedback.selection()
+                            if selection.contains(item.id) { selection.remove(item.id) }
+                            else { selection.insert(item.id) }
+                        } label: {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: item.categoryIcon)
+                                    .font(AppFont.scaled(15, weight: .medium))
+                                    .foregroundStyle(item.categoryColor)
+                                    .frame(width: 28)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(verbatim: item.name)
+                                        .font(AppFont.scaled(15))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Text(verbatim: item.location)
+                                        .font(AppFont.scaled(12))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                Image(systemName: selection.contains(item.id)
+                                      ? "checkmark.circle.fill" : "circle")
+                                    .font(AppFont.scaled(20))
+                                    .foregroundStyle(selection.contains(item.id)
+                                                     ? Color.accentColor
+                                                     : Color.primary.opacity(AppOpacity.disabled))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Button(allSelected
+                           ? String(localized: "Deselect All")
+                           : String(localized: "Select All")) {
+                        HapticFeedback.selection()
+                        selection = allSelected ? [] : Set(items.map(\.id))
+                    }
+                    .font(AppFont.footnoteEmphasis)
+                    .textCase(nil)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("inv_qr_select_title")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        pending = items.filter { selection.contains($0.id) }
+                        dismiss()
+                    } label: {
+                        Text(verbatim: "\(String(localized: "Print")) (\(selection.count))")
+                    }
+                    .disabled(selection.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .onAppear { selection = preselected.isEmpty ? Set(items.map(\.id)) : preselected }
     }
 }

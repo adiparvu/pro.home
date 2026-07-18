@@ -26,13 +26,30 @@ evolution. Build for the future, not only for the current feature.
 
 ## Apple design philosophy
 
-The bar is "iOS 27" — the user's shorthand for one step AHEAD of Apple's
-current design language. Every screen must feel like it belongs on the
-newest iOS (26+) and anticipates the next one, at a visual quality
-comparable to Apple's own apps. Use Liquid Glass thoughtfully throughout.
-The app should always feel premium, elegant, minimal, immersive, refined,
-fluid, modern, and native. Never ship generic UI — every component should
-look intentionally designed. When Apple's newest visual language and an
+The bar is ALWAYS the CURRENT WWDC cycle (permanent, user-decreed).
+Today that is WWDC 2026 — the user's shorthand "iOS 27"; next year it
+becomes WWDC 2027, and so on, forever. Every screen must feel like it
+belongs on the newest OS at a visual quality comparable to Apple's own
+apps, so the app can keep being developed on the newest standard instead
+of re-fighting the same drift every cycle.
+
+- The SOURCE OF TRUTH is developer.apple.com — the HIG, the framework
+  docs and the current WWDC session pages — fetched FRESH, never
+  recalled from memory: each WWDC postdates the model's training, so
+  memory is wrong by construction. The proven loop: parallel doc-mining
+  agents over the official pages → a gap map against this codebase
+  (must/should/taste) → implement the musts as deploy trains.
+- On every new WWDC (or when the user says "update to WWDC(N)"), rerun
+  that loop across the whole app: app structure and bars, menus, Liquid
+  Glass/materials, components, icons/typography, and the new SDK APIs.
+- Prefer the SYSTEM implementation over rebuilding it: WWDC26's lesson
+  (menus) is permanent — when Apple ships a native component with the
+  behavior we want, adopt it instead of imitating it.
+
+Use Liquid Glass thoughtfully throughout. The app should always feel
+premium, elegant, minimal, immersive, refined, fluid, modern, and
+native. Never ship generic UI — every component should look
+intentionally designed. When Apple's newest visual language and an
 older iOS convention disagree, always choose the newest.
 
 ### Liquid Glass rules
