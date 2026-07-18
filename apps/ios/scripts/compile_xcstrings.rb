@@ -62,4 +62,15 @@ end
   content = merged.map { |k, v| "#{k.to_json} = #{v.to_json};" }.join("\n") + "\n"
   File.write(File.join(lproj_dir, "Localizable.strings"), content)
   puts "xcstrings → #{lang}.lproj/Localizable.strings (#{merged.size} keys)"
+
+  # Permission prompts: the system reads NS*UsageDescription from
+  # InfoPlist.strings in the matching .lproj — without this, every
+  # permission sheet showed English regardless of device language.
+  # Languages without their own table fall back to the English one.
+  infoplist = File.join(project_dir, "Resources", "#{lang}.lproj", "InfoPlist.strings")
+  infoplist = File.join(project_dir, "Resources", "en.lproj", "InfoPlist.strings") unless File.exist?(infoplist)
+  if File.exist?(infoplist)
+    FileUtils.cp(infoplist, File.join(lproj_dir, "InfoPlist.strings"))
+    puts "InfoPlist.strings → #{lang}.lproj"
+  end
 end
