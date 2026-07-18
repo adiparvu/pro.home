@@ -8,7 +8,11 @@ struct TasksWidget: Widget {
     let kind = "TasksWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
+        // Configurable (Edit Widget): priority + overdue-only filters over the
+        // same catalog the static widget rendered. Placed widgets migrate with
+        // the intent's defaults, which reproduce the unfiltered widget.
+        AppIntentConfiguration(kind: kind, intent: TasksWidgetConfigIntent.self,
+                               provider: TasksConfigProvider()) { entry in
             TasksWidgetView(entry: entry)
         }
         .configurationDisplayName(NSLocalizedString("widget_tasks_name", comment: ""))
@@ -22,6 +26,16 @@ struct TasksWidget: Widget {
 struct TasksWidgetSmallView: View {
     let entry: PRVIOWidgetEntry
 
+    /// Counts honor the configured filter; the default configuration falls
+    /// back to the snapshot's authoritative totals (identical pre-config look).
+    private var counts: (open: Int, overdue: Int) {
+        if let cfg = entry.tasksConfig, cfg.isFiltering {
+            let filtered = cfg.filter(entry.taskCatalog)
+            return (filtered.count, filtered.filter { $0.isOverdue ?? false }.count)
+        }
+        return (entry.snapshot.openTaskCount, entry.snapshot.overdueTaskCount)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -29,8 +43,8 @@ struct TasksWidgetSmallView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.blue)
                 Spacer()
-                if entry.snapshot.overdueTaskCount > 0 {
-                    Text("\(entry.snapshot.overdueTaskCount)")
+                if counts.overdue > 0 {
+                    Text("\(counts.overdue)")
                         .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(.red)
                 } else {
@@ -41,14 +55,14 @@ struct TasksWidgetSmallView: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.snapshot.overdueTaskCount > 0
+                Text(counts.overdue > 0
                      ? NSLocalizedString("widget_overdue_label", comment: "")
                      : NSLocalizedString("widget_tasks_label", comment: ""))
                     .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.secondary)
-                Text(entry.snapshot.overdueTaskCount > 0
-                     ? "\(entry.snapshot.overdueTaskCount) \(NSLocalizedString("widget_overdue", comment: ""))"
-                     : "\(entry.snapshot.openTaskCount) \(NSLocalizedString("widget_open", comment: ""))")
+                Text(counts.overdue > 0
+                     ? "\(counts.overdue) \(NSLocalizedString("widget_overdue", comment: ""))"
+                     : "\(counts.open) \(NSLocalizedString("widget_open", comment: ""))")
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -66,7 +80,9 @@ struct TasksMediumView: View {
     let entry: PRVIOWidgetEntry
 
     var pendingTasks: [TaskCatalogEntry] {
-        entry.taskCatalog.filter { !$0.isCompleted }.prefix(3).map { $0 }
+        let pending = entry.tasksConfig?.filter(entry.taskCatalog)
+            ?? entry.taskCatalog.filter { !$0.isCompleted }
+        return pending.prefix(3).map { $0 }
     }
 
     private func makeCompleteTaskIntent(id: UUID, title: String, priority: String) -> CompleteTaskIntent {

@@ -8,7 +8,11 @@ struct PlantsWidget: Widget {
     let kind = "PlantsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
+        // Configurable (Edit Widget): the medium list can include healthy
+        // plants under the thirsty ones. Placed widgets migrate with the
+        // intent's default, which reproduces the thirsty-only widget.
+        AppIntentConfiguration(kind: kind, intent: PlantsWidgetConfigIntent.self,
+                               provider: PlantsConfigProvider()) { entry in
             PlantsWidgetView(entry: entry)
         }
         .configurationDisplayName(NSLocalizedString("widget_plants_name", comment: ""))
@@ -62,8 +66,14 @@ struct PlantsSmallView: View {
 struct PlantsMediumView: View {
     let entry: PRVIOWidgetEntry
 
-    var needsWater: [PlantCatalogEntry] {
-        entry.plantCatalog.filter { $0.needsWatering }.prefix(3).map { $0 }
+    /// Thirsty plants first; with "show healthy plants too" configured, the
+    /// rest of the garden fills the remaining rows.
+    var shownPlants: [PlantCatalogEntry] {
+        let thirsty = entry.plantCatalog.filter { $0.needsWatering }
+        guard entry.plantsConfig?.includeHealthy == true else {
+            return thirsty.prefix(3).map { $0 }
+        }
+        return (thirsty + entry.plantCatalog.filter { !$0.needsWatering }).prefix(3).map { $0 }
     }
 
     private func makeWaterIntent(id: UUID, name: String, emoji: String) -> WaterPlantIntent {
@@ -95,7 +105,7 @@ struct PlantsMediumView: View {
                 }
             }
 
-            if needsWater.isEmpty {
+            if shownPlants.isEmpty {
                 HStack(spacing: 8) {
                     Text("🌿")
                     Text("All plants are watered!")
@@ -105,7 +115,7 @@ struct PlantsMediumView: View {
                 .frame(maxHeight: .infinity)
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(needsWater, id: \.id) { plant in
+                    ForEach(shownPlants, id: \.id) { plant in
                         HStack(spacing: 8) {
                             Text(plant.emoji)
                                 .font(AppFont.scaled(16))
@@ -114,12 +124,18 @@ struct PlantsMediumView: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
-                            Button(intent: makeWaterIntent(id: plant.id, name: plant.name, emoji: plant.emoji)) {
-                                Image(systemName: "drop.fill")
+                            if plant.needsWatering {
+                                Button(intent: makeWaterIntent(id: plant.id, name: plant.name, emoji: plant.emoji)) {
+                                    Image(systemName: "drop.fill")
+                                        .font(AppFont.scaled(14))
+                                        .foregroundStyle(.blue)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Image(systemName: "checkmark.circle.fill")
                                     .font(AppFont.scaled(14))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.green)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }

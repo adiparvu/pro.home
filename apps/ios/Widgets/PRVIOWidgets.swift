@@ -11,6 +11,10 @@ struct PRVIOWidgetEntry: TimelineEntry {
     let taskCatalog: [TaskCatalogEntry]
     let plantCatalog: [PlantCatalogEntry]
     var supplyCatalog: [SupplyCatalogEntry] = []
+    // Set only by the AppIntent providers (WidgetConfigIntents.swift); nil
+    // everywhere else, which renders exactly the unconfigured widget.
+    var tasksConfig: TasksWidgetConfigIntent? = nil
+    var plantsConfig: PlantsWidgetConfigIntent? = nil
 }
 
 // MARK: - Shared Timeline Provider
