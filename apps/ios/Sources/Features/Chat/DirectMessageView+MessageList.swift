@@ -489,6 +489,23 @@ extension DirectMessageView {
                         withAnimation { proxy.scrollTo(t, anchor: .center) }
                         scrollTarget = nil
                     }
+                    // The keyboard's rise grows the bottom inset but never
+                    // re-anchors the viewport — a reader sitting at the bottom
+                    // watched the newest bubbles slide UNDER the composer,
+                    // visible only refracted through its glass (IMG_8586/8587).
+                    // Re-anchor when focus arrives, then re-assert once the
+                    // keyboard's own animation settles. Up-thread readers are
+                    // left alone, same contract as message auto-follow.
+                    .onChange(of: focused) { _, isFocused in
+                        guard isFocused, isAtBottom else { return }
+                        withAnimation(.snappy(duration: 0.25)) {
+                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                        }
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.45))
+                            if isAtBottom { proxy.scrollTo("DM_BOTTOM", anchor: .bottom) }
+                        }
+                    }
                 }
             }
             .overlay(alignment: .bottomTrailing) {

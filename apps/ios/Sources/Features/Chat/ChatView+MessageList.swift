@@ -512,6 +512,21 @@ extension ChatView {
                     proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 }
             }
+            // The keyboard's rise grows the bottom inset but never re-anchors
+            // the viewport — a reader at the bottom watched the newest bubbles
+            // slide UNDER the composer (IMG_8586/8587, the DM twin of this
+            // list). Re-anchor when focus arrives, re-assert after the
+            // keyboard's animation settles; up-thread readers stay untouched.
+            .onChange(of: focused) { _, isFocused in
+                guard isFocused, isAtBottom else { return }
+                withAnimation(.snappy(duration: 0.25)) {
+                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.45))
+                    if isAtBottom { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
+                }
+            }
             .onChange(of: isAtBottom) { _, atBottom in
                 // Returning to the bottom is the honest "I've now seen these"
                 // moment for messages that arrived while reading up-thread.

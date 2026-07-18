@@ -266,6 +266,9 @@ struct ChatComposerBar<Accessory: View>: View {
                 // a hairline, sharing the message field's pill.
                 if showsSubjectRow, let subject {
                     subjectField(subject)
+                        // Same whole-row target as the message row below.
+                        .contentShape(Rectangle())
+                        .onTapGesture { subjectFocused = true }
                     Rectangle()
                         .fill(Color.hairline)
                         .frame(height: 0.5)
@@ -317,6 +320,16 @@ struct ChatComposerBar<Accessory: View>: View {
                         .frame(height: 42)
                         .padding(.bottom, 3)
                 }
+                // The ENTIRE row focuses the field, the way iMessage's pill
+                // does. The TextField's own tap target is just its 26pt text
+                // line — taps landing on the pill's padding or the empty
+                // trailing area did nothing, which read as "I must tap 2-3
+                // times before I can type" (IMG_8586/8587). The mic/send
+                // Buttons sit closer to the leaf, so they still win their
+                // own taps; direct taps in the text keep UIKit's caret
+                // placement.
+                .contentShape(Rectangle())
+                .onTapGesture { focused.wrappedValue = true }
             }
             .animation(.spring(duration: 0.2), value: isTextEmpty)
             .animation(.spring(duration: 0.2), value: config.isResponding)
