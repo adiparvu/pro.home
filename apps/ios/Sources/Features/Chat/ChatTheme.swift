@@ -623,9 +623,11 @@ struct BubbleColorPicker: View {
 // MARK: - Background (wallpaper) picker
 //
 // Restructured like the Messages background sheet: a live preview of the
-// current choice up top, then Dynamic (animated mesh presets), Colors
-// (static gradients) and Your Photo — each a titled section. Selection is
-// exclusive across sections; the storage keys record which kind won.
+// current choice up top, then Your Photo (the personal option leads —
+// IMG_8611 "nu are ce căuta jos"), then Dynamic and Colors as HORIZONTAL
+// swatch rows — compact phone-shaped chips that scroll sideways instead of
+// the old page-length slab grid. Selection is exclusive across sections;
+// the storage keys record which kind won.
 
 struct BackgroundPicker: View {
     private let scope: String?
@@ -647,7 +649,10 @@ struct BackgroundPicker: View {
         _bgAnim = AppStorage(wrappedValue: gAnim, "prvio.chatBgAnim\(suffix)")
     }
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
+    /// Width of one preset chip in the horizontal rows — phone-shaped at the
+    /// tile's 0.62 aspect, six of them visible with a peek of the seventh.
+    private static let tileWidth: CGFloat = 84
+
     private var usingPhoto: Bool { !bgImage.isEmpty }
     private var usingDynamic: Bool { !usingPhoto && !bgAnim.isEmpty }
 
@@ -655,9 +660,9 @@ struct BackgroundPicker: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
                 livePreview
+                photoSection
                 dynamicSection
                 colorsSection
-                photoSection
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, AppSpacing.lg)
@@ -715,78 +720,24 @@ struct BackgroundPicker: View {
             .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
     }
 
-    // MARK: Dynamic (animated) presets
-
-    private var dynamicSection: some View {
-        section(title: "Dynamic") {
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(AnimatedBackgroundPreset.all) { preset in
-                    Button {
-                        bgAnim = preset.id; bgID = ""; bgImage = ""
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        tile(selected: usingDynamic && bgAnim == preset.id) {
-                            ZStack(alignment: .bottom) {
-                                AnimatedChatBackground(preset: preset)
-                                Text(preset.name)
-                                    .font(AppFont.label)
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, AppSpacing.sm)
-                                    .padding(.vertical, 3)
-                                    .background(.black.opacity(0.28), in: Capsule())
-                                    .padding(.bottom, AppSpacing.sm)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: Static gradient presets
-
-    private var colorsSection: some View {
-        section(title: "Colors") {
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(ChatTheme.all) { theme in
-                    let isSel = !usingPhoto && !usingDynamic && bgID == theme.id
-                    Button {
-                        bgID = theme.id; bgImage = ""; bgAnim = ""
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        tile(selected: isSel) {
-                            Group {
-                                if let cols = theme.backgroundColors {
-                                    LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
-                                } else {
-                                    appBackground
-                                }
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: Your photo
+    // MARK: Your photo (leads — the personal option is the page's point)
 
     private var photoSection: some View {
         section(title: "Your photo") {
-            VStack(spacing: 10) {
-                LazyVGrid(columns: columns, spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: AppSpacing.sm) {
                     PhotosPicker(selection: $photoItem, matching: .images) {
                         tile(selected: false) {
                             VStack(spacing: 6) {
-                                Image(systemName: "photo.badge.plus").font(AppFont.scaled(24, weight: .semibold))
-                                Text("Upload").font(AppFont.caption)
+                                Image(systemName: "photo.badge.plus")
+                                    .font(AppFont.scaled(20, weight: .semibold))
+                                Text("Upload").font(AppFont.caption2)
                             }
                             .foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(Color.accentColor.opacity(0.1))
                         }
+                        .frame(width: Self.tileWidth)
                     }
                     .buttonStyle(.plain)
 
@@ -803,17 +754,82 @@ struct BackgroundPicker: View {
                                     .overlay(Image(uiImage: img).resizable().scaledToFill())
                                     .clipped()
                             }
+                            .frame(width: Self.tileWidth)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if usingPhoto {
+                        Button(role: .destructive) {
+                            bgImage = ""; HapticFeedback.impact(.light)
+                        } label: {
+                            Label("Remove custom photo", systemImage: "trash")
+                                .font(AppFont.caption)
+                        }
+                        .padding(.leading, AppSpacing.sm)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+
+    // MARK: Dynamic (animated) presets — one horizontal swatch row
+
+    private var dynamicSection: some View {
+        section(title: "Dynamic") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: AppSpacing.sm) {
+                    ForEach(AnimatedBackgroundPreset.all) { preset in
+                        let isSel = usingDynamic && bgAnim == preset.id
+                        Button {
+                            bgAnim = preset.id; bgID = ""; bgImage = ""
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            VStack(spacing: AppSpacing.xs) {
+                                tile(selected: isSel) {
+                                    AnimatedChatBackground(preset: preset)
+                                }
+                                .frame(width: Self.tileWidth)
+                                Text(preset.name)
+                                    .font(AppFont.caption2)
+                                    .foregroundStyle(isSel ? AnyShapeStyle(.primary)
+                                                          : AnyShapeStyle(.secondary))
+                                    .lineLimit(1)
+                            }
                         }
                         .buttonStyle(.plain)
                     }
                 }
+            }
+        }
+    }
 
-                if usingPhoto {
-                    Button(role: .destructive) {
-                        bgImage = ""; HapticFeedback.impact(.light)
-                    } label: {
-                        Label("Remove custom photo", systemImage: "trash")
-                            .font(AppFont.subheadline)
+    // MARK: Static gradient presets — one horizontal swatch row
+
+    private var colorsSection: some View {
+        section(title: "Colors") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: AppSpacing.sm) {
+                    ForEach(ChatTheme.all) { theme in
+                        let isSel = !usingPhoto && !usingDynamic && bgID == theme.id
+                        Button {
+                            bgID = theme.id; bgImage = ""; bgAnim = ""
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            tile(selected: isSel) {
+                                Group {
+                                    if let cols = theme.backgroundColors {
+                                        LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+                                    } else {
+                                        appBackground
+                                    }
+                                }
+                            }
+                            .frame(width: Self.tileWidth)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
