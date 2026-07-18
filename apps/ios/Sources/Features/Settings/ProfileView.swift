@@ -576,13 +576,19 @@ struct AvatarRingSheet: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.xl) {
-                    GlassCard {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
-                                  spacing: AppSpacing.lg) {
-                            ForEach(Self.names, id: \.self) { swatch($0) }
-                        }
-                        .padding(AppSpacing.lg)
+                    // Naked grid, deliberately NOT on glass: inside a
+                    // glassEffect container the vibrancy compositing eats
+                    // flat fills of SEMANTIC colors (.orange, .teal …) while
+                    // explicit-RGB fills survive — on device (IMG_8608) six
+                    // of the eight swatches vanished. The retired inline
+                    // picker drew the same circles straight on the page
+                    // background and rendered all of them; this keeps that
+                    // proven surface.
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
+                              spacing: AppSpacing.lg) {
+                        ForEach(Self.names, id: \.self) { swatch($0) }
                     }
+                    .padding(.vertical, AppSpacing.lg)
 
                     GlassCard {
                         HStack(spacing: AppSpacing.sm) {
