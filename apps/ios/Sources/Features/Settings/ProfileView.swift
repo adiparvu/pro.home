@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var toast: String?
     @State private var toastIsError = false
     @State private var copiedAccountId = false
+    @State private var showRingSheet = false
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     /// Geofenced home presence (moved here from the chat hub, IMG_8591) —
     /// the toggle mirrors the service's stored opt-in; side effects (auth
@@ -145,53 +146,7 @@ struct ProfileView: View {
             Text(auth.session?.user.email ?? "")
                 .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-
-            ringColorPicker
         }
-    }
-
-    private var ringColorPicker: some View {
-        HStack(spacing: 8) {
-            ForEach(["blue", "purple", "green", "orange", "pink", "gold", "red", "teal"], id: \.self) { name in
-                let c = avatarRingColor(for: name)
-                Button { withAnimation(.spring(response: 0.3)) { avatarRingColorName = name } } label: {
-                    ZStack {
-                        Circle().fill(c).frame(width: 22, height: 22)
-                        if avatarRingColorName == name {
-                            Circle().strokeBorder(.white, lineWidth: 2).frame(width: 22, height: 22)
-                            Circle().strokeBorder(c, lineWidth: 1).frame(width: 26, height: 26)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Custom ring color picker
-            ZStack {
-                Circle()
-                    .fill(AngularGradient(
-                        gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
-                        center: .center
-                    ))
-                    .frame(width: 22, height: 22)
-                if avatarRingColorName.hasPrefix("#") {
-                    Circle().strokeBorder(.white, lineWidth: 2).frame(width: 22, height: 22)
-                    Circle().strokeBorder(ringColor, lineWidth: 1).frame(width: 26, height: 26)
-                }
-                ColorPicker("", selection: Binding(
-                    get: { Color(hex: avatarRingColorName) ?? .blue },
-                    set: { newColor in
-                        withAnimation(.spring(response: 0.3)) {
-                            avatarRingColorName = newColor.hexString()
-                        }
-                    }
-                ), supportsOpacity: false)
-                .labelsHidden()
-                .opacity(0.02)
-                .frame(width: 44, height: 44)
-            }
-        }
-        .padding(.top, 2)
     }
 
     @ViewBuilder
@@ -230,6 +185,8 @@ struct ProfileView: View {
                 infoRow("Email", auth.session?.user.email ?? "—")
                 div
                 infoRow("Display Name", profileService.profile?.preferredName ?? "—")
+                div
+                ringRow
                 div
                 if let fullName = profileService.profile?.fullName, !fullName.isEmpty {
                     infoRow("Full Name", fullName)
@@ -282,6 +239,39 @@ struct ProfileView: View {
         .accessibilityLabel(Text("Account ID"))
         .accessibilityValue(Text(shortId))
         .accessibilityHint(Text("account_id_copy_hint"))
+    }
+
+    /// The ring color as an identity setting (moved out of the hero,
+    /// IMG_8598): a labeled row with a live swatch, drilling into the
+    /// compact palette sheet — the hero stays avatar · name · email.
+    private var ringRow: some View {
+        Button { showRingSheet = true } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Text("Avatar ring")
+                    .font(AppFont.scaled(14))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                Spacer()
+                Circle()
+                    .fill(ringColor)
+                    .frame(width: 14, height: 14)
+                Text(ringValueLabel)
+                    .font(AppFont.footnote)
+                    .foregroundStyle(.primary)
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Avatar ring"))
+        .accessibilityValue(Text(ringValueLabel))
+        .sheet(isPresented: $showRingSheet) { AvatarRingSheet() }
+    }
+
+    private var ringValueLabel: String {
+        AvatarRingSheet.displayName(for: avatarRingColorName)
     }
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
@@ -552,5 +542,120 @@ struct ProfileView: View {
         guard let user = auth.session?.user else { return "—" }
         let f = DateFormatter(); f.dateFormat = "MMMM yyyy"
         return f.string(from: user.createdAt)
+    }
+}
+
+// MARK: - Avatar ring sheet
+
+/// Compact picker for the avatar's ring color (IMG_8598): the named palette
+/// as large checked swatches plus the system ColorPicker for custom hues.
+/// Owns the same @AppStorage key the profile hero reads, so the ring and
+/// the row's swatch repaint live while picking.
+struct AvatarRingSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+
+    static let names = ["blue", "purple", "green", "orange", "pink", "gold", "red", "teal"]
+
+    /// Localized display name for a stored ring value — hex means custom.
+    static func displayName(for stored: String) -> String {
+        switch stored {
+        case "blue":   return String(localized: "Blue")
+        case "purple": return String(localized: "Purple")
+        case "green":  return String(localized: "Green")
+        case "orange": return String(localized: "Orange")
+        case "pink":   return String(localized: "Pink")
+        case "gold":   return String(localized: "Gold")
+        case "red":    return String(localized: "Red")
+        case "teal":   return String(localized: "Teal")
+        default:       return String(localized: "Custom")
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.xl) {
+                    GlassCard {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
+                                  spacing: AppSpacing.lg) {
+                            ForEach(Self.names, id: \.self) { swatch($0) }
+                        }
+                        .padding(AppSpacing.lg)
+                    }
+
+                    GlassCard {
+                        HStack(spacing: AppSpacing.sm) {
+                            Text("Custom color")
+                                .font(AppFont.scaled(14))
+                                .foregroundStyle(.primary)
+                            if avatarRingColorName.hasPrefix("#") {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(AppFont.footnote)
+                                    .foregroundStyle(Color.brandSuccess)
+                            }
+                            Spacer()
+                            ColorPicker("", selection: Binding(
+                                get: { Color(hex: avatarRingColorName) ?? .blue },
+                                set: { newColor in
+                                    withAnimation(.snappy(duration: 0.25)) {
+                                        avatarRingColorName = newColor.hexString()
+                                    }
+                                }
+                            ), supportsOpacity: false)
+                            .labelsHidden()
+                            .accessibilityLabel(Text("Custom color"))
+                        }
+                        .padding(AppSpacing.lg)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Avatar ring")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFont.captionStrong)
+                    }
+                    .accessibilityLabel(Text("Close"))
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func swatch(_ name: String) -> some View {
+        let color = avatarRingColor(for: name)
+        let selected = avatarRingColorName == name
+        return Button {
+            withAnimation(.snappy(duration: 0.25)) { avatarRingColorName = name }
+            HapticFeedback.selection()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 40, height: 40)
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.white)
+                }
+            }
+            .overlay {
+                if selected {
+                    Circle()
+                        .strokeBorder(color, lineWidth: 1.5)
+                        .frame(width: 48, height: 48)
+                }
+            }
+            .frame(width: 48, height: 48)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: Self.displayName(for: name)))
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

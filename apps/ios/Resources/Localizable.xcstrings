@@ -96253,6 +96253,40 @@
           }
         }
       }
+    },
+    "Avatar ring" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avatar ring"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inel avatar"
+          }
+        }
+      }
+    },
+    "Custom color" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom color"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Culoare personalizată"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
