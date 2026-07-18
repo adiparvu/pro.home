@@ -138,6 +138,9 @@ struct SuppliesView: View {
             activity.title = String(localized: "Shopping — PRVIO")
             activity.userInfo = ["tab": "shopping"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = true
         }
     }

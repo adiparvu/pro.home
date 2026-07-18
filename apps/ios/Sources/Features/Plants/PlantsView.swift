@@ -97,6 +97,9 @@ struct PlantsView: View {
             activity.title = String(localized: "Plants — PRVIO")
             activity.userInfo = ["tab": "plants"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = true
         }
     }

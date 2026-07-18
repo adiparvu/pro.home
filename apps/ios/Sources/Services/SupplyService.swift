@@ -121,6 +121,11 @@ final class SupplyService {
         updated.isCompleted.toggle()
         updated.updatedAt = ISODate.string(from: Date())
         await updateItem(updated)
+        // Checking OFF (never unchecking) is donated so Siri Suggestions
+        // learn the shopping rhythm.
+        if updated.isCompleted {
+            SiriDonations.supplyChecked(id: item.id, name: item.name)
+        }
         // Keep the shopping Live Activity in sync with this list's progress.
         let listId = item.listId
         let listName = lists.first { $0.id == listId }?.name ?? String(localized: "Shopping list")

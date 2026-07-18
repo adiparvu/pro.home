@@ -94,6 +94,8 @@ final class PlantService {
             LiveActivityService.shared.plantWatered(
                 name: plant.name, remainingAfter: plantsNeedingWater.count)
         }
+        // The real watering, donated so Siri Suggestions learn the routine.
+        SiriDonations.plantWatered(id: plant.id, name: plant.name, emoji: plant.emoji)
         do {
             try await supabase
                 .from("plants").update(upd)

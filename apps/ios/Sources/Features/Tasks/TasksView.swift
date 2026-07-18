@@ -260,6 +260,9 @@ struct TasksView: View {
             activity.title = String(localized: "Tasks — PRVIO")
             activity.userInfo = ["tab": "tasks"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = true
         }
     }

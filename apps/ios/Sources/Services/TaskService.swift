@@ -150,9 +150,12 @@ final class TaskService {
                 tasks[idx].status = newStatus
                 tasks[idx].updatedAt = update.updatedAt
             }
-            // Completing a tracked task finishes its Live Activity.
+            // Completing a tracked task finishes its Live Activity, and the
+            // real completion is donated so Siri Suggestions learn it.
             if newStatus == "completed" {
                 LiveActivityService.shared.completeMaintenance(taskTitle: task.title)
+                SiriDonations.taskCompleted(id: task.id, title: task.title,
+                                            priority: task.priority)
             }
             // Keep the linked Apple Reminder in step (both directions:
             // completing here checks it off, reopening here unchecks it).

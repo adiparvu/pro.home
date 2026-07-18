@@ -647,6 +647,9 @@ struct ChatView: View {
             activity.title = String(localized: "Chat — PRVIO")
             activity.userInfo = ["tab": "chat"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = false
         }
     }
