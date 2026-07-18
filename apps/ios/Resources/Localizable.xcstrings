@@ -96406,6 +96406,40 @@
           }
         }
       }
+    },
+    "info_notifications_privacy" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications & Privacy"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notificări și confidențialitate"
+          }
+        }
+      }
+    },
+    "info_see_all" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vezi tot"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
