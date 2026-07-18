@@ -5,7 +5,6 @@ import SwiftUI
 struct PRVIOTimelineView: View {
     @Environment(TaskService.self) var taskService
     @Environment(PropertyElementService.self) var elementService
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum TimeFilter: String, CaseIterable {
         case today  = "Today"
@@ -105,7 +104,6 @@ struct PRVIOTimelineView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, AppSpacing.sm)
-            .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Timeline")

@@ -13,7 +13,6 @@ struct SettingsView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
     @Environment(CurrencyService.self) private var currencyService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(SupplyService.self) private var supplyService
     @Environment(PlantService.self) private var plantService
     @Environment(DeliveryService.self) private var deliveryService
@@ -50,7 +49,6 @@ struct SettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
-        .onAppear { tabBarVis.scrollOffset = 0 }
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }

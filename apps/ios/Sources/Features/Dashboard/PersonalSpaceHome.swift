@@ -29,7 +29,6 @@ struct PersonalSpaceHome: View {
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
-            .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
         .navigationBarHidden(true)

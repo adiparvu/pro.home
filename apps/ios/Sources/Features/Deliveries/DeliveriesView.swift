@@ -4,7 +4,6 @@ import SwiftUI
 
 struct DeliveriesView: View {
     @Environment(DeliveryService.self) private var deliveryService
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showAddDelivery = false
     @State private var editingDelivery: Delivery? = nil
@@ -99,18 +98,6 @@ struct DeliveriesView: View {
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: ScrollOffsetKey.self,
-                        value: geo.frame(in: .named("deliveriesScroll")).minY
-                    )
-                }
-            )
-        }
-        .coordinateSpace(name: "deliveriesScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            tabBarVis.scrollOffset = y
         }
         .refreshable {
             if let pid = PropertyService.activePropertyId {

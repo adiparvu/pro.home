@@ -69,19 +69,19 @@ struct MainTabView: View {
                         }
                     }
                 }
-                .tabItem { Image(systemName: "house.fill") }
+                .tabItem { Label(AppTab.home.label, systemImage: AppTab.home.icon) }
                 .tag(AppTab.home)
             }
 
             if visibleTabs.contains(.digitalTwin) {
                 NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
-                    .tabItem { Image(systemName: "square.split.2x2.fill") }
+                    .tabItem { Label(AppTab.digitalTwin.label, systemImage: AppTab.digitalTwin.icon) }
                     .tag(AppTab.digitalTwin)
             }
 
             if visibleTabs.contains(.tasks) {
                 NavigationStack(path: path(for: .tasks)) { routedRoot { TasksView() } }
-                    .tabItem { Image(systemName: "checklist") }
+                    .tabItem { Label(AppTab.tasks.label, systemImage: AppTab.tasks.icon) }
                     .tag(AppTab.tasks)
                     .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
             }
@@ -99,13 +99,16 @@ struct MainTabView: View {
                         .environment(router)
                 }
             }
-            .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
+            .tabItem { Label(AppTab.chat.label, systemImage: AppTab.chat.icon) }
             .tag(AppTab.chat)
 
             NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
-                .tabItem { Image(systemName: "person.crop.circle.fill") }
+                .tabItem { Label(AppTab.settings.label, systemImage: AppTab.settings.icon) }
                 .tag(AppTab.settings)
         }
+        // System minimize-on-scroll (iOS 26+); the isHidden toolbar line
+        // stays for the one FULL hide — an open conversation (ChatView).
+        .modifier(SystemTabBarMinimize())
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
         .fullScreenCover(item: $router.activeCover,
                          onDismiss: { router.drainPending() }) { destination in
@@ -248,9 +251,6 @@ struct MainTabView: View {
             // A chat push was tapped: land on the chat tab; the conversation
             // list drains the stored target and opens the right thread.
             router.selectedTab = .chat
-        }
-        .onChange(of: router.selectedTab) { _, _ in
-            tabBarVis.scrollOffset = 0
         }
         .onReceive(NotificationCenter.default.publisher(for: .prvioProcessPending)) { _ in
             processPendingIntentActions()

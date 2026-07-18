@@ -12,7 +12,6 @@ struct ZonesListView: View {
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
     @Environment(AppRouter.self) var router
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ZoneFilter = .all
     @State private var searchText = ""
@@ -92,7 +91,6 @@ struct ZonesListView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, AppSpacing.sm)
-            .trackTabScroll()
         }
         // Smart-home warm skin: the blurred cover-photo backdrop with the
         // content resolving in the dark scheme, like every twin surface.

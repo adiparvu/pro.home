@@ -10,7 +10,6 @@ struct ConversationsView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(PresenceService.self) private var presenceService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

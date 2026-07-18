@@ -5,7 +5,6 @@ import SwiftUI
 struct PlantsView: View {
     @Environment(PlantService.self) private var plantService
     @Environment(PropertyService.self) private var propertyService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
     @State private var showAddPlant = false
@@ -114,18 +113,6 @@ struct PlantsView: View {
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: ScrollOffsetKey.self,
-                        value: geo.frame(in: .named("plantsScroll")).minY
-                    )
-                }
-            )
-        }
-        .coordinateSpace(name: "plantsScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            tabBarVis.scrollOffset = y
         }
     }
 

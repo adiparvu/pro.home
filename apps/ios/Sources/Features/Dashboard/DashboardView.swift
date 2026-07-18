@@ -27,7 +27,6 @@ struct DashboardView: View {
     // the Deliveries widget from it.
     @Environment(DeliveryService.self) var deliveryService
     @Environment(PropertyElementService.self) private var elementService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(InventoryService.self) var inventoryService
     @Environment(ContractorService.self) var contractorService
     @Environment(SupplyService.self) var supplyService
@@ -179,20 +178,7 @@ struct DashboardView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, topSafeArea + 6)
-            .trackTabScroll()
             .padding(.bottom, AppSpacing.xl)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self,
-                                           value: geo.frame(in: .named("dashScroll")).minY)
-                }
-            )
-        }
-        .coordinateSpace(name: "dashScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
-                tabBarVis.scrollOffset = y
-            }
         }
     }
 

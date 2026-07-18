@@ -1,26 +1,14 @@
 import SwiftUI
 import Observation
 
+/// The one remaining job of this class: the FULL tab-bar hide inside an open
+/// conversation (ChatView). Minimize-on-scroll everywhere else is the
+/// system's — `.tabBarMinimizeBehavior(.onScrollDown)` on the TabView — so
+/// the old scroll-offset pipeline (a GeometryReader preference invalidating
+/// a dozen pages on every scroll frame) is gone (WWDC26 gap map).
 @Observable
 final class TabBarVisibility {
     var isHidden = false
-    var scrollOffset: CGFloat = 0
-
-    // 0 = fully shown, 1 = fully hidden — drives continuous zoom-out
-    var hideProgress: CGFloat {
-        if isHidden { return 1.0 }
-        let start: CGFloat = -28
-        let end: CGFloat = -110
-        guard scrollOffset < start else { return 0 }
-        return min((scrollOffset - start) / (end - start), 1.0)
-    }
-
-    var scrolledDown: Bool { hideProgress > 0.55 }
-}
-
-struct ScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 enum AppTab: String, CaseIterable {
@@ -31,7 +19,7 @@ enum AppTab: String, CaseIterable {
         case .home:        return "house.fill"
         case .digitalTwin: return "square.split.2x2.fill"
         case .tasks:       return "checklist"
-        case .chat:        return "sparkles"
+        case .chat:        return "bubble.left.and.bubble.right.fill"
         case .settings:    return "person.crop.circle.fill"
         }
     }
@@ -41,17 +29,19 @@ enum AppTab: String, CaseIterable {
         case .home:        return "house"
         case .digitalTwin: return "square.split.2x2"
         case .tasks:       return "checklist"
-        case .chat:        return "sparkles"
+        case .chat:        return "bubble.left.and.bubble.right"
         case .settings:    return "person.crop.circle"
         }
     }
 
+    /// The tab's single-word HIG label — part of standard tab anatomy and
+    /// the tab's VoiceOver name (MainTabView renders `Label(label, icon)`).
     var label: String {
         switch self {
         case .home:        return String(localized: "Home")
         case .digitalTwin: return String(localized: "Spaces")
         case .tasks:       return String(localized: "Tasks")
-        case .chat:        return String(localized: "AI")
+        case .chat:        return String(localized: "Chat")
         case .settings:    return String(localized: "You")
         }
     }
@@ -78,29 +68,20 @@ enum AppTab: String, CaseIterable {
     }
 }
 
-// MARK: - Scroll-direction tracker (Instagram-style tab hide)
+// MARK: - System minimize-on-scroll (WWDC26)
 
-struct TabScrollDetector: ViewModifier {
-    @Environment(TabBarVisibility.self) private var tabBarVis
-
+/// Minimize-on-scroll is a SYSTEM behavior on iOS 26+ — the tab bar shrinks
+/// on downward scrolling and restores on a tab tap or scroll-to-top, with
+/// the system's own Liquid Glass morph. Earlier OSes simply keep the bar
+/// static (the standard pre-26 anatomy) — the hand-rolled Instagram-style
+/// tracker this replaces was the imitation anti-pattern.
+struct SystemTabBarMinimize: ViewModifier {
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: ScrollOffsetKey.self,
-                        value: geo.frame(in: .named("scroll")).minY
-                    )
-                }
-            )
-            .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
-                    tabBarVis.scrollOffset = offset
-                }
-            }
+        if #available(iOS 26.0, *) {
+            content.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            content
+        }
     }
-}
-
-extension View {
-    func trackTabScroll() -> some View { modifier(TabScrollDetector()) }
 }

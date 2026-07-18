@@ -14,7 +14,6 @@ struct TasksView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(PropertyService.self) private var propertyService
     @Environment(DocumentService.self) private var documentService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
     @Environment(FamilyService.self) private var familyService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -273,16 +272,6 @@ struct TasksView: View {
             ScrollView(showsIndicators: false) {
                 list
                     .padding(.bottom, 120)
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear.preference(key: ScrollOffsetKey.self,
-                                                   value: geo.frame(in: .named("tasksScroll")).minY)
-                        }
-                    )
-            }
-            .coordinateSpace(name: "tasksScroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { y in
-                tabBarVis.scrollOffset = y
             }
             .onChange(of: router.deepLinkTaskId) { resolveTaskDeepLink(proxy) }
             .task(id: taskService.tasks.count) { resolveTaskDeepLink(proxy) }

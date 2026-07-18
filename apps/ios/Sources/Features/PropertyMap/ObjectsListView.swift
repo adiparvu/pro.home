@@ -11,7 +11,6 @@ struct ObjectsListView: View {
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
     @Environment(PropertyService.self) var propertyService
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ObjectFilter = .all
     @State private var favoritesOnly = false
@@ -99,7 +98,6 @@ struct ObjectsListView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, AppSpacing.sm)
-            .trackTabScroll()
         }
         // Smart-home warm skin: the blurred cover-photo backdrop with the
         // content resolving in the dark scheme, like every twin surface.

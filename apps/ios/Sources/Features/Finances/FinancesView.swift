@@ -20,7 +20,6 @@ struct FinancesView: View {
     @Environment(DocumentService.self) var documentService
     @Environment(FamilyService.self) var familyService
     @Environment(AppSettings.self) var appSettings
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
     @State private var showAddSheet    = false
@@ -261,16 +260,6 @@ struct FinancesView: View {
                             .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear.preference(key: ScrollOffsetKey.self,
-                                                   value: geo.frame(in: .named("financesScroll")).minY)
-                        }
-                    )
-                }
-                .coordinateSpace(name: "financesScroll")
-                .onPreferenceChange(ScrollOffsetKey.self) { y in
-                    tabBarVis.scrollOffset = y
                 }
                 .refreshable { await financialService.load() }
         }
