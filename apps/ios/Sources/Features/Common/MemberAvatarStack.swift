@@ -70,8 +70,14 @@ struct GroupHeaderAvatar: View {
 
     private func memberCircle(_ m: FamilyMember, _ s: CGFloat) -> some View {
         Group {
-            if let urlStr = m.avatarUrl, let url = URL(string: urlStr) {
-                StorageImage(url: url) { phase in
+            // LIVE profile directory first, roster snapshot second — the
+            // one avatar resolution order every surface must use. Gating
+            // on the snapshot alone left account holders (photo lives only
+            // in profiles) on initials in these stacks (IMG_8589 class).
+            if let urlStr = MemberDirectory.shared.avatarString(userId: m.userId,
+                                                                fallback: m.avatarUrl),
+               !urlStr.isEmpty {
+                StorageImage(source: urlStr) { phase in
                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                     else { initialBadge(m.initials, m.swiftColor, s) }
                 }

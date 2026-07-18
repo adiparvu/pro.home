@@ -75,9 +75,18 @@ struct MemberProfileSheet: View {
     // Header avatar: the member's photo when one exists, otherwise their
     // initials in `.primary` on a clear Liquid Glass disc — never a tinted
     // colour fill.
+    //
+    // The photo check goes through the LIVE profile directory FIRST (the
+    // authority every other surface uses), roster snapshot second. Gating
+    // on the snapshot alone left account holders — whose photo lives only
+    // in the directory — on initials here while the chat header showed
+    // their photo (IMG_8589). Reading the @Observable directory also
+    // subscribes the sheet, so late hydration repaints it.
     @ViewBuilder
     private var headerAvatar: some View {
-        if let urlStr = resolvedMember.avatarUrl, !urlStr.isEmpty, URL(string: urlStr) != nil {
+        let live = MemberDirectory.shared.avatarString(userId: resolvedMember.userId,
+                                                       fallback: resolvedMember.avatarUrl)
+        if let urlStr = live, !urlStr.isEmpty {
             MemberAvatar(member: resolvedMember, size: 80)
         } else {
             Text(resolvedMember.initials)
