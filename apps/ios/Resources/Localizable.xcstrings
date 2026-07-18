@@ -95999,6 +95999,22 @@
           }
         }
       }
+    },
+    "watch_crash_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Watch crash"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimul crash pe Watch"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

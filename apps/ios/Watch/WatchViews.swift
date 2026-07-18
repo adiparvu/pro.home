@@ -275,6 +275,17 @@ struct WatchRootView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            // The previous launch's captured crash, named right here — the
+            // wrist's own black box (see WatchCrashRecorder).
+            if let note = store.lastCrashNote {
+                Text("watch_crash_title")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.red)
+                Text(verbatim: note)
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(6)
+            }
         }
         .padding()
     }

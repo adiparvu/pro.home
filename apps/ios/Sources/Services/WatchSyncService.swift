@@ -129,6 +129,14 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
            !SharedDataStore.registerProcessedWatchAction(actionId) {
             return
         }
+        // A crash captured on the wrist by WatchCrashRecorder — the "opens
+        // for a second and closes" black box. Persisted so the Watch
+        // settings page can name the killer; also in the debug log.
+        if action == "watchCrash", let text = userInfo["text"] as? String {
+            debugLog("[WatchCrash]", text)
+            UserDefaults.standard.set(text, forKey: "prvio.watch.crashReport")
+            return
+        }
         // Dictated from the wrist: park the title; the app creates the real
         // task through TaskService on its next foreground beat.
         if action == "createTask", let title = userInfo["title"] as? String,

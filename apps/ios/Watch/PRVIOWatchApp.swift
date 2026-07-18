@@ -38,6 +38,41 @@ extension TimeInterval {
     }
 }
 
+// MARK: - Wrist crash forensics (the 1069/1072 playbook, on the watch)
+//
+// "Opens for a second and closes" is a crash in the launch/first-render
+// path — the class both historical wrist crashes belonged to (duplicate
+// ForEach identities, undeclared Handoff type), and both were
+// NSExceptions, exactly what this handler catches. The report survives in
+// the App Group; the NEXT launch (even a one-second one) shows it on the
+// waiting screen and forwards it to the iPhone over the guaranteed
+// transferUserInfo queue, where the Watch settings page displays it.
+
+enum WatchCrashRecorder {
+    fileprivate static let key = "prvio.watch.lastCrash"
+
+    static func arm() {
+        NSSetUncaughtExceptionHandler { exception in
+            let text = "\(exception.name.rawValue): \(exception.reason ?? "?")\n"
+                + exception.callStackSymbols.prefix(8).joined(separator: "\n")
+            (UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard)
+                .set(text, forKey: WatchCrashRecorder.key)
+        }
+    }
+
+    static func peek() -> String? {
+        (UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard)
+            .string(forKey: key)
+    }
+
+    static func drain() -> String? {
+        let defaults = UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+        guard let text = defaults.string(forKey: key) else { return nil }
+        defaults.removeObject(forKey: key)
+        return text
+    }
+}
+
 // MARK: - Store (session delegate + cache)
 
 @Observable
@@ -60,8 +95,15 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
     }
 
+    /// The previous launch's crash, when one was captured — shown on the
+    /// waiting screen so the wrist itself names what killed it.
+    private(set) var lastCrashNote: String?
+
     override init() {
         super.init()
+        // Forensics FIRST — everything after this line is a crash suspect.
+        WatchCrashRecorder.arm()
+        lastCrashNote = WatchCrashRecorder.peek()
         // Render instantly from the last delivery, then refresh live.
         // sanitizedForRender: a cached payload with duplicate row identities
         // crashes at first render on EVERY launch (Series 4 stays on
@@ -495,6 +537,12 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         for entry in WatchActionRelay.drain() {
             guard let action = entry["action"], let id = entry["id"] else { continue }
             session.transferUserInfo(["action": action, "id": id])
+        }
+        // A captured crash from a previous launch rides the same guaranteed
+        // queue to the iPhone, where the Watch settings page displays it.
+        if let crash = WatchCrashRecorder.drain() {
+            session.transferUserInfo(["action": "watchCrash", "text": crash,
+                                      "actionId": UUID().uuidString])
         }
         Task { @MainActor [weak self] in
             // Re-read the cache: the widget may have mutated it while we slept.

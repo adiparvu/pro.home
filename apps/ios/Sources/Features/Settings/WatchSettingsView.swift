@@ -51,6 +51,7 @@ struct WatchSettingsView: View {
                 }
                 scopeRow
                 siriSection
+                crashReportSection
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.top, AppSpacing.sm)
@@ -67,6 +68,39 @@ struct WatchSettingsView: View {
             // The initial load also lands here — only user edits persist.
             guard !old.isEmpty else { return }
             save()
+        }
+    }
+
+    // MARK: Wrist black box — the last captured watch crash, if any
+    //
+    // Filled by WatchSyncService when the wrist forwards a report captured
+    // by WatchCrashRecorder ("opens for a second and closes"). Honest and
+    // quiet: the section only exists while a report exists; Copy puts the
+    // full text on the pasteboard so it can be pasted straight into a chat.
+
+    @ViewBuilder private var crashReportSection: some View {
+        if let report = UserDefaults.standard.string(forKey: "prvio.watch.crashReport") {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("watch_crash_title")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(.red)
+                Text(verbatim: report)
+                    .font(AppFont.scaled(11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(10)
+                Button {
+                    UIPasteboard.general.string = report
+                    HapticFeedback.success()
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                        .font(AppFont.footnoteEmphasis)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+            }
+            .padding(AppSpacing.base)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .liquidGlass(cornerRadius: AppRadius.lg)
         }
     }
 
