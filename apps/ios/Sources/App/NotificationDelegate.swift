@@ -98,6 +98,23 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         case "SUPPLY_ADD":
             NotificationCenter.default.post(name: .prvioQuickAction, object: "com.prvio.action.shopping")
 
+        case "LOAN_RETURNED":
+            // Marked returned straight from the loan reminder (IMG_8612) —
+            // parked, the app's next active beat runs the REAL markReturned
+            // (loan history, reminder cancellation, server write).
+            if let idStr = info["loanItemId"] as? String, let id = UUID(uuidString: idStr) {
+                SharedDataStore.appendPendingLoanReturn(id)
+                NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+            }
+
+        case "LOAN_VIEW":
+            // Foreground action — land on the item's inventory page, with the
+            // same cold-launch stash the default tap uses.
+            if let link = info["deepLink"] as? String, !link.isEmpty, let url = URL(string: link) {
+                UserDefaults.standard.set(link, forKey: "prvio.pendingDeepLink")
+                NotificationCenter.default.post(name: .prvioOpenURL, object: url)
+            }
+
         case "DOC_REMIND_WEEK":
             let content = (response.notification.request.content.mutableCopy() as? UNMutableNotificationContent)
                 ?? UNMutableNotificationContent()

@@ -779,6 +779,13 @@ struct MainTabView: View {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
+        // Loans marked returned from the reminder notification (IMG_8612).
+        let loanReturnIds = SharedDataStore.popPendingLoanReturns()
+        for id in loanReturnIds {
+            if let item = inventoryService.items.first(where: { $0.id == id }), item.isLoaned {
+                Task { await inventoryService.markReturned(item) }
+            }
+        }
         // Deliveries marked received from the Live Activity island.
         let deliveredIds = SharedDataStore.popPendingDeliveryReceived()
         for id in deliveredIds {

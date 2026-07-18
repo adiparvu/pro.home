@@ -96440,6 +96440,40 @@
           }
         }
       }
+    },
+    "notif_loan_view" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afișează"
+          }
+        }
+      }
+    },
+    "notif_loan_returned" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark returned ✓"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează returnat ✓"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

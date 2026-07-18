@@ -153,9 +153,22 @@ final class NotificationScheduler {
                                                      actions: [messageReply],
                                                      intentIdentifiers: [], options: [])
 
+        // Loan reminders (IMG_8612): open the item's inventory page, or mark
+        // it returned straight from the notification — the return rides the
+        // same park-and-drain queue the other actions use.
+        let loanView = UNNotificationAction(identifier: "LOAN_VIEW",
+                                            title: String(localized: "notif_loan_view"),
+                                            options: [.foreground])
+        let loanReturned = UNNotificationAction(identifier: "LOAN_RETURNED",
+                                                title: String(localized: "notif_loan_returned"),
+                                                options: [])
+        let loanCategory = UNNotificationCategory(identifier: "LOAN",
+                                                  actions: [loanView, loanReturned],
+                                                  intentIdentifiers: [], options: [])
+
         UNUserNotificationCenter.current().setNotificationCategories(
             [taskCategory, plantCategory, supplyCategory,
-             documentCategory, proactiveCategory, messageCategory])
+             documentCategory, proactiveCategory, messageCategory, loanCategory])
     }
 
     // MARK: - Plant watering notifications

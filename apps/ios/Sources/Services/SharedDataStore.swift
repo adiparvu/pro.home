@@ -598,6 +598,16 @@ enum SharedDataStore {
         coordinatedPop("waterings", legacyKey: pendingWateringsKey).compactMap { UUID(uuidString: $0) }
     }
 
+    /// "Mark returned" tapped on a loan-reminder notification (IMG_8612) —
+    /// the same park-and-drain contract every other notification action uses.
+    static func appendPendingLoanReturn(_ itemId: UUID) {
+        coordinatedAppendUnique("loanReturns", legacyKey: nil, itemId.uuidString)
+    }
+
+    static func popPendingLoanReturns() -> [UUID] {
+        coordinatedPop("loanReturns", legacyKey: nil).compactMap { UUID(uuidString: $0) }
+    }
+
     // MARK: Supply catalog
 
     static func writeSupplyCatalog(_ items: [SupplyCatalogEntry]) {

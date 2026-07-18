@@ -172,6 +172,10 @@ final class InventoryService {
             content.title = String(localized: "Item Not Returned")
             content.body = body
             content.sound = .default
+            // Quick actions (IMG_8612): view the item / mark it returned.
+            content.categoryIdentifier = "LOAN"
+            content.userInfo = ["loanItemId": item.id.uuidString,
+                                "deepLink": "prvio://inventory/\(item.id.uuidString)"]
             let request = UNNotificationRequest(
                 identifier: "inventory.loan.\(item.id.uuidString).\(days)",
                 content: content,
@@ -189,6 +193,9 @@ final class InventoryService {
             content.body = String(format: String(localized: "inv_due_today_fmt"),
                                   item.name, loan.borrowerName)
             content.sound = .default
+            content.categoryIdentifier = "LOAN"
+            content.userInfo = ["loanItemId": item.id.uuidString,
+                                "deepLink": "prvio://inventory/\(item.id.uuidString)"]
             center.add(UNNotificationRequest(
                 identifier: "inventory.loan.\(item.id.uuidString).due",
                 content: content,
