@@ -206,7 +206,7 @@ struct ActuatorControlProvider: AppIntentControlValueProvider {
         var entity: ActuatorEntity?
     }
 
-    func previousValue(configuration: SelectActuatorControlIntent) -> Value {
+    func previewValue(configuration: SelectActuatorControlIntent) -> Value {
         resolve(configuration)
     }
 
