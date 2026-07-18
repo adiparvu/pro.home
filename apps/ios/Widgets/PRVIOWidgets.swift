@@ -62,6 +62,7 @@ struct PRVIOWidgetBundle: WidgetBundle {
         LockScreenMessagesWidget()
         LockScreenNextTaskWidget()
         LockScreenUpcomingWidget()
+        LockScreenShoppingWidget()
         // Live Activities
         ShoppingLiveActivity()
         MaintenanceLiveActivity()

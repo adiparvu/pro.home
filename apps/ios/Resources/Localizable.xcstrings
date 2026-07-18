@@ -96100,6 +96100,57 @@
           }
         }
       }
+    },
+    "Shopping (Lock Screen)" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping (Lock Screen)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cumpărături (Ecran blocat)"
+          }
+        }
+      }
+    },
+    "Check off items without opening the app." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check off items without opening the app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bifează articole fără să deschizi aplicația."
+          }
+        }
+      }
+    },
+    "Nothing to buy" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to buy"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimic de cumpărat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

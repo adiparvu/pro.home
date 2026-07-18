@@ -6,6 +6,13 @@ import SwiftUI
 // Accessory widgets follow the HIG: AccessoryWidgetBackground for circulars,
 // .widgetAccentable() on the primary glyph so tinted Lock Screens color the
 // right element, and a deep link straight to the matching screen.
+//
+// Rectangular accessories are INTERACTIVE (iOS 17 App Intents in widgets):
+// the trailing button runs the same CompleteTaskIntent/WaterPlantIntent the
+// home-screen widgets use — pending queue + instant local catalog echo —
+// so a task can be checked off or a plant watered without ever unlocking
+// past the Lock Screen. A button only renders when the row resolves to a
+// real catalog id; no dead controls.
 
 // MARK: Tasks (Circular)
 
@@ -69,14 +76,71 @@ struct LockScreenPlantsWidget: Widget {
         }
         .configurationDisplayName("Plants (Lock Screen)")
         .description("Plants that need watering.")
-        .supportedFamilies([.accessoryCircular])
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular])
     }
 }
 
 struct LockScreenPlantsView: View {
+    @Environment(\.widgetFamily) var family
     let entry: PRVIOWidgetEntry
 
+    private func makeWaterIntent(_ plant: PlantCatalogEntry) -> WaterPlantIntent {
+        var i = WaterPlantIntent()
+        i.plant = PlantEntity(id: plant.id, name: plant.name, emoji: plant.emoji)
+        return i
+    }
+
     var body: some View {
+        switch family {
+        case .accessoryRectangular:
+            let thirsty = Array(entry.plantCatalog.filter(\.needsWatering).prefix(2))
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: "leaf.fill")
+                        .font(AppFont.scaled(9, weight: .semibold))
+                        .widgetAccentable()
+                    Text(thirsty.isEmpty ? String(localized: "Plants") : String(localized: "Needs water"))
+                        .font(AppFont.scaled(9, weight: .semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                }
+                if thirsty.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(AppFont.captionStrong)
+                            .widgetAccentable()
+                        Text("All watered")
+                            .font(AppFont.captionEmphasis)
+                    }
+                } else {
+                    ForEach(thirsty, id: \.id) { plant in
+                        HStack(spacing: 5) {
+                            Text(plant.emoji)
+                                .font(AppFont.scaled(11))
+                            Text(plant.name)
+                                .font(AppFont.scaled(12))
+                                .lineLimit(1)
+                            Spacer(minLength: 2)
+                            Button(intent: makeWaterIntent(plant)) {
+                                Image(systemName: "drop.circle")
+                                    .font(AppFont.scaled(17, weight: .medium))
+                                    .widgetAccentable()
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .containerBackground(for: .widget) { Color.clear }
+            .widgetURL(URL(string: "prvio://plants"))
+
+        default: // .accessoryCircular
+            circularBody
+        }
+    }
+
+    private var circularBody: some View {
         ZStack {
             AccessoryWidgetBackground()
             if entry.snapshot.plantsNeedingWater > 0 {
@@ -252,7 +316,40 @@ struct LockScreenNextTaskWidget: Widget {
 struct LockScreenNextTaskView: View {
     let entry: PRVIOWidgetEntry
 
+    /// The catalog row behind the shown title. The snapshot carries only the
+    /// title; the id lives in the task catalog written by the same beat. When
+    /// the two can't be joined (stale catalog, duplicate titles resolved to
+    /// completed rows) the widget honestly shows no button rather than a
+    /// checkmark that completes the wrong task.
+    private var shownTask: TaskCatalogEntry? {
+        guard let title = entry.snapshot.criticalTaskTitle
+                ?? entry.snapshot.nextMaintenanceTitle else { return nil }
+        return entry.taskCatalog.first { !$0.isCompleted && $0.title == title }
+    }
+
+    private func makeCompleteIntent(_ task: TaskCatalogEntry) -> CompleteTaskIntent {
+        var i = CompleteTaskIntent()
+        i.task = TaskEntity(id: task.id, title: task.title, priority: task.priority)
+        return i
+    }
+
     var body: some View {
+        HStack(spacing: 6) {
+            content
+            if let task = shownTask {
+                Button(intent: makeCompleteIntent(task)) {
+                    Image(systemName: "circle")
+                        .font(AppFont.scaled(18, weight: .medium))
+                        .widgetAccentable()
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .containerBackground(for: .widget) { Color.clear }
+        .widgetURL(URL(string: "prvio://tasks"))
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 2) {
             // An overdue task takes priority over the next scheduled one.
             if let critical = entry.snapshot.criticalTaskTitle {
@@ -300,8 +397,6 @@ struct LockScreenNextTaskView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .containerBackground(for: .widget) { Color.clear }
-        .widgetURL(URL(string: "prvio://tasks"))
     }
 }
 
@@ -364,6 +459,73 @@ struct LockScreenUpcomingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .containerBackground(for: .widget) { Color.clear }
         .widgetURL(URL(string: "prvio://tasks"))
+    }
+}
+
+// MARK: Shopping (Rectangular, interactive)
+
+struct LockScreenShoppingWidget: Widget {
+    let kind = "LockScreenShoppingWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
+            LockScreenShoppingView(entry: entry)
+        }
+        .configurationDisplayName("Shopping (Lock Screen)")
+        .description("Check off items without opening the app.")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}
+
+struct LockScreenShoppingView: View {
+    let entry: PRVIOWidgetEntry
+
+    private func makeCheckIntent(_ item: SupplyCatalogEntry) -> CheckSupplyItemIntent {
+        var i = CheckSupplyItemIntent()
+        i.item = SupplyItemEntity(id: item.id, name: item.name)
+        return i
+    }
+
+    var body: some View {
+        let toBuy = Array(entry.supplyCatalog.filter { !$0.isCompleted }.prefix(2))
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "cart.fill")
+                    .font(AppFont.scaled(9, weight: .semibold))
+                    .widgetAccentable()
+                Text("Shopping")
+                    .font(AppFont.scaled(9, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+            }
+            if toBuy.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(AppFont.captionStrong)
+                        .widgetAccentable()
+                    Text("Nothing to buy")
+                        .font(AppFont.captionEmphasis)
+                }
+            } else {
+                ForEach(toBuy, id: \.id) { item in
+                    HStack(spacing: 5) {
+                        Text(item.name)
+                            .font(AppFont.scaled(12))
+                            .lineLimit(1)
+                        Spacer(minLength: 2)
+                        Button(intent: makeCheckIntent(item)) {
+                            Image(systemName: "circle")
+                                .font(AppFont.scaled(17, weight: .medium))
+                                .widgetAccentable()
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .containerBackground(for: .widget) { Color.clear }
+        .widgetURL(URL(string: "prvio://shopping"))
     }
 }
 
