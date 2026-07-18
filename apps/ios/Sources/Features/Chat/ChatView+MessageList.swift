@@ -126,6 +126,13 @@ extension ChatView {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
             })
         }
+        if !own {
+            // UGC compliance (Guideline 1.2): someone else's message can be
+            // reported; the reason sheet + insert live on the surface.
+            items.append(ChatActionItem("Report", "exclamationmark.bubble") {
+                reportCandidate = m
+            })
+        }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
     }
