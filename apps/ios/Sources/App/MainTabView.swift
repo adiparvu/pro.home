@@ -191,6 +191,9 @@ struct MainTabView: View {
             // Beat immediately on foreground so we don't read as offline after a
             // background gap; drop the live channel while backgrounded.
             if phase == .active {
+                // Live again — an exit from here on is an unclean one (see
+                // AppDelegate's unclean-exit detector).
+                UserDefaults.standard.set(false, forKey: "prvio.sessionParked")
                 Task { await pulsePresence() }
                 // A reminder ticked in the Reminders app while we were in the
                 // background completes its linked task on return.
@@ -210,6 +213,9 @@ struct MainTabView: View {
                 }
             }
             else if phase == .background {
+                // Parked cleanly — a termination from the background is the
+                // normal iOS lifecycle, not a crash.
+                UserDefaults.standard.set(true, forKey: "prvio.sessionParked")
                 Task { await presenceService.unsubscribe() }
                 // Widgets must always show the state you left the app in —
                 // refresh the shared snapshot on every trip to the background.

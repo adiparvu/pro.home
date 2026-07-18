@@ -27,6 +27,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             debugLog("[Crash] previous session uncaught exception:\n\(pending)")
             UserDefaults.standard.removeObject(forKey: "prvio.lastUncaughtException")
         }
+        // Unclean-exit detector (the 07:33 watchdog kill, b1070): SIGKILL —
+        // a hang the termination watchdog ends, a force-quit of a frozen UI —
+        // never reaches the exception handler above, and the .ips carries
+        // only system frames. So: the session marks itself "parked" every
+        // trip to the background and "live" on activation (MainTabView).
+        // Launching while the previous session still reads "live" means it
+        // died mid-foreground — surface it, WITH the last navigation
+        // breadcrumb, so the next freeze names its screen.
+        if UserDefaults.standard.object(forKey: "prvio.sessionParked") != nil,
+           UserDefaults.standard.bool(forKey: "prvio.sessionParked") == false {
+            let lastNav = UserDefaults.standard.string(forKey: "prvio.lastNav") ?? "unknown"
+            RealtimeFlightRecorder.shared.note(
+                "UNCLEAN EXIT last session (hang kill / force-quit while active) · last nav: \(lastNav)")
+            debugLog("[Crash] unclean exit last session · last nav: \(lastNav)")
+        }
+        UserDefaults.standard.set(false, forKey: "prvio.sessionParked")
         ProactiveEngine.registerBackgroundTask()
         ProactiveEngine.scheduleBackgroundRefresh()
         // Apple's own crash/hang/battery telemetry, persisted on-device —

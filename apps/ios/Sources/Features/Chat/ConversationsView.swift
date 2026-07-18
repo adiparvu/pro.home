@@ -317,6 +317,14 @@ struct ConversationsView: View {
             drainChatNotificationTarget()
         }
         .onChange(of: searchText) { _, text in scheduleServerSearch(text) }
+        // Navigation breadcrumb for the unclean-exit detector (AppDelegate):
+        // the 07:33 b1070 watchdog kill froze inside a conversation PUSH with
+        // only system frames in the .ips — the breadcrumb names the thread so
+        // the next occurrence is attributable.
+        .onChange(of: navTarget) { _, target in
+            guard let target else { return }
+            UserDefaults.standard.set("chat push → \(target)", forKey: "prvio.lastNav")
+        }
         .navigationDestination(item: $navTarget) { id in
             if id == "group" {
                 groupChatDestination
