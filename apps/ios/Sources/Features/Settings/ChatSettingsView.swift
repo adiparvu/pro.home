@@ -131,7 +131,10 @@ struct ChatSettingsView: View {
                     .padding(.leading, AppSpacing.sm)
 
                 ZStack {
-                    theme.background
+                    // previewBackground, NOT background — the anchored
+                    // variant is screen-sized and inflated this hero to
+                    // full screen width (IMG_8591/8592 margins).
+                    theme.previewBackground
                     VStack(spacing: 8) {
                         HStack {
                             Capsule()

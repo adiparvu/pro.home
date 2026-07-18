@@ -344,7 +344,10 @@ struct ProfileView: View {
                 ChatSettingsView()
             } label: {
                 ZStack {
-                    theme.background
+                    // previewBackground, NOT background: the anchored
+                    // variant is screen-sized and would inflate this card
+                    // past the page margins (IMG_8592).
+                    theme.previewBackground
                     VStack(spacing: 8) {
                         HStack {
                             Capsule()

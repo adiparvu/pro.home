@@ -250,6 +250,28 @@ struct ChatTheme: Identifiable {
         }
     }
 
+    /// The same visual layers as `background`, WITHOUT the screen-anchored
+    /// frame — for previews that render the theme INSIDE a card (Profile's
+    /// chat card, the hub's theme hero). The anchor's fixed
+    /// `UIScreen`-sized frame is the chat surface's keyboard contract; put
+    /// inside a card it inflates the card to full screen width, blowing
+    /// past the page's 20pt margins (IMG_8592). Here the card's own frame
+    /// + clip bound the layers instead.
+    @ViewBuilder var previewBackground: some View {
+        if let name = backgroundImage,
+           ChatBackgroundStore.cachedImage(named: name) != nil
+            || ChatBackgroundStore.imageExists(named: name) {
+            ChatWallpaperImage(name: name)
+        } else if let animID = backgroundAnimation,
+                  let preset = AnimatedBackgroundPreset.preset(for: animID) {
+            AnimatedChatBackground(preset: preset)
+        } else if let cols = backgroundColors {
+            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+        } else {
+            appBackground
+        }
+    }
+
     /// WhatsApp-style bubble colour palette for the "Chat bubble" picker.
     // (see ChatWallpaperAnchor below for how wallpaper layers stay motionless)
     static let bubblePalette: [Color] = [
