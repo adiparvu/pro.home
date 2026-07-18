@@ -220,8 +220,6 @@ struct SpaceDossierSections: View {
     private func dossierLabel(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .kerning(1.1)
-            .textCase(.uppercase)
             .foregroundStyle(.secondary)
     }
 }

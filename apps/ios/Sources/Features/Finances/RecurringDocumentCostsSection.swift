@@ -43,7 +43,7 @@ struct RecurringDocumentCostsSection: View {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
                     Text("doc_cost_section_title")
-                        .font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
                     Spacer()
                 }
                 .padding(.leading, AppSpacing.sm)

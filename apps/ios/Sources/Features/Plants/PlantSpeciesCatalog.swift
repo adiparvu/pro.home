@@ -219,7 +219,6 @@ struct PlantSpeciesPicker: View {
 
     private func sectionHeader(_ key: String) -> some View {
         Text(LocalizedStringKey(key))
-            .textCase(.uppercase)
             .font(AppFont.captionStrong)
             .foregroundStyle(.secondary)
             .padding(.top, AppSpacing.md)

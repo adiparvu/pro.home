@@ -426,7 +426,6 @@ struct ApplianceFormSheet: View {
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.xs)
-                .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }

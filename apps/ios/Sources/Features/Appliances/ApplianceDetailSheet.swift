@@ -490,7 +490,6 @@ struct ApplianceDetailSheet: View {
             .font(AppFont.label)
             .foregroundStyle(.secondary)
             .padding(.leading, AppSpacing.xs)
-            .textCase(.uppercase)
     }
 
     private func infoRow(icon: String, label: LocalizedStringKey, value: String, valueColor: Color = .primary) -> some View {

@@ -9,7 +9,6 @@ struct SettingsGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)

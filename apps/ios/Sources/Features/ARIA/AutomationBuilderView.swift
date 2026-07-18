@@ -203,7 +203,6 @@ private struct AddAutomationSheet: View {
                                 Text("Rule Name")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 TextField("e.g. Warranty Alert", text: $name)
                                     .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
@@ -218,7 +217,6 @@ private struct AddAutomationSheet: View {
                                 Text("When (Trigger)")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                     .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<triggerOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
@@ -245,7 +243,6 @@ private struct AddAutomationSheet: View {
                                 Text("If (Condition)")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                     .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<conditionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
@@ -272,7 +269,6 @@ private struct AddAutomationSheet: View {
                                 Text("Then (Action)")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                     .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<actionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(

@@ -152,7 +152,7 @@ struct MemberProfileSheet: View {
 
     private var contactSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("CONTACT")
+            sectionLabel("Contact")
             VStack(spacing: 0) {
                 if let email = resolvedMember.email, !email.isEmpty {
                     contactRow(icon: "envelope.fill", color: .orange, value: email)
@@ -195,7 +195,6 @@ struct MemberProfileSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .textCase(.uppercase)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .padding(.leading, AppSpacing.xxs)

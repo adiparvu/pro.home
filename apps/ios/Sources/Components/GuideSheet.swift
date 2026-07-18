@@ -123,7 +123,6 @@ struct GuideSheet: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("guide_examples")
                         .font(AppFont.captionStrong)
-                        .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                     ForEach(Array(section.examples.enumerated()), id: \.offset) { _, example in
                         HStack(alignment: .top, spacing: 8) {

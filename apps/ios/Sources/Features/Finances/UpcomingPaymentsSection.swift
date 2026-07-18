@@ -38,8 +38,6 @@ struct UpcomingPaymentsSection: View {
                 Text("fin_upcoming_header")
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.4))
-                    .textCase(.uppercase)
-                    .kerning(0.5)
 
                 VStack(spacing: AppSpacing.base) {
                     ForEach(items) { item in

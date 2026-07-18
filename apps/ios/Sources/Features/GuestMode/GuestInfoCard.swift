@@ -262,7 +262,6 @@ struct GuestInfoCard: View {
                     .font(AppFont.scaled(10, weight: .semibold))
                 Text(label)
                     .font(AppFont.scaled(10, weight: .semibold))
-                    .textCase(.uppercase)
                     .tracking(0.4)
             }
             .foregroundStyle(CardInk.secondary)
@@ -293,7 +292,6 @@ struct GuestInfoCard: View {
             Text(title)
                 .font(AppFont.label)
                 .tracking(0.5)
-                .textCase(.uppercase)
         }
         .foregroundStyle(CardInk.secondary)
     }

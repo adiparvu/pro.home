@@ -201,7 +201,7 @@ private struct IntegrationIdentityEditor: View {
                 .liquidGlass(cornerRadius: AppRadius.lg)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("ICON")
+                Text("Icon")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
@@ -224,7 +224,7 @@ private struct IntegrationIdentityEditor: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("COLOR")
+                Text("Color")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 HStack(spacing: 12) {
@@ -404,7 +404,7 @@ private struct IntegrationDetailSheet: View {
 
     private var connectionSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CONNECTION")
+            Text("Connection")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)

@@ -78,7 +78,6 @@ struct QuickActionsSettingsView: View {
     private var pagesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("On which pages it appears")
-                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.sm)
@@ -135,10 +134,8 @@ private struct FabDialPreview: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 5) {
                 Text("Preview")
-                    .textCase(.uppercase)
                 Text("·")
                 Text(host.title)
-                    .textCase(.uppercase)
             }
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
@@ -310,7 +307,6 @@ private struct FabPageDetailView: View {
     private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Actions on this page")
-                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.sm)

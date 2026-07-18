@@ -144,7 +144,6 @@ struct PlantHealthView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Label(group.titleKey, systemImage: group.icon)
                             .font(AppFont.label)
-                            .textCase(.uppercase)
                             .foregroundStyle(.secondary)
                         SymptomFlow(spacing: AppSpacing.sm) {
                             ForEach(PlantSymptomCatalog.inGroup(group)) { symptom in
@@ -200,7 +199,6 @@ struct PlantHealthView: View {
                 Text("plant_health_diag_results")
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 ForEach(matches) { match in
                     DiagnosisResultCard(match: match)
                 }
@@ -513,7 +511,6 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label(title, systemImage: icon)
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 Text(text)
                     .font(AppFont.scaled(15))
@@ -530,7 +527,6 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label(title, systemImage: icon)
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     ForEach(Array(items.enumerated()), id: \.offset) { _, item in
@@ -557,7 +553,6 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label("plant_health_sec_sources", systemImage: "book.closed")
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 Text(sources.joined(separator: " · "))
                     .font(AppFont.caption)

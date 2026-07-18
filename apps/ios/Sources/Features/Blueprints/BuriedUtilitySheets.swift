@@ -98,7 +98,7 @@ struct BuriedUtilityDetailSheet: View {
                         if !utility.notes.isEmpty {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("NOTES").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    Text("Notes").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                     Text(utility.notes).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.8))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,7 +212,7 @@ struct AddBuriedUtilitySheet: View {
 
     private var typePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+            Text("Type").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(BuriedUtilityKind.all, id: \.self) { t in

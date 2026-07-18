@@ -197,7 +197,6 @@ struct PaintCatalogPicker: View {
     private func section(_ family: PaintCatalogFamily) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(LocalizedStringKey(family.id))
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: columns, spacing: 10) {

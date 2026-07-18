@@ -408,7 +408,7 @@ struct PropertyValueView: View {
     // MARK: - History
 
     private var historyHeader: some View {
-        Text("HISTORY")
+        Text("History")
             .font(AppFont.label)
             .foregroundStyle(.secondary)
             .padding(.top, AppSpacing.sm)

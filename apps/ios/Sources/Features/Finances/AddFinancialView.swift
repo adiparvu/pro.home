@@ -139,7 +139,7 @@ struct AddFinancialView: View {
     private var amountField: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("AMOUNT")
+                Text("Amount")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
 

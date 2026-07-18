@@ -54,7 +54,6 @@ struct TextSizeView: View {
     private var previewSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("textsize_preview_section")
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)

@@ -113,7 +113,6 @@ struct PantryView: View {
         VStack(alignment: .leading, spacing: 8) {
             title
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(tint ?? .secondary)
                 .padding(.leading, AppSpacing.xxs)
 
@@ -366,7 +365,6 @@ private struct PantryItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             content()
         }

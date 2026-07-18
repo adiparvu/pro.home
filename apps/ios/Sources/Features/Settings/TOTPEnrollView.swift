@@ -76,7 +76,7 @@ struct TOTPEnrollView: View {
 
     private var secretCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("MANUAL KEY").font(AppFont.label).foregroundStyle(.secondary)
+            Text("Manual Key").font(AppFont.label).foregroundStyle(.secondary)
             HStack {
                 Text(secret)
                     .font(AppFont.scaled(15, weight: .medium, design: .monospaced))

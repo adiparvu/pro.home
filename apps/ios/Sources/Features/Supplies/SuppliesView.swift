@@ -299,7 +299,7 @@ struct SuppliesView: View {
             .prefix(5)
         if !urgent.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("URGENT")
+                Text("Urgent")
                     .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {

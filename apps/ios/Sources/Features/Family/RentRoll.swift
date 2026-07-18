@@ -117,7 +117,6 @@ struct RentRollCard: View {
                         Text("rentroll_monthly_income")
                             .font(AppFont.scaled(11, weight: .semibold))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                            .textCase(.uppercase)
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             if roll.hasMixedCurrency {
                                 Text("≈").font(AppFont.scaled(18, weight: .semibold))

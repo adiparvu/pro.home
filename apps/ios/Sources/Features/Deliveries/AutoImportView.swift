@@ -68,7 +68,7 @@ struct AutoImportView: View {
     private var addressCard: some View {
         GlassCard(padding: AppSpacing.lg) {
             VStack(spacing: AppSpacing.md) {
-                Text("YOUR FORWARDING ADDRESS")
+                Text("Your Forwarding Address")
                     .font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -106,7 +106,7 @@ struct AutoImportView: View {
     private var steps: some View {
         GlassCard(padding: AppSpacing.lg) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("HOW TO SET IT UP")
+                Text("How to Set It Up")
                     .font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 step(1, "Copy the address above.")
                 step(2, "In Gmail, open Settings → Filters → Create a filter.")

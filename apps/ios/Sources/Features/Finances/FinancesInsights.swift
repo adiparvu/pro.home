@@ -25,8 +25,6 @@ struct CategoryBreakdownSection: View {
                 Text("fin_categories_header")
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.4))
-                    .textCase(.uppercase)
-                    .kerning(0.5)
 
                 VStack(spacing: AppSpacing.base) {
                     ForEach(items) { item in
@@ -104,8 +102,6 @@ struct SixMonthTrendSection: View {
                 Text("fin_trend_header")
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.4))
-                    .textCase(.uppercase)
-                    .kerning(0.5)
 
                 Chart(points) { point in
                     if point.hasData {

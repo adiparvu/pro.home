@@ -271,7 +271,7 @@ struct YearInReviewView: View {
         let rows = chapterRows(story)
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("THE STORY")
+                Text("The Story")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .padding(.leading, AppSpacing.xxs)

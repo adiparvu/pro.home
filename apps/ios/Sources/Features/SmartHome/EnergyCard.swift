@@ -50,8 +50,6 @@ struct EnergyCard: View {
                     .foregroundStyle(Color.brandGold)
                 Text("energy_card_title")
                     .font(AppFont.label)
-                    .kerning(0.8)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 deltaArrow
@@ -215,7 +213,6 @@ struct EnergyDetailSheet: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Text("energy_zones_title")
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 let zones = store.perZone
                 let maxKWh = zones.map { $0.kWh }.max() ?? 0

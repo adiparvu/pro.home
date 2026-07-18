@@ -365,8 +365,6 @@ struct PhotoJournalView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("journal_latest_kicker")
                             .font(AppFont.scaled(11, weight: .semibold))
-                            .textCase(.uppercase)
-                            .kerning(0.8)
                             .foregroundStyle(.white.opacity(0.75))
                         Text(verbatim: entry.title)
                             .font(AppFont.scaled(19, weight: .bold))

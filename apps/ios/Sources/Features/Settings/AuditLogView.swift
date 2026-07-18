@@ -75,7 +75,6 @@ struct AuditLogView: View {
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Account (all devices)")
-                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.sm)
@@ -210,7 +209,6 @@ struct AuditLogView: View {
             // directly on the backdrop and scrolls with its rows.
             HStack {
                 Text(day)
-                    .textCase(.uppercase)
                     .font(AppFont.label)
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)

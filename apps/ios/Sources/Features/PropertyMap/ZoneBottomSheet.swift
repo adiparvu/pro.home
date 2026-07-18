@@ -47,7 +47,7 @@ struct ZoneBottomSheet: View {
                     actionRow
 
                     if !objects.isEmpty {
-                        Text("OBJECTS IN ZONE")
+                        Text("Objects in Zone")
                             .font(AppFont.captionStrong)
                             .foregroundStyle(Color.smartTextSecondary)
                             .padding(.top, 2)

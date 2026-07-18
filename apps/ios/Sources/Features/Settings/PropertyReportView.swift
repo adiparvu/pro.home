@@ -164,7 +164,7 @@ struct PropertyReportView: View {
 
     private var sectionToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INCLUDE IN REPORT")
+            Text("Include in Report")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)

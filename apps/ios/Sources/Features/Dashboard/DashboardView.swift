@@ -314,7 +314,7 @@ struct DashboardView: View {
     /// and the "+" as a glass circle like the header controls.
     private var widgetSectionHeader: some View {
         HStack {
-            Text("OVERVIEW")
+            Text("Overview")
                 .font(AppFont.label)
                 .kerning(1.1)
                 .foregroundStyle(.secondary)

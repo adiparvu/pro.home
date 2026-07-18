@@ -78,7 +78,7 @@ struct DocumentHistorySection: View {
             HStack(spacing: 8) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
-                Text("doc_hist_title").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                Text("doc_hist_title").font(AppFont.captionStrong).foregroundStyle(.secondary)
                 Spacer()
                 if !rows.isEmpty {
                     Text("\(rows.count)")

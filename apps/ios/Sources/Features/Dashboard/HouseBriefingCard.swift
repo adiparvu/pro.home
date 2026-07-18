@@ -39,9 +39,7 @@ struct HouseBriefingCard: View {
                     .foregroundStyle(Color.accentColor)
                 Text("House Briefing")
                     .font(AppFont.label)
-                    .kerning(1.1)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 Spacer()
             }
 

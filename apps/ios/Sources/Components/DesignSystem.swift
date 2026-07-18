@@ -62,7 +62,11 @@ enum AppFont {
         return Font.system(size: resolved, weight: weight, design: design)
     }
 
-    /// 11pt semibold — section headers, uppercase labels, tags.
+    /// 11pt semibold — section headers, eyebrow labels, tags. Section
+    /// headers use TITLE-STYLE capitalization (WWDC26 Liquid Glass guide:
+    /// "update any hardcoded uppercase headers") — never add
+    /// `.textCase(.uppercase)` to a header; uppercase survives only on
+    /// deliberate badge/tag capsules and monograms.
     static var label: Font { scaled(11, weight: .semibold, relativeTo: .caption2) }
     /// 11pt medium — small metadata (timestamps, counts).
     static var caption2: Font { scaled(11, weight: .medium, relativeTo: .caption2) }

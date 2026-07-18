@@ -286,7 +286,6 @@ struct SensorHistorySection: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(titleKey)
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             Text(verbatim: value)
                 .font(AppFont.scaled(emphasized ? 15 : 13, weight: .semibold))
@@ -427,8 +426,6 @@ struct SensorHistorySheet: View {
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text("sh_history_title")
                             .font(AppFont.scaled(11, weight: .semibold))
-                            .kerning(1.2)
-                            .textCase(.uppercase)
                             .foregroundStyle(.secondary)
                         Text(verbatim: target.name)
                             .font(AppFont.scaled(26, weight: .light))

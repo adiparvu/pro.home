@@ -498,7 +498,6 @@ struct SmartDeviceSheet: View {
                 Text("sh_sensor_reading")
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 if let value = device.readingValue {
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                         Text(verbatim: value.formatted(.number.precision(.fractionLength(0...1))))

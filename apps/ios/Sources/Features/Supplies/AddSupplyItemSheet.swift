@@ -69,7 +69,7 @@ struct AddSupplyItemSheet: View {
     }
 
     private func fieldLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key).font(AppFont.label).foregroundStyle(.secondary).textCase(.uppercase)
+        Text(key).font(AppFont.label).foregroundStyle(.secondary)
     }
 
     private var nameField: some View {
@@ -103,7 +103,6 @@ struct AddSupplyItemSheet: View {
                     .foregroundStyle(.secondary)
                 Text(String(localized: "sup_frequent_label"))
                     .font(AppFont.label).foregroundStyle(.secondary)
-                    .textCase(.uppercase)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {

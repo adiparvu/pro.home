@@ -280,8 +280,6 @@ extension FinancesView {
                             Text(groupDateLabel(group.date))
                                 .font(AppFont.captionStrong)
                                 .foregroundStyle(Color.primary.opacity(0.4))
-                                .textCase(.uppercase)
-                                .kerning(0.5)
                             Spacer()
                             let dayTotal = group.records.reduce(0.0) { sum, r in
                                 let v = currencyService.convert(r.amount, from: r.currency, to: preferred)

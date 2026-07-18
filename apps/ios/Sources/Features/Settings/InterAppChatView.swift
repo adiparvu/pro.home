@@ -47,7 +47,7 @@ struct InterAppChatView: View {
                 if enabled, let channel = service.channel {
                     // Endpoint + token
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("CONNECTION")
+                        Text("Connection")
                             .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .padding(.leading, AppSpacing.xxs)
@@ -77,7 +77,7 @@ struct InterAppChatView: View {
 
                     // Payload example
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("MESSAGE FORMAT")
+                        Text("Message Format")
                             .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .padding(.leading, AppSpacing.xxs)

@@ -419,7 +419,6 @@ struct AddPhotoJournalSheet: View {
                         Text("journal_suggested_tags")
                             .font(AppFont.caption2)
                             .foregroundStyle(Color.secondaryTextColor)
-                            .textCase(.uppercase)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 6) {
                                 ForEach(tagSuggestions, id: \.self) { tag in
@@ -649,7 +648,6 @@ struct AddPhotoJournalSheet: View {
             Text(text)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .textCase(.uppercase)
             if let count {
                 Text(verbatim: "\(count)/\(maxPhotos)")
                     .font(AppFont.captionEmphasis)

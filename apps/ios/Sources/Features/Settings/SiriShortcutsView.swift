@@ -89,7 +89,6 @@ struct SiriShortcutsView: View {
         VStack(spacing: 0) {
             Text(group.title)
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, AppSpacing.sm)

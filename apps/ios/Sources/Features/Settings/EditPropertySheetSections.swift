@@ -181,7 +181,6 @@ private func editorHeader(title: LocalizedStringKey, isExpanded: Binding<Bool>) 
         Text(title)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            .textCase(.uppercase)
         Spacer()
         Button {
             HapticFeedback.impact(.light)

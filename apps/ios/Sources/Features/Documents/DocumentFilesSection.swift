@@ -50,7 +50,7 @@ struct DocumentFilesSection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "paperclip").font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
-                Text("doc_sec_files").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                Text("doc_sec_files").font(AppFont.captionStrong).foregroundStyle(.secondary)
                 Spacer()
                 if totalCount > 0 {
                     Text("\(totalCount)")

@@ -152,10 +152,8 @@ struct PRVIOTimelineView: View {
 
     private func sectionHeader(_ label: LocalizedStringKey) -> some View {
         Text(label)
-            .textCase(.uppercase)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            .kerning(0.8)
     }
 
     private func buildEvents() -> [TimelineEvent] {

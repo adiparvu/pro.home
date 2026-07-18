@@ -309,9 +309,7 @@ struct GlassFilterSectionLabel: View {
             Text(titleKey)
         } else {
             Text(titleKey)
-                .textCase(.uppercase)
                 .font(AppFont.label)
-                .kerning(0.8)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.md)

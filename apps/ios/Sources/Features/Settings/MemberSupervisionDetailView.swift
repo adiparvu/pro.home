@@ -73,7 +73,7 @@ struct MemberSupervisionDetailView: View {
 
     private var sectionsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("WHAT THEY CAN SEE")
+            Text("What They Can See")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.xxs)
@@ -120,7 +120,7 @@ struct MemberSupervisionDetailView: View {
 
     private var notificationsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NOTIFICATIONS")
+            Text("Notifications")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.xxs)

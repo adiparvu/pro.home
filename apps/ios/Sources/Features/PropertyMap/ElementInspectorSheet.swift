@@ -307,7 +307,7 @@ struct ElementInspectorSheet: View {
 
     private func notesCard(_ text: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NOTES")
+            Text("Notes")
                 .font(AppFont.captionStrong)
                 .foregroundStyle(Color.smartTextSecondary)
             Text(text)

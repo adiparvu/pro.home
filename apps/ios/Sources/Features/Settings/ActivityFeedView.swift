@@ -745,7 +745,6 @@ struct ActivityFeedView: View {
         HStack {
             HStack(spacing: AppSpacing.xs) {
                 dayTitle(day)
-                    .textCase(.uppercase)
                     .font(AppFont.scaled(12, weight: .semibold))
                     .foregroundStyle(.primary)
                     .tracking(0.5)

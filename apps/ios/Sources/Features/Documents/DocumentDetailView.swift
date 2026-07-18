@@ -222,7 +222,7 @@ struct DocumentDetailView: View {
                 Image(systemName: "lock.shield.fill")
                     .font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.teal)
                 Text("doc_sec_security").font(AppFont.captionStrong)
-                    .textCase(.uppercase).foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
             }
             .padding(.leading, AppSpacing.sm)
             GlassCard {
@@ -526,7 +526,7 @@ struct DocumentDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: icon).font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(color)
-                Text(title).font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                Text(title).font(AppFont.captionStrong).foregroundStyle(.secondary)
             }
             .padding(.leading, AppSpacing.sm)
             GlassCard {

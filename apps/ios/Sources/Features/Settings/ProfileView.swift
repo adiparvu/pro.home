@@ -309,7 +309,6 @@ struct ProfileView: View {
         if !links.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("soc_section_title")
-                    .textCase(.uppercase)
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .padding(.leading, AppSpacing.sm)
@@ -335,7 +334,6 @@ struct ProfileView: View {
         }()
         return VStack(alignment: .leading, spacing: 8) {
             Text("Chat")
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)

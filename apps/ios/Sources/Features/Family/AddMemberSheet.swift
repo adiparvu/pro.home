@@ -404,7 +404,7 @@ struct AddFamilyMemberSheet: View {
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.xs) {
-                Text("ROLE")
+                Text("Role")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Button {

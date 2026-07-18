@@ -271,7 +271,6 @@ struct AppliancesView: View {
                     (group.location.map { Text(verbatim: $0) } ?? Text("appliance_no_location"))
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        .textCase(.uppercase)
                 }
                 .padding(.leading, AppSpacing.xs)
                 .padding(.top, AppSpacing.xs)

@@ -120,7 +120,6 @@ struct PlantHistorySection: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(group.title)
                             .font(AppFont.captionStrong).foregroundStyle(.secondary)
-                            .textCase(.uppercase)
                         ForEach(Array(group.items.enumerated()), id: \.element.id) { idx, item in
                             if idx > 0 { rowDivider }
                             row(item)

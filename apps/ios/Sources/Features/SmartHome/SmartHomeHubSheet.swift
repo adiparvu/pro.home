@@ -573,8 +573,6 @@ struct SmartHomeHubSheet: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .kerning(1.1)
-            .textCase(.uppercase)
             .foregroundStyle(.secondary)
             .padding(.top, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.xxs)

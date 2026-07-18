@@ -459,7 +459,6 @@ struct NFCTagNameSheet: View {
                                 Text("Name")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 TextField("e.g. Front Door, Garage, Boiler Room", text: $name)
                                     .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
@@ -474,7 +473,6 @@ struct NFCTagNameSheet: View {
                                 Text("Links to")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 Picker("", selection: $linkedType) {
                                     Text("Zone / Room").tag("zone")
                                     Text("Appliance").tag("appliance")
@@ -502,7 +500,6 @@ struct NFCTagNameSheet: View {
                                 Text("Icon")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
                                     ForEach(iconOptions, id: \.self) { icon in
                                         Button {

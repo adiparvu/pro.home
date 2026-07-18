@@ -434,8 +434,6 @@ struct HomeKitImportWizardSheet: View {
         HStack(spacing: AppSpacing.xs) {
             Text(key)
                 .font(AppFont.label)
-                .kerning(1.1)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             Text(verbatim: "\(count)")
                 .font(AppFont.label)

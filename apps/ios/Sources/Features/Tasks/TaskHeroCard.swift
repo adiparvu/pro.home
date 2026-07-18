@@ -85,8 +85,6 @@ struct TaskHeroCard: View {
                     .font(AppFont.scaled(11, weight: .bold))
                 Text("task_hero_now")
                     .font(AppFont.label)
-                    .kerning(1.1)
-                    .textCase(.uppercase)
             }
             .foregroundStyle(task.isOverdue ? Color.brandDanger : Color.brandPurple)
             .accessibilityElement(children: .combine)

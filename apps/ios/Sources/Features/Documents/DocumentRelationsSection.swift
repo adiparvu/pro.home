@@ -81,7 +81,7 @@ struct DocumentRelationsSection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "link").font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
-                Text("doc_rel_linked_title").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                Text("doc_rel_linked_title").font(AppFont.captionStrong).foregroundStyle(.secondary)
                 Spacer()
                 if !service.links.isEmpty {
                     Text("\(service.links.count)")
@@ -170,7 +170,7 @@ struct DocumentRelationsSection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "doc.on.doc.fill").font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
-                Text("doc_rel_related_title").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                Text("doc_rel_related_title").font(AppFont.captionStrong).foregroundStyle(.secondary)
                 Spacer()
                 if !relatedRows.isEmpty {
                     Text("\(relatedRows.count)")

@@ -114,7 +114,7 @@ struct LiveActivitySettingsView: View {
                     // All Live Activities the user has — each opens its own
                     // settings (auto-start + its own appearance) and shows live
                     // status.
-                    Text("MY LIVE ACTIVITIES")
+                    Text("My Live Activities")
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -370,7 +370,7 @@ struct LiveActivityKindDetailView: View {
                 }
 
                 if custom {
-                    Text("SHOW IN")
+                    Text("Show In")
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
@@ -386,7 +386,7 @@ struct LiveActivityKindDetailView: View {
                                     isOn: $dynamicIsland)
                     }
 
-                    Text("DISPLAY OPTIONS")
+                    Text("Display Options")
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
@@ -405,7 +405,7 @@ struct LiveActivityKindDetailView: View {
                     }
 
                     if dynamicIsland {
-                        Text("DYNAMIC ISLAND")
+                        Text("Dynamic Island")
                             .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)

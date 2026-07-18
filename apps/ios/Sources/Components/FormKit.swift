@@ -81,7 +81,6 @@ struct FormGroup<Content: View>: View {
                 Text(title)
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .textCase(.uppercase)
                     .padding(.leading, AppSpacing.xxs)
             }
             VStack(spacing: 0) { content() }

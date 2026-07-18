@@ -216,7 +216,6 @@ struct PlantEncyclopediaView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(row.0)
                                 .font(AppFont.label)
-                                .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                             Text(row.1)
                                 .font(AppFont.scaled(15))

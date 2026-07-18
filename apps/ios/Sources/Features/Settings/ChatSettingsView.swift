@@ -125,7 +125,6 @@ struct ChatSettingsView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Teme și fundal")
-                    .textCase(.uppercase)
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .padding(.leading, AppSpacing.sm)
@@ -183,7 +182,6 @@ struct ChatSettingsView: View {
     private var liveSnapshot: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Chatul tău acum")
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)

@@ -278,7 +278,6 @@ struct AppearanceView: View {
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .padding(.leading, AppSpacing.xxs)
-            .textCase(.uppercase)
     }
 }
 

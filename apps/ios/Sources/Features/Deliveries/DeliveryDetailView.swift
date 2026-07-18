@@ -111,7 +111,6 @@ struct DeliveryDetailView: View {
                     Image(systemName: "dot.radiowaves.left.and.right")
                         .font(AppFont.footnote).foregroundStyle(Color.brandSuccess)
                     Text("Live tracking").font(AppFont.captionStrong).foregroundStyle(.secondary)
-                        .textCase(.uppercase)
                     Spacer()
                     if delivery.isLiveTracked {
                         Text(LocalizedStringKey(liveStatusLabel))
@@ -159,7 +158,6 @@ struct DeliveryDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Tracking history")
                         .font(AppFont.captionStrong).foregroundStyle(.secondary)
-                        .textCase(.uppercase)
                         .padding(.bottom, AppSpacing.md)
 
                     ForEach(Array(events.enumerated()), id: \.element.id) { idx, cp in

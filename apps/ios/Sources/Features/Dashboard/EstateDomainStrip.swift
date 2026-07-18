@@ -37,8 +37,6 @@ struct EstateDomainStrip: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm + 2) {
             Text("est_domain")
                 .font(AppFont.label)
-                .kerning(1.1)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, AppSpacing.lg)
             if zoneService.zones.isEmpty {

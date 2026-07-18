@@ -220,8 +220,6 @@ struct FloorPlansView: View {
                      ?? String(format: String(localized: "floor_level %lld"), level))
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .textCase(.uppercase)
-                    .kerning(0.5)
                 Spacer()
                 let count = service.rooms(onLevel: level).count
                 Text("\(count)")

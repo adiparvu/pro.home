@@ -416,7 +416,6 @@ private struct ScannerEntryView: View {
                         Text("scanner_info_title")
                             .font(AppFont.label)
                             .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
                         capabilityRow("text.viewfinder", "scanner_info_ocr")
                         capabilityRow("basket", "scanner_info_products")
                         capabilityRow("checklist", "scanner_info_sync")
@@ -750,7 +749,6 @@ private struct ReceiptReviewView: View {
                 Text(String(format: String(localized: "scanner_items_count"), parsed.items.count))
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
                         ForEach($parsed.items) { $item in
@@ -912,7 +910,6 @@ private struct ReceiptReviewView: View {
         Text(key)
             .font(AppFont.label)
             .foregroundStyle(.secondary)
-            .textCase(.uppercase)
     }
 }
 

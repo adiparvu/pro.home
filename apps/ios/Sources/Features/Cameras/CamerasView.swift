@@ -328,7 +328,6 @@ struct CamerasView: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .textCase(.uppercase)
             .foregroundStyle(.secondary)
             .padding(.leading, AppSpacing.xxs)
     }
@@ -379,7 +378,6 @@ struct CameraDetailView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("cameras_field_notes")
                                     .font(AppFont.label)
-                                    .textCase(.uppercase)
                                     .foregroundStyle(.secondary)
                                 Text(verbatim: notes)
                                     .font(AppFont.footnote)

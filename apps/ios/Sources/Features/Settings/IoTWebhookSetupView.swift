@@ -156,7 +156,6 @@ struct IoTWebhookSetupView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("iot_wh_example_title")
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
 

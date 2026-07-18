@@ -138,7 +138,7 @@ struct TrustedPersonsView: View {
 
     private var personsList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("PERSOANE DE ÎNCREDERE")
+            Text("Persoane de încredere")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -431,7 +431,7 @@ private struct TrustedPersonSheet: View {
                     VStack(spacing: 20) {
                         // Info fields
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("DETALII")
+                            Text("Details")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, AppSpacing.xxs)
@@ -446,7 +446,7 @@ private struct TrustedPersonSheet: View {
 
                         // Permissions
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("PERMISIUNI")
+                            Text("Permissions")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, AppSpacing.xxs)

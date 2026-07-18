@@ -133,7 +133,6 @@ struct PlantHealthScoreCard: View {
             Label("plant_score_missing_title", systemImage: "questionmark.circle")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .textCase(.uppercase)
             ForEach(score.missingFactors) { factor in
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
                     Image(systemName: factor.kind.icon)

@@ -387,7 +387,6 @@ struct EmojiPickerField: View {
                     Text(LocalizedStringKey(section.titleKey))
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                        .textCase(.uppercase)
                     LazyVGrid(
                         columns: [GridItem(.adaptive(minimum: 52), spacing: 10)],
                         spacing: 10

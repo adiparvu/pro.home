@@ -153,8 +153,6 @@ struct TodayAtHomeCard: View {
                         .foregroundStyle(Color.accentColor)
                     Text("Today at home")
                         .font(AppFont.label)
-                        .kerning(1.1)
-                        .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -263,8 +261,6 @@ struct HouseFeedView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(titleKey)
                 .font(AppFont.label)
-                .kerning(1.1)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             if events.isEmpty {
                 Text("Nothing yet today.")

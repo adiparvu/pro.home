@@ -27,8 +27,6 @@ struct ProactiveInsightsCard: View {
                     .foregroundStyle(Color.accentColor)
                 Text("For you")
                     .font(AppFont.label)
-                    .kerning(1.1)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
                 Spacer()
                 if insights.count > 1 {

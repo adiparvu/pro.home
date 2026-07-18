@@ -318,8 +318,6 @@ struct SpaceDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(verbatim: "\(String(localized: "est_domain")) · \(kind.title)")
                 .font(AppFont.scaled(11, weight: .semibold))
-                .kerning(1.2)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             Text(verbatim: live.name)
                 .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
@@ -572,8 +570,6 @@ struct SpaceDetailView: View {
     private func sectionLabel(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .kerning(1.1)
-            .textCase(.uppercase)
             .foregroundStyle(.secondary)
     }
 }

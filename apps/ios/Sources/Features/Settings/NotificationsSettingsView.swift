@@ -102,7 +102,7 @@ struct NotificationsSettingsView: View {
 
     private var preferencesSection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            group("TASKS & DOCUMENTS") {
+            group("Tasks & Documents") {
                 deadlineRow(icon: "checklist", color: .blue,
                             title: "Task reminders",
                             subtitle: "notif_sub_tasks",
@@ -118,7 +118,7 @@ struct NotificationsSettingsView: View {
                             isOn: scheduler.documentExpiry)
             }
 
-            group("PROPERTY & FINANCES") {
+            group("Property & Finances") {
                 deadlineRow(icon: "shield.lefthalf.filled", color: .teal,
                             title: "Object warranties",
                             subtitle: "notif_sub_warranties",
@@ -146,7 +146,7 @@ struct NotificationsSettingsView: View {
                             isOn: scheduler.leaseAlerts)
             }
 
-            group("COMMUNICATION") {
+            group("Communication") {
                 NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
                                title: "Chat",
                                subtitle: "New messages in chat",
@@ -165,14 +165,14 @@ struct NotificationsSettingsView: View {
                 }
             }
 
-            group("AUTOMATIONS") {
+            group("Automations") {
                 NotifToggleRow(icon: "gearshape.2.fill", color: .yellow,
                                title: "Automations",
                                subtitle: "Alerts from property automations",
                                value: bind(\.automationAlerts))
             }
 
-            group("SUMMARY") {
+            group("Summary") {
                 NotifToggleRow(icon: "newspaper.fill", color: .purple,
                                title: "Weekly summary",
                                subtitle: "Every Monday at 9:00",

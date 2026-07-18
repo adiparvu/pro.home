@@ -77,7 +77,7 @@ struct BackupCodesView: View {
 
     private var codesGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("CODURI DE REZERVĂ")
+            Text("Coduri de rezervă")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)

@@ -174,8 +174,6 @@ struct RoomInspectorSheet: View {
                 Text(String(format: String(localized: String.LocalizationValue(titleKey)), count))
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.4))
-                    .textCase(.uppercase)
-                    .kerning(0.5)
                 inner
             }
         }

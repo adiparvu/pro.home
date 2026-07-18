@@ -242,7 +242,6 @@ struct CameraFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
                 .font(AppFont.label)
-                .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             content()
         }

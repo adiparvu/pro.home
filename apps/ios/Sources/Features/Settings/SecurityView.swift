@@ -454,7 +454,6 @@ struct SecurityView: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
-                .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
                 .liquidGlass(cornerRadius: AppRadius.xl)

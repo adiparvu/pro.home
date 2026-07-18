@@ -556,7 +556,6 @@ struct SendLaterSheet: View {
                 .font(AppFont.caption2)
             Text(title)
                 .font(AppFont.label)
-                .textCase(.uppercase)
         }
         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         .padding(.leading, AppSpacing.xxs)

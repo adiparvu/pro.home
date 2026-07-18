@@ -540,7 +540,6 @@ struct GuestModeView: View {
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
-                .textCase(.uppercase)
         }
         .padding(.leading, AppSpacing.xs)
     }

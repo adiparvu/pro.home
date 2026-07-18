@@ -271,7 +271,7 @@ struct ZoneDetailView: View {
     private var metricsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text("METRICS")
+                Text("Metrics")
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
@@ -513,7 +513,7 @@ struct ZoneDetailView: View {
 
     private var elementsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("OBJECTS IN ZONE")
+            Text("Objects in Zone")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(1.2)

@@ -183,8 +183,6 @@ struct SpacesTabView: View {
                         Text(floorPlanService.floor(forLevel: level)?.name
                              ?? String(format: String(localized: "floor_level %lld"), level))
                             .font(AppFont.label)
-                            .kerning(1.1)
-                            .textCase(.uppercase)
                             .foregroundStyle(.secondary)
                         // READ-ONLY here by design: one plan editor lives in
                         // Settings → Blueprints, so geometry can never fork.
@@ -205,8 +203,6 @@ struct SpacesTabView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("spaces_unplaced")
                             .font(AppFont.label)
-                            .kerning(1.1)
-                            .textCase(.uppercase)
                             .foregroundStyle(.secondary)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: AppSpacing.sm) {

@@ -249,7 +249,7 @@ struct AddPlanSheet: View {
 
     private var kindPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CATEGORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+            Text("Category").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in

@@ -308,7 +308,6 @@ struct AddPaintColorSheet: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .textCase(.uppercase)
                 .padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) { content() }

@@ -151,7 +151,7 @@ struct SupervisionView: View {
 
     private var memberList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("MEMBERS")
+            Text("Members")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.xxs)

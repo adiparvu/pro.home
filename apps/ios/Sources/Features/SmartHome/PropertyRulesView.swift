@@ -259,7 +259,6 @@ struct PropertyRulesView: View {
             } header: {
                 Text("rule_templates_header")
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
             } footer: {
                 Text("rule_templates_caption")
@@ -335,7 +334,6 @@ struct PropertyRulesView: View {
             } header: {
                 Text("rule_log_header")
                     .font(AppFont.label)
-                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
             }
         }

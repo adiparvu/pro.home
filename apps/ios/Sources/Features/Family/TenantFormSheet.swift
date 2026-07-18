@@ -50,19 +50,19 @@ struct TenantFormSheet: View {
                      canSave: canSave, isSaving: isSaving,
                      error: $errorMessage, onSave: { Task { await save() } }) {
                         header
-                        section("IDENTITY") {
+                        section("Identity") {
                             fieldRow(icon: "person.fill", tint: .purple, placeholder: "First name *", text: $firstName)
                             divider
                             fieldRow(icon: "person", tint: .purple, placeholder: "Last name", text: $lastName)
                         }
-                        section("CONTACT") {
+                        section("Contact") {
                             fieldRow(icon: "envelope.fill", tint: .blue, placeholder: "Email", text: $email,
                                      keyboard: .emailAddress)
                             divider
                             fieldRow(icon: "phone.fill", tint: Color.brandSuccess, placeholder: "Phone", text: $phone,
                                      keyboard: .phonePad)
                         }
-                        section("LEASE") {
+                        section("Lease") {
                             DatePicker(selection: $leaseStart, displayedComponents: .date) {
                                 Label("Lease start", systemImage: "calendar")
                                     .font(AppFont.subheadline).foregroundStyle(.primary)
@@ -83,7 +83,7 @@ struct TenantFormSheet: View {
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                             }
                         }
-                        section("RENT") {
+                        section("Rent") {
                             HStack(spacing: AppSpacing.md) {
                                 Label("Monthly rent", systemImage: "banknote.fill")
                                     .font(AppFont.subheadline).foregroundStyle(.primary)
@@ -131,13 +131,13 @@ struct TenantFormSheet: View {
                             }
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
                         }
-                        section("NOTES") {
+                        section("Notes") {
                             TextField("Parking spot, house rules, meter readings…", text: $notes, axis: .vertical)
                                 .lineLimit(3...6)
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                         }
                         if !email.trimmingCharacters(in: .whitespaces).isEmpty {
-                            section("ACCESS") {
+                            section("Access") {
                                 Toggle(isOn: $sendInvite) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Send invitation email")

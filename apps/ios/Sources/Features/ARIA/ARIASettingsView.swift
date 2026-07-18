@@ -417,7 +417,7 @@ struct ARIASettingsView: View {
 
     private var personalitySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("PERSONALITY")
+            Text("Personality")
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
@@ -500,7 +500,6 @@ struct ARIASettingsView: View {
     private var contextSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("WHAT \(assistantName) CAN SEE")
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)

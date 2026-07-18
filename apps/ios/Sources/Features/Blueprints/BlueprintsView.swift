@@ -225,7 +225,7 @@ struct BlueprintsView: View {
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             let _ = lockRefresh   // re-render badges when a lock toggles
-            Text("SAVED PLANS & MODELS")
+            Text("Saved Plans & Models")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)

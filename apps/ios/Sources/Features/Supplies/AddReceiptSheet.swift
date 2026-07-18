@@ -140,7 +140,7 @@ struct AddReceiptSheet: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("ITEMS")
+                Text("Items")
                     .font(AppFont.label).foregroundStyle(.secondary)
                 Spacer()
                 Button {

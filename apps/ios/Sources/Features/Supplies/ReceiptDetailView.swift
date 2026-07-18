@@ -58,7 +58,7 @@ struct ReceiptDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("add_receipt_photo")
                 .font(AppFont.label).foregroundStyle(.secondary)
-                .textCase(.uppercase).padding(.leading, AppSpacing.xxs)
+                .padding(.leading, AppSpacing.xxs)
             GlassCard(padding: 6) {
                 Group {
                     if let url = resolvedImageURL {
@@ -196,7 +196,7 @@ struct ReceiptDetailView: View {
     private var notesSection: some View {
         if let notes = receipt.notes, !notes.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("NOTES")
+                Text("Notes")
                     .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 14) {
                     Text(notes)

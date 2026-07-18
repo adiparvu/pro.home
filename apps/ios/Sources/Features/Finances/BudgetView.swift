@@ -98,7 +98,7 @@ struct BudgetView: View {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("PER CATEGORY")
+            Text("Per Category")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -210,7 +210,7 @@ private struct EditBudgetSheet: View {
                 VStack(spacing: 24) {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("MONTHLY BUDGET")
+                            Text("Monthly Budget")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             HStack(spacing: 8) {

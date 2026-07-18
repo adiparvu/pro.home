@@ -30,7 +30,7 @@ struct LinkedDocumentsSection: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "doc.text.fill").font(AppFont.scaled(13, weight: .semibold)).foregroundStyle(.blue)
-                        Text("doc_rel_papers_title").font(AppFont.captionStrong).textCase(.uppercase).foregroundStyle(.secondary)
+                        Text("doc_rel_papers_title").font(AppFont.captionStrong).foregroundStyle(.secondary)
                         Spacer()
                         Text("\(linkedDocs.count)")
                             .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))

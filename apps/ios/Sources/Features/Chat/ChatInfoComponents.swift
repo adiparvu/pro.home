@@ -93,7 +93,6 @@ struct InfoSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             if let title {
                 Text(title)
-                    .textCase(.uppercase)
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .padding(.leading, AppSpacing.sm)

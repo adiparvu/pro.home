@@ -244,7 +244,6 @@ struct SeasonalChecklistView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(LocalizedStringKey(category))
-                    .textCase(.uppercase)
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -466,7 +465,6 @@ struct SeasonalChecklistView: View {
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("seasonal_history_title")
-                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.xs)
@@ -550,7 +548,6 @@ struct SeasonalItemEditorSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Title")
                                 .font(AppFont.captionStrong)
-                                .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, AppSpacing.xxs)
                             TextField("What needs to be done?", text: $title)
@@ -564,7 +561,6 @@ struct SeasonalItemEditorSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Description (optional)")
                                 .font(AppFont.captionStrong)
-                                .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, AppSpacing.xxs)
                             TextField("Add details…", text: $description, axis: .vertical)
@@ -579,7 +575,6 @@ struct SeasonalItemEditorSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Category")
                                 .font(AppFont.captionStrong)
-                                .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, AppSpacing.xxs)
                             TextField("E.g. Plumbing, Safety, Custom…", text: $category)

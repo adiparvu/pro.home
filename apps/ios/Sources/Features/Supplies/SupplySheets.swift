@@ -74,7 +74,7 @@ struct AddSupplyListSheet: View {
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NAME")
+            Text("Name")
                 .font(AppFont.label).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(AppFont.scaled(16)).foregroundStyle(.primary).tint(.accentColor)
@@ -96,7 +96,7 @@ struct AddSupplyListSheet: View {
 
     private var iconPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ICON")
+            Text("Icon")
                 .font(AppFont.label).foregroundStyle(.secondary)
             let color = Color(hex: selectedColor) ?? .blue
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
@@ -123,7 +123,7 @@ struct AddSupplyListSheet: View {
 
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("COLOR")
+            Text("Color")
                 .font(AppFont.label).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(SupplyList.colorOptions, id: \.hex) { opt in
