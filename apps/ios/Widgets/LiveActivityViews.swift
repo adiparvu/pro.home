@@ -135,6 +135,7 @@ struct ShoppingLiveActivity: Widget {
                             }
                             if !done, let nextId = context.state.nextItemId {
                                 ShoppingCheckButton(itemId: nextId, name: context.state.nextItemName)
+                                    .transition(.blurReplace)
                             }
                         }
                     }
@@ -210,6 +211,7 @@ private struct ShoppingLockView: View {
                     ShoppingCheckButton(itemId: nextId, name: context.state.nextItemName)
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.bottom, AppSpacing.lg)
+                        .transition(.blurReplace)
                 }
             }
             .activityBackgroundTint(Color.clear)
@@ -273,6 +275,7 @@ struct MaintenanceLiveActivity: Widget {
                             }
                             if !done, let taskId = context.attributes.taskId {
                                 MaintenanceDoneButton(taskId: taskId)
+                                    .transition(.blurReplace)
                             }
                         }
                     }
@@ -337,6 +340,7 @@ private struct MaintenanceLockView: View {
                     MaintenanceDoneButton(taskId: taskId)
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.bottom, AppSpacing.lg)
+                        .transition(.blurReplace)
                 }
             }
             .activityBackgroundTint(Color.clear)
@@ -401,6 +405,7 @@ struct WorkSessionLiveActivity: Widget {
                             }
                             .buttonStyle(.bordered)
                         }
+                        .transition(.blurReplace)
                     }
                 }
             } compactLeading: {
@@ -480,6 +485,7 @@ private struct WorkSessionLockView: View {
                         }
                         .buttonStyle(.bordered)
                     }
+                    .transition(.blurReplace)
                 }
             }
             .padding(AppSpacing.lg)
@@ -597,10 +603,13 @@ struct DeliveryLiveActivity: Widget {
             let problem = state.isProblem == true
             let tint = DeliveryFace.tint(state)
             let label = DeliveryFace.label(state.status, fallback: state.statusLabel)
+            // Out for delivery: the box wiggles periodically — attention, not alarm.
+            let enRoute = !delivered && !problem && DeliveryFace.milestone(state) == 2
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandHeader(kind: .delivery, title: Text(context.attributes.carrier), isComplete: delivered)
+                    IslandHeader(kind: .delivery, title: Text(context.attributes.carrier), isComplete: delivered,
+                                 wiggles: enRoute)
                         .widgetURL(LiveActivityKind.delivery.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -632,12 +641,13 @@ struct DeliveryLiveActivity: Widget {
                             }
                             if !delivered, let deliveryId = context.attributes.deliveryId {
                                 DeliveryReceivedButton(deliveryId: deliveryId)
+                                    .transition(.blurReplace)
                             }
                         }
                     }
                 }
             } compactLeading: {
-                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem)
+                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem, wiggles: enRoute)
                     .font(AppFont.captionStrong)
                     .accessibilityLabel(Text(LiveActivityKind.delivery.title))
             } compactTrailing: {
@@ -649,7 +659,7 @@ struct DeliveryLiveActivity: Widget {
                         .contentTransition(.opacity)
                 }
             } minimal: {
-                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem)
+                IslandStateIcon(kind: .delivery, isComplete: delivered, isProblem: problem, wiggles: enRoute)
                     .accessibilityLabel(Text(verbatim: label))
             }
         }
@@ -680,12 +690,14 @@ private struct DeliveryLockView: View {
         let state = context.state
         let delivered = state.status == "delivered"
         let label = DeliveryFace.label(state.status, fallback: state.statusLabel)
+        let enRoute = !delivered && state.isProblem != true && DeliveryFace.milestone(state) == 2
 
         if LA.lockDetails(.delivery) {
             VStack(spacing: 0) {
                 IslandLockCard(kind: .delivery,
                                title: Text(context.attributes.description),
-                               isComplete: delivered) {
+                               isComplete: delivered,
+                               wiggles: enRoute) {
                     if LA.progress(.delivery) {
                         IslandMilestoneBar(stage: DeliveryFace.milestone(state),
                                            tint: delivered ? .brandSuccess : LiveActivityKind.delivery.color,
@@ -710,6 +722,7 @@ private struct DeliveryLockView: View {
                     DeliveryReceivedButton(deliveryId: deliveryId)
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.bottom, AppSpacing.lg)
+                        .transition(.blurReplace)
                 }
             }
             .activityBackgroundTint(Color.clear)
@@ -747,7 +760,8 @@ struct PlantCareLiveActivity: Widget {
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandHeader(kind: .plantCare, title: Text("Plant watering"), isComplete: done)
+                    IslandHeader(kind: .plantCare, title: Text("Plant watering"), isComplete: done,
+                                 breathes: !done)
                         .widgetURL(LiveActivityKind.plantCare.deepLink)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -773,12 +787,13 @@ struct PlantCareLiveActivity: Widget {
                             if !done {
                                 PlantWaterButton()
                                     .padding(.top, AppSpacing.xxs)
+                                    .transition(.blurReplace)
                             }
                         }
                     }
                 }
             } compactLeading: {
-                IslandStateIcon(kind: .plantCare, isComplete: done)
+                IslandStateIcon(kind: .plantCare, isComplete: done, breathes: !done)
                     .font(AppFont.captionStrong)
                     .accessibilityLabel(Text(LiveActivityKind.plantCare.title))
             } compactTrailing: {
@@ -787,7 +802,7 @@ struct PlantCareLiveActivity: Widget {
                         .accessibilityLabel(countLabel)
                 }
             } minimal: {
-                IslandStateIcon(kind: .plantCare, isComplete: done)
+                IslandStateIcon(kind: .plantCare, isComplete: done, breathes: !done)
                     .accessibilityLabel(Text(LiveActivityKind.plantCare.title))
             }
         }
@@ -804,7 +819,7 @@ private struct PlantCareActivitySmallView: View {
         SmallStackCard(title: Text("Plant watering"),
                        progress: total > 0 ? Double(watered) / Double(total) : 0,
                        progressTint: done ? .brandSuccess : LiveActivityKind.plantCare.color) {
-            IslandStateIcon(kind: .plantCare, isComplete: done)
+            IslandStateIcon(kind: .plantCare, isComplete: done, breathes: !done)
         } trailing: {
             IslandMetric(Text(verbatim: "\(watered)/\(total)"),
                          tint: done ? .brandSuccess : LiveActivityKind.plantCare.color,
@@ -831,7 +846,8 @@ private struct PlantCareLockView: View {
             VStack(spacing: 0) {
                 IslandLockCard(kind: .plantCare,
                                title: Text("Plant watering"),
-                               isComplete: isComplete) {
+                               isComplete: isComplete,
+                               breathes: !isComplete) {
                     if LA.progress(.plantCare) {
                         IslandProgressBar(value: progress, tint: LiveActivityKind.plantCare.color)
                     }
@@ -848,6 +864,7 @@ private struct PlantCareLockView: View {
                     PlantWaterButton()
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.bottom, AppSpacing.lg)
+                        .transition(.blurReplace)
                 }
             }
             .activityBackgroundTint(Color.clear)
@@ -1238,8 +1255,7 @@ struct EnergyLiveActivity: Widget {
                                         .monospacedDigit()
                                         .contentTransition(.numericText())
                                 } icon: {
-                                    Image(systemName: "sun.max.fill")
-                                        .foregroundStyle(Color.brandSuccess)
+                                    EnergySunIcon()
                                 }
                                 .font(AppFont.caption)
                                 .accessibilityLabel(Text("la_energy_production"))
@@ -1280,6 +1296,19 @@ private struct EnergyActivitySmallView: View {
                               ?? EnergyFace.watts(context.state.productionW) ?? "—"),
                          tint: LiveActivityKind.energy.color, size: .expanded)
         }
+    }
+}
+
+/// The production sun: a variable-color cascade while panels are live. The
+/// icon renders only when real production watts exist, so the motion can
+/// never claim energy that isn't flowing.
+private struct EnergySunIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Image(systemName: "sun.max.fill")
+            .foregroundStyle(Color.brandSuccess)
+            .symbolEffect(.variableColor, options: .repeating, isActive: !reduceMotion)
     }
 }
 
@@ -1438,6 +1467,7 @@ struct CoverLiveActivity: Widget {
                                 }
                                 .buttonStyle(.bordered)
                                 .tint(LiveActivityKind.cover.color)
+                                .transition(.blurReplace)
                             }
                         }
                     }
@@ -1513,6 +1543,7 @@ private struct CoverLockView: View {
                     .tint(LiveActivityKind.cover.color)
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.bottom, AppSpacing.lg)
+                    .transition(.blurReplace)
                 }
             }
             .activityBackgroundTint(Color.clear)

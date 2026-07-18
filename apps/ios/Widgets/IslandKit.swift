@@ -44,6 +44,10 @@ struct IslandStateIcon: View {
     var isProblem = false
     /// Ongoing-attention pulse without the warning symbol swap (emergency).
     var pulses = false
+    /// Organic breathing while care is still owed (plant watering).
+    var breathes = false
+    /// Gentle periodic wiggle for "on its way" attention (delivery en route).
+    var wiggles = false
 
     private var symbol: String {
         if isComplete { return "checkmark.circle.fill" }
@@ -67,6 +71,11 @@ struct IslandStateIcon: View {
             // Ongoing attention while a problem/attention state persists.
             .symbolEffect(.pulse, options: .repeating,
                           isActive: (isProblem || pulses) && !isComplete && !reduceMotion)
+            .symbolEffect(.breathe, options: .repeating,
+                          isActive: breathes && !isComplete && !reduceMotion)
+            // Periodic (not continuous) so it reads as a nudge, not an alarm.
+            .symbolEffect(.wiggle, options: .repeat(.periodic),
+                          isActive: wiggles && !isComplete && !isProblem && !reduceMotion)
     }
 }
 
@@ -74,13 +83,15 @@ struct IslandStateIcon: View {
 struct IslandIconDisc: View {
     let kind: LiveActivityKind
     var isComplete = false
+    var breathes = false
+    var wiggles = false
 
     var body: some View {
         ZStack {
             Circle()
                 .fill((isComplete ? Color.brandSuccess : kind.color).opacity(AppOpacity.tintedFill))
                 .frame(width: IslandMetrics.iconDisc, height: IslandMetrics.iconDisc)
-            IslandStateIcon(kind: kind, isComplete: isComplete)
+            IslandStateIcon(kind: kind, isComplete: isComplete, breathes: breathes, wiggles: wiggles)
                 .font(AppFont.title3)
         }
         .accessibilityHidden(true) // decorative — the card's text carries the state
@@ -133,10 +144,13 @@ struct IslandHeader: View {
     /// Ongoing-attention pulse on the leading glyph (emergency), matching the
     /// compact/minimal presentations so the beacon reads "live" everywhere.
     var pulses = false
+    var breathes = false
+    var wiggles = false
 
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
-            IslandStateIcon(kind: kind, isComplete: isComplete, pulses: pulses)
+            IslandStateIcon(kind: kind, isComplete: isComplete, pulses: pulses,
+                            breathes: breathes, wiggles: wiggles)
                 .font(AppFont.captionStrong)
             if LA.expandedData(kind) {
                 title
@@ -156,6 +170,9 @@ struct IslandProgressBar: View {
     var body: some View {
         ProgressView(value: max(0, min(1, value)))
             .tint(tint)
+            // The documented LA mechanism for custom update timing: the fill
+            // eases with the brand curve instead of the system default.
+            .animation(.smooth, value: value)
             .accessibilityHidden(true) // the row's text already states n of m
     }
 }
@@ -178,6 +195,7 @@ struct IslandMilestoneBar: View {
                     .frame(maxWidth: .infinity)
             }
         }
+        .animation(.smooth, value: stage)
         .accessibilityHidden(true) // the status text carries the stage
     }
 
@@ -195,12 +213,14 @@ struct IslandLockCard<Detail: View, Trailing: View>: View {
     let kind: LiveActivityKind
     let title: Text
     var isComplete = false
+    var breathes = false
+    var wiggles = false
     @ViewBuilder var detail: Detail
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
         HStack(spacing: AppSpacing.base) {
-            IslandIconDisc(kind: kind, isComplete: isComplete)
+            IslandIconDisc(kind: kind, isComplete: isComplete, breathes: breathes, wiggles: wiggles)
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 title
                     .font(AppFont.footnoteEmphasis)
@@ -233,6 +253,9 @@ struct IslandContextLine: View {
         .font(AppFont.caption)
         .foregroundStyle(.secondary)
         .lineLimit(1)
+        // Counts inside context lines ("2 of 5 items") roll like the hero
+        // metrics; prose keeps the system's blurred text transition.
+        .contentTransition(.numericText())
     }
 }
 
