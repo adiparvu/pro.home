@@ -92,7 +92,7 @@ struct ShoppingLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             ActivityFamilyGate {
-                ShoppingSmallView(context: context)
+                ShoppingActivitySmallView(context: context)
             } full: {
                 ShoppingLockView(context: context)
             }
@@ -156,7 +156,7 @@ struct ShoppingLiveActivity: Widget {
     }
 }
 
-private struct ShoppingSmallView: View {
+private struct ShoppingActivitySmallView: View {
     let context: ActivityViewContext<ShoppingActivityAttributes>
 
     var body: some View {
@@ -230,7 +230,7 @@ struct MaintenanceLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
             ActivityFamilyGate {
-                MaintenanceSmallView(context: context)
+                MaintenanceActivitySmallView(context: context)
             } full: {
                 MaintenanceLockView(context: context)
             }
@@ -294,7 +294,7 @@ struct MaintenanceLiveActivity: Widget {
     }
 }
 
-private struct MaintenanceSmallView: View {
+private struct MaintenanceActivitySmallView: View {
     let context: ActivityViewContext<MaintenanceActivityAttributes>
 
     var body: some View {
@@ -363,7 +363,7 @@ struct WorkSessionLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: WorkSessionActivityAttributes.self) { context in
             ActivityFamilyGate {
-                WorkSessionSmallView(context: context)
+                WorkSessionActivitySmallView(context: context)
             } full: {
                 WorkSessionLockView(context: context)
             }
@@ -420,7 +420,7 @@ struct WorkSessionLiveActivity: Widget {
     }
 }
 
-private struct WorkSessionSmallView: View {
+private struct WorkSessionActivitySmallView: View {
     let context: ActivityViewContext<WorkSessionActivityAttributes>
 
     var body: some View {
@@ -586,7 +586,7 @@ struct DeliveryLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
             ActivityFamilyGate {
-                DeliverySmallView(context: context)
+                DeliveryActivitySmallView(context: context)
             } full: {
                 DeliveryLockView(context: context)
             }
@@ -656,7 +656,7 @@ struct DeliveryLiveActivity: Widget {
     }
 }
 
-private struct DeliverySmallView: View {
+private struct DeliveryActivitySmallView: View {
     let context: ActivityViewContext<DeliveryActivityAttributes>
 
     var body: some View {
@@ -732,7 +732,7 @@ struct PlantCareLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
             ActivityFamilyGate {
-                PlantCareSmallView(context: context)
+                PlantCareActivitySmallView(context: context)
             } full: {
                 PlantCareLockView(context: context)
             }
@@ -794,7 +794,7 @@ struct PlantCareLiveActivity: Widget {
     }
 }
 
-private struct PlantCareSmallView: View {
+private struct PlantCareActivitySmallView: View {
     let context: ActivityViewContext<PlantCareActivityAttributes>
 
     var body: some View {
@@ -873,7 +873,7 @@ struct EmergencyLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: EmergencyActivityAttributes.self) { context in
             ActivityFamilyGate {
-                EmergencySmallView(context: context)
+                EmergencyActivitySmallView(context: context)
             } full: {
                 EmergencyLockView(context: context)
             }
@@ -930,7 +930,7 @@ struct EmergencyLiveActivity: Widget {
     }
 }
 
-private struct EmergencySmallView: View {
+private struct EmergencyActivitySmallView: View {
     let context: ActivityViewContext<EmergencyActivityAttributes>
 
     var body: some View {
@@ -1015,7 +1015,7 @@ struct IoTAlertLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: IoTAlertActivityAttributes.self) { context in
             ActivityFamilyGate {
-                IoTAlertSmallView(context: context)
+                IoTAlertActivitySmallView(context: context)
             } full: {
                 IoTAlertLockView(context: context)
             }
@@ -1092,7 +1092,7 @@ struct IoTAlertLiveActivity: Widget {
     }
 }
 
-private struct IoTAlertSmallView: View {
+private struct IoTAlertActivitySmallView: View {
     let context: ActivityViewContext<IoTAlertActivityAttributes>
 
     private var tint: Color {
@@ -1195,7 +1195,7 @@ struct EnergyLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: EnergyActivityAttributes.self) { context in
             ActivityFamilyGate {
-                EnergySmallView(context: context)
+                EnergyActivitySmallView(context: context)
             } full: {
                 EnergyLockView(context: context)
             }
@@ -1269,7 +1269,7 @@ struct EnergyLiveActivity: Widget {
     }
 }
 
-private struct EnergySmallView: View {
+private struct EnergyActivitySmallView: View {
     let context: ActivityViewContext<EnergyActivityAttributes>
 
     var body: some View {
@@ -1376,7 +1376,7 @@ struct CoverLiveActivity: Widget {
     private var configuration: some WidgetConfiguration {
         ActivityConfiguration(for: CoverActivityAttributes.self) { context in
             ActivityFamilyGate {
-                CoverSmallView(context: context)
+                CoverActivitySmallView(context: context)
             } full: {
                 CoverLockView(context: context)
             }
@@ -1440,7 +1440,7 @@ struct CoverLiveActivity: Widget {
     }
 }
 
-private struct CoverSmallView: View {
+private struct CoverActivitySmallView: View {
     let context: ActivityViewContext<CoverActivityAttributes>
 
     var body: some View {
