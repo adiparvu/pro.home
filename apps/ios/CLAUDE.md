@@ -27,11 +27,24 @@ evolution. Build for the future, not only for the current feature.
 ## Apple design philosophy
 
 The bar is ALWAYS the CURRENT WWDC cycle (permanent, user-decreed).
-Today that is WWDC 2026 — the user's shorthand "iOS 27"; next year it
-becomes WWDC 2027, and so on, forever. Every screen must feel like it
+Today that is **WWDC26+ / iOS 27+** — the minimum reference for every
+design decision, proposal, report and comment; next year it becomes
+WWDC27+/iOS 28+, and so on, forever. Every screen must feel like it
 belongs on the newest OS at a visual quality comparable to Apple's own
 apps, so the app can keep being developed on the newest standard instead
 of re-fighting the same drift every cycle.
+
+- BAR vs FLOOR (user-decreed, 2026-07): the bar — what we design
+  against, mine docs for, and cite when proposing — is ALWAYS the
+  current cycle (WWDC26+/iOS 27+ today). Older OS versions may appear
+  ONLY as technical floors: deployment targets, `#available` gates,
+  and where-an-API-appeared facts. NEVER present a previous cycle as
+  "the newest"/"the standard" in any proposal, report, comment, or
+  user-facing copy — frame capabilities from the current cycle down,
+  never from a past cycle up.
+- When a current-cycle API needs a newer SDK than the CI toolchain
+  ships, say so explicitly, adopt the current cycle's design guidance
+  NOW, and queue the API adoption for the moment the toolchain allows.
 
 - The SOURCE OF TRUTH is developer.apple.com — the HIG, the framework
   docs and the current WWDC session pages — fetched FRESH, never

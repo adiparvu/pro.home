@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Settings Group (iOS 26/27 liquid glass)
+// MARK: - Settings Group (Liquid Glass)
 
 struct SettingsGroup<Content: View>: View {
     let title: LocalizedStringKey
