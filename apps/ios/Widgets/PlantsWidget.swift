@@ -32,11 +32,13 @@ struct PlantsSmallView: View {
                 Image(systemName: "leaf.fill")
                     .font(AppFont.headline)
                     .foregroundStyle(.green)
+                    .widgetAccentable()
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
                     Text("\(entry.snapshot.plantsNeedingWater)")
                         .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(Color(red: 1.0, green: 0.62, blue: 0.1))
+                        .widgetAccentable()
                 } else {
                     Image(systemName: "drop.fill")
                         .font(AppFont.scaled(24))
@@ -93,6 +95,7 @@ struct PlantsMediumView: View {
                     Image(systemName: "leaf.fill")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(.green)
+                        .widgetAccentable()
                 }
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {

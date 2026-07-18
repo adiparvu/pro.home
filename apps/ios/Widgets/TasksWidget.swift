@@ -42,11 +42,13 @@ struct TasksWidgetSmallView: View {
                 Image(systemName: "checklist")
                     .font(AppFont.headline)
                     .foregroundStyle(.blue)
+                    .widgetAccentable()
                 Spacer()
                 if counts.overdue > 0 {
                     Text("\(counts.overdue)")
                         .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(.red)
+                        .widgetAccentable()
                 } else {
                     Image(systemName: "checkmark.circle.fill")
                         .font(AppFont.scaled(24))
@@ -102,6 +104,7 @@ struct TasksMediumView: View {
                     Image(systemName: "checklist")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(.blue)
+                        .widgetAccentable()
                 }
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {

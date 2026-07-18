@@ -26,10 +26,12 @@ struct ShoppingSmallView: View {
                 Image(systemName: "cart.fill")
                     .font(AppFont.headline)
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
+                    .widgetAccentable()
                 Spacer()
                 Text("\(entry.snapshot.pendingSupplyCount)")
                     .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
+                    .widgetAccentable()
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
@@ -75,6 +77,7 @@ struct ShoppingMediumView: View {
                     Image(systemName: "cart.fill")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 1.0))
+                        .widgetAccentable()
                 }
                 Spacer()
                 if entry.snapshot.pendingSupplyCount > 0 {

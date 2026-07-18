@@ -48,7 +48,9 @@ private struct BrandWidgetView: View {
     }
 
     private var glyph: some View {
-        // The monogram stands on its own — no plate behind it.
+        // The monogram stands on its own — no plate behind it. Accentable so
+        // the iOS 18 tinted Home Screen paints the mark in the user's tint
+        // (the black plate is a containerBackground, removed by the system).
         Image("BrandMark")
             .renderingMode(.template)
             .resizable()
@@ -56,6 +58,7 @@ private struct BrandWidgetView: View {
             .frame(width: family == .systemMedium ? 56 : 48,
                    height: family == .systemMedium ? 56 : 48)
             .foregroundStyle(.white)
+            .widgetAccentable()
     }
 
     private var wordmark: some View {
@@ -63,6 +66,7 @@ private struct BrandWidgetView: View {
             .font(AppFont.scaled(24, weight: .heavy, design: .rounded))
             .tracking(2)
             .foregroundStyle(.white)
+            .widgetAccentable()
     }
 
 }

@@ -42,14 +42,20 @@ private struct AerialBackground: View {
 // MARK: - Small View
 
 struct DashboardSmallView: View {
+    // Tinted Home Screen (iOS 18): the system strips the aerial
+    // containerBackground, so the legibility scrim must go with it — a
+    // tinted slab over nothing reads as a stain.
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.72)],
-                startPoint: .center, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.72)],
+                    startPoint: .center, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 if let name = entry.snapshot.propertyName {
@@ -57,6 +63,7 @@ struct DashboardSmallView: View {
                         .font(AppFont.scaled(13, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                        .widgetAccentable()
                 }
                 HStack(spacing: 10) {
                     miniStat(icon: "checklist",
@@ -78,6 +85,7 @@ struct DashboardSmallView: View {
             Image(systemName: icon)
                 .font(AppFont.scaled(10, weight: .semibold))
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
                 .font(AppFont.scaled(12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
@@ -88,14 +96,17 @@ struct DashboardSmallView: View {
 // MARK: - Medium View
 
 struct DashboardMediumView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.78)],
-                startPoint: .top, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.78)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 if let name = entry.snapshot.propertyName {
@@ -103,6 +114,7 @@ struct DashboardMediumView: View {
                         .font(AppFont.scaled(15, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                        .widgetAccentable()
                 }
 
                 HStack(spacing: 0) {
@@ -136,6 +148,7 @@ struct DashboardMediumView: View {
             Image(systemName: icon)
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
                 .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
@@ -150,6 +163,7 @@ struct DashboardMediumView: View {
 // MARK: - Large View
 
 struct DashboardLargeView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var pendingTasks: [TaskCatalogEntry] {
@@ -162,10 +176,12 @@ struct DashboardLargeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.55), .black.opacity(0.82)],
-                startPoint: .top, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.55), .black.opacity(0.82)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 12) {
                 // Property name + time
@@ -175,6 +191,7 @@ struct DashboardLargeView: View {
                             .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
+                            .widgetAccentable()
                     }
                     Spacer()
                     Text(relativeTime)
@@ -253,6 +270,7 @@ struct DashboardLargeView: View {
             Image(systemName: icon)
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
                 .font(AppFont.title2)
                 .foregroundStyle(.white)
