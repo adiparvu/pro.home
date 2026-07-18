@@ -82,9 +82,11 @@ struct AppliancesView: View {
         }
         if !search.isEmpty {
             list = list.filter {
-                $0.name.localizedCaseInsensitiveContains(search) ||
-                ($0.brand?.localizedCaseInsensitiveContains(search) ?? false) ||
-                ($0.location?.localizedCaseInsensitiveContains(search) ?? false)
+                $0.name.matchesSearch(search) ||
+                ($0.brand ?? "").matchesSearch(search) ||
+                ($0.location ?? "").matchesSearch(search) ||
+                ($0.modelNumber ?? "").matchesSearch(search) ||
+                ApplianceWarrantyPresentation($0).text.matchesSearch(search)
             }
         }
         return sorted(list)

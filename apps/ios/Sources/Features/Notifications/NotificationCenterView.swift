@@ -50,8 +50,18 @@ struct NotificationCenterView: View {
             }
         }
         guard !searchText.isEmpty else { return base }
-        return base.filter {
-            $0.title.matchesSearch(searchText) || ($0.body ?? "").matchesSearch(searchText)
+        return base.filter { n in
+            // Raw DB strings AND the localized display strings the row
+            // actually renders (localizer-translated title/body, module tag,
+            // relative time) — either form must be findable.
+            let haystack: [String] = [
+                n.title, n.body ?? "",
+                ServerNotificationLocalizer.title(n.title),
+                ServerNotificationLocalizer.body(n.body) ?? "",
+                NotificationCategory.forModule(n.module).title,
+                n.timeDisplay
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
 

@@ -148,6 +148,7 @@ struct TasksView: View {
                 || ($0.description ?? "").matchesSearch(searchText)
                 || $0.category.matchesSearch(searchText)
                 || $0.assigneeNames.contains { $0.matchesSearch(searchText) }
+                || (TaskTriage.relativeDueLabel(for: $0) ?? "").matchesSearch(searchText)
         }
     }
 

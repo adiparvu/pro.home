@@ -234,6 +234,8 @@ struct LiveActivitiesHubView: View {
         return hubFold(item.title).contains(query)
             || hubFold(item.detail).contains(query)
             || hubFold(item.kind.searchableTitle).contains(query)
+            || hubFold(item.propertyName ?? "").contains(query)
+            || hubFold(item.startedAt?.formatted(.relative(presentation: .named)) ?? "").contains(query)
     }
 
     /// Auto badge/filter is honest: only kinds that HAVE an auto-start toggle

@@ -20,7 +20,14 @@ struct CurrencyView: View {
     private var filteredCurrencies: [(code: String, name: String, symbol: String)] {
         guard !searchText.isEmpty else { return CurrencyService.supported }
         return CurrencyService.supported.filter {
-            $0.code.matchesSearch(searchText) || $0.name.matchesSearch(searchText)
+            // Rows show the symbol, "CODE — <localized name>" and the rate
+            // line, so match the raw key AND everything actually rendered.
+            let haystack: [String] = [
+                $0.code, $0.name, $0.symbol,
+                String(localized: String.LocalizationValue($0.name)),
+                currencyService.rateDisplay(for: $0.code)
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
     @FocusState private var amountFocused: Bool

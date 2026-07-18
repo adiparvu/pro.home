@@ -20,9 +20,15 @@ struct PlantsView: View {
     }
 
     private func matchesSearch(_ plant: Plant) -> Bool {
-        plant.name.matchesSearch(searchText)
-            || (plant.species ?? "").matchesSearch(searchText)
-            || (plant.notes ?? "").matchesSearch(searchText)
+        let haystack: [String] = [
+            plant.name,
+            plant.species ?? "",
+            plant.notes ?? "",
+            plant.wateringLabel,
+            plant.lastWateredDisplay,
+            plant.healthScore.map(String.init) ?? ""
+        ]
+        return haystack.contains { $0.matchesSearch(searchText) }
     }
 
     var body: some View {

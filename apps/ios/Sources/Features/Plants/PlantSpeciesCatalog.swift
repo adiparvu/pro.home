@@ -178,6 +178,7 @@ struct PlantSpeciesPicker: View {
                 $0.nameEN.matchesSearch(search)
                     || $0.nameRO.matchesSearch(search)
                     || $0.latin.matchesSearch(search)
+                    || waterHint($0.wateringDays).matchesSearch(search)
             }
             return hits.isEmpty ? nil : PlantSpeciesFamily(id: family.id, species: hits)
         }

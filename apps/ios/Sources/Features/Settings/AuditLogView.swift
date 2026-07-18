@@ -12,6 +12,23 @@ struct AuditLogView: View {
             $0.description.matchesSearch(searchText)
                 || $0.type.matchesSearch(searchText)
                 || $0.deviceName.matchesSearch(searchText)
+                || timeString(from: $0.timestamp).matchesSearch(searchText)
+                || Self.dayFormatter.string(from: $0.timestamp).matchesSearch(searchText)
+        }
+    }
+
+    /// The account (server) events the section renders — the newest 10,
+    /// narrowed by the same search the rest of the page honours, over the
+    /// exact text each row displays (title, date, device).
+    private var filteredAccountEvents: [AccountSecurityEvent] {
+        let visible = Array(security.recentEvents.prefix(10))
+        guard !searchText.isEmpty else { return visible }
+        return visible.filter { event in
+            accountEventTitle(event.type).matchesSearch(searchText)
+                || (ISODate.date(from: event.createdAt)?
+                        .formatted(.dateTime.day().month().hour().minute()) ?? "")
+                    .matchesSearch(searchText)
+                || (event.payload?["device_name"] ?? "").matchesSearch(searchText)
         }
     }
 
@@ -25,7 +42,7 @@ struct AuditLogView: View {
                 // Account-level events come from the server journal
                 // (`account_security_events`), so sign-ins and security
                 // changes made on OTHER devices show up here too.
-                if searchText.isEmpty, !security.recentEvents.isEmpty {
+                if !filteredAccountEvents.isEmpty {
                     accountSection
                 }
                 if events.isEmpty {
@@ -80,7 +97,7 @@ struct AuditLogView: View {
                 .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
-                ForEach(Array(security.recentEvents.prefix(10).enumerated()), id: \.element.id) { idx, event in
+                ForEach(Array(filteredAccountEvents.enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
                         Rectangle()
                             .fill(Color.primary.opacity(AppOpacity.hairline))
@@ -128,16 +145,18 @@ struct AuditLogView: View {
         .padding(.vertical, AppSpacing.md)
     }
 
-    private func accountEventTitle(_ type: String) -> LocalizedStringKey {
+    /// Returns a resolved String (not a LocalizedStringKey) so the search
+    /// filter can fold the same text the row displays.
+    private func accountEventTitle(_ type: String) -> String {
         switch type {
-        case "new_device_login":          return "Sign-in on a new device"
-        case "session_revoked":           return "Device removed from sessions"
-        case "password_reset_requested":  return "Password reset requested"
-        case "totp_enabled":              return "Authenticator app enabled"
-        case "totp_disabled":             return "Authenticator app disabled"
-        case "backup_codes_generated":    return "Backup codes generated"
-        case "backup_code_used":          return "A backup code was used"
-        default:                          return "Security event"
+        case "new_device_login":          return String(localized: "Sign-in on a new device")
+        case "session_revoked":           return String(localized: "Device removed from sessions")
+        case "password_reset_requested":  return String(localized: "Password reset requested")
+        case "totp_enabled":              return String(localized: "Authenticator app enabled")
+        case "totp_disabled":             return String(localized: "Authenticator app disabled")
+        case "backup_codes_generated":    return String(localized: "Backup codes generated")
+        case "backup_code_used":          return String(localized: "A backup code was used")
+        default:                          return String(localized: "Security event")
         }
     }
 
@@ -169,10 +188,23 @@ struct AuditLogView: View {
 
     // MARK: - Grouped data
 
+    /// Shared formatters — built once, reused by the day grouping, the rows
+    /// and the search filter (never per element inside a filter closure).
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
     private var groupedByDay: [(String, [AuditLogService.AuditEvent])] {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
+        let formatter = Self.dayFormatter
         var dict: [(String, [AuditLogService.AuditEvent])] = []
         var seen: [String: Int] = [:]
         for event in filteredEvents {
@@ -295,8 +327,6 @@ struct AuditLogView: View {
     }
 
     private func timeString(from date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm"
-        return f.string(from: date)
+        Self.timeFormatter.string(from: date)
     }
 }

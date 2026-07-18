@@ -295,7 +295,13 @@ struct SuppliesView: View {
     @ViewBuilder
     private var urgentSection: some View {
         let urgent = supplyService.items
-            .filter { !$0.isCompleted && ($0.priority == "critical" || $0.priority == "high") && $0.name.matchesSearch(searchText) }
+            .filter { item in
+                guard !item.isCompleted, item.priority == "critical" || item.priority == "high" else { return false }
+                // The compact row shows the item name plus the parent list's
+                // name as its subtitle — both must be findable.
+                return item.name.matchesSearch(searchText)
+                    || (supplyService.lists.first { $0.id == item.listId }?.name ?? "").matchesSearch(searchText)
+            }
             .prefix(5)
         if !urgent.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
@@ -333,8 +339,16 @@ struct SuppliesView: View {
 
     // MARK: - To Buy / Completed tabs
 
+    /// SupplyItemRow displays name, quantity badge and the localized
+    /// location label — search must reach all three.
+    private func matchesItemRowSearch(_ item: SupplyItem) -> Bool {
+        item.name.matchesSearch(searchText)
+            || (item.quantity ?? "").matchesSearch(searchText)
+            || SupplyLocation.displayName(for: item.location ?? "").matchesSearch(searchText)
+    }
+
     private var toBuyContent: some View {
-        let pending = supplyService.items.filter { !$0.isCompleted && $0.name.matchesSearch(searchText) }
+        let pending = supplyService.items.filter { !$0.isCompleted && matchesItemRowSearch($0) }
         return Group {
             if pending.isEmpty && searchText.isEmpty {
                 VStack(spacing: 16) {
@@ -379,7 +393,7 @@ struct SuppliesView: View {
     }
 
     private var completedContent: some View {
-        let done = supplyService.items.filter { $0.isCompleted && $0.name.matchesSearch(searchText) }
+        let done = supplyService.items.filter { $0.isCompleted && matchesItemRowSearch($0) }
         return Group {
             if done.isEmpty && searchText.isEmpty {
                 VStack(spacing: 16) {

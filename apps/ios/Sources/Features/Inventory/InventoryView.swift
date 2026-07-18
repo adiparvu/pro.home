@@ -75,12 +75,23 @@ struct InventoryView: View {
         }
         if let cat = selectedCategory { base = base.filter { $0.category == cat } }
         if let loc = selectedLocation { base = base.filter { $0.location == loc } }
-        base = base.filter {
-            $0.name.matchesSearch(searchText)
-                || $0.brand.matchesSearch(searchText)
-                || $0.serialNumber.matchesSearch(searchText)
-                || $0.category.matchesSearch(searchText)
-                || $0.location.matchesSearch(searchText)
+        if !searchText.isEmpty {
+            base = base.filter { item in
+                var haystack: [String] = [
+                    item.name, item.brand, item.serialNumber,
+                    item.category, item.location,
+                    InventoryLabels.category(item.category),
+                    InventoryLabels.location(item.location),
+                    item.currentLoan?.borrowerName ?? ""
+                ]
+                if item.purchasePrice > 0 {
+                    haystack.append(CurrencyService.money(item.purchasePrice, code: "EUR", whole: true))
+                }
+                if item.warrantyStatus == .expiringSoon, let exp = item.warrantyExpiresAt {
+                    haystack.append(exp.formatted(.dateTime.day().month(.abbreviated)))
+                }
+                return haystack.contains { $0.matchesSearch(searchText) }
+            }
         }
         return sorted(base)
     }

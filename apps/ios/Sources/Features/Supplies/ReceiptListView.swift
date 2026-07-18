@@ -17,7 +17,10 @@ struct ReceiptListView: View {
 
     private var filtered: [Receipt] {
         receiptService.receipts.filter {
-            searchText.isEmpty || $0.storeName.matchesSearch(searchText)
+            searchText.isEmpty
+                || $0.storeName.matchesSearch(searchText)
+                || $0.formattedDate.matchesSearch(searchText)
+                || CurrencyService.money($0.total, code: appSettings.preferredCurrency).matchesSearch(searchText)
         }
     }
 

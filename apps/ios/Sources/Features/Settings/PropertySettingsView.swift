@@ -14,7 +14,8 @@ struct PropertySettingsView: View {
             $0.name.matchesSearch(searchText) ||
             $0.addressLine1.matchesSearch(searchText) ||
             $0.city.matchesSearch(searchText) ||
-            $0.propertyType.matchesSearch(searchText)
+            $0.propertyType.matchesSearch(searchText) ||
+            ($0.healthScore.map(String.init) ?? "").matchesSearch(searchText)
         }
     }
 

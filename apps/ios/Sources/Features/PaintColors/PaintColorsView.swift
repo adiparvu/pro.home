@@ -31,6 +31,7 @@ struct PaintColorsView: View {
             || (color.brand ?? "").matchesSearch(searchText)
             || (color.code ?? "").matchesSearch(searchText)
             || color.roomName.matchesSearch(searchText)
+            || color.finishDisplay.matchesSearch(searchText)
     }
 
     private var sortedRooms: [String] {

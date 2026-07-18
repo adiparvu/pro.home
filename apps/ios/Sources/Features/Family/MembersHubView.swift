@@ -119,14 +119,28 @@ struct MembersHubView: View {
     var filteredAccounts: [AccountMember] {
         accountService.members.filter { account in
             let profile = accountService.profiles[account.userId]
-            return (profile?.bestName ?? "").matchesSearch(searchText)
-                || (profile?.email ?? "").matchesSearch(searchText)
+            let haystack: [String] = [
+                profile?.bestName ?? "",
+                profile?.email ?? "",
+                account.nickname ?? "",          // the row title's fallback
+                account.role,                    // raw role slug
+                accountRoleLabelText(account.role) // the badge the row shows
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
 
     var filteredInvitations: [MemberInvitation] {
-        invitationService.invitations.filter {
-            $0.email.matchesSearch(searchText) || ($0.name ?? "").matchesSearch(searchText)
+        invitationService.invitations.filter { inv in
+            let haystack: [String] = [
+                inv.email,
+                inv.name ?? "",
+                inv.role,                        // raw role slug
+                String(localized: String.LocalizationValue(
+                    kRoleLabels[inv.role] ?? inv.role.capitalized)), // visible label
+                inv.sentDisplay                  // the visible "Sent …" date
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
 

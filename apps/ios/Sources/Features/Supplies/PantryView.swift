@@ -17,7 +17,12 @@ struct PantryView: View {
     @State private var priceHistoryTarget: PriceHistoryTarget? = nil
 
     private var filtered: [PantryItem] {
-        pantryService.items.filter { $0.name.matchesSearch(searchText) }
+        pantryService.items.filter { item in
+            item.name.matchesSearch(searchText)
+                || item.quantityDisplay.matchesSearch(searchText)
+                || (PantryCategory.all.first(where: { $0.id == item.category })?.label ?? "")
+                    .matchesSearch(searchText)
+        }
     }
 
     private var low: [PantryItem] { filtered.filter(\.isLow) }

@@ -60,7 +60,8 @@ extension ChatView {
     private var filteredMessages: [Message] {
         guard showSearch && !searchText.isEmpty else { return visibleMessages }
         return visibleMessages.filter {
-            ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
+            ($0.body ?? "").matchesSearch(searchText)
+                || $0.senderName.matchesSearch(searchText)
         }
     }
 

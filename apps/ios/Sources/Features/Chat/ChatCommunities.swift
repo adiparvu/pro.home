@@ -27,7 +27,9 @@ struct CommunitiesView: View {
     private var filteredGroups: [ChatGroup] {
         guard !searchText.isEmpty else { return service.groups }
         return service.groups.filter {
-            $0.name.matchesSearch(searchText) || $0.kindLabel.matchesSearch(searchText)
+            $0.name.matchesSearch(searchText)
+                || $0.kindLabel.matchesSearch(searchText)
+                || (service.previewLine(for: $0)?.text ?? "").matchesSearch(searchText)
         }
     }
 

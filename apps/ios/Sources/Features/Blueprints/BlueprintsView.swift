@@ -219,7 +219,9 @@ struct BlueprintsView: View {
     // MARK: - Grid
 
     private var filteredScans: [HomeScan] {
-        service.scans.filter { $0.name.matchesSearch(searchText) }
+        service.scans.filter {
+            $0.name.matchesSearch(searchText) || $0.kindLabel.matchesSearch(searchText)
+        }
     }
 
     private var scansGrid: some View {

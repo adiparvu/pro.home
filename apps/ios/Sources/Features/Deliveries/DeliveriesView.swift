@@ -20,9 +20,15 @@ struct DeliveriesView: View {
     }
 
     private func matchesSearch(_ delivery: Delivery) -> Bool {
-        delivery.description.matchesSearch(searchText)
-            || (delivery.carrier ?? "").matchesSearch(searchText)
-            || (delivery.trackingNumber ?? "").matchesSearch(searchText)
+        let haystack: [String] = [
+            delivery.description,
+            delivery.carrier ?? "",
+            delivery.trackingNumber ?? "",
+            delivery.statusLabel,          // already-localized status pill
+            delivery.liveStatusLabel ?? "",
+            delivery.etaDisplay ?? ""
+        ]
+        return haystack.contains { $0.matchesSearch(searchText) }
     }
 
     var body: some View {

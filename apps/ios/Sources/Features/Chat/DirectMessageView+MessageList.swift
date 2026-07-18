@@ -12,7 +12,7 @@ extension DirectMessageView {
         // Searching scans the whole conversation; browsing renders only the
         // most-recent window so a long history doesn't build thousands of rows.
         guard !q.isEmpty else { return Array(all.suffix(visibleCount)) }
-        return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
+        return all.filter { $0.body.matchesSearch(q) }
     }
 
     /// What the peer is doing right now (nil = idle). Recording wins over

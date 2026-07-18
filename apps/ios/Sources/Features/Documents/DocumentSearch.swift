@@ -56,7 +56,8 @@ enum DocumentSearch {
             d.issuerCompany, d.issuerContact, d.issuerPhone, d.issuerEmail, d.issuerWebsite,
             d.clientNumber, d.docNumber, d.series, d.contractCode, d.clientCode,
             d.fiscalCode, d.policyNumber, d.barcode,
-            d.ocrText
+            d.ocrText,
+            d.fileSizeDisplay, d.expiresDisplay
         ]
         parts.append(contentsOf: d.tags.map { Optional($0) })
         return parts.compactMap { $0 }.joined(separator: " ")

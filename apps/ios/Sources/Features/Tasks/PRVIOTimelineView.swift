@@ -48,7 +48,9 @@ struct PRVIOTimelineView: View {
         }
         guard !searchText.isEmpty else { return timed }
         return timed.filter {
-            $0.title.matchesSearch(searchText) || $0.subtitle.matchesSearch(searchText)
+            $0.title.matchesSearch(searchText)
+                || $0.subtitle.matchesSearch(searchText)
+                || $0.timeLabel.matchesSearch(searchText)
         }
     }
 
@@ -243,12 +245,18 @@ struct TimelineEvent: Identifiable {
         return df.string(from: date)
     }
 
+    /// Shared formatter — timeLabel now also runs inside the search filter
+    /// (once per event per keystroke), so it must not allocate per call.
+    private static let shortTimeFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.timeStyle = .short
+        return df
+    }()
+
     var timeLabel: String {
         let cal = Calendar.current
         if cal.isDateInToday(date) || cal.isDateInYesterday(date) {
-            let df = DateFormatter()
-            df.timeStyle = .short
-            return df.string(from: date)
+            return Self.shortTimeFormatter.string(from: date)
         }
         return ""
     }

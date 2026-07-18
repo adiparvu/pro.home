@@ -20,6 +20,24 @@ func accountRoleLabel(_ role: String) -> LocalizedStringKey {
     }
 }
 
+/// Plain-String twin of `accountRoleLabel`, resolved through the same
+/// catalog entries — used by search filters, which must fold the exact
+/// text the role badge displays (LocalizedStringKey cannot be folded).
+func accountRoleLabelText(_ role: String) -> String {
+    switch role {
+    case "owner":            return String(localized: "Owner")
+    case "partner":          return String(localized: "Partner")
+    case "family_adult":     return String(localized: "Member")
+    case "family_teen":      return String(localized: "Teen")
+    case "family_child":     return String(localized: "Child")
+    case "family_elderly":   return String(localized: "Member")
+    case "tenant":           return String(localized: "Tenant")
+    case "service_provider": return String(localized: "Worker")
+    case "guest":            return String(localized: "Guest")
+    default:                 return role.capitalized
+    }
+}
+
 private let kAssignableRoles = ["partner", "family_adult", "family_teen",
                                 "family_child", "family_elderly", "tenant",
                                 "service_provider", "guest"]

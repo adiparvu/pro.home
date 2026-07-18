@@ -51,6 +51,14 @@ struct HubPerson: Identifiable {
         return LocalizedStringKey(kRoleLabels[role] ?? role.capitalized)
     }
 
+    /// The resolved String the role badge displays — the foldable twin of
+    /// `roleLabel`, so search matches what the user actually sees.
+    var roleLabelText: String {
+        if let account { return accountRoleLabelText(account.role) }
+        let role = member?.role ?? ""
+        return String(localized: String.LocalizationValue(kRoleLabels[role] ?? role.capitalized))
+    }
+
     var roleColor: Color { member?.swiftColor ?? Color.accentColor }
 
     /// Destination for "Send message": the durable auth user id when there is
@@ -72,7 +80,16 @@ struct HubPerson: Identifiable {
     }
 
     func matchesSearch(_ text: String) -> Bool {
-        displayName.matchesSearch(text) || (email ?? "").matchesSearch(text)
+        guard !text.isEmpty else { return true }
+        let haystack: [String] = [
+            displayName,
+            email ?? "",
+            account?.role ?? member?.role ?? "",
+            roleLabelText,
+            // The visible "member since <month year>" subtitle.
+            joinedDate.map { $0.formatted(.dateTime.month(.wide).year()) } ?? ""
+        ]
+        return haystack.contains { $0.matchesSearch(text) }
     }
 }
 

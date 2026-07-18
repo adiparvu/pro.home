@@ -16,10 +16,18 @@ struct TenantManagementView: View {
     private var tenants: [FamilyMember] {
         let base = familyService.members.filter { $0.role == "tenant" }
         guard !searchText.isEmpty else { return base }
-        return base.filter {
-            $0.name.matchesSearch(searchText)
-                || ($0.email ?? "").matchesSearch(searchText)
-                || ($0.phone ?? "").matchesSearch(searchText)
+        return base.filter { tenant in
+            let lease = familyService.leases[tenant.id]
+            var haystack = [
+                tenant.name,
+                tenant.email ?? "",
+                tenant.phone ?? "",
+                lease?.rentDisplay ?? "",
+                lease?.endDisplay ?? "",
+                memberSinceLabel(tenant)
+            ]
+            haystack.append(contentsOf: (tenant.socialLinks ?? []).map(\.platformLabel))
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
 

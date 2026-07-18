@@ -540,7 +540,10 @@ private struct ApplianceAttachDocumentSheet: View {
     private var candidates: [DocumentModel] {
         var docs = documentService.documents.filter { !alreadyLinked.contains($0.id) }
         if !search.isEmpty {
-            docs = docs.filter { $0.name.localizedCaseInsensitiveContains(search) }
+            docs = docs.filter {
+                $0.name.matchesSearch(search)
+                    || DocumentTypeDisplay.name($0.category).matchesSearch(search)
+            }
         }
         return docs
     }

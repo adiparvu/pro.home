@@ -221,6 +221,9 @@ struct FinancesView: View {
             $0.title.matchesSearch(searchText)
                 || $0.category.matchesSearch(searchText)
                 || ($0.description ?? "").matchesSearch(searchText)
+                || $0.dateFormatted.matchesSearch(searchText)
+                || currencyService.formatted($0.amount, from: $0.currency, preferred: preferred)
+                    .matchesSearch(searchText)
         }
 
         Group {

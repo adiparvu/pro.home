@@ -17,7 +17,10 @@ struct SupplyListDetailView: View {
 
     private var filtered: [SupplyItem] {
         listItems.filter { item in
-            let matchSearch = searchText.isEmpty || item.name.localizedCaseInsensitiveContains(searchText)
+            let matchSearch = searchText.isEmpty
+                || item.name.matchesSearch(searchText)
+                || (item.quantity ?? "").matchesSearch(searchText)
+                || SupplyLocation.displayName(for: item.location ?? "").matchesSearch(searchText)
             let matchCat = selectedCategory == nil || item.category == selectedCategory
             return matchSearch && matchCat
         }

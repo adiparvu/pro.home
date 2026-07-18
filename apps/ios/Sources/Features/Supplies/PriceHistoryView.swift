@@ -25,7 +25,12 @@ struct PriceHistoryView: View {
     private var groups: [ProductPriceGroup] {
         let all = receiptService.productPriceGroups()
         guard !searchText.isEmpty else { return all }
-        return all.filter { $0.name.matchesSearch(searchText) }
+        return all.filter { group in
+            group.name.matchesSearch(searchText)
+                || (group.entries.first.map {
+                    CurrencyService.money($0.price, code: appSettings.preferredCurrency)
+                } ?? "").matchesSearch(searchText)
+        }
     }
 
     var body: some View {

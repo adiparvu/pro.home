@@ -48,12 +48,14 @@ struct ObjectsListView: View {
         case .categories:
             if let cat = categoryFilter { items = items.filter { $0.elementType.category == cat } }
         }
-        let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        let q = searchText.trimmingCharacters(in: .whitespaces)
         if !q.isEmpty {
             items = items.filter { el in
-                let fields = [el.name, el.brand, el.model, el.serialNumber, el.notes, el.elementType.displayName]
+                let fields = [el.name, el.brand, el.model, el.serialNumber, el.notes,
+                              el.elementType.displayName, zoneName(for: el),
+                              String(el.healthScore)]
                     .compactMap { $0 } + el.tags
-                return fields.contains { $0.lowercased().contains(q) }
+                return fields.contains { $0.matchesSearch(q) }
             }
         }
         return items

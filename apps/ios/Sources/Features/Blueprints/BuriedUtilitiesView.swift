@@ -17,6 +17,8 @@ struct BuriedUtilitiesView: View {
             $0.name.matchesSearch(searchText)
                 || $0.typeLabel.matchesSearch(searchText)
                 || $0.notes.matchesSearch(searchText)
+                || $0.depthDisplay.matchesSearch(searchText)
+                || $0.lengthDisplay.matchesSearch(searchText)
         }
     }
 

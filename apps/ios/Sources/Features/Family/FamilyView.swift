@@ -20,10 +20,15 @@ struct FamilyView: View {
 
     private var filteredMembers: [FamilyMember] {
         guard !searchText.isEmpty else { return familyMembers }
-        return familyMembers.filter {
-            $0.name.matchesSearch(searchText)
-                || $0.role.matchesSearch(searchText)
-                || ($0.email ?? "").matchesSearch(searchText)
+        return familyMembers.filter { member in
+            var haystack = [member.name, member.role, member.roleLabel, member.email ?? ""]
+            if let bd = member.birthdayDate {
+                let comps = Calendar.current.dateComponents([.month, .day], from: bd)
+                if let d = comps.day, let m = comps.month {
+                    haystack.append("\(d)/\(m)")   // the visible "🎂 d/m" badge
+                }
+            }
+            return haystack.contains { $0.matchesSearch(searchText) }
         }
     }
 
