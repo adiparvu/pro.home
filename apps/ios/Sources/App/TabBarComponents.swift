@@ -34,8 +34,9 @@ enum AppTab: String, CaseIterable {
         }
     }
 
-    /// The tab's single-word HIG label — part of standard tab anatomy and
-    /// the tab's VoiceOver name (MainTabView renders `Label(label, icon)`).
+    /// The tab's single-word name — VOICEOVER ONLY (user-decreed): the bar
+    /// shows icons without visible labels; MainTabView attaches this as the
+    /// accessibility label so the tabs still speak their names.
     var label: String {
         switch self {
         case .home:        return String(localized: "Home")

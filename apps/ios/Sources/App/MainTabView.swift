@@ -69,19 +69,19 @@ struct MainTabView: View {
                         }
                     }
                 }
-                .tabItem { Label(AppTab.home.label, systemImage: AppTab.home.icon) }
+                .tabItem { Image(systemName: AppTab.home.icon).accessibilityLabel(Text(verbatim: AppTab.home.label)) }
                 .tag(AppTab.home)
             }
 
             if visibleTabs.contains(.digitalTwin) {
                 NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
-                    .tabItem { Label(AppTab.digitalTwin.label, systemImage: AppTab.digitalTwin.icon) }
+                    .tabItem { Image(systemName: AppTab.digitalTwin.icon).accessibilityLabel(Text(verbatim: AppTab.digitalTwin.label)) }
                     .tag(AppTab.digitalTwin)
             }
 
             if visibleTabs.contains(.tasks) {
                 NavigationStack(path: path(for: .tasks)) { routedRoot { TasksView() } }
-                    .tabItem { Label(AppTab.tasks.label, systemImage: AppTab.tasks.icon) }
+                    .tabItem { Image(systemName: AppTab.tasks.icon).accessibilityLabel(Text(verbatim: AppTab.tasks.label)) }
                     .tag(AppTab.tasks)
                     .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
             }
@@ -99,11 +99,11 @@ struct MainTabView: View {
                         .environment(router)
                 }
             }
-            .tabItem { Label(AppTab.chat.label, systemImage: AppTab.chat.icon) }
+            .tabItem { Image(systemName: AppTab.chat.icon).accessibilityLabel(Text(verbatim: AppTab.chat.label)) }
             .tag(AppTab.chat)
 
             NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
-                .tabItem { Label(AppTab.settings.label, systemImage: AppTab.settings.icon) }
+                .tabItem { Image(systemName: AppTab.settings.icon).accessibilityLabel(Text(verbatim: AppTab.settings.label)) }
                 .tag(AppTab.settings)
         }
         // System minimize-on-scroll (iOS 26+); the isHidden toolbar line
