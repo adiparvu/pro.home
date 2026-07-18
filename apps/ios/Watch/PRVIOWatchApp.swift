@@ -50,6 +50,8 @@ extension TimeInterval {
 
 enum WatchCrashRecorder {
     fileprivate static let key = "prvio.watch.lastCrash"
+    fileprivate static let launchKey = "prvio.watch.launchInFlight"
+    fileprivate static let deathCountKey = "prvio.watch.launchDeathCount"
 
     static func arm() {
         NSSetUncaughtExceptionHandler { exception in
@@ -58,6 +60,37 @@ enum WatchCrashRecorder {
             (UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard)
                 .set(text, forKey: WatchCrashRecorder.key)
         }
+    }
+
+    /// Launch breadcrumb — the NSException handler is blind to watchdog
+    /// kills and hard (signal) crashes, which is exactly the "never opens"
+    /// class. A sentinel set here and cleared only by the first rendered
+    /// frame means: still present at the NEXT launch → the previous launch
+    /// died silently. Counted, and synthesized into a report when the
+    /// exception handler captured nothing, so the phone card names even
+    /// the deaths it cannot see. (A death BEFORE this line — dyld/launch
+    /// loader — stays invisible to the app; only the system .ips has it.)
+    static func beginLaunch() {
+        let defaults = UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+        if defaults.bool(forKey: launchKey) {
+            let died = defaults.integer(forKey: deathCountKey) + 1
+            defaults.set(died, forKey: deathCountKey)
+            if defaults.string(forKey: key) == nil {
+                defaults.set(
+                    "Launch died before first frame ×\(died) — no exception captured "
+                    + "(watchdog kill or hard crash). The system .ips report has the cause.",
+                    forKey: key)
+            }
+        }
+        defaults.set(true, forKey: launchKey)
+    }
+
+    /// The first frame rendered — this launch survived; clear the sentinel
+    /// so a later clean exit is never miscounted as a death.
+    static func firstFrameRendered() {
+        let defaults = UserDefaults(suiteName: SharedDataStore.suiteName) ?? .standard
+        defaults.set(false, forKey: launchKey)
+        defaults.removeObject(forKey: deathCountKey)
     }
 
     static func peek() -> String? {
@@ -103,6 +136,7 @@ final class WatchStore: NSObject, WCSessionDelegate, UNUserNotificationCenterDel
         super.init()
         // Forensics FIRST — everything after this line is a crash suspect.
         WatchCrashRecorder.arm()
+        WatchCrashRecorder.beginLaunch()
         lastCrashNote = WatchCrashRecorder.peek()
         // Render instantly from the last delivery, then refresh live.
         // sanitizedForRender: a cached payload with duplicate row identities

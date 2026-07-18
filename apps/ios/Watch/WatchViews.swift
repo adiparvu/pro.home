@@ -128,26 +128,32 @@ struct WatchRootView: View {
             .contains("com.prvio.page") == true
 
     var body: some View {
-        if let payload = store.payload {
-            pages(payload)
-                .tabViewStyle(.verticalPage)
-                // One atmosphere for every page ground (moodPageGround reads
-                // it); nil until the phone delivers a mood with the payload.
-                .environment(\.watchMood, store.mood)
-                .onOpenURL { url in
-                    // Complication taps: prvio://tasks, prvio://plants, …
-                    switch url.host {
-                    case "tasks":                  selection = .tasks
-                    case "plants":                 selection = .plants
-                    case "shopping", "supplies":   selection = .shopping
-                    case "pantry":                 selection = .pantry
-                    case "deliveries", "packages": selection = .deliveries
-                    default:                       selection = .today
+        Group {
+            if let payload = store.payload {
+                pages(payload)
+                    .tabViewStyle(.verticalPage)
+                    // One atmosphere for every page ground (moodPageGround reads
+                    // it); nil until the phone delivers a mood with the payload.
+                    .environment(\.watchMood, store.mood)
+                    .onOpenURL { url in
+                        // Complication taps: prvio://tasks, prvio://plants, …
+                        switch url.host {
+                        case "tasks":                  selection = .tasks
+                        case "plants":                 selection = .plants
+                        case "shopping", "supplies":   selection = .shopping
+                        case "pantry":                 selection = .pantry
+                        case "deliveries", "packages": selection = .deliveries
+                        default:                       selection = .today
+                        }
                     }
-                }
-        } else {
-            waiting
+            } else {
+                waiting
+            }
         }
+        // The launch breadcrumb's other half: a committed first frame means
+        // this launch SURVIVED — a sentinel still set at the next launch is
+        // therefore a death the exception handler couldn't see.
+        .onAppear { WatchCrashRecorder.firstFrameRendered() }
     }
 
     @ViewBuilder
