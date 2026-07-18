@@ -31,6 +31,21 @@ struct YearInReviewView: View {
     @State private var shareURLs: [URL] = []
     @State private var showWrapped = false
 
+    // Stretchy-hero chrome — the property page's edge-to-edge presentation
+    // (user-decreed, IMG_8599): same StretchyHeroHeader, same hidden system
+    // bar + materializing compact bar.
+    /// 0…1 — how far the compact inline bar has materialized.
+    @State private var heroBarProgress: CGFloat = 0
+    /// Measured status-bar + navigation-bar height; the compact bar's frame.
+    @State private var heroTopInset: CGFloat = 0
+
+    private static let heroScrollSpace = "yearHeroScroll"
+    private static let heroHeight: CGFloat = 280
+    private static let compactBarStripHeight: CGFloat = 44
+    /// The year identity lives INSIDE the hero, so the bar materializes the
+    /// moment the hero's bottom edge slides under the bar (gap 0).
+    private static let heroBarFadeDistance: CGFloat = 28
+
     // MARK: Synthesis (all from this home's data)
 
     private var builder: YearStoryBuilder {
@@ -60,28 +75,51 @@ struct YearInReviewView: View {
     var body: some View {
         let story = builder.build(year: selectedYear)
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+            VStack(spacing: 0) {
                 heroHeader
-                statGrid(story)
-                if story.hasAnyData {
-                    wrappedButton
+                VStack(spacing: 20) {
+                    statGrid(story)
+                    if story.hasAnyData {
+                        wrappedButton
+                    }
+                    if story.months.contains(where: { $0.total > 0 }) {
+                        YearActivityStrip(
+                            months: story.months,
+                            monthSymbols: monthSymbols,
+                            moneyDisplay: { moneyDisplay($0, code: story.expenseCurrency) }
+                        )
+                    }
+                    storySection(story)
+                    Spacer(minLength: 90)
                 }
-                if story.months.contains(where: { $0.total > 0 }) {
-                    YearActivityStrip(
-                        months: story.months,
-                        monthSymbols: monthSymbols,
-                        moneyDisplay: { moneyDisplay($0, code: story.expenseCurrency) }
-                    )
-                }
-                storySection(story)
-                Spacer(minLength: 90)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.top, AppSpacing.md)
         }
+        .coordinateSpace(name: Self.heroScrollSpace)
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Year of Your Home")
+        // Edge-to-edge hero, exactly the property page's chrome: content
+        // starts at the very top of the screen, the system bar draws no
+        // background, and a compact bar materializes at the threshold.
+        .ignoresSafeArea(edges: .top)
+        // LOOP GUARD (same as PropertyDetailView): the inset is measured
+        // mid-layout; absorb sub-point jitter and land writes in their own
+        // main-queue turn so a geometry↔state oscillation can't livelock.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.safeAreaInsets.top
+        } action: { inset in
+            guard abs(inset - heroTopInset) > 0.5 else { return }
+            Task { @MainActor in
+                if abs(inset - heroTopInset) > 0.5 { heroTopInset = inset }
+            }
+        }
+        .overlay(alignment: .top) { compactBar }
+        .onPreferenceChange(StretchyHeroBottomEdgeKey.self) { bottom in
+            updateHeroBarProgress(heroBottom: bottom)
+        }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { optionsButton }
         }
@@ -144,21 +182,45 @@ struct YearInReviewView: View {
     // MARK: - Hero
 
     private var heroHeader: some View {
-        ZStack(alignment: .bottomLeading) {
-            Group {
-                if let ui = UIImage(named: "aerial_property") {
-                    Image(uiImage: ui).resizable().scaledToFill()
-                } else {
-                    LinearGradient(colors: [Color.brandPurple, Color.brandPrimaryBlue],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                }
+        StretchyHeroHeader(height: Self.heroHeight,
+                           scrollSpace: Self.heroScrollSpace) {
+            heroMedia
+        } overlay: {
+            heroOverlay
+        }
+    }
+
+    /// The stretchable photo layer — sized, clipped, stretched, receded and
+    /// dimmed by the hero; keep it free of text.
+    private var heroMedia: some View {
+        Group {
+            if let ui = UIImage(named: "aerial_property") {
+                Image(uiImage: ui).resizable().scaledToFill()
+            } else {
+                LinearGradient(colors: [Color.brandPurple, Color.brandPrimaryBlue],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
             }
-            .frame(height: 180)
-            .clipped()
-            .overlay(
-                LinearGradient(colors: [.clear, .black.opacity(0.55)],
-                               startPoint: .center, endPoint: .bottom)
-            )
+        }
+        .overlay(alignment: .top) {
+            // Status-bar/toolbar legibility over bright skies — pinned to the
+            // photo's visual top, exactly the property page's crown.
+            LinearGradient(colors: [.black.opacity(0.28), .clear],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 90)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// The year identity, pinned to the hero's resting bounds — never
+    /// stretched, receded, or dimmed.
+    private var heroOverlay: some View {
+        ZStack(alignment: .bottomLeading) {
+            LinearGradient(colors: [.clear, .black.opacity(0.55)],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 140)
+                .frame(maxWidth: .infinity)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .allowsHitTesting(false)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: String(selectedYear))
@@ -169,12 +231,55 @@ struct YearInReviewView: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
             }
-            .padding(AppSpacing.base)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.base)
         }
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-            .strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
-        .shadow(color: .black.opacity(0.3), radius: 16, y: 5)
+    }
+
+    // MARK: Compact inline bar (the property page's TestFlight transition)
+
+    private var compactBar: some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(.bar)
+            Text("Year of Your Home")
+                .font(AppFont.headline)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                // Clearance for the floating back/options buttons on top.
+                .padding(.horizontal, 72)
+                .frame(height: Self.compactBarStripHeight)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.hairline).frame(height: 0.5)
+        }
+        .frame(height: heroTopInset)
+        .frame(maxWidth: .infinity)
+        .ignoresSafeArea(edges: .top)
+        .opacity(heroBarProgress)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Same transaction-break discipline as PropertyDetailView: preference
+    /// handlers never write state back into the pass that produced it.
+    private func updateHeroBarProgress(heroBottom: CGFloat) {
+        guard heroTopInset > 0 else {
+            if heroBarProgress != 0 {
+                Task { @MainActor in
+                    if heroBarProgress != 0 { heroBarProgress = 0 }
+                }
+            }
+            return
+        }
+        let raw = (heroTopInset - heroBottom) / Self.heroBarFadeDistance
+        let clamped = min(max(raw, 0), 1)
+        let next = reduceMotion
+            ? (clamped < 0.5 ? 0 : 1)
+            : (clamped * 50).rounded() / 50
+        guard next != heroBarProgress else { return }
+        Task { @MainActor in
+            if heroBarProgress != next { heroBarProgress = next }
+        }
     }
 
     // MARK: - Numbers
