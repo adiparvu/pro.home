@@ -84,7 +84,9 @@ struct MainTabView: View {
 
             if visibleTabs.contains(.tasks) {
                 NavigationStack(path: path(for: .tasks)) { routedRoot { TasksView() } }
-                    .tabItem { Image(systemName: AppTab.tasks.icon).accessibilityLabel(Text(verbatim: AppTab.tasks.label)) }
+                    // Threads-style plus (user-decreed, IMG_8596) — thick
+                    // round-capped strokes, template vector PDF in Assets.
+                    .tabItem { Image("ThreadsPlus").accessibilityLabel(Text(verbatim: AppTab.tasks.label)) }
                     .tag(AppTab.tasks)
                     .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
             }
@@ -106,7 +108,9 @@ struct MainTabView: View {
             .tag(AppTab.chat)
 
             NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
-                .tabItem { Image(systemName: AppTab.settings.icon).accessibilityLabel(Text(verbatim: AppTab.settings.label)) }
+                // Threads-style outlined person (user-decreed, IMG_8597) —
+                // stroked head circle + shoulders arc, template vector PDF.
+                .tabItem { Image("ThreadsPerson").accessibilityLabel(Text(verbatim: AppTab.settings.label)) }
                 .tag(AppTab.settings)
         }
         // System minimize-on-scroll (iOS 26+); the isHidden toolbar line
