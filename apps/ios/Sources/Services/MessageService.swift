@@ -214,6 +214,22 @@ final class MessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, groupId: UUID? = nil) async {
+        // UNSTRUCTURED on purpose (field log 11:49:33 → chan:none on a
+        // connected socket): the open-thread `.task` that calls this dies
+        // with the view (or an id change), and a cancellation landing
+        // BETWEEN the teardown and the join tore the old channel down and
+        // never joined the new one — the CancellationError catch read it as
+        // "superseded", but no successor existed, so live delivery sat dead
+        // for the whole 30s rebuild backoff. An unstructured task does not
+        // inherit the caller's cancellation: teardown + join complete as
+        // one atomic unit no matter what happens to the view.
+        let work = Task { @MainActor [weak self] in
+            await self?.performSubscribeRealtime(propertyId: propertyId, groupId: groupId)
+        }
+        await work.value
+    }
+
+    private func performSubscribeRealtime(propertyId: UUID, groupId: UUID?) async {
         // Idempotent ONLY for the same conversation scope on a genuinely live
         // channel. Two real-world failures hid behind the old `!= nil` check:
         // a community thread opened after the main chat kept coasting on the

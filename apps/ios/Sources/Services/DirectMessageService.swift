@@ -659,6 +659,18 @@ final class DirectMessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
+        // UNSTRUCTURED on purpose — the same cancellation hole as the group
+        // channel (see MessageService.subscribeRealtime): a view `.task`
+        // dying between the teardown and the join left the DM channel torn
+        // down and never rejoined. The unstructured unit completes
+        // teardown + join atomically regardless of the caller's fate.
+        let work = Task { @MainActor [weak self] in
+            await self?.performSubscribeRealtime(propertyId: propertyId, myName: myName)
+        }
+        await work.value
+    }
+
+    private func performSubscribeRealtime(propertyId: UUID, myName: String) async {
         // Idempotent: already GENUINELY live for this property → keep it
         // (don't let a navigation push/pop tear down the channel while a
         // thread is open). The status check matters: a channel whose initial

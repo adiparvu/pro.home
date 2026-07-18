@@ -547,3 +547,24 @@ extension View {
         modifier(ChatAtBottomModifier(threshold: threshold, update: update))
     }
 }
+
+// MARK: - Bottom-anchored transcript (iOS 18)
+
+/// Keeps a chat transcript glued to its newest message while the content's
+/// height settles — iOS 18's size-change scroll anchor, the system-native
+/// cure for the "opens at the last message, hops, then comes back" entry
+/// jump: the lazy rows' estimated first-pass heights change under the
+/// viewport and the system re-anchors the bottom edge itself, so no
+/// corrective `scrollTo` is needed (or visible). The anchor only holds
+/// while the reader IS at the bottom — up-thread reading is untouched.
+/// Pre-18, the manual entry snap + re-assert remains the fallback.
+struct ChatBottomAnchored: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.defaultScrollAnchor(.bottom, for: .sizeChanges)
+        } else {
+            content
+        }
+    }
+}

@@ -396,6 +396,10 @@ extension DirectMessageView {
                         .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: conversationMessages.count)
                     }
                     .defaultScrollAnchor(.bottom)
+                    // iOS 18+: the SYSTEM holds the bottom edge while row
+                    // heights settle — retires the entry hop
+                    // (see ChatBottomAnchored).
+                    .modifier(ChatBottomAnchored())
                     .scrollDismissesKeyboard(.immediately)
                     // Live at-bottom detection (iOS 18+): drives auto-follow
                     // and the jump button from real viewport geometry instead
@@ -425,19 +429,19 @@ extension DirectMessageView {
                         // who has scrolled up). Deferred so the lazy rows lay out
                         // first. Mirrors the group chat's `!chatDidLoad` snap.
                         guard !chatDidLoad else { return }
-                        DispatchQueue.main.async {
-                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                        }
-                        // LazyVStack estimates row heights on the first pass,
-                        // so the entry snap can land with the newest bubble
-                        // half-hidden behind the composer (IMG_8284). Once
-                        // real layout settles, re-assert the anchor — a no-op
-                        // when the first pass already landed; skipped if the
-                        // reader has already scrolled up-thread.
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.45))
-                            if !chatDidLoad || isAtBottom {
+                        // iOS 18+: ChatBottomAnchored's size-change anchor
+                        // already rests on and holds the newest message —
+                        // the manual snap + re-assert is the pre-18 path
+                        // (estimated first-pass heights land short, IMG_8284).
+                        if #unavailable(iOS 18.0) {
+                            DispatchQueue.main.async {
                                 proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                            }
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .seconds(0.45))
+                                if !chatDidLoad || isAtBottom {
+                                    proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                                }
                             }
                         }
                     }
@@ -458,17 +462,21 @@ extension DirectMessageView {
                         guard appended else { return }
                         let isOwnLatest = conversationMessages.last?.isMine(myUserId: directMessageService.myUserId, myName: myName) == true
                         if !chatDidLoad {
-                            // Entry batches: snap straight to the bottom rest,
-                            // then re-assert once the lazy rows take their real
-                            // heights — the estimated first pass lands short.
-                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
-                            scroll.setJumpToLatest(false)
-                            Task { @MainActor in
-                                try? await Task.sleep(for: .seconds(0.45))
-                                if !chatDidLoad || isAtBottom {
-                                    proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                            // Entry batches: on iOS 18+ the size-change
+                            // anchor (ChatBottomAnchored) holds the bottom
+                            // while the lazy rows take their real heights —
+                            // no corrective jump. Pre-18 keeps the manual
+                            // snap + re-assert (first pass lands short).
+                            if #unavailable(iOS 18.0) {
+                                proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .seconds(0.45))
+                                    if !chatDidLoad || isAtBottom {
+                                        proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                                    }
                                 }
                             }
+                            scroll.setJumpToLatest(false)
                         } else if isAtBottom || isOwnLatest {
                             // Follow new messages only when already at the
                             // bottom or when we sent it ourselves — never yank

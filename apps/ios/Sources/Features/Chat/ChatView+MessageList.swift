@@ -494,6 +494,9 @@ extension ChatView {
                 .animation(animateMessageDelta ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
+            // iOS 18+: the SYSTEM holds the bottom edge while row heights
+            // settle — retires the entry hop (see ChatBottomAnchored).
+            .modifier(ChatBottomAnchored())
             .scrollDismissesKeyboard(.immediately)
             // Live at-bottom detection (iOS 18+): drives auto-follow and the
             // jump button from real viewport geometry instead of the
@@ -562,19 +565,22 @@ extension ChatView {
                     == supabase.auth.currentSession?.user.id
                 if appended {
                     if !chatDidLoad {
-                        // Entry batches: snap straight to the bottom rest,
-                        // then re-assert once the lazy rows take their real
-                        // heights — the estimated first pass can leave the
-                        // newest bubble half-hidden behind the composer
-                        // (IMG_8284).
-                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                        scroll.hide()
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.45))
-                            if !chatDidLoad || isAtBottom {
-                                proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                        // Entry batches: on iOS 18+ the size-change anchor
+                        // (ChatBottomAnchored) holds the bottom while the
+                        // lazy rows take their real heights — no corrective
+                        // jump, so the visible hop-then-settle is gone. The
+                        // manual snap + re-assert stays as the pre-18 path
+                        // (the estimated first pass lands short, IMG_8284).
+                        if #unavailable(iOS 18.0) {
+                            proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .seconds(0.45))
+                                if !chatDidLoad || isAtBottom {
+                                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                                }
                             }
                         }
+                        scroll.hide()
                     } else if isAtBottom || ownLatest {
                         // Follow new messages only when already at the bottom
                         // or when we sent it — never yank a reader up-thread.
