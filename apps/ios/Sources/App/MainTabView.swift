@@ -117,8 +117,9 @@ struct MainTabView: View {
                 .tabItem { Image("ThreadsPerson").accessibilityLabel(Text(verbatim: AppTab.settings.label)) }
                 .tag(AppTab.settings)
         }
-        // System minimize-on-scroll (iOS 26+); the isHidden toolbar line
-        // stays for the one FULL hide — an open conversation (ChatView).
+        // Always-visible bar (user-decreed — no minimize, no scroll hide);
+        // the isHidden toolbar line stays for the one FULL hide — an open
+        // conversation (ChatView).
         .modifier(SystemTabBarMinimize())
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
         .fullScreenCover(item: $router.activeCover,

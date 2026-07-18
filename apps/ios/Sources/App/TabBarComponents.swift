@@ -69,18 +69,19 @@ enum AppTab: String, CaseIterable {
     }
 }
 
-// MARK: - System minimize-on-scroll (WWDC26)
+// MARK: - Tab bar visibility policy (user-decreed: always visible)
 
-/// Minimize-on-scroll is a SYSTEM behavior on iOS 26+ — the tab bar shrinks
-/// on downward scrolling and restores on a tab tap or scroll-to-top, with
-/// the system's own Liquid Glass morph. Earlier OSes simply keep the bar
-/// static (the standard pre-26 anatomy) — the hand-rolled Instagram-style
-/// tracker this replaces was the imitation anti-pattern.
+/// The bar NEVER minimizes or hides on scroll (user verdict over both the
+/// system's minimize-on-scroll and the old Instagram-style zoom-out, which
+/// was deleted in 1082 as the imitation anti-pattern). Explicit `.never`
+/// rather than relying on `.automatic`, so no OS default can ever shrink
+/// it. The one full hide — an open conversation — stays on
+/// `TabBarVisibility.isHidden`.
 struct SystemTabBarMinimize: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.tabBarMinimizeBehavior(.onScrollDown)
+            content.tabBarMinimizeBehavior(.never)
         } else {
             content
         }
