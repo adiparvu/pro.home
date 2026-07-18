@@ -84,11 +84,12 @@ older iOS convention disagree, always choose the newest.
   Use `GlassDrillMenu` (Components/GlassDrillMenu.swift) for pages with 4+
   facets; flat sections stay the default for 2–3 groups. Keep a submenu to
   roughly five options (HIG) — beyond that, prefer flat sections.
-- The ONE sanctioned exception: content a menu cannot host (a search
-  field, avatar rows — Activity's People section). That page passes
-  `richContent: true`, which keeps the popover presentation (arrowless,
-  glass card via `GlassMenuChrome`, action mailbox, measured-once height).
-  Do not add new rich popovers without exhausting the native menu first.
+- NO exceptions (user-decreed, IMG_8593): every page presents the native
+  `Menu` — the `richContent` popover path has zero users and stays
+  dormant. Content that "doesn't fit a menu" gets rethought until it
+  does (Activity's People section became plain single-select options;
+  search fields and avatars are not menu anatomy), or it moves onto the
+  page — it never resurrects the custom popover.
 
 ### Headers — no borders, ever (permanent, user-decreed)
 

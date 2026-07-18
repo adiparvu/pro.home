@@ -20,9 +20,11 @@ import UIKit
 //  • destructive actions carry the real `ButtonRole.destructive`;
 //  • counts/badges are not menu anatomy — they stay on page content.
 //
-// One sanctioned exception: content a menu cannot host (a search field, avatar
-// rows — Activity's People section). That page opts into `richContent`, which
-// keeps the popover presentation and the legacy row rendering below.
+// `richContent` (the legacy popover presentation) has NO users anymore —
+// Activity's People section, its last justification, moved onto native menu
+// options by user decree (IMG_8593): a household roster is short, and search
+// fields/avatars are not menu anatomy. The machinery below stays dormant;
+// do not opt new pages into it.
 
 // MARK: - Rendering mode (native menu vs. rich popover)
 
