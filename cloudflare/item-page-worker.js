@@ -10,27 +10,33 @@
 // back to a friendly generic page instead of 404, because a finder should
 // still learn the item is registered.
 //
-// Bind as environment variables (no secrets in this file):
-//   SUPABASE_URL      = https://<project-ref>.supabase.co
-//   SUPABASE_ANON_KEY = the publishable (anon) key
+// The publishable key is public BY DESIGN (it ships inside the iOS app);
+// only RLS policies guard the data. Env bindings SUPABASE_URL /
+// SUPABASE_ANON_KEY override the defaults when set — nothing to configure
+// for a plain paste-and-deploy.
 // Route: xparvu.com/i/*  — the rest of the zone is untouched.
+
+const DEFAULT_SUPABASE_URL = "https://kwcanenheihuylaymwsl.supabase.co";
+const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_2gO8iM7dBqlbQqCiSTFeLQ_CV-DBgnC";
 
 const UUID_RE = /^\/i\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 export default {
   async fetch(request, env) {
     const match = new URL(request.url).pathname.match(UUID_RE);
+    const base = env?.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+    const key = env?.SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY;
     let item = null;
     if (match) {
       try {
         const r = await fetch(
-          `${env.SUPABASE_URL}/rest/v1/public_items` +
+          `${base}/rest/v1/public_items` +
             `?item_uuid=eq.${match[1]}` +
             `&select=item_name,owner_name,owner_phone,owner_address,property_name`,
           {
             headers: {
-              apikey: env.SUPABASE_ANON_KEY,
-              authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+              apikey: key,
+              authorization: `Bearer ${key}`,
             },
           },
         );
