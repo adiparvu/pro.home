@@ -41,6 +41,16 @@ enum PropertyRepo {
            let rows = try? bootstrapDecoder.decode([T].self, from: data) {
             return rows
         }
+        // A request riding a missing/expired session gets the anon key, and
+        // under RLS that is a SUCCESSFUL response with ZERO rows — which the
+        // services then honestly adopt and persist, poisoning every cache
+        // with [] (the "inventory disappears after each update" field
+        // report: first launch after an update fetches before the token
+        // refresh landed). Refresh-or-throw first: a thrown session error is
+        // a normal load failure (cache kept), and a response that does
+        // arrive is guaranteed to carry the user's claims — so an empty
+        // list is a REAL empty list, never an auth artifact.
+        _ = try await supabase.auth.session
         var query = supabase.from(table).select()
         if let pid = propertyId {
             switch scope {
@@ -116,6 +126,9 @@ enum PropertyRepo {
     static func preloadBootstrap(propertyId: UUID) async {
         struct Params: Encodable { let p_property_id: UUID }
         do {
+            // Same session guard as fetch: an anon-keyed RPC would return
+            // thirteen honest-looking empty slices.
+            _ = try await supabase.auth.session
             let data = try await supabase
                 .rpc("app_bootstrap", params: Params(p_property_id: propertyId))
                 .execute()

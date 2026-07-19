@@ -41,7 +41,12 @@ enum ServiceCache {
         let target = url(entity, propertyId: propertyId)
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(value) else { return }
-            try? data.write(to: target, options: [.atomic, .completeFileProtection])
+            // Until-first-unlock, not Complete: the hydration cache must be
+            // readable on background beats (watch wakes, pushes, prewarm)
+            // with the device locked — Complete made those launches start
+            // empty. Still encrypted at rest until the first unlock after
+            // boot, which is the right class for a read cache.
+            try? data.write(to: target, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         }
     }
 
