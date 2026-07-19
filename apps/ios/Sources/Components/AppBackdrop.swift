@@ -32,8 +32,11 @@ struct AppBackdrop: View {
 
 // MARK: - Shared background
 
-/// The app-wide background every screen layers under its content.
-var appBackground: some View { AppBackdrop() }
+/// The app-wide background every screen layers under its content: the F1
+/// real-time weather stage (user-decreed return, 2026-07-20) — procedural
+/// GPU sky driven by the property's real weather and the real sun. Sheets
+/// keep the flat classic ground (one layer; the IMG_8573 transition lesson).
+var appBackground: some View { WeatherStageView() }
 
 // MARK: - Sheet backdrop
 
