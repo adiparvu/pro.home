@@ -166,9 +166,15 @@ final class InventoryService {
     private func publicAppIconURL() async -> String? {
         let themeId = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         let theme = AppIconCatalog.theme(id: themeId)
-        guard let image = UIImage(named: theme.lightPreview),
+        guard let uid = supabase.auth.currentSession?.user.id.uuidString.lowercased(),
+              let image = UIImage(named: theme.lightPreview),
               let data = image.uploadJPEG(quality: 0.9, maxDimension: 256) else { return nil }
-        let path = "app-icons/\(theme.lightPreview.lowercased()).jpg"
+        // {auth-uid}/{folder} convention on purpose: storage UPSERT needs
+        // INSERT+UPDATE, and the documents UPDATE policy is uid-folder-
+        // scoped — the old root "app-icons/…" path was silently DENIED on
+        // every sync, so no icon ever reached the public page (IMG_8687:
+        // zero objects server-side, app_icon_url null on every row).
+        let path = "\(uid)/app-icons/\(theme.lightPreview.lowercased()).jpg"
         return try? await SignedStorage.uploadPublicImage(data, path: path, upsert: true)
     }
 
