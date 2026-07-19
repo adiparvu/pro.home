@@ -58,7 +58,6 @@ struct EditFamilyMemberSheet: View {
                      error: $saveError,
                      onSave: { Task { await save() } }) {
             avatarPreview
-            colorRow
             fieldsSection
             roleSection
             socialLinksSection
@@ -205,17 +204,8 @@ struct EditFamilyMemberSheet: View {
         HapticFeedback.warning()
     }
 
-    private var colorRow: some View {
-        HStack(spacing: 10) {
-            ForEach(kColors, id: \.self) { c in
-                Button { color = c } label: {
-                    Circle().fill(Color(hex: c) ?? .blue).frame(width: 30, height: 30)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
-                        .scaleEffect(color == c ? 1.15 : 1.0).animation(.spring(response: 0.2), value: color)
-                }.buttonStyle(.plain)
-            }
-        }
-    }
+    // The colour swatch row is gone (IMG_8664): the member's colour is set
+    // once at add time and stays a stable identity — editing keeps it as-is.
 
     private var fieldsSection: some View {
         FormGroup {

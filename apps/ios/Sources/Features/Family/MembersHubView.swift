@@ -291,17 +291,8 @@ struct EditMemberSheet: View {
                         .frame(width: 76, height: 76)
                         .padding(.top, AppSpacing.sm)
 
-                        HStack(spacing: 10) {
-                            ForEach(kColors, id: \.self) { c in
-                                Button { color = c } label: {
-                                    Circle().fill(Color(hex: c) ?? .blue)
-                                        .frame(width: 28, height: 28)
-                                        .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-
+                        // Colour swatches removed (IMG_8664) — the member's
+                        // colour is a stable identity set at add time.
                         VStack(spacing: 0) {
                             editRow(icon: "person.fill", tint: .blue, placeholder: "Name", text: $name)
                             div
