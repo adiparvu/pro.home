@@ -96474,6 +96474,20 @@
           }
         }
       }
+    },
+    "mood_classic_light" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Classic Light" } },
+        "ro" : { "stringUnit" : { "state" : "translated", "value" : "Luminos clasic" } }
+      }
+    },
+    "mood_classic_dark" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Classic Dark" } },
+        "ro" : { "stringUnit" : { "state" : "translated", "value" : "Întunecat clasic" } }
+      }
     }
   },
   "version": "1.0"

@@ -49,8 +49,16 @@ enum AppMood: String, CaseIterable, Identifiable {
     case rain
     case winter
     case event
+    // The pre-atmosphere classics, kept by request (IMG_8622): one flat
+    // light / dark ground, zero light pools, zero atmospheric effects.
+    // Manual picks only — Auto never resolves to them.
+    case classicLight = "classic_light"
+    case classicDark  = "classic_dark"
 
     var id: String { rawValue }
+
+    /// The two flat classics — no accents, no effects, scheme pinned.
+    var isClassic: Bool { self == .classicLight || self == .classicDark }
 
     var titleKey: LocalizedStringKey {
         switch self {
@@ -61,6 +69,8 @@ enum AppMood: String, CaseIterable, Identifiable {
         case .rain:    "mood_rain"
         case .winter:  "mood_winter"
         case .event:   "mood_event"
+        case .classicLight: "mood_classic_light"
+        case .classicDark:  "mood_classic_dark"
         }
     }
 
@@ -75,6 +85,8 @@ enum AppMood: String, CaseIterable, Identifiable {
         case .rain:    String(localized: "mood_rain")
         case .winter:  String(localized: "mood_winter")
         case .event:   String(localized: "mood_event")
+        case .classicLight: String(localized: "mood_classic_light")
+        case .classicDark:  String(localized: "mood_classic_dark")
         }
     }
 
@@ -89,6 +101,8 @@ enum AppMood: String, CaseIterable, Identifiable {
         case .rain:    "🌧️"
         case .winter:  "❄️"
         case .event:   "🎉"
+        case .classicLight: "⬜️"
+        case .classicDark:  "⬛️"
         }
     }
 
@@ -103,6 +117,8 @@ enum AppMood: String, CaseIterable, Identifiable {
         case .rain:    .rain
         case .winter:  .winter
         case .event:   .event
+        case .classicLight: .classicLight
+        case .classicDark:  .classicDark
         }
     }
 

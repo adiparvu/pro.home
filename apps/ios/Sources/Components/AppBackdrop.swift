@@ -47,8 +47,10 @@ struct AppBackdrop: View {
         if let fixed { return fixed }
         let desired = AppMoodEngine.shared.resolved
         switch (desired.palette.colorScheme, colorScheme) {
-        case (.light, .dark): return .night
-        case (.dark, .light): return .day
+        // A mismatched classic substitutes its own classic twin, never an
+        // atmosphere — the user asked for the flat look, keep it flat.
+        case (.light, .dark): return desired.isClassic ? .classicDark : .night
+        case (.dark, .light): return desired.isClassic ? .classicLight : .day
         default:              return desired
         }
     }
@@ -84,8 +86,12 @@ struct AppBackdrop: View {
                                startRadius: 0, endRadius: accent.radius * 0.38)
             }
             if fixed == nil {
-                tone?.wash(for: palette.colorScheme) ?? Color.clear
-                AppBackdropEffectsLayer(mood: mood)
+                // Classics are flat by definition: no weather wash, no live
+                // effects — the whole point of picking one (IMG_8622).
+                if !mood.isClassic {
+                    tone?.wash(for: palette.colorScheme) ?? Color.clear
+                    AppBackdropEffectsLayer(mood: mood)
+                }
             } else {
                 AppBackdropEffectsHint(mood: mood)
             }
@@ -137,8 +143,8 @@ struct AppSheetBackdrop: View {
         // light ground under a dark scheme (or vice versa).
         let desired = AppMoodEngine.shared.resolved
         let mood: AppMood = switch (desired.palette.colorScheme, colorScheme) {
-        case (.light, .dark): .night
-        case (.dark, .light): .day
+        case (.light, .dark): desired.isClassic ? .classicDark : .night
+        case (.dark, .light): desired.isClassic ? .classicLight : .day
         default:              desired
         }
         return LinearGradient(stops: mood.palette.resolvedSkyStops,

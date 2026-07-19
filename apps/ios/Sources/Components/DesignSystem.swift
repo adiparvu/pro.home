@@ -631,6 +631,25 @@ struct AppMoodPalette {
     /// both ≤ 12% so dark glass and white text stay AA and the room reads
     /// elegant, never kitsch. Static like every palette: no animation.
     /// Ground #2A1B2E → #140D18; pools gold #E3B354, magenta #C2478F.
+    /// Luminos clasic — the pre-atmosphere look, kept by request (IMG_8622):
+    /// one clean airy neutral wash, zero light pools, zero effects. Accent =
+    /// the day palette's sky blue #1B6C9C (AA against both stops).
+    static let classicLight = AppMoodPalette(
+        colorScheme: .light,
+        baseTop: Color(red: 0.976, green: 0.976, blue: 0.980),
+        baseBottom: Color(red: 0.941, green: 0.941, blue: 0.949),
+        accents: [],
+        accent: Color(red: 0.106, green: 0.424, blue: 0.612))
+
+    /// Întunecat clasic — deep flat graphite, calm and even. Accent = the
+    /// night palette's ember #E8A45C (≥ 7.8:1 on both stops).
+    static let classicDark = AppMoodPalette(
+        colorScheme: .dark,
+        baseTop: Color(red: 0.071, green: 0.078, blue: 0.098),
+        baseBottom: Color(red: 0.039, green: 0.043, blue: 0.055),
+        accents: [],
+        accent: Color(red: 0.910, green: 0.643, blue: 0.361))
+
     static let event = AppMoodPalette(
         colorScheme: .dark,
         baseTop: Color(red: 0.165, green: 0.106, blue: 0.180),

@@ -45,6 +45,8 @@ enum WidgetMood {
         case "rain":    return .rain
         case "winter":  return .winter
         case "event":   return .event
+        case "classic_light": return .classicLight
+        case "classic_dark":  return .classicDark
         default:        return nil
         }
     }

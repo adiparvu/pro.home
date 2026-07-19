@@ -137,6 +137,10 @@ final class AtmosphericEffectsPolicy {
         case .rain:    .rain(scheme: .light)
         case .winter:  .snow
         case .event:   .sparkle
+        // Unreachable by construction: AppBackdrop never mounts the live
+        // effects layer for a classic backdrop (flat by definition). The
+        // stars are the harmless answer if that invariant ever breaks.
+        case .classicLight, .classicDark: .stars
         }
     }
 
@@ -1963,6 +1967,8 @@ struct AppBackdropEffectsHint: View {
         case .morning: marks(kind: .motes)
         case .sunset:  marks(kind: .birds)
         case .day:     EmptyView()   // honest — see the type comment
+        case .classicLight, .classicDark:
+            EmptyView()              // classics are flat: no effect marks
         }
     }
 
