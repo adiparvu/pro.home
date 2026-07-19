@@ -11,6 +11,7 @@ struct PublicContactSheet: View {
 
     @State private var ownerName: String
     @State private var ownerPhone: String
+    @State private var ownerEmail: String
     @State private var ownerAddress: String
     @State private var propertyName: String
     @State private var isEnabled: Bool
@@ -19,6 +20,7 @@ struct PublicContactSheet: View {
         self.item = item; self.onSave = onSave
         _ownerName    = State(initialValue: item.publicProfile?.ownerName ?? "")
         _ownerPhone   = State(initialValue: item.publicProfile?.ownerPhone ?? "")
+        _ownerEmail   = State(initialValue: item.publicProfile?.ownerEmail ?? "")
         _ownerAddress = State(initialValue: item.publicProfile?.ownerAddress ?? "")
         _propertyName = State(initialValue: item.publicProfile?.propertyName ?? "")
         _isEnabled    = State(initialValue: item.publicProfile?.isEnabled ?? true)
@@ -44,6 +46,8 @@ struct PublicContactSheet: View {
                                 div
                                 pField("phone.fill", "Phone number", $ownerPhone, keyboard: .phonePad)
                                 div
+                                pField("envelope.fill", "Email", $ownerEmail, keyboard: .emailAddress)
+                                div
                                 pField("house.fill", "Home address", $ownerAddress)
                                 div
                                 pField("building.fill", "Property name", $propertyName)
@@ -67,7 +71,9 @@ struct PublicContactSheet: View {
                         var updated = item
                         if isEnabled {
                             updated.publicProfile = PublicProfile(ownerName: ownerName, ownerPhone: ownerPhone,
-                                                                  ownerAddress: ownerAddress, propertyName: propertyName, isEnabled: true)
+                                                                  ownerAddress: ownerAddress, propertyName: propertyName,
+                                                                  ownerEmail: ownerEmail.isEmpty ? nil : ownerEmail,
+                                                                  isEnabled: true)
                         } else {
                             updated.publicProfile = nil
                         }

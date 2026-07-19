@@ -17,6 +17,9 @@ struct PublicProfile: Codable {
     var ownerPhone: String = ""
     var ownerAddress: String = ""
     var propertyName: String = ""
+    /// Optional (and decode-tolerant for pre-1151 items): shown on the
+    /// public page as a mailto row when set.
+    var ownerEmail: String? = nil
     var isEnabled: Bool = true
 }
 

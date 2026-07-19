@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import UserNotifications
+import UIKit
 
 @MainActor
 @Observable
@@ -135,13 +136,32 @@ final class InventoryService {
         }
         struct Payload: Encodable {
             let item_uuid, item_name, owner_name, owner_phone, owner_address, property_name, user_id: String
+            let owner_email: String?
+            let latitude: Double?
+            let longitude: Double?
+            let app_icon_url: String?
         }
         guard let uid = supabase.auth.currentSession?.user.id else { return }
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
                         owner_address: profile.ownerAddress, property_name: profile.propertyName,
-                        user_id: uid.uuidString)
+                        user_id: uid.uuidString,
+                        owner_email: profile.ownerEmail,
+                        latitude: item.latitude, longitude: item.longitude,
+                        app_icon_url: await publicAppIconURL())
         _ = try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
+    }
+
+    /// The owner's chosen app icon, mirrored publicly: the current theme's
+    /// preview imageset uploads once per theme to a stable public path, so
+    /// the found-item page's badge wears the same face as their app.
+    private func publicAppIconURL() async -> String? {
+        let themeId = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
+        let theme = AppIconCatalog.theme(id: themeId)
+        guard let image = UIImage(named: theme.lightPreview),
+              let data = image.uploadJPEG(quality: 0.9, maxDimension: 256) else { return nil }
+        let path = "app-icons/\(theme.lightPreview.lowercased()).jpg"
+        return try? await SignedStorage.uploadPublicImage(data, path: path, upsert: true)
     }
 
     func removePublicProfile(for item: InventoryItem) async {
