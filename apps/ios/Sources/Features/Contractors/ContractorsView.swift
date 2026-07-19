@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import PhotosUI
 
 struct ContractorModel: Identifiable, Codable {
     let id: UUID
@@ -12,10 +13,14 @@ struct ContractorModel: Identifiable, Codable {
     var isPreferred: Bool
     var website: String?
     var address: String?
+    /// The contractor's own photo (migration 166) — used only when no PRVIO
+    /// account matches; matched accounts keep the account's avatar.
+    var photoUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, category, phone, email, notes, rating, website, address
         case isPreferred = "is_preferred"
+        case photoUrl    = "photo_url"
     }
 
     var specialty: String { category }  // backward-compat alias for UI
@@ -80,6 +85,7 @@ final class ContractorService {
                     "notes": c.notes ?? "",
                     "rating": String(c.rating ?? 0),
                     "is_preferred": c.isPreferred ? "true" : "false",
+                    "photo_url": c.photoUrl ?? "",
                 ])
                 .eq("id", value: c.id.uuidString)
                 .select()
@@ -113,11 +119,13 @@ struct NewContractor: Encodable {
     let email: String?
     let notes: String?
     let isPreferred: Bool
+    var photoUrl: String? = nil
     enum CodingKeys: String, CodingKey {
         case name, category, phone, email, notes
         case propertyId  = "property_id"
         case createdBy   = "created_by"
         case isPreferred = "is_preferred"
+        case photoUrl    = "photo_url"
     }
 }
 
@@ -431,11 +439,23 @@ private struct ContractorRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
-                // The member's real avatar when the contractor has a PRVIO
-                // account; a round Liquid Glass disc with the colour on the
-                // trade icon ONLY otherwise (IMG_8643) — never a tinted square.
+                // Avatar chain (IMG_8643 + train 1147): the matched PRVIO
+                // account's avatar first, the contractor's OWN photo second,
+                // and the round glass disc with the trade icon last — never
+                // a tinted square.
                 if let member = matchedMember {
                     MemberAvatar(member: member, size: 44)
+                } else if let urlStr = contractor.photoUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFill()
+                        } else {
+                            Circle().fill(.ultraThinMaterial)
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
                 } else {
                     Image(systemName: contractor.specialtyIcon)
                         .font(AppFont.scaled(17, weight: .medium))
@@ -651,6 +671,16 @@ struct ContractorPeekCard: View {
     @ViewBuilder private var avatar: some View {
         if let member {
             MemberAvatar(member: member, size: 56)
+        } else if let urlStr = contractor.photoUrl, let url = URL(string: urlStr) {
+            AsyncImage(url: url) { phase in
+                if case .success(let image) = phase {
+                    image.resizable().scaledToFill()
+                } else {
+                    Circle().fill(.ultraThinMaterial)
+                }
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(Circle())
         } else {
             ZStack {
                 Circle().fill(.ultraThinMaterial)
@@ -697,6 +727,10 @@ private struct AddContractorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""; @State private var category = ""; @State private var phone = ""
     @State private var email = ""; @State private var notes = ""; @State private var isSaving = false
+    /// Own avatar (train 1147) — for contractors without a PRVIO account;
+    /// matched accounts keep showing the account's avatar everywhere.
+    @State private var avatarItem: PhotosPickerItem? = nil
+    @State private var avatarImage: UIImage? = nil
 
     /// Live matches from what's typed so far — name/email substrings (2+
     /// chars) or phone digits (4+), capped at three honest rows.
@@ -718,6 +752,10 @@ private struct AddContractorSheet: View {
             ZStack {
                 appBackground.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
+                    avatarPicker
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, AppSpacing.md)
+
                     VStack(spacing: 0) {
                         Group {
                             fieldRow("person.fill", "Name", $name)
@@ -744,6 +782,15 @@ private struct AddContractorSheet: View {
                 }
                 .animation(.smooth(duration: 0.25), value: suggestions.map(\.id))
             }
+            .onChange(of: avatarItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        withAnimation(.snappy(duration: 0.25)) { avatarImage = image }
+                    }
+                }
+            }
             .navigationTitle("Add Contractor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
@@ -754,6 +801,36 @@ private struct AddContractorSheet: View {
                 }
             }
         }
+    }
+
+    /// The circular avatar well: picked photo, or a camera glyph on a clear
+    /// Liquid Glass disc — the system photo picker opens on tap.
+    private var avatarPicker: some View {
+        PhotosPicker(selection: $avatarItem, matching: .images) {
+            Group {
+                if let image = avatarImage {
+                    Image(uiImage: image)
+                        .resizable().scaledToFill()
+                        .frame(width: 84, height: 84)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
+                } else {
+                    Image(systemName: "camera.fill")
+                        .font(AppFont.scaled(22, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .frame(width: 84, height: 84)
+                        .glassCircle()
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "plus.circle.fill")
+                    .font(AppFont.scaled(20))
+                    .foregroundStyle(Color.accentColor)
+                    .background(Circle().fill(.background).padding(2))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Add photo"))
     }
 
     // MARK: Suggestions — people already in PRVIO (IMG_8645)
@@ -824,6 +901,13 @@ private struct AddContractorSheet: View {
         guard let pid = propertyId else { dismiss(); return }
         isSaving = true
         defer { isSaving = false }
+        // Optional avatar first — the same public documents-bucket pattern
+        // as every other property image (fresh name per upload).
+        var photoUrl: String? = nil
+        if let image = avatarImage, let data = image.uploadJPEG(quality: 0.82) {
+            let path = "contractors/\(pid.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
+            photoUrl = try? await SignedStorage.uploadPublicImage(data, path: path)
+        }
         let c = NewContractor(
             propertyId: pid,
             createdBy: userId,
@@ -832,7 +916,8 @@ private struct AddContractorSheet: View {
             phone: phone.isEmpty ? nil : phone,
             email: email.isEmpty ? nil : email,
             notes: notes.isEmpty ? nil : notes,
-            isPreferred: false
+            isPreferred: false,
+            photoUrl: photoUrl
         )
         try? await service.add(c)
         HapticFeedback.success()

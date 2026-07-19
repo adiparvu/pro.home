@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ContractorDetailSheet: View {
     let contractor: ContractorModel
@@ -115,10 +116,21 @@ struct ContractorDetailSheet: View {
 
     private var heroHeader: some View {
         VStack(spacing: 12) {
-            // The account's real avatar when this contractor IS someone in
-            // PRVIO; the trade disc otherwise.
+            // Avatar chain: the matched PRVIO account's avatar, then the
+            // contractor's OWN photo (migration 166), then the trade disc.
             if let member = matchedMember {
                 MemberAvatar(member: member, size: 72)
+            } else if let urlStr = currentContractor.photoUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let image) = phase {
+                        image.resizable().scaledToFill()
+                    } else {
+                        Circle().fill(.ultraThinMaterial)
+                    }
+                }
+                .frame(width: 72, height: 72)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
             } else {
                 ZStack {
                     Circle()
@@ -403,6 +415,10 @@ struct EditContractorSheet: View {
     @State private var email: String
     @State private var notes: String
     @State private var isSaving = false
+    /// Own avatar (train 1147) — same well as the add form; the existing
+    /// photo shows until a new pick replaces it.
+    @State private var avatarItem: PhotosPickerItem? = nil
+    @State private var avatarImage: UIImage? = nil
 
     init(contractor: ContractorModel, service: ContractorService) {
         self.contractor = contractor
@@ -419,6 +435,10 @@ struct EditContractorSheet: View {
             ZStack {
                 Color.clear
                 ScrollView(showsIndicators: false) {
+                    avatarPicker
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, AppSpacing.md)
+
                     VStack(spacing: 0) {
                         Group {
                             fieldRow("person.fill", "Name", $name)
@@ -435,6 +455,15 @@ struct EditContractorSheet: View {
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
+                }
+            }
+            .onChange(of: avatarItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        withAnimation(.snappy(duration: 0.25)) { avatarImage = image }
+                    }
                 }
             }
             .navigationTitle("Edit Contractor").navigationBarTitleDisplayMode(.inline)
@@ -463,6 +492,47 @@ struct EditContractorSheet: View {
         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
     }
 
+    /// The circular avatar well: a fresh pick, else the contractor's current
+    /// photo, else a camera glyph on a clear Liquid Glass disc.
+    private var avatarPicker: some View {
+        PhotosPicker(selection: $avatarItem, matching: .images) {
+            Group {
+                if let image = avatarImage {
+                    Image(uiImage: image)
+                        .resizable().scaledToFill()
+                        .frame(width: 84, height: 84)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
+                } else if let urlStr = contractor.photoUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFill()
+                        } else {
+                            Circle().fill(.ultraThinMaterial)
+                        }
+                    }
+                    .frame(width: 84, height: 84)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
+                } else {
+                    Image(systemName: "camera.fill")
+                        .font(AppFont.scaled(22, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .frame(width: 84, height: 84)
+                        .glassCircle()
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "plus.circle.fill")
+                    .font(AppFont.scaled(20))
+                    .foregroundStyle(Color.accentColor)
+                    .background(Circle().fill(.background).padding(2))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(contractor.photoUrl == nil ? Text("Add photo") : Text("est_change_photo"))
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -472,6 +542,14 @@ struct EditContractorSheet: View {
         updated.phone = phone.isEmpty ? nil : phone
         updated.email = email.isEmpty ? nil : email
         updated.notes = notes.isEmpty ? nil : notes
+        // A new pick uploads first (fresh name defeats the public-bucket
+        // cache); no pick keeps the existing photo untouched.
+        if let image = avatarImage, let data = image.uploadJPEG(quality: 0.82) {
+            let path = "contractors/\(contractor.id.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
+            if let uploaded = try? await SignedStorage.uploadPublicImage(data, path: path) {
+                updated.photoUrl = uploaded
+            }
+        }
         await service.update(updated)
         HapticFeedback.success()
         dismiss()
