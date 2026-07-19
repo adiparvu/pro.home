@@ -84,7 +84,7 @@ struct ExpenseDashboardView: View {
         } label: {
             VStack(spacing: 2) {
                 Text(value).font(AppFont.scaled(22, weight: .bold)).contentTransition(.numericText())
-                Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
+                Text(label).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .frame(maxWidth: .infinity)
         }
@@ -217,7 +217,7 @@ struct ExpenseDashboardView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(String(localized: "expense_section_daily"))
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .tracking(0.8)
 
                     Chart(days) { day in
@@ -297,7 +297,7 @@ struct ExpenseDashboardView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(String(localized: "expense_section_categories"))
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .tracking(0.8)
 
                     HStack(alignment: .center, spacing: 16) {
@@ -326,7 +326,7 @@ struct ExpenseDashboardView: View {
                                     let pct = total > 0 ? cat.total / total * 100 : 0
                                     Text(String(format: "%.0f%%", pct))
                                         .font(AppFont.label)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 }
                             }
                             if cats.count > 5 {
@@ -354,7 +354,7 @@ struct ExpenseDashboardView: View {
                 HStack {
                     Text(String(localized: "expense_section_budgets"))
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .tracking(0.8)
                     Spacer()
                     Button { showBudgets = true } label: {
@@ -424,7 +424,7 @@ struct ExpenseDashboardView: View {
                             .foregroundStyle(.primary)
                         Text(String(localized: "price_history_subtitle"))
                             .font(AppFont.scaled(12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .lineLimit(1)
                     }
 
@@ -448,7 +448,7 @@ struct ExpenseDashboardView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "expense_section_recent"))
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .tracking(0.8)
                     .padding(.leading, AppSpacing.xxs)
 
@@ -498,7 +498,7 @@ struct ExpenseDashboardView: View {
                         .lineLimit(1)
                     Text(receipt.formattedDate)
                         .font(AppFont.scaled(11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
 
                 Spacer()
@@ -523,7 +523,7 @@ struct ExpenseDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "expense_section_recurring"))
                 .font(AppFont.captionStrong)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .tracking(0.8)
                 .padding(.leading, AppSpacing.xxs)
 
@@ -539,7 +539,7 @@ struct ExpenseDashboardView: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(item.name).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
                                     Text(String(format: String(localized: "expense_recurring_times"), item.count))
-                                        .font(AppFont.scaled(11)).foregroundStyle(.secondary)
+                                        .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 }
                                 Spacer()
                                 Text(verbatim: "~\(money(item.avgPrice))")

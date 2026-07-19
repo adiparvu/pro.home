@@ -32,7 +32,9 @@ struct SuppliesView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
 
-    @State private var activeTab: ExpenseTab = .overview
+    // The page OPENS on the daily surface — shopping lists + pantry
+    // (IMG_8654, user-decreed); the money dashboard stays one tap away.
+    @State private var activeTab: ExpenseTab = .lists
     @State private var showAddList = false
     @State private var showScanner = false
     @State private var showAddReceipt = false
