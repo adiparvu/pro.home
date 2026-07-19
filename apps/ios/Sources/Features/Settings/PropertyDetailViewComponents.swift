@@ -316,7 +316,9 @@ extension PropertyDetailView {
                 Label("prop_detail_copy_address", systemImage: "doc.on.doc")
             }
         } label: {
-            row("mappin.fill", "Address", address, .blue, chevron: true)
+            // "mappin.fill" is NOT a real SF Symbol — it rendered as an
+            // empty square (IMG_8646). The address pin glyph is this one.
+            row("mappin.and.ellipse", "Address", address, .blue, chevron: true)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

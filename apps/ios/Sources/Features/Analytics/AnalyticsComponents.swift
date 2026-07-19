@@ -13,6 +13,11 @@ struct FinancesSection: View {
     @Environment(AppSettings.self) private var appSettings
 
     @State var chartRange: ChartRange = .sixMonths
+    /// Revolut-style load-in (IMG_8648): the evolution chart draws itself
+    /// up from the baseline when the page arrives. Not private — the chart
+    /// lives in the FinancesSectionChart extension file.
+    @State var chartReveal = false
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     @State var customStart = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     @State var customEnd = Date()
     @State var showCustomSheet = false

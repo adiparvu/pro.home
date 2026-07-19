@@ -112,6 +112,10 @@ extension FinancesSection {
 
                 let data = rangeChartData
                 let hasData = data.contains { $0.income > 0 || $0.expenses > 0 }
+                // Revolut-style load-in (IMG_8648): every y-value rides the
+                // reveal factor, so the whole chart grows from the baseline.
+                let reveal = chartReveal ? 1.0 : 0.0
+                let axisLabels = thinnedLabels(data.map(\.label))
 
                 if !hasData {
                     emptyChartPlaceholder
@@ -120,7 +124,7 @@ extension FinancesSection {
                         ForEach(data, id: \.label) { item in
                             AreaMark(
                                 x: .value("Period", item.label),
-                                y: .value("Income", item.income)
+                                y: .value("Income", item.income * reveal)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -133,7 +137,7 @@ extension FinancesSection {
 
                             LineMark(
                                 x: .value("Period", item.label),
-                                y: .value("Income", item.income)
+                                y: .value("Income", item.income * reveal)
                             )
                             .foregroundStyle(Color.brandSuccess)
                             .lineStyle(StrokeStyle(lineWidth: 2))
@@ -143,7 +147,7 @@ extension FinancesSection {
 
                             AreaMark(
                                 x: .value("Period", item.label),
-                                y: .value("Expenses", item.expenses)
+                                y: .value("Expenses", item.expenses * reveal)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -155,7 +159,7 @@ extension FinancesSection {
 
                             LineMark(
                                 x: .value("Period", item.label),
-                                y: .value("Expenses", item.expenses)
+                                y: .value("Expenses", item.expenses * reveal)
                             )
                             .foregroundStyle(.red.opacity(0.75))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 4]))
@@ -171,13 +175,23 @@ extension FinancesSection {
                         }
                     }
                     .chartXAxis {
-                        AxisMarks { _ in
+                        // At most ~6 labels regardless of range — 13 monthly
+                        // buckets used to print 13 overlapping labels (IMG_8647).
+                        AxisMarks(values: axisLabels) { _ in
                             AxisValueLabel().foregroundStyle(.secondary)
                                 .font(AppFont.scaled(10))
                         }
                     }
                     .frame(height: 160)
                     .animation(.easeInOut(duration: 0.25), value: chartRange)
+                    .onAppear {
+                        guard !chartReveal else { return }
+                        if reduceMotion {
+                            chartReveal = true
+                        } else {
+                            withAnimation(.smooth(duration: 0.9)) { chartReveal = true }
+                        }
+                    }
                 }
 
                 HStack(spacing: 16) {
@@ -217,6 +231,13 @@ extension FinancesSection {
     }
 
     // MARK: - Helpers
+
+    /// At most six axis labels, evenly strided over the buckets — the axis
+    /// stays legible from 7 day-buckets up to 13+ month-buckets.
+    func thinnedLabels(_ labels: [String]) -> [String] {
+        let step = max(1, Int((Double(labels.count) / 6.0).rounded(.up)))
+        return labels.enumerated().filter { $0.offset % step == 0 }.map(\.element)
+    }
 
     var emptyChartPlaceholder: some View {
         VStack(spacing: 10) {

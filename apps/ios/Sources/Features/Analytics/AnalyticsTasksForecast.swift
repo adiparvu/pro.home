@@ -7,6 +7,10 @@ struct TasksSection: View {
     var service: TaskService
     @Environment(FamilyService.self) private var familyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Revolut-style load-in (IMG_8648): bars and the completion rate grow
+    /// from zero when the tab arrives.
+    @State private var chartReveal = false
 
     private var cal: Calendar { Calendar.current }
 
@@ -179,7 +183,7 @@ struct TasksSection: View {
                 barChartCard(header: "By priority") {
                     Chart(priorities, id: \.label) { item in
                         BarMark(
-                            x: .value("Count", item.count),
+                            x: .value("Count", Double(item.count) * (chartReveal ? 1 : 0)),
                             y: .value("Priority", item.label)
                         )
                         .foregroundStyle(
@@ -195,7 +199,7 @@ struct TasksSection: View {
                 barChartCard(header: "ana_tasks_by_category") {
                     Chart(categories, id: \.label) { item in
                         BarMark(
-                            x: .value("Count", item.count),
+                            x: .value("Count", Double(item.count) * (chartReveal ? 1 : 0)),
                             y: .value("Category", item.label)
                         )
                         .foregroundStyle(
@@ -210,6 +214,14 @@ struct TasksSection: View {
 
             if propertyService.isFamilyMember, !members.isEmpty {
                 memberCard(members)
+            }
+        }
+        .onAppear {
+            guard !chartReveal else { return }
+            if reduceMotion {
+                chartReveal = true
+            } else {
+                withAnimation(.smooth(duration: 0.9)) { chartReveal = true }
             }
         }
     }
@@ -235,8 +247,10 @@ struct TasksSection: View {
                                 colors: [.blue, Color.brandSuccess],
                                 startPoint: .leading, endPoint: .trailing
                             ))
-                            .frame(width: geo.size.width * (completionRate / 100), height: 10)
+                            .frame(width: geo.size.width * (completionRate / 100) * (chartReveal ? 1 : 0),
+                                   height: 10)
                             .animation(.spring(response: 0.7), value: completionRate)
+                            .animation(.smooth(duration: 0.8), value: chartReveal)
                     }
                 }
                 .frame(height: 10)
