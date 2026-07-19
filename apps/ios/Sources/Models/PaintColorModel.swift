@@ -72,6 +72,14 @@ struct PaintColor: Identifiable, Codable, Equatable {
     }
 
     var finishDisplay: String { finish?.displayName ?? String(localized: "Unknown") }
+
+    /// The stored surface value through the form's localized catalog
+    /// ("walls" → "Pereți"); unknown legacy values show as stored.
+    var surfaceDisplay: String {
+        let key = "paint_surface_\(surface)"
+        let localized = String(localized: String.LocalizationValue(key))
+        return localized == key ? surface : localized
+    }
 }
 
 struct NewPaintColorPayload: Encodable {

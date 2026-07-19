@@ -96566,6 +96566,14 @@
   "paint_edit_title": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Edit Color" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Editează culoarea" } }
+  } },
+  "paint_pick_title": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Choose Colors" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Alege culorile" } }
+  } },
+  "paint_sheet_meta": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "%d colors · %d rooms" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "%d culori · %d camere" } }
   } }
   },
   "version": "1.0"

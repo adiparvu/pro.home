@@ -101,7 +101,7 @@ struct PaintColorDetailSheet: View {
                 row("door.left.hand.closed", "Room", color.roomName, .blue)
                 div
                 row("square.split.bottomrightquarter", "paint_surface",
-                    surfaceLabel(color.surface), .brandPurple)
+                    color.surfaceDisplay, .brandPurple)
                 if let hex = color.hexColor, !hex.isEmpty {
                     div
                     row("number", "paint_hex", hex.uppercased(), .orange)
@@ -131,13 +131,6 @@ struct PaintColorDetailSheet: View {
                 .presentationBackground(.black)
             }
         }
-    }
-
-    private func surfaceLabel(_ raw: String) -> String {
-        // The form's fixed surface catalog — unknown values show as-is.
-        let key = "paint_surface_\(raw)"
-        let localized = String(localized: String.LocalizationValue(key))
-        return localized == key ? raw : localized
     }
 
     // MARK: Usage — last used + leftover can (migration 165)
@@ -292,8 +285,16 @@ enum PaintColorCard {
             }
             VStack(alignment: .leading, spacing: 6) {
                 specLine("paint_card_room", color.roomName)
+                specLine("paint_surface", color.surfaceDisplay)
                 if let finish = color.finish { specLine("paint_card_finish", finish.displayName) }
                 if let hex = color.hexColor, !hex.isEmpty { specLine("paint_card_hex", hex.uppercased()) }
+                if let day = color.lastUsedAt.flatMap(AppDate.day(from:)) {
+                    specLine("paint_last_used",
+                             day.formatted(date: .abbreviated, time: .omitted))
+                }
+                if let leftover = color.leftoverNote, !leftover.isEmpty {
+                    specLine("paint_leftover", leftover)
+                }
             }
             Text(verbatim: "PRVIO").font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)

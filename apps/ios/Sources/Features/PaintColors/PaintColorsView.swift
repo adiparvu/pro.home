@@ -13,6 +13,17 @@ struct PaintColorsView: View {
     @State private var editColor: PaintColor? = nil
     @State private var searchText = ""
 
+    /// Share/Print goes through an explicit selection step (IMG_8628): all
+    /// colors preselected, or exactly the ones the user keeps checked.
+    private enum SpecJobMode: String, Identifiable {
+        case share, print
+        var id: String { rawValue }
+    }
+    @State private var specPicker: SpecJobMode? = nil
+    /// Rendered and presented from onDismiss — a print panel or share sheet
+    /// presented while the picker is still dismissing is silently dropped.
+    @State private var pendingSpec: (print: Bool, colors: [PaintColor])? = nil
+
     private var filteredByRoom: [String: [PaintColor]] {
         let base: [String: [PaintColor]]
         if let room = selectedRoom {
@@ -89,6 +100,13 @@ struct PaintColorsView: View {
                 .environment(paintColorService)
                 .environment(propertyService)
         }
+        .sheet(item: $specPicker, onDismiss: runPendingSpec) { mode in
+            PaintSpecPickerSheet(rooms: paintColorService.byRoom.keys.sorted()
+                                    .map { ($0, paintColorService.byRoom[$0] ?? []) }
+                                    .filter { !$0.1.isEmpty },
+                                 isPrint: mode == .print,
+                                 pending: $pendingSpec)
+        }
         .confirmationDialog(
             "Delete \"\(colorToDelete?.colorName ?? "")\"?",
             isPresented: Binding(get: { colorToDelete != nil }, set: { if !$0 { colorToDelete = nil } }),
@@ -149,14 +167,11 @@ struct PaintColorsView: View {
             GlassFilterSectionDivider()
             GlassFilterActionRow(icon: "square.and.arrow.up",
                                  title: String(localized: "paint_share")) {
-                if let image = renderSpecSheet() { SystemActions.share([image]) }
+                specPicker = .share
             }
             GlassFilterActionRow(icon: "printer",
                                  title: String(localized: "paint_print")) {
-                if let image = renderSpecSheet() {
-                    SystemActions.print(image: image,
-                                        jobName: String(localized: "paint_colors_title"))
-                }
+                specPicker = .print
             }
         }
     }
@@ -305,13 +320,27 @@ struct PaintColorsView: View {
 
     // MARK: - Share / Print
 
-    /// Renders the full paint list (all rooms, ignoring the on-screen room filter)
-    /// into a clean, light-mode document image suitable for AirPrint or sharing —
-    /// the spec sheet you take to the paint store.
-    private func renderSpecSheet() -> UIImage? {
-        let rooms = paintColorService.byRoom.keys.sorted()
-            .map { ($0, paintColorService.byRoom[$0] ?? []) }
-            .filter { !$0.1.isEmpty }
+    /// Runs the job the picker left behind: renders exactly the selected
+    /// colors into the spec sheet, then presents share or AirPrint.
+    private func runPendingSpec() {
+        guard let job = pendingSpec else { return }
+        pendingSpec = nil
+        guard let image = renderSpecSheet(colors: job.colors) else { return }
+        if job.print {
+            SystemActions.print(image: image,
+                                jobName: String(localized: "paint_colors_title"))
+        } else {
+            SystemActions.share([image])
+        }
+    }
+
+    /// Renders the given colors (grouped back into their rooms) into a clean,
+    /// light-mode document image suitable for AirPrint or sharing — the spec
+    /// sheet you take to the paint store.
+    private func renderSpecSheet(colors: [PaintColor]) -> UIImage? {
+        let grouped = Dictionary(grouping: colors, by: { $0.roomName })
+        let rooms = grouped.keys.sorted().map { ($0, grouped[$0] ?? []) }
+        guard !rooms.isEmpty else { return nil }
         let sheet = PaintColorsSpecSheet(propertyName: propertyService.primary?.name ?? "",
                                          rooms: rooms)
         let renderer = ImageRenderer(content: sheet)
@@ -320,10 +349,120 @@ struct PaintColorsView: View {
     }
 }
 
-// MARK: - Printable spec sheet
+// MARK: - Selection step before share / print (IMG_8628)
+//
+// Same pattern as the inventory QR label picker: every color as a native
+// checkmark row grouped by room, Select All / Deselect All in one toggle,
+// and a confirm carrying the honest count. All colors start selected, so
+// the old "share everything" flow is still two taps.
+
+private struct PaintSpecPickerSheet: View {
+    let rooms: [(String, [PaintColor])]
+    let isPrint: Bool
+    @Binding var pending: (print: Bool, colors: [PaintColor])?
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection: Set<UUID> = []
+
+    private var allColors: [PaintColor] { rooms.flatMap(\.1) }
+    private var allSelected: Bool {
+        !allColors.isEmpty && selection.count == allColors.count
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Button(allSelected
+                           ? String(localized: "Deselect All")
+                           : String(localized: "Select All")) {
+                        HapticFeedback.selection()
+                        selection = allSelected ? [] : Set(allColors.map(\.id))
+                    }
+                    .font(AppFont.footnoteEmphasis)
+                }
+                ForEach(rooms, id: \.0) { room, colors in
+                    Section {
+                        ForEach(colors) { color in
+                            row(color)
+                        }
+                    } header: {
+                        Text(verbatim: room)
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("paint_pick_title")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        pending = (print: isPrint,
+                                   colors: allColors.filter { selection.contains($0.id) })
+                        dismiss()
+                    } label: {
+                        Text(verbatim: "\(String(localized: isPrint ? "Print" : "Share")) (\(selection.count))")
+                    }
+                    .disabled(selection.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .onAppear { selection = Set(allColors.map(\.id)) }
+    }
+
+    private func row(_ color: PaintColor) -> some View {
+        Button {
+            HapticFeedback.selection()
+            if selection.contains(color.id) { selection.remove(color.id) }
+            else { selection.insert(color.id) }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(color.swatchColor)
+                    .frame(width: 26, height: 26)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7)
+                    )
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: color.colorName)
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    if let code = color.code, !code.isEmpty {
+                        Text(verbatim: code)
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer()
+                Image(systemName: selection.contains(color.id)
+                      ? "checkmark.circle.fill" : "circle")
+                    .font(AppFont.scaled(20))
+                    .foregroundStyle(selection.contains(color.id)
+                                     ? Color.accentColor
+                                     : Color.primary.opacity(AppOpacity.disabled))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Printable spec sheet (redesigned, IMG_8630)
 //
 // A fixed-width, always-light document (independent of the app theme) so the
-// print/share output is legible on paper. Rendered off-screen via ImageRenderer.
+// print/share output is legible on paper. Rendered off-screen via
+// ImageRenderer. Artistic but honest: the header carries the title, the
+// property and a live count line; a paint strip made of the ACTUAL selected
+// colors runs under it; every color prints its basics (swatch, name, hex)
+// plus every real field it has — brand, code, finish, surface, last used,
+// leftover can, notes. Absent fields simply don't print.
 
 private struct PaintColorsSpecSheet: View {
     let propertyName: String
@@ -331,90 +470,177 @@ private struct PaintColorsSpecSheet: View {
 
     private let width: CGFloat = 560
     private let ink = Color(white: 0.08)
+    private let soft = Color(white: 0.3)
     private let faint = Color(white: 0.45)
+    private let rule = Color(white: 0.9)
+
+    private var all: [PaintColor] { rooms.flatMap(\.1) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 26) {
             header
+            paintStrip
             ForEach(rooms, id: \.0) { room, colors in
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(room)
-                        .font(AppFont.scaled(17, weight: .bold))
-                        .foregroundStyle(ink)
-                    ForEach(colors) { color in row(color) }
-                }
+                roomBlock(room, colors)
             }
             footer
         }
-        .padding(28)
+        .padding(32)
         .frame(width: width, alignment: .leading)
         .background(Color.white)
         .environment(\.colorScheme, .light)
     }
 
+    // MARK: Header — title, property, count line
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 11) {
                 Image(systemName: "paintpalette.fill")
-                    .font(AppFont.scaled(18))
+                    .font(.system(size: 24))
                     .foregroundStyle(Color(red: 0.30, green: 0.20, blue: 0.62))
                 Text("paint_colors_title")
-                    .font(AppFont.scaled(22, weight: .heavy))
+                    .font(.system(size: 30, weight: .heavy))
                     .foregroundStyle(ink)
             }
             if !propertyName.isEmpty {
-                Text(propertyName)
-                    .font(AppFont.footnote)
-                    .foregroundStyle(faint)
+                Text(verbatim: propertyName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(soft)
             }
-            Rectangle().fill(Color(white: 0.9)).frame(height: 1).padding(.top, 6)
+            Text(verbatim: metaLine)
+                .font(.system(size: 12))
+                .foregroundStyle(faint)
+        }
+    }
+
+    private var metaLine: String {
+        let counts = String(format: String(localized: "paint_sheet_meta"),
+                            all.count, rooms.count)
+        let day = Date().formatted(date: .abbreviated, time: .omitted)
+        return "\(counts) · \(day)"
+    }
+
+    /// The signature band: one flexible stripe per selected color, in room
+    /// order — the palette itself as ornament, never invented data.
+    private var paintStrip: some View {
+        HStack(spacing: 0) {
+            ForEach(all) { color in
+                Rectangle().fill(color.swatchColor)
+            }
+        }
+        .frame(height: 16)
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(Color(white: 0.88), lineWidth: 1))
+    }
+
+    // MARK: Rooms
+
+    private func roomBlock(_ room: String, _ colors: [PaintColor]) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Text(verbatim: room)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(ink)
+                    .fixedSize()
+                Rectangle().fill(rule).frame(height: 1)
+            }
+            ForEach(colors) { color in row(color) }
         }
     }
 
     private func row(_ color: PaintColor) -> some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+        HStack(alignment: .top, spacing: 16) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(color.swatchColor)
-                .frame(width: 46, height: 46)
+                .frame(width: 56, height: 56)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(Color(white: 0.85), lineWidth: 1)
                 )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(color.colorName)
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(ink)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: color.colorName)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(ink)
+                    if let hex = color.hexColor, !hex.isEmpty {
+                        Text(verbatim: hex.hasPrefix("#") ? hex.uppercased() : "#\(hex.uppercased())")
+                            .font(.system(size: 11, weight: .medium))
+                            .monospaced()
+                            .foregroundStyle(faint)
+                    }
+                    Spacer(minLength: 0)
+                }
                 HStack(spacing: 8) {
                     if let brand = color.brand, !brand.isEmpty { tag(brand) }
                     if let code = color.code, !code.isEmpty { tag(code) }
                     tag(color.finishDisplay)
-                    if let hex = color.hexColor, !hex.isEmpty {
-                        tag(hex.hasPrefix("#") ? hex.uppercased() : "#\(hex.uppercased())")
-                    }
+                    tag(color.surfaceDisplay)
+                }
+                factsLine(color)
+                if !color.notes.isNilOrEmpty {
+                    Text(verbatim: color.notes ?? "")
+                        .font(.system(size: 11, weight: .regular).italic())
+                        .foregroundStyle(faint)
+                        .lineLimit(2)
                 }
             }
-            Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 3)
+    }
+
+    /// The usage facts (migration 165), printed only when they exist.
+    @ViewBuilder
+    private func factsLine(_ color: PaintColor) -> some View {
+        let lastUsed = color.lastUsedAt.flatMap(AppDate.day(from:))
+        if lastUsed != nil || !color.leftoverNote.isNilOrEmpty {
+            HStack(spacing: 14) {
+                if let day = lastUsed {
+                    fact("paint_last_used",
+                         day.formatted(date: .abbreviated, time: .omitted))
+                }
+                if let leftover = color.leftoverNote, !leftover.isEmpty {
+                    fact("paint_leftover", leftover)
+                }
+            }
+        }
+    }
+
+    private func fact(_ key: String.LocalizationValue, _ value: String) -> some View {
+        HStack(spacing: 4) {
+            Text(verbatim: String(localized: key) + ":")
+                .font(.system(size: 11.5))
+                .foregroundStyle(faint)
+            Text(verbatim: value)
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(soft)
+        }
     }
 
     private func tag(_ text: String) -> some View {
-        Text(text)
-            .font(AppFont.caption2)
-            .foregroundStyle(faint)
+        Text(verbatim: text)
+            .font(.system(size: 11))
+            .foregroundStyle(soft)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color(white: 0.955), in: Capsule())
     }
 
     private var footer: some View {
         HStack {
             Spacer()
-            Text("PRVIO")
-                .font(AppFont.scaled(11, weight: .bold))
+            Text(verbatim: "PRVIO")
+                .font(.system(size: 11, weight: .bold))
                 .tracking(1.5)
                 .foregroundStyle(Color(white: 0.75))
             Spacer()
         }
-        .padding(.top, 6)
+        .padding(.top, 4)
     }
+}
+
+private extension Optional where Wrapped == String {
+    var isNilOrEmpty: Bool { self?.isEmpty ?? true }
 }
 
 // MARK: - PaintSwatch
