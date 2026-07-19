@@ -18,6 +18,23 @@ export default {
     if (request.method === "POST" && url.pathname === "/contact") {
       return handleContact(request, env);
     }
+    // Apple App Site Association — universal links for the item QR labels:
+    // with the matching Associated Domains entitlement in the app, scanning
+    // https://xparvu.com/i/<uuid> opens PRVIO straight on the item.
+    if (url.pathname === "/.well-known/apple-app-site-association" ||
+        url.pathname === "/apple-app-site-association") {
+      return new Response(JSON.stringify({
+        applinks: {
+          apps: [],
+          details: [{ appIDs: ["SU92TVZT8W.com.prvio.app"], components: [{ "/": "/i/*" }] }],
+        },
+      }), {
+        headers: {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=3600",
+        },
+      });
+    }
     // The hard hat is also the site icon — served straight from the worker.
     if (url.pathname === "/favicon.svg" || url.pathname === "/favicon.ico") {
       return new Response(FAVICON, {

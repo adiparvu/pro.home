@@ -373,6 +373,24 @@ platform :ios do
             puts "  enable ACCESS_WIFI_INFORMATION → HTTP #{rc.code}: #{rc.body[0..400]}"
           end
 
+          # Universal links (QR labels → straight into the app): without the
+          # capability the regenerated profile is stripped of the
+          # associated-domains entitlement and xparvu.com links keep opening
+          # Safari instead of PRVIO.
+          ad_cap = caps.find { |c| c.dig("attributes","capabilityType") == "ASSOCIATED_DOMAINS" }
+          if ad_cap
+            puts "  ASSOCIATED_DOMAINS already enabled (id=#{ad_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "ASSOCIATED_DOMAINS" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable ASSOCIATED_DOMAINS → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
           # The property weather card fetches through WeatherKit — the
           # capability must be on the App ID or the entitlement is stripped
           # from the regenerated profile and every fetch fails with a JWT

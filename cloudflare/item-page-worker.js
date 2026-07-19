@@ -46,7 +46,7 @@ export default {
         // Network hiccup → the generic page still helps the finder.
       }
     }
-    return new Response(page(item), {
+    return new Response(page(item, match ? match[1] : null), {
       headers: {
         "content-type": "text/html; charset=utf-8",
         "cache-control": "no-store",
@@ -69,7 +69,7 @@ function row(label, value, href) {
     <span data-i="${esc(label)}" style="min-width:72px;font-size:12px;color:rgba(255,255,255,0.4);flex-shrink:0"></span>${inner}</div>`;
 }
 
-function page(item) {
+function page(item, uuid) {
   const itemName = item?.item_name || "";
   const hasContact = !!(item?.owner_name || item?.owner_phone || item?.owner_email || item?.owner_address);
   const hasCoords = typeof item?.latitude === "number" && typeof item?.longitude === "number";
@@ -110,10 +110,12 @@ function page(item) {
   <h1 style="font-size:26px;font-weight:700;margin:0 0 6px">${itemName ? esc(itemName) : '<span data-i="generic_title"></span>'}</h1>
   ${item?.property_name ? `<p style="font-size:13px;color:rgba(255,255,255,0.55);margin:0 0 18px"><span data-i="belongs"></span> <strong style="color:#f0f6ff">${esc(item.property_name)}</strong></p>` : '<div style="height:12px"></div>'}
 
-  <div style="background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.28);border-radius:14px;padding:16px 18px;margin:6px 0 18px">
+  ${item ? `<div style="background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.28);border-radius:14px;padding:16px 18px;margin:6px 0 18px">
     <h2 data-i="found_title" style="font-size:14px;font-weight:600;color:#ffaa44;margin:0 0 6px"></h2>
-    <p style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.55;margin:0"><span data-i="${item ? "found_body" : "generic_body"}"></span>${item?.owner_name ? ` <strong style="color:rgba(255,255,255,.85)">${esc(item.owner_name)}</strong>` : ""}</p>
-  </div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.55;margin:0"><span data-i="found_body"></span>${item?.owner_name ? ` <strong style="color:rgba(255,255,255,.85)">${esc(item.owner_name)}</strong>` : ""}</p>
+  </div>` : `<p data-i="standard_body" style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin:6px 0 18px"></p>`}
+
+  ${uuid ? `<a href="prvio://inventory/${esc(uuid)}" style="display:block;text-align:center;padding:15px;border-radius:14px;background:linear-gradient(120deg,#1c3f8f,#3b6fd4);color:#f0f6ff;font-size:15px;font-weight:700;text-decoration:none;margin:0 0 14px;box-shadow:0 10px 30px rgba(28,63,143,.4)"><span data-i="open_app"></span></a>` : ""}
 
   ${item?.loaned_to ? `<div style="background:rgba(120,110,255,0.1);border:1px solid rgba(120,110,255,0.3);border-radius:14px;padding:14px 18px;margin:0 0 14px">
     <h2 data-i="loan_title" style="font-size:13px;font-weight:600;color:#a9a0ff;margin:0 0 4px"></h2>
@@ -164,7 +166,9 @@ ${(wazeHref || gmapsHref || amapsHref) ? `
       generic_body: "Acest obiect aparține unui utilizator PRVIO. Dacă l-ai găsit sau împrumutat, te rugăm să încerci să îl returnezi proprietarului.",
       l_owner: "Proprietar", l_phone: "Telefon", l_email: "Email", l_address: "Adresă",
       map_open: "Deschide în hărți", map_choose: "Deschide locația cu", cancel: "Anulează",
-      loan_title: "Împrumutat", loan_body: "Acest obiect este împrumutat lui", loan_since: " din "
+      loan_title: "Împrumutat", loan_body: "Acest obiect este împrumutat lui", loan_since: " din ",
+      open_app: "Deschide în PRVIO",
+      standard_body: "Acest obiect face parte din inventarul unei proprietăți PRVIO. Dacă faci parte din proprietate, deschide-l direct în aplicație."
     },
     en: {
       generic_title: "PRVIO Item",
@@ -174,7 +178,9 @@ ${(wazeHref || gmapsHref || amapsHref) ? `
       generic_body: "This item belongs to a PRVIO user. If you found or borrowed it, please try to return it to its owner.",
       l_owner: "Owner", l_phone: "Phone", l_email: "Email", l_address: "Address",
       map_open: "Open in maps", map_choose: "Open location with", cancel: "Cancel",
-      loan_title: "On loan", loan_body: "This item is on loan to", loan_since: " since "
+      loan_title: "On loan", loan_body: "This item is on loan to", loan_since: " since ",
+      open_app: "Open in PRVIO",
+      standard_body: "This item is part of a PRVIO property's inventory. If you are a member of the property, open it directly in the app."
     }
   };
   function apply(lang) {

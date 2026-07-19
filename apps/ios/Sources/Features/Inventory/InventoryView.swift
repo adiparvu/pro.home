@@ -270,6 +270,12 @@ struct InventoryView: View {
             }
         }
         .sheet(item: $selectedItem) { item in ItemDetailView(item: item, service: service) }
+        // A scanned QR label (universal link / prvio://inventory/<id>) parks
+        // its item id on the router — open the detail the moment the item is
+        // available (immediately when hydrated, or as soon as load lands).
+        .onAppear { openPendingDeepLinkItem() }
+        .onChange(of: router.pendingInventoryItemId) { _, _ in openPendingDeepLinkItem() }
+        .onChange(of: service.items.count) { _, _ in openPendingDeepLinkItem() }
         .sheet(item: $editItem) { item in
             AddInventorySheet(editing: item) { updated in Task { await service.update(updated) } }
         }
@@ -371,6 +377,18 @@ struct InventoryView: View {
     /// The service resolves legacy formats (`?id=` and `prvio://inventory/`);
     /// current labels encode `https://…/i/<uuid>`, whose id rides in the last
     /// path component — without this, the app couldn't find its own codes.
+    /// Opens the item a deep-linked QR label asked for, once it exists in
+    /// the loaded set; an id from another property clears without effect.
+    private func openPendingDeepLinkItem() {
+        guard let iid = router.pendingInventoryItemId else { return }
+        guard !service.items.isEmpty else { return }
+        router.pendingInventoryItemId = nil
+        if let found = service.items.first(where: { $0.id == iid }) {
+            HapticFeedback.success()
+            selectedItem = found
+        }
+    }
+
     private func resolveScanned(_ value: String) -> InventoryItem? {
         if let hit = service.itemByQR(value) { return hit }
         if let last = value.split(separator: "/").last,

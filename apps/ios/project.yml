@@ -99,6 +99,13 @@ targets:
         # is disallowed") — HomeKit is a plain capability. If an upload ever
         # rejects it, revert THIS key only.
         com.apple.developer.homekit: true
+        # Universal links: the printed QR labels encode
+        # https://xparvu.com/i/<uuid> — with this entitlement (plus the AASA
+        # file the Cloudflare worker serves at /.well-known/) scanning a
+        # label opens PRVIO straight on the item for property members. The
+        # Fastfile enables the matching capability portal-side every run.
+        com.apple.developer.associated-domains:
+          - applinks:xparvu.com
         # Access WiFi Information — the smart-home network card shows the real
         # SSID via NEHotspotNetwork.fetchCurrent, which returns nothing without
         # this entitlement (plus precise-location authorization at runtime).
@@ -125,7 +132,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1152"
+        CURRENT_PROJECT_VERSION: "1153"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -219,7 +226,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1152"
+        CURRENT_PROJECT_VERSION: "1153"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -256,7 +263,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1152"
+        CURRENT_PROJECT_VERSION: "1153"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -294,7 +301,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1152"
+        CURRENT_PROJECT_VERSION: "1153"
         # Full manual plist (the proven widgets pattern) — no generate+merge
         # behavior to trust; NSUserActivityTypes is guaranteed in the build.
         INFOPLIST_FILE: Watch/Info.plist
@@ -338,7 +345,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1152"
+        CURRENT_PROJECT_VERSION: "1153"
         INFOPLIST_FILE: Watch/Widgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"

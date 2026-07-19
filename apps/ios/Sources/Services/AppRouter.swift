@@ -295,7 +295,22 @@ final class AppRouter {
         }
     }
 
+    /// Set by a scanned QR label (universal link or prvio://inventory/<id>);
+    /// InventoryView consumes it once its items are loaded and opens the
+    /// item's detail sheet.
+    var pendingInventoryItemId: UUID?
+
     func handle(deepLink url: URL) {
+        // Universal link https://xparvu.com/i/<uuid> — the printed QR labels.
+        // Arrives via onOpenURL once the Associated Domains entitlement ships.
+        if url.scheme == "https", url.host == "xparvu.com" {
+            let parts = url.pathComponents.filter { $0 != "/" }
+            if parts.first == "i", let iid = parts.dropFirst().first.flatMap(UUID.init(uuidString:)) {
+                pendingInventoryItemId = iid
+                navigate(to: .inventory)
+            }
+            return
+        }
         guard url.scheme == "prvio" else { return }
         // One Control Center tap can arrive twice — once through the
         // OpenURLIntent and once through the App Group hand-off. Navigating
@@ -347,6 +362,7 @@ final class AppRouter {
         case "finances":
             navigate(to: .finances)
         case "inventory":
+            if let pathId { pendingInventoryItemId = pathId }
             navigate(to: .inventory)
         case "family", "members":
             navigate(to: .family)
