@@ -96614,6 +96614,14 @@
   "tenant_day_fmt": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Day %d of the month" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Ziua %d a lunii" } }
+  } },
+  "Total": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Total" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Total" } }
+  } },
+  "Healthy": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Healthy" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Sănătoase" } }
   } }
   },
   "version": "1.0"

@@ -161,9 +161,12 @@ struct PlantsView: View {
                 .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(color)
                 .contentTransition(.numericText())
+            // Explicit token color, never hierarchical `.secondary` inside
+            // glass — the vibrancy compositor can eat it entirely
+            // (IMG_8652, the same law as the player controls).
             Text(label)
                 .font(AppFont.scaled(11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -329,7 +332,7 @@ struct PlantCard: View {
                         if let species = plant.species, !species.isEmpty {
                             Text(species)
                                 .font(AppFont.scaled(12))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .lineLimit(1)
                         }
 
