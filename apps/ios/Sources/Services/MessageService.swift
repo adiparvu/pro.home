@@ -102,6 +102,13 @@ final class MessageService {
         // Unsubscribe from any previous property's channels before loading new data.
         await unsubscribeAll()
         currentGroupId = groupId
+        // Session gate (same law as PropertyRepo): a fetch riding the anon
+        // key gets a SUCCESSFUL empty page under RLS — the "chat opens
+        // empty on first entry" field report — and the realtime join that
+        // follows it rides the same stale credential, which the server
+        // answers by closing the channel. Refresh-or-throw first; if the
+        // refresh fails this load simply ends and the cached page stands.
+        guard (try? await supabase.auth.session) != nil else { return }
         // Offline hydration (audit: the flagship feature opened EMPTY
         // offline while every record module hydrated from disk). Paint the
         // last cached page instantly — guarded on empty, so a refresh never
