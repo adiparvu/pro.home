@@ -1,5 +1,6 @@
 import SwiftUI
 import RoomPlan
+import PhotosUI
 
 // MARK: - Space detail page (Estate OS E2 — Liquid Glass)
 //
@@ -68,6 +69,10 @@ struct SpaceDetailView: View {
     /// The downloaded .usdz being previewed via QuickLook.
     @State private var scanPreviewURL: URL? = nil
     @State private var isFetchingScan = false
+    /// Space photo (IMG_8638/8639): picker presentation + upload state.
+    @State private var showPhotoPicker = false
+    @State private var photoItem: PhotosPickerItem? = nil
+    @State private var isSavingPhoto = false
 
     private let smartHome = SmartHomeService.shared
     /// Cached HomeKit indoor readings (Smart Control R3) — feeds the
@@ -157,6 +162,15 @@ struct SpaceDetailView: View {
         .sheet(item: $historyTarget) { target in
             SensorHistorySheet(target: target)
         }
+        // Space photo (IMG_8638/8639): the system picker, opened from the
+        // page's one menu; the upload runs off-main and the row update
+        // re-dresses every surface.
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
+        .onChange(of: photoItem) { _, newItem in
+            guard let newItem else { return }
+            photoItem = nil
+            Task { await savePhoto(newItem) }
+        }
         // Push chrome: the page owns its top bar (the glass back circle),
         // so the system navigation bar stays hidden on the stack.
         .navigationBarBackButtonHidden(true)
@@ -191,7 +205,7 @@ struct SpaceDetailView: View {
             }
         }
         .overlay {
-            if isFetchingScan {
+            if isFetchingScan || isSavingPhoto {
                 ProgressView()
                     .padding(AppSpacing.xl)
                     .background(.ultraThinMaterial,
@@ -220,8 +234,36 @@ struct SpaceDetailView: View {
 
     // MARK: Backdrop — the app-wide living mood ground
 
+    /// The mood ground, and — when the space has its photo — the photo as
+    /// the page's upper band, fading into the mood with a top scrim so the
+    /// glass circles and the white hero type keep their contrast.
     private var backdrop: some View {
-        appBackground.ignoresSafeArea()
+        ZStack(alignment: .top) {
+            appBackground
+            if let photo = live.photoUrl, !photo.isEmpty {
+                Color.clear
+                    .frame(height: 360)
+                    .overlay {
+                        StorageImage(source: photo, targetSize: 480) { phase in
+                            if case .success(let image) = phase {
+                                image.resizable().scaledToFill()
+                            }
+                        }
+                    }
+                    .clipped()
+                    .mask(LinearGradient(stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.55),
+                        .init(color: .clear, location: 1),
+                    ], startPoint: .top, endPoint: .bottom))
+                    .overlay(
+                        LinearGradient(colors: [.black.opacity(0.38), .clear],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
+                    .accessibilityHidden(true)
+            }
+        }
+        .ignoresSafeArea()
     }
 
     // MARK: Top bar — back + the page's one circle
@@ -291,7 +333,49 @@ struct SpaceDetailView: View {
                         openScan()
                     }
                 }
+                // The space's ONE photo (IMG_8638/8639) — card background,
+                // page ground and round avatar all read from it.
+                GlassFilterSectionDivider()
+                GlassFilterActionRow(icon: "photo",
+                                     title: String(localized: hasPhoto
+                                         ? "est_change_photo" : "est_set_photo")) {
+                    showPhotoPicker = true
+                }
+                if hasPhoto {
+                    GlassFilterActionRow(icon: "photo.badge.arrow.down",
+                                         title: String(localized: "est_remove_photo")) {
+                        var updated = live
+                        updated.photoUrl = nil
+                        Task { await zoneService.update(updated) }
+                    }
+                }
             }
+        }
+    }
+
+    private var hasPhoto: Bool { live.photoUrl?.isEmpty == false }
+
+    /// Uploads the picked image as the space's photo. A fresh object name
+    /// per upload (the public bucket caches aggressively — a fixed name
+    /// would show the OLD photo after a change), then the zone row updates
+    /// and every surface re-dresses from the service.
+    private func savePhoto(_ pickerItem: PhotosPickerItem) async {
+        guard !isSavingPhoto else { return }
+        isSavingPhoto = true
+        defer { isSavingPhoto = false }
+        guard let data = try? await pickerItem.loadTransferable(type: Data.self) else { return }
+        let compressed = await Task.detached(priority: .userInitiated) {
+            UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
+        }.value
+        do {
+            let path = "zones/\(live.id.uuidString.lowercased())/cover-\(UUID().uuidString.lowercased()).jpg"
+            let url = try await SignedStorage.uploadPublicImage(compressed, path: path, upsert: true)
+            var updated = live
+            updated.photoUrl = url
+            await zoneService.update(updated)
+            HapticFeedback.success()
+        } catch {
+            HapticFeedback.error()
         }
     }
 
@@ -316,13 +400,32 @@ struct SpaceDetailView: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // The round space avatar (IMG_8638/8639) — the same one photo,
+            // as the identity disc over the page's photo band.
+            if let photo = live.photoUrl, !photo.isEmpty {
+                StorageImage(source: photo, targetSize: 64) { phase in
+                    if case .success(let image) = phase {
+                        image.resizable().scaledToFill()
+                    } else {
+                        kind.sceneGradient
+                    }
+                }
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.55), lineWidth: 1))
+                .accessibilityHidden(true)
+            }
             Text(verbatim: "\(String(localized: "est_domain")) · \(kind.title)")
                 .font(AppFont.scaled(11, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(hasPhoto ? AnyShapeStyle(Color.white.opacity(0.78))
+                                          : AnyShapeStyle(.secondary))
             Text(verbatim: live.name)
                 .font(AppFont.scaled(SpaceHero.nameSize, weight: .light))
                 .kerning(SpaceHero.nameTracking)
-                .foregroundStyle(.primary)
+                // White on the photo's scrim (the grid card's legibility
+                // contract); the adaptive primary on the bare mood ground.
+                .foregroundStyle(hasPhoto ? AnyShapeStyle(Color.white)
+                                          : AnyShapeStyle(.primary))
                 .lineLimit(2)
                 .minimumScaleFactor(0.6)
             statusPill
