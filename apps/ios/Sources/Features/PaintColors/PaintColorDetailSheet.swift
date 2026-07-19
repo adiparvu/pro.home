@@ -106,7 +106,7 @@ struct PaintColorDetailSheet: View {
                     div
                     row("number", "paint_hex", hex.uppercased(), .orange)
                 }
-                if let added = AppDate.date(from: color.createdAt) ?? AppDate.day(from: color.createdAt) {
+                if let added = ISODate.date(from: color.createdAt) ?? AppDate.day(from: color.createdAt) {
                     div
                     row("calendar", "paint_added",
                         added.formatted(date: .abbreviated, time: .omitted), Color.brandSuccess)
