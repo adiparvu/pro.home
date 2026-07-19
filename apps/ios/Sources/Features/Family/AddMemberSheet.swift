@@ -111,6 +111,14 @@ struct AddFamilyMemberSheet: View {
                 .padding(.top, AppSpacing.sm)
             }
             .scrollDismissesKeyboard(.interactively)
+            // Identity colour assigns itself (IMG_8672): the least-used
+            // palette entry across the roster, so the preview shows exactly
+            // what will be saved and avatars stay distinct.
+            .onAppear {
+                let usage = Dictionary(grouping: familyService.members.map(\.color), by: { $0 })
+                color = kColors.min { (usage[$0]?.count ?? 0, kColors.firstIndex(of: $0) ?? 0)
+                                    < (usage[$1]?.count ?? 0, kColors.firstIndex(of: $1) ?? 0) } ?? kColors[0]
+            }
             .safeAreaInset(edge: .bottom) { addButton }
             .navigationTitle("Add Member")
             .navigationBarTitleDisplayMode(.inline)
@@ -173,7 +181,6 @@ struct AddFamilyMemberSheet: View {
     private var identitySection: some View {
         VStack(spacing: AppSpacing.base) {
             avatar
-            colorPicker
             FormGroup {
                 FormRow(icon: "person.fill", tint: .blue) {
                     TextField("First name *", text: $firstName)
@@ -295,39 +302,9 @@ struct AddFamilyMemberSheet: View {
         HapticFeedback.success()
     }
 
-    /// The avatar's colour, presented as a deliberate choice right under it —
-    /// the ring and spring make the selection legible instead of decorative.
-    private var colorPicker: some View {
-        HStack(spacing: AppSpacing.sm) {
-            ForEach(Array(kColors.enumerated()), id: \.element) { idx, c in
-                let selected = color == c
-                Button {
-                    HapticFeedback.selection()
-                    withAnimation(selectSpring) { color = c }
-                } label: {
-                    Circle().fill(Color(hex: c) ?? .blue)
-                        .frame(width: 26, height: 26)
-                        .overlay(
-                            Circle().strokeBorder(.white, lineWidth: selected ? 2 : 0)
-                        )
-                        .background(
-                            Circle().strokeBorder((Color(hex: c) ?? .blue).opacity(selected ? 0.55 : 0),
-                                                  lineWidth: 2)
-                                .padding(-4)
-                        )
-                        .scaleEffect(selected ? 1.12 : 1.0)
-                        .padding(AppSpacing.xxs)
-                        .contentShape(Circle().inset(by: -6))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Avatar color"))
-                .accessibilityValue(Text(verbatim: "\(idx + 1)/\(kColors.count)"))
-                .accessibilityAddTraits(selected ? [.isSelected] : [])
-            }
-        }
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-        .background(Color.subtleFill.opacity(0.6), in: Capsule())
-    }
+    // The colour swatch row is gone (IMG_8672, same call as the edit sheet):
+    // the identity colour assigns itself — the least-used palette entry
+    // across the current roster — so avatars stay distinct with zero forms.
 
     // MARK: 2. Contact
 
