@@ -39,7 +39,7 @@ struct InventoryItemPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let img = InventoryImageStore.load(for: item.id) {
+            if let img = InventoryImageStore.avatar(for: item.id) {
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFill()

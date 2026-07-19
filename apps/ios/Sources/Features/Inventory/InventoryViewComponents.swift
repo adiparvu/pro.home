@@ -12,11 +12,14 @@ struct InventoryRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 12) {
-                if let img = InventoryImageStore.load(for: item.id) {
+                if let img = InventoryImageStore.avatar(for: item.id) {
+                    // Round photo avatar (IMG_8632) — cover photo, or the
+                    // first gallery photo when no cover was set.
                     Image(uiImage: img)
                         .resizable().scaledToFill()
                         .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
                         .overlay(alignment: .bottomTrailing) {
                             // Keep the category icon visible alongside the photo.
                             ZStack {
@@ -28,20 +31,17 @@ struct InventoryRow: View {
                                     .font(AppFont.scaled(8, weight: .semibold))
                                     .foregroundStyle(.white)
                             }
-                            .offset(x: 4, y: 4)
+                            .offset(x: 3, y: 3)
                         }
                 } else {
-                    // Category-tinted fallback badge — the same colour mapping
-                    // as the long-press preview, so every row carries its
-                    // category identity even without a photo.
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(item.categoryColor.opacity(0.15))
-                        Image(systemName: item.categoryIcon)
-                            .font(AppFont.scaled(18, weight: .medium))
-                            .foregroundStyle(item.categoryColor)
-                    }
-                    .frame(width: 44, height: 44)
+                    // No photo: a round Liquid Glass disc with the category
+                    // colour on the icon ONLY — no tinted fill around it
+                    // (user-decreed, IMG_8632).
+                    Image(systemName: item.categoryIcon)
+                        .font(AppFont.scaled(17, weight: .medium))
+                        .foregroundStyle(item.categoryColor)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
@@ -625,6 +625,16 @@ enum InventoryImageStore {
 
     static func load(for id: UUID) -> UIImage? {
         guard let data = try? Data(contentsOf: url(for: id)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// The list/tile avatar: the cover photo when one was set, otherwise the
+    /// first gallery photo — an item photographed either way still shows
+    /// itself in the list instead of falling back to the category icon.
+    static func avatar(for id: UUID) -> UIImage? {
+        if let cover = load(for: id) { return cover }
+        guard let first = galleryURLs(for: id).first,
+              let data = try? Data(contentsOf: first) else { return nil }
         return UIImage(data: data)
     }
 
