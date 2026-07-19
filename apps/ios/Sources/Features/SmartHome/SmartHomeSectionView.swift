@@ -126,7 +126,10 @@ struct SmartHomeSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            if !allRooms.isEmpty { roomFilter }
+            // The room circle exists only when there are DEVICES to narrow
+            // (IMG_8655): zone names alone used to summon it over an empty
+            // grid, where filtering narrows nothing — a dead control.
+            if !allRooms.isEmpty, !smartHome.devices(in: nil).isEmpty { roomFilter }
             let scenes = homeKitScenes
             if !scenes.isEmpty { SmartSceneChipRow(scenes: scenes) }
             // Media card only while something REALLY plays (IMG_8618) — the
