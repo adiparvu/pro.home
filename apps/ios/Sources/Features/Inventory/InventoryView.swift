@@ -274,6 +274,14 @@ struct InventoryView: View {
         // its item id on the router — open the detail the moment the item is
         // available (immediately when hydrated, or as soon as load lands).
         .onAppear { openPendingDeepLinkItem() }
+        // The page owns its data need (lesson of the b1156 DM fix): if the
+        // startup orchestration's inventory load was cancelled or failed,
+        // self-heal here instead of presenting a silent, wrong empty state.
+        .task {
+            guard service.items.isEmpty, !service.isLoading,
+                  let pid = PropertyService.activePropertyId else { return }
+            await service.load(propertyId: pid)
+        }
         .onChange(of: router.pendingInventoryItemId) { _, _ in openPendingDeepLinkItem() }
         .onChange(of: service.items.count) { _, _ in openPendingDeepLinkItem() }
         .sheet(item: $editItem) { item in

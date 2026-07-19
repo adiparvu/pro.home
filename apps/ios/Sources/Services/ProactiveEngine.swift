@@ -135,8 +135,20 @@ final class ProactiveEngine {
     func scheduleNotifications(for insights: [ProactiveInsight]) {
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.warrantyAlerts) else { return }
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: insights.map { "proactive-\($0.id)" })
-        for insight in insights.filter({ !$0.isDismissed && $0.category == .warranty }) {
+        // Insight ids are deterministic and analyze() reruns on every launch
+        // and background refresh — without this ledger the same warranty
+        // warnings re-fired (5s trigger) at every single app open.
+        let ledgerKey = "prvio.proactive.notified"
+        var notified = Set(UserDefaults.standard.stringArray(forKey: ledgerKey) ?? [])
+        defer {
+            // Prune to the current generation so the ledger can't grow
+            // unbounded; a vanished insight that ever returns may alert again.
+            let live = Set(insights.map { $0.id.uuidString })
+            UserDefaults.standard.set(Array(notified.intersection(live)), forKey: ledgerKey)
+        }
+        for insight in insights.filter({ !$0.isDismissed && $0.category == .warranty
+                                         && !notified.contains($0.id.uuidString) }) {
+            notified.insert(insight.id.uuidString)
             let content = UNMutableNotificationContent()
             content.title = insight.title
             content.body = insight.body

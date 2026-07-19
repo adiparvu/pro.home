@@ -199,6 +199,15 @@ final class NotificationScheduler {
             }
             components.hour   = 8
             components.minute = 0
+            // A thirsty plant discovered after 08:00 waits for tomorrow's
+            // slot — a past-dated trigger fires on the spot, which turned
+            // every app launch into a fresh "water the plants" alert.
+            if let fire = cal.date(from: components), fire <= Date(),
+               let next = cal.date(byAdding: .day, value: 1, to: fire) {
+                components = cal.dateComponents([.year, .month, .day], from: next)
+                components.hour   = 8
+                components.minute = 0
+            }
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             requests.append(UNNotificationRequest(
@@ -328,6 +337,15 @@ final class NotificationScheduler {
         let cal = Calendar.current
         var requests: [UNNotificationRequest] = []
 
+        // Overdue nudges dedupe by DAY, not by launch: reschedule() runs on
+        // every world load (cold start, context switch, app update), and the
+        // 60-second trigger below would otherwise re-deliver the exact same
+        // "overdue" alerts each time the app opens.
+        let stampsKey = "prvio.notif.overdueStamps"
+        var overdueStamps = UserDefaults.standard.dictionary(forKey: stampsKey) as? [String: String] ?? [:]
+        let todayComps = cal.dateComponents([.year, .month, .day], from: now)
+        let todayStamp = "\(todayComps.year ?? 0)-\(todayComps.month ?? 0)-\(todayComps.day ?? 0)"
+
         // iOS keeps at most 64 pending local notifications per app; other
         // schedulers (plant care, celebrations, monthly recap) share that
         // budget, so we cap the deadline pass and — because the agenda is
@@ -338,8 +356,10 @@ final class NotificationScheduler {
             if requests.count >= deadlineBudget { break }
             let day = cal.startOfDay(for: item.date)
 
-            // Overdue tasks nudge once, shortly after launch.
+            // Overdue tasks nudge once per day, shortly after launch.
             if item.category == .task, day < cal.startOfDay(for: now) {
+                guard overdueStamps[item.occurrenceKey] != todayStamp else { continue }
+                overdueStamps[item.occurrenceKey] = todayStamp
                 let content = deadlineContent(for: item, phase: .overdue)
                 requests.append(UNNotificationRequest(
                     identifier: "agenda.overdue.\(item.occurrenceKey)",
@@ -364,6 +384,12 @@ final class NotificationScheduler {
         }
 
         if weeklyDigest { requests.append(weeklyDigestNotification()) }
+
+        // Stamps for items no longer on the agenda (completed, deleted) are
+        // dead weight — prune so the map tracks the live overdue set only.
+        let liveKeys = Set(agenda.map(\.occurrenceKey))
+        overdueStamps = overdueStamps.filter { liveKeys.contains($0.key) }
+        UserDefaults.standard.set(overdueStamps, forKey: stampsKey)
 
         for request in requests { try? await center.add(request) }
     }
