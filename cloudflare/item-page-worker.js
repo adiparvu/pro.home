@@ -69,20 +69,20 @@ function row(label, value, href) {
 }
 
 function page(item) {
-  const itemName = item?.item_name || "PRV House Item";
+  const itemName = item?.item_name || "PRVIO Item";
   const hasContact = !!(item?.owner_name || item?.owner_phone || item?.owner_address);
   const message = item
     ? `Please return it to the owner${item.owner_name ? ` ${esc(item.owner_name)}` : ""}. Thank you for your honesty!`
-    : "This item belongs to a PRV House user. If you found or borrowed it, please try to return it to its owner.";
+    : "This item belongs to a PRVIO user. If you found or borrowed it, please try to return it to its owner.";
   const brand = `<svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" fill="white" d="M18 10 h28 v80 h-28 Z M46 10 L68 10 Q90 10 90 33 Q90 56 68 56 L46 56 Z M46 26 L65 26 Q74 26 74 33 Q74 40 65 40 L46 40 Z"/></svg>`;
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(itemName)} · PRV House</title></head>
+<title>${esc(itemName)} · PRVIO</title></head>
 <body style="margin:0;min-height:100dvh;background:#0d1117;color:#f0f6ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
 <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:32px;max-width:400px;width:100%">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
     <div style="width:34px;height:34px;border-radius:9px;background:#0D1420;display:flex;align-items:center;justify-content:center">${brand}</div>
-    <span style="font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase">PRV House</span>
+    <span style="font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase">PRVIO</span>
   </div>
   <div style="width:64px;height:64px;border-radius:18px;background:rgba(255,140,0,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:28px">📦</div>
   <h1 style="font-size:26px;font-weight:700;margin:0 0 4px">${esc(itemName)}</h1>
@@ -96,6 +96,6 @@ function page(item) {
     ${row("Phone", item?.owner_phone, item?.owner_phone ? `tel:${item.owner_phone}` : undefined)}
     ${row("Address", item?.owner_address)}
   </div>` : ""}
-  <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin-top:28px">Powered by PRV House · Home Management</p>
+  <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin-top:28px">Powered by PRVIO · Home Management</p>
 </div></body></html>`;
 }

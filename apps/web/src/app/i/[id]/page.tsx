@@ -35,7 +35,7 @@ async function loadItem(id: string): Promise<PublicItem | null> {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const item = await loadItem(id)
-  return { title: item?.item_name ? `${item.item_name} · PRV House` : 'PRV House' }
+  return { title: item?.item_name ? `${item.item_name} · PRVIO` : 'PRVIO' }
 }
 
 const BrandMark = () => (
@@ -60,11 +60,11 @@ export default async function PublicItemPage({ params }: Props) {
   const { id } = await params
   const item = await loadItem(id)
 
-  const itemName = item?.item_name || 'PRV House Item'
+  const itemName = item?.item_name || 'PRVIO Item'
   const hasContact = !!(item?.owner_name || item?.owner_phone || item?.owner_address)
   const message = item
     ? `Please return it to the owner${item.owner_name ? ` ${item.owner_name}` : ''}. Thank you for your honesty!`
-    : 'This item belongs to a PRV House user. If you found or borrowed it, please try to return it to its owner.'
+    : 'This item belongs to a PRVIO user. If you found or borrowed it, please try to return it to its owner.'
 
   return (
     <div style={{
@@ -90,7 +90,7 @@ export default async function PublicItemPage({ params }: Props) {
           <div style={{ width: 34, height: 34, borderRadius: 9, background: '#0D1420', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <BrandMark />
           </div>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase' }}>PRV House</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase' }}>PRVIO</span>
         </div>
 
         <div style={{
@@ -120,7 +120,7 @@ export default async function PublicItemPage({ params }: Props) {
         )}
 
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center', marginTop: 28 }}>
-          Powered by PRV House · Home Management
+          Powered by PRVIO · Home Management
         </p>
       </div>
     </div>
