@@ -61,7 +61,6 @@ struct AuditLogView: View {
         .navigationTitle("Jurnal activitate")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

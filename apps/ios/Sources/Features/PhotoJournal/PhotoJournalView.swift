@@ -58,7 +58,6 @@ struct PhotoJournalView: View {
         .navigationTitle("Photo Journal")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             if !topTags.isEmpty || !contributors.isEmpty {

@@ -104,7 +104,6 @@ struct FamilyView: View {
         .navigationTitle("Family")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.family)
         .toolbar {

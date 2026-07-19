@@ -47,7 +47,6 @@ struct PriceHistoryView: View {
         .navigationTitle(String(localized: "price_history_title"))
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
     }
 

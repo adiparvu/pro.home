@@ -46,7 +46,6 @@ struct ReceiptListView: View {
         .navigationTitle(String(localized: "receipt_list_title"))
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .sheet(item: $selectedReceipt) { receipt in
             ReceiptDetailView(receipt: receipt)

@@ -62,7 +62,6 @@ struct PaintColorsView: View {
         .navigationTitle("Paint Colors")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             // One circle for everything (IMG_8544/8546): the room

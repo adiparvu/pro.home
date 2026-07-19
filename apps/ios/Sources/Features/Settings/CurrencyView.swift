@@ -65,7 +65,6 @@ struct CurrencyView: View {
         .navigationTitle("currency_row_label")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .scrollDismissesKeyboard(.interactively)
         .task { await currencyService.refresh() }

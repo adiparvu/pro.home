@@ -108,7 +108,7 @@ struct ObjectsListView: View {
         .navigationTitle("Objects")
         .navigationBarTitleDisplayMode(.large)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search name, brand, serial…")
+        .searchable(text: $searchText, prompt: "Search name, brand, serial…")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredElements.count)")

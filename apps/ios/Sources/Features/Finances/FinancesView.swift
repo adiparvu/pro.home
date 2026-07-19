@@ -285,7 +285,6 @@ struct FinancesView: View {
         .navigationTitle("Finances")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("fin_search_prompt"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }

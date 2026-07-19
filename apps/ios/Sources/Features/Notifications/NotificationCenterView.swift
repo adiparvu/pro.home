@@ -89,7 +89,6 @@ struct NotificationCenterView: View {
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             if !service.notifications.isEmpty {

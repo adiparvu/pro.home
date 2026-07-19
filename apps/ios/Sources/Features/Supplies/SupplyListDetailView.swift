@@ -43,7 +43,6 @@ struct SupplyListDetailView: View {
         .navigationTitle(list.name)
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search items…"))
         .toolbar {
             if !listItems.isEmpty {

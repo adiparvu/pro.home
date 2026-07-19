@@ -70,7 +70,6 @@ struct CommunitiesView: View {
             .navigationTitle("chat_groups_title")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $searchText,
-                        placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: Text("Search…"))
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showCreate) {

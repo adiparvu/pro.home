@@ -75,7 +75,6 @@ struct BlueprintsView: View {
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {

@@ -365,7 +365,6 @@ struct ContractorsView: View {
         .navigationTitle("Contractors")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $search,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.contractors)
         .toolbar {
