@@ -161,6 +161,8 @@ struct AccountReviewSheet: View {
                     VStack(spacing: 20) {
                         header
                         detailsCard
+                        socialCard
+                        if !isSelf { messageButton }
                         if canAdmin {
                             roleCard
                             blockCard
@@ -253,15 +255,27 @@ struct AccountReviewSheet: View {
         return String(localized: "Blocked")
     }
 
+    // Parity law (IMG_8615/8616): the full Account page must never show LESS
+    // than the long-press peek — same rows (full name, e-mail, phone,
+    // birthday, joined, status), plus the social row and the message action.
     private var detailsCard: some View {
         GlassCard(padding: 0) {
             VStack(spacing: 0) {
+                if let full = profile?.fullName?.trimmingCharacters(in: .whitespaces),
+                   !full.isEmpty, full != (profile?.bestName ?? "") {
+                    infoRow("person.fill", "Name", full, Color.brandPurple)
+                    div
+                }
                 if let email = profile?.email, !email.isEmpty {
                     infoRow("envelope.fill", "E-mail", email, .orange)
                     div
                 }
                 if let phone = profile?.phone, !phone.isEmpty {
                     infoRow("phone.fill", "Phone", phone, Color.brandSuccess)
+                    div
+                }
+                if let birthday = birthdayValue {
+                    infoRow("birthday.cake.fill", "cal_birthday", birthday, .pink)
                     div
                 }
                 if let joined = live.joinedDate {
@@ -273,6 +287,40 @@ struct AccountReviewSheet: View {
                         live.isBlocked ? Color.brandDanger : Color.brandSuccess)
             }
         }
+    }
+
+    private var birthdayValue: String? {
+        guard let raw = profile?.birthDate, let date = AppDate.day(from: raw) else { return nil }
+        return date.formatted(.dateTime.day().month(.wide).year())
+    }
+
+    /// The profile's real social links — same component the preview renders.
+    @ViewBuilder private var socialCard: some View {
+        let links = SocialLinksRow.displayable(profile?.socialLinks ?? [])
+        if !links.isEmpty {
+            GlassCard(padding: AppSpacing.base) {
+                SocialLinksRow(links: links)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// The exact route a tapped chat push takes (ChatNotificationTarget →
+    /// .prvioOpenChat) — no chat-stack plumbing of its own.
+    private var messageButton: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            ChatNotificationTarget.store(live.userId.uuidString)
+            dismiss()
+            NotificationCenter.default.post(name: .prvioOpenChat, object: nil)
+        } label: {
+            Label("mem_send_message", systemImage: "bubble.left.fill")
+                .font(AppFont.scaled(15, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Color.accentColor)
     }
 
     private var roleCard: some View {
