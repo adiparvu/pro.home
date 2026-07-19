@@ -33,7 +33,7 @@ export default {
           `${base}/rest/v1/public_items` +
             `?item_uuid=eq.${match[1]}` +
             `&select=item_name,owner_name,owner_phone,owner_email,owner_address,` +
-            `property_name,latitude,longitude,app_icon_url`,
+            `property_name,latitude,longitude,app_icon_url,loaned_to,loaned_at`,
           {
             headers: {
               apikey: key,
@@ -115,6 +115,11 @@ function page(item) {
     <p style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.55;margin:0"><span data-i="${item ? "found_body" : "generic_body"}"></span>${item?.owner_name ? ` <strong style="color:rgba(255,255,255,.85)">${esc(item.owner_name)}</strong>` : ""}</p>
   </div>
 
+  ${item?.loaned_to ? `<div style="background:rgba(120,110,255,0.1);border:1px solid rgba(120,110,255,0.3);border-radius:14px;padding:14px 18px;margin:0 0 14px">
+    <h2 data-i="loan_title" style="font-size:13px;font-weight:600;color:#a9a0ff;margin:0 0 4px"></h2>
+    <p style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5;margin:0"><span data-i="loan_body"></span> <strong style="color:#f0f6ff">${esc(item.loaned_to)}</strong><span id="loanDate" data-date="${esc(item.loaned_at || "")}"></span></p>
+  </div>` : ""}
+
   ${hasContact ? `<div style="background:rgba(255,255,255,0.04);border-radius:14px;overflow:hidden;margin-bottom:14px">
     ${row("l_owner", item?.owner_name)}
     ${row("l_phone", item?.owner_phone, item?.owner_phone ? `tel:${item.owner_phone}` : undefined)}
@@ -158,7 +163,8 @@ ${(wazeHref || gmapsHref || amapsHref) ? `
       found_body: "Te rugăm să îl returnezi proprietarului. Mulțumim pentru onestitate!",
       generic_body: "Acest obiect aparține unui utilizator PRVIO. Dacă l-ai găsit sau împrumutat, te rugăm să încerci să îl returnezi proprietarului.",
       l_owner: "Proprietar", l_phone: "Telefon", l_email: "Email", l_address: "Adresă",
-      map_open: "Deschide în hărți", map_choose: "Deschide locația cu", cancel: "Anulează"
+      map_open: "Deschide în hărți", map_choose: "Deschide locația cu", cancel: "Anulează",
+      loan_title: "Împrumutat", loan_body: "Acest obiect este împrumutat lui", loan_since: " din "
     },
     en: {
       generic_title: "PRVIO Item",
@@ -167,7 +173,8 @@ ${(wazeHref || gmapsHref || amapsHref) ? `
       found_body: "Please return it to the owner. Thank you for your honesty!",
       generic_body: "This item belongs to a PRVIO user. If you found or borrowed it, please try to return it to its owner.",
       l_owner: "Owner", l_phone: "Phone", l_email: "Email", l_address: "Address",
-      map_open: "Open in maps", map_choose: "Open location with", cancel: "Cancel"
+      map_open: "Open in maps", map_choose: "Open location with", cancel: "Cancel",
+      loan_title: "On loan", loan_body: "This item is on loan to", loan_since: " since "
     }
   };
   function apply(lang) {
@@ -177,6 +184,15 @@ ${(wazeHref || gmapsHref || amapsHref) ? `
     for (var i = 0; i < nodes.length; i++) {
       var k = nodes[i].getAttribute("data-i");
       if (dict[k]) nodes[i].textContent = dict[k];
+    }
+    var loanDate = document.getElementById("loanDate");
+    if (loanDate && loanDate.getAttribute("data-date")) {
+      var d = new Date(loanDate.getAttribute("data-date"));
+      if (!isNaN(d)) {
+        var fmt = new Intl.DateTimeFormat(lang === "ro" ? "ro-RO" : "en-GB",
+                                          { day: "numeric", month: "long", year: "numeric" });
+        loanDate.textContent = dict.loan_since + fmt.format(d);
+      }
     }
     var chips = document.querySelectorAll("#langs button");
     for (var j = 0; j < chips.length; j++) {

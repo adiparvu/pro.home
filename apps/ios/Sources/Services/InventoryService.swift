@@ -96,6 +96,8 @@ final class InventoryService {
         updated.currentLoan = record
         await update(updated)
         scheduleLoanReminders(for: updated, loan: record)
+        // The public QR page shows live loan status — keep it in step.
+        await syncPublicProfile(for: updated)
     }
 
     func markReturned(_ item: InventoryItem) async {
@@ -107,6 +109,8 @@ final class InventoryService {
         }
         cancelLoanNotifications(for: item)
         await update(updated)
+        // A return clears the loan line on the public QR page.
+        await syncPublicProfile(for: updated)
     }
 
     func itemByQR(_ qrString: String) -> InventoryItem? {
@@ -140,6 +144,8 @@ final class InventoryService {
             let latitude: Double?
             let longitude: Double?
             let app_icon_url: String?
+            let loaned_to: String?
+            let loaned_at: String?
         }
         guard let uid = supabase.auth.currentSession?.user.id else { return }
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
@@ -148,7 +154,9 @@ final class InventoryService {
                         user_id: uid.uuidString,
                         owner_email: profile.ownerEmail,
                         latitude: item.latitude, longitude: item.longitude,
-                        app_icon_url: await publicAppIconURL())
+                        app_icon_url: await publicAppIconURL(),
+                        loaned_to: item.currentLoan?.borrowerName,
+                        loaned_at: item.currentLoan.map { ISODate.string(from: $0.loanedAt) })
         _ = try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
     }
 
