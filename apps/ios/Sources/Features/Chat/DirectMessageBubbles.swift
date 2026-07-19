@@ -94,6 +94,8 @@ struct DMBubble: View {
     /// First bubble of a same-sender run — anchors the sender-name label (only
     /// shown for an incoming peer who isn't a saved contact, iMessage-style).
     var isFirstInRun: Bool = true
+    /// Part of a run of consecutive photos — compact uniform tile (IMG_8613).
+    var photoRunMember: Bool = false
     var myName: String = ""
     /// My auth user id — reactions key on it (names collide and drift).
     var myUserId: UUID? = nil
@@ -259,7 +261,8 @@ struct DMBubble: View {
                 hasTail: hasTail
             )
         case .image:
-            DMImageBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail) { u in
+            DMImageBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail,
+                          compact: photoRunMember) { u in
                 viewerItem = ImageViewerItem(url: u)
             }
         case .video:
@@ -311,6 +314,8 @@ struct DMImageBubble: View {
     let stored: String
     var isOwn: Bool = false
     var hasTail: Bool = true
+    /// Compact uniform tile for a run of consecutive photos (IMG_8613).
+    var compact: Bool = false
     let onTap: (URL) -> Void
     @State private var url: URL?
 
@@ -322,7 +327,8 @@ struct DMImageBubble: View {
             case .success(let img):
                 img.resizable()
                     .scaledToFill()
-                    .frame(maxWidth: 220, maxHeight: 180)
+                    .frame(width: compact ? 158 : nil, height: compact ? 158 : nil)
+                    .frame(maxWidth: compact ? nil : 220, maxHeight: compact ? nil : 180)
                     .clipShape(shape)
                     .onTapGesture { if let url { onTap(url) } }
             case .failure:

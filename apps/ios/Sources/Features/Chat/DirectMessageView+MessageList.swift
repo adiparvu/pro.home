@@ -242,6 +242,14 @@ extension DirectMessageView {
                                 // incoming sender-name label for unknown peers.
                                 let prevSameSender = !isSearching && !showDate && idx > 0
                                     && shown[idx - 1].senderName == msg.senderName
+                                // IMG_8613: consecutive photos collapse into a
+                                // tight run of uniform tiles (same law as the
+                                // group chat) — visual only, every interaction
+                                // stays per-message.
+                                let photoRun = !isSearching
+                                    && ChatMedia.dmBodyKind(msg.body) == .image
+                                    && ((prevSameSender && ChatMedia.dmBodyKind(shown[idx - 1].body) == .image)
+                                        || (nextSameSender && ChatMedia.dmBodyKind(shown[idx + 1].body) == .image))
 
                                 if showDate {
                                     ChatDateSeparator(dateStr: msg.createdAt)
@@ -262,6 +270,7 @@ extension DirectMessageView {
                                     isOwn: isOwn,
                                     hasTail: !nextSameSender,
                                     isFirstInRun: !prevSameSender,
+                                    photoRunMember: photoRun,
                                     myName: myName,
                                     myUserId: directMessageService.myUserId,
                                     partner: member,

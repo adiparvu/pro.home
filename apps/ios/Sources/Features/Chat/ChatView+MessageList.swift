@@ -328,6 +328,15 @@ extension ChatView {
                         let nextSameSender = grouping && idx < msgs.count - 1
                             && sameDay(msg, msgs[idx + 1])
                             && msgs[idx + 1].senderName == msg.senderName
+                        // IMG_8613: consecutive photos from one sender read as
+                        // one tight gallery of uniform tiles instead of full
+                        // bubbles sprawling down the chat. Purely visual —
+                        // every tile stays its own message (menu, reactions,
+                        // receipts, selection all untouched).
+                        let photoRun = grouping && msg.isImageMessage
+                            && (msg.body?.isEmpty ?? true)
+                            && ((prevSameSender && msgs[idx - 1].isImageMessage)
+                                || (nextSameSender && msgs[idx + 1].isImageMessage))
                         if showDate {
                             ChatDateSeparator(dateStr: msg.createdAt)
                         }
@@ -385,6 +394,7 @@ extension ChatView {
                             onLongPress: { menuMessage = msg },
                             isGroupStart: !prevSameSender,
                             isGroupEnd: !nextSameSender,
+                            photoRunMember: photoRun,
                             onQuotedTap: {
                                 guard let rid = msg.replyTo else { return }
                                 // Tapping the quote isolates the whole reply

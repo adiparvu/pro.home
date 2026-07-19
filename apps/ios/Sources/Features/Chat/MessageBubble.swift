@@ -41,6 +41,9 @@ struct MessageBubble: View {
     var isGroupStart: Bool = true
     /// Last message of a same-sender run — anchors the avatar to this bubble.
     var isGroupEnd: Bool = true
+    /// Part of a run of consecutive photos from the same sender — the image
+    /// renders as a compact uniform tile so the run reads as one gallery.
+    var photoRunMember: Bool = false
     /// Tapping the quoted reply snippet jumps to the original message.
     var onQuotedTap: (() -> Void)? = nil
     /// Briefly tinted when the reader jumped here from a reply/pin.
@@ -282,7 +285,8 @@ struct MessageBubble: View {
             }
         } else if message.isImageMessage, let urlStr = message.attachmentUrl {
             ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
-                            ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd) { resolved in
+                            ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd,
+                            compact: photoRunMember) { resolved in
                 viewerItem = ImageViewerItem(url: resolved)
             }
         } else if message.isVideoMessage, let urlStr = message.attachmentUrl {

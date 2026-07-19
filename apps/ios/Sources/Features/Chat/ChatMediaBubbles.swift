@@ -152,6 +152,8 @@ struct ChatImageBubble: View {
     let isOwn: Bool
     let ownBubbleColor: Color
     var hasTail: Bool = true
+    /// Compact uniform tile for a run of consecutive photos (IMG_8613).
+    var compact: Bool = false
     let onTap: (URL) -> Void
     @State private var url: URL?
     /// Bumping this re-runs the resolve `.task` — the tap-to-retry affordance
@@ -166,7 +168,8 @@ struct ChatImageBubble: View {
                 switch phase {
                 case .success(let img):
                     img.resizable().scaledToFill()
-                        .frame(maxWidth: 220, maxHeight: 160)
+                        .frame(width: compact ? 158 : nil, height: compact ? 158 : nil)
+                        .frame(maxWidth: compact ? nil : 220, maxHeight: compact ? nil : 160)
                         .contentShape(Rectangle())
                         .onTapGesture { if let url { onTap(url) } }
                 case .failure:
