@@ -96574,6 +96574,30 @@
   "paint_sheet_meta": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "%d colors · %d rooms" } },
     "ro": { "stringUnit": { "state": "translated", "value": "%d culori · %d camere" } }
+  } },
+  "inv_overdue_by": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Overdue by %@" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Termen depășit cu %@" } }
+  } },
+  "inv_map_tap_hint": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Tap the map to place the pin" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Atinge harta pentru a așeza pinul" } }
+  } },
+  "inv_open_in_maps": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Open in Maps" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Deschide în Hărți" } }
+  } },
+  "est_set_photo": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Add space photo" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Adaugă fotografia spațiului" } }
+  } },
+  "est_change_photo": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Change photo" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Schimbă fotografia" } }
+  } },
+  "est_remove_photo": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Remove photo" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Șterge fotografia" } }
   } }
   },
   "version": "1.0"

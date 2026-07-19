@@ -32,6 +32,59 @@ struct LoanRecord: Identifiable, Codable {
     var daysOut: Int { Calendar.current.dateComponents([.day], from: loanedAt, to: returnedAt ?? Date()).day ?? 0 }
 }
 
+extension LoanRecord {
+    /// Seconds past the promised return DAY — the promised date itself is
+    /// grace (the list's long-standing convention: overdue starts the
+    /// following midnight). nil = returned / on time / no promise made.
+    var overdueInterval: TimeInterval? {
+        guard returnedAt == nil, let due = expectedReturnDate else { return nil }
+        let deadline = Calendar.current.startOfDay(for: due).addingTimeInterval(86_400)
+        let elapsed = Date().timeIntervalSince(deadline)
+        return elapsed > 0 ? elapsed : nil
+    }
+}
+
+/// The escalating overdue ladder (user-decreed buckets, IMG_8635):
+/// 1h · 1d · 3d · 7d · 14d · 30d · 90d · 180d · 1y — the longer a loan
+/// sits past its promised return, the hotter its row reads.
+enum LoanOverdueTier: Int, CaseIterable {
+    case justPassed, hours, oneDay, threeDays, oneWeek, twoWeeks
+    case oneMonth, threeMonths, sixMonths, oneYear
+
+    init(overdueBy interval: TimeInterval) {
+        let hour: TimeInterval = 3_600, day: TimeInterval = 86_400
+        switch interval {
+        case ..<hour:        self = .justPassed
+        case ..<day:         self = .hours
+        case ..<(3 * day):   self = .oneDay
+        case ..<(7 * day):   self = .threeDays
+        case ..<(14 * day):  self = .oneWeek
+        case ..<(30 * day):  self = .twoWeeks
+        case ..<(90 * day):  self = .oneMonth
+        case ..<(180 * day): self = .threeMonths
+        case ..<(365 * day): self = .sixMonths
+        default:             self = .oneYear
+        }
+    }
+
+    /// Yellow → amber → oranges → reds → deep crimson → violet: one hue
+    /// ramp, hotter with every bucket, legible on both schemes.
+    var color: Color {
+        switch self {
+        case .justPassed:  Color(red: 0.93, green: 0.78, blue: 0.10)
+        case .hours:       Color(red: 1.00, green: 0.70, blue: 0.00)
+        case .oneDay:      Color(red: 1.00, green: 0.55, blue: 0.00)
+        case .threeDays:   Color(red: 1.00, green: 0.40, blue: 0.10)
+        case .oneWeek:     Color(red: 0.95, green: 0.27, blue: 0.20)
+        case .twoWeeks:    Color(red: 0.88, green: 0.12, blue: 0.15)
+        case .oneMonth:    Color(red: 0.75, green: 0.05, blue: 0.12)
+        case .threeMonths: Color(red: 0.62, green: 0.00, blue: 0.16)
+        case .sixMonths:   Color(red: 0.50, green: 0.00, blue: 0.28)
+        case .oneYear:     Color(red: 0.38, green: 0.00, blue: 0.42)
+        }
+    }
+}
+
 // MARK: - InventoryItem
 
 struct InventoryItem: Identifiable, Codable {

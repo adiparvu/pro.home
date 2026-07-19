@@ -60,12 +60,7 @@ struct InventoryRow: View {
                         Text(verbatim: InventoryLabels.location(item.location)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
-                        // "La Vasile · până la 12 aug." when a return was
-                        // promised (red once that day has passed), otherwise
-                        // "La Vasile · 3 iul." — who has it and since when.
-                        Label(loanLine(loan), systemImage: isOverdue(loan) ? "exclamationmark.circle.fill" : "person.fill")
-                            .font(AppFont.scaled(10, weight: .medium))
-                            .foregroundStyle(isOverdue(loan) ? Color.brandDanger : .orange)
+                        loanStatus(loan)
                     }
                 }
                 Spacer()
@@ -90,8 +85,42 @@ struct InventoryRow: View {
         }
         .overlay {
             if item.isLoaned {
-                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(loanAccent.opacity(overdueTier == nil ? 0.45 : 0.65),
+                                  lineWidth: 1.5)
             }
+        }
+        // The escalation's glow — hotter buckets throw a warmer halo.
+        .shadow(color: overdueTier.map { $0.color.opacity(0.3) } ?? .clear,
+                radius: overdueTier == nil ? 0 : 9, y: 2)
+    }
+
+    // MARK: Loan escalation (IMG_8635)
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The current escalation bucket — nil while the promise still holds.
+    private var overdueTier: LoanOverdueTier? {
+        item.currentLoan?.overdueInterval.map { LoanOverdueTier(overdueBy: $0) }
+    }
+
+    /// Calm blue while on time; the bucket's heat once the term is blown.
+    private var loanAccent: Color {
+        overdueTier?.color ?? Color.brandSkyBlue
+    }
+
+    /// "La Vasile · până la 12 aug." in calm blue while the promise holds;
+    /// past it, a second pulsing line says exactly HOW LONG the return is
+    /// overdue, in the escalation bucket's color.
+    @ViewBuilder private func loanStatus(_ loan: LoanRecord) -> some View {
+        Label(loanLine(loan), systemImage: "person.fill")
+            .font(AppFont.scaled(10, weight: .medium))
+            .foregroundStyle(loanAccent)
+        if let tier = overdueTier, let interval = loan.overdueInterval {
+            Label(overdueLine(interval), systemImage: "exclamationmark.triangle.fill")
+                .font(AppFont.scaled(10, weight: .semibold))
+                .foregroundStyle(tier.color)
+                .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
         }
     }
 
@@ -106,9 +135,18 @@ struct InventoryRow: View {
                       loan.loanedAt.formatted(.dateTime.day().month(.abbreviated)))
     }
 
-    private func isOverdue(_ loan: LoanRecord) -> Bool {
-        guard let due = loan.expectedReturnDate else { return false }
-        return due < Calendar.current.startOfDay(for: Date())
+    /// One-unit, locale-aware: "3 zile", "2 săptămâni", "1 an".
+    private static let overdueFormatter: DateComponentsFormatter = {
+        let f = DateComponentsFormatter()
+        f.allowedUnits = [.year, .month, .weekOfMonth, .day, .hour]
+        f.maximumUnitCount = 1
+        f.unitsStyle = .full
+        return f
+    }()
+
+    private func overdueLine(_ interval: TimeInterval) -> String {
+        String(format: String(localized: "inv_overdue_by"),
+               Self.overdueFormatter.string(from: interval) ?? "")
     }
 }
 
