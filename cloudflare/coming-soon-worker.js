@@ -18,6 +18,15 @@ export default {
     if (request.method === "POST" && url.pathname === "/contact") {
       return handleContact(request, env);
     }
+    // The hard hat is also the site icon — served straight from the worker.
+    if (url.pathname === "/favicon.svg" || url.pathname === "/favicon.ico") {
+      return new Response(FAVICON, {
+        headers: {
+          "content-type": "image/svg+xml",
+          "cache-control": "public, max-age=86400",
+        },
+      });
+    }
     return new Response(PAGE, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -71,9 +80,18 @@ async function handleContact(request, env) {
   }
 }
 
+const FAVICON = `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="26" fill="#07090f"/>
+  <path d="M22 74 A38 38 0 0 1 98 74 Z" fill="#FFC53D"/>
+  <rect x="53" y="30" width="14" height="32" rx="7" fill="#FFD666"/>
+  <rect x="12" y="72" width="96" height="13" rx="6.5" fill="#F5A623"/>
+  <path d="M22 74 A38 38 0 0 1 60 36 L60 74 Z" fill="rgba(255,255,255,.14)"/>
+</svg>`;
+
 const PAGE = `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Under construction.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <title>Under construction</title>
 <style>
   :root { color-scheme: dark; }
