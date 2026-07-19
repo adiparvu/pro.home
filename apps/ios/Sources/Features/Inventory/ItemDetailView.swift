@@ -12,6 +12,9 @@ struct ItemDetailView: View {
     @State private var showReturnConfirm = false
     @State private var showHistory = false
     @State private var showPublicContact = false
+    /// In-app preview of the item's live public QR page (IMG_8685) — the
+    /// same real-page preview the Lost & Found card gained in b1165.
+    @State private var showQRPagePreview = false
     @State private var showLocationPicker = false
 
     private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
@@ -194,7 +197,9 @@ struct ItemDetailView: View {
                                 Image(systemName: "person.fill").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(loan.borrowerName).font(AppFont.scaled(13)).foregroundStyle(.primary)
-                                    Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
+                                    Text(String(format: String(localized: "loan_hist_line"),
+                                                Self.dayCount(loan.daysOut),
+                                                loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-"))
                                         .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                                 }
                             }
@@ -264,7 +269,7 @@ struct ItemDetailView: View {
                     VStack(spacing: 6) {
                         loanRow("Borrower", loan.borrowerName)
                         loanRow("Loaned", loan.loanedAt.formatted(date: .abbreviated, time: .omitted))
-                        loanRow("Days out", "\(loan.daysOut) day\(loan.daysOut == 1 ? "" : "s")", highlight: loan.daysOut > 7)
+                        loanRow("Days out", Self.dayCount(loan.daysOut), highlight: loan.daysOut > 7)
                         if let ret = loan.expectedReturnDate {
                             loanRow("Expected return",
                                     overdue
@@ -329,6 +334,26 @@ struct ItemDetailView: View {
                         }
                     }
                 }
+                // The scanned page itself, one tap away (IMG_8685): the LIVE
+                // public page, not a mock — loan status, map, language, all.
+                Button {
+                    HapticFeedback.impact(.light)
+                    showQRPagePreview = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari.fill").font(AppFont.scaled(13))
+                        Text("lost_preview_page").font(AppFont.scaled(13, weight: .medium))
+                    }
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity).frame(height: 40)
+                    .glassCapsule()
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showQRPagePreview) {
+            if let url = URL(string: live.qrContent) {
+                SafariView(url: url).ignoresSafeArea()
             }
         }
     }
@@ -347,6 +372,20 @@ struct ItemDetailView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
+    }
+
+    /// Locale-aware day count ("3 zile", "1 zi", "0 zile") — the b1132
+    /// one-unit style; the hand-built "day\(s)" literal leaked English on
+    /// Romanian devices (IMG_8685: "0 days").
+    private static let dayCountFormatter: DateComponentsFormatter = {
+        let f = DateComponentsFormatter()
+        f.allowedUnits = [.day]
+        f.unitsStyle = .full
+        return f
+    }()
+
+    private static func dayCount(_ days: Int) -> String {
+        dayCountFormatter.string(from: DateComponents(day: days)) ?? "\(days)"
     }
 
     private func renderQR() -> UIImage? {

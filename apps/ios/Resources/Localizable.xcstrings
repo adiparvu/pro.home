@@ -96714,6 +96714,10 @@
   "theme_page_caption": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Automatic follows your device. The choice applies to the whole app." } },
     "ro": { "stringUnit": { "state": "translated", "value": "Automat urmeaz\u0103 setarea telefonului. Alegerea se aplic\u0103 \u00eentregii aplica\u021bii." } }
+  } },
+  "loan_hist_line": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "%@ \u00b7 returned %@" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "%@ \u00b7 returnat %@" } }
   } }
   },
   "version": "1.0"
