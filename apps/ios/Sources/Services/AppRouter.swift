@@ -103,9 +103,9 @@ final class AppRouter {
              iotHub, calendar, appliances, seasonal, propertyDetails, houseFeed
     }
 
-    /// Bumped when an external entry point asks for the Communities sheet;
-    /// the chat tab observes it, presents the sheet, and CommunitiesView
-    /// auto-opens `deepLinkCommunityGroupId` when one was requested.
+    /// Bumped when an external entry point asks for a chat group; groups are
+    /// rows in the conversations list, which observes this and pushes the
+    /// thread for `deepLinkCommunityGroupId` when one was requested.
     private(set) var communitiesRequest = 0
     var deepLinkCommunityGroupId: UUID?
 

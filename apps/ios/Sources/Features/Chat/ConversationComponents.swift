@@ -57,6 +57,9 @@ struct ConversationEntry: Identifiable {
     /// counterpart holds an account — including peers with NO roster row
     /// (the property owner on a non-owner device).
     var peer: ChatPeer? = nil
+    /// The chat group behind a "cg:<uuid>" row — nil for the main family
+    /// chat entry ("group") and for DMs.
+    var chatGroup: ChatGroup? = nil
 
     /// The addressable 1:1 thread behind a DM row; nil for the group entry.
     var dmThread: DMThread? {
@@ -182,7 +185,16 @@ struct ConversationRowView: View {
 
     @ViewBuilder
     private var avatar: some View {
-        if entry.isGroup {
+        if let group = entry.chatGroup {
+            // A chat group's identity is its kind glyph on a glass disc —
+            // never the main family avatar collage.
+            Image(systemName: group.kindIcon)
+                .font(AppFont.scaled(22, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(group.kindTint)
+                .frame(width: 54, height: 54)
+                .glassCircle()
+        } else if entry.isGroup {
             GroupChatAvatar(members: members, photoUrl: propertyPhotoUrl)
         } else {
             // Identity first: the ChatPeer carries the live profile photo

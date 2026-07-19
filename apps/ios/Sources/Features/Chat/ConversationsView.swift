@@ -23,7 +23,10 @@ struct ConversationsView: View {
     @State private var showNewConversation = false
     @State private var showAddContact = false
     @State private var showContactsPicker = false
-    @State private var showCommunities = false
+    @State private var showCreateGroup = false
+    /// Chat groups (chat_groups) — first-class rows in this list (IMG_8657);
+    /// the standalone "Grupuri" sheet that duplicated them is gone.
+    @State private var groupService = ChatGroupService()
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
@@ -105,6 +108,9 @@ struct ConversationsView: View {
             if entry.name.localizedCaseInsensitiveContains(q) { return true }
             if entry.preview.localizedCaseInsensitiveContains(q) { return true }
             if entry.isGroup {
+                // Only the main family chat has its page loaded here; group
+                // threads load lazily, so their rows match on name/preview.
+                guard entry.chatGroup == nil else { return false }
                 return messageService.messages.contains {
                     ($0.body ?? "").localizedCaseInsensitiveContains(q)
                 }
@@ -158,6 +164,24 @@ struct ConversationsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             navTarget = target
         }
+    }
+
+    /// Groups are list rows now — refresh them on every appearance (initial
+    /// mount and every tab return, so a group created elsewhere shows up).
+    private func refreshGroups() {
+        guard let pid = propertyService.primary?.id else { return }
+        Task {
+            await groupService.load(propertyId: pid)
+            openDeepLinkedGroupIfNeeded()
+        }
+    }
+
+    /// Pushes the group a deep link (prvio://communities/<id>) asked for.
+    private func openDeepLinkedGroupIfNeeded() {
+        guard let gid = router.deepLinkCommunityGroupId else { return }
+        guard groupService.groups.contains(where: { $0.id == gid }) else { return }
+        router.deepLinkCommunityGroupId = nil
+        navTarget = "cg:\(gid.uuidString)"
     }
 
     private func loadFlags() {
@@ -309,6 +333,7 @@ struct ConversationsView: View {
         .onAppear {
             loadFlags()
             drainChatNotificationTarget()
+            refreshGroups()
         }
         // A tapped chat push stored its destination (persisted, so cold
         // launches route too); open it the moment the list is on screen.
@@ -327,6 +352,14 @@ struct ConversationsView: View {
         .navigationDestination(item: $navTarget) { id in
             if id == "group" {
                 groupChatDestination
+            } else if id.hasPrefix("cg:"),
+                      let gid = UUID(uuidString: String(id.dropFirst(3))),
+                      let group = groupService.groups.first(where: { $0.id == gid }) {
+                GroupChatView(group: group,
+                              propertyId: propertyService.primary?.id,
+                              myName: myName,
+                              members: familyService.members,
+                              service: groupService)
             } else if let member = familyService.members.first(where: { $0.id.uuidString == id }) {
                 DirectMessageView(member: member)
             } else if let uid = UUID(uuidString: id) {
@@ -364,16 +397,25 @@ struct ConversationsView: View {
                 .environment(familyService)
                 .environment(propertyService)
         }
-        .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
-            CommunitiesView(propertyId: propertyService.primary?.id,
-                            members: familyService.members,
-                            myName: myName)
+        .sheet(isPresented: $showCreateGroup, onDismiss: { router.drainPending() }) {
+            CreateGroupSheet(members: familyService.members) { name, selected in
+                showCreateGroup = false
+                guard let pid = propertyService.primary?.id else { return }
+                Task {
+                    // Kinds are no longer chosen at creation — every new
+                    // group is a plain one; legacy kinds keep their icons.
+                    if let created = await groupService.create(propertyId: pid, name: name, kind: "custom",
+                                                               selected: selected, myName: myName) {
+                        // Land straight in the new conversation.
+                        navTarget = "cg:\(created.id.uuidString)"
+                    }
+                }
+            }
         }
-        // Deep link prvio://communities[/<groupId>] — the router lands on the
-        // chat tab and bumps this counter; the sheet opens here and
-        // CommunitiesView auto-opens the requested group.
+        // Deep link prvio://communities[/<groupId>] — groups are list rows
+        // now, so the router just pushes the requested thread directly.
         .onChange(of: router.communitiesRequest) { _, _ in
-            showCommunities = true
+            openDeepLinkedGroupIfNeeded()
         }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
@@ -409,7 +451,7 @@ struct ConversationsView: View {
             HStack(spacing: 12) {
                 Menu {
                     Button { router.navigate(to: .profile) } label: { Label("Profile", systemImage: "person.crop.circle") }
-                    Button { showCommunities = true } label: { Label("chat_groups_title", systemImage: "person.3") }
+                    Button { showCreateGroup = true } label: { Label("Grup nou", systemImage: "person.3") }
                     Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     // The ARIA shortcut used to ride along in the filter-chip
                     // row; the row is gone, so — like everything else on this
@@ -634,7 +676,14 @@ struct ConversationsView: View {
                 tint: .brandIndigo,
                 chips: conversationChips(entry)
             ) {
-                if entry.isGroup {
+                if let group = entry.chatGroup {
+                    Image(systemName: group.kindIcon)
+                        .font(AppFont.scaled(22, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(group.kindTint)
+                        .frame(width: 54, height: 54)
+                        .glassCircle()
+                } else if entry.isGroup {
                     GroupChatAvatar(members: familyService.members,
                                     photoUrl: propertyService.primary?.photoUrl)
                 } else {
@@ -756,6 +805,9 @@ struct ConversationsView: View {
         UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
         if wasManual { syncPrefs(entry.id) }
         if entry.isGroup {
+            // Group threads (cg:) stamp their reads when opened — only the
+            // main family chat's badge is owned by this list's service.
+            guard entry.chatGroup == nil else { return }
             messageService.resetUnread()
             if let pid = propertyService.primary?.id {
                 Task { await messageService.markRead(propertyId: pid, readerName: myName) }
@@ -929,6 +981,27 @@ struct ConversationsView: View {
                 isGroup: true,
                 member: nil,
                 peer: nil
+            ))
+        }
+
+        // Chat groups (IMG_8657): every group is a first-class conversation
+        // row here — created ones appear in chat, tapped ones push their
+        // thread; the standalone listing sheet is gone.
+        for group in groupService.groups {
+            let preview = groupService.previewLine(for: group)
+            let fallback = "\(group.kindLabel) · "
+                + String(format: String(localized: "comm_member_count"),
+                         groupService.members(for: group).count)
+            items.append(ConversationEntry(
+                id: "cg:\(group.id.uuidString)",
+                name: group.name.isEmpty ? group.kindLabel : group.name,
+                preview: preview?.text.isEmpty == false ? preview!.text : fallback,
+                date: preview?.date,
+                unread: 0,
+                isGroup: true,
+                member: nil,
+                peer: nil,
+                chatGroup: group
             ))
         }
 

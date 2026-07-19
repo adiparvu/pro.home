@@ -1,152 +1,13 @@
 import SwiftUI
 import Combine
 
-// MARK: - Groups (UI shell)
+// MARK: - Groups (chat threads + management)
 //
 // Groups — multiple named chat groups per property (workers, family, …),
-// backed by chat_groups / chat_group_members (migration 078). This screen lists
-// and creates groups and manages their members. (The type keeps its historical
-// "Communities" name because ChatSettingsView also presents it; only the
-// user-facing wording changed.)
-
-struct CommunitiesView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(AppRouter.self) private var router
-    @State private var service = ChatGroupService()
-
-    var propertyId: UUID? = nil
-    var members: [FamilyMember] = []
-    var myName: String = "Me"
-
-    @State private var showCreate = false
-    /// Value-based path so a deep link (prvio://communities/<id>) can open a
-    /// specific group programmatically, not just by tap.
-    @State private var path: [ChatGroup] = []
-    @State private var searchText = ""
-
-    private var filteredGroups: [ChatGroup] {
-        guard !searchText.isEmpty else { return service.groups }
-        return service.groups.filter {
-            $0.name.matchesSearch(searchText)
-                || $0.kindLabel.matchesSearch(searchText)
-                || (service.previewLine(for: $0)?.text ?? "").matchesSearch(searchText)
-        }
-    }
-
-    var body: some View {
-        NavigationStack(path: $path) {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
-                    newGroupButton
-
-                    if service.groups.isEmpty {
-                        emptyState
-                    } else {
-                        VStack(spacing: 10) {
-                            ForEach(filteredGroups) { group in
-                                NavigationLink(value: group) {
-                                    CommunityRow(group: group,
-                                                 memberCount: service.members(for: group).count,
-                                                 preview: service.previewLine(for: group),
-                                                 avatarMembers: resolvedMembers(of: group))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.lg)
-                    }
-
-                    Spacer(minLength: 20)
-                }
-                .padding(.top, AppSpacing.sm)
-            }
-            .navigationDestination(for: ChatGroup.self) { group in
-                GroupChatView(group: group,
-                              propertyId: propertyId,
-                              myName: myName,
-                              members: members,
-                              service: service)
-            }
-            .navigationTitle("chat_groups_title")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText,
-                        prompt: Text("Search…"))
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .sheet(isPresented: $showCreate) {
-                CreateGroupSheet(members: members) { name, selected in
-                    showCreate = false
-                    guard let pid = propertyId else { return }
-                    Task {
-                        // Kinds are no longer chosen at creation — every new
-                        // group is a plain one; legacy kinds keep their icons.
-                        if let created = await service.create(propertyId: pid, name: name, kind: "custom",
-                                                              selected: selected, myName: myName) {
-                            // Land straight in the new conversation.
-                            path = [created]
-                        }
-                    }
-                }
-            }
-            .task {
-                if let pid = propertyId { await service.load(propertyId: pid) }
-                openDeepLinkedGroupIfNeeded()
-            }
-            // A second deep link while the sheet is already up re-targets the
-            // path instead of relying on a fresh .task.
-            .onChange(of: router.communitiesRequest) { _, _ in
-                openDeepLinkedGroupIfNeeded()
-            }
-            // A shared task card asked for the Tasks page — clear the stage.
-            .onChange(of: router.dismissGeneration) { _, _ in
-                dismiss()
-            }
-        }
-        .presentationBackground(.thinMaterial)
-    }
-
-    /// Opens the group a deep link asked for, once, when it exists.
-    private func openDeepLinkedGroupIfNeeded() {
-        guard let gid = router.deepLinkCommunityGroupId else { return }
-        router.deepLinkCommunityGroupId = nil
-        if let group = service.groups.first(where: { $0.id == gid }) {
-            path = [group]
-        }
-    }
-
-    /// Group members resolved back to FamilyMembers (for real avatars).
-    private func resolvedMembers(of group: ChatGroup) -> [FamilyMember] {
-        service.members(for: group).compactMap { gm in
-            members.first { $0.id.uuidString == gm.memberId }
-        }
-    }
-
-    private var newGroupButton: some View {
-        Button { showCreate = true } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "plus")
-                    .font(AppFont.scaled(22, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 52, height: 52)
-                    .glassRoundedRect(AppRadius.lg)
-                Text("Grup nou").font(AppFont.headline).foregroundStyle(.primary)
-                Spacer()
-                Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
-            }
-            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
-            .liquidGlass(cornerRadius: AppRadius.lg)
-            .padding(.horizontal, AppSpacing.lg)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var emptyState: some View {
-        EmptyStateView(
-            icon: "person.3.sequence.fill",
-            title: "Organizează grupuri",
-            message: "Creează grupuri separate pentru muncitori, familie sau orice altă echipă."
-        )
-    }
-}
+// backed by chat_groups / chat_group_members (migration 078). Groups live as
+// first-class rows in the conversations list (IMG_8657 — the old standalone
+// "Grupuri" sheet that duplicated them is gone); this file keeps the group
+// thread itself, its management sheet, and the creation sheet.
 
 // Community group thread. A thin wrapper that reuses the full, polished
 // iMessage-style `ChatView` — scoped to this group via its OWN group-scoped
@@ -155,13 +16,13 @@ struct CommunitiesView: View {
 // voice, reactions, reply, long-press menu, outbox, jump-to-latest, themes)
 // without duplicating any of it. Everything arrives as plain params — no
 // @EnvironmentObject — so it can't crash on a missing ancestor when pushed
-// from the Communities sheet.
-private struct GroupChatView: View {
+// from the conversations list.
+struct GroupChatView: View {
     let group: ChatGroup
     let propertyId: UUID?
     let myName: String
     let members: [FamilyMember]
-    /// Passed by reference from CommunitiesView (not @EnvironmentObject) so this
+    /// Passed by reference from the conversations list (not @EnvironmentObject) so this
     /// view stays crash-safe while still sharing live group/member state.
     /// A rename in the settings sheet updates the title live.
     var service: ChatGroupService
@@ -202,75 +63,6 @@ private struct GroupChatView: View {
         }
     }
 }
-
-private struct CommunityRow: View {
-    let group: ChatGroup
-    let memberCount: Int
-    /// Newest message ("Ana: vin mâine") + its timestamp, when the group has one.
-    let preview: (text: String, date: Date?)?
-    /// Members resolved to FamilyMembers, for the overlapping avatar stack.
-    let avatarMembers: [FamilyMember]
-
-    private var fallbackLine: String {
-        "\(group.kindLabel) · " + String(format: String(localized: "comm_member_count"), memberCount)
-    }
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: group.kindIcon)
-                .font(AppFont.scaled(20, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(group.kindTint)
-                .frame(width: 48, height: 48)
-                .glassCircle()
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(group.name.isEmpty ? group.kindLabel : group.name)
-                    .font(AppFont.headline).foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(preview?.text.isEmpty == false ? preview!.text : fallbackLine)
-                    .font(AppFont.scaled(13))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: AppSpacing.sm)
-
-            VStack(alignment: .trailing, spacing: 5) {
-                if let date = preview?.date {
-                    Text(date, format: .relative(presentation: .named))
-                        .font(AppFont.caption2)
-                        .foregroundStyle(Color.primary.opacity(0.4))
-                        .lineLimit(1)
-                }
-                if !avatarMembers.isEmpty {
-                    HStack(spacing: -8) {
-                        ForEach(avatarMembers.prefix(3)) { m in
-                            MemberAvatar(member: m, size: 20)
-                                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.2))
-                        }
-                        if avatarMembers.count > 3 {
-                            Text(verbatim: "+\(avatarMembers.count - 3)")
-                                .font(AppFont.scaled(9, weight: .bold))
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                                .frame(width: 20, height: 20)
-                                .background(Circle().fill(Color.primary.opacity(0.08)))
-                                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.2))
-                        }
-                    }
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.primary.opacity(0.25))
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
-        .liquidGlass(cornerRadius: AppRadius.lg)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 // Group management: rename, add/remove members, contractors roster, delete.
 private struct GroupSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -633,7 +425,7 @@ private struct AddContractorsSheet: View {
     }
 }
 
-private struct CreateGroupSheet: View {
+struct CreateGroupSheet: View {
     @Environment(\.dismiss) private var dismiss
     let members: [FamilyMember]
     let onCreate: (String, [FamilyMember]) -> Void

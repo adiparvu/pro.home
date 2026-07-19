@@ -26,7 +26,10 @@ struct ChatSettingsView: View {
     @AppStorage(MessageSubject.showFieldDefaultsKey) private var showSubjectField = false
     @State private var showTheme = false
     @State private var showStarred = false
-    @State private var showCommunities = false
+    @State private var showCreateGroup = false
+    /// Creation-only: groups themselves live as rows in the chat list
+    /// (IMG_8657) — this hub just offers the "new group" door.
+    @State private var groupService = ChatGroupService()
     @State private var themeRefresh = 0
 
     private var myName: String {
@@ -79,7 +82,7 @@ struct ChatSettingsView: View {
                 SettingsGroup(title: "Funcții") {
                     ToggleSettingsRow(icon: "textformat", color: .orange,
                                       label: "chat_show_subject_field", value: $showSubjectField)
-                    TapSettingsRow(icon: "person.3.fill", color: .purple, label: "chat_groups_title") { showCommunities = true }
+                    TapSettingsRow(icon: "person.3.fill", color: .purple, label: "Grup nou") { showCreateGroup = true }
                     NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: Color.brandSuccess, label: "Cross-app messaging") {
                         InterAppChatView()
                     }
@@ -97,10 +100,17 @@ struct ChatSettingsView: View {
         .sheet(isPresented: $showStarred) {
             StarredMessagesView(messages: marked, members: familyService.members) { _ in showStarred = false }
         }
-        .sheet(isPresented: $showCommunities, onDismiss: { router.drainPending() }) {
-            CommunitiesView(propertyId: propertyService.primary?.id,
-                            members: familyService.members,
-                            myName: myName)
+        .sheet(isPresented: $showCreateGroup, onDismiss: { router.drainPending() }) {
+            // The created group appears as a row in the chat list — the
+            // inbox refreshes groups on every appearance.
+            CreateGroupSheet(members: familyService.members) { name, selected in
+                showCreateGroup = false
+                guard let pid = propertyService.primary?.id else { return }
+                Task {
+                    await groupService.create(propertyId: pid, name: name, kind: "custom",
+                                              selected: selected, myName: myName)
+                }
+            }
         }
         .task {
             // The inbox keeps these fresh while it's open; refresh here too so
