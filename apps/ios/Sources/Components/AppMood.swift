@@ -437,21 +437,25 @@ final class AppMoodEngine {
     @ObservationIgnored private var weatherCacheObserver: NSObjectProtocol?
 
     private init() {
+        // Computed on locals first: @Observable property accessors must not
+        // run before every stored property is initialized.
         let stored = UserDefaults.standard.string(forKey: Self.overrideKey) ?? ""
-        override = AppMood(rawValue: stored)
-        appearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
-            .flatMap(AppAppearance.init) ?? .mood
+        var initialOverride = AppMood(rawValue: stored)
+        var initialAppearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
+            .flatMap(AppAppearance.init) ?? AppAppearance.mood
         // Migration (IMG_8678): the classics left the atmosphere carousel —
         // a stored classic pin becomes its THEME and the atmosphere returns
         // to Auto. Property observers don't fire in init, so persist by hand.
-        if let pinned = override, pinned.isClassic {
+        if let pinned = initialOverride, pinned.isClassic {
             if UserDefaults.standard.string(forKey: Self.appearanceKey) == nil {
-                appearance = pinned == .classicLight ? .light : .dark
-                UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey)
+                initialAppearance = pinned == .classicLight ? .light : .dark
+                UserDefaults.standard.set(initialAppearance.rawValue, forKey: Self.appearanceKey)
             }
-            override = nil
+            initialOverride = nil
             UserDefaults.standard.removeObject(forKey: Self.overrideKey)
         }
+        override = initialOverride
+        appearance = initialAppearance
         morningStartMinutes = Self.readMinutes(key: Self.morningStartKey)
         nightStartMinutes = Self.readMinutes(key: Self.nightStartKey)
         weatherReactive = (UserDefaults.standard.object(forKey: Self.weatherReactiveKey) as? Bool) ?? true
