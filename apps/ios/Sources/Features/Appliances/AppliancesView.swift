@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - AppliancesView
 //
@@ -19,6 +20,11 @@ struct AppliancesView: View {
     @State private var sort: ApplianceSort = .newest
     @State private var groupByLocation = false
     @State private var warrantySlice: WarrantySlice? = nil
+    /// Long-press quick actions (IMG_8641): edit + one-tap avatar.
+    @State private var editAppliance: Appliance? = nil
+    @State private var photoTarget: Appliance? = nil
+    @State private var showAvatarPicker = false
+    @State private var avatarItem: PhotosPickerItem? = nil
 
     enum ApplianceSort: String, CaseIterable {
         case newest, name, warranty
@@ -170,6 +176,18 @@ struct AppliancesView: View {
             ApplianceDetailSheet(appliance: appliance)
                 .environment(applianceService)
         }
+        .sheet(item: $editAppliance) { appliance in
+            ApplianceFormSheet(editing: appliance)
+                .environment(applianceService)
+                .environment(propertyService)
+        }
+        .photosPicker(isPresented: $showAvatarPicker, selection: $avatarItem, matching: .images)
+        .onChange(of: avatarItem) { _, newItem in
+            guard let newItem, let target = photoTarget else { return }
+            avatarItem = nil
+            photoTarget = nil
+            Task { await saveAvatar(newItem, for: target) }
+        }
         .task {
             if let id = propertyService.primary?.id {
                 await applianceService.load(propertyId: id)
@@ -290,16 +308,108 @@ struct AppliancesView: View {
                 selectedAppliance = appliance
                 HapticFeedback.impact(.light)
             }
-            // ScrollView rows have no swipe actions — the delete affordance
-            // lives in the context menu (and on the detail page).
+            // Long-press: the full quick-action set over the PreviewCard
+            // mini preview (IMG_8641) — the tasks/inventory contract.
             .contextMenu {
+                Button {
+                    selectedAppliance = appliance
+                } label: {
+                    Label("View", systemImage: "eye")
+                }
+                Button {
+                    editAppliance = appliance
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                Button {
+                    photoTarget = appliance
+                    showAvatarPicker = true
+                } label: {
+                    Label(appliance.photoUrl?.isEmpty == false
+                              ? "est_change_photo" : "Add photo",
+                          systemImage: "photo")
+                }
+                Divider()
                 Button(role: .destructive) {
                     HapticFeedback.warning()
                     Task { await applianceService.delete(appliance) }
                 } label: {
                     Label("Delete", systemImage: "trash")
                 }
+            } preview: {
+                appliancePreview(appliance)
             }
+    }
+
+    /// The system-rendered snapshot behind the menu: identity + the real
+    /// fields at a glance; absent fields are omitted, never invented.
+    private func appliancePreview(_ appliance: Appliance) -> some View {
+        let warranty = ApplianceWarrantyPresentation(appliance)
+        var details: [PreviewCardDetail] = []
+        if let location = appliance.location, !location.isEmpty {
+            details.append(PreviewCardDetail(icon: "mappin.circle.fill",
+                                             label: Text("Location"),
+                                             value: Text(verbatim: location)))
+        }
+        if let model = appliance.modelNumber, !model.isEmpty {
+            details.append(PreviewCardDetail(icon: "number",
+                                             label: Text("Model"),
+                                             value: Text(verbatim: model)))
+        }
+        if let serial = appliance.serialNumber, !serial.isEmpty {
+            details.append(PreviewCardDetail(icon: "barcode",
+                                             label: Text("Serial"),
+                                             value: Text(verbatim: serial)))
+        }
+        let subtitle = (appliance.brand?.isEmpty == false)
+            ? Text(verbatim: appliance.brand ?? "") : nil
+        return PreviewCard(
+            title: Text(verbatim: appliance.name),
+            subtitle: subtitle,
+            tint: appliance.categoryColor,
+            details: details,
+            chips: [PreviewCardChip(icon: "checkmark.shield.fill",
+                                    text: Text(verbatim: warranty.text),
+                                    tint: warranty.color)]
+        ) {
+            if let urlString = appliance.photoUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let image) = phase {
+                        image.resizable().scaledToFill()
+                    } else {
+                        appliance.categoryColor.opacity(0.15)
+                    }
+                }
+                .frame(width: 48, height: 48)
+                .clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle().fill(.ultraThinMaterial)
+                    Circle().strokeBorder(Color.primary.opacity(AppOpacity.subtleFill),
+                                          lineWidth: 1)
+                    Image(systemName: appliance.categoryIcon)
+                        .font(AppFont.scaled(18, weight: .medium))
+                        .foregroundStyle(appliance.categoryColor)
+                }
+                .frame(width: 48, height: 48)
+            }
+        }
+    }
+
+    /// One-tap avatar from the row (IMG_8640): picked image through the
+    /// same uploader the form uses, then photo_url updates on the row.
+    private func saveAvatar(_ item: PhotosPickerItem, for appliance: Appliance) async {
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data),
+              let url = try? await ApplianceMediaUploader.upload(image, propertyId: appliance.propertyId)
+        else {
+            HapticFeedback.error()
+            return
+        }
+        var updated = appliance
+        updated.photoUrl = url
+        await applianceService.update(updated)
+        HapticFeedback.success()
     }
 
     // MARK: - States
@@ -431,21 +541,27 @@ private struct ApplianceRow: View {
         }
     }
 
-    /// Photo thumbnail when a real photo_url exists; the category badge
-    /// otherwise. Never a placeholder pretending to be a photo.
+    /// Round photo avatar when a real photo_url exists (IMG_8640); a round
+    /// Liquid Glass disc with the category colour on the icon ONLY
+    /// otherwise — no tinted square, the app-wide list-avatar law.
     @ViewBuilder private var thumb: some View {
         if let urlString = appliance.photoUrl, let url = URL(string: urlString) {
             AsyncImage(url: url) { phase in
                 if case .success(let image) = phase {
                     image.resizable().scaledToFill()
                 } else {
-                    ColoredIconBadge(icon: appliance.categoryIcon, color: appliance.categoryColor, size: 40)
+                    Circle().fill(.ultraThinMaterial)
                 }
             }
-            .frame(width: 40, height: 40)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
         } else {
-            ColoredIconBadge(icon: appliance.categoryIcon, color: appliance.categoryColor, size: 40)
+            Image(systemName: appliance.categoryIcon)
+                .font(AppFont.scaled(17, weight: .medium))
+                .foregroundStyle(appliance.categoryColor)
+                .frame(width: 44, height: 44)
+                .glassCircle()
         }
     }
 }

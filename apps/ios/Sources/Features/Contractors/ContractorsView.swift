@@ -430,7 +430,18 @@ private struct ContractorRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
-                ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
+                // The member's real avatar when the contractor has a PRVIO
+                // account; a round Liquid Glass disc with the colour on the
+                // trade icon ONLY otherwise (IMG_8643) — never a tinted square.
+                if let member = matchedMember {
+                    MemberAvatar(member: member, size: 44)
+                } else {
+                    Image(systemName: contractor.specialtyIcon)
+                        .font(AppFont.scaled(17, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
