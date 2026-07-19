@@ -4,13 +4,22 @@
 // pages keep their own worker on the MORE SPECIFIC route xparvu.com/i/*,
 // which Cloudflare always prefers, so /i/<uuid> is untouched.
 //
-// Deliberately brandless (IMG_8661): the domain page has nothing to do with
-// the app — just a bobbing hard hat, "Under construction", and the sale note
-// (€500.000). Self-contained, pure CSS animation, quiet under
+// Deliberately brandless (IMG_8661): a bobbing hard hat, "Under
+// construction", and the sale note (€500.000) which opens a contact form.
+// POST /contact stores the inquiry in Supabase (domain_inquiries, migration
+// 167) — anon may only INSERT under RLS, the publishable key is public by
+// design. Self-contained, pure CSS animation, quiet under
 // prefers-reduced-motion.
 
+const DEFAULT_SUPABASE_URL = "https://kwcanenheihuylaymwsl.supabase.co";
+const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_2gO8iM7dBqlbQqCiSTFeLQ_CV-DBgnC";
+
 export default {
-  async fetch() {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/contact") {
+      return handleContact(request, env);
+    }
     return new Response(PAGE, {
       headers: {
         "content-type": "text/html; charset=utf-8",
@@ -19,6 +28,44 @@ export default {
     });
   },
 };
+
+async function handleContact(request, env) {
+  const json = (ok, status = 200) =>
+    new Response(JSON.stringify({ ok }), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json(false, 400);
+  }
+  const email = String(body?.email ?? "").trim().slice(0, 320);
+  const message = String(body?.message ?? "").trim().slice(0, 4000);
+  const name = String(body?.name ?? "").trim().slice(0, 200);
+  // Honeypot: real people never fill the invisible field — pretend success.
+  if (body?.website) return json(true);
+  if (!email.includes("@") || email.length < 3 || !message) return json(false, 400);
+
+  const base = env?.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const key = env?.SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY;
+  try {
+    const r = await fetch(`${base}/rest/v1/domain_inquiries`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify({ name: name || null, email, message }),
+    });
+    return json(r.ok, r.ok ? 200 : 502);
+  } catch (_) {
+    return json(false, 502);
+  }
+}
 
 const PAGE = `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -108,10 +155,66 @@ const PAGE = `<!doctype html><html lang="en"><head>
     font-size: 13px; line-height: 1.65; color: rgba(240,246,255,.45);
     border-top: 1px solid rgba(255,255,255,.08); padding-top: 22px;
   }
-  .sale strong { color: rgba(240,246,255,.8); font-weight: 600; }
+  .sale button {
+    font: inherit; font-weight: 600; color: rgba(240,246,255,.85);
+    background: none; border: none; cursor: pointer;
+    border-bottom: 1px solid rgba(255,214,102,.5); padding-bottom: 1px;
+    transition: color .2s, border-color .2s;
+  }
+  .sale button:hover { color: #ffd666; border-color: #ffd666; }
+
+  /* Contact overlay */
+  .overlay {
+    position: fixed; inset: 0; z-index: 2; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(4,6,10,.6);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    width: calc(100% - 40px); max-width: 440px; text-align: left;
+    background: rgba(18,22,32,.92);
+    border: 1px solid rgba(255,255,255,.12); border-radius: 24px;
+    padding: 28px; box-shadow: 0 40px 100px rgba(0,0,0,.6);
+    animation: rise .3s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+  .sheet h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .sheet p.sub { font-size: 12.5px; color: rgba(240,246,255,.45); margin-bottom: 18px; }
+  .sheet label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .8px;
+                 text-transform: uppercase; color: rgba(240,246,255,.4); margin: 12px 0 6px; }
+  .sheet input, .sheet textarea {
+    width: 100%; font: inherit; font-size: 14px; color: #f0f6ff;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px; padding: 11px 13px; outline: none;
+    transition: border-color .2s;
+  }
+  .sheet input:focus, .sheet textarea:focus { border-color: rgba(255,214,102,.55); }
+  .sheet textarea { min-height: 110px; resize: vertical; }
+  .hp { position: absolute; left: -9999px; opacity: 0; height: 0; overflow: hidden; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  .actions button {
+    flex: 1; font: inherit; font-size: 14px; font-weight: 600;
+    padding: 12px; border-radius: 999px; cursor: pointer; border: none;
+    transition: transform .15s, opacity .2s;
+  }
+  .actions button:active { transform: scale(.97); }
+  .btn-cancel { background: rgba(255,255,255,.08); color: rgba(240,246,255,.7); }
+  .btn-send { background: linear-gradient(120deg, #f5a623, #ffd666); color: #241a02; }
+  .btn-send[disabled] { opacity: .55; cursor: default; }
+  .note { font-size: 12px; margin-top: 12px; min-height: 16px; }
+  .note.err { color: #ff9f8f; }
+  .done { text-align: center; padding: 18px 0 6px; }
+  .done .tick { width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 50%;
+                background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.4);
+                display: flex; align-items: center; justify-content: center;
+                font-size: 24px; color: #4ade80; animation: pop .35s cubic-bezier(.2,.9,.3,1.4); }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } }
+  .done h3 { font-size: 16px; margin-bottom: 4px; }
+  .done p { font-size: 12.5px; color: rgba(240,246,255,.45); }
 
   @media (prefers-reduced-motion: reduce) {
-    .aurora span, .stars, .stars::after, .hat, h1, .bar i { animation: none; }
+    .aurora span, .stars, .stars::after, .hat, h1, .bar i, .sheet, .done .tick { animation: none; }
   }
 </style></head>
 <body>
@@ -126,6 +229,80 @@ const PAGE = `<!doctype html><html lang="en"><head>
   </svg>
   <h1>Under construction</h1>
   <div class="bar" aria-hidden="true"><i></i></div>
-  <p class="sale">Interested in this domain? <strong>€500.000</strong></p>
+  <p class="sale">Interested in this domain? <button type="button" id="open">€500.000 — get in touch</button></p>
 </main>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="ct">
+  <div class="sheet">
+    <div id="formBox">
+      <h2 id="ct">Domain inquiry</h2>
+      <p class="sub">xparvu.com · asking €500.000</p>
+      <form id="f">
+        <label for="n">Name</label>
+        <input id="n" name="name" autocomplete="name" maxlength="200">
+        <label for="e">Email</label>
+        <input id="e" name="email" type="email" required autocomplete="email" maxlength="320">
+        <label for="m">Message</label>
+        <textarea id="m" name="message" required maxlength="4000" placeholder="Your offer…"></textarea>
+        <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
+        <div class="actions">
+          <button type="button" class="btn-cancel" id="close">Cancel</button>
+          <button type="submit" class="btn-send" id="send">Send</button>
+        </div>
+        <p class="note" id="note"></p>
+      </form>
+    </div>
+    <div class="done" id="doneBox" hidden>
+      <div class="tick">✓</div>
+      <h3>Message sent</h3>
+      <p>Thank you — you'll hear back if the offer is serious.</p>
+      <div class="actions"><button type="button" class="btn-cancel" id="close2">Close</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var overlay = document.getElementById('overlay');
+  var note = document.getElementById('note');
+  function open() { overlay.classList.add('open'); document.getElementById('e').focus(); }
+  function shut() {
+    overlay.classList.remove('open');
+    document.getElementById('formBox').hidden = false;
+    document.getElementById('doneBox').hidden = true;
+    note.textContent = ''; note.classList.remove('err');
+  }
+  document.getElementById('open').addEventListener('click', open);
+  document.getElementById('close').addEventListener('click', shut);
+  document.getElementById('close2').addEventListener('click', shut);
+  overlay.addEventListener('click', function (ev) { if (ev.target === overlay) shut(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') shut(); });
+
+  document.getElementById('f').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target, send = document.getElementById('send');
+    send.disabled = true; note.textContent = ''; note.classList.remove('err');
+    fetch('/contact', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: f.name.value, email: f.email.value,
+        message: f.message.value, website: f.website.value
+      })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      send.disabled = false;
+      if (d && d.ok) {
+        document.getElementById('formBox').hidden = true;
+        document.getElementById('doneBox').hidden = false;
+        f.reset();
+      } else {
+        note.textContent = 'Something went wrong — please try again.';
+        note.classList.add('err');
+      }
+    }).catch(function () {
+      send.disabled = false;
+      note.textContent = 'Network error — please try again.';
+      note.classList.add('err');
+    });
+  });
+</script>
 </body></html>`;
