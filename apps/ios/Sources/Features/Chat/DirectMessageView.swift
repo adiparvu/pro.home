@@ -518,6 +518,23 @@ struct DirectMessageView: View {
             }
         }
         .task {
+            // The thread owns its data need (IMG_8674 — an opened DM sat
+            // permanently EMPTY while messages kept landing server-side):
+            // it used to depend on the conversations LIST's load task, which
+            // SwiftUI cancels the moment the push hides the list — and a
+            // cancelled first load now fails silently (the b1146 sweep
+            // rightly stopped alerting "CancellationError", but the thread
+            // was left with no data and no retry). load() is merge-based and
+            // cache-hydrated, so re-running it here is cheap; one short
+            // retry covers a first pass that raced an upstream teardown.
+            guard let pid = propertyService.primary?.id else { return }
+            await directMessageService.load(propertyId: pid, myName: myName)
+            if conversationMessages.isEmpty {
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                await directMessageService.load(propertyId: pid, myName: myName)
+            }
+        }
+        .task {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
