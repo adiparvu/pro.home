@@ -186,7 +186,7 @@ struct NowPlayingCard: View {
                     // small provider mark) — decorative, states the source.
                     Image(systemName: "music.note")
                         .font(AppFont.scaled(13, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .accessibilityHidden(true)
                 }
 
@@ -249,7 +249,7 @@ struct NowPlayingCard: View {
                 if let artist = now.artist {
                     Text(verbatim: artist)
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
             } else {
@@ -258,7 +258,7 @@ struct NowPlayingCard: View {
                     .foregroundStyle(.primary)
                 Text("media_nothing_playing_hint")
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -300,14 +300,14 @@ struct NowPlayingCard: View {
             HStack {
                 Text(verbatim: Self.elapsedText(model.elapsed))
                     .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .monospacedDigit()
                 Spacer(minLength: AppSpacing.sm)
                 if let duration = model.nowPlaying?.duration,
                    duration > 0, duration.isFinite {
                     Text(verbatim: Self.elapsedText(duration))
                         .font(AppFont.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .monospacedDigit()
                 }
             }
@@ -373,6 +373,11 @@ struct NowPlayingCard: View {
         .accessibilityLabel(Text(LocalizedStringKey(model.isPlaying ? "media_pause" : "media_play")))
     }
 
+    // Controls must NEVER ride hierarchical styles inside glass: `.secondary`
+    // resolves through the vibrancy compositor, which ate the skip buttons
+    // and timestamps whole on the flat Day wash (IMG_8623 — same failure
+    // family as the avatar-ring swatches, IMG_8608). Explicit token colors
+    // resolve to real pixels in every backdrop and every OS build.
     private func transportButton(_ icon: String,
                                  label: LocalizedStringKey,
                                  active: Bool = false,
@@ -384,7 +389,7 @@ struct NowPlayingCard: View {
             Image(systemName: icon)
                 .font(AppFont.scaled(15, weight: .semibold))
                 .foregroundStyle(active ? AnyShapeStyle(Color.accentColor)
-                                        : AnyShapeStyle(.secondary))
+                                        : AnyShapeStyle(Color.primary.opacity(AppOpacity.mediumText)))
                 .frame(width: 38, height: 38)
                 .contentShape(Circle())
         }
