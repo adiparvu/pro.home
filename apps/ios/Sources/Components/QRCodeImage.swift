@@ -81,7 +81,7 @@ struct QRCodeImage: View {
         }
     }
 
-    // A rounded white knockout carrying the PRV House "P" brand mark, centred over
+    // A rounded white knockout carrying the PRVIO "P" brand mark, centred over
     // the matrix — the same letterform the web app stamps into its QR codes, so a
     // code looks identical whichever platform generated it.
     private var centerMark: some View {

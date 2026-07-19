@@ -7,7 +7,7 @@
 // Fully self-contained: no assets, no JS frameworks — pure CSS animation
 // (aurora gradient drift, floating brand mark, shimmer progress), honest
 // about respecting prefers-reduced-motion. One extra note: the domain
-// listens to serious offers (starting at €500.000).
+// listens to serious offers — five zeros minimum (€100.000+).
 
 export default {
   async fetch() {
@@ -141,6 +141,6 @@ const PAGE = `<!doctype html><html lang="en"><head>
   <p class="tag">Premium home &amp; property management</p>
   <div class="status"><span class="dot"></span>În lucru · Under construction</div>
   <div class="bar" aria-hidden="true"><i></i></div>
-  <p class="sale">Interested in this domain? <strong>Serious offers only — starting at €500.000.</strong></p>
+  <p class="sale">Interested in this domain? <strong>Serious offers only — think five zeros: €100.000+</strong></p>
 </main>
 </body></html>`;

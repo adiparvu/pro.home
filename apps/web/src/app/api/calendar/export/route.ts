@@ -114,10 +114,10 @@ export async function GET() {
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//PRV House//Property Calendar//EN',
+    'PRODID:-//PRVIO//Property Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${escIcs(property.name)} – PRV House`,
+    `X-WR-CALNAME:${escIcs(property.name)} – PRVIO`,
     'X-WR-TIMEZONE:UTC',
     ...validEvents,
     'END:VCALENDAR',

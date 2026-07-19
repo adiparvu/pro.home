@@ -60,7 +60,7 @@ export default function OfflinePage() {
 
           <h1 className="text-2xl font-bold text-white mb-2">You&apos;re offline</h1>
           <p className="text-sm text-white/50 leading-relaxed mb-8">
-            PRV House requires a connection to sync your property data. Some cached pages may still be available.
+            PRVIO requires a connection to sync your property data. Some cached pages may still be available.
           </p>
 
           {/* What you can still do */}
