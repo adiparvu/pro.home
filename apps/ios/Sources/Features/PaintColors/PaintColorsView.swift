@@ -9,7 +9,8 @@ struct PaintColorsView: View {
     @State private var showAdd = false
     @State private var selectedRoom: String? = nil
     @State private var colorToDelete: PaintColor? = nil
-    @State private var photoPreview: PaintColor? = nil
+    @State private var detailColor: PaintColor? = nil
+    @State private var editColor: PaintColor? = nil
     @State private var searchText = ""
 
     private var filteredByRoom: [String: [PaintColor]] {
@@ -78,8 +79,15 @@ struct PaintColorsView: View {
                 .environment(paintColorService)
                 .environment(propertyService)
         }
-        .sheet(item: $photoPreview) { color in
-            PaintPhotoSheet(color: color)
+        .sheet(item: $detailColor) { color in
+            PaintColorDetailSheet(colorId: color.id)
+                .environment(paintColorService)
+                .environment(propertyService)
+        }
+        .sheet(item: $editColor) { color in
+            AddPaintColorSheet(editing: color)
+                .environment(paintColorService)
+                .environment(propertyService)
         }
         .confirmationDialog(
             "Delete \"\(colorToDelete?.colorName ?? "")\"?",
@@ -180,23 +188,105 @@ struct PaintColorsView: View {
                     ForEach(colors) { color in
                         PaintSwatch(paintColor: color)
                             .onTapGesture {
-                                // Only entries saved with a photo respond —
-                                // the badge on the swatch is the affordance.
-                                guard color.photoUrl?.isEmpty == false else { return }
-                                photoPreview = color
+                                // Every color has its own page (IMG_8628).
+                                detailColor = color
                                 HapticFeedback.impact(.light)
                             }
-                            .onLongPressGesture(minimumDuration: 0.5) {
-                                colorToDelete = color
-                                HapticFeedback.warning()
+                            .contextMenu {
+                                swatchMenu(color)
+                            } preview: {
+                                swatchPreview(color)
                             }
-                            .accessibilityHint(color.photoUrl?.isEmpty == false
-                                               ? Text("paint_photo_view") : Text(verbatim: ""))
+                            .accessibilityHint(Text("View"))
                     }
                 }
                 .padding(.horizontal, 2)
                 .padding(.bottom, AppSpacing.xxs)
             }
+        }
+    }
+
+    // MARK: - Long-press: quick actions over the mini preview (IMG_8628)
+
+    @ViewBuilder
+    private func swatchMenu(_ color: PaintColor) -> some View {
+        Button {
+            detailColor = color
+        } label: {
+            Label("View", systemImage: "eye")
+        }
+        Button {
+            editColor = color
+        } label: {
+            Label("Edit", systemImage: "pencil")
+        }
+        Button {
+            if let image = PaintColorCard.render(color) {
+                SystemActions.share([image])
+            }
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        Button {
+            if let image = PaintColorCard.render(color) {
+                SystemActions.print(image: image, jobName: color.colorName)
+            }
+        } label: {
+            Label("Print", systemImage: "printer")
+        }
+        Divider()
+        Button(role: .destructive) {
+            colorToDelete = color
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+
+    /// The system-rendered snapshot behind the menu: identity + the real
+    /// fields at a glance. Missing fields are omitted, never invented.
+    private func swatchPreview(_ color: PaintColor) -> some View {
+        var details: [PreviewCardDetail] = [
+            PreviewCardDetail(icon: "door.left.hand.closed",
+                              label: Text("Room"),
+                              value: Text(verbatim: color.roomName)),
+        ]
+        if let raw = color.lastUsedAt, let day = AppDate.day(from: raw) {
+            details.append(PreviewCardDetail(
+                icon: "paintbrush.pointed.fill",
+                label: Text("paint_last_used"),
+                value: Text(day.formatted(date: .abbreviated, time: .omitted))))
+        }
+        if let leftover = color.leftoverNote, !leftover.isEmpty {
+            details.append(PreviewCardDetail(icon: "shippingbox.fill",
+                                             label: Text("paint_leftover"),
+                                             value: Text(verbatim: leftover)))
+        }
+        var chips: [PreviewCardChip] = [
+            PreviewCardChip(text: Text(verbatim: color.finishDisplay),
+                            tint: color.swatchColor),
+        ]
+        if let hex = color.hexColor, !hex.isEmpty {
+            let display = hex.hasPrefix("#") ? hex.uppercased() : "#\(hex.uppercased())"
+            chips.append(PreviewCardChip(icon: "number", text: Text(verbatim: display)))
+        }
+        let subtitle = [color.brand, color.code]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+        return PreviewCard(
+            title: Text(verbatim: color.colorName),
+            subtitle: subtitle.isEmpty ? nil : Text(verbatim: subtitle),
+            tint: color.swatchColor,
+            details: details,
+            chips: chips
+        ) {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(color.swatchColor)
+                .frame(width: 44, height: 44)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8)
+                )
         }
     }
 
@@ -324,52 +414,6 @@ private struct PaintColorsSpecSheet: View {
             Spacer()
         }
         .padding(.top, 6)
-    }
-}
-
-// MARK: - Photo preview
-//
-// The optional photo saved with a color (the painted wall or the tin
-// label), shown full-size over the app background. Opened by tapping a
-// swatch that carries the photo badge.
-
-private struct PaintPhotoSheet: View {
-    let color: PaintColor
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                if let url = color.photoUrl.flatMap({ URL(string: $0) }) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-                                .padding(AppSpacing.lg)
-                        case .failure:
-                            Image(systemName: "photo")
-                                .font(AppFont.scaled(34))
-                                .foregroundStyle(Color.secondaryTextColor)
-                        default:
-                            ProgressView()
-                        }
-                    }
-                }
-            }
-            .navigationTitle(Text(verbatim: color.colorName))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationBackground(.thinMaterial)
-        .presentationDragIndicator(.visible)
     }
 }
 

@@ -32,6 +32,10 @@ struct PaintColor: Identifiable, Codable, Equatable {
     var notes: String?
     var photoUrl: String?
     var createdAt: String
+    /// "yyyy-MM-dd" — the day this color was last actually used (migration 165).
+    var lastUsedAt: String?
+    /// Where a leftover can still sits, if any ("o cutie de 2,5L în garaj").
+    var leftoverNote: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -44,6 +48,8 @@ struct PaintColor: Identifiable, Codable, Equatable {
         case hexColor   = "hex_color"
         case photoUrl   = "photo_url"
         case createdAt  = "created_at"
+        case lastUsedAt = "last_used_at"
+        case leftoverNote = "leftover_note"
     }
 
     var swatchColor: Color {

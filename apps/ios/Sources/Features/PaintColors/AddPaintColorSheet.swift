@@ -37,6 +37,32 @@ struct AddPaintColorSheet: View {
 
     @State private var photoItem: PhotosPickerItem? = nil
     @State private var photoImage: UIImage? = nil
+    @State private var lastUsedEnabled = false
+    @State private var lastUsedDate = Date()
+    @State private var leftoverNote = ""
+
+    /// Edit mode (IMG_8628): the same form, prefilled, saving through
+    /// `update` instead of `add`. nil = the classic add flow.
+    let editing: PaintColor?
+
+    init(editing: PaintColor? = nil) {
+        self.editing = editing
+        guard let e = editing else { return }
+        _roomName = State(initialValue: e.roomName)
+        _useCustomRoom = State(initialValue: true)
+        _surface = State(initialValue: e.surface)
+        _colorName = State(initialValue: e.colorName)
+        _brand = State(initialValue: e.brand ?? "")
+        _code = State(initialValue: e.code ?? "")
+        _finish = State(initialValue: e.finish ?? .eggshell)
+        _hexColor = State(initialValue: e.hexColor ?? "")
+        _notes = State(initialValue: e.notes ?? "")
+        _leftoverNote = State(initialValue: e.leftoverNote ?? "")
+        if let raw = e.lastUsedAt, let day = AppDate.day(from: raw) {
+            _lastUsedEnabled = State(initialValue: true)
+            _lastUsedDate = State(initialValue: day)
+        }
+    }
 
     /// Chip labels are localized; the persisted `value` strings are exactly
     /// what the `paint_colors.surface` column has always stored.
@@ -62,7 +88,7 @@ struct AddPaintColorSheet: View {
     }
 
     var body: some View {
-        FormScaffold(title: "paint_new_title",
+        FormScaffold(title: editing == nil ? "paint_new_title" : "paint_edit_title",
                      canSave: canSave,
                      isSaving: isSaving,
                      error: $saveError,
@@ -103,6 +129,47 @@ struct AddPaintColorSheet: View {
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .lineLimit(3...6)
+                }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, 13)
+            }
+
+            FormGroup(title: "paint_usage_section") {
+                Toggle(isOn: $lastUsedEnabled) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "paintbrush.pointed.fill")
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 28)
+                        Text("paint_last_used").font(AppFont.scaled(15))
+                    }
+                }
+                .tint(Color.accentColor)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, 10)
+                if lastUsedEnabled {
+                    divider
+                    DatePicker("paint_last_used", selection: $lastUsedDate,
+                               in: ...Date(), displayedComponents: .date)
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.vertical, 8)
+                }
+                divider
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(AppFont.scaled(14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                        .padding(.top, 2)
+                    TextField(String(localized: "paint_leftover_placeholder"),
+                              text: $leftoverNote, axis: .vertical)
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(1...3)
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, 13)
@@ -528,6 +595,25 @@ struct AddPaintColorSheet: View {
                 HapticFeedback.warning()
                 return
             }
+        }
+
+        if let editing {
+            var updated = editing
+            updated.roomName = roomName.trimmingCharacters(in: .whitespaces)
+            updated.surface = surface
+            updated.colorName = colorName.trimmingCharacters(in: .whitespaces)
+            updated.brand = brand.isEmpty ? nil : brand
+            updated.code = code.isEmpty ? nil : code
+            updated.finish = finish
+            updated.hexColor = normalizedHex
+            updated.notes = notes.isEmpty ? nil : notes
+            if let photoUrl { updated.photoUrl = photoUrl }
+            updated.lastUsedAt = lastUsedEnabled ? AppDate.dayString(from: lastUsedDate) : nil
+            updated.leftoverNote = leftoverNote.isEmpty ? nil : leftoverNote
+            await paintColorService.update(updated)
+            HapticFeedback.success()
+            dismiss()
+            return
         }
 
         let payload = NewPaintColorPayload(

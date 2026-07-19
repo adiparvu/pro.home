@@ -96502,7 +96502,71 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel service task" } },
         "ro" : { "stringUnit" : { "state" : "translated", "value" : "Anulează task-ul de revizie" } }
       }
-    }
+    },
+  "paint_usage_section": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Usage" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Utilizare" } }
+  } },
+  "paint_last_used": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Last used" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Ultima folosire" } }
+  } },
+  "paint_never_used": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Never used yet" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Încă nefolosită" } }
+  } },
+  "paint_used_today": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Mark as used today" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Marchează ca folosită azi" } }
+  } },
+  "paint_leftover": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Leftover can" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Rest de vopsea" } }
+  } },
+  "paint_no_leftover": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "No leftover recorded" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Fără rest înregistrat" } }
+  } },
+  "paint_leftover_placeholder": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Where is the leftover can? (e.g. 2.5L in the garage)" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Unde e restul de vopsea? (ex. 2,5 L în garaj)" } }
+  } },
+  "paint_surface": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Surface" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Suprafață" } }
+  } },
+  "paint_hex": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Hex code" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Cod hex" } }
+  } },
+  "paint_added": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Added" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Adăugată" } }
+  } },
+  "paint_delete": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Delete color" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Șterge culoarea" } }
+  } },
+  "paint_delete_confirm": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Delete this color? This action cannot be undone." } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Ștergi această culoare? Acțiunea nu poate fi anulată." } }
+  } },
+  "paint_card_room": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Room" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Cameră" } }
+  } },
+  "paint_card_finish": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Finish" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Finisaj" } }
+  } },
+  "paint_card_hex": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Hex" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Hex" } }
+  } },
+  "paint_edit_title": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Edit Color" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Editează culoarea" } }
+  } }
   },
   "version": "1.0"
 }
