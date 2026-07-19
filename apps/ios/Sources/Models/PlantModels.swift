@@ -152,7 +152,9 @@ struct Plant: Identifiable, Codable, Hashable {
     /// sheets interpolated it verbatim (a ternary of literals types as
     /// String, never LocalizedStringKey), so devices saw raw English.
     static func wateringIntervalDisplay(_ days: Int) -> String {
-        String(format: String(localized: days == 1 ? "Every %lld day" : "Every %lld days"), days)
+        days == 1
+            ? String(format: String(localized: "Every %lld day"), days)
+            : String(format: String(localized: "Every %lld days"), days)
     }
 
     static let emojiOptions = ["🌿","🌱","🌸","🌺","🌻","🌹","🌷","🌵","🪴","🌾","🍀","🍃","🌳","🌲","🌊","🪸"]
