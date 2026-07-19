@@ -41,20 +41,31 @@ struct PropertyRulesView: View {
     @State private var templateError: String? = nil
 
     var body: some View {
-        ZStack {
-            appBackground.ignoresSafeArea()
-            VStack(alignment: .leading, spacing: 0) {
-                topBar
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.lg)
-                // The engine's honest contract, always on the page.
-                Text("rule_honesty_caption")
-                    .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.xxs)
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
                 content
+            }
+            // The same chrome as every other page (IMG_8637): the native
+            // large title, the page actions as toolbar circles — no
+            // hand-rolled header row.
+            .navigationTitle("rules_routines_title")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        builder = .create
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityLabel(Text("rule_add"))
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.foregroundStyle(.primary)
+                }
             }
         }
         .presentationDetents([.large])
@@ -86,51 +97,23 @@ struct PropertyRulesView: View {
         }
     }
 
-    // MARK: Top bar
-
-    private var topBar: some View {
-        HStack(alignment: .center, spacing: AppSpacing.sm) {
-            Text("rules_routines_title")
-                .font(AppFont.scaled(26, weight: .light))
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 0)
-            Button {
-                HapticFeedback.impact(.light)
-                builder = .create
-            } label: {
-                Image(systemName: "plus")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(Text("rule_add"))
-            Button {
-                HapticFeedback.impact(.light)
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(Text("sh_close"))
-        }
-    }
-
     // MARK: Content
 
     @ViewBuilder private var content: some View {
         if store.isLoading && store.rules.isEmpty {
-            Spacer()
-            HStack { Spacer(); ProgressView(); Spacer() }
-            Spacer()
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
+                // The engine's honest contract, always on the page — a
+                // native section footer under the large title.
+                Section {
+                } footer: {
+                    Text("rule_honesty_caption")
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if store.rules.isEmpty {
                     emptySection
                     templatesSection
