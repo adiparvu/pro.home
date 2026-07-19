@@ -30,10 +30,19 @@ enum ChatMedia {
         if lower.contains("/dm-video/") || lower.hasSuffix(".mp4") || lower.hasSuffix(".mov") { return .video }
         if lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg")
             || lower.hasSuffix(".png") || lower.hasSuffix(".webp") {
-            // Storage path (new), legacy dm-images path, or legacy public URL.
-            if lower.contains("/dm/") || lower.contains("/dm-images/") || lower.hasPrefix("http") { return .image }
+            // Storage path (new), Live Photo still (dm-live), legacy
+            // dm-images path, or legacy public URL. Live stills ride the
+            // image pipeline everywhere; `isDMLive` adds badge + playback.
+            if lower.contains("/dm/") || lower.contains("/dm-live/")
+                || lower.contains("/dm-images/") || lower.hasPrefix("http") { return .image }
         }
         return .text
+    }
+
+    /// True when a DM image body is a Live Photo still (its motion pair
+    /// lives beside it under the same stem — see `liveVideoPath(for:)`).
+    static func isDMLive(_ body: String) -> Bool {
+        body.lowercased().contains("/dm-live/")
     }
 
     /// Uploads data to the private bucket under `{propertyId}/{subdir}/{uuid}.{ext}`

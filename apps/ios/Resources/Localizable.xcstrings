@@ -96650,6 +96650,30 @@
   "live_unavailable": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Motion unavailable — showing the still" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Mișcarea nu e disponibilă — se afișează cadrul" } }
+  } },
+  "est_set_backdrop": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Set background" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Adaugă fundal" } }
+  } },
+  "est_change_backdrop": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Change background" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Schimbă fundalul" } }
+  } },
+  "est_remove_backdrop": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Remove background" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Șterge fundalul" } }
+  } },
+  "est_set_avatar": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Set avatar" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Adaugă avatar" } }
+  } },
+  "est_change_avatar": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Change avatar" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Schimbă avatarul" } }
+  } },
+  "est_remove_avatar": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Remove avatar" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Șterge avatarul" } }
   } }
   },
   "version": "1.0"

@@ -1053,7 +1053,8 @@ struct ConversationsView: View {
                 }
                 switch ChatMedia.dmBodyKind(last.body) {
                 case .audio: return prefix + String(localized: "convo_prev_audio")
-                case .image: return prefix + String(localized: "convo_prev_image")
+                case .image: return prefix + String(localized: ChatMedia.isDMLive(last.body)
+                                                    ? "convo_prev_live" : "convo_prev_image")
                 case .video: return prefix + String(localized: "convo_prev_video")
                 case .text:  return prefix + MessageSubject.strip(last.body)
                 }

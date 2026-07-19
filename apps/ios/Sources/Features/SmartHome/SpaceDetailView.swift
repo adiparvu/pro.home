@@ -72,6 +72,7 @@ struct SpaceDetailView: View {
     /// Space photo (IMG_8638/8639): picker presentation + upload state.
     @State private var showPhotoPicker = false
     @State private var photoItem: PhotosPickerItem? = nil
+    @State private var photoTarget: SpacePhotoTarget = .backdrop
     @State private var isSavingPhoto = false
 
     private let smartHome = SmartHomeService.shared
@@ -333,19 +334,35 @@ struct SpaceDetailView: View {
                         openScan()
                     }
                 }
-                // The space's ONE photo (IMG_8638/8639) — card background,
-                // page ground and round avatar all read from it.
+                // Two separate identities (migration 168): the BACKDROP
+                // dresses the card and the page ground; the AVATAR is the
+                // small identity disc in the hero.
                 GlassFilterSectionDivider()
                 GlassFilterActionRow(icon: "photo",
                                      title: String(localized: hasPhoto
-                                         ? "est_change_photo" : "est_set_photo")) {
+                                         ? "est_change_backdrop" : "est_set_backdrop")) {
+                    photoTarget = .backdrop
                     showPhotoPicker = true
                 }
                 if hasPhoto {
                     GlassFilterActionRow(icon: "photo.badge.arrow.down",
-                                         title: String(localized: "est_remove_photo")) {
+                                         title: String(localized: "est_remove_backdrop")) {
                         var updated = live
                         updated.photoUrl = nil
+                        Task { await zoneService.update(updated) }
+                    }
+                }
+                GlassFilterActionRow(icon: "person.crop.circle",
+                                     title: String(localized: hasAvatar
+                                         ? "est_change_avatar" : "est_set_avatar")) {
+                    photoTarget = .avatar
+                    showPhotoPicker = true
+                }
+                if hasAvatar {
+                    GlassFilterActionRow(icon: "person.crop.circle.badge.xmark",
+                                         title: String(localized: "est_remove_avatar")) {
+                        var updated = live
+                        updated.avatarUrl = nil
                         Task { await zoneService.update(updated) }
                     }
                 }
@@ -354,8 +371,12 @@ struct SpaceDetailView: View {
     }
 
     private var hasPhoto: Bool { live.photoUrl?.isEmpty == false }
+    private var hasAvatar: Bool { live.avatarUrl?.isEmpty == false }
 
-    /// Uploads the picked image as the space's photo. A fresh object name
+    /// Which slot the picker fills — the page backdrop or the identity disc.
+    private enum SpacePhotoTarget { case backdrop, avatar }
+
+    /// Uploads the picked image into the chosen slot. A fresh object name
     /// per upload (the public bucket caches aggressively — a fixed name
     /// would show the OLD photo after a change), then the zone row updates
     /// and every surface re-dresses from the service.
@@ -364,14 +385,21 @@ struct SpaceDetailView: View {
         isSavingPhoto = true
         defer { isSavingPhoto = false }
         guard let data = try? await pickerItem.loadTransferable(type: Data.self) else { return }
+        let target = photoTarget
         let compressed = await Task.detached(priority: .userInitiated) {
-            UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
+            // The avatar renders at 56pt — cap it small so the disc loads
+            // instantly; the backdrop keeps full display quality.
+            UIImage(data: data).flatMap {
+                target == .avatar ? $0.uploadJPEG(quality: 0.82, maxDimension: 512)
+                                  : $0.uploadJPEG(quality: 0.82)
+            } ?? data
         }.value
         do {
-            let path = "zones/\(live.id.uuidString.lowercased())/cover-\(UUID().uuidString.lowercased()).jpg"
+            let prefix = target == .avatar ? "avatar" : "cover"
+            let path = "zones/\(live.id.uuidString.lowercased())/\(prefix)-\(UUID().uuidString.lowercased()).jpg"
             let url = try await SignedStorage.uploadPublicImage(compressed, path: path, upsert: true)
             var updated = live
-            updated.photoUrl = url
+            if target == .avatar { updated.avatarUrl = url } else { updated.photoUrl = url }
             await zoneService.update(updated)
             HapticFeedback.success()
         } catch {
@@ -400,9 +428,10 @@ struct SpaceDetailView: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // The round space avatar (IMG_8638/8639) — the same one photo,
-            // as the identity disc over the page's photo band.
-            if let photo = live.photoUrl, !photo.isEmpty {
+            // The round identity disc — its OWN avatar photo when set
+            // (migration 168), else the backdrop as before.
+            if let photo = live.avatarUrl?.isEmpty == false ? live.avatarUrl : live.photoUrl,
+               !photo.isEmpty {
                 StorageImage(source: photo, targetSize: 64) { phase in
                     if case .success(let image) = phase {
                         image.resizable().scaledToFill()

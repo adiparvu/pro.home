@@ -68,7 +68,7 @@ extension DirectMessage {
         if isContactShare { return String(localized: "convo_prev_contact") }
         switch ChatMedia.dmBodyKind(body) {
         case .audio: return String(localized: "dm_prev_audio")
-        case .image: return String(localized: "dm_prev_photo")
+        case .image: return String(localized: ChatMedia.isDMLive(body) ? "convo_prev_live" : "dm_prev_photo")
         case .video: return String(localized: "dm_prev_video")
         case .text:  return MessageSubject.strip(body)
         }

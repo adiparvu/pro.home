@@ -33,7 +33,12 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     var polygon: [GeoPoint]
     var imagePolygon: [ImagePoint]?
     var notes: String?
+    /// The immersive BACKDROP of the space page (cover photo).
     var photoUrl: String?
+    /// The small identity disc (hero + list rows) — separate from the
+    /// backdrop (migration 168) so one photo can set the mood and another
+    /// can identify the space.
+    var avatarUrl: String?
     var sortOrder: Int
     /// Estate OS (E1): what KIND of space this zone is (`SpaceKind` raw
     /// value — "pond", "garden"…). nil = never classified; readers use
@@ -50,6 +55,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
         case colorHex    = "color_hex"
         case healthScore = "health_score"
         case photoUrl    = "photo_url"
+        case avatarUrl   = "avatar_url"
         case sortOrder   = "sort_order"
         case spaceKind   = "space_kind"
         case createdAt   = "created_at"
@@ -179,6 +185,7 @@ struct NewPropertyZone: Encodable {
     var polygon: [GeoPoint]
     var imagePolygon: [ImagePoint]? = nil
     var photoUrl: String?
+    var avatarUrl: String? = nil
     var sortOrder: Int
     let createdAt: String
     let updatedAt: String
@@ -190,6 +197,7 @@ struct NewPropertyZone: Encodable {
         case colorHex    = "color_hex"
         case healthScore = "health_score"
         case photoUrl    = "photo_url"
+        case avatarUrl   = "avatar_url"
         case sortOrder   = "sort_order"
         case createdAt   = "created_at"
         case updatedAt   = "updated_at"

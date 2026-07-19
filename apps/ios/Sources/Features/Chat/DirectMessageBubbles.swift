@@ -131,6 +131,7 @@ struct DMBubble: View {
 
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
+    @State private var liveItem: LiveViewerItem? = nil
     @State private var fileItem: FilePreviewItem? = nil
 
     private var reactionCounts: [String: Int] {
@@ -233,6 +234,9 @@ struct DMBubble: View {
         .fullScreenCover(item: $videoItem) { item in
             VideoPlayerSheet(url: item.url)
         }
+        .fullScreenCover(item: $liveItem) { item in
+            LivePhotoViewer(stored: item.stored)
+        }
         .sheet(item: $fileItem) { item in
             FilePreviewSheet(url: item.url, filename: item.name)
         }
@@ -262,8 +266,13 @@ struct DMBubble: View {
             )
         case .image:
             DMImageBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail,
-                          compact: photoRunMember) { u in
-                viewerItem = ImageViewerItem(url: u)
+                          compact: photoRunMember,
+                          isLive: ChatMedia.isDMLive(message.body)) { u in
+                if ChatMedia.isDMLive(message.body) {
+                    liveItem = LiveViewerItem(stored: message.body)
+                } else {
+                    viewerItem = ImageViewerItem(url: u)
+                }
             }
         case .video:
             // Same bubble the group chat uses — resolves the signed URL and
@@ -316,6 +325,9 @@ struct DMImageBubble: View {
     var hasTail: Bool = true
     /// Compact uniform tile for a run of consecutive photos (IMG_8613).
     var compact: Bool = false
+    /// A Live Photo still — wears the system LIVE badge; the tap opens the
+    /// press-to-play viewer instead of the flat image viewer.
+    var isLive: Bool = false
     let onTap: (URL) -> Void
     @State private var url: URL?
 
@@ -341,6 +353,17 @@ struct DMImageBubble: View {
                     .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 220, height: 140)
                     .overlay(ProgressView())
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if isLive {
+                Image(systemName: "livephoto")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(5)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .padding(6)
+                    .accessibilityLabel(Text("convo_prev_live"))
             }
         }
         .task(id: stored) { url = await ChatMedia.resolve(stored) }

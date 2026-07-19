@@ -280,6 +280,19 @@ extension DirectMessageView {
         // Send each selected item as its own message (preserves order). The
         // picker offers images and videos; branch on the item's content type.
         for item in items {
+            // Live Photos first (train 1150 — DM parity with the group
+            // chat): the pair uploads under one stem in dm-live and the
+            // body carries the still's path; extraction failure falls
+            // through to the plain-image send.
+            if ChatLivePhoto.isLive(item),
+               let pair = await ChatLivePhoto.pair(from: item),
+               let propId = propertyService.primary?.id,
+               let path = await ChatMedia.uploadLivePair(still: pair.still, video: pair.video,
+                                                         propertyId: propId, subdir: "dm-live") {
+                MessageSounds.sent()
+                if await performDMSend(body: path, kind: .image) { HapticFeedback.impact(.light) }
+                continue
+            }
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
             if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
                 let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }

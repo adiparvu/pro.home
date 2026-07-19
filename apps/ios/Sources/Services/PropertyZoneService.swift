@@ -56,6 +56,7 @@ final class PropertyZoneService {
             polygon: zone.polygon,
             imagePolygon: zone.imagePolygon,
             photoUrl: zone.photoUrl,
+            avatarUrl: zone.avatarUrl,
             sortOrder: zone.sortOrder,
             createdAt: zone.createdAt,
             updatedAt: ISODate.string(from: Date())
