@@ -21,6 +21,9 @@ struct MemberProfileSheet: View {
                     VStack(spacing: 20) {
                         profileHeader
                         quickActions
+                        // The tenant's lease, first-class (IMG_8651): every
+                        // real field the contract carries, absent stays absent.
+                        leaseSection
                         if resolvedMember.email != nil || resolvedMember.phone != nil || resolvedMember.birthday != nil {
                             contactSection
                         }
@@ -63,12 +66,14 @@ struct MemberProfileSheet: View {
             Text(resolvedMember.name)
                 .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(.primary)
+            // Quiet role capsule on clear glass — no colored fill or
+            // contour (user-decreed, IMG_8650).
             Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
                 .font(AppFont.label)
-                .foregroundStyle(resolvedMember.swiftColor)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xxs)
-                .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
+                .glassCapsule()
         }
     }
 
@@ -148,6 +153,95 @@ struct MemberProfileSheet: View {
     private func profileActionBtn(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         GlassActionButton(icon: icon, label: label, action: action)
             .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Lease (tenants only)
+
+    private struct LeaseRow: Identifiable {
+        let id = UUID()
+        let icon: String
+        let color: Color
+        let label: LocalizedStringKey
+        let value: String
+    }
+
+    private func leaseRows(_ lease: TenantLease) -> [LeaseRow] {
+        var rows: [LeaseRow] = []
+        let start = lease.leaseStart.flatMap(AppDate.day(from:))
+            .map { AppDate.medium.string(from: $0) }
+        let period = [start, lease.endDisplay].compactMap { $0 }
+        if !period.isEmpty {
+            rows.append(LeaseRow(icon: "calendar", color: .purple,
+                                 label: "tenant_lease_period",
+                                 value: period.joined(separator: " – ")))
+        }
+        if let rent = lease.rentDisplay {
+            rows.append(LeaseRow(icon: "banknote.fill", color: Color.brandSuccess,
+                                 label: "Monthly rent",
+                                 value: "\(rent)/\(String(localized: "month"))"))
+        }
+        if let day = lease.paymentDay {
+            rows.append(LeaseRow(icon: "calendar.badge.clock", color: .orange,
+                                 label: "Payment day",
+                                 value: String(format: String(localized: "tenant_day_fmt"), day)))
+        }
+        if let deposit = lease.deposit {
+            rows.append(LeaseRow(icon: "shield.lefthalf.filled", color: .blue,
+                                 label: "Deposit",
+                                 value: "\(CurrencyService.amount(deposit)) \(lease.currency)"))
+        }
+        if let occupants = lease.occupants {
+            rows.append(LeaseRow(icon: "person.2.fill", color: .teal,
+                                 label: "Occupants",
+                                 value: "\(occupants)"))
+        }
+        return rows
+    }
+
+    @ViewBuilder private var leaseSection: some View {
+        if resolvedMember.role == "tenant",
+           let lease = familyService.leases[resolvedMember.id] {
+            let rows = leaseRows(lease)
+            if !rows.isEmpty || lease.notes?.isEmpty == false {
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionLabel(String(localized: "Lease"))
+                    VStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 { divider }
+                            detailRow(icon: row.icon, color: row.color,
+                                      label: row.label, value: row.value)
+                        }
+                        if let notes = lease.notes, !notes.isEmpty {
+                            if !rows.isEmpty { divider }
+                            HStack(alignment: .top, spacing: 12) {
+                                ColoredIconBadge(icon: "note.text", color: .gray, size: 36)
+                                Text(verbatim: notes)
+                                    .font(AppFont.scaled(13))
+                                    .foregroundStyle(Color.primary.opacity(0.75))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
+                        }
+                    }
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                }
+            }
+        }
+    }
+
+    private func detailRow(icon: String, color: Color,
+                           label: LocalizedStringKey, value: String) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color, size: 36)
+            Text(label).font(AppFont.scaled(13)).foregroundStyle(.secondary)
+            Spacer(minLength: AppSpacing.sm)
+            Text(verbatim: value)
+                .font(AppFont.scaled(14))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
     }
 
     private var contactSection: some View {

@@ -194,23 +194,22 @@ struct TenantManagementView: View {
         GlassCard(padding: 16) {
             VStack(spacing: 12) {
                 HStack(spacing: 14) {
-                    MemberAvatar(member: tenant, size: 52)
+                    tenantAvatar(tenant)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(tenant.name)
                             .font(AppFont.headline)
                             .foregroundStyle(.primary)
 
+                        // Quiet role line — no colored capsule, no contour
+                        // (user-decreed, IMG_8650).
                         HStack(spacing: 6) {
                             Image(systemName: "key.fill")
                                 .font(AppFont.scaled(10))
-                                .foregroundStyle(tenant.swiftColor)
                             Text("Tenant")
                                 .font(AppFont.caption)
-                                .foregroundStyle(tenant.swiftColor)
                         }
-                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
-                        .background(tenant.swiftColor.opacity(0.12), in: Capsule())
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
 
                         if let email = tenant.email, !email.isEmpty {
                             Label(email, systemImage: "envelope.fill")
@@ -307,6 +306,22 @@ struct TenantManagementView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// Photo when the tenant has one; initials in `.primary` on a clear
+    /// Liquid Glass disc otherwise — never a tinted fill (IMG_8649).
+    @ViewBuilder private func tenantAvatar(_ tenant: FamilyMember) -> some View {
+        let live = MemberDirectory.shared.avatarString(userId: tenant.userId,
+                                                       fallback: tenant.avatarUrl)
+        if let urlStr = live, !urlStr.isEmpty {
+            MemberAvatar(member: tenant, size: 52)
+        } else {
+            Text(tenant.initials)
+                .font(AppFont.scaled(17, weight: .bold))
+                .foregroundStyle(.primary)
+                .frame(width: 52, height: 52)
+                .glassCircle()
         }
     }
 

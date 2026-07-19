@@ -96606,6 +96606,14 @@
   "cont_suggestion_hint": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Fills the form from this account" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Completează formularul din acest cont" } }
+  } },
+  "tenant_lease_period": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Period" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Perioadă" } }
+  } },
+  "tenant_day_fmt": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Day %d of the month" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Ziua %d a lunii" } }
   } }
   },
   "version": "1.0"
