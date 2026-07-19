@@ -213,12 +213,27 @@ struct ItemLocationSheet: View {
 
     private let trackerTypes = ["", "airtag", "tile", "gps", "other"]
 
+    /// The map's camera — starts on the saved pin, or wide when none.
+    @State private var camera: MapCameraPosition
+
     init(item: InventoryItem, onSave: @escaping (InventoryItem) -> Void) {
         self.item = item; self.onSave = onSave
         _latText           = State(initialValue: item.latitude.map { String(format: "%.6f", $0) } ?? "")
         _lonText           = State(initialValue: item.longitude.map { String(format: "%.6f", $0) } ?? "")
         _trackerType       = State(initialValue: item.trackerType)
         _trackerIdentifier = State(initialValue: item.trackerIdentifier)
+        if let lat = item.latitude, let lon = item.longitude {
+            _camera = State(initialValue: .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003))))
+        } else {
+            _camera = State(initialValue: .automatic)
+        }
+    }
+
+    private var currentCoordinate: CLLocationCoordinate2D? {
+        guard let lat = Double(latText), let lon = Double(lonText) else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 
     var body: some View {
@@ -227,16 +242,36 @@ struct ItemLocationSheet: View {
                 Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        if let lat = Double(latText), let lon = Double(lonText) {
-                            Map(initialPosition: .region(MKCoordinateRegion(
-                                center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                            ))) {
-                                Marker("", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
-                                    .tint(.blue)
+                        // The map is ALWAYS on the page — tap anywhere on it
+                        // to drop/move the pin; satellite so the yard reads.
+                        MapReader { proxy in
+                            Map(position: $camera) {
+                                if let coord = currentCoordinate {
+                                    Marker(item.name, coordinate: coord)
+                                        .tint(Color.brandDanger)
+                                }
                             }
-                            .frame(maxWidth: .infinity).frame(height: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+                            .mapStyle(.hybrid)
+                            .onTapGesture { point in
+                                guard let coord = proxy.convert(point, from: .local) else { return }
+                                latText = String(format: "%.6f", coord.latitude)
+                                lonText = String(format: "%.6f", coord.longitude)
+                                HapticFeedback.selection()
+                            }
+                        }
+                        .frame(maxWidth: .infinity).frame(height: 230)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                        .overlay(alignment: .bottom) {
+                            if currentCoordinate == nil {
+                                Text("inv_map_tap_hint")
+                                    .font(AppFont.scaled(12, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, AppSpacing.md)
+                                    .padding(.vertical, AppSpacing.xs)
+                                    .background(.black.opacity(0.45), in: Capsule())
+                                    .padding(.bottom, AppSpacing.md)
+                                    .allowsHitTesting(false)
+                            }
                         }
                         Button { locMgr.requestLocation() } label: {
                             Label("Use Current Location", systemImage: "location.fill")
@@ -244,6 +279,20 @@ struct ItemLocationSheet: View {
                                 .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                                 .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: AppRadius.md))
                         }.buttonStyle(.plain)
+                        if let coord = currentCoordinate {
+                            Button {
+                                HapticFeedback.impact(.light)
+                                openInMaps(coord)
+                            } label: {
+                                Label("inv_open_in_maps",
+                                      systemImage: "arrow.triangle.turn.up.right.circle.fill")
+                                    .font(AppFont.footnoteEmphasis)
+                                    .foregroundStyle(Color.accentColor)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, AppSpacing.md)
+                                    .glassCapsule()
+                            }.buttonStyle(.plain)
+                        }
                         VStack(spacing: 0) {
                             coordRow("Latitude", $latText)
                             Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
@@ -256,15 +305,13 @@ struct ItemLocationSheet: View {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(trackerTypes, id: \.self) { t in
-                                        Button { trackerType = t } label: {
-                                            Text(LocalizedStringKey(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : (t == "gps" ? "GPS" : t.capitalized))))
-                                                .font(AppFont.scaled(13, weight: trackerType == t ? .semibold : .regular))
-                                                .foregroundStyle(trackerType == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                                                .background(trackerType == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
-                                        }.buttonStyle(.plain)
+                                        GlassFilterChip(label: trackerLabel(t),
+                                                        isSelected: trackerType == t) {
+                                            trackerType = t
+                                        }
                                     }
                                 }
+                                .padding(.horizontal, 2)
                             }
                         }
                         if !trackerType.isEmpty {
@@ -312,9 +359,37 @@ struct ItemLocationSheet: View {
                 guard let loc else { return }
                 latText = String(format: "%.6f", loc.coordinate.latitude)
                 lonText = String(format: "%.6f", loc.coordinate.longitude)
+                camera = .region(MKCoordinateRegion(
+                    center: loc.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)))
             }
         }
         .presentationBackground(.thinMaterial)
+    }
+
+    private func trackerLabel(_ t: String) -> String {
+        switch t {
+        case "":       String(localized: "None")
+        case "airtag": "AirTag"
+        case "gps":    "GPS"
+        case "tile":   "Tile"
+        default:       String(localized: "Other")
+        }
+    }
+
+    /// Hands the pin to Apple Maps — the current-cycle MKMapItem init on
+    /// iOS 26+, the placemark path on the older floor.
+    private func openInMaps(_ coord: CLLocationCoordinate2D) {
+        let mapItem: MKMapItem
+        if #available(iOS 26.0, *) {
+            mapItem = MKMapItem(location: CLLocation(latitude: coord.latitude,
+                                                     longitude: coord.longitude),
+                                address: nil)
+        } else {
+            mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coord))
+        }
+        mapItem.name = item.name
+        mapItem.openInMaps()
     }
 
     private func coordRow(_ label: String, _ binding: Binding<String>) -> some View {
