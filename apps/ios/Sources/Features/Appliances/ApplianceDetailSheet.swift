@@ -24,7 +24,6 @@ struct ApplianceDetailSheet: View {
     @State private var documentsRefresh = 0
     /// The value just copied — drives the transient "Copied" confirmation.
     @State private var copiedValue: String?
-    @State private var serviceTaskCreated = false
 
     /// The live row — edits land in the service array; the sheet must not
     /// keep showing the stale copy it was presented with.
@@ -399,38 +398,76 @@ struct ApplianceDetailSheet: View {
 
     // MARK: - Periodic service (honest task bridge — no invented schedule)
 
+    /// The one revision task this appliance would create — matched LIVE in
+    /// the task list by its generated title, so the section always reflects
+    /// the truth in Sarcini instead of a transient local flag (IMG_8625/26:
+    /// the old 2.5s flag re-armed the button and every tap minted another
+    /// "Revizie X" duplicate, while "cancelling" deleted nothing).
+    private var expectedRevisionTitle: String {
+        String(format: String(localized: "appliance_task_title %@"), current.name)
+    }
+    private var existingRevisionTask: MaintenanceTask? {
+        taskService.tasks.first { !$0.isCompleted && $0.title == expectedRevisionTitle }
+    }
+
     private var revisionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("appliance_revision_section")
             GlassCard {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("appliance_revision_hint")
+                    Text(existingRevisionTask == nil ? "appliance_revision_hint"
+                                                     : "appliance_task_exists_hint")
                         .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        Task { await createServiceTask() }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: serviceTaskCreated ? "checkmark.circle.fill" : "wrench.and.screwdriver.fill")
-                                .font(AppFont.scaled(13, weight: .semibold))
-                            (serviceTaskCreated ? Text("appliance_task_created") : Text("appliance_task_cta"))
-                                .font(AppFont.captionEmphasis)
+                    if let open = existingRevisionTask {
+                        // A real toggle: tapping again removes the task it
+                        // created — never a second copy.
+                        Button {
+                            Task {
+                                await taskService.delete(open)
+                                HapticFeedback.impact(.light)
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(AppFont.scaled(13, weight: .semibold))
+                                Text("appliance_task_cancel")
+                                    .font(AppFont.captionEmphasis)
+                            }
+                            .foregroundStyle(Color.brandDanger)
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.vertical, 8)
+                            .glassCapsule()
                         }
-                        .foregroundStyle(serviceTaskCreated ? Color.brandSuccess : Color.accentColor)
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, 8)
-                        .glassCapsule()
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            Task { await createServiceTask() }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "wrench.and.screwdriver.fill")
+                                    .font(AppFont.scaled(13, weight: .semibold))
+                                Text("appliance_task_cta")
+                                    .font(AppFont.captionEmphasis)
+                            }
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.vertical, 8)
+                            .glassCapsule()
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(serviceTaskCreated)
                 }
             }
         }
     }
 
     private func createServiceTask() async {
-        let title = String(format: String(localized: "appliance_task_title %@"), current.name)
+        // The live check is the dedup: a second entry can only happen if the
+        // first task is already gone from Sarcini.
+        guard existingRevisionTask == nil else { return }
+        let title = expectedRevisionTitle
         let subject = [current.name, current.brand].compactMap { $0 }
             .filter { !$0.isEmpty }.joined(separator: " ")
         let description = String(format: String(localized: "appliance_task_notes %@"), subject)
@@ -446,11 +483,6 @@ struct ApplianceDetailSheet: View {
                 assigneeNames: []
             ))
             HapticFeedback.success()
-            withAnimation(.snappy(duration: 0.25)) { serviceTaskCreated = true }
-            Task {
-                try? await Task.sleep(for: .seconds(2.5))
-                withAnimation(.smooth(duration: 0.3)) { serviceTaskCreated = false }
-            }
         } catch {
             HapticFeedback.error()
         }

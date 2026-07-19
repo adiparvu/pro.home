@@ -96488,6 +96488,20 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Classic Dark" } },
         "ro" : { "stringUnit" : { "state" : "translated", "value" : "Întunecat clasic" } }
       }
+    },
+    "appliance_task_exists_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An open service task for this appliance is already in Tasks." } },
+        "ro" : { "stringUnit" : { "state" : "translated", "value" : "Există deja un task de revizie deschis în Sarcini pentru acest aparat." } }
+      }
+    },
+    "appliance_task_cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel service task" } },
+        "ro" : { "stringUnit" : { "state" : "translated", "value" : "Anulează task-ul de revizie" } }
+      }
     }
   },
   "version": "1.0"
