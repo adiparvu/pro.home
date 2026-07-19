@@ -223,6 +223,23 @@ struct InventoryMetadata: Codable {
 
     init() {}
 
+    /// Hand-written `init(from:)` below suppresses the synthesized
+    /// memberwise initializer — restored by hand for the write-path
+    /// payloads (`inventoryMetadata`).
+    init(location: String, currentLoan: LoanRecord?, loanHistory: [LoanRecord],
+         publicProfile: PublicProfile?, latitude: Double?, longitude: Double?,
+         trackerType: String, trackerIdentifier: String, elementId: UUID?) {
+        self.location = location
+        self.currentLoan = currentLoan
+        self.loanHistory = loanHistory
+        self.publicProfile = publicProfile
+        self.latitude = latitude
+        self.longitude = longitude
+        self.trackerType = trackerType
+        self.trackerIdentifier = trackerIdentifier
+        self.elementId = elementId
+    }
+
     // Synthesized Codable makes every defaulted property a REQUIRED key,
     // and array decoding is all-or-nothing — the four seed rows born with
     // metadata `{}` (2026-06-10) failed here and ONE of them emptied the
