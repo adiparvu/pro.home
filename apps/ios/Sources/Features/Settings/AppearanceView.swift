@@ -65,12 +65,10 @@ struct AppearanceView: View {
 
     // MARK: - Theme
 
-    /// The living background's current selection, stated the way iOS
-    /// Settings states a row's value ("Fundal   Automat ›").
+    /// The theme's current selection, stated the way iOS Settings states a
+    /// row's value ("Temă   Automat ›"). Backgrounds retired 2026-07-19.
     private var moodRowValue: String {
-        AppMoodEngine.shared.isAuto
-            ? String(localized: "mood_auto")
-            : AppMoodEngine.shared.resolved.localizedTitle
+        AppMoodEngine.shared.appearance.localizedTitle
     }
 
     /// The app's color scheme follows the background mood engine (Auto /
@@ -79,8 +77,8 @@ struct AppearanceView: View {
     /// (`appSettings.theme` stays stored for profile compatibility.)
     private var themeSection: some View {
         SettingsGroup(title: "Theme") {
-            NavSettingsRow(icon: "sun.horizon.fill", color: .brandGold,
-                           label: "mood_settings_title",
+            NavSettingsRow(icon: "circle.lefthalf.filled", color: .brandGold,
+                           label: "appearance_title",
                            value: moodRowValue) {
                 BackgroundMoodView()
             }

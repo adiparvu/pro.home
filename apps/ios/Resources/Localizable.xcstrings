@@ -96706,6 +96706,14 @@
   "lost_preview_caption": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Saves the card and opens the item's live public page \u2014 exactly what a finder sees." } },
     "ro": { "stringUnit": { "state": "translated", "value": "Salveaz\u0103 cardul \u0219i deschide pagina public\u0103 live a obiectului \u2014 exact ce vede cine \u00eel g\u0103se\u0219te." } }
+  } },
+  "theme_auto": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Automatic" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Automat" } }
+  } },
+  "theme_page_caption": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Automatic follows your device. The choice applies to the whole app." } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Automat urmeaz\u0103 setarea telefonului. Alegerea se aplic\u0103 \u00eentregii aplica\u021bii." } }
   } }
   },
   "version": "1.0"

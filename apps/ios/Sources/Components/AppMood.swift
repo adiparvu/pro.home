@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import UIKit
 
 // MARK: - App mood (the living background's seven atmospheres)
 //
@@ -230,14 +231,11 @@ private struct SunWindow {
 
 // MARK: - App appearance (the theme, SEPARATE from the atmosphere)
 
-/// The app's color-scheme control (IMG_8678, user-decreed): picking a theme
-/// must never disable the living backgrounds. `.mood` is the original
-/// behavior — the scheme follows the atmosphere's palette; the other three
-/// pin light/dark or defer to the device while the backdrop keeps living
-/// (AppBackdrop already resolves a palette/scheme disagreement by swapping
-/// to the matching palette).
+/// The app's theme (user-decreed, 2026-07-19: the living backgrounds are
+/// retired — back to the classic Automatic / Light / Dark). A legacy
+/// stored "mood" raw value no longer parses, so it migrates to `.system`
+/// for free at the engine's init.
 enum AppAppearance: String, CaseIterable, Identifiable {
-    case mood
     case system
     case light
     case dark
@@ -246,10 +244,17 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .mood:   "appearance_mood"
-        case .system: "appearance_system"
+        case .system: "theme_auto"
         case .light:  "appearance_light"
         case .dark:   "appearance_dark"
+        }
+    }
+
+    var localizedTitle: String {
+        switch self {
+        case .system: String(localized: "theme_auto")
+        case .light:  String(localized: "appearance_light")
+        case .dark:   String(localized: "appearance_dark")
         }
     }
 }
@@ -304,17 +309,19 @@ final class AppMoodEngine {
     private static let publishedMoodKey = "app.mood.current"
     private static let publishedSchemeKey = "app.mood.scheme"
 
-    /// The theme (Settings → Aspect → Fundal), persisted. Controls ONLY the
-    /// root color scheme — the atmosphere keeps living under any of them.
-    var appearance: AppAppearance = .mood {
-        didSet { UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey) }
+    /// The theme (Settings → Aspect → Temă), persisted. The only look
+    /// control since the living backgrounds were retired.
+    var appearance: AppAppearance = .system {
+        didSet {
+            UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey)
+            // Widgets/watch mirror the classic ground of the new scheme.
+            publishResolvedIfChanged()
+        }
     }
 
-    /// The root `.preferredColorScheme` value: the atmosphere's own scheme
-    /// in `.mood`, the device's in `.system`, or the pinned scheme.
+    /// The root `.preferredColorScheme` value: nil defers to the device.
     var preferredScheme: ColorScheme? {
         switch appearance {
-        case .mood:   resolved.palette.colorScheme
         case .system: nil
         case .light:  ColorScheme.light
         case .dark:   ColorScheme.dark
@@ -384,11 +391,23 @@ final class AppMoodEngine {
     /// True while no manual pin is set.
     var isAuto: Bool { override == nil }
 
-    /// What the app shows right now: the manual pin, or the full Auto
-    /// composition (event > rain > winter > time — see the class comment).
+    /// The published "mood" is now simply the classic ground matching the
+    /// effective scheme (backgrounds retired) — widgets, the watch and the
+    /// auto accent all collapse to the flat classic through this one door.
     var resolved: AppMood {
-        override ?? autoResolved
+        switch appearance {
+        case .light:  return .classicLight
+        case .dark:   return .classicDark
+        case .system:
+            return UITraitCollection.current.userInterfaceStyle == .dark
+                ? .classicDark : .classicLight
+        }
     }
+
+    /// The pre-retirement Auto composition — kept only because `autoReason`
+    /// and the threshold plumbing still reference it; nothing user-facing
+    /// resolves through it anymore.
+    var legacyAutoResolved: AppMood { autoResolved }
 
     /// What Auto composes right now, independent of any pin — the settings
     /// page's Auto card previews exactly this.
@@ -441,8 +460,10 @@ final class AppMoodEngine {
         // run before every stored property is initialized.
         let stored = UserDefaults.standard.string(forKey: Self.overrideKey) ?? ""
         var initialOverride = AppMood(rawValue: stored)
+        // A stored legacy "mood" value fails to parse (case removed) and
+        // lands on .system — the intended migration.
         var initialAppearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
-            .flatMap(AppAppearance.init) ?? AppAppearance.mood
+            .flatMap(AppAppearance.init) ?? AppAppearance.system
         // Migration (IMG_8678): the classics left the atmosphere carousel —
         // a stored classic pin becomes its THEME and the atmosphere returns
         // to Auto. Property observers don't fire in init, so persist by hand.
