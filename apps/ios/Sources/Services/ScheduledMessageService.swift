@@ -76,7 +76,7 @@ final class ScheduledMessageService {
                 .value
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -129,7 +129,7 @@ final class ScheduledMessageService {
                 .execute()
             items.removeAll { $0.id == item.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

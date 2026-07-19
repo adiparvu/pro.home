@@ -38,7 +38,7 @@ final class PantryService {
             items = fetched
             ServiceCache.save(items, entity: "pantry.items", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -66,7 +66,7 @@ final class PantryService {
             try await supabase
                 .from("pantry_items").update(upd)
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Consumption / correction from the pantry page, clamped at zero.
@@ -82,7 +82,7 @@ final class PantryService {
             try await supabase
                 .from("pantry_items").delete()
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     // MARK: Receipt intake

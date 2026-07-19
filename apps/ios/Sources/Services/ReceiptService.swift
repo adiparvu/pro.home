@@ -243,7 +243,7 @@ final class ReceiptService {
             receiptItems = try await fi
             budgets = try await fb
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -284,7 +284,7 @@ final class ReceiptService {
                 .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
             return path
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -319,7 +319,7 @@ final class ReceiptService {
                 .eq("id", value: receipt.id.uuidString)
                 .select().single().execute().value
             if let i = receipts.firstIndex(where: { $0.id == receipt.id }) { receipts[i] = updated }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func deleteReceipt(_ receipt: Receipt) async {
@@ -328,7 +328,7 @@ final class ReceiptService {
         do {
             try await supabase.from("receipts").delete()
                 .eq("id", value: receipt.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     // MARK: - Budgets
@@ -363,7 +363,7 @@ final class ReceiptService {
             }
             return true
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return false
         }
     }
@@ -376,7 +376,7 @@ final class ReceiptService {
                 table: "household_budgets", propertyId: propertyId,
                 scope: .strict, order: "month", limit: 500)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -385,7 +385,7 @@ final class ReceiptService {
         do {
             try await supabase.from("household_budgets").delete()
                 .eq("id", value: budget.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 }
 

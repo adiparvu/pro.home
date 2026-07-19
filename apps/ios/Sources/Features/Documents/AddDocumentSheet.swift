@@ -593,7 +593,7 @@ struct AddDocumentSheet: View {
             dismiss()
             await onSaved()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         isSaving = false
     }

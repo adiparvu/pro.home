@@ -55,7 +55,7 @@ final class CustomIntegrationService {
                 .order("created_at", ascending: true)
                 .execute().value
             error = nil
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func create(propertyId: UUID, name: String, icon: String, color: String) async {
@@ -78,7 +78,7 @@ final class CustomIntegrationService {
                 ))
                 .execute()
             await load(propertyId: propertyId)
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func setEnabled(_ integration: CustomIntegration, _ on: Bool) async {
@@ -90,7 +90,7 @@ final class CustomIntegrationService {
             if let i = integrations.firstIndex(where: { $0.id == integration.id }) {
                 integrations[i].enabled = on
             }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func rename(_ integration: CustomIntegration, name: String, icon: String, color: String) async {
@@ -104,7 +104,7 @@ final class CustomIntegrationService {
                 integrations[i].icon = icon
                 integrations[i].color = color
             }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Rotating a token cuts off only THIS integration's old token.
@@ -115,7 +115,7 @@ final class CustomIntegrationService {
                 .eq("id", value: integration.id.uuidString)
                 .execute()
             await load(propertyId: integration.propertyId)
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func delete(_ integration: CustomIntegration) async {
@@ -125,7 +125,7 @@ final class CustomIntegrationService {
                 .eq("id", value: integration.id.uuidString)
                 .execute()
             integrations.removeAll { $0.id == integration.id }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Posts through the PUBLIC endpoint with this integration's own token —

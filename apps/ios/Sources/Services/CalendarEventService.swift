@@ -29,7 +29,7 @@ final class CalendarEventService {
             ServiceCache.save(events, entity: "calendar_events", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -103,7 +103,7 @@ final class CalendarEventService {
             if let i = events.firstIndex(where: { $0.id == event.id }) { events[i] = updated }
             events.sort { $0.startsAt < $1.startsAt }
             ServiceCache.save(events, entity: "calendar_events", propertyId: event.propertyId)
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func delete(_ event: CalendarEvent) async {

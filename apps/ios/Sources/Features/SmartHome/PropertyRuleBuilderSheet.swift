@@ -622,7 +622,7 @@ struct PropertyRuleBuilderSheet: View {
                 dismiss()
             } catch {
                 HapticFeedback.error()
-                self.error = error.localizedDescription
+                self.error = error.recordableDescription
             }
         }
     }

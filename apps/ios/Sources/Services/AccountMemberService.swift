@@ -103,7 +103,7 @@ final class AccountMemberService {
                 profiles = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

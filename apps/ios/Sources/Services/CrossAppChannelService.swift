@@ -47,7 +47,7 @@ final class CrossAppService {
                 .eq("property_id", value: propertyId.uuidString)
                 .execute().value
             channel = rows.first
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// First enable creates the channel row (token generated server-side).
@@ -69,7 +69,7 @@ final class CrossAppService {
                     .execute()
             }
             await load(propertyId: propertyId)
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func setNotifyRequests(_ on: Bool, propertyId: UUID) async {
@@ -79,7 +79,7 @@ final class CrossAppService {
                 .eq("property_id", value: propertyId.uuidString)
                 .execute()
             channel?.notifyRequests = on
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Rotating the token instantly cuts off every service using the old one.
@@ -90,7 +90,7 @@ final class CrossAppService {
                 .eq("property_id", value: propertyId.uuidString)
                 .execute()
             await load(propertyId: propertyId)
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Posts through the PUBLIC endpoint — exactly what an external app does —

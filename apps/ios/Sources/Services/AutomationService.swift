@@ -26,7 +26,7 @@ final class AutomationService {
                 .value
             byElement[elementId] = loaded
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -43,7 +43,7 @@ final class AutomationService {
             await scheduleNotification(for: created)
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -66,7 +66,7 @@ final class AutomationService {
                 else { cancelNotification(id: automation.id) }
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -77,7 +77,7 @@ final class AutomationService {
             byElement[automation.elementId]?.removeAll { $0.id == automation.id }
             cancelNotification(id: automation.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

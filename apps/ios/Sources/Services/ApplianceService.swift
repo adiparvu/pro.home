@@ -29,7 +29,7 @@ final class ApplianceService {
             ServiceCache.save(appliances, entity: "appliances", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -41,7 +41,7 @@ final class ApplianceService {
                 .select().single().execute().value
             appliances.append(inserted)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -70,7 +70,7 @@ final class ApplianceService {
                 appliances[i] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -81,7 +81,7 @@ final class ApplianceService {
                 .from("appliances").delete()
                 .eq("id", value: appliance.id.uuidString).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

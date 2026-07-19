@@ -390,7 +390,7 @@ struct AddContactView: View {
                 contactAdded = true
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return
         }
         // WhatsApp-style: adding a contact with an email invites them. Surface a

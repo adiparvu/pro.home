@@ -139,7 +139,7 @@ final class PropertyService {
             ServiceCache.save(properties, entity: "properties")
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         Self.activePropertyId = primary?.id
     }
@@ -189,7 +189,7 @@ final class PropertyService {
                         onConflict: "property_id,user_id")
                 .execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -243,7 +243,7 @@ final class PropertyService {
                 properties[idx] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -264,7 +264,7 @@ final class PropertyService {
                 properties[idx].photoUrl = url
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

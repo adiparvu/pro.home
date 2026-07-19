@@ -78,7 +78,7 @@ final class FinancialService {
             ServiceCache.save(records, entity: "financial", propertyId: pid)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         if let pid { await subscribeRealtime(propertyId: pid) }
     }
@@ -157,7 +157,7 @@ final class FinancialService {
                 .execute()
             records.removeAll { $0.id == record.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

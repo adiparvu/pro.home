@@ -24,7 +24,7 @@ final class PaintColorService {
                                                   scope: .strict, order: "room_name", ascending: true,
                                                   limit: 500)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -36,7 +36,7 @@ final class PaintColorService {
                 .select().single().execute().value
             colors.append(inserted)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -65,7 +65,7 @@ final class PaintColorService {
                 .value
             if let i = colors.firstIndex(where: { $0.id == color.id }) { colors[i] = fresh }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -76,7 +76,7 @@ final class PaintColorService {
                 .from("paint_colors").delete()
                 .eq("id", value: color.id.uuidString).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

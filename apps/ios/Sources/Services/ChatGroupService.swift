@@ -116,7 +116,7 @@ final class ChatGroupService {
             await loadAllMembers()
             await loadPreviews(propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -201,7 +201,7 @@ final class ChatGroupService {
             try await supabase.from("chat_group_members").insert(rows).execute()
             await loadAllMembers()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -252,7 +252,7 @@ final class ChatGroupService {
             await loadAllMembers()
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -264,7 +264,7 @@ final class ChatGroupService {
             groups.removeAll { $0.id == group.id }
             membersByGroup[group.id] = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -279,7 +279,7 @@ final class ChatGroupService {
                 .execute()
             if let i = groups.firstIndex(where: { $0.id == group.id }) { groups[i].name = trimmed }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -300,7 +300,7 @@ final class ChatGroupService {
             try await supabase.from("chat_group_members").insert(rows).execute()
             await loadAllMembers()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -333,7 +333,7 @@ final class ChatGroupService {
                 .execute()
             membersByGroup[group.id]?.removeAll { $0.memberId == member.memberId }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

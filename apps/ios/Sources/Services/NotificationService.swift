@@ -159,7 +159,7 @@ final class NotificationService {
                 .value
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -216,7 +216,7 @@ final class NotificationService {
             if let i = notifications.firstIndex(where: { $0.id == notification.id }) {
                 notifications[i].status = "unread"
             }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -238,7 +238,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -255,7 +255,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -271,7 +271,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -296,7 +296,7 @@ final class NotificationService {
         } catch {
             // Leave the optimistic flip; a later load() reconciles. (Matches the
             // rest of this type: local stays authoritative, the server catches up.)
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         await reconcileBadge(userId: userId)
     }
@@ -335,7 +335,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -351,7 +351,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

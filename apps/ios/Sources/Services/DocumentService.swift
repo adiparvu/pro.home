@@ -26,7 +26,7 @@ final class DocumentService {
             ServiceCache.save(documents, entity: "documents", propertyId: pid)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -172,7 +172,7 @@ final class DocumentService {
                 documents[idx].elementId = elementId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -256,7 +256,7 @@ final class DocumentService {
                                                 details: ["expires_at": doc.expiresAt ?? ""])
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -282,7 +282,7 @@ final class DocumentService {
             await DocumentEventsService.log(documentId: doc.id, kind: .edited,
                                             details: ["read_only": value ? "on" : "off"])
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -304,7 +304,7 @@ final class DocumentService {
             await DocumentEventsService.log(documentId: doc.id, kind: .shared,
                                             details: ["hidden_from_family": value ? "on" : "off"])
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -327,7 +327,7 @@ final class DocumentService {
                 .execute()
             documents.removeAll { $0.id == doc.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

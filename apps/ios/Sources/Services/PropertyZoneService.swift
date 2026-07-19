@@ -23,7 +23,7 @@ final class PropertyZoneService {
                                                  limit: 500)
             ServiceCache.save(zones, entity: "zones", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -40,7 +40,7 @@ final class PropertyZoneService {
             zones.append(created)
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -73,7 +73,7 @@ final class PropertyZoneService {
                 zones[idx] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -86,7 +86,7 @@ final class PropertyZoneService {
                 .execute()
             zones.removeAll { $0.id == zone.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

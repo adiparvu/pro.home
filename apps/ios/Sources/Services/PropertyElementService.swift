@@ -25,7 +25,7 @@ final class PropertyElementService {
                                                     limit: 500)
             ServiceCache.save(elements, entity: "elements", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -40,7 +40,7 @@ final class PropertyElementService {
                 .value
             elements.append(created)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -88,7 +88,7 @@ final class PropertyElementService {
                 elements[idx] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -109,7 +109,7 @@ final class PropertyElementService {
                 elements[idx].positionY = y
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -128,7 +128,7 @@ final class PropertyElementService {
                 elements[idx].coverPhotoUrl = url
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -149,7 +149,7 @@ final class PropertyElementService {
                 elements[idx].homekitAccessoryId = accessoryId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -171,7 +171,7 @@ final class PropertyElementService {
             if let i = elements.firstIndex(where: { $0.id == elementId }) {
                 elements[i].isFavorite = !newValue // revert
             }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -192,7 +192,7 @@ final class PropertyElementService {
                 elements[idx].technicalCondition = condition
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -216,7 +216,7 @@ final class PropertyElementService {
                 elements[idx].zoneId = zoneId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -235,7 +235,7 @@ final class PropertyElementService {
                 elements[idx].photoUrls = urls
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -253,7 +253,7 @@ final class PropertyElementService {
             elements.removeAll { $0.id == element.id }
             records.removeValue(forKey: element.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -270,7 +270,7 @@ final class PropertyElementService {
                 .value
             records[elementId] = loaded
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -285,7 +285,7 @@ final class PropertyElementService {
                 .value
             records[created.elementId, default: []].insert(created, at: 0)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -298,7 +298,7 @@ final class PropertyElementService {
                 .execute()
             records[record.elementId]?.removeAll { $0.id == record.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

@@ -55,7 +55,7 @@ final class InvitationService {
                 .execute()
                 .value
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -68,7 +68,7 @@ final class InvitationService {
                 .execute()
             await load(propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

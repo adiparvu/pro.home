@@ -22,7 +22,7 @@ extension PropertyZoneService {
                 .eq("id", value: zone.id.uuidString)
                 .execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         await load(propertyId: propertyId)
     }

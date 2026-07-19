@@ -195,7 +195,7 @@ final class PropertyRulesStore {
         } catch {
             if error is CancellationError { return }
             // Don't throw an alert over data already on screen.
-            if rules.isEmpty { self.error = error.localizedDescription }
+            if rules.isEmpty { self.error = error.recordableDescription }
         }
     }
 
@@ -264,7 +264,7 @@ final class PropertyRulesStore {
             if let idx = rules.firstIndex(where: { $0.id == rule.id }) {
                 rules[idx].enabled = previous
             }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -277,7 +277,7 @@ final class PropertyRulesStore {
             rules.removeAll { $0.id == rule.id }
             localLastFired[rule.id] = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

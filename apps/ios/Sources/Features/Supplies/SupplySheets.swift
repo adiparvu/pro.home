@@ -214,7 +214,7 @@ struct AddSupplyListSheet: View {
                 HapticFeedback.success()
                 dismiss()
             } catch {
-                self.error = error.localizedDescription
+                self.error = error.recordableDescription
             }
             isSaving = false
         }

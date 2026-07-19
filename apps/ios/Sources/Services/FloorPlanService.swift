@@ -40,7 +40,7 @@ final class FloorPlanService {
                 .execute()
                 .value
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -87,7 +87,7 @@ final class FloorPlanService {
             floors.append(created)
             floors.sort { $0.floorNumber < $1.floorNumber }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -103,7 +103,7 @@ final class FloorPlanService {
                 floors[idx].name = name
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -129,7 +129,7 @@ final class FloorPlanService {
                 rooms[idx].floorPlanId = nil
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -163,7 +163,7 @@ final class FloorPlanService {
                 .value
             rooms.append(created)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -181,7 +181,7 @@ final class FloorPlanService {
                 .execute()
             rooms.removeAll { $0.id == room.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -238,7 +238,7 @@ final class FloorPlanService {
             rooms.append(created)
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -257,7 +257,7 @@ final class FloorPlanService {
                 rooms[idx].zoneId = zone.id
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -298,7 +298,7 @@ final class FloorPlanService {
                 rooms[idx].heightPct = heightPct
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -325,7 +325,7 @@ final class FloorPlanService {
                 rooms[idx].scanPath = path
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -343,7 +343,7 @@ final class FloorPlanService {
             try data.write(to: tmp, options: .atomic)
             return tmp
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }

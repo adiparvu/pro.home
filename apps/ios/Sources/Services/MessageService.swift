@@ -149,7 +149,7 @@ final class MessageService {
             // naturally bounded at pageSize rows.
             ServiceCache.save(messages, entity: cacheEntity, propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -183,7 +183,7 @@ final class MessageService {
             messages.insert(contentsOf: older, at: 0)
             hasMoreOlder = rows.count == Self.pageSize
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

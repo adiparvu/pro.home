@@ -30,7 +30,7 @@ final class InventoryService {
             ServiceCache.save(items, entity: "inventory", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -51,7 +51,7 @@ final class InventoryService {
             // the real id on insert, so move them over.
             InventoryImageStore.migrate(from: item.id, to: saved.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -70,7 +70,7 @@ final class InventoryService {
                 items[i] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -85,7 +85,7 @@ final class InventoryService {
             items.removeAll { $0.id == item.id }
             InventoryImageStore.deleteAll(for: item.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

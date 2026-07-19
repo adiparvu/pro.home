@@ -48,7 +48,7 @@ final class TaskService {
             // A transient refresh failure must not throw a blocking alert
             // over already-displayed cached data — only report when there
             // is nothing on screen to stand behind.
-            if tasks.isEmpty { self.error = error.localizedDescription }
+            if tasks.isEmpty { self.error = error.recordableDescription }
         }
         // The spinner ends with the FETCH — the realtime subscribe below can
         // stall on a flaky websocket handshake, and while it hung inside the
@@ -130,7 +130,7 @@ final class TaskService {
                 tasks[idx].elementId = elementId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -161,7 +161,7 @@ final class TaskService {
             // completing here checks it off, reopening here unchecks it).
             TaskCalendarSync.setReminderCompleted(taskId: task.id, newStatus == "completed")
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -287,7 +287,7 @@ final class TaskService {
             // A deleted task must stop steering its Apple Reminder.
             TaskReminderLinks.unlink(taskId: task.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

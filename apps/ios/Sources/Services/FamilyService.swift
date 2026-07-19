@@ -24,7 +24,7 @@ final class FamilyService {
                                                    ascending: true, limit: 500)
             ServiceCache.save(members, entity: "family", propertyId: pid)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -180,7 +180,7 @@ final class FamilyService {
             }
             return true
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return false
         }
     }
@@ -222,7 +222,7 @@ final class FamilyService {
             }
             return updated
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -237,7 +237,7 @@ final class FamilyService {
             }
             return updated
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -279,7 +279,7 @@ final class FamilyService {
                 .execute()
             members.removeAll { $0.id == member.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

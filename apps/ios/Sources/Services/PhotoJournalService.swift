@@ -26,7 +26,7 @@ final class PhotoJournalService {
                                                    scope: .strict, order: "taken_at", limit: 600)
             ServiceCache.save(entries, entity: "journal", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -75,7 +75,7 @@ final class PhotoJournalService {
                 .from("photo_journal_entries").delete()
                 .eq("id", value: entry.id.uuidString).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

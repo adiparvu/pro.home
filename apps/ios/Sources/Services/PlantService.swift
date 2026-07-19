@@ -30,7 +30,7 @@ final class PlantService {
             ServiceCache.save(plants, entity: "plants", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -60,7 +60,7 @@ final class PlantService {
                 .eq("id", value: plant.id.uuidString)
                 .select().single().execute().value
             if let i = plants.firstIndex(where: { $0.id == plant.id }) { plants[i] = updated }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Links a plant to (or, with nil, unlinks it from) its `plant_species`
@@ -77,7 +77,7 @@ final class PlantService {
             try await supabase
                 .from("plants").update(upd)
                 .eq("id", value: plant.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func markWatered(_ plant: Plant) async {
@@ -100,7 +100,7 @@ final class PlantService {
             try await supabase
                 .from("plants").update(upd)
                 .eq("id", value: plant.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Persists a freshly computed Plant Health Score (P6). Focused single-column
@@ -118,7 +118,7 @@ final class PlantService {
             try await supabase
                 .from("plants").update(PlantHealthScoreUpdate(healthScore: score, healthScoreAt: now))
                 .eq("id", value: plant.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     /// Uploads the plant's hero photo through the canonical property-imagery
@@ -139,7 +139,7 @@ final class PlantService {
             try await supabase
                 .from("plants").update(PlantHeroPhotoUpdate(photoUrl: url, updatedAt: now))
                 .eq("id", value: plantId.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func delete(_ plant: Plant) async {
@@ -148,6 +148,6 @@ final class PlantService {
             try await supabase
                 .from("plants").delete()
                 .eq("id", value: plant.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 }

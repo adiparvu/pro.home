@@ -57,7 +57,7 @@ final class ContractorService {
                                                        order: "name", ascending: true, limit: 500)
             ServiceCache.save(contractors, entity: "contractors", propertyId: pid)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -90,7 +90,7 @@ final class ContractorService {
                 contractors[i] = result
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -99,7 +99,7 @@ final class ContractorService {
             try await supabase.from("contractors").delete().eq("id", value: c.id.uuidString).execute()
             contractors.removeAll { $0.id == c.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

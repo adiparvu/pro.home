@@ -153,7 +153,7 @@ struct TOTPEnrollView: View {
             secret = response.totp?.secret ?? ""
             otpauthURI = response.totp?.uri ?? ""
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

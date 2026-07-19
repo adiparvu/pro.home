@@ -50,7 +50,7 @@ final class SupplyService {
             ServiceCache.save(lists, entity: "supplies.lists", propertyId: propertyId)
             ServiceCache.save(items, entity: "supplies.items", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -78,7 +78,7 @@ final class SupplyService {
                 .eq("id", value: list.id.uuidString)
                 .select().single().execute().value
             if let i = lists.firstIndex(where: { $0.id == list.id }) { lists[i] = updated }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func deleteList(_ list: SupplyList) async {
@@ -88,7 +88,7 @@ final class SupplyService {
             try await supabase
                 .from("supply_lists").delete()
                 .eq("id", value: list.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     // MARK: Items
@@ -113,7 +113,7 @@ final class SupplyService {
             try await supabase
                 .from("supply_items").update(upd)
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func toggleComplete(_ item: SupplyItem) async {
@@ -146,6 +146,6 @@ final class SupplyService {
             try await supabase
                 .from("supply_items").delete()
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 }
