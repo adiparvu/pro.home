@@ -190,6 +190,20 @@ extension ChatView {
         // and videos are both supported by the picker.
         let ids = mentionedIds
         for (index, item) in items.enumerated() {
+            // Live Photos first (WhatsApp-parity): both halves upload under
+            // one stem and the message rides as "live". Extraction failure
+            // falls through to the plain-image path — a send never drops.
+            if ChatLivePhoto.isLive(item),
+               let pair = await ChatLivePhoto.pair(from: item),
+               let path = await ChatMedia.uploadLivePair(still: pair.still, video: pair.video,
+                                                         propertyId: pid, subdir: "chat") {
+                await performGroupSend(
+                    body: (index == 0 && !caption.isEmpty) ? caption : nil,
+                    attachmentUrl: path, attachmentType: "live",
+                    kind: .image, mentionedIds: ids
+                )
+                continue
+            }
             guard var data = try? await item.loadTransferable(type: Data.self) else { continue }
             let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
             let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }

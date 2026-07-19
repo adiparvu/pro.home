@@ -154,6 +154,9 @@ struct ChatImageBubble: View {
     var hasTail: Bool = true
     /// Compact uniform tile for a run of consecutive photos (IMG_8613).
     var compact: Bool = false
+    /// A Live Photo still — wears the system LIVE badge; the tap opens the
+    /// press-to-play viewer instead of the flat image viewer.
+    var isLive: Bool = false
     let onTap: (URL) -> Void
     @State private var url: URL?
     /// Bumping this re-runs the resolve `.task` — the tap-to-retry affordance
@@ -213,6 +216,17 @@ struct ChatImageBubble: View {
         // Clip the whole card (image + caption) to the bubble so a group ending
         // on a photo carries the same tail as a text bubble.
         .clipShape(ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
+        .overlay(alignment: .topLeading) {
+            if isLive {
+                Image(systemName: "livephoto")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(5)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .padding(6)
+                    .accessibilityLabel(Text("convo_prev_live"))
+            }
+        }
         .task(id: "\(stored)#\(reloadToken)") { url = await ChatMedia.resolve(stored) }
     }
 }

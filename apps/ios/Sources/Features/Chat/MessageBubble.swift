@@ -64,6 +64,7 @@ struct MessageBubble: View {
     @State private var localMyReaction: String? = nil
     @State private var viewerItem: ImageViewerItem? = nil
     @State private var videoItem: ImageViewerItem? = nil
+    @State private var liveItem: LiveViewerItem? = nil
     @State private var filePreview: FilePreviewItem? = nil
 
     private var displayReactions: [String: Int] {
@@ -157,6 +158,9 @@ struct MessageBubble: View {
         }
         .fullScreenCover(item: $videoItem) { item in
             VideoPlayerSheet(url: item.url)
+        }
+        .fullScreenCover(item: $liveItem) { item in
+            LivePhotoViewer(stored: item.stored)
         }
     }
 
@@ -286,8 +290,12 @@ struct MessageBubble: View {
         } else if message.isImageMessage, let urlStr = message.attachmentUrl {
             ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
                             ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd,
-                            compact: photoRunMember) { resolved in
-                viewerItem = ImageViewerItem(url: resolved)
+                            compact: photoRunMember, isLive: message.isLiveMessage) { resolved in
+                if message.isLiveMessage {
+                    liveItem = LiveViewerItem(stored: urlStr)
+                } else {
+                    viewerItem = ImageViewerItem(url: resolved)
+                }
             }
         } else if message.isVideoMessage, let urlStr = message.attachmentUrl {
             ChatVideoBubble(stored: urlStr, isOwn: isOwn, hasTail: isGroupEnd) { resolved in videoItem = ImageViewerItem(url: resolved) }

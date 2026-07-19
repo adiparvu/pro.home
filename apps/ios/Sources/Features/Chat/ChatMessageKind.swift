@@ -16,6 +16,7 @@ import Foundation
 enum ChatMessageKind: Equatable {
     case text
     case image
+    case livePhoto
     case video
     case audio
     case file
@@ -36,6 +37,7 @@ enum ChatMessageKind: Equatable {
         switch self {
         case .text:         return nil
         case .image:        return String(localized: "convo_prev_image")
+        case .livePhoto:    return String(localized: "convo_prev_live")
         case .video:        return String(localized: "convo_prev_video")
         case .audio:        return String(localized: "convo_prev_audio")
         case .file:         return String(localized: "convo_prev_file")
@@ -87,6 +89,7 @@ extension Message {
         if isTaskShare       { return .taskShare }
         if isContactShare    { return .contactShare }
         if isAudioMessage    { return .audio }
+        if isLiveMessage     { return .livePhoto }
         if isImageMessage    { return .image }
         if isVideoMessage    { return .video }
         if isLocationMessage { return .location }

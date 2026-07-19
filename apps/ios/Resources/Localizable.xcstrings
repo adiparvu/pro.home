@@ -96638,6 +96638,18 @@
   "pantry_low_fmt": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "%d running low" } },
     "ro": { "stringUnit": { "state": "translated", "value": "%d pe sfârșite" } }
+  } },
+  "convo_prev_live": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "📸 Live Photo" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "📸 Live Photo" } }
+  } },
+  "live_hold_hint": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Touch and hold to play" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Ține apăsat pentru redare" } }
+  } },
+  "live_unavailable": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Motion unavailable — showing the still" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Mișcarea nu e disponibilă — se afișează cadrul" } }
   } }
   },
   "version": "1.0"

@@ -36,6 +36,14 @@ struct FilePreviewItem: Identifiable {
     let name: String
 }
 
+/// A "live" attachment headed for the press-to-play viewer — carries the
+/// STORED still path (the pair is resolved inside the viewer), not a
+/// pre-resolved URL.
+struct LiveViewerItem: Identifiable {
+    let id = UUID()
+    let stored: String
+}
+
 struct FullScreenImageViewer: View {
     let url: URL
     @Environment(\.dismiss) private var dismiss

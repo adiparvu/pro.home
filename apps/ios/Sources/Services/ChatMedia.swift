@@ -50,6 +50,31 @@ enum ChatMedia {
         }
     }
 
+    /// Uploads a Live Photo pair under the SAME uuid stem —
+    /// `{propertyId}/{subdir}/{uuid}.jpg` + `{uuid}.mov` — and returns the
+    /// STILL's path (the attachment_url for type "live"). The motion path is
+    /// always derived via `liveVideoPath(for:)`, so no schema change rides.
+    static func uploadLivePair(still: Data, video: Data, propertyId: UUID,
+                               subdir: String) async -> String? {
+        let stem = "\(propertyId.uuidString)/\(subdir)/\(UUID().uuidString)"
+        do {
+            try await supabase.storage.from(bucket)
+                .upload(stem + ".jpg", data: still,
+                        options: FileOptions(contentType: "image/jpeg", upsert: false))
+            try await supabase.storage.from(bucket)
+                .upload(stem + ".mov", data: video,
+                        options: FileOptions(contentType: "video/quicktime", upsert: false))
+            return stem + ".jpg"
+        } catch {
+            return nil
+        }
+    }
+
+    /// The paired-motion path for a "live" attachment's still path.
+    static func liveVideoPath(for stillPath: String) -> String {
+        (stillPath as NSString).deletingPathExtension + ".mov"
+    }
+
     /// Resolves a stored attachment value to a displayable URL. Legacy public
     /// URLs (http…) pass through; chat-media paths get a signed URL, cached so
     /// repeated resolves for the same path (re-renders, LazyVStack recycling

@@ -956,6 +956,7 @@ struct ConversationsView: View {
             if let body = m.body, !body.isEmpty { return prefix + MessageSubject.strip(body) }
             switch m.attachmentType {
             case "image":    return prefix + String(localized: "convo_prev_image")
+            case "live":     return prefix + String(localized: "convo_prev_live")
             case "video":    return prefix + String(localized: "convo_prev_video")
             case "audio":    return prefix + String(localized: "convo_prev_audio")
             case "location": return prefix + String(localized: "convo_prev_location")
