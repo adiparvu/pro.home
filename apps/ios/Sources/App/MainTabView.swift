@@ -462,6 +462,11 @@ struct MainTabView: View {
         // the round-trips overlap instead of paying their sum, and every
         // service decodes off the main actor (PropertyRepo).
         let propId = propertyService.primary?.id
+        // ONE round-trip for the whole world (migration 164): the RPC's
+        // slices land in PropertyRepo's cache and every service load below
+        // decodes locally instead of paying its own trip. If the RPC fails,
+        // the loads fan out to the network exactly as before.
+        if let propId { await PropertyRepo.preloadBootstrap(propertyId: propId) }
         // The seasonal overlay is local (UserDefaults) — pointing it at the
         // property is synchronous and must precede the widgets' first read.
         seasonalService.configure(propertyId: propId)
