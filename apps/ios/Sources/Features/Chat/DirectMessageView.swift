@@ -205,6 +205,10 @@ struct DirectMessageView: View {
         // slot from the cache until something else bumped the revision
         // (IMG_8539). Different identity → different cache key.
         hasher.combine(directMessageService.myUserId)
+        // myName participates in the legacy matching inside the cached
+        // closure — omitting it served a stale slot across a name change
+        // (the IMG_8539 bug shape, previously fixed only for myUserId).
+        hasher.combine(myName)
         hasher.combine(ConversationClearStore.clearedAt(convId))
         hasher.combine(ChatDisappearStore.ttl(disappearKey))
         hasher.combine(Int(Date().timeIntervalSince1970 / 30))

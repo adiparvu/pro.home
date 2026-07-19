@@ -230,8 +230,12 @@ enum ChatDisappearStore {
     // pg_cron sweep (migration 084) deletes expired rows for real.
 
     /// The server key every participant computes identically for a DM.
+    /// Trimmed at the door: one edge space forked "dm:Adi |Bianca" from
+    /// "dm:Adi|Bianca" and the TTL setting and its stamp never met
+    /// (2026-07-19 field failure) — covers every call site at once.
     static func dmServerKey(_ a: String, _ b: String) -> String {
-        "dm:" + [a, b].sorted().joined(separator: "|")
+        let parts = [a, b].map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        return "dm:" + parts.sorted().joined(separator: "|")
     }
 
     private struct SettingRow: Decodable {
@@ -253,12 +257,18 @@ enum ChatDisappearStore {
             .execute()
             .value
         guard let rows else { return }
+        // Trimmed comparison: a key holding the trimmed "Adi" while myName
+        // was "Adi " failed to exclude SELF, writing the peer's TTL under
+        // the user's own name — the setting and the stamp never met.
+        let me = myName.trimmingCharacters(in: .whitespacesAndNewlines)
         for row in rows {
             let localId: String
             if row.convKey.hasPrefix("dm:") {
                 let names = row.convKey.dropFirst(3).split(separator: "|").map(String.init)
-                guard let peer = names.first(where: { $0 != myName }) ?? names.first else { continue }
-                localId = peer
+                guard let peer = names.first(where: {
+                    $0.trimmingCharacters(in: .whitespacesAndNewlines) != me
+                }) ?? names.first else { continue }
+                localId = peer.trimmingCharacters(in: .whitespacesAndNewlines)
             } else {
                 localId = row.convKey
             }

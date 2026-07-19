@@ -29,8 +29,14 @@ struct ProfileData: Codable, Equatable {
     }
 
     var preferredName: String {
-        if let d = displayName, !d.isEmpty { return d }
-        if !fullName.isEmpty { return fullName }
+        // The ONE name authority — always trimmed: a single edge space here
+        // forked every name-keyed DM surface app-wide ("Adi " vs "Adi", the
+        // 2026-07-19 vanishing-thread field failure). Emptiness is judged
+        // AFTER trimming so a whitespace-only field can't win the cascade.
+        let display = (displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !display.isEmpty { return display }
+        let full = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !full.isEmpty { return full }
         return email.components(separatedBy: "@").first?.capitalized ?? "User"
     }
 

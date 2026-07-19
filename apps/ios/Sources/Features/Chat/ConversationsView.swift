@@ -227,9 +227,13 @@ struct ConversationsView: View {
         // Reflect server-side blocks locally — by member id first (survives
         // renames), by name only for legacy rows.
         let blocked = await ChatBlockSync.load()
+        // Legacy name rows compare TRIMMED on both sides — a rename or an
+        // edge space must never silently unblock someone.
+        let blockedNames = Set(blocked.names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) })
         for m in familyService.members {
             ChatBlockStore.setBlocked(m.id.uuidString,
-                                      blocked.memberIds.contains(m.id) || blocked.names.contains(m.name))
+                                      blocked.memberIds.contains(m.id)
+                                        || blockedNames.contains(m.name.trimmingCharacters(in: .whitespacesAndNewlines)))
         }
     }
     private func toggleLocked(_ id: String) {

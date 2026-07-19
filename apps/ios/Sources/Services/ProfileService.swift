@@ -44,6 +44,10 @@ final class ProfileService {
         isSaving = true
         defer { isSaving = false }
         func clean(_ s: String?) -> String? { (s?.isEmpty ?? true) ? nil : s }
+        // Identity names are trimmed at the door (belt to migration 172's
+        // DB trigger): an edge space in display_name forked the DM keys.
+        let fullName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let payload = ProfileUpdate(
             fullName: fullName,

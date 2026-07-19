@@ -83,8 +83,12 @@ struct DMThread: Hashable {
     init(member: FamilyMember) {
         peerUserId = member.userId
         memberId = member.id
-        memberName = member.name
-        displayName = member.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Trimmed: legacyName feeds the older-page fetch clauses, and the
+        // rows themselves are trimmed since migration 172 — an untrimmed
+        // snapshot made legacy pages come back empty and permanently
+        // retired "Load older" for the session.
+        memberName = member.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        displayName = memberName
         storeKey = member.id
     }
 
@@ -368,7 +372,11 @@ final class DirectMessageService {
         }
 
         var id: String {
-            peerUserId?.uuidString ?? peerMemberId?.uuidString ?? peerName.lowercased()
+            // The name fallback trims to match the server's lower(btrim())
+            // grouping (migration 141) — untrimmed, one edge space forked
+            // the same conversation into two list rows.
+            peerUserId?.uuidString ?? peerMemberId?.uuidString
+                ?? peerName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
         var lastDate: Date? { ISODate.date(from: lastCreatedAt) }
     }
