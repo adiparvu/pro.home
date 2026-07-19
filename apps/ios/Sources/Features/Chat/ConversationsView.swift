@@ -998,7 +998,9 @@ struct ConversationsView: View {
                 name: group.name.isEmpty ? group.kindLabel : group.name,
                 preview: preview?.text.isEmpty == false ? preview!.text : fallback,
                 date: preview?.date,
-                unread: 0,
+                // Server truth (read receipts) — opening the thread stamps
+                // them and the badge clears on the next groups refresh.
+                unread: groupService.unreadByGroup[group.id] ?? 0,
                 isGroup: true,
                 member: nil,
                 peer: nil,

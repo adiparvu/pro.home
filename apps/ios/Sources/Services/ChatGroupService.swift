@@ -63,15 +63,20 @@ struct ChatGroup: Identifiable, Codable, Hashable {
 }
 
 /// The newest message of a community group, for the list preview line.
+/// id + senderId ride along so the same window also yields the unread
+/// count (rows from others without my read receipt).
 struct GroupMessagePreview: Decodable {
+    let id: UUID
     let groupId: UUID
+    let senderId: UUID?
     let senderName: String?
     let body: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case body
+        case id, body
         case groupId    = "group_id"
+        case senderId   = "sender_id"
         case senderName = "sender_name"
         case createdAt  = "created_at"
     }
@@ -98,6 +103,11 @@ final class ChatGroupService {
     var groups: [ChatGroup] = []
     var membersByGroup: [UUID: [ChatGroupMember]] = [:]
     var latestByGroup: [UUID: GroupMessagePreview] = [:]
+    /// Unread per group — SERVER truth: messages from others in the recent
+    /// window that carry no read receipt of mine. Opening the thread stamps
+    /// the receipts (ChatView.markRead), so the badge clears itself on the
+    /// next refresh. Bounded by the preview window (a badge, not a ledger).
+    var unreadByGroup: [UUID: Int] = [:]
     var isLoading = false
     var error: String?
 
@@ -124,11 +134,11 @@ final class ChatGroupService {
     /// rows for the property, reduced client-side to the first per group.
     func loadPreviews(propertyId: UUID) async {
         let ids = groups.map { $0.id.uuidString }
-        guard !ids.isEmpty else { latestByGroup = [:]; return }
+        guard !ids.isEmpty else { latestByGroup = [:]; unreadByGroup = [:]; return }
         do {
             let rows: [GroupMessagePreview] = try await supabase
                 .from("messages")
-                .select("group_id, sender_name, body, created_at")
+                .select("id, group_id, sender_id, sender_name, body, created_at")
                 .eq("property_id", value: propertyId.uuidString)
                 .in("group_id", values: ids)
                 .order("created_at", ascending: false)
@@ -138,8 +148,35 @@ final class ChatGroupService {
             var latest: [UUID: GroupMessagePreview] = [:]
             for row in rows where latest[row.groupId] == nil { latest[row.groupId] = row }
             latestByGroup = latest
+            await computeUnread(rows: rows)
         } catch {
             // Non-fatal: rows fall back to the member-count line.
+        }
+    }
+
+    /// One receipts query over the preview window: a message from someone
+    /// else with no read receipt of mine counts as unread for its group.
+    private func computeUnread(rows: [GroupMessagePreview]) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        let foreign = rows.filter { $0.senderId != uid }
+        guard !foreign.isEmpty else { unreadByGroup = [:]; return }
+        struct ReadRow: Decodable {
+            let messageId: UUID
+            enum CodingKeys: String, CodingKey { case messageId = "message_id" }
+        }
+        do {
+            let reads: [ReadRow] = try await supabase
+                .from("message_reads")
+                .select("message_id")
+                .eq("user_id", value: uid.uuidString)
+                .in("message_id", values: foreign.map { $0.id.uuidString })
+                .execute()
+                .value
+            let seen = Set(reads.map(\.messageId))
+            unreadByGroup = Dictionary(grouping: foreign.filter { !seen.contains($0.id) },
+                                       by: { $0.groupId }).mapValues(\.count)
+        } catch {
+            // Non-fatal: keep the previous counts rather than flashing zeros.
         }
     }
 
