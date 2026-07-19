@@ -140,9 +140,16 @@ struct InventoryView: View {
                 } else if filtered.isEmpty {
                     VStack {
                         Spacer()
-                        Text("inv_no_results").font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text("inv_no_results")
+                            .font(AppFont.scaled(16))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                            .multilineTextAlignment(.center)
                         Spacer()
                     }
+                    // The page ZStack aligns .bottomTrailing (for the FAB), so
+                    // a hugging column gets pinned to the right edge — it must
+                    // claim the full width to actually center (IMG_8627).
+                    .frame(maxWidth: .infinity)
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 10) {
