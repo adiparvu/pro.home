@@ -40,6 +40,7 @@ import SwiftUI
 struct BackgroundMoodView: View {
     @Environment(IconManager.self) private var iconManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var pageScheme
 
     /// True while the page's own weather fetch attempt is in flight.
     @State private var isRefreshingWeather = false
@@ -119,17 +120,46 @@ struct BackgroundMoodView: View {
             RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
                 .strokeBorder(Color.hairline, lineWidth: 1)
         )
-        // The app's scheme follows the mood; the preview must too, or the
-        // glass would lie about its contrast.
-        .environment(\.colorScheme, mood.palette.colorScheme)
+        // The preview adopts the app's EFFECTIVE scheme — the theme's pin,
+        // the device's (the page's own scheme), or the mood's palette —
+        // or the glass would lie about its contrast.
+        .environment(\.colorScheme, engine.preferredScheme ?? pageScheme)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(mood.titleKey))
     }
 
     // MARK: Selector — Auto (+ custom hours) + the atmosphere carousel
 
+    // MARK: Theme — SEPARATE from the atmosphere (IMG_8678)
+
+    /// Light/dark/system/atmosphere. Only the root color scheme changes;
+    /// the living background keeps running under any of them (the classics
+    /// that used to sit in the carousel migrated here).
+    private var themeSection: some View {
+        SettingsGroup(title: "appearance_title") {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Picker("appearance_title", selection: Binding(
+                    get: { engine.appearance },
+                    set: { engine.appearance = $0; HapticFeedback.impact(.light) }
+                )) {
+                    ForEach(AppAppearance.allCases) { mode in
+                        Text(mode.titleKey).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("appearance_caption")
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+        }
+    }
+
     private var selectorSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
+            themeSection
             SettingsGroup(title: "mood_choose_title") {
                 autoRow
                 // Custom hours refine Auto only; a pinned mood ignores them,
@@ -168,7 +198,10 @@ struct BackgroundMoodView: View {
                     select(nil)
                 }
                 .carouselCardWidth()
-                ForEach(AppMood.allCases) { mood in
+                // The classics left the carousel (IMG_8678): light/dark is
+                // the THEME's business now, one section above — atmospheres
+                // only here.
+                ForEach(AppMood.allCases.filter { !$0.isClassic }) { mood in
                     MoodPreviewCard(mood: mood,
                                     isSelected: engine.override == mood) {
                         select(mood)

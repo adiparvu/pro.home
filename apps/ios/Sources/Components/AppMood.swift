@@ -228,6 +228,32 @@ private struct SunWindow {
     }
 }
 
+// MARK: - App appearance (the theme, SEPARATE from the atmosphere)
+
+/// The app's color-scheme control (IMG_8678, user-decreed): picking a theme
+/// must never disable the living backgrounds. `.mood` is the original
+/// behavior — the scheme follows the atmosphere's palette; the other three
+/// pin light/dark or defer to the device while the backdrop keeps living
+/// (AppBackdrop already resolves a palette/scheme disagreement by swapping
+/// to the matching palette).
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case mood
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var titleKey: LocalizedStringKey {
+        switch self {
+        case .mood:   "appearance_mood"
+        case .system: "appearance_system"
+        case .light:  "appearance_light"
+        case .dark:   "appearance_dark"
+        }
+    }
+}
+
 // MARK: - AppMoodEngine
 
 /// The single mood authority. Views read `resolved`; the settings page
@@ -271,11 +297,29 @@ final class AppMoodEngine {
     static let shared = AppMoodEngine()
 
     private static let overrideKey = "app.mood.override"
+    private static let appearanceKey = "app.appearance.mode"
     private static let morningStartKey = "app.mood.morningStart"
     private static let nightStartKey = "app.mood.nightStart"
     private static let weatherReactiveKey = "app.mood.weatherReactive"
     private static let publishedMoodKey = "app.mood.current"
     private static let publishedSchemeKey = "app.mood.scheme"
+
+    /// The theme (Settings → Aspect → Fundal), persisted. Controls ONLY the
+    /// root color scheme — the atmosphere keeps living under any of them.
+    var appearance: AppAppearance = .mood {
+        didSet { UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey) }
+    }
+
+    /// The root `.preferredColorScheme` value: the atmosphere's own scheme
+    /// in `.mood`, the device's in `.system`, or the pinned scheme.
+    var preferredScheme: ColorScheme? {
+        switch appearance {
+        case .mood:   resolved.palette.colorScheme
+        case .system: nil
+        case .light:  ColorScheme.light
+        case .dark:   ColorScheme.dark
+        }
+    }
 
     /// Manual mood pin; nil follows the clock (Auto). Persisted.
     var override: AppMood? {
@@ -395,6 +439,19 @@ final class AppMoodEngine {
     private init() {
         let stored = UserDefaults.standard.string(forKey: Self.overrideKey) ?? ""
         override = AppMood(rawValue: stored)
+        appearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
+            .flatMap(AppAppearance.init) ?? .mood
+        // Migration (IMG_8678): the classics left the atmosphere carousel —
+        // a stored classic pin becomes its THEME and the atmosphere returns
+        // to Auto. Property observers don't fire in init, so persist by hand.
+        if let pinned = override, pinned.isClassic {
+            if UserDefaults.standard.string(forKey: Self.appearanceKey) == nil {
+                appearance = pinned == .classicLight ? .light : .dark
+                UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey)
+            }
+            override = nil
+            UserDefaults.standard.removeObject(forKey: Self.overrideKey)
+        }
         morningStartMinutes = Self.readMinutes(key: Self.morningStartKey)
         nightStartMinutes = Self.readMinutes(key: Self.nightStartKey)
         weatherReactive = (UserDefaults.standard.object(forKey: Self.weatherReactiveKey) as? Bool) ?? true

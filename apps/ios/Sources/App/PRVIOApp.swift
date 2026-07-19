@@ -33,11 +33,12 @@ struct PRVIOApp: App {
                         LoginView()
                     }
                 }
-                // The color scheme follows the living background's mood
-                // (dimineața/zi → light, noaptea → dark; manual pin or Auto
-                // from Settings → Aspect → Fundal). Reading `resolved` here
-                // is what re-renders the scheme when the mood changes.
-                .preferredColorScheme(AppMoodEngine.shared.resolved.palette.colorScheme)
+                // The color scheme comes from the THEME (Settings → Aspect →
+                // Fundal, IMG_8678): follow the atmosphere's palette (the
+                // original behavior), the device, or a pinned light/dark —
+                // in every case the living background stays on. Reading the
+                // engine here is what re-renders the scheme when it changes.
+                .preferredColorScheme(AppMoodEngine.shared.preferredScheme)
                 // In-app text size (Settings → Aspect → Mărimea textului);
                 // nil override = pure re-application of the system size.
                 .appTextSize()

@@ -504,9 +504,15 @@ struct AddTaskView: View {
     private func prepareCalendarAccess() async {
         switch await TaskCalendarSync.requestEventAccess() {
         case .full:
+            // PRVIO's own calendar is the default target (IMG_8677) —
+            // created on demand BEFORE listing so it appears in the picker;
+            // the system default remains the fallback when no source can
+            // host it. The user's explicit pick still always wins.
+            let prvio = HouseCalendarMirror.dedicatedCalendar()
             availableCalendars = TaskCalendarSync.writableCalendars()
             if selectedCalendarId == nil {
-                selectedCalendarId = TaskCalendarSync.defaultCalendarId
+                selectedCalendarId = prvio?.calendarIdentifier
+                    ?? TaskCalendarSync.defaultCalendarId
             }
             syncHint = nil
         case .writeOnly:

@@ -96674,6 +96674,30 @@
   "est_remove_avatar": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Remove avatar" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Șterge avatarul" } }
+  } },
+  "appearance_title": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Theme" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Tem\u0103" } }
+  } },
+  "appearance_mood": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Atmosphere" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Atmosfer\u0103" } }
+  } },
+  "appearance_system": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "System" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Sistem" } }
+  } },
+  "appearance_light": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Light" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Luminos" } }
+  } },
+  "appearance_dark": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Dark" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "\u00centunecat" } }
+  } },
+  "appearance_caption": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "The theme only controls light or dark \u2014 the living background stays on no matter which you pick." } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Tema controleaz\u0103 doar luminos sau \u00eentunecat \u2014 fundalul viu r\u0103m\u00e2ne activ indiferent de alegere." } }
   } }
   },
   "version": "1.0"

@@ -31,6 +31,11 @@ enum HouseCalendarMirror {
 
     // MARK: Dedicated calendar
 
+    /// The "PRVIO" calendar (created on demand) — also the task form's
+    /// DEFAULT sync target (IMG_8677), so house events land under the PRVIO
+    /// name instead of whatever the user's default calendar happens to be.
+    static func dedicatedCalendar() -> EKCalendar? { mirrorCalendar() }
+
     /// The "PRVIO" calendar, created on first use in a writable source
     /// (iCloud preferred, then local). nil if no source can host it.
     private static func mirrorCalendar() -> EKCalendar? {
