@@ -29,17 +29,21 @@ final class AuthService {
     }
 
     private func listenToAuthChanges() async {
-        // NOTE: realtime auth is intentionally NOT wired to the session token —
-        // this project signs user JWTs with ES256 (new asymmetric keys) which
-        // its Realtime service rejects, so realtime authenticates with the anon
-        // key via the client's realtime accessToken closure (see SupabaseClient).
+        // Realtime channel auth rides the client's accessToken closure (see
+        // SupabaseClient — the ES256 session JWT was re-proven working on
+        // joins, 2026-07-16). Channels keep the JWT they JOINED with, so on
+        // every refresh the fresh token is pushed over the socket to all
+        // subscribed channels — without this, a long-lived subscription ages
+        // past its join-time token and the server closes it.
         for await (event, session) in supabase.auth.authStateChanges {
             switch event {
             case .initialSession, .signedIn, .userUpdated:
                 self.session = session
+                if let s = session { Task { await realtimeAnon.setAuth(s.accessToken) } }
             case .tokenRefreshed:
                 self.session = session
                 if let s = session {
+                    Task { await realtimeAnon.setAuth(s.accessToken) }
                     AccountsStore.shared.updateTokens(
                         userId: s.user.id.uuidString,
                         accessToken: s.accessToken,

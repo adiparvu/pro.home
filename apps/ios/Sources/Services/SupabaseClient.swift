@@ -65,7 +65,19 @@ let realtimeAnon = RealtimeClientV2(
         // migration 156's authenticated-only realtime authorization);
         // publishable key when signed out. `auth.session` refreshes an
         // expired token before returning, so joins never carry a stale JWT.
-        accessToken: { (try? await supabase.auth.session)?.accessToken ?? supabasePublishableKey },
+        //
+        // NEVER downgrade a signed-in user to the publishable key: the same
+        // network blip that drops the socket also fails `auth.session` here,
+        // and an anon-key join on authenticated-only broadcast/presence is
+        // CONFIRMED then CLOSED by the server — the b1157 field log's
+        // "subscribed → phx_close" storm, killing exactly the broadcast
+        // channels (messages, dm_*) while postgres-only ones survived. The
+        // cached session token is the same identity and usually still valid;
+        // the publishable key is strictly the signed-out credential.
+        accessToken: {
+            if let live = try? await supabase.auth.session { return live.accessToken }
+            return supabase.auth.currentSession?.accessToken ?? supabasePublishableKey
+        },
         // Flight recorder: SDK-internal close codes and reconnect decisions
         // land in the same timeline the diagnostic banner exports.
         logger: RealtimeFlightRecorder.shared

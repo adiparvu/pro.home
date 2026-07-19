@@ -493,7 +493,12 @@ final class MessageService {
         // server-side joins, then rebuild on the clean connection (our topic
         // was deregistered by the close, so the SDK's rejoin skips it and
         // subscribeRealtime below owns it without competition).
-        if realtimeChannel?.status == .unsubscribed, RealtimeStormBreaker.shouldBounceSocket() {
+        // The gate covers chan=none too (b1157 field log): after a bounce's
+        // own unsubscribe nils the channel, a re-closed rebuild loops through
+        // here as "rebuild chan=none" forever — with the gate on
+        // .unsubscribed alone, the breaker never re-engaged.
+        if realtimeChannel == nil || realtimeChannel?.status == .unsubscribed,
+           RealtimeStormBreaker.shouldBounceSocket() {
             await unsubscribe()
             await RealtimeStormBreaker.bounceSocket(reason: "group messages join/close loop")
         }
