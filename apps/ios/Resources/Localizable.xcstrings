@@ -96698,6 +96698,14 @@
   "appearance_caption": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "The theme only controls light or dark \u2014 the living background stays on no matter which you pick." } },
     "ro": { "stringUnit": { "state": "translated", "value": "Tema controleaz\u0103 doar luminos sau \u00eentunecat \u2014 fundalul viu r\u0103m\u00e2ne activ indiferent de alegere." } }
+  } },
+  "lost_preview_page": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Preview the scanned page" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Vezi pagina a\u0219a cum apare la scanare" } }
+  } },
+  "lost_preview_caption": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Saves the card and opens the item's live public page \u2014 exactly what a finder sees." } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Salveaz\u0103 cardul \u0219i deschide pagina public\u0103 live a obiectului \u2014 exact ce vede cine \u00eel g\u0103se\u0219te." } }
   } }
   },
   "version": "1.0"

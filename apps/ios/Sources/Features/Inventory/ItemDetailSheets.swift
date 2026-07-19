@@ -15,6 +15,9 @@ struct PublicContactSheet: View {
     @State private var ownerAddress: String
     @State private var propertyName: String
     @State private var isEnabled: Bool
+    /// In-app preview of the live public page (IMG_8683): exactly what a
+    /// finder sees after scanning the label — no mock, the real page.
+    @State private var showPreview = false
 
     init(item: InventoryItem, onSave: @escaping (InventoryItem) -> Void) {
         self.item = item; self.onSave = onSave
@@ -57,6 +60,34 @@ struct PublicContactSheet: View {
                             Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
                                 .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
+                            GlassCard {
+                                Button {
+                                    // The live page reads the SYNCED profile, so
+                                    // previewing implies saving — stated in the
+                                    // caption below, never a silent side effect.
+                                    onSave(assembledItem())
+                                    HapticFeedback.impact(.light)
+                                    Task {
+                                        // A beat for the public_items upsert to
+                                        // land before the page fetches it.
+                                        try? await Task.sleep(nanoseconds: 900_000_000)
+                                        showPreview = true
+                                    }
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "safari.fill").font(AppFont.scaled(14))
+                                            .foregroundStyle(Color.accentColor).frame(width: 28)
+                                        Text("lost_preview_page").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                                        Spacer()
+                                        Image(systemName: "chevron.right").font(AppFont.scaled(12))
+                                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            Text("lost_preview_caption")
+                                .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                         }
                         Spacer(minLength: 60)
                     }
@@ -68,25 +99,39 @@ struct PublicContactSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        var updated = item
-                        if isEnabled {
-                            updated.publicProfile = PublicProfile(ownerName: ownerName, ownerPhone: ownerPhone,
-                                                                  ownerAddress: ownerAddress, propertyName: propertyName,
-                                                                  ownerEmail: ownerEmail.isEmpty ? nil : ownerEmail,
-                                                                  isEnabled: true)
-                        } else {
-                            updated.publicProfile = nil
-                        }
-                        onSave(updated); HapticFeedback.success(); dismiss()
+                        onSave(assembledItem()); HapticFeedback.success(); dismiss()
                     }
                     .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }
         .presentationBackground(.thinMaterial)
+        .sheet(isPresented: $showPreview) {
+            if let url = URL(string: item.qrContent) {
+                SafariView(url: url).ignoresSafeArea()
+            }
+        }
     }
 
-    private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+    /// The item with the sheet's current fields applied — shared by Save
+    /// and the live-page preview so the two can never drift.
+    private func assembledItem() -> InventoryItem {
+        var updated = item
+        if isEnabled {
+            updated.publicProfile = PublicProfile(ownerName: ownerName, ownerPhone: ownerPhone,
+                                                  ownerAddress: ownerAddress, propertyName: propertyName,
+                                                  ownerEmail: ownerEmail.isEmpty ? nil : ownerEmail,
+                                                  isEnabled: true)
+        } else {
+            updated.publicProfile = nil
+        }
+        return updated
+    }
+
+    /// Placeholder is a `LocalizedStringKey` on purpose: a plain `String`
+    /// title renders VERBATIM (the IMG_8683 English-on-Romanian bug) even
+    /// though the catalog carries the translations.
+    private func pField(_ icon: String, _ ph: LocalizedStringKey, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
