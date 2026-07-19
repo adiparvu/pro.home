@@ -97,7 +97,7 @@ enum PropertyRepo {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .custom { decoder in
             let s = try decoder.singleValueContainer().decode(String.self)
-            if let date = AppDate.date(from: s) ?? AppDate.day(from: s) { return date }
+            if let date = ISODate.date(from: s) ?? AppDate.day(from: s) { return date }
             throw DecodingError.dataCorrupted(.init(
                 codingPath: decoder.codingPath,
                 debugDescription: "Unparseable wire date: \(s)"))
