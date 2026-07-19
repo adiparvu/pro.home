@@ -4,15 +4,13 @@
 // pages keep their own worker on the MORE SPECIFIC route xparvu.com/i/*,
 // which Cloudflare always prefers, so /i/<uuid> is untouched.
 //
-// Deliberately brandless (IMG_8661): a bobbing hard hat, "Under
-// construction", and the sale note (€500.000) which opens a contact form.
-// POST /contact stores the inquiry in Supabase (domain_inquiries, migration
-// 167) — anon may only INSERT under RLS, the publishable key is public by
-// design. Self-contained, pure CSS animation, quiet under
-// prefers-reduced-motion.
+// Deliberately brandless (IMG_8661) and deliberately app-less: the domain
+// sale has nothing to do with the app, so POST /contact delivers straight
+// to adi@xparvu.com via the zone's own Email Routing (send_email binding
+// INQUIRY_MAIL — envelope goes to the verified destination inbox that
+// adi@ forwards to). Nothing is stored anywhere.
 
-const DEFAULT_SUPABASE_URL = "https://kwcanenheihuylaymwsl.supabase.co";
-const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_2gO8iM7dBqlbQqCiSTFeLQ_CV-DBgnC";
+import { EmailMessage } from "cloudflare:email";
 
 export default {
   async fetch(request, env) {
@@ -48,20 +46,26 @@ async function handleContact(request, env) {
   if (body?.website) return json(true);
   if (!email.includes("@") || email.length < 3 || !message) return json(false, 400);
 
-  const base = env?.SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const key = env?.SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY;
+  // Header values must stay single-line ASCII-safe.
+  const clean = (s) => s.replace(/[\r\n]+/g, " ");
+  const raw =
+    `From: xparvu.com <inquiry@xparvu.com>\r\n` +
+    `To: adi@xparvu.com\r\n` +
+    `Reply-To: ${clean(name ? `${name} <${email}>` : email)}\r\n` +
+    `Subject: Domain inquiry - xparvu.com\r\n` +
+    `Date: ${new Date().toUTCString()}\r\n` +
+    `Content-Type: text/plain; charset=utf-8\r\n` +
+    `\r\n` +
+    `New inquiry from the xparvu.com sale page\r\n` +
+    `------------------------------------------\r\n` +
+    `Name:  ${clean(name || "-")}\r\n` +
+    `Email: ${clean(email)}\r\n` +
+    `\r\n${message}\r\n`;
   try {
-    const r = await fetch(`${base}/rest/v1/domain_inquiries`, {
-      method: "POST",
-      headers: {
-        apikey: key,
-        authorization: `Bearer ${key}`,
-        "content-type": "application/json",
-        prefer: "return=minimal",
-      },
-      body: JSON.stringify({ name: name || null, email, message }),
-    });
-    return json(r.ok, r.ok ? 200 : 502);
+    await env.INQUIRY_MAIL.send(
+      new EmailMessage("inquiry@xparvu.com", env.INQUIRY_DEST || "adi@xparvu.com", raw),
+    );
+    return json(true);
   } catch (_) {
     return json(false, 502);
   }
