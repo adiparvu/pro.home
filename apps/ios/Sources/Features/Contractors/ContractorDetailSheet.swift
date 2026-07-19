@@ -40,6 +40,11 @@ struct ContractorDetailSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         heroHeader
+                        // The linked PRVIO account, first-class (IMG_8644):
+                        // who they are in the app, with every real channel.
+                        if let member = matchedMember {
+                            accountSection(member)
+                        }
                         contactSection
                         if currentContractor.notes?.isEmpty == false {
                             notesSection
@@ -110,13 +115,19 @@ struct ContractorDetailSheet: View {
 
     private var heroHeader: some View {
         VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.teal.opacity(0.18))
-                    .frame(width: 72, height: 72)
-                Image(systemName: contractor.specialtyIcon)
-                    .font(AppFont.scaled(28, weight: .semibold))
-                    .foregroundStyle(Color.teal)
+            // The account's real avatar when this contractor IS someone in
+            // PRVIO; the trade disc otherwise.
+            if let member = matchedMember {
+                MemberAvatar(member: member, size: 72)
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(Color.teal.opacity(0.18))
+                        .frame(width: 72, height: 72)
+                    Image(systemName: contractor.specialtyIcon)
+                        .font(AppFont.scaled(28, weight: .semibold))
+                        .foregroundStyle(Color.teal)
+                }
             }
 
             VStack(spacing: 4) {
@@ -155,6 +166,72 @@ struct ContractorDetailSheet: View {
                         updated.rating = star
                         Task { await service.update(updated) }
                     }
+            }
+        }
+    }
+
+    // MARK: - PRVIO account (IMG_8644)
+
+    /// The linked account card: identity (avatar, name, role, badge) plus
+    /// every channel the ACCOUNT actually carries — email opens Mail, phone
+    /// dials, the header row opens the in-app DM. Only real fields render.
+    private func accountSection(_ member: FamilyMember) -> some View {
+        GlassCard(padding: 0) {
+            VStack(spacing: 0) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    dmMember = member
+                } label: {
+                    HStack(spacing: 14) {
+                        MemberAvatar(member: member, size: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Text(verbatim: member.name)
+                                    .font(AppFont.scaled(15, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                PRVIOAccountBadge()
+                            }
+                            Text(verbatim: member.roleLabel)
+                                .font(AppFont.scaled(12))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "bubble.left.fill")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(Color.brandSkyBlue)
+                    }
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.base)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(Text("mem_send_message"))
+
+                // Only channels the contact card below doesn't already show
+                // — the account card must add information, not repeat it.
+                if let email = member.email, !email.isEmpty,
+                   ContractorAccountMatch.emailKey(email)
+                       != ContractorAccountMatch.emailKey(currentContractor.email) {
+                    rowDivider
+                    contactRow(icon: "envelope.fill", label: "Email",
+                               value: email, color: .blue) {
+                        if let url = URL(string: "mailto:\(email)") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
+                if let phone = member.phone, !phone.isEmpty,
+                   ContractorAccountMatch.phoneKey(phone)
+                       != ContractorAccountMatch.phoneKey(currentContractor.phone) {
+                    rowDivider
+                    contactRow(icon: "phone.fill", label: "Phone",
+                               value: phone, color: .green) {
+                        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
             }
         }
     }

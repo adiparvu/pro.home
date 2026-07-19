@@ -96598,6 +96598,14 @@
   "est_remove_photo": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Remove photo" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Șterge fotografia" } }
+  } },
+  "cont_suggestions_title": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Already in PRVIO" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Deja în PRVIO" } }
+  } },
+  "cont_suggestion_hint": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "Fills the form from this account" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Completează formularul din acest cont" } }
   } }
   },
   "version": "1.0"

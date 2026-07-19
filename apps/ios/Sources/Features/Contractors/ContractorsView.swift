@@ -307,7 +307,9 @@ struct ContractorsView: View {
             }
         }
         .sheet(isPresented: $showAdd) {
-            AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)
+            AddContractorSheet(service: service, propertyId: propertyService.primary?.id,
+                               userId: auth.session?.user.id,
+                               members: familyService.members)
         }
         .sheet(item: $selectedContractor) { c in
             ContractorDetailSheet(contractor: c, service: service)
@@ -688,9 +690,29 @@ private struct AddContractorSheet: View {
     var service: ContractorService
     let propertyId: UUID?
     let userId: UUID?
+    /// The household roster (IMG_8645): typing a name, email or phone that
+    /// matches someone already in PRVIO surfaces live suggestions whose tap
+    /// autofills the form — the saved contractor then auto-links to that
+    /// account (badge, avatar, in-app message) through the existing match.
+    var members: [FamilyMember] = []
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""; @State private var category = ""; @State private var phone = ""
     @State private var email = ""; @State private var notes = ""; @State private var isSaving = false
+
+    /// Live matches from what's typed so far — name/email substrings (2+
+    /// chars) or phone digits (4+), capped at three honest rows.
+    private var suggestions: [FamilyMember] {
+        let qName = name.trimmingCharacters(in: .whitespaces).lowercased()
+        let qEmail = email.trimmingCharacters(in: .whitespaces).lowercased()
+        let qPhone = phone.filter(\.isNumber)
+        guard qName.count >= 2 || qEmail.count >= 2 || qPhone.count >= 4 else { return [] }
+        return Array(members.filter { member in
+            if qName.count >= 2, member.name.lowercased().contains(qName) { return true }
+            if qEmail.count >= 2, member.email?.lowercased().contains(qEmail) == true { return true }
+            if qPhone.count >= 4, member.phone?.filter(\.isNumber).contains(qPhone) == true { return true }
+            return false
+        }.prefix(3))
+    }
 
     var body: some View {
         NavigationStack {
@@ -713,7 +735,15 @@ private struct AddContractorSheet: View {
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
+
+                    if !suggestions.isEmpty {
+                        suggestionsBlock
+                            .padding(.horizontal, AppSpacing.xl)
+                            .padding(.top, AppSpacing.md)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
+                .animation(.smooth(duration: 0.25), value: suggestions.map(\.id))
             }
             .navigationTitle("Add Contractor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -725,6 +755,62 @@ private struct AddContractorSheet: View {
                 }
             }
         }
+    }
+
+    // MARK: Suggestions — people already in PRVIO (IMG_8645)
+
+    private var suggestionsBlock: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("cont_suggestions_title")
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
+            ForEach(suggestions) { member in
+                suggestionRow(member)
+            }
+        }
+    }
+
+    /// One tap fills the form from the member's real profile — name always,
+    /// email/phone only when the account actually has them.
+    private func suggestionRow(_ member: FamilyMember) -> some View {
+        Button {
+            HapticFeedback.success()
+            name = member.name
+            if let e = member.email, !e.isEmpty { email = e }
+            if let p = member.phone, !p.isEmpty { phone = p }
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                MemberAvatar(member: member, size: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(verbatim: member.name)
+                            .font(AppFont.scaled(14, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        PRVIOAccountBadge()
+                    }
+                    if let detail = [member.email, member.phone]
+                        .compactMap({ $0 }).first(where: { !$0.isEmpty }) {
+                        Text(verbatim: detail)
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: AppSpacing.sm)
+                Image(systemName: "arrow.down.left.circle.fill")
+                    .font(AppFont.scaled(18))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, AppSpacing.sm + 2)
+            .contentShape(Rectangle())
+            .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(Text("cont_suggestion_hint"))
     }
 
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
