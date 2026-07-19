@@ -96622,6 +96622,22 @@
   "Healthy": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "Healthy" } },
     "ro": { "stringUnit": { "state": "translated", "value": "Sănătoase" } }
+  } },
+  "supply_month_money_title": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "This month" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "Luna aceasta" } }
+  } },
+  "pantry_one_product": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "1 product in stock" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "1 produs în stoc" } }
+  } },
+  "pantry_stock_fmt": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "%d products in stock" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "%d produse în stoc" } }
+  } },
+  "pantry_low_fmt": { "extractionState": "manual", "localizations": {
+    "en": { "stringUnit": { "state": "translated", "value": "%d running low" } },
+    "ro": { "stringUnit": { "state": "translated", "value": "%d pe sfârșite" } }
   } }
   },
   "version": "1.0"
