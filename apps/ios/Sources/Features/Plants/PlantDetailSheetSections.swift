@@ -65,7 +65,7 @@ extension PlantDetailSheet {
                         icon: "clock.fill",
                         iconColor: .purple,
                         label: "Watering interval",
-                        value: "Every \(plant.wateringIntervalDays) days"
+                        value: Plant.wateringIntervalDisplay(plant.wateringIntervalDays)
                     )
                     rowDivider
                     detailRow(
@@ -236,7 +236,7 @@ extension PlantDetailSheet {
             VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("WATERING INTERVAL")
                 HStack {
-                    Text(editedPlant.wateringIntervalDays == 1 ? "Every \(editedPlant.wateringIntervalDays) day" : "Every \(editedPlant.wateringIntervalDays) days")
+                    Text(Plant.wateringIntervalDisplay(editedPlant.wateringIntervalDays))
                         .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()

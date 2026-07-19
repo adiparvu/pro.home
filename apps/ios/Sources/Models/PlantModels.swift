@@ -147,6 +147,14 @@ struct Plant: Identifiable, Codable, Hashable {
         return AppDateDisplay.dayMonth.string(from: d)
     }
 
+    /// "La fiecare N zile" — the one watering-cadence string, localized with
+    /// the singular/plural key pair the care-sheet PDF already ships. The
+    /// sheets interpolated it verbatim (a ternary of literals types as
+    /// String, never LocalizedStringKey), so devices saw raw English.
+    static func wateringIntervalDisplay(_ days: Int) -> String {
+        String(format: String(localized: days == 1 ? "Every %lld day" : "Every %lld days"), days)
+    }
+
     static let emojiOptions = ["🌿","🌱","🌸","🌺","🌻","🌹","🌷","🌵","🪴","🌾","🍀","🍃","🌳","🌲","🌊","🪸"]
 
     static let healthOptions: [(id: String, label: String)] = [

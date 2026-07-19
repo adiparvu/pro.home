@@ -331,7 +331,7 @@ struct PlantSpeciesPickerView: View {
             }
             .task { await service.loadAll() }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
     }
 

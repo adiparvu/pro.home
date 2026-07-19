@@ -53,3 +53,17 @@ struct AppSheetBackdrop: View {
 }
 
 var sheetBackground: some View { AppSheetBackdrop() }
+
+extension View {
+    /// The decreed presentation ground for content sheets: the flat classic
+    /// gradient instead of bare `.thinMaterial`. A material presentation
+    /// ground puts the whole sheet in a vibrancy context that borrows its
+    /// light from whatever sits BEHIND the sheet — over the black night
+    /// backdrop every hierarchical `.secondary`/`.tertiary` label rendered
+    /// invisible while `.primary` and explicit colors survived
+    /// (IMG_8688–8690). An opaque classic ground gives the glass the
+    /// luminance it needs, in both schemes.
+    func sheetGround() -> some View {
+        presentationBackground { AppSheetBackdrop().ignoresSafeArea() }
+    }
+}

@@ -133,7 +133,7 @@ enum PlantPDFExporter {
         // Watering: the plant's own cadence + last watered.
         let watering = [
             "\(String(localized: "Watering interval")): " +
-                String(format: String(localized: "Every %lld days"), plant.wateringIntervalDays),
+                Plant.wateringIntervalDisplay(plant.wateringIntervalDays),
             "\(String(localized: "Last watered")): \(plant.lastWateredDisplay)",
         ]
         sections.append(Section(title: String(localized: "plant_care_watering"), lines: watering))

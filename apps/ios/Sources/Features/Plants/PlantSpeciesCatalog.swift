@@ -214,7 +214,7 @@ struct PlantSpeciesPicker: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
     }
 

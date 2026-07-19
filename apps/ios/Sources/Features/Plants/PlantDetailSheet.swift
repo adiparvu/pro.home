@@ -165,7 +165,7 @@ struct PlantDetailSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     /// Renders the care-sheet PDF off the main actor and presents the share
