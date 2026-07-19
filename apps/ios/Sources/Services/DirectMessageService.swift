@@ -966,8 +966,12 @@ final class DirectMessageService {
         // Server closed a confirmed join on a connected socket, repeatedly?
         // That's the stale-phx_close storm (see RealtimeStormBreaker): another
         // plain rejoin only manufactures the next close. Bounce the socket to
-        // shed the orphaned server-side joins, then rebuild cleanly.
-        if channel?.status == .unsubscribed, RealtimeStormBreaker.shouldBounceSocket() {
+        // shed the orphaned server-side joins, then rebuild cleanly. The gate
+        // covers chan=none too (b1157 log, same as MessageService): a bounce's
+        // own unsubscribe nils the channel, and the narrow gate then looped
+        // "rebuild chan=none" forever without re-engaging the breaker.
+        if channel == nil || channel?.status == .unsubscribed,
+           RealtimeStormBreaker.shouldBounceSocket() {
             await unsubscribe()
             await RealtimeStormBreaker.bounceSocket(reason: "dm join/close loop")
         }
