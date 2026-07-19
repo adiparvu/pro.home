@@ -220,6 +220,28 @@ struct InventoryMetadata: Codable {
     var trackerType: String = ""
     var trackerIdentifier: String = ""
     var elementId: UUID? = nil
+
+    init() {}
+
+    // Synthesized Codable makes every defaulted property a REQUIRED key,
+    // and array decoding is all-or-nothing — the four seed rows born with
+    // metadata `{}` (2026-06-10) failed here and ONE of them emptied the
+    // ENTIRE inventory for every member, masked for weeks by the local
+    // cache + in-place inserts (root-caused 2026-07-19, migration 171
+    // backfilled the data). Absent or malformed keys now fall back to
+    // their defaults so no single row can ever poison the list again.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        location = (try? c.decodeIfPresent(String.self, forKey: .location)) ?? "garage"
+        currentLoan = (try? c.decodeIfPresent(LoanRecord.self, forKey: .currentLoan)) ?? nil
+        loanHistory = (try? c.decodeIfPresent([LoanRecord].self, forKey: .loanHistory)) ?? []
+        publicProfile = (try? c.decodeIfPresent(PublicProfile.self, forKey: .publicProfile)) ?? nil
+        latitude = (try? c.decodeIfPresent(Double.self, forKey: .latitude)) ?? nil
+        longitude = (try? c.decodeIfPresent(Double.self, forKey: .longitude)) ?? nil
+        trackerType = (try? c.decodeIfPresent(String.self, forKey: .trackerType)) ?? ""
+        trackerIdentifier = (try? c.decodeIfPresent(String.self, forKey: .trackerIdentifier)) ?? ""
+        elementId = (try? c.decodeIfPresent(UUID.self, forKey: .elementId)) ?? nil
+    }
 }
 
 struct DBInventoryRecord: Codable {
@@ -233,7 +255,9 @@ struct DBInventoryRecord: Codable {
     var purchasePrice: Double?
     var warrantyExpires: String?
     var notes: String?
-    var metadata: InventoryMetadata
+    /// Optional so a SQL-NULL metadata column can never fail the row — the
+    /// same all-or-nothing array-decode trap the `{}` seed rows sprang.
+    var metadata: InventoryMetadata?
 
     enum CodingKeys: String, CodingKey {
         case id, name, brand, category, condition, notes, metadata
@@ -253,15 +277,16 @@ struct DBInventoryRecord: Codable {
         item.purchasePrice = purchasePrice ?? 0
         item.warrantyExpiresAt = warrantyExpires.flatMap { DateFormatter.isoDate.date(from: $0) }
         item.notes = notes ?? ""
-        item.location = metadata.location
-        item.currentLoan = metadata.currentLoan
-        item.loanHistory = metadata.loanHistory
-        item.publicProfile = metadata.publicProfile
-        item.latitude = metadata.latitude
-        item.longitude = metadata.longitude
-        item.trackerType = metadata.trackerType
-        item.trackerIdentifier = metadata.trackerIdentifier
-        item.elementId = metadata.elementId
+        let m = metadata ?? InventoryMetadata()
+        item.location = m.location
+        item.currentLoan = m.currentLoan
+        item.loanHistory = m.loanHistory
+        item.publicProfile = m.publicProfile
+        item.latitude = m.latitude
+        item.longitude = m.longitude
+        item.trackerType = m.trackerType
+        item.trackerIdentifier = m.trackerIdentifier
+        item.elementId = m.elementId
         return item
     }
 }
