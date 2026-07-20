@@ -12,6 +12,7 @@ final class InventoryService {
 
     private(set) var currentPropertyId: UUID?
     private(set) var currentUserId: UUID?
+    private var cachedPropertyName: (id: UUID, name: String)?
 
     init() {}
 
@@ -148,9 +149,13 @@ final class InventoryService {
             let loaned_at: String?
         }
         guard let uid = supabase.auth.currentSession?.user.id else { return }
+        // The page's "belongs to property X" line names the REAL property
+        // entity — the manually-typed contact field is only the fallback
+        // (IMG_8707: "să apară proprietatea, nu ownerul").
+        let propertyName = await activePropertyName() ?? profile.propertyName
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
-                        owner_address: profile.ownerAddress, property_name: profile.propertyName,
+                        owner_address: profile.ownerAddress, property_name: propertyName,
                         user_id: uid.uuidString,
                         owner_email: profile.ownerEmail,
                         latitude: item.latitude, longitude: item.longitude,
@@ -160,22 +165,23 @@ final class InventoryService {
         _ = try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
     }
 
-    /// The owner's chosen app icon, mirrored publicly: the current theme's
-    /// preview imageset uploads once per theme to a stable public path, so
-    /// the found-item page's badge wears the same face as their app.
+    /// The owner's chosen app icon, mirrored publicly — one STABLE path per
+    /// user, so every published page shares one URL and an icon change
+    /// repaints them all by overwriting the object (IMG_8709).
     private func publicAppIconURL() async -> String? {
-        let themeId = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
-        let theme = AppIconCatalog.theme(id: themeId)
-        guard let uid = supabase.auth.currentSession?.user.id.uuidString.lowercased(),
-              let image = UIImage(named: theme.lightPreview),
-              let data = image.uploadJPEG(quality: 0.9, maxDimension: 256) else { return nil }
-        // {auth-uid}/{folder} convention on purpose: storage UPSERT needs
-        // INSERT+UPDATE, and the documents UPDATE policy is uid-folder-
-        // scoped — the old root "app-icons/…" path was silently DENIED on
-        // every sync, so no icon ever reached the public page (IMG_8687:
-        // zero objects server-side, app_icon_url null on every row).
-        let path = "\(uid)/app-icons/\(theme.lightPreview.lowercased()).jpg"
-        return try? await SignedStorage.uploadPublicImage(data, path: path, upsert: true)
+        await PublicAppIconMirror.uploadCurrentIcon()
+    }
+
+    /// The property ENTITY's name for the public page, cached per property.
+    private func activePropertyName() async -> String? {
+        guard let pid = currentPropertyId else { return nil }
+        if let cached = cachedPropertyName, cached.id == pid { return cached.name }
+        struct Row: Decodable { let name: String }
+        guard let row: Row = try? await supabase.from("properties")
+            .select("name").eq("id", value: pid.uuidString)
+            .single().execute().value else { return nil }
+        cachedPropertyName = (pid, row.name)
+        return row.name
     }
 
     func removePublicProfile(for item: InventoryItem) async {
@@ -241,5 +247,44 @@ final class InventoryService {
         var ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
         ids.append("inventory.loan.\(item.id.uuidString).due")
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+}
+
+// MARK: - Public app-icon mirror (IMG_8709)
+//
+// The found-item page's badge must BE the app's icon — including after the
+// user changes it. One stable public path per user ({uid}/app-icons/
+// current.jpg) makes that automatic: same URL on every row, new bytes on
+// every icon change. `sync()` additionally repoints every already-published
+// row, healing pages that predate the mirror without a re-save.
+
+enum PublicAppIconMirror {
+    /// Uploads the CURRENT theme's preview to the stable public path and
+    /// returns its URL. {auth-uid}/… on purpose: storage UPSERT needs
+    /// INSERT+UPDATE, and the documents UPDATE policy is uid-folder-scoped
+    /// (build 1170's lesson — root paths are silently denied).
+    @MainActor
+    static func uploadCurrentIcon() async -> String? {
+        guard let uid = supabase.auth.currentSession?.user.id else { return nil }
+        let themeId = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
+        let theme = AppIconCatalog.theme(id: themeId)
+        guard let image = UIImage(named: theme.lightPreview),
+              let data = image.uploadJPEG(quality: 0.9, maxDimension: 256) else { return nil }
+        let path = "\(uid.uuidString.lowercased())/app-icons/current.jpg"
+        return try? await SignedStorage.uploadPublicImage(data, path: path, upsert: true)
+    }
+
+    /// Refreshes the mirror AND points every published Lost&Found row at
+    /// it. Fire-and-forget from the icon picker's apply.
+    static func sync() {
+        Task { @MainActor in
+            guard let url = await uploadCurrentIcon(),
+                  let uid = supabase.auth.currentSession?.user.id else { return }
+            struct Patch: Encodable { let app_icon_url: String }
+            _ = try? await supabase.from("public_items")
+                .update(Patch(app_icon_url: url))
+                .eq("user_id", value: uid.uuidString)
+                .execute()
+        }
     }
 }

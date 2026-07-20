@@ -484,6 +484,10 @@ final class IconManager {
         lastAppliedName = name
         selected = theme
         savedId = theme.id
+        // The public found-item pages wear this icon — refresh their
+        // mirror and repoint published rows (IMG_8709: change the app
+        // icon, the pages change with it).
+        PublicAppIconMirror.sync()
         UIApplication.shared.setAlternateIconNameSilently(name) { [weak self] error in
             guard error != nil else { return }
             // The system rejected the change — roll back to what is actually

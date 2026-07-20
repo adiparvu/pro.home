@@ -9,6 +9,13 @@
 // migration 169), a neutral (untinted) item tile, and a footer that says
 // just "Powered by PRVIO".
 //
+// v3 (IMG_8707-8709): the item glyph loses its boxed frame — the emoji
+// stands alone, gently floating (motion pauses under
+// prefers-reduced-motion) — and the card fades up on load. The badge and
+// property line stay data-driven: the app now mirrors the CURRENT app
+// icon to one stable URL per user (changing the icon repaints every
+// page) and sends the real property entity's name.
+//
 // Reads ONLY the `public_items` projection (opt-in per item via the Lost &
 // Found card); unknown / unpublished ids fall back to a friendly generic
 // page instead of 404. The publishable key is public BY DESIGN (it ships
@@ -92,9 +99,16 @@ function page(item, uuid) {
 
   return `<!doctype html><html lang="ro"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(itemName || "PRVIO")} · PRVIO</title></head>
+<title>${esc(itemName || "PRVIO")} · PRVIO</title>
+<style>
+@keyframes prvFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes prvIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.prvGlyph{display:inline-block;animation:prvFloat 4.5s ease-in-out infinite}
+.prvCard{animation:prvIn .5s cubic-bezier(.2,.7,.3,1) both}
+@media (prefers-reduced-motion:reduce){.prvGlyph,.prvCard{animation:none}}
+</style></head>
 <body style="margin:0;min-height:100dvh;background:#0d1117;color:#f0f6ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
-<div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px;max-width:420px;width:100%">
+<div class="prvCard" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px;max-width:420px;width:100%">
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
     ${badge}
@@ -106,7 +120,7 @@ function page(item, uuid) {
     </span>
   </div>
 
-  <div style="width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:28px">📦</div>
+  <div class="prvGlyph" style="font-size:56px;line-height:1;margin:2px 0 16px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))">📦</div>
   <h1 style="font-size:26px;font-weight:700;margin:0 0 6px">${itemName ? esc(itemName) : '<span data-i="generic_title"></span>'}</h1>
   ${item?.property_name ? `<p style="font-size:13px;color:rgba(255,255,255,0.55);margin:0 0 18px"><span data-i="belongs"></span> <strong style="color:#f0f6ff">${esc(item.property_name)}</strong></p>` : '<div style="height:12px"></div>'}
 
