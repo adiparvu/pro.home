@@ -9,19 +9,31 @@ struct PropertyReportView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PropertyElementService.self) private var elementService
+    @Environment(PlantService.self) private var plantService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(InventoryService.self) private var inventoryService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PhotoJournalService.self) private var photoJournalService
 
     @State private var isGenerating = false
     @State private var pdfURL: URL? = nil
     @State private var showShareSheet = false
-    @State private var includesTasks = true
-    @State private var includesFinances = true
-    @State private var includesDocuments = true
-    @State private var includesTwin = true
+
+    // Section choices persist across opens — a report is configured once and
+    // regenerated many times, so the selection shouldn't reset every visit.
+    @AppStorage("rep_include_tasks")      private var includesTasks = true
+    @AppStorage("rep_include_finances")   private var includesFinances = true
+    @AppStorage("rep_include_documents")  private var includesDocuments = true
+    @AppStorage("rep_include_twin")       private var includesTwin = true
+    @AppStorage("rep_include_plants")     private var includesPlants = true
+    @AppStorage("rep_include_appliances") private var includesAppliances = true
+    @AppStorage("rep_include_inventory")  private var includesInventory = true
+    @AppStorage("rep_include_tenants")    private var includesTenants = true
+    @AppStorage("rep_include_journal")    private var includesJournal = true
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Raport", subtitleKey: "PROPERTY")
                 heroCard
                 sectionToggles
                 generateButton
@@ -31,10 +43,26 @@ struct PropertyReportView: View {
             .padding(.top, AppSpacing.xxs)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Raport")
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showShareSheet) {
-            if let url = pdfURL { ShareSheet(url: url) }
+            // Preview first, share from the preview — nobody sends a
+            // document they haven't seen.
+            if let url = pdfURL { ReportPreviewSheet(url: url) }
+        }
+        .task {
+            // The report must reflect EVERYTHING, not just the pages the
+            // user happened to visit this session — hydrate every empty
+            // source concurrently. Cheap no-ops when already loaded.
+            guard let pid = propertyService.primary?.id else { return }
+            await withTaskGroup(of: Void.self) { group in
+                if plantService.plants.isEmpty { group.addTask { @MainActor in await plantService.load(propertyId: pid) } }
+                if applianceService.appliances.isEmpty { group.addTask { @MainActor in await applianceService.load(propertyId: pid) } }
+                if inventoryService.items.isEmpty { group.addTask { @MainActor in await inventoryService.load(propertyId: pid) } }
+                if photoJournalService.entries.isEmpty { group.addTask { @MainActor in await photoJournalService.load(propertyId: pid) } }
+                if familyService.members.isEmpty { group.addTask { @MainActor in await familyService.load() } }
+                if familyService.leases.isEmpty { group.addTask { @MainActor in await familyService.loadLeases(propertyId: pid) } }
+            }
         }
     }
 
@@ -54,21 +82,26 @@ struct PropertyReportView: View {
                         Circle()
                             .fill(.white.opacity(0.2))
                             .frame(width: 44, height: 44)
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 20, weight: .semibold))
+                        // The brand monogram (P with the roof) — the same
+                        // asset the FAB and QR badge stamp, not a redraw.
+                        Image("BrandMark")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
                             .foregroundStyle(.white)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(propertyService.primary?.name ?? "My Home")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                         Text("Generated · \(formattedToday)")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(.white.opacity(0.7))
                     }
                     Spacer()
                     Image(systemName: "doc.richtext.fill")
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -76,7 +109,8 @@ struct PropertyReportView: View {
             }
             .frame(height: 88)
 
-            // Stats strip
+            // Stats strip — each cell dims when its section is excluded, so
+            // the card previews what the generated report will contain.
             HStack(spacing: 0) {
                 statCell(icon: "checklist",
                          value: "\(taskService.openCount)",
@@ -84,11 +118,13 @@ struct PropertyReportView: View {
                              ? "\(taskService.overdueCount) \(String(localized: "overdue"))"
                              : String(localized: "open"),
                          color: taskService.overdueCount > 0 ? .red : .blue)
+                    .opacity(includesTasks ? 1 : AppOpacity.disabled)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "banknote",
-                         value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
+                         value: financialService.moneyDisplay(financialService.currentMonthIncome),
                          label: String(localized: "this month"),
                          color: Color.brandSuccess)
+                    .opacity(includesFinances ? 1 : AppOpacity.disabled)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "doc.fill",
                          value: "\(documentService.documents.count)",
@@ -96,7 +132,11 @@ struct PropertyReportView: View {
                              ? String(localized: "total")
                              : "\(documentService.expiringDocs.count) \(String(localized: "expiring"))",
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
+                    .opacity(includesDocuments ? 1 : AppOpacity.disabled)
             }
+            .animation(AppMotion.state, value: includesTasks)
+            .animation(AppMotion.state, value: includesFinances)
+            .animation(AppMotion.state, value: includesDocuments)
             .padding(.vertical, AppSpacing.base)
             .background(Color.primary.opacity(0.04))
         }
@@ -111,10 +151,10 @@ struct PropertyReportView: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(15, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
             Text(label)
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
@@ -124,18 +164,33 @@ struct PropertyReportView: View {
 
     private var sectionToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INCLUDE IN REPORT")
+            Text("Include in Report")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
+                rowDivider
                 toggleRow("banknote.fill", Color.brandSuccess, "Financial summary", $includesFinances)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
+                rowDivider
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
+                rowDivider
+                toggleRow("leaf.fill", .green, "rep_sec_plants", $includesPlants,
+                          count: plantService.plants.count)
+                rowDivider
+                toggleRow("washer.fill", .teal, "rep_sec_appliances", $includesAppliances,
+                          count: applianceService.appliances.count)
+                rowDivider
+                toggleRow("shippingbox.fill", .brown, "rep_sec_inventory", $includesInventory,
+                          count: inventoryService.items.count)
+                rowDivider
+                toggleRow("person.2.fill", .purple, "rep_sec_tenants", $includesTenants,
+                          count: tenants.count)
+                rowDivider
+                toggleRow("photo.on.rectangle.angled", .pink, "rep_sec_journal", $includesJournal,
+                          count: photoJournalService.entries.count)
+                rowDivider
                 toggleRow("map.fill", .indigo, "Digital Twin & Zones", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
@@ -145,49 +200,92 @@ struct PropertyReportView: View {
         }
     }
 
-    private func toggleRow(_ icon: String, _ color: Color, _ label: LocalizedStringKey, _ binding: Binding<Bool>) -> some View {
-        HStack(spacing: 12) {
+    private var rowDivider: some View {
+        Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
+    }
+
+    /// A section toggle. Rows with a live `count` show it as a pill; when
+    /// the count is zero the row is disabled and dimmed — an empty section
+    /// can't be included, so the PDF never renders a header with nothing
+    /// under it.
+    private func toggleRow(_ icon: String, _ color: Color, _ label: LocalizedStringKey,
+                           _ binding: Binding<Bool>, count: Int? = nil) -> some View {
+        let isEmpty = count == 0
+        return HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
-            Toggle("", isOn: binding)
+            if let count, count > 0 {
+                Text("\(count)")
+                    .font(AppFont.scaled(12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.secondaryTextColor)
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, 2)
+                    .background(Color.subtleFill, in: Capsule())
+                    .monospacedDigit()
+            }
+            Toggle("", isOn: isEmpty ? .constant(false) : binding)
                 .labelsHidden()
                 .tint(.accentColor)
+                .disabled(isEmpty)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
+        .opacity(isEmpty ? AppOpacity.secondaryText : 1)
     }
 
     // MARK: - Generate Button
 
     private var generateButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
+        GlassWideButton(icon: "arrow.down.doc.fill", label: "Generate PDF",
+                        isBusy: isGenerating) {
             Task { await generate() }
-        } label: {
-            ZStack {
-                LinearGradient(
-                    colors: [.blue, .indigo],
-                    startPoint: .leading, endPoint: .trailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                if isGenerating {
-                    ProgressView().tint(.white)
-                } else {
-                    Label("Generate PDF", systemImage: "arrow.down.doc.fill")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .shadow(color: .blue.opacity(0.35), radius: 12, y: 4)
         }
-        .buttonStyle(.plain)
-        .disabled(isGenerating)
+    }
+
+    // MARK: - Section data
+
+    /// Tenants on the current roster (`family_members` rows with role
+    /// "tenant") — the same filter TenantManagementView uses.
+    private var tenants: [FamilyMember] {
+        familyService.members.filter { $0.role == "tenant" }
+    }
+
+    /// Expected monthly rent, summed per currency so mixed-currency leases
+    /// are never added together ("1.200 EUR + 500 USD"), or "—" when no
+    /// lease captures a rent.
+    private var expectedRentDisplay: String {
+        let rents = tenants
+            .compactMap { familyService.leases[$0.id] }
+            .compactMap { lease in lease.monthlyRent.map { (lease.currency, $0) } }
+        guard !rents.isEmpty else { return "—" }
+        return Dictionary(grouping: rents, by: \.0)
+            .map { "\(CurrencyService.amount($0.value.reduce(0) { $0 + $1.1 })) \($0.key)" }
+            .sorted()
+            .joined(separator: " + ")
+    }
+
+    /// The five most recent journal captures — count + captions only; the
+    /// report stays lightweight by never embedding the photos themselves.
+    private var recentJournalEntries: [PhotoJournalEntry] {
+        Array(photoJournalService.entries
+            .sorted { ($0.takenDate ?? .distantPast) > ($1.takenDate ?? .distantPast) }
+            .prefix(5))
+    }
+
+    private var latestJournalDisplay: String {
+        photoJournalService.entries.compactMap(\.takenDate).max()
+            .map { AppDate.medium.string(from: $0) } ?? "—"
+    }
+
+    /// A day-string ("2026-08-01" or ISO timestamp) formatted for print —
+    /// same parsing chain `Appliance` uses internally.
+    private func dayDisplay(_ raw: String?) -> String {
+        guard let raw else { return "—" }
+        guard let d = ISODate.date(from: raw) ?? AppDate.day(from: raw) else { return raw }
+        return AppDate.medium.string(from: d)
     }
 
     // MARK: - Helpers
@@ -270,108 +368,285 @@ struct PropertyReportView: View {
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
         let now = DateFormatter()
         now.dateStyle = .long
+        let dateLine = now.string(from: Date())
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("PRVIO_Report_\(Date().timeIntervalSince1970).pdf")
 
+        let titleAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+            .foregroundColor: UIColor.white
+        ]
+        let subAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 13),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.5)
+        ]
+        let bodyAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.white
+        ]
+        let sectionAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.4)
+        ]
+        let footerAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.3)
+        ]
+
         try? renderer.writePDF(to: url) { ctx in
-            ctx.beginPage()
-            let g = ctx.cgContext
+            var page = PDFCursor(
+                ctx: ctx, pageRect: pageRect,
+                footer: String(format: String(localized: "report_pdf_footer %@"), dateLine),
+                footerAttr: footerAttr)
+            page.newPage()
 
-            UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
-            g.fill(pageRect)
-
-            var y: CGFloat = 40
-
-            let titleAttr: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                .foregroundColor: UIColor.white
-            ]
-            let title = propertyService.primary?.name ?? "Property Report"
-            title.draw(at: CGPoint(x: 40, y: y), withAttributes: titleAttr)
-            y += 40
-
-            let subAttr: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 13),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.5)
-            ]
-            "Generated \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: y), withAttributes: subAttr)
-            y += 40
-
-            UIColor.white.withAlphaComponent(0.1).setFill()
-            g.fill(CGRect(x: 40, y: y, width: 515, height: 0.5))
-            y += 20
-
-            let bodyAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.white]
-            let sectionAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .semibold), .foregroundColor: UIColor.white.withAlphaComponent(0.4)]
+            let title = propertyService.primary?.name ?? String(localized: "report_pdf_title_fallback")
+            page.draw(title, titleAttr, advance: 40)
+            page.draw(String(format: String(localized: "report_pdf_generated %@"), dateLine),
+                      subAttr, advance: 40)
+            page.rule()
 
             if includesTasks {
-                "TASKS & MAINTENANCE".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                "Open: \(taskService.openCount)   Overdue: \(taskService.overdueCount)   Completed this week: \(taskService.completedThisWeek)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 24
-                for t in taskService.tasks.filter({ $0.isOverdue }).prefix(5) {
-                    "  • \(t.title) — due \(t.dueDateDisplay)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                    y += 17
+                page.draw(String(localized: "report_pdf_tasks"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_tasks_line %lld %lld %lld"),
+                                 taskService.openCount, taskService.overdueCount,
+                                 taskService.completedThisWeek),
+                          bodyAttr, advance: 24)
+                // The full overdue list — the cursor breaks pages, so the
+                // report no longer silently stops at five items.
+                for t in taskService.tasks.filter({ $0.isOverdue }) {
+                    page.draw("  " + String(format: String(localized: "report_pdf_task_due %@ %@"),
+                                            t.title, t.dueDateDisplay),
+                              bodyAttr, advance: 17)
                 }
-                y += 16
+                page.space(16)
             }
 
             if includesFinances {
-                "FINANCIAL SUMMARY".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                let sym = financialService.currencySymbol
-                "This month: \(sym)\(Int(financialService.currentMonthIncome)) income · \(sym)\(Int(financialService.currentMonthExpenses)) expenses · Net: \(sym)\(Int(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 30
+                page.draw(String(localized: "report_pdf_finances"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_fin_line %@ %@ %@"),
+                                 financialService.moneyDisplay(financialService.currentMonthIncome),
+                                 financialService.moneyDisplay(financialService.currentMonthExpenses),
+                                 financialService.moneyDisplay(financialService.currentMonthNet)),
+                          bodyAttr, advance: 30)
             }
 
             if includesDocuments {
-                "DOCUMENTS".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
-                y += 22
-                "Total: \(documentService.documents.count)   Expiring soon: \(documentService.expiringDocs.count)   Critical: \(documentService.criticalDocs.count)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                y += 24
-                for doc in documentService.expiringDocs.prefix(5) {
-                    "  ⚠ \(doc.name) expires \(doc.expiresDisplay ?? "")".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
-                    y += 17
+                page.draw(String(localized: "report_pdf_documents"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "report_pdf_docs_line %lld %lld %lld"),
+                                 documentService.documents.count,
+                                 documentService.expiringDocs.count,
+                                 documentService.criticalDocs.count),
+                          bodyAttr, advance: 24)
+                for doc in documentService.expiringDocs {
+                    page.draw("  " + String(format: String(localized: "report_pdf_doc_expires %@ %@"),
+                                            doc.name, doc.expiresDisplay ?? ""),
+                              bodyAttr, advance: 17)
+                }
+                page.space(16)
+            }
+
+            // The living-and-assets sections render only when they have real
+            // rows behind them — a header over nothing is a lie, so empty
+            // sections are skipped even if their toggle survived in storage.
+
+            if includesPlants && !plantService.plants.isEmpty {
+                page.draw(String(localized: "rep_pdf_plants"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "rep_pdf_plants_line %lld %lld %lld"),
+                                 plantService.plants.count,
+                                 plantService.plantsNeedingWater.count,
+                                 plantService.criticalPlants.count),
+                          bodyAttr, advance: 24)
+                for plant in plantService.plantsNeedingWater {
+                    page.draw("  " + String(format: String(localized: "rep_pdf_plant_water %@"), plant.name),
+                              bodyAttr, advance: 17)
+                }
+                page.space(16)
+            }
+
+            if includesAppliances && !applianceService.appliances.isEmpty {
+                page.draw(String(localized: "rep_pdf_appliances"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "rep_pdf_appliances_line %lld %lld"),
+                                 applianceService.appliances.count,
+                                 applianceService.appliancesExpiringWarranty.count),
+                          bodyAttr, advance: 24)
+                for appliance in applianceService.appliancesExpiringWarranty {
+                    page.draw("  " + String(format: String(localized: "rep_pdf_appliance_warranty %@ %@"),
+                                            appliance.name, dayDisplay(appliance.warrantyUntil)),
+                              bodyAttr, advance: 17)
+                }
+                page.space(16)
+            }
+
+            if includesInventory && !inventoryService.items.isEmpty {
+                page.draw(String(localized: "rep_pdf_inventory"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "rep_pdf_inventory_line %lld %@ %lld"),
+                                 inventoryService.items.count,
+                                 CurrencyService.money(inventoryService.totalValue, code: "EUR", whole: true),
+                                 inventoryService.loanedCount),
+                          bodyAttr, advance: 24)
+                for item in inventoryService.items.filter(\.isLoaned) {
+                    page.draw("  " + String(format: String(localized: "rep_pdf_inv_loan %@ %@"),
+                                            item.name, item.currentLoan?.borrowerName ?? "—"),
+                              bodyAttr, advance: 17)
+                }
+                page.space(16)
+            }
+
+            if includesTenants && !tenants.isEmpty {
+                page.draw(String(localized: "rep_pdf_tenants"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "rep_pdf_tenants_line %lld %@"),
+                                 tenants.count, expectedRentDisplay),
+                          bodyAttr, advance: 24)
+                for tenant in tenants {
+                    let lease = familyService.leases[tenant.id]
+                    let details = [
+                        lease?.rentDisplay,
+                        lease?.endDisplay.map {
+                            String(format: String(localized: "rep_pdf_until %@"), $0)
+                        }
+                    ].compactMap { $0 }.joined(separator: " · ")
+                    page.draw("  \(tenant.name) — \(details.isEmpty ? "—" : details)",
+                              bodyAttr, advance: 17)
+                }
+                page.space(16)
+            }
+
+            if includesJournal && !photoJournalService.entries.isEmpty {
+                page.draw(String(localized: "rep_pdf_journal"), sectionAttr, advance: 22)
+                page.draw(String(format: String(localized: "rep_pdf_journal_line %lld %@"),
+                                 photoJournalService.entries.count, latestJournalDisplay),
+                          bodyAttr, advance: 24)
+                for entry in recentJournalEntries {
+                    let date = entry.takenDate.map { AppDate.medium.string(from: $0) } ?? "—"
+                    page.draw("  \(date) — \(entry.title)", bodyAttr, advance: 17)
                 }
             }
 
-            let footerAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.white.withAlphaComponent(0.3)]
-            "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
-
-            // Digital Twin page
             if includesTwin {
-                ctx.beginPage()
-                UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
-                g.fill(pageRect)
-                var ty: CGFloat = 40
-                "DIGITAL TWIN".draw(at: CGPoint(x: 40, y: ty), withAttributes: titleAttr)
-                ty += 44
-
+                page.newPage()
+                page.draw(String(localized: "report_pdf_twin"), titleAttr, advance: 44)
                 if let twinImage {
-                    let rect = CGRect(x: 40, y: ty, width: 515, height: 280)
-                    twinImage.draw(in: rect)
-                    UIColor.white.withAlphaComponent(0.12).setStroke()
-                    let border = UIBezierPath(roundedRect: rect, cornerRadius: 10)
-                    border.lineWidth = 1; border.stroke()
-                    ty += 300
+                    page.image(twinImage, height: 280)
                 }
-
-                "Zones: \(zoneService.zones.count)   Objects: \(elementService.elements.count)   Average health: \(elementService.overallHealthScore)%"
-                    .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
-                ty += 28
-                "ZONES".draw(at: CGPoint(x: 40, y: ty), withAttributes: sectionAttr)
-                ty += 20
-                for zone in zoneService.zones.prefix(12) {
+                page.draw(String(format: String(localized: "report_pdf_twin_line %lld %lld %lld"),
+                                 zoneService.zones.count, elementService.elements.count,
+                                 elementService.overallHealthScore),
+                          bodyAttr, advance: 28)
+                page.draw(String(localized: "report_pdf_zones"), sectionAttr, advance: 20)
+                for zone in zoneService.zones {
                     let count = elementService.elements(inZone: zone.id).count
-                    "  • \(zone.name) — \(zone.healthScore)%  ·  \(count) objects"
-                        .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
-                    ty += 17
+                    page.draw("  " + String(format: String(localized: "report_pdf_zone_line %@ %lld %lld"),
+                                            zone.name, zone.healthScore, count),
+                              bodyAttr, advance: 17)
                 }
-                "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
             }
         }
 
         return url
+    }
+}
+
+// MARK: - PDF layout cursor
+//
+// A vertical cursor with automatic page breaks: every page it opens gets
+// the dark background and the footer, and any draw that would collide with
+// the footer flows onto a fresh page — so long lists paginate instead of
+// being truncated or drawn off-canvas.
+
+private struct PDFCursor {
+    let ctx: UIGraphicsPDFRendererContext
+    let pageRect: CGRect
+    let footer: String
+    let footerAttr: [NSAttributedString.Key: Any]
+    var y: CGFloat = 40
+
+    private var margin: CGFloat { 40 }
+    private var bottomLimit: CGFloat { pageRect.height - 60 }
+
+    mutating func newPage() {
+        ctx.beginPage()
+        UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
+        ctx.cgContext.fill(pageRect)
+        footer.draw(at: CGPoint(x: margin, y: pageRect.height - 42), withAttributes: footerAttr)
+        y = 40
+    }
+
+    mutating func ensure(_ height: CGFloat) {
+        if y + height > bottomLimit { newPage() }
+    }
+
+    mutating func draw(_ text: String, _ attr: [NSAttributedString.Key: Any], advance: CGFloat) {
+        ensure(advance)
+        text.draw(at: CGPoint(x: margin, y: y), withAttributes: attr)
+        y += advance
+    }
+
+    mutating func space(_ height: CGFloat) {
+        y += height
+    }
+
+    mutating func rule() {
+        ensure(21)
+        UIColor.white.withAlphaComponent(0.1).setFill()
+        ctx.cgContext.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 0.5))
+        y += 20
+    }
+
+    mutating func image(_ image: UIImage, height: CGFloat) {
+        ensure(height + 20)
+        let rect = CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: height)
+        image.draw(in: rect)
+        UIColor.white.withAlphaComponent(0.12).setStroke()
+        let border = UIBezierPath(roundedRect: rect, cornerRadius: 10)
+        border.lineWidth = 1
+        border.stroke()
+        y += height + 20
+    }
+}
+
+// MARK: - Report preview
+
+private struct ReportPreviewSheet: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ReportPDFView(url: url)
+                .ignoresSafeArea(edges: .bottom)
+                .navigationTitle("report_preview_title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                                .font(AppFont.footnoteEmphasis)
+                        }
+                        .accessibilityLabel(Text("Close"))
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        ShareLink(item: url)
+                    }
+                }
+        }
+    }
+}
+
+private struct ReportPDFView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> PDFView {
+        let view = PDFView()
+        view.autoScales = true
+        view.backgroundColor = .clear
+        view.document = PDFDocument(url: url)
+        return view
+    }
+
+    func updateUIView(_ view: PDFView, context: Context) {
+        if view.document?.documentURL != url {
+            view.document = PDFDocument(url: url)
+        }
     }
 }

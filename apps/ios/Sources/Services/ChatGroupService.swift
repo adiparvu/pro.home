@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import Supabase
+import SwiftUI
 
 // MARK: - Communities: multiple chat groups per property (workers, family, …)
 //
@@ -15,13 +16,25 @@ struct ChatGroup: Identifiable, Codable, Hashable {
     var description: String
     var avatarUrl: String?
     var kind: String            // "family" | "work" | "custom"
+    /// The auth user who created the group — the group's admin. Management
+    /// (rename, members, delete) is gated on this, not on the ambiguous
+    /// "you" member row.
+    var createdBy: UUID?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, kind
         case propertyId = "property_id"
         case avatarUrl  = "avatar_url"
+        case createdBy  = "created_by"
         case createdAt  = "created_at"
+    }
+
+    /// Legacy rows without created_by stay manageable by everyone rather
+    /// than locking their own creator out.
+    func isAdmin(userId: UUID?) -> Bool {
+        guard let createdBy else { return true }
+        return createdBy == userId
     }
 
     var kindIcon: String {
@@ -38,6 +51,34 @@ struct ChatGroup: Identifiable, Codable, Hashable {
         case "work":   return String(localized: "Muncă")
         default:       return String(localized: "Grup")
         }
+    }
+
+    var kindTint: Color {
+        switch kind {
+        case "family": return Color.brandSuccess
+        case "work":   return .orange
+        default:       return Color.brandPurple
+        }
+    }
+}
+
+/// The newest message of a community group, for the list preview line.
+/// id + senderId ride along so the same window also yields the unread
+/// count (rows from others without my read receipt).
+struct GroupMessagePreview: Decodable {
+    let id: UUID
+    let groupId: UUID
+    let senderId: UUID?
+    let senderName: String?
+    let body: String?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, body
+        case groupId    = "group_id"
+        case senderId   = "sender_id"
+        case senderName = "sender_name"
+        case createdAt  = "created_at"
     }
 }
 
@@ -61,6 +102,12 @@ struct ChatGroupMember: Identifiable, Codable, Hashable {
 final class ChatGroupService {
     var groups: [ChatGroup] = []
     var membersByGroup: [UUID: [ChatGroupMember]] = [:]
+    var latestByGroup: [UUID: GroupMessagePreview] = [:]
+    /// Unread per group — SERVER truth: messages from others in the recent
+    /// window that carry no read receipt of mine. Opening the thread stamps
+    /// the receipts (ChatView.markRead), so the badge clears itself on the
+    /// next refresh. Bounded by the preview window (a badge, not a ledger).
+    var unreadByGroup: [UUID: Int] = [:]
     var isLoading = false
     var error: String?
 
@@ -77,9 +124,73 @@ final class ChatGroupService {
                 .value
             groups = rows
             await loadAllMembers()
+            await loadPreviews(propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
+    }
+
+    /// Latest message per group in ONE query: the newest ~80 group-scoped
+    /// rows for the property, reduced client-side to the first per group.
+    func loadPreviews(propertyId: UUID) async {
+        let ids = groups.map { $0.id.uuidString }
+        guard !ids.isEmpty else { latestByGroup = [:]; unreadByGroup = [:]; return }
+        do {
+            let rows: [GroupMessagePreview] = try await supabase
+                .from("messages")
+                .select("id, group_id, sender_id, sender_name, body, created_at")
+                .eq("property_id", value: propertyId.uuidString)
+                .in("group_id", values: ids)
+                .order("created_at", ascending: false)
+                .limit(80)
+                .execute()
+                .value
+            var latest: [UUID: GroupMessagePreview] = [:]
+            for row in rows where latest[row.groupId] == nil { latest[row.groupId] = row }
+            latestByGroup = latest
+            await computeUnread(rows: rows)
+        } catch {
+            // Non-fatal: rows fall back to the member-count line.
+        }
+    }
+
+    /// One receipts query over the preview window: a message from someone
+    /// else with no read receipt of mine counts as unread for its group.
+    private func computeUnread(rows: [GroupMessagePreview]) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        let foreign = rows.filter { $0.senderId != uid }
+        guard !foreign.isEmpty else { unreadByGroup = [:]; return }
+        struct ReadRow: Decodable {
+            let messageId: UUID
+            enum CodingKeys: String, CodingKey { case messageId = "message_id" }
+        }
+        do {
+            let reads: [ReadRow] = try await supabase
+                .from("message_reads")
+                .select("message_id")
+                .eq("user_id", value: uid.uuidString)
+                .in("message_id", values: foreign.map { $0.id.uuidString })
+                .execute()
+                .value
+            let seen = Set(reads.map(\.messageId))
+            unreadByGroup = Dictionary(grouping: foreign.filter { !seen.contains($0.id) },
+                                       by: { $0.groupId }).mapValues(\.count)
+        } catch {
+            // Non-fatal: keep the previous counts rather than flashing zeros.
+        }
+    }
+
+    /// "Ana: vin mâine" — the preview line for a group's row, with structured
+    /// bodies (shared contacts) rendered as their human meaning.
+    func previewLine(for group: ChatGroup) -> (text: String, date: Date?)? {
+        guard let p = latestByGroup[group.id] else { return nil }
+        let contacts = SharedContactPayload.decode(p.body)
+        let bodyText = contacts.isEmpty
+            ? (p.body ?? "")
+            : String(format: String(localized: "search_shared_contact"),
+                     contacts.map(\.name).joined(separator: ", "))
+        let prefix = (p.senderName?.isEmpty == false) ? "\(p.senderName ?? ""): " : ""
+        return (prefix + bodyText, p.createdAt.flatMap { AppDate.timestamp(from: $0) })
     }
 
     private func loadAllMembers() async {
@@ -96,8 +207,39 @@ final class ChatGroupService {
         }
     }
 
+    /// Contractors attached to a group are a contact roster, not chat
+    /// participants — they ride the same membership table with a prefixed
+    /// member_id and the "external" role, and are listed separately.
+    static let externalPrefix = "contractor:"
+
     func members(for group: ChatGroup) -> [ChatGroupMember] {
-        membersByGroup[group.id] ?? []
+        (membersByGroup[group.id] ?? []).filter { !$0.memberId.hasPrefix(Self.externalPrefix) }
+    }
+
+    func externals(for group: ChatGroup) -> [ChatGroupMember] {
+        (membersByGroup[group.id] ?? []).filter { $0.memberId.hasPrefix(Self.externalPrefix) }
+    }
+
+    /// Attaches contractors to a group's roster (role "external").
+    func addContractors(_ selected: [ContractorModel], to group: ChatGroup) async {
+        guard !selected.isEmpty else { return }
+        struct NewMember: Encodable {
+            let group_id: String
+            let member_id: String
+            let member_name: String
+            let role: String
+        }
+        let rows = selected.map {
+            NewMember(group_id: group.id.uuidString,
+                      member_id: Self.externalPrefix + $0.id.uuidString,
+                      member_name: $0.name, role: "external")
+        }
+        do {
+            try await supabase.from("chat_group_members").insert(rows).execute()
+            await loadAllMembers()
+        } catch {
+            self.error = error.recordableDescription
+        }
     }
 
     /// Creates a group and inserts its members in one flow. `selected` are the
@@ -147,7 +289,7 @@ final class ChatGroupService {
             await loadAllMembers()
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -159,7 +301,7 @@ final class ChatGroupService {
             groups.removeAll { $0.id == group.id }
             membersByGroup[group.id] = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -174,7 +316,7 @@ final class ChatGroupService {
                 .execute()
             if let i = groups.firstIndex(where: { $0.id == group.id }) { groups[i].name = trimmed }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -195,8 +337,27 @@ final class ChatGroupService {
             try await supabase.from("chat_group_members").insert(rows).execute()
             await loadAllMembers()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
+    }
+
+    /// Sends one text message into a specific sub-group without any UI
+    /// context — used by the notification quick-reply queue. There is no
+    /// direct group-send on this service; the group screen (GroupChatView)
+    /// sends through a group-scoped `MessageService`, so this invokes exactly
+    /// that same path: `load(propertyId:groupId:)` scopes the service to the
+    /// group (it is the only public way to set its group id) and `send` then
+    /// stamps `group_id`, honors the group's disappearing-message TTL and
+    /// rides the same RLS as an in-app send. Throws on failure so the caller
+    /// can requeue the reply instead of dropping it.
+    static func sendMessage(propertyId: UUID, groupId: UUID,
+                            senderName: String, body: String) async throws {
+        let svc = MessageService()
+        // Scopes currentGroupId up-front (before its own fetch), so even a
+        // failed history load leaves the send correctly group-targeted; a
+        // real network outage then surfaces in `send`, which throws.
+        await svc.load(propertyId: propertyId, groupId: groupId)
+        try await svc.send(propertyId: propertyId, senderName: senderName, body: body)
     }
 
     /// Removes one member from a group.
@@ -209,7 +370,7 @@ final class ChatGroupService {
                 .execute()
             membersByGroup[group.id]?.removeAll { $0.memberId == member.memberId }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

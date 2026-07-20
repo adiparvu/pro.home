@@ -13,7 +13,6 @@ struct SettingsView: View {
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
     @Environment(CurrencyService.self) private var currencyService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(SupplyService.self) private var supplyService
     @Environment(PlantService.self) private var plantService
     @Environment(DeliveryService.self) private var deliveryService
@@ -26,6 +25,7 @@ struct SettingsView: View {
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
     @State private var showAddAccount = false
+    @State private var showAddProperty = false
 
     var body: some View {
         @Bindable var router = router
@@ -33,7 +33,10 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 profileCard
                 switchCard
-                propertySection
+                if propertyService.properties.isEmpty && !propertyService.isLoading {
+                    noPropertyCard
+                }
+                propertySectionGated
                 familySection
                 appSection
                 supportSection
@@ -46,7 +49,6 @@ struct SettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
-        .onAppear { tabBarVis.scrollOffset = 0 }
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }
@@ -57,9 +59,6 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Rating will be available once the app launches on the App Store.")
-        }
-        .navigationDestination(isPresented: $router.showSuppliesView) {
-            SuppliesView()
         }
     }
 
@@ -81,12 +80,12 @@ struct SettingsView: View {
                             .font(AppFont.headline)
                             .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
             }
@@ -113,7 +112,7 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "house.fill", color: .blue)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Property")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             if let name = propertyService.primary?.name {
                                 Text(name)
                                     .font(AppFont.footnote).foregroundStyle(.primary)
@@ -126,7 +125,7 @@ struct SettingsView: View {
                         }
                         Spacer()
                         Image(systemName: "arrow.2.squarepath")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(.blue)
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
@@ -140,14 +139,14 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "person.circle.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Account")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             Text(auth.session?.user.email ?? "—")
                                 .font(AppFont.footnote).foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         Spacer()
                         Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(.blue)
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
@@ -165,10 +164,45 @@ struct SettingsView: View {
         }
     }
 
+    /// Shown when the account has no household yet — either a brand-new owner
+    /// (who starts here) or an invited member whose invitation hasn't been
+    /// accepted yet. Everything property-scoped is hidden in that state, so
+    /// this card is the one path forward.
+    private var noPropertyCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                Image(systemName: "house.badge.exclamationmark")
+                    .font(AppFont.scaled(30, weight: .medium))
+                    .foregroundStyle(.blue)
+                Text("No property yet")
+                    .font(AppFont.headline)
+                    .foregroundStyle(.primary)
+                Text("Create your own property, or ask the owner of a home to invite you.")
+                    .font(AppFont.footnote)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .multilineTextAlignment(.center)
+                Button {
+                    showAddProperty = true
+                } label: {
+                    Text("Add Property")
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.vertical, AppSpacing.sm)
+                        .mediaGlass(in: Capsule(), interactive: true)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm)
+        }
+        .sheet(isPresented: $showAddProperty) { AddPropertySheet() }
+    }
+
     @ViewBuilder
     private var profileAvatar: some View {
         if let urlStr = profileService.profile?.avatarUrl, let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable().scaledToFill()
@@ -189,152 +223,375 @@ struct SettingsView: View {
             Circle()
                 .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(initial)
-                .font(.system(size: 20, weight: .bold))
+                .font(AppFont.scaled(20, weight: .bold))
                 .foregroundStyle(.primary)
         }
     }
 
     // MARK: - Sections
 
-    private var propertySection: some View {
-        SettingsGroup(title: "Property") {
-            NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
-                PropertySettingsView()
-                    .environment(propertyService)
+    // MARK: - Role-based property matrix
+    //
+    // Single source of truth for which property tools each role sees. Owners,
+    // partners (and the fail-open default) get everything; a family adult gets
+    // everything except landlord-only tools; residents and service providers get
+    // a curated subset; guests get nothing. Feature order = display order.
+    private enum PropertyFeature: CaseIterable {
+        case myProperty, documents, houseCalendar, plans, finances, inventory, supplies, plants,
+             deliveries, utilities, contractors, analytics, report, tenants,
+             appliances, photoJournal, seasonal, paint, propertyValue, guestMode,
+             yearReview, monthlyRecap, dataExport
+    }
+
+    private func allowed(_ f: PropertyFeature) -> Bool {
+        // nil = role still loading -> fail open so the owner's screen never
+        // flashes empty; unknown strings already collapsed to .guest.
+        guard let role = propertyService.role else { return true }
+        switch role {
+        case .guest:
+            return false
+        case .tenant:
+            return [.documents, .houseCalendar, .supplies, .plants, .deliveries, .utilities,
+                    .contractors, .appliances, .photoJournal, .seasonal, .paint,
+                    .yearReview, .monthlyRecap].contains(f)
+        case .familyChild, .familyTeen:
+            return [.supplies, .plants, .deliveries, .photoJournal, .seasonal,
+                    .yearReview, .monthlyRecap].contains(f)
+        case .serviceProvider:
+            return [.documents, .contractors, .deliveries, .appliances,
+                    .seasonal, .photoJournal].contains(f)
+        case .familyAdult, .familyElderly:
+            // Family adult: everything except the landlord-only tools.
+            return f != .tenants && f != .guestMode && f != .propertyValue && f != .dataExport
+        case .owner, .partner:
+            return true
+        }
+    }
+
+    private var visibleFeatures: [PropertyFeature] { PropertyFeature.allCases.filter(allowed) }
+
+    // MARK: Thematic hubs — the flat 20-row list, grouped by mental model.
+    // Role gating stays per-feature: a hub only shows the rows its role allows,
+    // and disappears entirely when none remain.
+    private enum PropertyHub: CaseIterable, Hashable {
+        case home, upkeep, moneyDocs, daily
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .home:      return "My Home"
+            case .upkeep:    return "Items & Maintenance"
+            case .moneyDocs: return "Money & Documents"
+            case .daily:     return "Everyday"
             }
-            NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
-                DocumentsView()
-                    .environment(documentService)
-                    .environment(propertyService)
+        }
+        var icon: String {
+            switch self {
+            case .home:      return "house.fill"
+            case .upkeep:    return "wrench.and.screwdriver.fill"
+            case .moneyDocs: return "banknote.fill"
+            case .daily:     return "cart.fill"
             }
-            NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
-                BlueprintsView()
+        }
+        var color: Color {
+            switch self {
+            case .home:      return .blue
+            case .upkeep:    return .teal
+            case .moneyDocs: return Color.brandSuccess
+            case .daily:     return Color.brandSkyBlue
             }
-            NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
-                FinancesView()
-                    .environment(financialService)
-                    .environment(propertyService)
-                    .environment(budgetService)
-            }
-            NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
-                InventoryView()
-            }
-            NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
-                SuppliesView()
-                    .environment(supplyService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
-                PlantsView()
-                    .environment(plantService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
-                DeliveriesView()
-                    .environment(deliveryService)
-            }
-            NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
-                UtilityView()
-            }
-            NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
-                ContractorsView()
-                    .environment(auth)
-            }
-            NavSettingsRow(icon: "chart.bar.xaxis", color: .purple, label: "Analytics") {
-                AnalyticsView()
-            }
-            NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
-                PropertyReportView()
-                    .environment(taskService)
-                    .environment(financialService)
-                    .environment(documentService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
-                TenantManagementView()
-                    .environment(familyService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "washer.fill", color: Color.brandPrimaryBlue, label: "Appliances") {
-                AppliancesView()
-                    .environment(applianceService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
-                PhotoJournalView()
-                    .environment(photoJournalService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
-                SeasonalChecklistView()
-            }
-            NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
-                PaintColorsView()
-                    .environment(paintColorService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
-                PropertyValueView()
-                    .environment(propertyValueService)
-                    .environment(propertyService)
-                    .environment(currencyService)
-                    .environment(appSettings)
-            }
-            NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
-                GuestModeView()
-                    .environment(propertyService)
-                    .environment(familyService)
-            }
-            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color.brandSkyBlue, label: "Perspectives") {
-                PropertyPerspectivesView()
-                    .environment(propertyService)
-                    .environment(taskService)
-                    .environment(documentService)
-                    .environment(financialService)
-                    .environment(familyService)
-                    .environment(applianceService)
-                    .environment(router)
+        }
+        var features: [PropertyFeature] {
+            switch self {
+            case .home:      return [.myProperty, .plans, .photoJournal, .yearReview,
+                                     .propertyValue, .analytics, .report]
+            case .upkeep:    return [.inventory, .appliances, .paint, .contractors,
+                                     .seasonal, .utilities]
+            case .moneyDocs: return [.finances, .documents, .tenants]
+            case .daily:     return [.supplies, .plants, .deliveries]
             }
         }
     }
 
-    private var familySection: some View {
-        SettingsGroup(title: "Family & Chat") {
-            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
-                MembersHubView()
-                    .environment(familyService)
-                    .environment(propertyService)
-            }
-            NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
-                Group {
-                    if propertyService.primary?.id != nil {
-                        ChatSettingsView()
-                            .environment(propertyService)
-                            .environment(familyService)
-                            .environment(profileService)
-                            .environment(messageService)
-                    } else {
-                        SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Chat", description: "Adaugă o proprietate pentru a putea trimite mesaje.")
+    private func hubFeatures(_ hub: PropertyHub) -> [PropertyFeature] {
+        hub.features.filter(allowed)
+    }
+
+    @ViewBuilder private var propertySectionGated: some View {
+        if !visibleFeatures.isEmpty {
+            VStack(spacing: 14) {
+                frequentShortcuts
+                SettingsGroup(title: "Property") {
+                    ForEach(PropertyHub.allCases, id: \.self) { hub in
+                        if !hubFeatures(hub).isEmpty {
+                            NavSettingsRow(icon: hub.icon, color: hub.color, label: hub.label) {
+                                hubPage(hub)
+                            }
+                        }
                     }
                 }
             }
-            // Cross-app messaging lives inside the Chat settings page — no need
-            // for a duplicate row here.
+        }
+    }
+
+    /// One-tap tiles for the pages used daily, so the hubs never add a hop
+    /// to the routine.
+    @ViewBuilder private var frequentShortcuts: some View {
+        let shortcuts: [PropertyFeature] = [.documents, .finances, .inventory].filter(allowed)
+        if !shortcuts.isEmpty {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(shortcuts, id: \.self) { f in
+                    NavigationLink { propertyDestination(f) } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: shortcutIcon(f))
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(shortcutColor(f))
+                            Text(shortcutLabel(f))
+                                .font(AppFont.caption2)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func shortcutIcon(_ f: PropertyFeature) -> String {
+        switch f {
+        case .documents: return "doc.text.fill"
+        case .finances:  return "banknote.fill"
+        default:         return "shippingbox.fill"
+        }
+    }
+    private func shortcutColor(_ f: PropertyFeature) -> Color {
+        switch f {
+        case .documents: return .orange
+        case .finances:  return Color.brandSuccess
+        default:         return .indigo
+        }
+    }
+    private func shortcutLabel(_ f: PropertyFeature) -> LocalizedStringKey {
+        switch f {
+        case .documents: return "Documents"
+        case .finances:  return "Finances"
+        default:         return "Inventory"
+        }
+    }
+
+    /// Destinations for the frequent-shortcut tiles (same views the hub rows
+    /// push, including their section locks).
+    @ViewBuilder private func propertyDestination(_ f: PropertyFeature) -> some View {
+        switch f {
+        case .documents:
+            DocumentsView().environment(documentService).environment(propertyService)
+                .sectionLock(.documents)
+        case .finances:
+            FinancesView().environment(financialService).environment(propertyService).environment(budgetService)
+                .sectionLock(.finances)
+        default:
+            InventoryView()
+                .sectionLock(.inventory)
+        }
+    }
+
+    private func hubPage(_ hub: PropertyHub) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 16) {
+                SettingsGroup(title: hub.label) {
+                    ForEach(hubFeatures(hub), id: \.self) { propertyRow($0) }
+                }
+                Spacer(minLength: 90)
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle(Text(hub.label))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private func propertyRow(_ f: PropertyFeature) -> some View {
+        switch f {
+        case .myProperty:
+            NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
+                PropertySettingsView().environment(propertyService)
+            }
+        case .documents:
+            NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
+                DocumentsView().environment(documentService).environment(propertyService)
+                    .sectionLock(.documents)
+            }
+        case .yearReview:
+            NavSettingsRow(icon: "sparkles.rectangle.stack.fill", color: Color.brandPurple, label: "Year of Your Home") {
+                YearInReviewView()
+                    .environment(propertyService)
+                    .environment(taskService)
+                    .environment(financialService)
+                    .environment(photoJournalService)
+                    .environment(documentService)
+                    .environment(plantService)
+                    .environment(familyService)
+                    .environment(propertyValueService)
+                    .environment(appSettings)
+            }
+        case .houseCalendar:
+            NavSettingsRow(icon: "calendar", color: .red, label: "House Calendar") {
+                CalendarView()
+                    .environment(taskService)
+                    .environment(documentService)
+                    .environment(applianceService)
+                    .environment(familyService)
+            }
+        case .monthlyRecap:
+            NavSettingsRow(icon: "moon.stars.fill", color: .indigo, label: "Month of Your Home") {
+                MonthlyRecapView()
+                    .environment(propertyService)
+                    .environment(taskService)
+                    .environment(financialService)
+                    .environment(photoJournalService)
+                    .environment(documentService)
+            }
+        case .dataExport:
+            NavSettingsRow(icon: "square.and.arrow.up.on.square.fill", color: .mint, label: "Export Your Data") {
+                ExportDataView()
+            }
+        case .plans:
+            NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
+                BlueprintsView()
+                    .sectionLock(.plans)
+            }
+        case .finances:
+            NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
+                FinancesView().environment(financialService).environment(propertyService).environment(budgetService)
+                    .sectionLock(.finances)
+            }
+        case .inventory:
+            NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
+                InventoryView()
+                    .sectionLock(.inventory)
+            }
+        case .supplies:
+            NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
+                SuppliesView().environment(supplyService).environment(propertyService)
+            }
+        case .plants:
+            NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
+                PlantsView().environment(plantService).environment(propertyService)
+            }
+        case .deliveries:
+            NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
+                DeliveriesView().environment(deliveryService)
+            }
+        case .utilities:
+            NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
+                UtilityView()
+            }
+        case .contractors:
+            NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
+                ContractorsView().environment(auth)
+            }
+        case .analytics:
+            NavSettingsRow(icon: "chart.bar.xaxis", color: .purple, label: "Analytics") {
+                AnalyticsView()
+            }
+        case .report:
+            NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
+                PropertyReportView().environment(taskService).environment(financialService).environment(documentService).environment(propertyService)
+            }
+        case .tenants:
+            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
+                TenantManagementView().environment(familyService).environment(propertyService)
+            }
+        case .appliances:
+            NavSettingsRow(icon: "washer.fill", color: Color.brandPrimaryBlue, label: "Appliances") {
+                AppliancesView().environment(applianceService).environment(propertyService)
+            }
+        case .photoJournal:
+            NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
+                PhotoJournalView().environment(photoJournalService).environment(propertyService)
+            }
+        case .seasonal:
+            NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
+                SeasonalChecklistView().environment(propertyService).environment(taskService)
+            }
+        case .paint:
+            NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
+                PaintColorsView().environment(paintColorService).environment(propertyService)
+            }
+        case .propertyValue:
+            NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
+                PropertyValueView().environment(propertyValueService).environment(propertyService).environment(currencyService).environment(appSettings)
+            }
+        case .guestMode:
+            NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
+                GuestModeView().environment(propertyService).environment(familyService)
+            }
+        }
+    }
+
+    // Only owners/partners (or the not-yet-resolved default) manage the roster.
+    private var canManageMembers: Bool {
+        guard let role = propertyService.role else { return true }   // still loading
+        return role.canManageMembers
+    }
+
+    private var familySection: some View {
+        SettingsGroup(title: "People & Access") {
+            // Members moved into the General page (with Appearance, Language,
+            // Watch, automation…). Guest Mode stays here as the one
+            // property-scoped sharing control.
+            if allowed(.guestMode) {
+                NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
+                    GuestModeView().environment(propertyService).environment(familyService)
+                }
+            }
+            // Chat settings moved to Profil (the avatar is the door to
+            // everything personal) — the live chat card there opens the hub.
+        }
+    }
+
+    // MARK: - Role-based App-section gating
+    //
+    // Some App-section rows configure the property "power" features (access
+    // keys, third-party integrations, action shortcuts) and shouldn't appear for
+    // low-privilege roles. The purely-personal rows (Appearance, Language,
+    // Activity, App Icon, Live Activities, Siri) stay visible to everyone.
+    private enum AppFeature { case liveActivities, floatingButtons, nfcKeys, integrations }
+
+    private func allowedApp(_ f: AppFeature) -> Bool {
+        guard let role = propertyService.role else { return true }   // still loading
+        switch role {
+        case .guest, .familyChild, .familyTeen:
+            return false                       // no property power tools
+        case .tenant:
+            // A resident tracks their own activities, configures shortcuts and
+            // may hold an access key, but doesn't wire up account integrations.
+            return f == .liveActivities || f == .floatingButtons || f == .nfcKeys
+        case .serviceProvider:
+            return f == .liveActivities || f == .floatingButtons
+        case .owner, .partner, .familyAdult, .familyElderly:
+            return true
         }
     }
 
     private var appSection: some View {
-        SettingsGroup(title: "App") {
-            NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
-                AppearanceView()
-                    .environment(appSettings)
-                    .environment(auth)
-                    .environment(currencyService)
+        SettingsGroup(title: "Personalization") {
+            // Members, Appearance, Language, Apple Watch, Live Activities,
+            // Floating Buttons, Siri, NFC keys and Integrations now live
+            // together in one General page, so the root list stays short.
+            NavSettingsRow(icon: "gearshape.fill", color: .gray, label: "General") {
+                GeneralSettingsView()
             }
-            NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
-                LanguageSettingsView()
-                    .environment(appSettings)
-            }
+        }
+    }
+
+    private var supportSection: some View {
+        SettingsGroup(title: "Support") {
             NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activity") {
                 ActivityFeedView()
                     .environment(financialService)
@@ -345,35 +602,13 @@ struct SettingsView: View {
                     .environment(applianceService)
                     .environment(plantService)
             }
-            NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
-                AppIconPickerView()
-            }
-            NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
-                LiveActivitySettingsView()
-            }
-            NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
-                QuickActionsSettingsView()
-                    .environment(appSettings)
-            }
-            NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
-                SiriShortcutsView()
-            }
-            NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
-                NFCWalletView()
-            }
-            NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
-                IntegrationsView()
-                    .environment(taskService)
+            NavSettingsRow(icon: "sos.circle.fill", color: .red, label: "Emergency Mode") {
+                EmergencyModeView()
+                    .environment(documentService)
+                    .environment(router)
                     .environment(propertyService)
-                    .environment(familyService)
-            }
-        }
-    }
-
-    private var supportSection: some View {
-        SettingsGroup(title: "Support") {
-            NavSettingsRow(icon: "phone.fill", color: .red, label: "Emergency Contacts") {
-                EmergencyContactsView()
+                    .environment(profileService)
+                    .environment(messageService)
             }
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
                 HelpFAQView()

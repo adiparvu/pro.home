@@ -5,6 +5,7 @@ import SwiftUI
 struct AddSupplyItemSheet: View {
     @Environment(SupplyService.self) private var supplyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(ReceiptService.self) private var receiptService
     @Environment(\.dismiss) private var dismiss
 
     let list: SupplyList?
@@ -19,6 +20,8 @@ struct AddSupplyItemSheet: View {
     @State private var selectedListId: UUID? = nil
     @State private var isSaving = false
     @State private var error: String?
+    /// Real purchase history only, computed once per presentation.
+    @State private var frequentSuggestions: [String] = []
 
     init(list: SupplyList?, editingItem: SupplyItem?) {
         self.list = list
@@ -29,7 +32,9 @@ struct AddSupplyItemSheet: View {
             _category  = State(initialValue: item.category)
             _priority  = State(initialValue: item.priority)
             _notes     = State(initialValue: item.notes ?? "")
-            _location  = State(initialValue: item.location ?? "")
+            // Stored canonically (or as legacy free text) — edit what the
+            // user reads, not the slug.
+            _location  = State(initialValue: (item.location).map(SupplyLocation.displayName(for:)) ?? "")
         }
     }
 
@@ -38,47 +43,40 @@ struct AddSupplyItemSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 22) {
-                        nameField
-                        quantityField
-                        if list == nil && supplyService.lists.count > 1 { listPicker }
-                        categoryPicker
-                        priorityPicker
-                        locationField
-                        notesField
-                        if let error { Text(error).font(.caption).foregroundStyle(.red) }
-                        saveButton
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
-                }
-            }
-            .navigationTitle(editingItem == nil ? String(localized: "New Item") : String(localized: "Edit Item"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+        FormScaffold(title: editingItem == nil ? "New Item" : "Edit Item",
+                     saveLabel: editingItem == nil ? "Add" : "Save",
+                     canSave: !name.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: isSaving,
+                     error: $error,
+                     onSave: { save() }) {
+            nameField
+            if editingItem == nil && !frequentSuggestions.isEmpty { frequentSection }
+            quantityField
+            if list == nil && supplyService.lists.count > 1 { listPicker }
+            categoryPicker
+            priorityPicker
+            locationField
+            notesField
         }
         .onAppear {
             if list == nil { selectedListId = supplyService.lists.first?.id }
+            if editingItem == nil {
+                frequentSuggestions = receiptService.frequentProducts(
+                    excluding: supplyService.items.filter { !$0.isCompleted }.map(\.name),
+                    limit: 6)
+            }
         }
     }
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(AppFont.label).foregroundStyle(.secondary)
+    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key).font(AppFont.label).foregroundStyle(.secondary)
     }
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NAME")
+            fieldLabel("sup_field_name")
             TextField("What needs to be bought?", text: $name)
-                .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -86,19 +84,58 @@ struct AddSupplyItemSheet: View {
 
     private var quantityField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("QUANTITY (OPTIONAL)")
+            fieldLabel("sup_field_quantity")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
+    /// "You buy this often" — the household's most scanned products, one
+    /// tap to fill the name (category follows the lexicon). Only real
+    /// history: no scans, no section.
+    private var frequentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 5) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(String(localized: "sup_frequent_label"))
+                    .font(AppFont.label).foregroundStyle(.secondary)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(frequentSuggestions, id: \.self) { suggestion in
+                        GlassFilterChip(label: suggestion,
+                                        isSelected: name == suggestion) {
+                            name = suggestion
+                            category = supplyCategory(forProduct: suggestion)
+                            HapticFeedback.selection()
+                        }
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+        }
+    }
+
+    /// Maps the lexicon's ReceiptCategory to this form's supply categories.
+    private func supplyCategory(forProduct product: String) -> String {
+        let receiptCategory = ReceiptProductLexicon.category(for: product)
+        return supplyCategories.contains { $0.id == receiptCategory } ? receiptCategory : "other"
+    }
+
     private var locationField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LOCATION (OPTIONAL)")
+            HStack(spacing: 5) {
+                Image(systemName: "mappin")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                fieldLabel("sup_field_location")
+            }
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -106,9 +143,9 @@ struct AddSupplyItemSheet: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NOTES (OPTIONAL)")
+            fieldLabel("sup_field_notes")
             TextField("Additional notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...5).padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -116,14 +153,14 @@ struct AddSupplyItemSheet: View {
 
     private var listPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LIST")
+            fieldLabel("sup_field_list")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyService.lists) { l in
                         Button { selectedListId = l.id; HapticFeedback.selection() } label: {
                             HStack(spacing: 6) {
-                                Image(systemName: l.icon).font(.system(size: 12))
-                                Text(l.name).font(.system(size: 13))
+                                Image(systemName: l.icon).font(AppFont.scaled(12))
+                                Text(l.name).font(AppFont.scaled(13))
                             }
                             .foregroundStyle(selectedListId == l.id ? .white : .primary)
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
@@ -139,13 +176,13 @@ struct AddSupplyItemSheet: View {
 
     private var categoryPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("CATEGORY")
+            fieldLabel("sup_field_category")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyCategories, id: \.id) { cat in
                         Button { category = cat.id; HapticFeedback.selection() } label: {
-                            Text(cat.label)
-                                .font(.system(size: 13, weight: category == cat.id ? .semibold : .regular))
+                            Text(LocalizedStringKey(cat.label))
+                                .font(AppFont.scaled(13, weight: category == cat.id ? .semibold : .regular))
                                 .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, 13).padding(.vertical, 7)
                                 .background(category == cat.id ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
@@ -161,15 +198,15 @@ struct AddSupplyItemSheet: View {
 
     private var priorityPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("PRIORITY")
+            fieldLabel("sup_field_priority")
             HStack(spacing: 8) {
                 ForEach(supplyPriorities, id: \.id) { p in
                     let item = SupplyItem(id: UUID(), listId: UUID(), propertyId: UUID(),
                                          name: "", category: "other", priority: p.id,
                                          isCompleted: false, createdAt: "", updatedAt: "")
                     Button { priority = p.id; HapticFeedback.selection() } label: {
-                        Text(p.label)
-                            .font(.system(size: 13, weight: priority == p.id ? .semibold : .regular))
+                        Text(LocalizedStringKey(p.label))
+                            .font(AppFont.scaled(13, weight: priority == p.id ? .semibold : .regular))
                             .foregroundStyle(priority == p.id ? .white : Color.primary.opacity(0.65))
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(priority == p.id ? item.priorityColor : Color.primary.opacity(AppOpacity.subtleFill),
@@ -181,31 +218,13 @@ struct AddSupplyItemSheet: View {
         }
     }
 
-    private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if isSaving { ProgressView().tint(.primary) }
-                else {
-                    Text(LocalizedStringKey(editingItem == nil ? "Add item" : "Save changes"))
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity).frame(height: 52)
-            .background(name.trimmingCharacters(in: .whitespaces).isEmpty
-                ? Color.primary.opacity(0.2) : Color.primary,
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
-                ? Color.primary.opacity(0.4) : Color(UIColor.systemBackground))
-        }
-        .buttonStyle(.plain)
-        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
-    }
-
     private func save() {
         guard let propId = propertyService.primary?.id else { return }
         let n = name.trimmingCharacters(in: .whitespaces)
         guard !n.isEmpty else { return }
         isSaving = true
+        // Locations persist canonically ("kitchen"), display localized.
+        let storedLocation = SupplyLocation.normalized(location)
 
         if let existing = editingItem {
             var updated = existing
@@ -214,7 +233,7 @@ struct AddSupplyItemSheet: View {
             updated.category = category
             updated.priority = priority
             updated.notes    = notes.isEmpty ? nil : notes
-            updated.location = location.isEmpty ? nil : location
+            updated.location = storedLocation.isEmpty ? nil : storedLocation
             Task {
                 await supplyService.updateItem(updated)
                 HapticFeedback.success()
@@ -231,7 +250,7 @@ struct AddSupplyItemSheet: View {
                 category: category, priority: priority,
                 notes: notes.isEmpty ? nil : notes,
                 isCompleted: false,
-                location: location.isEmpty ? nil : location,
+                location: storedLocation.isEmpty ? nil : storedLocation,
                 createdAt: now, updatedAt: now
             )
             Task {
@@ -240,7 +259,7 @@ struct AddSupplyItemSheet: View {
                     HapticFeedback.success()
                     dismiss()
                 } catch {
-                    self.error = error.localizedDescription
+                    self.error = error.recordableDescription
                 }
                 isSaving = false
             }

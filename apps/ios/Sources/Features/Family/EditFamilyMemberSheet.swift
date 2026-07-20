@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - Edit sheet
 
@@ -21,6 +22,13 @@ struct EditFamilyMemberSheet: View {
     @State private var showAddSocial = false
     @State private var saveError: String?
 
+    // Photo (roster-only members — account holders' photos come from their
+    // live profile via MemberDirectory, so they're not editable from here).
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var previewImage: UIImage?
+    @State private var avatarUrl: String?
+    @State private var isUploadingPhoto = false
+
     init(member: FamilyMember) {
         self.member = member
         let parts = member.name.split(separator: " ", maxSplits: 1)
@@ -34,6 +42,7 @@ struct EditFamilyMemberSheet: View {
         _role      = State(initialValue: member.role)
         _color     = State(initialValue: member.color)
         _socialLinks = State(initialValue: member.socialLinks ?? [])
+        _avatarUrl = State(initialValue: member.avatarUrl)
     }
 
     private var fullName: String {
@@ -43,79 +52,163 @@ struct EditFamilyMemberSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        avatarPreview
-                        colorRow
-                        fieldsSection
-                        roleSection
-                        socialLinksSection
-                        deleteButton
-                        Spacer(minLength: 40)
+        FormScaffold(title: "Edit Member",
+                     canSave: !firstName.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: isSaving,
+                     error: $saveError,
+                     onSave: { Task { await save() } }) {
+            avatarPreview
+            fieldsSection
+            roleSection
+            socialLinksSection
+            deleteButton
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .confirmationDialog("Remove \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                Task { await familyService.delete(member); dismiss() }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showAddSocial) {
+            AddSocialLinkSheet { link in socialLinks.append(link) }
+        }
+        .onChange(of: selectedPhoto) { _, newItem in
+            guard let newItem else { return }
+            Task { await handlePhotoPick(newItem) }
+        }
+    }
+
+    // MARK: Photo
+
+    /// Roster-only members carry their photo on the `family_members` row;
+    /// account holders always show their live profile photo, so offering a
+    /// picker here would set a URL that never renders.
+    private var canEditPhoto: Bool { member.userId == nil }
+
+    private var hasPhoto: Bool {
+        previewImage != nil || !(avatarUrl ?? "").isEmpty
+    }
+
+    /// The freshest row (avatar ops update `familyService.members`), so a
+    /// second upload in the same session cleans up the first file.
+    private var freshMember: FamilyMember {
+        familyService.members.first { $0.id == member.id } ?? member
+    }
+
+    @ViewBuilder
+    private var avatarPreview: some View {
+        VStack(spacing: AppSpacing.sm) {
+            if canEditPhoto {
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    avatarCircle
+                }
+                .buttonStyle(.plain)
+                .disabled(isUploadingPhoto)
+                .accessibilityLabel(hasPhoto ? Text("Change photo") : Text("Add photo"))
+                if hasPhoto {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        Task { await removePhoto() }
+                    } label: {
+                        Text("Remove photo")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.brandDanger.opacity(0.85))
                     }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
+                    .buttonStyle(.plain)
+                    .disabled(isUploadingPhoto)
                 }
-                .scrollDismissesKeyboard(.immediately)
+            } else {
+                avatarCircle
             }
-            .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+        }
+        .padding(.top, AppSpacing.sm)
+    }
+
+    private var avatarCircle: some View {
+        ZStack {
+            if let previewImage {
+                Image(uiImage: previewImage)
+                    .resizable().scaledToFill()
+            } else if let avatarUrl, !avatarUrl.isEmpty {
+                StorageImage(source: avatarUrl) { phase in
+                    if case .success(let img) = phase { img.resizable().scaledToFill() }
+                    else { initialsCircle }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await save() } } label: {
-                        if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
-                    }
-                    .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
-                }
+            } else {
+                initialsCircle
             }
-            .confirmationDialog("Remove \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-                Button("Remove", role: .destructive) {
-                    Task { await familyService.delete(member); dismiss() }
-                }
-                Button("Cancel", role: .cancel) {}
+        }
+        .frame(width: 80, height: 80)
+        .clipShape(Circle())
+        .overlay(alignment: .bottomTrailing) {
+            if canEditPhoto {
+                Image(systemName: "camera.fill")
+                    .font(AppFont.scaled(10, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 24, height: 24)
+                    .background(Color.accentColor, in: Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
             }
-            .sheet(isPresented: $showAddSocial) {
-                AddSocialLinkSheet { link in socialLinks.append(link) }
-            }
-            .alert("Couldn't save", isPresented: Binding(
-                get: { saveError != nil }, set: { if !$0 { saveError = nil } }
-            )) {
-                Button("OK", role: .cancel) { saveError = nil }
-            } message: {
-                Text(saveError ?? "")
+        }
+        .overlay {
+            if isUploadingPhoto {
+                Circle().fill(.black.opacity(0.35))
+                ProgressView().tint(.white)
             }
         }
     }
 
-    private var avatarPreview: some View {
+    private var initialsCircle: some View {
         ZStack {
             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
             Text(fullName.isEmpty ? "?" : String(fullName.prefix(2)).uppercased())
-                .font(.system(size: 28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
+                .font(AppFont.scaled(28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
         }
-        .frame(width: 80, height: 80).padding(.top, AppSpacing.sm)
     }
 
-    private var colorRow: some View {
-        HStack(spacing: 10) {
-            ForEach(kColors, id: \.self) { c in
-                Button { color = c } label: {
-                    Circle().fill(Color(hex: c) ?? .blue).frame(width: 30, height: 30)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
-                        .scaleEffect(color == c ? 1.15 : 1.0).animation(.spring(response: 0.2), value: color)
-                }.buttonStyle(.plain)
-            }
+    private func handlePhotoPick(_ item: PhotosPickerItem) async {
+        defer { selectedPhoto = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return }
+        previewImage = image  // instant preview while the upload runs
+        isUploadingPhoto = true
+        defer { isUploadingPhoto = false }
+        if let updated = await familyService.uploadAvatar(for: freshMember, image: image) {
+            avatarUrl = updated.avatarUrl
+            HapticFeedback.success()
+        } else {
+            previewImage = nil
+            surfacePhotoError()
         }
     }
+
+    private func removePhoto() async {
+        isUploadingPhoto = true
+        defer { isUploadingPhoto = false }
+        if let updated = await familyService.removeAvatar(for: freshMember) {
+            previewImage = nil
+            avatarUrl = updated.avatarUrl
+            HapticFeedback.success()
+        } else {
+            surfacePhotoError()
+        }
+    }
+
+    /// Shows the failure in THIS sheet's banner and clears the service copy,
+    /// so FamilyView's global alert doesn't fire a second time behind us.
+    private func surfacePhotoError() {
+        saveError = familyService.error ?? String(localized: "Couldn't save changes.")
+        familyService.error = nil
+        HapticFeedback.warning()
+    }
+
+    // The colour swatch row is gone (IMG_8664): the member's colour is set
+    // once at add time and stays a stable identity — editing keeps it as-is.
 
     private var fieldsSection: some View {
-        VStack(spacing: 0) {
+        FormGroup {
             fieldRow(icon: "person.fill", color: .blue, placeholder: "First name *", text: $firstName)
             div
             fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Last name", text: $lastName)
@@ -126,21 +219,19 @@ struct EditFamilyMemberSheet: View {
             div
             birthdayRow
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
         VStack(spacing: 0) {
-            Button { withAnimation { showBirthday.toggle() } } label: {
+            Button { withAnimation(AppMotion.state) { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
+                    Image(systemName: "gift.fill").font(AppFont.scaled(14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
@@ -154,8 +245,7 @@ struct EditFamilyMemberSheet: View {
     }
 
     private var roleSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+        FormGroup(title: "ROLE") {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -163,7 +253,7 @@ struct EditFamilyMemberSheet: View {
                         .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -175,52 +265,45 @@ struct EditFamilyMemberSheet: View {
                 .pickerStyle(.menu).tint(.accentColor)
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var socialLinksSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
-            VStack(spacing: 0) {
-                ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
-                            TextField("@username", text: Binding(
-                                get: { socialLinks[idx].handle },
-                                set: { socialLinks[idx].handle = $0 }
-                            ))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
-                            .autocorrectionDisabled().textInputAutocapitalization(.never)
-                        }
-                        Spacer()
-                        Button { socialLinks.remove(at: idx) } label: {
-                            Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
-                        }
+        FormGroup(title: "SOCIAL NETWORKS") {
+            ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
+                HStack(spacing: 12) {
+                    SocialBrandIcon(platform: link.platform, size: 36)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
+                        TextField("@username", text: Binding(
+                            get: { socialLinks[idx].handle },
+                            set: { socialLinks[idx].handle = $0 }
+                        ))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.6))
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                    if idx < socialLinks.count - 1 {
-                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
+                    Spacer()
+                    Button { socialLinks.remove(at: idx) } label: {
+                        Image(systemName: "minus.circle.fill").font(AppFont.scaled(18)).foregroundStyle(.red.opacity(0.8))
                     }
                 }
-                Button {
-                    HapticFeedback.impact(.light)
-                    showAddSocial = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
-                        Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                        Spacer()
-                    }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                if idx < socialLinks.count - 1 {
+                    Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                 }
-                .buttonStyle(.plain)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            Button {
+                HapticFeedback.impact(.light)
+                showAddSocial = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
+                    Text("Add social network").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor)
+                    Spacer()
+                }
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -237,9 +320,9 @@ struct EditFamilyMemberSheet: View {
     private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>,
                           keyboard: UIKeyboardType = .default, autocap: TextInputAutocapitalization = .words) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(color).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)

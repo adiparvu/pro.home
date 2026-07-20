@@ -4,7 +4,6 @@ import Charts
 struct AnalyticsView: View {
     @Environment(FinancialService.self) private var financialService
     @Environment(TaskService.self) private var taskService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @State private var selectedTab: AnalyticsTab = .finances
     @State private var displayedMonth: Date = Calendar.current.startOfMonth(Date())
 
@@ -61,15 +60,6 @@ struct AnalyticsView: View {
                     .padding(.horizontal, AppSpacing.xl)
                     .padding(.top, AppSpacing.xxs)
                     .padding(.bottom, 110)
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("analyticsScroll")).minY)
-                        }
-                    )
-                }
-                .coordinateSpace(name: "analyticsScroll")
-                .onPreferenceChange(ScrollOffsetKey.self) { y in
-                    tabBarVis.scrollOffset = y
                 }
                 .refreshable {
                     await financialService.load()
@@ -79,6 +69,20 @@ struct AnalyticsView: View {
         }
         .navigationTitle("Analytics")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            // Export lives in the existing report builder — one PDF pipeline
+            // for the whole app, never a duplicate exporter per screen. The
+            // report view reads its services from this stack's environment.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    PropertyReportView()
+                } label: {
+                    Image(systemName: "doc.richtext")
+                        .font(AppFont.headline)
+                }
+                .accessibilityLabel("Raport")
+            }
+        }
         .floatingSpeedDial(.analytics)
     }
 }

@@ -18,12 +18,9 @@ struct LanguageSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: String(localized: "language_title"),
-                       subtitle: String(localized: "language_subtitle"))
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
-                    followSystemCard
                     languagePicker
                     restartNotice
                     Spacer(minLength: 110)
@@ -34,52 +31,18 @@ struct LanguageSettingsView: View {
         }
         .id(refreshToken)
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    // MARK: - Follow iOS
-
-    private var followSystemCard: some View {
-        section(title: String(localized: "lang_system_section")) {
-            GlassCard {
-                HStack(spacing: 14) {
-                    iconBadge("globe", tint: Color.brandSkyBlue)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(String(localized: "language_follow_ios"))
-                            .font(AppFont.body)
-                            .foregroundStyle(.primary)
-                        Text(String(localized: "language_follow_ios_desc"))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 8)
-                    Toggle("", isOn: Binding(
-                        get: { appSettings.followSystemLanguage },
-                        set: { on in
-                            HapticFeedback.selection()
-                            if on { appSettings.useSystemLanguage() }
-                            else  { appSettings.setLanguage(appSettings.currentLanguage) }
-                            refreshToken += 1
-                        }
-                    ))
-                    .labelsHidden()
-                    .tint(Color.brandSkyBlue)
-                }
-            }
-        }
+        .navigationTitle("language_title")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - Explicit picker
 
     private var languagePicker: some View {
-        let following = appSettings.followSystemLanguage
-        return section(title: String(localized: "lang_select_section")) {
+        section(title: String(localized: "lang_select_section")) {
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     ForEach(Array(Language.allCases.enumerated()), id: \.element.id) { idx, lang in
-                        languageRow(lang, following: following)
+                        languageRow(lang, following: appSettings.followSystemLanguage)
                         if idx < Language.allCases.count - 1 {
                             Divider()
                                 .overlay(Color.primary.opacity(0.05))
@@ -88,10 +51,6 @@ struct LanguageSettingsView: View {
                     }
                 }
             }
-            // When following iOS, the picker is informational — the toggle drives it.
-            .opacity(following ? 0.5 : 1)
-            .allowsHitTesting(!following)
-            .animation(.smooth(duration: 0.25), value: following)
         }
     }
 
@@ -105,25 +64,25 @@ struct LanguageSettingsView: View {
         } label: {
             HStack(spacing: 14) {
                 Text(lang.flag)
-                    .font(.system(size: 30))
+                    .font(AppFont.scaled(30))
                     .frame(width: 32)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(lang.nativeName)
                         .font(AppFont.body)
                         .foregroundStyle(.primary)
                     Text(lang.localizedName)
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 if isCurrent {
                     if following {
                         Text(String(localized: "lang_follows_ios"))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(.secondary)
                     } else {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 21))
+                            .font(AppFont.scaled(21))
                             .foregroundStyle(Color.accentColor)
                             .transition(.scale.combined(with: .opacity))
                     }
@@ -143,11 +102,11 @@ struct LanguageSettingsView: View {
         GlassCard {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.brandPurple)
                     .padding(.top, 1)
                 Text(String(localized: "lang_instant_rebuild"))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -169,7 +128,7 @@ struct LanguageSettingsView: View {
 
     private func iconBadge(_ systemName: String, tint: Color) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 16, weight: .semibold))
+            .font(AppFont.headline)
             .foregroundStyle(tint)
             .frame(width: 34, height: 34)
             .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))

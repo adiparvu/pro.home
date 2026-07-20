@@ -19,9 +19,10 @@ struct MainTabView: View {
     @State private var elementService = PropertyElementService()
     @State private var zoneService = PropertyZoneService()
     @State private var supplyService = SupplyService()
+    @State private var pantryService = PantryService()
     @State private var receiptService = ReceiptService()
-    @State private var stickerService = StickerService()
     @State private var plantService = PlantService()
+    @State private var calendarEventService = CalendarEventService()
     @State private var deliveryService = DeliveryService()
     @State private var applianceService = ApplianceService()
     @State private var inventoryService = InventoryService()
@@ -32,145 +33,117 @@ struct MainTabView: View {
     @State private var directMessageService = DirectMessageService()
     @State private var presenceService = PresenceService()
     @State private var proactiveEngine = ProactiveEngine()
+    // Shared with SeasonalChecklistView AND the dashboard's seasonal widget —
+    // one overlay store, so a check on the page moves the widget instantly.
+    @State private var seasonalService = SeasonalChecklistService()
+    // Shared between Blueprints (Settings) and Tab 2's floor-plan mode —
+    // ONE geometry source of truth. Loads lazily (first plan-mode entry /
+    // first space page), never in reloadWorld.
+    @State private var floorPlanService = FloorPlanService()
+    @State private var notificationService = NotificationService()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
     @Environment(\.scenePhase) private var scenePhase
+    /// True once reloadWorld has fully hydrated the services. Guards every
+    /// consumer that would misread "not loaded yet" as "empty" — most
+    /// critically the Apple Calendar mirror, whose reconciliation would
+    /// otherwise prune EVERY event on a cold-launch foreground tick and
+    /// recreate them later (a delete+recreate storm that spams every
+    /// participant of a shared PRVIO calendar with "Deleted by …").
+    @State private var worldLoaded = false
 
     var body: some View {
         @Bindable var router = router
         let visibleTabs = AppTab.visible(for: propertyService.myRole)
         return TabView(selection: $router.selectedTab) {
             if visibleTabs.contains(.home) {
-                NavigationStack { DashboardView() }
-                    .tabItem { Image(systemName: "house.fill") }
-                    .tag(AppTab.home)
+                // Family sees the household dashboard; outsiders (tenant) get
+                // the personal space — the family surfaces are RLS-empty for
+                // them, so the dashboard would render broken.
+                NavigationStack(path: path(for: .home)) {
+                    routedRoot {
+                        if propertyService.isFamilyMember {
+                            DashboardView()
+                        } else {
+                            PersonalSpaceHome()
+                        }
+                    }
+                }
+                // Threads-style rounded house (user-decreed, IMG_8595) — a
+                // template vector PDF in Assets, tinted by the tab bar like
+                // any symbol. The SF fallback stays in AppTab.icon.
+                .tabItem { Image("ThreadsHome").accessibilityLabel(Text(verbatim: AppTab.home.label)) }
+                .tag(AppTab.home)
             }
 
             if visibleTabs.contains(.digitalTwin) {
-                NavigationStack { PropertyTabView() }
-                    .tabItem { Image(systemName: "square.stack.3d.up.fill") }
+                NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
+                    // Threads-style outlined grid (approved: the whole bar
+                    // wears one stroke language) — template vector PDF.
+                    .tabItem { Image("ThreadsGrid").accessibilityLabel(Text(verbatim: AppTab.digitalTwin.label)) }
                     .tag(AppTab.digitalTwin)
             }
 
             if visibleTabs.contains(.tasks) {
-                NavigationStack { TasksView() }
-                    .tabItem { Image(systemName: "checklist") }
+                NavigationStack(path: path(for: .tasks)) { routedRoot { TasksView() } }
+                    // Threads-style plus (user-decreed, IMG_8596) — thick
+                    // round-capped strokes, template vector PDF in Assets.
+                    .tabItem { Image("ThreadsPlus").accessibilityLabel(Text(verbatim: AppTab.tasks.label)) }
                     .tag(AppTab.tasks)
                     .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
             }
 
-            NavigationStack {
-                ConversationsView()
-                    .environment(messageService)
-                    .environment(directMessageService)
-                    .environment(presenceService)
-                    .environment(familyService)
-                    .environment(propertyService)
-                    .environment(profileService)
-                    .environment(stickerService)
-                    .environment(tabBarVis)
-                    .environment(router)
+            NavigationStack(path: path(for: .chat)) {
+                routedRoot {
+                    ConversationsView()
+                        .environment(messageService)
+                        .environment(directMessageService)
+                        .environment(presenceService)
+                        .environment(familyService)
+                        .environment(propertyService)
+                        .environment(profileService)
+                        .environment(tabBarVis)
+                        .environment(router)
+                }
             }
-            .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
+            // Threads-style outlined bubble with tail (approved: one stroke
+            // language across the bar) — template vector PDF.
+            .tabItem { Image("ThreadsChat").accessibilityLabel(Text(verbatim: AppTab.chat.label)) }
             .tag(AppTab.chat)
 
-            NavigationStack { SettingsView() }
-                .tabItem { Image(systemName: "person.crop.circle.fill") }
+            NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
+                // Threads-style outlined person (user-decreed, IMG_8597) —
+                // stroked head circle + shoulders arc, template vector PDF.
+                .tabItem { Image("ThreadsPerson").accessibilityLabel(Text(verbatim: AppTab.settings.label)) }
                 .tag(AppTab.settings)
         }
+        // Always-visible bar (user-decreed — no minimize, no scroll hide);
+        // the isHidden toolbar line stays for the one FULL hide — an open
+        // conversation (ChatView).
+        .modifier(SystemTabBarMinimize())
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
-        .fullScreenCover(isPresented: $router.showARIA) {
-            NavigationStack {
-                ARIAView(onDismiss: { router.showARIA = false })
-                    .environment(propertyService)
-                    .environment(familyService)
-                    .environment(profileService)
-                    .environment(taskService)
-            }
+        .fullScreenCover(item: $router.activeCover,
+                         onDismiss: { router.drainPending() }) { destination in
+            routedCover(destination)
         }
-        .sheet(isPresented: $router.showAddTask) { AddTaskView() }
-        .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
-        .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
-        .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
-        .sheet(isPresented: $router.showInventoryView) { NavigationStack { InventoryView() } }
-        .sheet(isPresented: $router.showAddSupply) {
-            AddSupplyItemSheet(list: nil, editingItem: nil)
-                .environment(supplyService)
-                .environment(propertyService)
+        .sheet(item: $router.activeDestination,
+               onDismiss: { router.drainPending() }) { destination in
+            routedSheet(destination)
         }
-        .sheet(isPresented: $router.showWaterPlant) {
-            NavigationStack {
-                PlantsView()
-                    .environment(plantService)
-                    .environment(propertyService)
-            }
-        }
-        .sheet(isPresented: $router.showFamilyChat) {
-            NavigationStack {
-                ConversationsView()
-                    .environment(messageService)
-                    .environment(directMessageService)
-                    .environment(presenceService)
-                    .environment(familyService)
-                    .environment(propertyService)
-                    .environment(profileService)
-                    .environment(stickerService)
-                    .environment(tabBarVis)
-                    .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showDocuments) {
-            NavigationStack {
-                DocumentsView()
-                    .environment(documentService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showFamily) {
-            NavigationStack {
-                FamilyView()
-                    .environment(familyService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showContractors) {
-            NavigationStack {
-                ContractorsView()
-                    .environment(contractorService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showDeliveries) {
-            NavigationStack {
-                DeliveriesView()
-                    .environment(deliveryService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showFinances) {
-            NavigationStack {
-                FinancesView()
-                    .environment(financialService)
-                    .environment(propertyService)
-                    .environment(budgetService)
-                    .environment(currencyService)
-                    .environment(appSettings)
-                    .environment(tabBarVis)
-            }
-            .presentationDragIndicator(.visible)
+        // The scan-landing sheet: reachable ONLY through a scanned QR label
+        // (universal link / prvio:// scheme) — see AppRouter.ScanTarget.
+        .sheet(item: $router.scanLanding,
+               onDismiss: { router.drainPending() }) { target in
+            ScanLandingView(target: target)
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
-            router.showAddTask = true
+            router.activeDestination = .newTask
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonWaterPlants)) { _ in
-            router.showWaterPlant = true
+            router.navigate(to: .plants(id: nil))
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenARIA)) { _ in
-            router.showARIA = true
+            router.navigate(to: .aria)
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenDigitalTwin)) { _ in
             router.selectedTab = .digitalTwin
@@ -187,6 +160,7 @@ struct MainTabView: View {
         .environment(financialService)
         .environment(documentService)
         .environment(notificationScheduler)
+        .environment(notificationService)
         .environment(budgetService)
         .environment(familyService)
         .environment(messageService)
@@ -194,9 +168,10 @@ struct MainTabView: View {
         .environment(elementService)
         .environment(zoneService)
         .environment(supplyService)
+        .environment(pantryService)
         .environment(receiptService)
-        .environment(stickerService)
         .environment(plantService)
+        .environment(calendarEventService)
         .environment(deliveryService)
         .environment(applianceService)
         .environment(inventoryService)
@@ -207,63 +182,23 @@ struct MainTabView: View {
         .environment(directMessageService)
         .environment(presenceService)
         .environment(proactiveEngine)
+        .environment(seasonalService)
+        .environment(floorPlanService)
         .task {
-            // Property + role must resolve first — the tab layout and every
-            // property-scoped load depend on them. Currency + profile are
-            // independent, so they run concurrently with that.
-            async let currency: Void = currencyService.refresh()
-            async let profile: Void = loadProfileAndSettings()
-            await propertyService.load()
-            await propertyService.loadMyRole()
-            redirectIfTabHidden()
-            _ = await (currency, profile)
-
-            // Everything below is independent network I/O. Fanning it out with
-            // async let overlaps the round-trips instead of paying their sum,
-            // which is the single biggest win for cold-start latency.
-            let propId = propertyService.primary?.id
-            async let tasksLoad: Void = taskService.load()
-            async let financialLoad: Void = financialService.load()
-            async let documentsLoad: Void = documentService.load()
-            async let familyLoad: Void = familyService.load()
-            async let contractorLoad: Void = contractorService.load()
-            await tasksLoad; await financialLoad; await documentsLoad
-            await familyLoad; await contractorLoad
-
-            if let propId {
-                async let messagesLoad: Void = messageService.load(propertyId: propId)
-                async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
-                async let suppliesLoad: Void = supplyService.load(propertyId: propId)
-                async let receiptsLoad: Void = receiptService.load(propertyId: propId)
-                async let plantsLoad: Void = plantService.load(propertyId: propId)
-                async let appliancesLoad: Void = applianceService.load(propertyId: propId)
-                async let journalLoad: Void = photoJournalService.load(propertyId: propId)
-                async let paintLoad: Void = paintColorService.load(propertyId: propId)
-                async let valueLoad: Void = propertyValueService.load(propertyId: propId)
-                async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
-                async let budgetLoad: Void = budgetService.load(propertyId: propId)
-                await messagesLoad; await deliveriesLoad; await suppliesLoad
-                await receiptsLoad; await plantsLoad; await appliancesLoad
-                await journalLoad; await paintLoad; await valueLoad
-                await inventoryLoad; await budgetLoad
-            }
-
-            notificationScheduler.registerCategories()
-            await notificationScheduler.reschedule(
-                tasks: taskService.tasks,
-                documents: documentService.documents
-            )
-            writeWidgetSnapshot()
-            updateDynamicShortcuts()
-            await indexSpotlight()
-            await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
-            // Live Activities: property context + the "Start When App Opens" /
-            // "Start on a Schedule" preferences, now that data is loaded.
-            LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
-            LiveActivityService.shared.evaluateAutoStart(
-                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
-            proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
-            ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
+            WatchSyncService.shared.activate()
+            // One socket owner: connect realtime up front (instead of ~8 services
+            // racing connect-on-subscribe) and keep reviving it — supabase-swift's
+            // auto-reconnect is one-shot, so a single failed retry otherwise parks
+            // the socket in .disconnected forever.
+            RealtimeFlightRecorder.shared.startWatchdog()
+            // Now that the user is signed in, make sure the device is registered
+            // for push (requests permission the first time) — without a device
+            // token the backend has nowhere to deliver chat notifications.
+            PushTokenService.ensureRegistered()
+            await reloadWorld(reason: .coldStart)
+            // Reminders checked off while the app was closed complete their
+            // linked tasks now that the task list is loaded.
+            await taskService.syncFromReminders()
         }
         .task {
             // Presence heartbeat: advertise ourselves and refresh members' status
@@ -276,28 +211,46 @@ struct MainTabView: View {
         .onChange(of: scenePhase) { _, phase in
             // Beat immediately on foreground so we don't read as offline after a
             // background gap; drop the live channel while backgrounded.
-            if phase == .active { Task { await pulsePresence() } }
-            else if phase == .background { Task { await presenceService.unsubscribe() } }
-        }
-        .onChange(of: propertyService.primary?.id) { _, newPropId in
-            guard let newPropId else { return }
-            Task {
-                await propertyService.loadMyRole()
-                redirectIfTabHidden()
-                await deliveryService.load(propertyId: newPropId)
-                await supplyService.load(propertyId: newPropId)
-                await receiptService.load(propertyId: newPropId)
-                await plantService.load(propertyId: newPropId)
-                await applianceService.load(propertyId: newPropId)
-                await photoJournalService.load(propertyId: newPropId)
-                await paintColorService.load(propertyId: newPropId)
-                await propertyValueService.load(propertyId: newPropId)
-                await inventoryService.load(propertyId: newPropId)
-                await budgetService.load(propertyId: newPropId)
+            if phase == .active {
+                // Live again — an exit from here on is an unclean one (see
+                // AppDelegate's unclean-exit detector).
+                UserDefaults.standard.set(false, forKey: "prvio.sessionParked")
+                Task { await pulsePresence() }
+                // A reminder ticked in the Reminders app while we were in the
+                // background completes its linked task on return.
+                Task { await taskService.syncFromReminders() }
+                // Any household member who changed their photo while we were
+                // away shows their new avatar the moment we return.
+                MemberDirectory.shared.refreshSoon()
+                // Keep the Apple Calendar mirror current: a deadline that
+                // changed on another device (or a due date that simply passed)
+                // reconciles into the PRVIO calendar on foreground, without the
+                // user having to open the in-app calendar first. NEVER before
+                // the world loaded — a pre-load snapshot is empty and would
+                // prune the whole calendar (see worldLoaded).
+                if HouseCalendarMirror.isEnabled, worldLoaded {
+                    let snapshot = houseAgendaSnapshot()
+                    Task { await HouseCalendarMirror.sync(snapshot) }
+                }
+            }
+            else if phase == .background {
+                // Parked cleanly — a termination from the background is the
+                // normal iOS lifecycle, not a crash.
+                UserDefaults.standard.set(true, forKey: "prvio.sessionParked")
+                Task { await presenceService.unsubscribe() }
+                // Widgets must always show the state you left the app in —
+                // refresh the shared snapshot on every trip to the background.
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()
-                await indexSpotlight()
             }
+        }
+        .onChange(of: propertyService.primary?.id) { _, newPropId in
+            // Switching property is a full context switch: the role, every
+            // property-scoped module, the group chat and the glanceable
+            // surfaces all re-point at the newly selected home — only the
+            // person-level things (profile, appearance, accounts) survive.
+            guard newPropId != nil else { return }
+            Task { await reloadWorld(reason: .propertySwitch) }
         }
         .onChange(of: profileService.profile) { _, profile in
             if let profile, let s = auth.session {
@@ -310,40 +263,153 @@ struct MainTabView: View {
         }
         .onChange(of: auth.session?.user.id) { oldId, newId in
             guard let newId, newId != oldId else { return }
-            Task {
-                await propertyService.load()
-                await taskService.load()
-                await financialService.load()
-                await documentService.load()
-                await familyService.load()
-                await profileService.load(userId: newId)
-                if let profile = profileService.profile {
-                    appSettings.loadFromProfile(profile)
-                }
-                if let propId = propertyService.primary?.id {
-                    await messageService.load(propertyId: propId)
-                }
-                if let propId = propertyService.primary?.id {
-                    await deliveryService.load(propertyId: propId)
-                    await supplyService.load(propertyId: propId)
-                    await receiptService.load(propertyId: propId)
-                    await plantService.load(propertyId: propId)
-                    await applianceService.load(propertyId: propId)
-                    await photoJournalService.load(propertyId: propId)
-                    await paintColorService.load(propertyId: propId)
-                    await propertyValueService.load(propertyId: propId)
-                    await inventoryService.load(propertyId: propId)
-                    await budgetService.load(propertyId: propId)
-                }
-                writeWidgetSnapshot()
-                updateDynamicShortcuts()
-            }
+            Task { await reloadWorld(reason: .accountSwitch(userId: newId)) }
         }
-        .onChange(of: router.selectedTab) { _, _ in
-            tabBarVis.scrollOffset = 0
+        .onReceive(NotificationCenter.default.publisher(for: .prvioOpenChat)) { _ in
+            // A chat push was tapped: land on the chat tab; the conversation
+            // list drains the stored target and opens the right thread.
+            router.selectedTab = .chat
         }
         .onReceive(NotificationCenter.default.publisher(for: .prvioProcessPending)) { _ in
             processPendingIntentActions()
+        }
+    }
+
+    // MARK: - Routed navigation
+    //
+    // The HIG split, wired app-wide: content modules PUSH onto the active
+    // tab's stack (destinations — large title, edge-swipe back), while
+    // self-contained tasks PRESENT (one sheet slot + one cover slot, which
+    // can never race themselves).
+
+    /// Binding into the router's per-tab pushed-pages path.
+    private func path(for tab: AppTab) -> Binding<[AppRouter.RoutedDestination]> {
+        Binding(get: { router.tabPaths[tab] ?? [] },
+                set: { router.tabPaths[tab] = $0 })
+    }
+
+    /// Registers the routed content pages on a tab's stack root.
+    private func routedRoot<Root: View>(@ViewBuilder _ root: () -> Root) -> some View {
+        root().navigationDestination(for: AppRouter.RoutedDestination.self) { destination in
+            routedPage(destination)
+        }
+    }
+
+    /// Content modules, pushed. Services arrive through the environment the
+    /// tab stacks already live in — same as any NavigationLink in the app.
+    @ViewBuilder
+    private func routedPage(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .finances:
+            FinancesView()
+        case .documents:
+            DocumentsView()
+        case .inventory:
+            InventoryView()
+        case .family:
+            FamilyView()
+        case .contractors:
+            ContractorsView()
+        case .deliveries:
+            DeliveriesView()
+        case .supplies:
+            SuppliesView()
+        case .pantry:
+            PantryView()
+        case .cameras:
+            CamerasView()
+        case .paintColors:
+            PaintColorsView()
+        case .photoJournal:
+            PhotoJournalView()
+        case .plants:
+            PlantsView()
+        case .profile:
+            ProfileView()
+        case .emergency:
+            EmergencyModeView()
+        case .iotHub:
+            IoTHubView()
+        case .calendar:
+            CalendarView()
+        case .appliances:
+            AppliancesView()
+        case .seasonal:
+            SeasonalChecklistView()
+        case .propertyDetails:
+            if let pid = propertyService.primary?.id {
+                PropertyDetailView(propertyId: pid)
+            }
+        case .houseFeed:
+            HouseFeedView()
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func routedCover(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .aria:
+            NavigationStack {
+                ARIAView(onDismiss: { router.activeCover = nil })
+                    .environment(propertyService)
+                    .environment(familyService)
+                    .environment(profileService)
+                    .environment(taskService)
+            }
+        // Cameras / scanners present full-screen — a camera must never float as
+        // a sheet with the page showing through behind it. The inventory
+        // scanner also used to stack as a SECOND sheet on top of the inventory
+        // module when opened from Control Center / Shortcuts; full-screen here
+        // (plus a full-screen internal scanner) removes the stacked-sheet look.
+        case .receiptScan:
+            // Camera OCR receipt scanner (its own NavigationStack, with Cancel).
+            // Receipt + property services are required; supply/pantry are read
+            // optionally for shopping-list sync from the ambient environment.
+            ReceiptScannerView()
+                .environment(receiptService)
+                .environment(propertyService)
+        case .inventoryScan:
+            NavigationStack { InventoryView(autoScan: true) }
+        case .inventoryAdd:
+            NavigationStack { InventoryView(autoAdd: true) }
+        default:
+            EmptyView()
+        }
+    }
+
+    /// Self-contained tasks, presented modally (the HIG's modality rule) —
+    /// content modules push via routedPage instead.
+    @ViewBuilder
+    private func routedSheet(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .newTask:
+            AddTaskView()
+        case .addExpense:
+            AddFinancialView { await financialService.load() }
+        case .addSupply:
+            AddSupplyItemSheet(list: nil, editingItem: nil)
+                .environment(supplyService)
+                .environment(propertyService)
+        case .notifications:
+            NavigationStack {
+                NotificationCenterView(service: notificationService)
+                    .environment(auth)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
+        case .notificationsChat:
+            NavigationStack {
+                NotificationCenterView(service: notificationService, initialFilter: "chat")
+                    .environment(auth)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
+        default:
+            // Content modules never land in the sheet slot; ARIA is always
+            // cover-presented (routedCover).
+            EmptyView()
         }
     }
 
@@ -351,6 +417,145 @@ struct MainTabView: View {
 
     /// If the selected tab isn't available to the current role (e.g. a guest on
     /// the Home tab), fall back to Chat, which every role can see.
+    // MARK: - The one startup / context-switch orchestration
+    //
+    // Cold start, property switch and account switch used to carry three
+    // hand-copied ~25-call load blocks that drifted apart (the account path
+    // had quietly lost contractors, Spotlight and notification rescheduling).
+    // One method, one order, three entry reasons — the paths can't diverge.
+
+    private enum ReloadReason {
+        case coldStart
+        case propertySwitch
+        case accountSwitch(userId: UUID)
+    }
+
+    private func reloadWorld(reason: ReloadReason) async {
+        // A context switch empties the services before refilling them — the
+        // mirror (and anything else that treats "empty" as meaningful) must
+        // wait for the refill.
+        worldLoaded = false
+        // Phase 1 — identity: property list + role decide the tab layout and
+        // every property-scoped load below.
+        switch reason {
+        case .coldStart:
+            // Currency + profile are independent; overlap them with the
+            // property resolution.
+            async let currency: Void = currencyService.refresh()
+            async let profile: Void = loadProfileAndSettings()
+            await propertyService.load()
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+            // The tab layout is settled: buffered cold-launch routes (widget
+            // taps, quick actions, deep links) can present without being
+            // overridden by the initial mount.
+            router.markReady()
+            _ = await (currency, profile)
+        case .accountSwitch(let userId):
+            await propertyService.load()
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+            await profileService.load(userId: userId)
+            if let profile = profileService.profile {
+                appSettings.loadFromProfile(profile)
+            }
+        case .propertySwitch:
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+        }
+
+        // Phase 2 — data. Independent network I/O fanned out with async let:
+        // the round-trips overlap instead of paying their sum, and every
+        // service decodes off the main actor (PropertyRepo).
+        let propId = propertyService.primary?.id
+        // ONE round-trip for the whole world (migration 164): the RPC's
+        // slices land in PropertyRepo's cache and every service load below
+        // decodes locally instead of paying its own trip. If the RPC fails,
+        // the loads fan out to the network exactly as before.
+        if let propId { await PropertyRepo.preloadBootstrap(propertyId: propId) }
+        // The seasonal overlay is local (UserDefaults) — pointing it at the
+        // property is synchronous and must precede the widgets' first read.
+        seasonalService.configure(propertyId: propId)
+        // Home presence (wave 3B): point the geofence at the primary home.
+        // The service persists its write context so a background region
+        // relaunch can still record the transition; arming stays gated on
+        // the user's opt-in + Always authorization inside the service.
+        HomePresenceService.shared.configure(
+            propertyId: propId,
+            latitude: propertyService.primary?.latitude,
+            longitude: propertyService.primary?.longitude,
+            userName: profileService.profile?.preferredName
+                ?? profileService.profile?.fullName ?? "")
+        async let tasksLoad: Void = taskService.load()
+        async let financialLoad: Void = financialService.load()
+        async let documentsLoad: Void = documentService.load()
+        async let familyLoad: Void = familyService.load()
+        async let contractorLoad: Void = contractorService.load()
+        async let chatNameLoad: Void = propertyService.loadGroupChatName()
+        await tasksLoad; await financialLoad; await documentsLoad
+        await familyLoad; await contractorLoad; await chatNameLoad
+
+        if let propId {
+            async let messagesLoad: Void = messageService.load(propertyId: propId)
+            async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
+            async let suppliesLoad: Void = supplyService.load(propertyId: propId)
+            async let receiptsLoad: Void = receiptService.load(propertyId: propId)
+            async let plantsLoad: Void = plantService.load(propertyId: propId)
+            async let calendarEventsLoad: Void = calendarEventService.load(propertyId: propId)
+            async let appliancesLoad: Void = applianceService.load(propertyId: propId)
+            async let journalLoad: Void = photoJournalService.load(propertyId: propId)
+            async let paintLoad: Void = paintColorService.load(propertyId: propId)
+            async let valueLoad: Void = propertyValueService.load(propertyId: propId)
+            async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
+            async let budgetLoad: Void = budgetService.load(propertyId: propId)
+            await messagesLoad; await deliveriesLoad; await suppliesLoad
+            await receiptsLoad; await plantsLoad; await calendarEventsLoad
+            await appliancesLoad; await journalLoad; await paintLoad
+            await valueLoad; await inventoryLoad; await budgetLoad
+            // DM conversation heads (one cheap aggregate row per peer) — the
+            // service mirrors them into the watch's DM catalog, so the wrist
+            // inbox exists without the chat tab ever being opened.
+            await directMessageService.refreshHeads(propertyId: propId)
+        }
+
+        // Phase 3 — glanceable surfaces, always in the same order.
+        // The mood engine gets the property's coordinates first (nil is
+        // meaningful: without them Auto honestly follows the clock alone).
+        AppMoodEngine.shared.latitude = propertyService.primary?.latitude
+        AppMoodEngine.shared.longitude = propertyService.primary?.longitude
+        // Apple Weather first (1h App-Group cache) so the snapshot written
+        // below already carries it to the watch.
+        if let lat = propertyService.primary?.latitude,
+           let lon = propertyService.primary?.longitude {
+            await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
+        }
+        notificationScheduler.registerCategories()
+        worldLoaded = true
+        await notificationScheduler.reschedule(agenda: houseAgendaSnapshot())
+        // Mirror from FULL data, exactly once per world load — the foreground
+        // tick above is gated on worldLoaded, so this is the first sync.
+        if HouseCalendarMirror.isEnabled {
+            await HouseCalendarMirror.sync(houseAgendaSnapshot())
+        }
+        writeWidgetSnapshot()
+        updateDynamicShortcuts()
+        await indexSpotlight()
+        await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+        await notificationScheduler.scheduleCelebrations(
+            accountCreatedAt: profileService.profile?.createdAt,
+            birthDate: profileService.profile?.birthDate)
+        await notificationScheduler.scheduleMonthlyRecap()
+        LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
+        if case .coldStart = reason {
+            // "Start When App Opens" belongs to launch, not to context switches.
+            LiveActivityService.shared.evaluateAutoStart(
+                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
+        }
+        proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
+                                records: financialService.records, tasks: taskService.tasks)
+        ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
+    }
+
     private func redirectIfTabHidden() {
         if !AppTab.visible(for: propertyService.myRole).contains(router.selectedTab) {
             router.selectedTab = .chat
@@ -372,6 +577,19 @@ struct MainTabView: View {
         await presenceService.load(propertyId: pid)
     }
 
+    /// The full house agenda (−1…+12 months) built from every in-memory
+    /// service — the single source the Apple Calendar mirror reconciles
+    /// against on foreground, matching the in-app calendar's own window.
+    @MainActor
+    private func houseAgendaSnapshot() -> [AgendaItem] {
+        HouseAgenda.upcomingYear(
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
+    }
+
     private func loadProfileAndSettings() async {
         guard let uid = auth.session?.user.id else { return }
         await profileService.load(userId: uid)
@@ -381,18 +599,24 @@ struct MainTabView: View {
     }
 
     private func writeWidgetSnapshot() {
+        // The wrist mirrors the phone, so it must obey the same role boundary:
+        // an outsider (tenant/guest/worker) gets strictly their own surfaces —
+        // their tasks (already RLS-scoped) and their chat — never the family's
+        // plants, pantry, deliveries, budget, insight, streak or health score.
+        // Defense in depth on top of server RLS, not a substitute for it.
+        let family = propertyService.isFamilyMember
         var snapshot = PRVIOWidgetSnapshot()
         snapshot.overdueTaskCount = taskService.overdueCount
         snapshot.openTaskCount = taskService.tasks.filter { !$0.isCompleted }.count
-        snapshot.plantsNeedingWater = plantService.plantsNeedingWater.count
-        snapshot.plantNames = Array(plantService.plantsNeedingWater.prefix(3).map(\.name))
-        snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
+        snapshot.plantsNeedingWater = family ? plantService.plantsNeedingWater.count : 0
+        snapshot.plantNames = family ? Array(plantService.plantsNeedingWater.prefix(3).map(\.name)) : []
+        snapshot.activeDeliveryCount = family ? deliveryService.activeDeliveries.count : 0
         snapshot.propertyName = propertyService.primary?.name
-        snapshot.pendingSupplyCount = supplyService.totalPending
+        snapshot.pendingSupplyCount = family ? supplyService.totalPending : 0
         snapshot.unreadMessages = propertyService.primary.map {
             messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
         } ?? 0
-        snapshot.propertyHealthScore = propertyService.primary?.healthScore
+        snapshot.propertyHealthScore = family ? propertyService.primary?.healthScore : nil
         snapshot.criticalTaskTitle = taskService.tasks.first { $0.isOverdue && !$0.isCompleted }?.title
         let upcoming = taskService.tasks
             .filter { !$0.isCompleted && !$0.isOverdue && $0.dueDate != nil }
@@ -400,6 +624,17 @@ struct MainTabView: View {
             .first
         snapshot.nextMaintenanceTitle = upcoming?.title
         snapshot.nextMaintenanceDue = upcoming?.dueDateDisplay
+        // The "Upcoming" widget: the next few dated things across every module.
+        // An outsider only ever sees their own tasks — the family's documents,
+        // warranties, birthdays and rents never reach their lock screen.
+        let today = Calendar.current.startOfDay(for: Date())
+        let upcomingAgenda = houseAgendaSnapshot()
+            .filter { !$0.isCompleted && Calendar.current.startOfDay(for: $0.date) >= today }
+        snapshot.upcomingDeadlines = (family ? upcomingAgenda
+                                             : upcomingAgenda.filter { $0.category == .task })
+            .prefix(4)
+            .map { WidgetDeadline(title: $0.title, date: $0.date,
+                                  icon: $0.category.icon, category: $0.category.rawValue) }
         SharedDataStore.write(snapshot)
 
         SharedDataStore.writeTaskCatalog(
@@ -407,14 +642,68 @@ struct MainTabView: View {
                                                      isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) }
         )
         SharedDataStore.writePlantCatalog(
-            plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
+            family ? plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering, healthScore: $0.healthScore) } : []
         )
         SharedDataStore.writeSupplyCatalog(
-            supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }
+            family ? supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) } : []
+        )
+        SharedDataStore.writeDeliveryCatalog(
+            family ? deliveryService.activeDeliveries.map {
+                DeliveryCatalogEntry(id: $0.id, title: $0.description, carrier: $0.carrier,
+                                     status: $0.status, eta: $0.expectedDisplay)
+            } : []
+        )
+        SharedDataStore.writePantryCatalog(
+            family ? pantryService.items.prefix(24).map {
+                PantryCatalogEntry(id: $0.id, name: $0.name, quantity: $0.quantity, unit: $0.unit)
+            } : []
         )
         // Context for in-app intents (Shortcuts "send message to chat").
         SharedDataStore.setContext(propertyId: propertyService.primary?.id,
                                    myName: profileService.profile?.preferredName)
+        // Wrist extras: the property pin, the engine's freshest insight, and
+        // Apple Weather for the property (whatever the cache holds — the
+        // refresh runs in the startup orchestration).
+        // Insight, streak and budget are family intelligence — an outsider's
+        // wrist gets none of them (weather and the property pin stay: they
+        // describe the place the person lives or works at, not the family).
+        let topInsight = family ? proactiveEngine.insights.first { !$0.isDismissed } : nil
+        let weather = PropertyWeather.cached()
+        // The house streak: consecutive verified all-clear days.
+        let streak = family ? SharedDataStore.updateHouseStreak(
+            allClear: snapshot.overdueTaskCount == 0 && snapshot.plantsNeedingWater == 0) : nil
+        // This month's spending for the wrist — household currency only, so
+        // the number is honest (a EUR bill never inflates a RON total).
+        let householdCurrency = financialService.currency
+        let monthSpent = financialService.currentMonthRecords
+            .filter { $0.type == "expense" && $0.currency == householdCurrency }
+            .reduce(0) { $0 + $1.amount }
+        let budgetLimit = budgetService.totalBudget()
+        SharedDataStore.writeWatchExtras(SharedDataStore.WatchExtras(
+            latitude: propertyService.primary?.latitude,
+            longitude: propertyService.primary?.longitude,
+            insightTitle: topInsight?.title,
+            insightBody: topInsight?.body,
+            weatherTemp: weather?.temp,
+            weatherSymbol: weather?.symbol,
+            weatherLo: weather?.lo,
+            weatherHi: weather?.hi,
+            weatherAdvisory: weather?.advisory,
+            streakDays: streak,
+            budgetSpent: (family && !financialService.records.isEmpty) ? monthSpent : nil,
+            budgetLimit: (family && budgetLimit > 0) ? budgetLimit : nil,
+            budgetCurrency: (family && !financialService.records.isEmpty) ? householdCurrency : nil))
+        // Stamp the snapshot with the owning account + role scope so every push
+        // is attributable — the watch clears itself if a payload arrives for a
+        // different (or no) account, and self-limits to personal surfaces for an
+        // outsider. Written before currentWatchPayload() reads it.
+        SharedDataStore.writeAccountStamp(userId: auth.session?.user.id.uuidString,
+                                          isFamily: propertyService.isFamilyMember)
+        // The watch renders the same state the widgets do — one push, in the
+        // same breath as the snapshot write, so the two can never diverge.
+        if let payload = SharedDataStore.currentWatchPayload() {
+            WatchSyncService.shared.push(payload)
+        }
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -429,6 +718,14 @@ struct MainTabView: View {
     }
 
     private func processPendingIntentActions() {
+        // Smart-home commands the watch queued (toggle relay / open garage) —
+        // executed against the real device by IoTService.perform.
+        IoTService.shared.drainPendingWatchCommands()
+        // "Start emergency mode" pinned from the wrist — raise the real
+        // Emergency Live Activity now that the app is foreground.
+        if SharedDataStore.consumePendingEmergencyStart() {
+            LiveActivityService.shared.startEmergency()
+        }
         let waterIds = SharedDataStore.popPendingWaterings()
         for id in waterIds {
             if let plant = plantService.plants.first(where: { $0.id == id }) {
@@ -441,13 +738,150 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
+        let chatReplies = SharedDataStore.popPendingChatReplies()
+        for reply in chatReplies {
+            if let propId = propertyService.primary?.id {
+                let name = profileService.profile?.preferredName
+                    ?? profileService.profile?.fullName ?? ""
+                Task {
+                    do {
+                        // The reply goes to the conversation the push came
+                        // from: "dm:<peer>" → that direct thread;
+                        // "grp:<group>" → that community sub-group; anything
+                        // else → the household chat.
+                        if reply.target.hasPrefix("dm:"),
+                           let peerId = UUID(uuidString: String(reply.target.dropFirst(3))) {
+                            _ = try await directMessageService.send(
+                                propertyId: propId, senderName: name,
+                                to: DMThread(peer: ChatPeer(userId: peerId)),
+                                body: reply.text)
+                        } else if reply.target.hasPrefix("grp:"),
+                                  let groupId = UUID(uuidString: String(reply.target.dropFirst(4))) {
+                            try await ChatGroupService.sendMessage(
+                                propertyId: propId, groupId: groupId,
+                                senderName: name, body: reply.text)
+                        } else {
+                            try await messageService.send(propertyId: propId,
+                                                          senderName: name, body: reply.text)
+                        }
+                    } catch {
+                        // Never lose a notification quick-reply to a silent drop:
+                        // requeue it so the next foreground beat retries, instead
+                        // of the `try?` swallow the send pipeline removed elsewhere.
+                        SharedDataStore.appendPendingChatReply(reply.text, target: reply.target)
+                    }
+                }
+            }
+        }
+        let watchTaskTitles = SharedDataStore.popPendingWatchTasks()
+        for title in watchTaskTitles {
+            if let propId = propertyService.primary?.id {
+                Task {
+                    try? await taskService.addTask(NewTaskPayload(
+                        propertyId: propId, title: title, description: nil,
+                        dueDate: nil, priority: "medium", category: "maintenance",
+                        assigneeIds: [], assigneeNames: []))
+                }
+            }
+        }
         let supplyIds = SharedDataStore.popPendingSupplyChecks()
         for id in supplyIds {
             if let item = supplyService.items.first(where: { $0.id == id }), !item.isCompleted {
                 Task { await supplyService.toggleComplete(item) }
             }
         }
-        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty {
+        // Loans marked returned from the reminder notification (IMG_8612).
+        let loanReturnIds = SharedDataStore.popPendingLoanReturns()
+        for id in loanReturnIds {
+            if let item = inventoryService.items.first(where: { $0.id == id }), item.isLoaned {
+                Task { await inventoryService.markReturned(item) }
+            }
+        }
+        // Deliveries marked received from the Live Activity island.
+        let deliveredIds = SharedDataStore.popPendingDeliveryReceived()
+        for id in deliveredIds {
+            if let delivery = deliveryService.deliveries.first(where: { $0.id == id }),
+               delivery.status != "delivered" {
+                Task { await deliveryService.markDelivered(delivery) }
+            }
+        }
+        // Wrist pantry consumption: every queued tap is one unit off the
+        // stock. Taps on the same item collapse into ONE adjustment — two
+        // separate adjust(-1) calls would both start from the same stale
+        // quantity and lose a unit.
+        let pantryConsumeIds = SharedDataStore.popPendingPantryConsumes()
+        let consumeCounts = Dictionary(pantryConsumeIds.map { ($0, 1) }, uniquingKeysWith: +)
+        for (id, count) in consumeCounts {
+            if let item = pantryService.items.first(where: { $0.id == id }) {
+                Task { await pantryService.adjust(item, by: -Double(count)) }
+            }
+        }
+        // Pantry items the wrist asked to re-buy — one real SupplyService
+        // insert each, into the first shopping list (created if the household
+        // has none yet). Sequential on purpose: parallel inserts with no list
+        // would each create their own. An item already pending on a list is
+        // skipped, so a repeated wrist tap never duplicates a row.
+        let pantryToListIds = SharedDataStore.popPendingPantryToList()
+        if !pantryToListIds.isEmpty, let propId = propertyService.primary?.id {
+            let ownerId = auth.session?.user.id
+            Task {
+                for id in pantryToListIds {
+                    guard let name = pantryService.items.first(where: { $0.id == id })?.name
+                    else { continue }
+                    guard !supplyService.items.contains(where: {
+                        !$0.isCompleted && $0.name.caseInsensitiveCompare(name) == .orderedSame
+                    }) else { continue }
+                    let now = ISO8601DateFormatter().string(from: Date())
+                    do {
+                        let listId: UUID
+                        if let list = supplyService.lists.first {
+                            listId = list.id
+                        } else if let ownerId {
+                            listId = try await supplyService.addList(NewSupplyListPayload(
+                                propertyId: propId, ownerId: ownerId,
+                                name: String(localized: "Shopping list"),
+                                icon: "cart.fill", color: "#3B82F6", note: nil,
+                                createdAt: now, updatedAt: now)).id
+                        } else { continue }
+                        _ = try await supplyService.addItem(NewSupplyItemPayload(
+                            listId: listId, propertyId: propId, name: name,
+                            quantity: nil, category: "food", priority: "medium",
+                            notes: nil, isCompleted: false, location: nil,
+                            createdAt: now, updatedAt: now))
+                    } catch {
+                        // Never lose a wrist request to a network blip —
+                        // requeue for the next foreground beat (same policy
+                        // as the chat-reply drain above).
+                        SharedDataStore.appendPendingPantryToList(id)
+                    }
+                }
+                // The wrist's shopping page repaints from the fresh catalog.
+                writeWidgetSnapshot()
+            }
+        }
+        // The watch's work session, mirrored into the Dynamic Island. This
+        // runs on the foreground beat — exactly when the system allows a
+        // Live Activity to start; the original start date keeps the elapsed
+        // time truthful however late the mirror appears.
+        if let event = SharedDataStore.consumePendingSessionEvent() {
+            if let start = event.start {
+                // Adopt the wrist-started session into the one authority so the
+                // phone's banner/row timer light up with the true elapsed time;
+                // start() also raises the Dynamic Island mirror.
+                WorkSessionStore.shared.start(
+                    taskId: start.taskId, title: start.title, startedAt: start.startedAt)
+            } else if event.isEnd {
+                // Finish from the wrist banks the time and completes the task.
+                if let done = WorkSessionStore.shared.finish(),
+                   let task = taskService.tasks.first(where: { $0.id == done.taskId }),
+                   !task.isCompleted {
+                    Task { await taskService.toggleComplete(task) }
+                }
+            }
+        }
+        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty
+            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty
+            || !deliveredIds.isEmpty {
             writeWidgetSnapshot()
         }
     }

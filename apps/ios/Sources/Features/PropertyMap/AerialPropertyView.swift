@@ -11,8 +11,16 @@ struct AerialPropertyView: View {
     var elements: [PropertyElement] = []
     var cornerRadius: CGFloat = 20
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    /// The Canvas redraws every frame while the timeline runs; pause it the
+    /// moment the illustration is off screen or the scene loses foreground,
+    /// and keep it a still frame under Reduce Motion.
+    @State private var isActive = false
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: false)) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 60,
+                                paused: reduceMotion || !isActive || scenePhase != .active)) { tl in
             let t = tl.date.timeIntervalSinceReferenceDate
             Canvas { ctx, size in
                 AerialRenderer.draw(ctx: ctx, size: size, t: t, zones: zones)
@@ -20,6 +28,8 @@ struct AerialPropertyView: View {
             .scaleEffect(kenBurns(t), anchor: .center)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
+        .onAppear { isActive = true }
+        .onDisappear { isActive = false }
     }
 
     private func kenBurns(_ t: Double) -> CGFloat {

@@ -30,6 +30,7 @@ struct GlobalSearchSheet: View {
     @Environment(PaintColorService.self) private var paintColorService
     @Environment(PhotoJournalService.self) private var photoJournalService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AuthService.self) private var auth
     @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
@@ -164,7 +165,16 @@ struct GlobalSearchSheet: View {
         }
     }
 
+    /// The signed-in account when the query targets its PRVIO ID — the ID is
+    /// a real lookup key, not decoration.
+    private var accountIdMatch: UUID? {
+        guard active, let uid = auth.session?.user.id,
+              AccountID.matches(query, userId: uid) else { return nil }
+        return uid
+    }
+
     private var hasResults: Bool {
+        accountIdMatch != nil ||
         !shortcutResults.isEmpty || !taskResults.isEmpty || !docResults.isEmpty ||
         !plantResults.isEmpty || !deliveryResults.isEmpty || !peopleResults.isEmpty ||
         !financialResults.isEmpty || !elementResults.isEmpty || !applianceResults.isEmpty ||
@@ -191,7 +201,6 @@ struct GlobalSearchSheet: View {
                     }
                 }
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Global Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -201,22 +210,36 @@ struct GlobalSearchSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear { focused = true }
         .task {
-            // Sources that aren't loaded app-wide at launch — hydrate once so
-            // search covers them too. Cheap no-ops when already loaded.
+            // Search must cover EVERYTHING, not just the pages the user
+            // happened to visit this session — hydrate every empty source
+            // concurrently. Cheap no-ops when already loaded.
             guard let pid = propertyService.primary?.id else { return }
-            if contractorService.contractors.isEmpty { await contractorService.load() }
-            if zoneService.zones.isEmpty { await zoneService.load(propertyId: pid) }
-            if paintColorService.colors.isEmpty { await paintColorService.load(propertyId: pid) }
-            if photoJournalService.entries.isEmpty { await photoJournalService.load(propertyId: pid) }
+            await withTaskGroup(of: Void.self) { group in
+                if contractorService.contractors.isEmpty { group.addTask { @MainActor in await contractorService.load() } }
+                if zoneService.zones.isEmpty { group.addTask { @MainActor in await zoneService.load(propertyId: pid) } }
+                if paintColorService.colors.isEmpty { group.addTask { @MainActor in await paintColorService.load(propertyId: pid) } }
+                if photoJournalService.entries.isEmpty { group.addTask { @MainActor in await photoJournalService.load(propertyId: pid) } }
+                if taskService.tasks.isEmpty { group.addTask { @MainActor in await taskService.load() } }
+                if documentService.documents.isEmpty { group.addTask { @MainActor in await documentService.load() } }
+                if financialService.records.isEmpty { group.addTask { @MainActor in await financialService.load() } }
+                if familyService.members.isEmpty { group.addTask { @MainActor in await familyService.load() } }
+                if plantService.plants.isEmpty { group.addTask { @MainActor in await plantService.load(propertyId: pid) } }
+                if deliveryService.deliveries.isEmpty { group.addTask { @MainActor in await deliveryService.load(propertyId: pid) } }
+                if elementService.elements.isEmpty { group.addTask { @MainActor in await elementService.load(propertyId: pid) } }
+                if applianceService.appliances.isEmpty { group.addTask { @MainActor in await applianceService.load(propertyId: pid) } }
+                if supplyService.items.isEmpty { group.addTask { @MainActor in await supplyService.load(propertyId: pid) } }
+                if inventoryService.items.isEmpty { group.addTask { @MainActor in await inventoryService.load(propertyId: pid) } }
+            }
         }
         .task(id: query) {
             // Server-side chat search, debounced.
             guard active, let pid = propertyService.primary?.id else { chatHits = []; return }
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
-            chatHits = (try? await supabase
+            let raw: [ChatSearchHit] = (try? await supabase
                 .from("messages")
                 .select("id, sender_name, body, created_at")
                 .eq("property_id", value: pid.uuidString)
@@ -224,6 +247,18 @@ struct GlobalSearchSheet: View {
                 .order("created_at", ascending: false)
                 .limit(8)
                 .execute().value) ?? []
+            // Structured bodies (shared contacts ride as JSON with a base64
+            // avatar) match almost any substring — keep them only when the
+            // query matches what the user actually sees: names, phones, emails.
+            chatHits = raw.filter { hit in
+                let contacts = SharedContactPayload.decode(hit.body)
+                guard !contacts.isEmpty else { return true }
+                return contacts.contains { c in
+                    c.name.localizedCaseInsensitiveContains(query) ||
+                    c.phones.contains { $0.localizedCaseInsensitiveContains(query) } ||
+                    c.emails.contains { $0.localizedCaseInsensitiveContains(query) }
+                }
+            }
         }
         .sheet(item: $selectedMember) { m in
             MemberProfileSheet(member: m)
@@ -259,7 +294,7 @@ struct GlobalSearchSheet: View {
                 .font(AppFont.subheadline)
                 .foregroundStyle(.secondary)
             TextField("People, tasks, documents, appliances…", text: $query)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .focused($focused)
@@ -267,7 +302,7 @@ struct GlobalSearchSheet: View {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(AppFont.scaled(16))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
@@ -286,13 +321,13 @@ struct GlobalSearchSheet: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 48))
+                .font(AppFont.scaled(48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("Search the entire app")
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tasks · Chat · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries · Contractors · Zones · Paint · Photos")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -305,10 +340,10 @@ struct GlobalSearchSheet: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "questionmark.magnifyingglass")
-                .font(.system(size: 48))
+                .font(AppFont.scaled(48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No results for")
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("\"\(query)\"")
                 .font(AppFont.headline)
@@ -322,7 +357,8 @@ struct GlobalSearchSheet: View {
 
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
+                accountSectionView
                 shortcutsSectionView
                 peopleSectionView
                 chatSectionView
@@ -355,8 +391,7 @@ struct GlobalSearchSheet: View {
         let synonyms: [String]
         let icon: String
         let color: Color
-        let tab: AppTab
-        let extra: ((AppRouter) -> Void)?
+        let route: AppRouter.AppRoute
     }
 
     // swiftlint:disable function_body_length
@@ -370,133 +405,133 @@ struct GlobalSearchSheet: View {
             // ── Main tabs ──────────────────────────────────────────────────────
             AppShortcut(name: "Tasks", subtitle: "All maintenance tasks",
                         synonyms: ["task", "tasks", "sarcini", "sarcina", "checklist", "maintenance", "mentenanta", "mentenanță"],
-                        icon: "checklist", color: .blue, tab: .tasks, extra: nil),
+                        icon: "checklist", color: .blue, route: .tasks(id: nil)),
             AppShortcut(name: "Add Task", subtitle: "Create a new task",
                         synonyms: ["add task", "new task", "sarcina noua", "adauga sarcina"],
-                        icon: "plus.circle.fill", color: .blue, tab: .tasks, extra: { r in r.showAddTask = true }),
+                        icon: "plus.circle.fill", color: .blue, route: .newTask),
             AppShortcut(name: "Chat", subtitle: "House chat",
                         synonyms: ["chat", "mesaje", "messages", "conversatie", "conversație", "house chat"],
-                        icon: "bubble.left.and.bubble.right.fill", color: .blue, tab: .chat, extra: nil),
+                        icon: "bubble.left.and.bubble.right.fill", color: .blue, route: .chat),
             AppShortcut(name: "ARIA", subtitle: "AI assistant",
                         synonyms: ["aria", "chat ai", "ai", "assistant", "asistent", "gpt", "inteligenta artificiala"],
-                        icon: "sparkles", color: purple, tab: .home, extra: { r in r.showARIA = true }),
+                        icon: "sparkles", color: purple, route: .aria),
             AppShortcut(name: "Digital Twin", subtitle: "Property map & zones",
                         synonyms: ["twin", "digital twin", "map", "harta", "hartă", "zone", "zones", "proprietate map"],
-                        icon: "map.fill", color: .teal, tab: .digitalTwin, extra: nil),
+                        icon: "map.fill", color: .teal, route: .twin),
             // ── Home tab sections ──────────────────────────────────────────────
             AppShortcut(name: "Plants", subtitle: "Manage your plants",
                         synonyms: ["plant", "plants", "plante", "planta", "watering", "udare", "flori", "flower"],
-                        icon: "leaf.fill", color: pGreen, tab: .home, extra: { r in r.showWaterPlant = true }),
+                        icon: "leaf.fill", color: pGreen, route: .plants(id: nil)),
             AppShortcut(name: "Finances", subtitle: "Income, expenses & budget",
                         synonyms: ["finance", "finances", "finante", "finanțe", "budget", "buget", "cheltuieli", "venituri", "income", "expenses", "bani", "money"],
-                        icon: "creditcard.fill", color: green, tab: .home, extra: nil),
+                        icon: "creditcard.fill", color: green, route: .home),
             AppShortcut(name: "Budget", subtitle: "Budget planner",
                         synonyms: ["budget", "buget", "planner", "planificare"],
-                        icon: "chart.pie.fill", color: green, tab: .home, extra: nil),
+                        icon: "chart.pie.fill", color: green, route: .home),
             AppShortcut(name: "Mortgage", subtitle: "Mortgage calculator",
                         synonyms: ["mortgage", "ipoteca", "ipotecă", "credit", "loan", "imprumut", "împrumut"],
-                        icon: "building.columns.fill", color: green, tab: .home, extra: nil),
+                        icon: "building.columns.fill", color: green, route: .home),
             AppShortcut(name: "Supplies", subtitle: "Shopping & supply lists",
                         synonyms: ["supply", "supplies", "shopping", "lista", "cumparaturi", "cumpărături", "cart", "cos"],
-                        icon: "cart.fill", color: .cyan, tab: .home, extra: { r in r.showAddSupply = true }),
+                        icon: "cart.fill", color: .cyan, route: .addSupply),
             AppShortcut(name: "Inventory", subtitle: "Home inventory",
                         synonyms: ["inventory", "inventar", "items", "obiecte", "stoc", "lucruri"],
-                        icon: "archivebox.fill", color: .brown, tab: .home, extra: nil),
+                        icon: "archivebox.fill", color: .brown, route: .home),
             AppShortcut(name: "Deliveries", subtitle: "Package tracking",
                         synonyms: ["delivery", "deliveries", "livrare", "livrari", "parcel", "package", "tracking", "colet", "pachet"],
-                        icon: "shippingbox.fill", color: .orange, tab: .home, extra: nil),
+                        icon: "shippingbox.fill", color: .orange, route: .home),
             AppShortcut(name: "Analytics", subtitle: "Stats & property insights",
                         synonyms: ["analytics", "analiza", "analiză", "stats", "statistics", "raport", "report", "insights", "grafice"],
-                        icon: "chart.bar.fill", color: chart, tab: .home, extra: nil),
+                        icon: "chart.bar.fill", color: chart, route: .home),
             AppShortcut(name: "Photo Journal", subtitle: "Property photo diary",
                         synonyms: ["photo", "journal", "jurnal", "foto", "poza", "poze", "picture", "diary"],
-                        icon: "photo.fill", color: .pink, tab: .home, extra: nil),
+                        icon: "photo.fill", color: .pink, route: .home),
             AppShortcut(name: "Paint Colors", subtitle: "Saved paint colors",
                         synonyms: ["paint", "color", "culoare", "vopsea", "culori", "paint colors"],
-                        icon: "paintpalette.fill", color: .pink, tab: .home, extra: nil),
+                        icon: "paintpalette.fill", color: .pink, route: .home),
             AppShortcut(name: "Property Value", subtitle: "Property valuation",
                         synonyms: ["value", "valoare", "valuation", "price", "pret", "preț", "market", "piata"],
-                        icon: "house.fill", color: .indigo, tab: .home, extra: nil),
+                        icon: "house.fill", color: .indigo, route: .home),
             // ── Digital Twin tab sections ──────────────────────────────────────
             AppShortcut(name: "Documents", subtitle: "All your documents",
                         synonyms: ["document", "documents", "documente", "pdf", "file", "fisier", "fișier", "contract", "act"],
-                        icon: "doc.fill", color: .orange, tab: .digitalTwin, extra: nil),
+                        icon: "doc.fill", color: .orange, route: .twin),
             AppShortcut(name: "Appliances", subtitle: "Household appliances",
                         synonyms: ["appliance", "appliances", "electrocasnice", "washer", "fridge", "frigider", "masina spalat"],
-                        icon: "washer.fill", color: .teal, tab: .digitalTwin, extra: nil),
+                        icon: "washer.fill", color: .teal, route: .twin),
             AppShortcut(name: "Blueprints", subtitle: "Floor plans & 3D scans",
                         synonyms: ["blueprint", "blueprints", "plan", "floor plan", "scan", "lidar", "3d", "room scan", "planuri"],
-                        icon: "square.3.layers.3d", color: .indigo, tab: .digitalTwin, extra: nil),
+                        icon: "square.3.layers.3d", color: .indigo, route: .twin),
             AppShortcut(name: "Utilities", subtitle: "Bills & utility readings",
                         synonyms: ["utility", "utilities", "utilitati", "utilități", "bill", "bills", "factura", "facturi", "apa", "gaz", "curent", "electric", "water", "gas"],
-                        icon: "bolt.fill", color: Color(red: 1.0, green: 0.65, blue: 0.15), tab: .digitalTwin, extra: nil),
+                        icon: "bolt.fill", color: Color(red: 1.0, green: 0.65, blue: 0.15), route: .twin),
             AppShortcut(name: "Contractors", subtitle: "Service providers",
                         synonyms: ["contractor", "contractors", "service", "meserias", "meșteșugar", "instalator", "electrician", "provider"],
-                        icon: "wrench.and.screwdriver.fill", color: .orange, tab: .digitalTwin, extra: nil),
+                        icon: "wrench.and.screwdriver.fill", color: .orange, route: .twin),
             AppShortcut(name: "Property Zones", subtitle: "Rooms & outdoor zones",
                         synonyms: ["zone", "zones", "room", "camera", "camere", "baie", "bucatarie", "living", "gradina", "curte", "outdoor"],
-                        icon: "square.grid.2x2.fill", color: .teal, tab: .digitalTwin, extra: nil),
+                        icon: "square.grid.2x2.fill", color: .teal, route: .twin),
             AppShortcut(name: "Property Elements", subtitle: "Doors, windows, structures",
                         synonyms: ["element", "elements", "door", "window", "usa", "fereastra", "structura", "perete"],
-                        icon: "house.fill", color: .indigo, tab: .digitalTwin, extra: nil),
+                        icon: "house.fill", color: .indigo, route: .twin),
             // ── Settings tab ───────────────────────────────────────────────────
             AppShortcut(name: "Settings", subtitle: "All app preferences",
                         synonyms: ["settings", "setari", "setări", "preferences", "config", "configurare", "optiuni", "opțiuni"],
-                        icon: "gearshape.fill", color: gray, tab: .settings, extra: nil),
+                        icon: "gearshape.fill", color: gray, route: .settings),
             AppShortcut(name: "Language", subtitle: "Change app language",
                         synonyms: ["language", "limba", "limbă", "english", "romana", "română", "french", "dutch", "franceza", "olandeza", "traducere"],
-                        icon: "globe", color: .blue, tab: .settings, extra: nil),
+                        icon: "globe", color: .blue, route: .settings),
             AppShortcut(name: "Appearance", subtitle: "Theme, dark mode & accent color",
                         synonyms: ["appearance", "aspect", "theme", "tema", "dark mode", "mod intunecat", "culoare", "accent", "icon", "light mode"],
-                        icon: "paintbrush.fill", color: .pink, tab: .settings, extra: nil),
+                        icon: "paintbrush.fill", color: .pink, route: .settings),
             AppShortcut(name: "Notifications", subtitle: "Push notification settings",
                         synonyms: ["notification", "notifications", "notificari", "notificări", "push", "alert", "alerte", "remind"],
-                        icon: "bell.fill", color: .red, tab: .settings, extra: nil),
+                        icon: "bell.fill", color: .red, route: .settings),
             AppShortcut(name: "Floating Buttons", subtitle: "Customize quick-action buttons",
                         synonyms: ["floating", "button", "buttons", "butoane", "flotante", "speed dial", "quick action", "fab"],
-                        icon: "circle.grid.2x2.fill", color: .purple, tab: .settings, extra: nil),
+                        icon: "circle.grid.2x2.fill", color: .purple, route: .settings),
             AppShortcut(name: "Integrations", subtitle: "Google Calendar & more",
                         synonyms: ["integration", "integrations", "integrari", "integrări", "google", "calendar", "sync", "connect"],
-                        icon: "link", color: .blue, tab: .settings, extra: nil),
+                        icon: "link", color: .blue, route: .settings),
             AppShortcut(name: "Members", subtitle: "Family, invitations & supervision",
                         synonyms: ["family", "familie", "member", "members", "membri", "housemate", "colocatar", "persoane", "invitation", "invitatie", "invitație", "supraveghere", "supervision"],
-                        icon: "person.2.fill", color: .purple, tab: .settings, extra: nil),
+                        icon: "person.2.fill", color: .purple, route: .settings),
             AppShortcut(name: "Custom Integrations", subtitle: "Connect anything with its own key",
                         synonyms: ["custom integration", "integrari personalizate", "webhook", "token", "cheie", "connect anything", "conecteaza orice"],
-                        icon: "sparkles", color: .purple, tab: .settings, extra: nil),
+                        icon: "sparkles", color: .purple, route: .settings),
             AppShortcut(name: "Cross-app Messaging", subtitle: "Messages from other apps into chat",
                         synonyms: ["cross-app", "cross app", "mesaje externe", "external", "gateway", "shortcuts automation", "zapier chat"],
-                        icon: "arrow.left.arrow.right", color: .blue, tab: .settings, extra: nil),
+                        icon: "arrow.left.arrow.right", color: .blue, route: .settings),
             AppShortcut(name: "App Icon", subtitle: "Choose your app icon",
                         synonyms: ["app icon", "icon", "iconita", "iconiță", "pictograma", "logo"],
-                        icon: "app.fill", color: .purple, tab: .settings, extra: nil),
+                        icon: "app.fill", color: .purple, route: .settings),
             AppShortcut(name: "Live Activities", subtitle: "Lock Screen & Dynamic Island",
                         synonyms: ["live activity", "live activities", "dynamic island", "lock screen", "ecran blocare", "activitati live", "activități live"],
-                        icon: "bolt.badge.clock.fill", color: .blue, tab: .settings, extra: nil),
+                        icon: "bolt.badge.clock.fill", color: .blue, route: .settings),
             AppShortcut(name: "Widgets", subtitle: "Home & Lock Screen widgets",
                         synonyms: ["widget", "widgets", "widgeturi", "home screen", "control center"],
-                        icon: "square.grid.2x2", color: .teal, tab: .settings, extra: nil),
+                        icon: "square.grid.2x2", color: .teal, route: .settings),
             AppShortcut(name: "Trusted Contacts", subtitle: "Trusted people for property",
                         synonyms: ["trusted", "contact", "contacts", "incredere", "încredere", "persoane de contact"],
-                        icon: "person.badge.shield.checkmark.fill", color: .purple, tab: .settings, extra: nil),
+                        icon: "person.badge.shield.checkmark.fill", color: .purple, route: .settings),
             AppShortcut(name: "Emergency Contacts", subtitle: "Emergency contact list",
                         synonyms: ["emergency", "urgenta", "urgență", "sos", "ajutor", "help", "ambulanta", "pompieri", "politie"],
-                        icon: "phone.fill", color: .red, tab: .settings, extra: nil),
+                        icon: "phone.fill", color: .red, route: .settings),
             AppShortcut(name: "Security & Privacy", subtitle: "Face ID, app lock, password",
                         synonyms: ["security", "privacy", "securitate", "confidentialitate", "face id", "touch id", "lock", "parola", "password", "pin"],
-                        icon: "lock.shield.fill", color: .green, tab: .settings, extra: nil),
+                        icon: "lock.shield.fill", color: .green, route: .settings),
             AppShortcut(name: "Profile", subtitle: "Edit your profile",
                         synonyms: ["profile", "profil", "name", "nume", "avatar", "photo", "foto", "edit profile"],
-                        icon: "person.circle.fill", color: .blue, tab: .settings, extra: nil),
+                        icon: "person.circle.fill", color: .blue, route: .settings),
             AppShortcut(name: "My Property", subtitle: "Property details & info",
                         synonyms: ["property", "proprietate", "house", "casa", "home", "acasa", "my home", "adresa", "address"],
-                        icon: "house.fill", color: .indigo, tab: .settings, extra: nil),
+                        icon: "house.fill", color: .indigo, route: .settings),
             AppShortcut(name: "Help & FAQ", subtitle: "Help center and FAQ",
                         synonyms: ["help", "faq", "ajutor", "intrebare", "întrebare", "support", "suport", "problem", "problema"],
-                        icon: "questionmark.circle.fill", color: gray, tab: .settings, extra: nil),
+                        icon: "questionmark.circle.fill", color: gray, route: .settings),
             AppShortcut(name: "Sign Out", subtitle: "Log out of your account",
                         synonyms: ["sign out", "logout", "log out", "iesire", "ieșire", "deconecteaza", "deconectează"],
-                        icon: "rectangle.portrait.and.arrow.right", color: .red, tab: .settings, extra: nil),
+                        icon: "rectangle.portrait.and.arrow.right", color: .red, route: .settings),
         ]
     }()
     // swiftlint:enable function_body_length
@@ -516,7 +551,7 @@ struct GlobalSearchSheet: View {
                     resultRow(s.name, subtitle: s.subtitle,
                               icon: s.icon, color: s.color,
                               isLast: idx == shortcutResults.count - 1) {
-                        navigateAway(to: s.tab, action: s.extra)
+                        navigateAway(route: s.route)
                     }
                 }
             }
@@ -524,6 +559,19 @@ struct GlobalSearchSheet: View {
     }
 
     // MARK: - Individual section views
+
+    @ViewBuilder private var accountSectionView: some View {
+        if let uid = accountIdMatch {
+            resultSection("search_sec_account", icon: "person.text.rectangle.fill", color: .indigo) {
+                resultRow(AccountID.display(for: uid),
+                          subtitle: String(localized: "account_id_open_profile"),
+                          icon: "person.crop.circle.fill", color: .indigo,
+                          isLast: true) {
+                    navigateAway(route: .profile)
+                }
+            }
+        }
+    }
 
     @ViewBuilder private var peopleSectionView: some View {
         if !peopleResults.isEmpty {
@@ -546,7 +594,7 @@ struct GlobalSearchSheet: View {
                     resultRow(t.title, subtitle: t.dueDateDisplay,
                               icon: "checklist", color: .blue,
                               isLast: t.id == taskResults.prefix(8).last?.id) {
-                        navigateAway(to: .tasks) { r in r.deepLinkTaskId = t.id }
+                        navigateAway(route: .tasks(id: t.id))
                     }
                 }
             }
@@ -560,7 +608,7 @@ struct GlobalSearchSheet: View {
                     resultRow(d.name, subtitle: d.expiresDisplay ?? String(localized: "No expiry"),
                               icon: "doc.fill", color: .orange,
                               isLast: d.id == docResults.prefix(8).last?.id) {
-                        navigateAway(to: .digitalTwin)
+                        navigateAway(route: .documents(id: nil))
                     }
                 }
             }
@@ -605,7 +653,7 @@ struct GlobalSearchSheet: View {
                     resultRow(f.title, subtitle: f.category,
                               icon: "creditcard.fill", color: green,
                               isLast: f.id == financialResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(route: .finances)
                     }
                 }
             }
@@ -634,7 +682,7 @@ struct GlobalSearchSheet: View {
                     resultRow(s.name, subtitle: s.category,
                               icon: s.categoryIcon, color: s.categoryColor,
                               isLast: s.id == supplyResults.prefix(8).last?.id) {
-                        navigateAway(to: .home) { r in r.showAddSupply = true }
+                        navigateAway(route: .supplies)
                     }
                 }
             }
@@ -675,10 +723,13 @@ struct GlobalSearchSheet: View {
         if !chatHits.isEmpty {
             resultSection("Chat", icon: "bubble.left.and.bubble.right.fill", color: .blue) {
                 ForEach(chatHits) { hit in
-                    resultRow(hit.body ?? "", subtitle: hit.senderName ?? "",
-                              icon: "bubble.left.fill", color: .blue,
+                    let contacts = SharedContactPayload.decode(hit.body)
+                    resultRow(chatDisplayText(hit.body, contacts: contacts),
+                              subtitle: hit.senderName ?? "",
+                              icon: contacts.isEmpty ? "bubble.left.fill" : "person.crop.circle.fill",
+                              color: .blue,
                               isLast: hit.id == chatHits.last?.id) {
-                        navigateAway(to: .chat)
+                        navigateAway(route: .chat)
                     }
                 }
             }
@@ -692,7 +743,7 @@ struct GlobalSearchSheet: View {
                     resultRow(c.name, subtitle: c.category,
                               icon: "wrench.and.screwdriver.fill", color: .orange,
                               isLast: c.id == contractorResults.prefix(8).last?.id) {
-                        navigateAway(to: .digitalTwin) { r in r.showContractors = true }
+                        navigateAway(route: .contractors)
                     }
                 }
             }
@@ -706,7 +757,7 @@ struct GlobalSearchSheet: View {
                     resultRow(z.name, subtitle: z.notes ?? "",
                               icon: z.icon, color: Color(hex: z.colorHex) ?? .teal,
                               isLast: z.id == zoneResults.prefix(8).last?.id) {
-                        navigateAway(to: .digitalTwin)
+                        navigateAway(route: .twin)
                     }
                 }
             }
@@ -721,7 +772,7 @@ struct GlobalSearchSheet: View {
                               icon: "paintpalette.fill",
                               color: Color(hex: p.hexColor ?? "") ?? .pink,
                               isLast: p.id == paintResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(route: .paintColors)
                     }
                 }
             }
@@ -735,11 +786,20 @@ struct GlobalSearchSheet: View {
                     resultRow(e.title, subtitle: e.caption ?? "",
                               icon: "photo.fill", color: .pink,
                               isLast: e.id == journalResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(route: .photoJournal)
                     }
                 }
             }
         }
+    }
+
+    /// A chat body must always read like a message in results — structured
+    /// payloads (shared contacts) render as their human meaning, never as
+    /// wire-format JSON.
+    private func chatDisplayText(_ body: String?, contacts: [SharedContactPayload]) -> String {
+        guard !contacts.isEmpty else { return body ?? "" }
+        let names = contacts.map(\.name).joined(separator: ", ")
+        return String(format: String(localized: "search_shared_contact"), names)
     }
 
     // MARK: - Subtitle helpers (extracted to avoid type-checker timeout)
@@ -767,11 +827,14 @@ struct GlobalSearchSheet: View {
 
     // MARK: - Navigation helper
 
-    private func navigateAway(to tab: AppTab, action: ((AppRouter) -> Void)? = nil) {
-        // Capture router strongly BEFORE dismiss — EnvironmentObject becomes inaccessible once the view is torn down
+    private func navigateAway(route: AppRouter.AppRoute) {
+        // Capture the router strongly BEFORE dismiss — the environment becomes
+        // inaccessible once the view is torn down. The route is parked in
+        // pendingRoute; the presenting sheet's onDismiss drains it once the
+        // dismissal really ends — event-driven, no timers, no dropped sheets.
         let r = router
+        r.pendingRoute = route
         dismiss()
-        Task { try? await Task.sleep(for: .milliseconds(350)); r.selectedTab = tab; action?(r) }
     }
 
     // MARK: - Helpers
@@ -797,14 +860,12 @@ struct GlobalSearchSheet: View {
         Button(action: action) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                            .fill(color.opacity(0.14))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: icon)
-                            .font(AppFont.captionStrong)
-                            .foregroundStyle(color)
-                    }
+                    Image(systemName: icon)
+                        .font(AppFont.captionStrong)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(color)
+                        .frame(width: 30, height: 30)
+                        .glassRoundedRect(AppRadius.sm)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
                             .font(AppFont.footnote)
@@ -812,14 +873,14 @@ struct GlobalSearchSheet: View {
                             .lineLimit(1)
                         if !subtitle.isEmpty {
                             Text(LocalizedStringKey(subtitle))
-                                .font(.system(size: 12))
+                                .font(AppFont.scaled(12))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.22))
                 }
                 .padding(.horizontal, AppSpacing.base)

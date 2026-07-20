@@ -12,22 +12,35 @@ struct ItemDetailView: View {
     @State private var showReturnConfirm = false
     @State private var showHistory = false
     @State private var showPublicContact = false
+    /// In-app preview of the item's live public QR page (IMG_8685) — the
+    /// same real-page preview the Lost & Found card gained in b1165.
+    @State private var showQRPagePreview = false
     @State private var showLocationPicker = false
+    /// Last time SOMEONE opened the public QR page (migration 173) —
+    /// written server-side by the page itself, so it's honest evidence
+    /// the label was actually scanned, not an app-side guess.
+    @State private var lastScanAt: Date?
 
     private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
+                    // Reorganized by usefulness (IMG_8710, approved): hero →
+                    // quick actions → live loan (only while one exists — the
+                    // idle card was dead weight) → photos → details →
+                    // Lost & Found → QR → location/tracker → notes.
                     VStack(spacing: 16) {
                         headerSection
+                        quickActions
+                        if live.isLoaned { loanCard }
+                        InventoryPhotosCard(itemId: live.id)
                         detailsCard
-                        loanCard
+                        publicContactCard
                         qrCard
                         locationTrackerCard
-                        publicContactCard
                         if !live.notes.isEmpty { notesCard }
                         Spacer(minLength: 40)
                     }
@@ -35,6 +48,7 @@ struct ItemDetailView: View {
                 }
             }
             .navigationTitle("Item Detail").navigationBarTitleDisplayMode(.inline)
+            .task(id: live.id) { await loadLastScan() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.foregroundStyle(.primary) }
             }
@@ -51,7 +65,9 @@ struct ItemDetailView: View {
             }
         }
         .sheet(isPresented: $showLoan) {
-            LoanItemSheet { borrower, returnDate in Task { await service.loanOut(live, to: borrower, expectedReturn: returnDate) } }
+            LoanItemSheet(suggestions: service.items.recentBorrowers) { borrower, returnDate in
+                Task { await service.loanOut(live, to: borrower, expectedReturn: returnDate) }
+            }
         }
         .confirmationDialog("Mark as Returned?", isPresented: $showReturnConfirm, titleVisibility: .visible) {
             Button("Yes, mark returned") { HapticFeedback.success(); Task { await service.markReturned(live) } }
@@ -61,23 +77,112 @@ struct ItemDetailView: View {
                 Text("\"\(live.name)\" loaned to \(loan.borrowerName) will be marked as returned.")
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Sections
 
     private var headerSection: some View {
-        VStack(spacing: 10) {
-            ColoredIconBadge(icon: live.categoryIcon, color: live.categoryColor, size: 72)
-            Text(live.name).font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
+        let tint = live.categoryColor
+        let photo = InventoryImageStore.load(for: live.id)
+        return VStack(spacing: 14) {
+            if photo == nil {
+                Image(systemName: live.categoryIcon)
+                    .font(AppFont.scaled(38, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 96, height: 96)
+                    .glassCircle()
+            } else {
+                // The photo IS the hero (approved reorg): content sits at
+                // the bottom over a scrim; the category rides as a chip.
+                Spacer(minLength: 120)
+            }
+
+            Text(live.name)
+                .font(AppFont.scaled(24, weight: .bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2).minimumScaleFactor(0.7)
+
             HStack(spacing: 8) {
                 conditionBadge
-                Text(LocalizedStringKey(live.location.capitalized))
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
+                if photo != nil {
+                    heroChip(InventoryLabels.category(live.category), icon: live.categoryIcon)
+                }
+                if live.purchasePrice > 0 {
+                    heroChip(CurrencyService.money(live.purchasePrice, code: "EUR", whole: true), icon: "eurosign.circle.fill")
+                }
+                if !live.location.isEmpty {
+                    heroChip(InventoryLabels.location(live.location), icon: "mappin.circle.fill")
+                }
             }
         }
-        .padding(.top, AppSpacing.xxs)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .padding(.horizontal, AppSpacing.lg)
+        .background { heroBackground(photo: photo, tint: tint) }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
+        )
+        .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
+    }
+
+    @ViewBuilder
+    private func heroBackground(photo: UIImage?, tint: Color) -> some View {
+        if let photo {
+            ZStack {
+                Image(uiImage: photo).resizable().scaledToFill()
+                LinearGradient(colors: [.black.opacity(0.05), .black.opacity(0.62)],
+                               startPoint: .center, endPoint: .bottom)
+            }
+        } else {
+            LinearGradient(colors: [tint.opacity(0.32), tint.opacity(0.10)],
+                           startPoint: .top, endPoint: .bottom)
+                .overlay(
+                    RadialGradient(colors: [.white.opacity(0.16), .clear],
+                                   center: .top, startRadius: 6, endRadius: 220)
+                )
+        }
+    }
+
+    // MARK: Quick actions (approved reorg — the contact-card circles)
+
+    private var quickActions: some View {
+        HStack(spacing: AppSpacing.md) {
+            Group {
+                if live.isLoaned {
+                    GlassActionButton(icon: "checkmark.circle", label: "inv_qa_return") {
+                        showReturnConfirm = true
+                    }
+                } else {
+                    GlassActionButton(icon: "arrow.uturn.right.circle", label: "inv_qa_loan") {
+                        showLoan = true
+                    }
+                }
+                GlassActionButton(icon: "square.and.arrow.up", label: "inv_qa_share") {
+                    if let img = renderQR() { SystemActions.share([img]) }
+                }
+                GlassActionButton(icon: "location", label: "inv_qa_location") {
+                    showLocationPicker = true
+                }
+                GlassActionButton(icon: "mappin.and.ellipse", label: "inv_qa_public") {
+                    showPublicContact = true
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func heroChip(_ text: String, icon: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(AppFont.scaled(10, weight: .semibold))
+            Text(verbatim: text).font(AppFont.caption)
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
+        .background(.white.opacity(0.12), in: Capsule())
     }
 
     private var conditionBadge: some View {
@@ -94,26 +199,41 @@ struct ItemDetailView: View {
             VStack(spacing: 0) {
                 if !live.brand.isEmpty       { dRow("building.2.fill", "Brand",   live.brand);       rowDiv }
                 if !live.serialNumber.isEmpty { dRow("number", "Serial",           live.serialNumber); rowDiv }
-                if live.purchasePrice > 0    { dRow("eurosign.circle.fill", "Value", "€\(Int(live.purchasePrice))"); rowDiv }
+                if live.purchasePrice > 0    { dRow("eurosign.circle.fill", "Value", CurrencyService.money(live.purchasePrice, code: "EUR", whole: true)); rowDiv }
                 if let pd = live.purchaseDate {
                     dRow("calendar", "Purchased", pd.formatted(date: .abbreviated, time: .omitted))
                     rowDiv
                 }
                 dRow(warrantyIcon, "Warranty", warrantyText, color: warrantyColor)
+                if let receipt = InventoryImageStore.loadReceipt(for: live.id) {
+                    rowDiv
+                    HStack(spacing: 12) {
+                        Image(systemName: "doc.text.image").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+                        Text("inv_receipt").font(AppFont.scaled(14)).foregroundStyle(.primary)
+                        Spacer()
+                        Image(uiImage: receipt)
+                            .resizable().scaledToFill()
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                    }
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                }
                 if !live.loanHistory.isEmpty {
                     rowDiv
-                    Button { withAnimation { showHistory.toggle() } } label: {
+                    Button { withAnimation(AppMotion.state) { showHistory.toggle() } } label: {
                         dRow("clock.arrow.trianglehead.counterclockwise.rotate.90", "Loan History", "\(live.loanHistory.count)")
                     }.buttonStyle(.plain)
                     if showHistory {
                         ForEach(live.loanHistory) { loan in
                             rowDiv
                             HStack(spacing: 12) {
-                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
+                                Image(systemName: "person.fill").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(loan.borrowerName).font(.system(size: 13)).foregroundStyle(.primary)
-                                    Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
-                                        .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                                    Text(loan.borrowerName).font(AppFont.scaled(13)).foregroundStyle(.primary)
+                                    Text(String(format: String(localized: "loan_hist_line"),
+                                                Self.dayCount(loan.daysOut),
+                                                loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-"))
+                                        .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                                 }
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
@@ -127,10 +247,10 @@ struct ItemDetailView: View {
     @ViewBuilder
     private func dRow(_ icon: String, _ label: LocalizedStringKey, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
-            Text(label).font(.system(size: 14)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
-            Text(value).font(.system(size: 13)).foregroundStyle(color)
+            Text(value).font(AppFont.scaled(13)).foregroundStyle(color)
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
@@ -167,21 +287,28 @@ struct ItemDetailView: View {
                     Label("Loan Status", systemImage: "arrow.uturn.right.circle.fill")
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
+                    // Plain-Romanian states — "Împrumutat" / "Disponibil" —
+                    // instead of the cryptic IN/OUT badges.
                     if live.isLoaned {
-                        Text("OUT").font(.system(size: 11, weight: .bold)).foregroundStyle(.orange)
+                        Text("inv_status_loaned").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(.orange)
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
                     } else {
-                        Text("IN").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
-                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
+                        Text("inv_status_available").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.brandSuccess)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color.brandSuccess.opacity(0.15), in: Capsule())
                     }
                 }
                 if let loan = live.currentLoan {
+                    let overdue = loan.expectedReturnDate.map { $0 < Calendar.current.startOfDay(for: Date()) } ?? false
                     VStack(spacing: 6) {
                         loanRow("Borrower", loan.borrowerName)
                         loanRow("Loaned", loan.loanedAt.formatted(date: .abbreviated, time: .omitted))
-                        loanRow("Days out", "\(loan.daysOut) day\(loan.daysOut == 1 ? "" : "s")", highlight: loan.daysOut > 7)
+                        loanRow("Days out", Self.dayCount(loan.daysOut), highlight: loan.daysOut > 7)
                         if let ret = loan.expectedReturnDate {
-                            loanRow("Expected return", ret.formatted(date: .abbreviated, time: .omitted))
+                            loanRow("Expected return",
+                                    overdue
+                                        ? "\(ret.formatted(date: .abbreviated, time: .omitted)) · \(String(localized: "inv_loan_overdue"))"
+                                        : ret.formatted(date: .abbreviated, time: .omitted),
+                                    highlight: overdue, tint: Color.brandDanger)
                         }
                     }
                     .padding(AppSpacing.md).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
@@ -189,9 +316,9 @@ struct ItemDetailView: View {
                     Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
                         Label("Mark as Returned", systemImage: "checkmark.circle.fill")
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                            .foregroundStyle(Color.brandSuccess)
                             .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                            .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color.brandSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
                 } else {
                     Button { HapticFeedback.impact(.medium); showLoan = true } label: {
@@ -205,12 +332,13 @@ struct ItemDetailView: View {
         }
     }
 
-    private func loanRow(_ label: LocalizedStringKey, _ value: String, highlight: Bool = false) -> some View {
+    private func loanRow(_ label: LocalizedStringKey, _ value: String,
+                         highlight: Bool = false, tint: Color = .orange) -> some View {
         HStack {
-            Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            Text(label).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Spacer()
-            Text(value).font(.system(size: 13, weight: highlight ? .semibold : .regular))
-                .foregroundStyle(highlight ? .orange : Color.primary.opacity(AppOpacity.emphasis))
+            Text(value).font(AppFont.scaled(13, weight: highlight ? .semibold : .regular))
+                .foregroundStyle(highlight ? tint : Color.primary.opacity(AppOpacity.emphasis))
         }
     }
 
@@ -220,28 +348,83 @@ struct ItemDetailView: View {
                 HStack {
                     Label("QR Code", systemImage: "qrcode").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
-                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    Text("Scan to identify").font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
-                Button { shareQR() } label: {
-                    Label("Share / Print", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10))
-                }.buttonStyle(.plain)
+                // Two icon-only Liquid Glass actions — Share on the left,
+                // Print on the right. Prominence comes from the native glass
+                // material, not a tinted fill; the glyph carries the meaning.
+                HStack(spacing: AppSpacing.md) {
+                    qrActionButton("square.and.arrow.up",
+                                   label: Locale.appIsRomanian ? "Partajează" : "Share") {
+                        if let img = renderQR() { SystemActions.share([img]) }
+                    }
+                    qrActionButton("printer",
+                                   label: Locale.appIsRomanian ? "Printează" : "Print") {
+                        if let img = renderQR() {
+                            SystemActions.print(image: img,
+                                                jobName: live.name.isEmpty ? "PRVIO" : live.name)
+                        }
+                    }
+                }
+                // The scanned page itself, one tap away (IMG_8685): the LIVE
+                // public page, not a mock — loan status, map, language, all.
+                Button {
+                    HapticFeedback.impact(.light)
+                    showQRPagePreview = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari.fill").font(AppFont.scaled(13))
+                        Text("lost_preview_page").font(AppFont.scaled(13, weight: .medium))
+                    }
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity).frame(height: 40)
+                    .glassCapsule()
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showQRPagePreview) {
+            if let url = URL(string: live.qrContent) {
+                SafariView(url: url).ignoresSafeArea()
             }
         }
     }
 
-    private func shareQR() {
+    private func qrActionButton(_ icon: String, label: String,
+                                _ action: @escaping () -> Void) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            Image(systemName: icon)
+                .font(AppFont.scaled(17, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity).frame(height: 44)
+                .glassCapsule()
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+
+    /// Locale-aware day count ("3 zile", "1 zi", "0 zile") — the b1132
+    /// one-unit style; the hand-built "day\(s)" literal leaked English on
+    /// Romanian devices (IMG_8685: "0 days").
+    private static let dayCountFormatter: DateComponentsFormatter = {
+        let f = DateComponentsFormatter()
+        f.allowedUnits = [.day]
+        f.unitsStyle = .full
+        return f
+    }()
+
+    private static func dayCount(_ days: Int) -> String {
+        dayCountFormatter.string(from: DateComponents(day: days)) ?? "\(days)"
+    }
+
+    private func renderQR() -> UIImage? {
         let renderer = ImageRenderer(content: QRCodeImage(content: live.qrContent, size: 300))
         renderer.scale = 3.0
-        guard let img = renderer.uiImage else { return }
-        let vc = UIActivityViewController(activityItems: [img], applicationActivities: nil)
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let root = scene.windows.first?.rootViewController {
-            root.present(vc, animated: true)
-        }
+        return renderer.uiImage
     }
 
     private var locationTrackerCard: some View {
@@ -251,7 +434,7 @@ struct ItemDetailView: View {
                     Label("Location & Tracker", systemImage: "location.fill")
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
-                    if live.hasLocation { Text("📍").font(.system(size: 14)) }
+                    if live.hasLocation { Text("📍").font(AppFont.scaled(14)) }
                     if !live.trackerType.isEmpty {
                         Text(LocalizedStringKey(live.trackerType == "airtag" ? "AirTag" : live.trackerType.capitalized))
                             .font(AppFont.label).foregroundStyle(.orange)
@@ -277,7 +460,7 @@ struct ItemDetailView: View {
                         }
                     } label: {
                         Label("Open in Maps", systemImage: "map.fill")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity).padding(.vertical, 10)
                             .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
@@ -285,9 +468,9 @@ struct ItemDetailView: View {
                 if !live.trackerIdentifier.isEmpty {
                     HStack {
                         Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                         Text("Tracker: \(live.trackerIdentifier)")
-                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.65))
+                            .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.65))
                         Spacer()
                     }
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
@@ -295,7 +478,7 @@ struct ItemDetailView: View {
                 Button { showLocationPicker = true } label: {
                     Label(LocalizedStringKey(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker"),
                           systemImage: live.hasLocation ? "pencil" : "plus.circle.fill")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -311,29 +494,34 @@ struct ItemDetailView: View {
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.publicProfile != nil {
-                        Text("ON").font(.system(size: 11, weight: .bold))
+                        Text("ON").font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     } else {
-                        Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
+                        Text("OFF").font(AppFont.scaled(11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                 }
                 Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4)).lineSpacing(2)
+                    .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4)).lineSpacing(2)
                 if let p = live.publicProfile {
                     VStack(spacing: 4) {
                         if !p.ownerName.isEmpty    { publicRow("person.fill",  p.ownerName) }
                         if !p.ownerPhone.isEmpty   { publicRow("phone.fill",   p.ownerPhone) }
                         if !p.ownerAddress.isEmpty { publicRow("house.fill",   p.ownerAddress) }
+                        if let scan = lastScanAt {
+                            publicRow("qrcode.viewfinder",
+                                      String(format: String(localized: "inv_last_scan_fmt"),
+                                             scan.formatted(.relative(presentation: .named))))
+                        }
                     }
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
                 Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
                     Label(LocalizedStringKey(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info"),
                           systemImage: live.publicProfile == nil ? "plus.circle.fill" : "pencil")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -341,10 +529,23 @@ struct ItemDetailView: View {
         }
     }
 
+    /// Reads the page's server-written scan timestamp (migration 173).
+    /// Missing row / offline just means the line stays hidden — the page
+    /// only shows evidence it actually has.
+    private func loadLastScan() async {
+        guard live.publicProfile?.isEnabled == true else { lastScanAt = nil; return }
+        struct Row: Decodable { let last_scanned_at: String? }
+        let row: Row? = try? await supabase.from("public_items")
+            .select("last_scanned_at")
+            .eq("item_uuid", value: live.id.uuidString)
+            .single().execute().value
+        lastScanAt = row?.last_scanned_at.flatMap(ISODate.date(from:))
+    }
+
     private func publicRow(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 16)
-            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.65))
+            Image(systemName: icon).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 16)
+            Text(text).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.65))
             Spacer()
         }
     }
@@ -353,7 +554,7 @@ struct ItemDetailView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Notes", systemImage: "note.text").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                Text(live.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
+                Text(live.notes).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.8))
             }
         }
     }

@@ -15,10 +15,13 @@ enum ChatPrefsSync {
         let pinned: Bool
         let muted: Bool
         let archived: Bool
+        /// Optional so rows decode even before migration 119 lands.
+        let manualUnread: Bool?
         let clearedAt: String?
         enum CodingKeys: String, CodingKey {
             case convId = "conv_id"
             case pinned, muted, archived
+            case manualUnread = "manual_unread"
             case clearedAt = "cleared_at"
         }
     }
@@ -28,7 +31,7 @@ enum ChatPrefsSync {
     }
 
     static func upsert(convId: String, pinned: Bool, muted: Bool, archived: Bool,
-                       propertyId: UUID?) async {
+                       manualUnread: Bool, propertyId: UUID?) async {
         guard let uid = supabase.auth.currentSession?.user.id else { return }
         struct Payload: Encodable {
             let user_id: String
@@ -37,10 +40,12 @@ enum ChatPrefsSync {
             let pinned: Bool
             let muted: Bool
             let archived: Bool
+            let manual_unread: Bool
         }
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
-                        pinned: pinned, muted: muted, archived: archived)
+                        pinned: pinned, muted: muted, archived: archived,
+                        manual_unread: manualUnread)
         _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
@@ -57,7 +62,7 @@ enum ChatPrefsSync {
         }
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
-                        cleared_at: ISO8601DateFormatter().string(from: Date()))
+                        cleared_at: ISODate.string(from: Date()))
         _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
@@ -66,30 +71,54 @@ enum ChatPrefsSync {
 enum ChatBlockSync {
     struct BlockRow: Decodable {
         let blockedName: String
-        enum CodingKeys: String, CodingKey { case blockedName = "blocked_name" }
+        /// Stable identity (migration 120); nil only on pre-phase-A rows.
+        let blockedMemberId: UUID?
+        enum CodingKeys: String, CodingKey {
+            case blockedName = "blocked_name"
+            case blockedMemberId = "blocked_member_id"
+        }
     }
 
-    /// Display names the current user has blocked.
-    static func load() async -> Set<String> {
+    struct Blocked {
+        var memberIds: Set<UUID> = []
+        var names: Set<String> = []
+    }
+
+    /// Who the current user has blocked — member ids (rename-proof) plus the
+    /// display names still carried by legacy rows.
+    static func load() async -> Blocked {
         let rows: [BlockRow] = (try? await supabase.from("chat_blocks")
-            .select("blocked_name").execute().value) ?? []
-        return Set(rows.map { $0.blockedName })
+            .select("blocked_name, blocked_member_id").execute().value) ?? []
+        var out = Blocked()
+        for r in rows {
+            if let id = r.blockedMemberId { out.memberIds.insert(id) }
+            out.names.insert(r.blockedName)
+        }
+        return out
     }
 
-    static func block(name: String, myName: String, propertyId: UUID?) async {
+    static func block(member: FamilyMember, myName: String, propertyId: UUID?) async {
         struct Payload: Encodable {
             let blocker_name: String
             let blocked_name: String
+            let blocked_member_id: String
             let property_id: String?
         }
-        let p = Payload(blocker_name: myName, blocked_name: name,
+        // blocker_id is stamped server-side (chat_blocks_fill_ids trigger);
+        // names ride along as display snapshots and for pre-120 clients.
+        let p = Payload(blocker_name: myName, blocked_name: member.name,
+                        blocked_member_id: member.id.uuidString,
                         property_id: propertyId?.uuidString)
         _ = try? await supabase.from("chat_blocks")
             .upsert(p, onConflict: "blocker_name,blocked_name").execute()
     }
 
-    static func unblock(name: String) async {
+    static func unblock(member: FamilyMember) async {
+        // Two keyed deletes: the id form for phase-A rows, the name form for
+        // legacy ones. RLS scopes both to the caller's own blocks.
         _ = try? await supabase.from("chat_blocks")
-            .delete().eq("blocked_name", value: name).execute()
+            .delete().eq("blocked_member_id", value: member.id.uuidString).execute()
+        _ = try? await supabase.from("chat_blocks")
+            .delete().eq("blocked_name", value: member.name).execute()
     }
 }

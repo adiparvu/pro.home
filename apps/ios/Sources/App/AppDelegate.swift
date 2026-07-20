@@ -8,8 +8,46 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        // Crash breadcrumb (the 23:24 SIGABRT, b1066): an ObjC exception on a
+        // non-main thread aborts with only raw offsets in the .ips — useless
+        // without the dSYM. This handler runs BEFORE the abort and captures
+        // the exception name/reason plus `callStackSymbols`, which the
+        // runtime symbolicates with our own function names. The report waits
+        // in UserDefaults; the next launch copies it into the realtime
+        // flight recorder, so the banner's copy action exports it.
+        NSSetUncaughtExceptionHandler { exception in
+            let report = """
+            \(exception.name.rawValue): \(exception.reason ?? "?")
+            \(exception.callStackSymbols.joined(separator: "\n"))
+            """
+            UserDefaults.standard.set(report, forKey: "prvio.lastUncaughtException")
+        }
+        if let pending = UserDefaults.standard.string(forKey: "prvio.lastUncaughtException") {
+            RealtimeFlightRecorder.shared.note("CRASH LAST SESSION:\n\(pending)")
+            debugLog("[Crash] previous session uncaught exception:\n\(pending)")
+            UserDefaults.standard.removeObject(forKey: "prvio.lastUncaughtException")
+        }
+        // Unclean-exit detector (the 07:33 watchdog kill, b1070): SIGKILL —
+        // a hang the termination watchdog ends, a force-quit of a frozen UI —
+        // never reaches the exception handler above, and the .ips carries
+        // only system frames. So: the session marks itself "parked" every
+        // trip to the background and "live" on activation (MainTabView).
+        // Launching while the previous session still reads "live" means it
+        // died mid-foreground — surface it, WITH the last navigation
+        // breadcrumb, so the next freeze names its screen.
+        if UserDefaults.standard.object(forKey: "prvio.sessionParked") != nil,
+           UserDefaults.standard.bool(forKey: "prvio.sessionParked") == false {
+            let lastNav = UserDefaults.standard.string(forKey: "prvio.lastNav") ?? "unknown"
+            RealtimeFlightRecorder.shared.note(
+                "UNCLEAN EXIT last session (hang kill / force-quit while active) · last nav: \(lastNav)")
+            debugLog("[Crash] unclean exit last session · last nav: \(lastNav)")
+        }
+        UserDefaults.standard.set(false, forKey: "prvio.sessionParked")
         ProactiveEngine.registerBackgroundTask()
         ProactiveEngine.scheduleBackgroundRefresh()
+        // Apple's own crash/hang/battery telemetry, persisted on-device —
+        // the measured ground any future self-healing must stand on.
+        MetricsMonitor.shared.start()
         // Ask APNs for a token if the user already granted notifications.
         PushTokenService.registerIfAuthorized()
         // AsyncImage (chat photos, avatars, stickers) loads through
@@ -26,6 +64,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        Task { @MainActor in PushTokenService.logDebug("didRegister", detail: "len=\(deviceToken.count) prefix=\(hex.prefix(8))") }
         Task { await PushTokenService.handle(deviceToken: deviceToken) }
     }
 
@@ -33,9 +73,27 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
+        let ns = error as NSError
+        Task { @MainActor in
+            PushTokenService.logDebug("didFail", detail: "\(ns.domain)#\(ns.code): \(ns.localizedDescription)")
+        }
 #if DEBUG
-        print("[Push] APNs registration failed: \(error)")
+        debugLog("[Push] APNs registration failed: \(error)")
 #endif
+    }
+
+    // Scene-based apps (every SwiftUI app) deliver Home Screen quick actions
+    // to the SCENE delegate, never to the app-delegate callback below — so we
+    // must hand UIKit a scene-delegate class to receive them. SwiftUI keeps
+    // managing the window; the delegate only taps the callbacks.
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        config.delegateClass = QuickActionSceneDelegate.self
+        return config
     }
 
     func application(
@@ -43,18 +101,93 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         performActionFor shortcutItem: UIApplicationShortcutItem,
         completionHandler: @escaping (Bool) -> Void
     ) {
-        // Store for cold-launch case (SwiftUI onReceive may not be registered yet)
-        UserDefaults.standard.set(shortcutItem.type, forKey: "prvio.pendingQuickAction")
-        // Also post immediately for warm-launch (app already running)
-        NotificationCenter.default.post(
-            name: .prvioQuickAction,
-            object: shortcutItem.type
-        )
+        // Legacy path (non-scene delivery) — kept as belt and suspenders.
+        QuickActionSceneDelegate.deliver(shortcutItem.type)
         completionHandler(true)
+    }
+}
+
+/// Owns every external entry point of the scene. Installing a custom scene
+/// delegate also takes URL/activity delivery away from SwiftUI's internal
+/// one, so this class must forward ALL of it — quick actions, prvio:// URLs
+/// (widgets, Control Center controls) and Spotlight/Handoff activities —
+/// through the same pending-key + notification funnel PRVIOApp consumes.
+final class QuickActionSceneDelegate: NSObject, UIWindowSceneDelegate {
+    /// Cold launch: quick action / deep link / activity ride the connection
+    /// options (the per-event callbacks are NOT called for them). Stash them —
+    /// PRVIOApp consumes the pending keys when the scene becomes active, and
+    /// the router buffers routes until MainTabView has mounted.
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions) {
+        if let item = connectionOptions.shortcutItem {
+            UserDefaults.standard.set(item.type, forKey: "prvio.pendingQuickAction")
+        }
+        if let url = connectionOptions.urlContexts.first?.url {
+            UserDefaults.standard.set(url.absoluteString, forKey: "prvio.pendingDeepLink")
+        }
+        if let activity = connectionOptions.userActivities.first {
+            Self.stash(activity)
+        }
+    }
+
+    /// Warm launch: the app is running (or suspended) and the user picked a
+    /// quick action from the icon menu.
+    func windowScene(_ windowScene: UIWindowScene,
+                     performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        Self.deliver(shortcutItem.type)
+        completionHandler(true)
+    }
+
+    /// prvio:// deep links while running — widgets, Control Center controls,
+    /// notification actions.
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let url = URLContexts.first?.url else { return }
+        NotificationCenter.default.post(name: .prvioOpenURL, object: url)
+    }
+
+    /// Spotlight results and Handoff while running.
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        NotificationCenter.default.post(name: .prvioUserActivity, object: userActivity)
+    }
+
+    static func deliver(_ type: String) {
+        // Store for the cold-ish case (SwiftUI onReceive not registered yet)…
+        UserDefaults.standard.set(type, forKey: "prvio.pendingQuickAction")
+        // …and post immediately for the running-app case. PRVIOApp clears the
+        // pending key when it handles either signal.
+        NotificationCenter.default.post(name: .prvioQuickAction, object: type)
+    }
+
+    /// NSUserActivity isn't UserDefaults-friendly; keep just what routing needs.
+    private static func stash(_ activity: NSUserActivity) {
+        // Universal links (scanned QR labels) COLD-LAUNCH through here, not
+        // through scene(_:continue:) — dropping webpageURL made a camera
+        // scan "open just the app" on a cold start (IMG_8728). The
+        // pendingDeepLink stash rides the existing .active drain straight
+        // into handle(deepLink:) → the scan-landing sheet.
+        if activity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = activity.webpageURL {
+            UserDefaults.standard.set(url.absoluteString, forKey: "prvio.pendingDeepLink")
+            return
+        }
+        var payload: [String: String] = ["type": activity.activityType]
+        if let id = activity.userInfo?["kCSSearchableItemActivityIdentifier"] as? String {
+            payload["spotlightId"] = id
+        }
+        if let tab = activity.userInfo?["tab"] as? String {
+            payload["tab"] = tab
+        }
+        UserDefaults.standard.set(payload, forKey: "prvio.pendingActivity")
     }
 }
 
 extension Notification.Name {
     static let prvioQuickAction    = Notification.Name("prvio.quickAction")
     static let prvioProcessPending = Notification.Name("prvio.processPending")
+    static let prvioOpenURL        = Notification.Name("prvio.openURL")
+    static let prvioUserActivity   = Notification.Name("prvio.userActivity")
+    /// A chat push was tapped — switch to the chat tab and open the stored
+    /// ChatNotificationTarget (the conversation list drains it).
+    static let prvioOpenChat       = Notification.Name("prvio.openChat")
 }

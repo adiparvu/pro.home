@@ -3,9 +3,9 @@ import SwiftUI
 
 // MARK: - PRVIO brand widget
 //
-// A simple, premium home-screen shortcut: the PRVIO wordmark on the brand
-// gradient. Tapping it opens the app. Requested as "one that's just the PRVIO
-// name and opens the app."
+// A simple, premium home-screen shortcut: the PRVIO monogram and wordmark
+// centered on black — the composition of a hardware badge, not a data
+// widget. Tapping it opens the app.
 
 struct BrandWidget: Widget {
     let kind = "BrandWidget"
@@ -26,73 +26,47 @@ private struct BrandWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        Group {
-            if family == .systemMedium { medium } else { small }
-        }
-        .containerBackground(for: .widget) {
-            LinearGradient(
-                colors: [Color(red: 0.16, green: 0.36, blue: 0.78),
-                         Color(red: 0.42, green: 0.24, blue: 0.72)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var small: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        // Everything centered on black: logo above, wordmark and tagline
+        // beneath, the composition sitting in the optical middle.
+        VStack(spacing: family == .systemMedium ? 10 : 8) {
             glyph
-            Spacer(minLength: 6)
             wordmark
-            tagline
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(4)
-    }
-
-    private var medium: some View {
-        HStack(spacing: 16) {
-            glyph
-            VStack(alignment: .leading, spacing: 4) {
-                wordmark
-                tagline
-                if let name = snapshot.propertyName, !name.isEmpty {
-                    Text(name)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
-                        .lineLimit(1)
-                        .padding(.top, 2)
-                }
+        .multilineTextAlignment(.center)
+        // Center the badge both axes in every family; an explicit alignment so
+        // the wordmark never settles to a corner regardless of family sizing.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .containerBackground(for: .widget) {
+            // Near-black with a faint crown of light so the panel reads as a
+            // material, not a hole in the wallpaper.
+            ZStack {
+                Color.black
+                RadialGradient(colors: [.white.opacity(0.07), .clear],
+                               center: .top, startRadius: 0, endRadius: 200)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(4)
     }
 
     private var glyph: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(.white.opacity(0.16))
-                .frame(width: 52, height: 52)
-            Image(systemName: "house.fill")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
-        }
+        // The monogram stands on its own — no plate behind it. Accentable so
+        // the iOS 18 tinted Home Screen paints the mark in the user's tint
+        // (the black plate is a containerBackground, removed by the system).
+        Image("BrandMark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: family == .systemMedium ? 56 : 48,
+                   height: family == .systemMedium ? 56 : 48)
+            .foregroundStyle(.white)
+            .widgetAccentable()
     }
 
     private var wordmark: some View {
         Text("PRVIO")
-            .font(.system(size: 26, weight: .heavy, design: .rounded))
-            .tracking(1.5)
+            .font(AppFont.scaled(24, weight: .heavy, design: .rounded))
+            .tracking(2)
             .foregroundStyle(.white)
+            .widgetAccentable()
     }
 
-    private var tagline: some View {
-        Text(NSLocalizedString("widget_brand_tagline", comment: ""))
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(0.5)
-            .foregroundStyle(.white.opacity(0.7))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-    }
 }

@@ -80,15 +80,19 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             shortTitle: "Chat",
             systemImageName: "message.fill"
         )
+        // Note: Apple caps a provider at 10 App Shortcuts. The garage control
+        // takes the slot the redundant "Open PRVIO dashboard" phrase held —
+        // tapping the app icon already opens the dashboard, and OpenDashboard-
+        // Intent remains usable from the Shortcuts app.
         AppShortcut(
-            intent: OpenDashboardIntent(),
+            intent: OpenGarageIntent(),
             phrases: [
-                "Open \(.applicationName)",
-                "Open \(.applicationName) home",
-                "Show \(.applicationName) dashboard"
+                "Open the garage in \(.applicationName)",
+                "\(.applicationName) open the garage",
+                "Open the gate in \(.applicationName)"
             ],
-            shortTitle: "Open PRVIO",
-            systemImageName: "house.fill"
+            shortTitle: "Open Garage",
+            systemImageName: "door.garage.open"
         )
         AppShortcut(
             intent: AskARIAIntent(),
@@ -113,6 +117,34 @@ struct OpenDashboardIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         SharedDataStore.setIntentFlag("prvio.intent.openDashboard")
         return .result()
+    }
+}
+
+// MARK: - Siri: open the garage
+//
+// Lives here in the app-only shortcuts file, NOT in ControlIntents.swift —
+// that file is also compiled into the widget extension, which does not link
+// IoTService, so referencing it there breaks the extension build. "Hey Siri,
+// open the garage" resolves the first cover actuator in the user's own smart
+// home and issues the real open command through the same IoTService.perform
+// the app and watch use. No cover configured → an honest spoken "nothing to
+// open", never a fake success.
+
+struct OpenGarageIntent: AppIntent {
+    static let title: LocalizedStringResource = "Open the garage"
+    static let description = IntentDescription(
+        "Opens the first garage or gate in your PRVIO smart home.")
+    // The device write is a network call — it doesn't need the app on screen.
+    static var openAppWhenRun: Bool { false }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let covers = IoTService.shared.actuators.filter { $0.kind == .cover }
+        guard let cover = covers.first else {
+            return .result(dialog: "There's no garage or gate set up in PRVIO.")
+        }
+        IoTService.shared.perform(.open, on: cover)
+        return .result(dialog: "Opening \(cover.name).")
     }
 }
 

@@ -6,14 +6,28 @@ import PhotosUI
 struct PropertySettingsView: View {
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
+    @State private var showPassport = false
+    @State private var searchText = ""
+
+    private var filteredProperties: [PropertyModel] {
+        propertyService.properties.filter {
+            $0.name.matchesSearch(searchText) ||
+            $0.addressLine1.matchesSearch(searchText) ||
+            $0.city.matchesSearch(searchText) ||
+            $0.propertyType.matchesSearch(searchText) ||
+            ($0.healthScore.map(String.init) ?? "").matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
                 if propertyService.properties.isEmpty {
                     emptyState
+                } else if !searchText.isEmpty && filteredProperties.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else {
-                    ForEach(propertyService.properties) { p in
+                    ForEach(filteredProperties) { p in
                         NavigationLink {
                             PropertyDetailView(propertyId: p.id)
                                 .environment(propertyService)
@@ -30,18 +44,33 @@ struct PropertySettingsView: View {
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            if propertyService.primary != nil {
+                // The dossier: everything the property has become,
+                // as one shareable PDF.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showPassport = true } label: {
+                        Image(systemName: "doc.richtext")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityLabel(Text("passport_title"))
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add property")
             }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }
+        .sheet(isPresented: $showPassport) { PropertyPassportSheet() }
         .alert("Error", isPresented: Binding(
             get: { propertyService.error != nil },
             set: { if !$0 { propertyService.error = nil } }
@@ -61,10 +90,10 @@ struct PropertySettingsView: View {
                 propertyThumb(p)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(p.name)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(AppFont.scaled(17, weight: .bold))
                         .foregroundStyle(.primary)
                     Text("\(p.addressLine1), \(p.city)")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.55))
                         .lineLimit(1)
                     HStack(spacing: 8) {
@@ -75,7 +104,7 @@ struct PropertySettingsView: View {
                             .background(.blue.opacity(0.15), in: Capsule())
                         if let score = p.healthScore {
                             HStack(spacing: 3) {
-                                Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(.red.opacity(0.7))
+                                Image(systemName: "heart.fill").font(AppFont.scaled(9)).foregroundStyle(.red.opacity(0.7))
                                 Text("\(score)").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.6))
                             }
                         }
@@ -83,7 +112,7 @@ struct PropertySettingsView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
         }
@@ -92,7 +121,7 @@ struct PropertySettingsView: View {
     @ViewBuilder
     private func propertyThumb(_ p: PropertyModel) -> some View {
         if let urlStr = p.photoUrl, let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                 else { thumbPlaceholder }
             }
@@ -108,7 +137,7 @@ struct PropertySettingsView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
             Image(systemName: "house.fill")
-                .font(.system(size: 24, weight: .semibold))
+                .font(AppFont.scaled(24, weight: .semibold))
                 .foregroundStyle(.white)
         }
     }
@@ -116,41 +145,13 @@ struct PropertySettingsView: View {
     // MARK: - Empty
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             Spacer(minLength: 60)
-            Image(systemName: "house.circle")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text("No property found")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.55))
-            Text("Your property data will appear here once it's configured.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.38))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            EmptyStateView(
+                icon: "house.circle",
+                title: "No property found",
+                message: "Your property data will appear here once it's configured."
+            )
         }
-    }
-}
-
-// MARK: - Detail row (shared with PropertyDetailView)
-
-struct PropDetailRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Spacer()
-            Text(value)
-                .font(AppFont.footnote)
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, AppSpacing.md)
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
     }
 }

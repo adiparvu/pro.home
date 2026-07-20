@@ -86,6 +86,10 @@ struct IoTSensor: Identifiable, Codable {
     var alertMax: Double?
     var modbusAddress: Int?
     var modbusScale: Double = 1.0
+    /// User-set tag: this power/energy sensor measures production (solar
+    /// inverter output) rather than consumption. Optional so sensor records
+    /// saved before the field existed still decode.
+    var isProduction: Bool?
 
     enum SensorType: String, Codable, CaseIterable {
         case temperature, humidity, motion, doorWindow
@@ -176,6 +180,104 @@ struct IoTSensor: Identifiable, Codable {
         if let max = alertMax, v > max { return true }
         return false
     }
+
+    /// What the Live Activity layer treats as "alerting": a crossed
+    /// user-set threshold, or a binary hazard sensor reporting positive
+    /// (smoke needs no threshold to be an alarm).
+    var isLiveAlerting: Bool {
+        if isAlerting { return true }
+        if type == .smoke, let v = value, v > 0.5 { return true }
+        return false
+    }
+
+    /// Hazard classes get the critical (red, alerting) treatment; everything
+    /// else is a warning.
+    var isCriticalAlert: Bool {
+        isLiveAlerting && (type == .smoke || type == .gas || type == .water)
+    }
+
+    /// Eligible for the energy dashboard (instantaneous draw in watts).
+    var isPowerReading: Bool { type == .power }
+
+    /// A durable, installation-local identity for binding this sensor to a
+    /// plant (Plant OS P3). Sensors are persisted client-side (UserDefaults
+    /// JSON), not in a synced table, and the poller matches a sensor by
+    /// (deviceId, remoteId) — updating it in place — so that tuple, not the
+    /// random `id` (which is regenerated if a sensor is deleted and later
+    /// rediscovered), is the stable key. Format: "{deviceId-uuid}:{remoteId}".
+    var stableRef: String { "\(deviceId.uuidString):\(remoteId)" }
+}
+
+// MARK: - Actuator
+//
+// The write half of the IoT layer: a relay or a cover (garage door, gate)
+// the controller can drive. Commands are capability-gated per kind — the UI
+// never renders a button the actuator didn't declare.
+
+struct IoTActuator: Identifiable, Codable {
+    var id: UUID = UUID()
+    var deviceId: UUID
+    /// Identifier the controller firmware knows ("garage", relay index…).
+    var remoteId: String
+    var name: String
+    var kind: ActuatorKind
+    /// Last commanded relay state (best-effort; nil until first command).
+    var isOn: Bool?
+    /// Modbus target: coil address for relays (FC 05), holding register for
+    /// covers (FC 06, value 1 = open / 2 = close / 0 = stop).
+    var modbusAddress: Int?
+    /// Optional door/window sensor that confirms a cover's real end state —
+    /// without it the app only ever claims "command finished", never "open".
+    var feedbackSensorId: UUID?
+
+    enum ActuatorKind: String, Codable, CaseIterable, Identifiable {
+        case relay, cover
+        var id: String { rawValue }
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .relay: return "iot_actuator_relay"
+            case .cover: return "iot_actuator_cover"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .relay: return "power"
+            case .cover: return "door.garage.closed"
+            }
+        }
+        var commands: [ActuatorCommand] {
+            switch self {
+            case .relay: return [.turnOn, .turnOff]
+            case .cover: return [.open, .close, .stop]
+            }
+        }
+    }
+}
+
+enum ActuatorCommand: String, Codable, CaseIterable {
+    case turnOn = "on"
+    case turnOff = "off"
+    case open, close, stop
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .turnOn:  return "iot_cmd_on"
+        case .turnOff: return "iot_cmd_off"
+        case .open:    return "iot_cmd_open"
+        case .close:   return "iot_cmd_close"
+        case .stop:    return "iot_cmd_stop"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .turnOn:  return "power.circle.fill"
+        case .turnOff: return "power.circle"
+        case .open:    return "arrow.up.circle.fill"
+        case .close:   return "arrow.down.circle.fill"
+        case .stop:    return "stop.circle.fill"
+        }
+    }
 }
 
 // MARK: - Automation
@@ -202,11 +304,15 @@ struct IoTAutomation: Identifiable, Codable {
         case sendNotification = "Send Notification"
         case createTask       = "Create Task"
         case callWebhook      = "Call Webhook"
+        /// POSTs the sensor event to the account's iot-event webhook — the
+        /// same endpoint a controller can call directly with the app closed.
+        case phoneAlert       = "Phone Alert"
         var icon: String {
             switch self {
             case .sendNotification: return "bell.fill"
             case .createTask:       return "checklist"
             case .callWebhook:      return "arrow.up.circle.fill"
+            case .phoneAlert:       return "iphone.radiowaves.left.and.right"
             }
         }
     }
@@ -214,4 +320,28 @@ struct IoTAutomation: Identifiable, Codable {
     var conditionDescription: String {
         "\(triggerSensorName) \(condition.rawValue) \(String(format: "%.1f", triggerValue))"
     }
+}
+
+// MARK: - Plant automation bridge (Plant OS P6)
+//
+// The transient, engine-side shape of a per-plant automation rule. Per-plant
+// rules are persisted server-side (`plant_automations`) as the household-synced
+// source of truth; `PlantAutomationService` resolves each active rule's bound
+// sensor to a live sensor on THIS device and hands the resolved rules to
+// `IoTService`, which evaluates them on every sensor poll using the SAME firing
+// path as native IoT automations. A rule whose sensor is not present locally is
+// simply never resolved into one of these — so it is never fired here, and the
+// UI can say so honestly (no fabricated reading).
+struct IoTPlantRule: Identifiable {
+    let id: UUID              // the plant_automations row id (stable across polls)
+    let plantId: UUID
+    let name: String
+    let triggerSensorId: UUID // resolved live sensor on this device
+    let condition: IoTAutomation.TriggerCondition
+    let threshold: Double
+    let action: IoTAutomation.AutomationAction
+    let payload: String
+    /// Resolved real relay actuator to drive when the rule fires, if any. Only
+    /// ever set when a matching actuator actually exists on this device.
+    let actuatorId: UUID?
 }

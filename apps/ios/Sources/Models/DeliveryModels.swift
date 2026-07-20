@@ -10,13 +10,38 @@ struct Delivery: Identifiable, Codable, Hashable {
     var notes: String?
     var createdAt: String?
 
+    // Live courier tracking (aggregator-driven). All normalized + provider-
+    // agnostic: the app never sees Ship24/AfterShip payloads, only these fields
+    // written by the tracking webhook. Optional so decoding is safe whether or
+    // not the tracking migration has been applied yet.
+    var trackerId: String?
+    var courierCode: String?
+    var liveStatus: String?          // pending / info_received / in_transit / out_for_delivery / available_for_pickup / delivered / exception / failed_attempt / expired
+    var estimatedDelivery: String?
+    var checkpoints: [TrackingCheckpoint]?
+    var lastEventAt: String?
+    var trackingEnabled: Bool?
+
     enum CodingKeys: String, CodingKey {
         case id, description, notes, status
         case carrier
-        case trackingNumber = "tracking_number"
-        case expectedDate   = "expected_date"
-        case createdAt      = "created_at"
+        case trackingNumber    = "tracking_number"
+        case expectedDate      = "expected_date"
+        case createdAt         = "created_at"
+        case trackerId         = "tracker_id"
+        case courierCode       = "courier_code"
+        case liveStatus        = "live_status"
+        case estimatedDelivery = "estimated_delivery"
+        case checkpoints
+        case lastEventAt       = "last_event_at"
+        case trackingEnabled   = "tracking_enabled"
     }
+
+    /// Event timeline, newest first (empty until the webhook fills it).
+    var liveCheckpoints: [TrackingCheckpoint] { checkpoints ?? [] }
+
+    /// True once the aggregator is tracking this parcel.
+    var isLiveTracked: Bool { trackerId != nil }
 
     // MARK: Computed
 
@@ -57,15 +82,64 @@ struct Delivery: Identifiable, Codable, Hashable {
         status == "expected" || status == "out_for_delivery"
     }
 
+    // MARK: Live journey (progress stepper)
+    //
+    // Four milestones every parcel passes through, derived from the live
+    // tracking status when the aggregator is following it, otherwise from the
+    // manual status. The bar fills up to `progressStage`.
+    static let journeyStages = 4  // Info received → In transit → Out for delivery → Delivered
+
+    /// 0…3 — how far along the journey this parcel is.
+    var progressStage: Int {
+        switch liveStatus ?? status {
+        case "delivered":                            return 3
+        case "out_for_delivery", "available_for_pickup": return 2
+        case "in_transit":                           return 1
+        default:                                     return 0  // pending / info_received / expected
+        }
+    }
+
+    /// A problem on the way — the bar turns to a warning instead of progress.
+    var hasException: Bool {
+        switch liveStatus ?? status {
+        case "exception", "failed_attempt", "expired", "missed", "returned": return true
+        default: return false
+        }
+    }
+
+    /// The most precise arrival estimate available: the courier's own ETA when
+    /// live-tracked, otherwise the expected date the user entered.
+    var etaDisplay: String? {
+        if let e = estimatedDelivery, let d = AppDate.day(from: e) {
+            if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
+            if Calendar.current.isDateInTomorrow(d) { return String(localized: "Tomorrow") }
+            return AppDate.monthDay.string(from: d)
+        }
+        return expectedDisplay
+    }
+
+    /// The live status phrase to show while tracked ("In transit", "Out for
+    /// delivery"…), or nil to fall back to the manual status pill.
+    var liveStatusLabel: String? {
+        guard let live = liveStatus else { return nil }
+        switch live {
+        case "pending", "info_received":   return String(localized: "deliv_live_info")
+        case "in_transit":                 return String(localized: "deliv_live_transit")
+        case "out_for_delivery":           return String(localized: "Out for delivery")
+        case "available_for_pickup":       return String(localized: "deliv_live_pickup")
+        case "delivered":                  return String(localized: "Delivered")
+        case "exception", "failed_attempt": return String(localized: "deliv_live_exception")
+        case "expired":                    return String(localized: "deliv_live_expired")
+        default:                           return nil
+        }
+    }
+
     var expectedDisplay: String? {
         guard let ds = expectedDate else { return nil }
-        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-        guard let d = fmt.date(from: ds) else { return ds }
-        let out = DateFormatter()
+        guard let d = AppDate.day(from: ds) else { return ds }
         if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
         if Calendar.current.isDateInTomorrow(d) { return String(localized: "Tomorrow") }
-        out.dateFormat = "d MMM"
-        return out.string(from: d)
+        return AppDate.monthDay.string(from: d)
     }
 
     static var statusOptions: [(id: String, label: String)] {[
@@ -76,7 +150,52 @@ struct Delivery: Identifiable, Codable, Hashable {
         ("returned",         String(localized: "Returned")),
     ]}
 
-    static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Altul"]
+    static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Poșta Română","Altul"]
+
+    /// Best-effort carrier from a tracking number's format — but only when the
+    /// format is DISTINCTIVE enough to be sure. Ambiguous all-numeric codes
+    /// (most Romanian couriers) return nil rather than a wrong guess, so the
+    /// prefill never misleads.
+    static func detectCarrier(from raw: String) -> String? {
+        let t = raw.uppercased().filter { !$0.isWhitespace }
+        guard t.count >= 8 else { return nil }
+        // UPS: "1Z" + 16 alphanumerics.
+        if t.range(of: "^1Z[0-9A-Z]{16}$", options: .regularExpression) != nil { return "UPS" }
+        // DHL express / eCommerce prefixes.
+        if t.hasPrefix("JJD") || t.hasPrefix("JD") || t.hasPrefix("GM") { return "DHL" }
+        // Universal Postal Union S10 ending in RO → Poșta Română.
+        if t.range(of: "^[A-Z]{2}[0-9]{9}RO$", options: .regularExpression) != nil { return "Poșta Română" }
+        return nil
+    }
+}
+
+/// One normalized event in a parcel's tracking history. Shape matches the JSON
+/// the tracking webhook writes into `packages.checkpoints` — never a courier's
+/// own format, so the provider can change without touching this.
+struct TrackingCheckpoint: Codable, Hashable, Identifiable {
+    var time: String?
+    var status: String?
+    var message: String?
+    var location: String?
+    var milestone: String?
+
+    var id: String { "\(time ?? "")-\(status ?? "")-\(location ?? "")" }
+
+    var date: Date? { time.flatMap { ISODate.date(from: $0) } }
+}
+
+/// Per-property forwarding address for auto-importing deliveries from shipping
+/// emails. The token is the local-part of the address (`<token>@<domain>`).
+struct ParcelInbox: Identifiable, Codable, Hashable {
+    var id: UUID
+    var propertyId: UUID
+    var token: String
+    var active: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, token, active
+        case propertyId = "property_id"
+    }
 }
 
 struct NewDelivery: Encodable {

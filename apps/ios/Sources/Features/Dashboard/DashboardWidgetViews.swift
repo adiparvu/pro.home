@@ -10,9 +10,13 @@ struct WeatherWidget: View {
 
     @State private var weatherService = WeatherKitService.shared
     @State private var shimmer = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
             TimelineView(.everyMinute) { ctx in
                 ZStack {
                     LinearGradient(
@@ -31,7 +35,7 @@ struct WeatherWidget: View {
                             Image(systemName: weatherService.currentWeather != nil
                                   ? weatherService.conditionSymbol
                                   : weatherIcon(for: ctx.date))
-                                .font(.system(size: 44, weight: .light))
+                                .font(AppFont.scaled(44, weight: .light))
                                 .foregroundStyle(.white)
                                 .symbolEffect(.pulse, options: .repeating)
                                 .shadow(color: .white.opacity(0.35), radius: 12)
@@ -43,11 +47,11 @@ struct WeatherWidget: View {
                                     .lineLimit(1)
                                 if let w = weatherService.currentWeather {
                                     Text(w.condition.description)
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 } else {
-                                    Text("Apasă pentru prognoză")
-                                        .font(.system(size: 11))
+                                    Text("Tap for forecast")
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 }
                             }
@@ -59,18 +63,18 @@ struct WeatherWidget: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             if weatherService.currentWeather != nil {
                                 Text(weatherService.temperatureString)
-                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .font(AppFont.scaled(38, weight: .thin, design: .rounded))
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(weatherService.feelsLikeString)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(.white.opacity(0.70))
                                 Text(weatherService.humidityString)
-                                    .font(.system(size: 11))
+                                    .font(AppFont.scaled(11))
                                     .foregroundStyle(.white.opacity(0.70))
                             } else {
                                 Text(timeString(ctx.date))
-                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .font(AppFont.scaled(38, weight: .thin, design: .rounded))
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(dateString(ctx.date))
@@ -82,18 +86,24 @@ struct WeatherWidget: View {
                     }
                 }
                 .frame(height: 120)
+                // Chrome inside the label so it scales WITH the pressed
+                // card. The live time-of-day gradient is the widget's
+                // honest content and stays; the lift is the page's shared
+                // soft card shadow plus the standard hairline.
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
+                        .strokeBorder(Color.hairline, lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
             }
         }
-        .buttonStyle(.plain)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
-        )
-        .shadow(color: gradientColors(for: Date())[0].opacity(0.55), radius: 20, y: 8)
+        .buttonStyle(SmartCardPressStyle())
         .onAppear {
-            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                shimmer = true
+            if !reduceMotion {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    shimmer = true
+                }
             }
             if let coord = coordinate {
                 Task { await WeatherKitService.shared.fetch(for: coord) }
@@ -136,27 +146,35 @@ struct WeatherWidget: View {
 // MARK: - Calendar Large Widget (full-width, big date)
 
 struct CalendarLargeWidget: View {
+    /// The next few HOUSE agenda entries (events, tasks, deadlines) — real
+    /// data from the same aggregator the calendar page reads. Empty = the
+    /// widget honestly shows just the date, no filler rows.
+    var upcoming: [AgendaItem] = []
     var action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
             TimelineView(.everyMinute) { ctx in
+                VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     // Big day number
                     VStack(alignment: .leading, spacing: 2) {
                         Text(dayNumber(ctx.date))
-                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(72, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                             .contentTransition(.numericText())
                             .animation(.spring(response: 0.5), value: dayNumber(ctx.date))
                         Text(monthYear(ctx.date))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(13, weight: .medium))
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.leading, AppSpacing.xl)
 
                     Rectangle()
-                        .fill(Color.primary.opacity(0.08))
+                        .fill(Color.hairline)
                         .frame(width: 1, height: 60)
                         .padding(.horizontal, 18)
 
@@ -171,12 +189,16 @@ struct CalendarLargeWidget: View {
                                 let day = weekDay(ctx.date, offset: offset - weekdayOffset(ctx.date))
                                 let isToday = Calendar.current.isDateInToday(day)
                                 VStack(spacing: 2) {
+                                    // Today sits on the accent — white on it,
+                                    // the system's own accent-fill contract.
                                     Text(weekDayLetter(day))
-                                        .font(.system(size: 9, weight: .medium))
-                                        .foregroundStyle(isToday ? .white : Color.primary.opacity(0.3))
+                                        .font(AppFont.scaled(9, weight: .medium))
+                                        .foregroundStyle(isToday
+                                            ? Color.white.opacity(AppOpacity.emphasis)
+                                            : Color.secondary.opacity(0.6))
                                     Text(dayNum(day))
-                                        .font(.system(size: 12, weight: isToday ? .bold : .regular))
-                                        .foregroundStyle(isToday ? .white : Color.primary.opacity(0.55))
+                                        .font(AppFont.scaled(12, weight: isToday ? .bold : .regular))
+                                        .foregroundStyle(isToday ? Color.white : Color.secondary)
                                 }
                                 .frame(width: 26, height: 36)
                                 .background(isToday ? Color.accentColor : Color.clear,
@@ -187,11 +209,37 @@ struct CalendarLargeWidget: View {
 
                     Spacer()
                 }
+                if !upcoming.isEmpty {
+                    VStack(spacing: AppSpacing.xs) {
+                        ForEach(upcoming) { item in
+                            HStack(spacing: AppSpacing.sm) {
+                                Circle()
+                                    .fill(item.category.color)
+                                    .frame(width: 6, height: 6)
+                                Text(verbatim: item.title)
+                                    .font(AppFont.scaled(12, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Spacer(minLength: AppSpacing.xs)
+                                Text(verbatim: item.hasTime
+                                     ? item.date.formatted(date: .omitted, time: .shortened)
+                                     : item.date.formatted(.dateTime.day().month(.abbreviated)))
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
+                }
+                }
                 .padding(.vertical, AppSpacing.lg)
+                // Inside the label so the glass scales WITH the pressed card.
+                .liquidGlass(cornerRadius: AppRadius.xl)
             }
         }
-        .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.xl)
+        .buttonStyle(SmartCardPressStyle())
     }
 
     private func dayNumber(_ date: Date) -> String {

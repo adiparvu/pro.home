@@ -6,195 +6,198 @@ import UserNotifications
 import UniformTypeIdentifiers
 import Supabase
 
-private let kAvatarRingColorKey = "prvio.avatarRingColorName"
-
-private struct ChatBottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 struct ChatView: View {
     @Environment(MessageService.self) var messageService
-    @Environment(FamilyService.self) private var familyService
+    @Environment(FamilyService.self) var familyService
     @Environment(PropertyService.self) private var propertyService
-    @Environment(ProfileService.self) private var profileService
+    @Environment(ProfileService.self) var profileService
     @Environment(TabBarVisibility.self) private var tabBarVis
-    @Environment(StickerService.self) private var stickerService
     @Environment(PresenceService.self) private var presenceService
+    @Environment(NotificationService.self) private var notificationService
     @Environment(AppRouter.self) private var router
+    @Environment(\.scenePhase) private var scenePhase
     @State var text = ""
+    /// One-slot memos behind `visibleMessages` / the reply lookup index (see
+    /// DerivedCache) — internal because the message-list extension reads them.
+    @State var visibleCache = DerivedCache<[Message]>()
+    @State var messagesByIdCache = DerivedCache<[UUID: Message]>()
+    /// The composer's optional subject line (iMessage's "Show Subject Field").
+    /// Encoded into the body at send time (see MessageSubject), so the send
+    /// pipeline, outbox and realtime stay untouched.
+    @State var subject = ""
+    /// Chat Settings → "Show Subject Field". OFF by default; gates the row in
+    /// the composer for the family chat and every community group.
+    @AppStorage(MessageSubject.showFieldDefaultsKey) var showSubjectField = false
     @State var photoPickerItems: [PhotosPickerItem] = []
-    @State private var searchText = ""
-    @State private var showSearch = false
-    @State private var showJumpToLatest = false
+    @State var searchText = ""
+    @State var showSearch = false
+    @State var scroll = ConversationScrollModel()
+    /// Whether the reader is at (or within a bubble of) the bottom — the gate
+    /// for auto-following incoming messages and for honest read receipts.
+    /// Driven by live scroll geometry on iOS 18+ (see ChatAtBottomModifier);
+    /// the bottom sentinel keeps it updated on older systems.
+    @State var isAtBottom = true
     /// First unread message on open — anchors the "unread messages" divider.
     /// Frozen for the lifetime of this view so it doesn't chase read receipts.
-    @State private var unreadDividerId: UUID? = nil
+    @State var unreadDividerId: UUID? = nil
     @State private var showStarred = false
     @State private var showGroupInfo = false
     @State private var showAddMember = false
-    @State private var scrollTarget: UUID? = nil
-    @State private var highlightedMessageId: UUID? = nil
-    @State private var menuMessage: Message?
-    @State private var deleteCandidate: Message?
-    @State private var editingMessage: Message? = nil
-    @State private var editText = ""
-    @State private var lastTypingSent = Date.distantPast
+    @State var scrollTarget: UUID? = nil
+    @State var highlightedMessageId: UUID? = nil
+    @State var menuMessage: Message?
+    /// Anchor of the reply thread currently isolated in focus (iMessage-style);
+    /// nil dismisses the thread-focus overlay.
+    @State var threadFocusAnchor: UUID? = nil
+    @State var deleteCandidate: Message?
+    /// Message being reported (Guideline 1.2) — the reason dialog consumes it.
+    @State var reportCandidate: ReportTarget?
+    @State var reportOutcome: String?
+    /// Message whose details sheet is open (opened from the long-press menu).
+    @State var detailsMessage: Message? = nil
+    /// iMessage-style multi-select, entered from the long-press "Select" item.
+    @State var selecting = false
+    @State var selectedIDs: Set<UUID> = []
+    /// Presents the forward picker for the whole current selection.
+    @State var forwardingSelection = false
+    @State var editingMessage: Message? = nil
+    @State var editText = ""
     @State var replyingTo: Message?
-    @State private var forwardingMessage: Message?
+    @State var forwardingMessage: Message?
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
     @State private var showCameraSheet = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
-    @State private var showStickerPicker = false
-    @State private var showAttachmentSheet = false
+    @State var showAttachmentSheet = false
     @State private var showContactPicker = false
     @State private var showPollComposer = false
     @State private var showEventComposer = false
+    @State private var showSendLater = false
     @State var mentionedIds: [String] = []
     @State var mentionedNames: [String] = []
     @State var isSending = false
     @State private var showPhotoPickerTrigger = false
     @State private var showFileImporter = false
     @State var sendError: String? = nil
-    @FocusState private var focused: Bool
-    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @FocusState var focused: Bool
+    // Global defaults from Chat Settings (kept for live reactivity to global changes).
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
-    @State private var showThemePicker = false
-    @State private var audioRecorder = ChatAudioRecorder()
-    @State var outbox = OfflineOutbox()
+    // A background can be a gradient (chatBgID), a PHOTO (chatBgImage) or an
+    // ANIMATED preset (chatBgAnim). All three must be observed, or picking a
+    // photo/animated wallpaper in Chat Settings left every open chat on its
+    // stale background — the keys changed but nothing re-rendered.
+    @AppStorage("prvio.chatBgImage") private var chatBgImage = ""
+    @AppStorage("prvio.chatBgAnim") private var chatBgAnim = ""
+    @State private var themeRefresh = 0
+    /// False until entry settles. Messages arrive in two batches — the page
+    /// already in memory from ConversationsView, then the network refresh that
+    /// replaces it — and BOTH must land unanimated, so this flips only after a
+    /// short grace window, not on the first count change.
+    @State var chatDidLoad = false
+    /// Grace timer that flips `chatDidLoad`; started once the list is non-empty.
+    @State var chatLoadGraceTask: Task<Void, Never>? = nil
+    /// Per-change animation gate, decided in `onChange` (which runs ahead of
+    /// the body pass that renders the change): spring only for small deltas
+    /// (send/receive), never for bulk merges (refresh, older-page loads).
+    @State var animateMessageDelta = false
+    /// Newest rendered message id — distinguishes appends (auto-scroll) from
+    /// prepends like "load older" (keep the reading position).
+    @State var newestMessageId: UUID? = nil
+    /// Guards the jump-to-latest button against rapid re-taps mid-flight.
+    @State var isJumpingToLatest = false
+    /// Scope-keyed offline queue — assigned in init so each conversation
+    /// (main chat / each community group) persists to its own file.
+    @State var outbox: OfflineOutbox
 
-    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
-    private var pendingOutbox: [PendingMessage] {
+    // Optional community group scope. When nil, this is the main property chat
+    // and every behaviour below is byte-for-byte identical to before; when set,
+    // the same rich chat is scoped to a single community group (loading, drafts,
+    // theme, title and the settings gear all key off `groupId`).
+    var groupId: UUID? = nil
+    var groupTitle: String? = nil
+    var groupSettingsAction: (() -> Void)? = nil
+
+    /// Explicit init so the offline outbox can key its persistence FILE by the
+    /// conversation scope. All group scopes used to share one chat_outbox.json,
+    /// so a failed community-group message rendered in — and re-sent into —
+    /// whichever conversation flushed first.
+    init(groupId: UUID? = nil, groupTitle: String? = nil,
+         groupSettingsAction: (() -> Void)? = nil) {
+        self.groupId = groupId
+        self.groupTitle = groupTitle
+        self.groupSettingsAction = groupSettingsAction
+        _outbox = State(initialValue: OfflineOutbox(
+            filename: groupId.map { "chat_outbox_group_\($0.uuidString).json" } ?? "chat_outbox.json"))
+    }
+
+    // The conversation's theme scope; overrides live under prvio.chatTheme.<scope>.
+    // Each community group gets its own scope so its theme never collides with
+    // the main chat's "group" scope.
+    private var themeScope: String { groupId.map { "group.\($0.uuidString)" } ?? "group" }
+
+    // Per-conversation override wins; otherwise the global default is used.
+    var chatTheme: ChatTheme {
+        _ = themeRefresh
+        // The @AppStorage globals establish observation so a live global
+        // change re-renders; resolution itself is centralized in effective().
+        _ = (chatThemeID, chatBubbleHex, chatBgID, chatBgImage, chatBgAnim)
+        return .effective(scope: themeScope)
+    }
+    var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
-        return outbox.pending(for: pid)
+        return outbox.pending(for: pid, groupId: groupId)
     }
 
     var propertyId: UUID? { propertyService.primary?.id }
 
-    private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none")" }
+    private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none").\(groupId?.uuidString ?? "main")" }
+    private var subjectDraftKey: String { draftKey + ".subject" }
 
-    private func sameDay(_ a: Message, _ b: Message) -> Bool {
-        let dA = a.date ?? Date()
-        let dB = b.date ?? Date()
-        return Calendar.current.isDate(dA, inSameDayAs: dB)
-    }
-
-    /// Scroll to a message (e.g. from tapping a reply's quote) and flash it. No-op
-    /// if it isn't in the loaded window — older pages aren't force-loaded here.
-    private func jumpToMessage(_ id: UUID) {
-        guard filteredMessages.contains(where: { $0.id == id }) else { return }
-        scrollTarget = id
-        HapticFeedback.impact(.light)
-        withAnimation(.easeInOut(duration: 0.25)) { highlightedMessageId = id }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            withAnimation(.easeInOut(duration: 0.4)) {
-                if highlightedMessageId == id { highlightedMessageId = nil }
-            }
-        }
-    }
-
-    /// Messages after the "clear conversation" cutoff and disappearing-message
-    /// rules, before any search filter. Shared by the list, pins and counts so
-    /// none of them show messages the user has cleared or that have expired.
-    private var visibleMessages: [Message] {
-        let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
-        return ChatDisappearStore.filter(kept, convId: "group") { $0.date }
-    }
-    private var filteredMessages: [Message] {
-        guard showSearch && !searchText.isEmpty else { return visibleMessages }
-        return visibleMessages.filter {
-            ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
-        }
-    }
     private var typingText: String? {
         let names = messageService.typingNames.sorted()
         guard let first = names.first else { return nil }
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
     }
-    /// Family members (other than me) currently online, for the header subtitle.
-    private var onlineText: String? {
+    /// Family members (other than me) currently online, for the header
+    /// subtitle. Presence is keyed by AUTH USER ID (names drift and carry
+    /// stray whitespace); `now` is the PresenceTicker's clock so the online
+    /// window re-evaluates while the header is visible.
+    private func onlineText(at now: Date) -> String? {
         let me = senderName
+        let myId = supabase.auth.currentSession?.user.id
         let online = familyService.members
+            .filter {
+                $0.userId != myId && $0.name != me
+                    && presenceService.status(userId: $0.userId, name: $0.name, at: now) == .online
+            }
             .map(\.name)
-            .filter { $0 != me && presenceService.status(for: $0) == .online }
             .sorted()
         guard let first = online.first else { return nil }
         if online.count == 1 { return String(format: String(localized: "%@ is online"), first) }
         if online.count == 2 { return String(format: String(localized: "%@ and %@ online"), first, online[1]) }
         return String(format: String(localized: "%d online"), online.count)
     }
-    private var sharedMediaURLs: [URL] {
+    /// RAW stored paths — private-bucket media only loads through the
+    /// signer, so the gallery resolves each cell itself (audit fix: the
+    /// old `URL(string:)` on a bare path produced dead relative URLs).
+    private var sharedMediaPaths: [String] {
         messageService.messages.compactMap { m in
             guard m.isImageMessage, let s = m.attachmentUrl else { return nil }
-            return URL(string: s)
+            return s
         }
     }
     private var exportTranscript: String {
         ChatExport.transcript(title: "Group", lines: messageService.messages.map {
-            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
+            (sender: $0.senderName, time: $0.timeDisplay,
+             body: MessageSubject.strip($0.body ?? ""))
         })
     }
-    private var pinnedMessages: [Message] { visibleMessages.filter { $0.pinned == true && $0.deletedForAll != true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
 
-    @ViewBuilder
-    private func actionOverlay(_ m: Message) -> some View {
-        let own = m.senderId == supabase.auth.currentSession?.user.id
-        ChatActionOverlay(
-            previewText: pinnedSnippet(m),
-            isOwn: own,
-            bubbleColor: chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
-            myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
-            onReact: { e in
-                if let pid = propertyId {
-                    Task { await messageService.toggleReaction(messageId: m.id, propertyId: pid, emoji: e, reactorName: senderName) }
-                }
-            },
-            actions: messageActions(m),
-            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
-            imageStored: m.isImageMessage ? m.attachmentUrl : nil
-        )
-        .transition(.opacity)
-    }
-
-    private func messageActions(_ m: Message) -> [ChatActionItem] {
-        let own = m.senderId == supabase.auth.currentSession?.user.id
-        var items: [ChatActionItem] = [
-            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
-            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
-            ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = b } },
-            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
-        ]
-        if own, m.body?.isEmpty == false, m.attachmentType == nil {
-            items.append(ChatActionItem("Edit", "pencil") {
-                editingMessage = m; editText = m.body ?? ""
-                replyingTo = nil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
-            })
-        }
-        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
-        return items
-    }
-
-    private func pinnedSnippet(_ m: Message) -> String {
-        // Structured types first, so a poll/event never shows its JSON body.
-        if m.isPollMessage { return "📊 Poll" }
-        if m.isEventMessage { return "📅 Event" }
-        if m.isImageMessage { return "📷 Photo" }
-        if m.isVideoMessage { return "🎥 Video" }
-        if m.isAudioMessage { return "🎤 Voice message" }
-        if m.isLocationMessage { return "📍 Location" }
-        if m.isFileMessage { return "📎 File" }
-        if m.isStickerMessage { return "😀 Sticker" }
-        if let b = m.body, !b.isEmpty { return b }
-        return String(localized: "Attachment")
-    }
     var senderName: String {
         profileService.profile?.preferredName
             ?? profileService.profile?.fullName
@@ -206,8 +209,31 @@ struct ChatView: View {
 
     var body: some View {
         messageList
-            .overlay(alignment: .bottom) { inputBar }
+            // Diagnostic strip: shows only when the realtime channel/socket is
+            // NOT live, carrying the exact status (and verbatim subscribe error)
+            // so the user can tap to copy it. Zero height — and no visible
+            // chrome — while healthy, so it never touches the normal layout.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                RealtimeStatusBanner(status: messageService.realtimeStatus)
+            }
+            // The compose bar lives in the safe-area inset — the canonical
+            // iMessage structure (matches the DM thread): the scroll view
+            // gains the matching bottom inset automatically and the content
+            // still slides under the bar's material.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if selecting {
+                    ChatSelectionToolbar(
+                        count: selectedIDs.count,
+                        onDelete: deleteSelected,
+                        onForward: { forwardingSelection = true })
+                } else {
+                    inputBar
+                }
+            }
             .background(chatTheme.background)
+            // iMessage-style header: no bar, the conversation slides under a
+            // progressive blur and only glass controls float on top.
+            .overlay(alignment: .top) { ChatTopBlur() }
             .overlay {
                 if messageService.isLoading && messageService.messages.isEmpty {
                     MessageSkeleton()
@@ -216,63 +242,150 @@ struct ChatView: View {
             .overlay {
                 if let m = menuMessage { actionOverlay(m) }
             }
+            // iMessage-style isolated reply thread, layered above everything
+            // (header + composer) so the whole conversation recedes behind it.
+            .overlay { threadFocusLayer }
         .sheet(item: $forwardingMessage) { msg in
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }
                 forwardingMessage = nil
             }
         }
+        .sheet(item: $detailsMessage) { m in
+            MessageDetailsView(message: m,
+                               readers: messageService.reads[m.id] ?? [],
+                               deliverers: messageService.deliveries[m.id] ?? [],
+                               members: familyService.members)
+        }
+        .sheet(isPresented: $forwardingSelection) {
+            ForwardPicker(members: familyService.members) { dest in
+                forwardSelected(to: dest)
+                forwardingSelection = false
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
+        // Search is summoned on demand (group details / the magnifier for
+        // community groups) — never a bar pinned under the header.
+        .chatOnDemandSearch(text: $searchText, isPresented: $showSearch,
+                            prompt: Text("Search messages…"))
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 10) {
-                    GroupHeaderAvatar(
-                        members: familyService.members,
-                        photoUrl: propertyService.primary?.photoUrl,
-                        ownerAvatarUrl: profileService.profile?.avatarUrl,
-                        ownerInitial: ownerInitial,
-                        ringColor: avatarRingColor(for: avatarRingColorName)
-                    ) {
-                        showGroupInfo = true
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        // The group name is stored as the property name (renaming
-                        // the group from group details updates it) — reflect it
-                        // here instead of a hardcoded label.
-                        Text((propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 }
-                             ?? String(localized: "Chat Grup"))
-                            .font(AppFont.headline)
-                        // Transient typing status wins; otherwise show who's online.
-                        if let t = typingText {
-                            Text(t)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.accentColor)
-                        } else if let o = onlineText {
-                            Text(o)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.brandSuccess)
+                ChatHeaderPill {
+                    if groupId != nil {
+                        // Community group: its own title (no property avatar or
+                        // property group-info tap). Typing/online subtitle stays
+                        // for parity — typing is genuinely group-scoped via svc.
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(groupTitle ?? "")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(.primary)
+                            if let t = typingText {
+                                Text(t)
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(Color.accentColor)
+                            } else {
+                                PresenceTicker { now in
+                                    if let o = onlineText(at: now) {
+                                        Text(o)
+                                            .font(AppFont.scaled(11))
+                                            .foregroundStyle(Color.brandSuccess)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        HStack(spacing: 8) {
+                            GroupHeaderAvatar(
+                                members: familyService.members,
+                                photoUrl: propertyService.primary?.photoUrl,
+                                ownerAvatarUrl: profileService.profile?.avatarUrl,
+                                ownerInitial: ownerInitial
+                            ) {
+                                showGroupInfo = true
+                            }
+                            VStack(alignment: .leading, spacing: 0) {
+                                // The group chat has its own name (chat_group_settings),
+                                // independent of the property name.
+                                Text(propertyService.groupChatDisplayName)
+                                    .font(AppFont.subheadline)
+                                // Transient typing status wins; otherwise show who's online.
+                                if let t = typingText {
+                                    Text(t)
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.accentColor)
+                                } else {
+                                    PresenceTicker { now in
+                                        if let o = onlineText(at: now) {
+                                            Text(o)
+                                                .font(AppFont.scaled(11))
+                                                .foregroundStyle(Color.brandSuccess)
+                                        }
+                                    }
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture { showGroupInfo = true }
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { showGroupInfo = true }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showVideoSheet = true } label: {
-                    Image(systemName: "video.fill")
-                        .font(AppFont.headline)
+                if selecting {
+                    Button { exitSelection() } label: {
+                        Text("Cancel").font(AppFont.subheadline)
+                    }
+                    .accessibilityLabel(Text("Cancel selection"))
+                } else if replyingTo != nil {
+                    // iMessage reply focus: one X leaves the mode.
+                    Button { withAnimation(.snappy(duration: 0.28)) { replyingTo = nil } } label: {
+                        // No manual circle: iOS 26 wraps the toolbar button in its
+                        // own Liquid Glass circle (like the back button); drawing
+                        // our own on top doubled the X (IMG_8500).
+                        Image(systemName: "xmark")
+                            .font(AppFont.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.secondaryTextColor)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Cancel reply"))
+                } else if groupId != nil {
+                    // A community group manages everything (rename, members,
+                    // notifications, delete) through its settings sheet, so the
+                    // trailing cluster is magnifier + gear instead of
+                    // call/video. The magnifier keeps in-thread search
+                    // reachable now that the bar is no longer pinned (a
+                    // community group has no group-details page).
+                    HStack(spacing: 0) {
+                        Button { showSearch = true } label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 40, height: 34)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Search messages…"))
+
+                        Button { groupSettingsAction?() } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 40, height: 34)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Group settings")
+                    }
+                    // iOS 26 wraps toolbar items in system Liquid Glass —
+                    // only pre-26 draws its own capsule (see chatToolbarCapsule).
+                    .chatToolbarCapsule()
+                } else {
+                    ChatHeaderActions(
+                        onVideo: { showVideoSheet = true },
+                        onCall: { showCallSheet = true }
+                    )
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Video call")
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showCallSheet = true } label: {
-                    Image(systemName: "phone.fill")
-                        .font(AppFont.headline)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Call")
             }
         }
         .task {
@@ -280,48 +393,105 @@ struct ChatView: View {
             // Freeze where the reader left off BEFORE marking anything read, so
             // the "unread messages" divider lands at the first new message.
             let seen = messageService.lastSeen(propertyId: pid)
-            await messageService.load(propertyId: pid)
+            // The property group-chat name only applies to the main chat; a
+            // community group carries its own title via `groupTitle`.
+            if groupId == nil { await propertyService.loadGroupChatName() }
+            await messageService.load(propertyId: pid, groupId: groupId)
             unreadDividerId = messageService.firstUnreadId(
                 since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
             await presenceService.load(propertyId: pid)
-            await messageService.loadReads(propertyId: pid)
-            await messageService.loadDeliveries(propertyId: pid)
-            await messageService.loadReactions(propertyId: pid)
+            await messageService.loadReads(propertyId: pid, groupId: groupId)
+            await messageService.loadDeliveries(propertyId: pid, groupId: groupId)
+            await messageService.loadReactions(propertyId: pid, groupId: groupId)
             await messageService.markDelivered(propertyId: pid, delivererName: senderName)
             await messageService.markRead(propertyId: pid, readerName: senderName)
+            // Retry queued messages only after load() scoped the service to
+            // this conversation, so a flush can never stamp the wrong group.
+            await flushOutbox()
+            // Opening the group thread clears the chat notification rows + the
+            // springboard badge so the bell can't keep claiming read messages.
+            if let uid = supabase.auth.currentSession?.user.id {
+                await notificationService.markModuleRead("chat", userId: uid)
+            }
         }
         .task {
             guard let pid = propertyId else { return }
             messageService.myName = senderName
-            await messageService.subscribeRealtime(propertyId: pid)
+            // The group scope rides along explicitly: these tasks race
+            // load(), so deriving the channel topic from currentGroupId
+            // could subscribe a community thread to the MAIN chat's topic —
+            // the realtime client would then return the already-subscribed
+            // channel and silently drop the new callbacks.
+            await messageService.subscribeRealtime(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeReads(propertyId: pid)
+            await messageService.subscribeReads(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeDeliveries(propertyId: pid)
+            await messageService.subscribeDeliveries(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.subscribeReactions(propertyId: pid)
+            await messageService.subscribeReactions(propertyId: pid, groupId: groupId)
         }
         .task {
             guard let pid = propertyId else { return }
-            await messageService.loadPollVotes(propertyId: pid)
-            await messageService.subscribePollVotes(propertyId: pid)
+            await messageService.loadPollVotes(propertyId: pid, groupId: groupId)
+            await messageService.subscribePollVotes(propertyId: pid, groupId: groupId)
+        }
+        .task {
+            // Keep live-location bubbles following the sharer while the
+            // conversation is open. The same tick doubles as the delivery
+            // safety net: if the realtime channel isn't genuinely subscribed
+            // to THIS conversation's topic, rebuild it and fetch the newer
+            // rows, so an open thread can never sit silent.
+            guard let pid = propertyId else { return }
+            while !Task.isCancelled {
+                await LiveLocationService.shared.load(propertyId: pid)
+                await messageService.ensureLiveDelivery(propertyId: pid, groupId: groupId)
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+            }
         }
         .task { await flushOutbox() }
+        .task { await MemberDirectory.shared.loadIfNeeded() }
+        // Foreground catch-up: iOS freezes the realtime socket in the
+        // background and missed events are never replayed on reconnect, so a
+        // message that arrived while suspended (its push already shown) would
+        // sit invisible until some other reload. Refetch the conversation the
+        // moment the scene is active again; subscribeRealtime is idempotent.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, let pid = propertyId else { return }
+            Task {
+                await messageService.load(propertyId: pid, groupId: groupId)
+                await messageService.subscribeRealtime(propertyId: pid, groupId: groupId)
+                await messageService.markDelivered(propertyId: pid, delivererName: senderName)
+                await messageService.markRead(propertyId: pid, readerName: senderName)
+            }
+        }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
         }
         .onAppear {
+            // Active chat → suppress a foreground push for this exact group (the
+            // household chat, or a community sub-group) — WhatsApp behavior.
+            ActiveChat.set(ActiveChat.groupKey(groupId))
+            themeRefresh &+= 1
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
+            if subject.isEmpty, let s = UserDefaults.standard.string(forKey: subjectDraftKey), !s.isEmpty { subject = s }
         }
         .onDisappear {
+            ActiveChat.clear(ifCurrent: ActiveChat.groupKey(groupId))
+            chatLoadGraceTask?.cancel()
+            chatLoadGraceTask = nil
+            // Persist the unsent composer draft once, on the way out.
+            if text.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+            else { UserDefaults.standard.set(text, forKey: draftKey) }
+            if subject.isEmpty { UserDefaults.standard.removeObject(forKey: subjectDraftKey) }
+            else { UserDefaults.standard.set(subject, forKey: subjectDraftKey) }
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             // Remember we've now seen everything, so the next open computes the
             // unread divider from this point forward.
@@ -337,18 +507,13 @@ struct ChatView: View {
             }
         }
         .onChange(of: text) { _, newValue in
+            // Typing "@" summons the mention picker; the typing broadcast is
+            // throttled inside ChatComposerBar. Draft persistence happens on
+            // disappear — a UserDefaults write per keystroke is typing lag.
             if newValue.hasSuffix("@") && !showMentionPicker {
                 text = String(newValue.dropLast())
                 showMentionPicker = true
             }
-            let now = Date()
-            if !newValue.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
-                lastTypingSent = now
-                messageService.sendTyping()
-            }
-            // Draft restoration: persist the unsent composer text per conversation.
-            if newValue.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
-            else { UserDefaults.standard.set(newValue, forKey: draftKey) }
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
@@ -366,35 +531,23 @@ struct ChatView: View {
         .sheet(isPresented: $showVideoSheet) {
             CallPickerSheet(members: familyService.members, isVideo: true)
         }
-        .sheet(isPresented: $showStickerPicker) {
-            StickerPicker { sticker in
-                Task { await sendSticker(sticker) }
-            }
-            .environment(stickerService)
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.hidden)
-        }
         .sheet(isPresented: $showStarred) {
             StarredMessagesView(messages: markedMessages, members: familyService.members) { id in
                 showStarred = false
                 scrollTarget = id
             }
         }
-        .sheet(isPresented: $showThemePicker) {
-            ChatThemePicker()
-        }
         .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
-                groupName: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup"),
+                groupName: propertyService.groupChatDisplayName,
                 members: familyService.members,
                 photoUrl: propertyService.primary?.photoUrl,
                 onAudio: { showCallSheet = true },
                 onVideo: { showVideoSheet = true },
                 onAddMember: { showAddMember = true },
-                onSearch: { withAnimation(.spring(response: 0.3)) { showSearch = true } },
+                onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true },
-                mediaURLs: sharedMediaURLs,
+                mediaPaths: sharedMediaPaths,
                 inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
                 propertyId: propertyId,
                 exportText: exportTranscript
@@ -405,19 +558,33 @@ struct ChatView: View {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)
                 .environment(familyService)
         }
-        .sheet(isPresented: $showAttachmentSheet) {
-            ChatAttachmentSheet(
-                onPhotos: { showPhotoPickerTrigger = true },
-                onCamera: { showCameraSheet = true },
-                onLocation: { showLocationSheet = true },
-                onDocument: { showFileImporter = true },
-                onContact: { showContactPicker = true },
-                onPoll: { showPollComposer = true },
-                onEvent: { showEventComposer = true }
-            )
+        .overlay {
+            // The menu owns its own blur-in + spring-from-corner motion, so
+            // it mounts without a transition (a wrapping scale would zoom the
+            // full-screen backdrop from the corner too — see ChatAttachmentSheet).
+            if showAttachmentSheet {
+                ChatAttachmentSheet(
+                    isPresented: $showAttachmentSheet,
+                    onPhotos: { showPhotoPickerTrigger = true },
+                    onCamera: { showCameraSheet = true },
+                    onLocation: { showLocationSheet = true },
+                    onDocument: { showFileImporter = true },
+                    onContact: { showContactPicker = true },
+                    onPoll: { showPollComposer = true },
+                    onEvent: { showEventComposer = true },
+                    onSendLater: { showSendLater = true }
+                )
+            }
+        }
+        .sheet(isPresented: $showSendLater) {
+            if let pid = propertyId, let uid = supabase.auth.currentSession?.user.id {
+                SendLaterSheet(context: .group(propertyId: pid, authorId: uid, authorName: senderName))
+            }
         }
         .sheet(isPresented: $showContactPicker) {
-            ChatContactPicker { formatted in Task { await sendContact(formatted) } }
+            ContactMultiPicker(members: familyService.members) { payloads in
+                Task { await sendContacts(payloads) }
+            }
         }
         .sheet(isPresented: $showPollComposer) {
             PollComposerView { question, options, multi in
@@ -425,8 +592,8 @@ struct ChatView: View {
             }
         }
         .sheet(isPresented: $showEventComposer) {
-            EventComposerView { title, details, date, location in
-                Task { await sendEvent(title: title, details: details, date: date, location: location) }
+            EventComposerView { draft in
+                Task { await sendEvent(draft) }
             }
         }
         .confirmationDialog("Delete message?", isPresented: .init(
@@ -449,6 +616,9 @@ struct ChatView: View {
                 Button("Cancel", role: .cancel) { deleteCandidate = nil }
             }
         }
+        // UGC report (Guideline 1.2) — one cheap modifier; inlining the
+        // dialogs here pushed the body past the type-checker (red 1076).
+        .reportMessageDialogs(target: $reportCandidate, outcome: $reportOutcome)
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
@@ -477,501 +647,11 @@ struct ChatView: View {
             activity.title = String(localized: "Chat — PRVIO")
             activity.userInfo = ["tab": "chat"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = false
         }
     }
 
-    // MARK: - Message list
-
-    private let chatBottomInset: CGFloat = 78
-
-    private var messageList: some View {
-        GeometryReader { outer in
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                if showSearch {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                        TextField("Search messages…", text: $searchText)
-                            .font(.system(size: 15))
-                            .foregroundStyle(.primary)
-                            .tint(.accentColor)
-                        if !searchText.isEmpty {
-                            Button { searchText = "" } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color.primary.opacity(0.4))
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Clear search")
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.base)
-                    .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
-                if let pinned = pinnedMessages.last {
-                    Button {
-                        withAnimation { proxy.scrollTo(pinned.id, anchor: .center) }
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "pin.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.accentColor)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(pinnedMessages.count > 1
-                                     ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
-                                     : String(localized: "Pinned message"))
-                                    .font(AppFont.label)
-                                    .foregroundStyle(Color.accentColor)
-                                Text(pinnedSnippet(pinned))
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color.primary.opacity(0.6))
-                                    .lineLimit(1)
-                            }
-                            Spacer()
-                            Button {
-                                Task { await messageService.togglePin(pinned) }
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.primary.opacity(0.4))
-                                    .frame(width: 26, height: 26)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Unpin message")
-                        }
-                        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                        .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
-            // Capture the list ONCE per render. `filteredMessages` is a computed
-            // property that re-runs two filter passes on every access; the rows
-            // below read neighbours (idx±1), which made scrolling O(n²). The
-            // reply lookup gets the same treatment (dictionary instead of a
-            // linear scan per bubble).
-            let msgs = filteredMessages
-            let messagesById = Dictionary(messageService.messages.map { ($0.id, $0) },
-                                          uniquingKeysWith: { a, _ in a })
-            ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 2) {
-                    if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
-                        Button {
-                            if let pid = propertyId { Task { await messageService.loadOlder(propertyId: pid) } }
-                        } label: {
-                            if messageService.isLoadingOlder {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Text("Load older messages")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
-                        .disabled(messageService.isLoadingOlder)
-                    }
-                    ForEach(Array(msgs.enumerated()), id: \.element.id) { idx, msg in
-                        let showDate = idx == 0 || !sameDay(msgs[idx - 1], msg)
-                        // Consecutive messages from the same sender on the same day form a
-                        // visual group: only the first shows the name, only the last the
-                        // avatar. Searching yields a sparse subset, so grouping is disabled.
-                        let grouping = !(showSearch && !searchText.isEmpty)
-                        let prevSameSender = grouping && !showDate && idx > 0
-                            && msgs[idx - 1].senderName == msg.senderName
-                        let nextSameSender = grouping && idx < msgs.count - 1
-                            && sameDay(msg, msgs[idx + 1])
-                            && msgs[idx + 1].senderName == msg.senderName
-                        if showDate {
-                            ChatDateSeparator(dateStr: msg.createdAt)
-                        }
-                        if grouping, msg.id == unreadDividerId {
-                            UnreadDivider().id("UNREAD_DIVIDER")
-                        }
-                        MessageBubble(
-                            message: msg,
-                            isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
-                            members: familyService.members,
-                            outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
-                            readers: messageService.reads[msg.id] ?? [],
-                            deliverers: messageService.deliveries[msg.id] ?? [],
-                            persistedReactions: {
-                                let rows = messageService.reactions[msg.id] ?? []
-                                return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
-                            }(),
-                            persistedMyReaction: messageService.reactions[msg.id]?
-                                .first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
-                            onReact: { emoji in
-                                guard let pid = propertyId else { return }
-                                Task { await messageService.toggleReaction(
-                                    messageId: msg.id, propertyId: pid,
-                                    emoji: emoji, reactorName: senderName) }
-                            },
-                            repliedMessage: msg.replyTo.flatMap { messagesById[$0] },
-                            onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
-                            onPin: { Task { await messageService.togglePin(msg) } },
-                            onMark: { Task { await messageService.toggleMark(msg) } },
-                            onForward: { forwardingMessage = msg },
-                            onEdit: {
-                                editingMessage = msg; editText = msg.body ?? ""
-                                replyingTo = nil
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
-                            },
-                            onDeleteForEveryone: { Task { await messageService.deleteForEveryone(id: msg.id) } },
-                            onDeleteForMe: { messageService.deleteForMe(id: msg.id) },
-                            pollVotes: messageService.pollVotes[msg.id] ?? [],
-                            myUserId: supabase.auth.currentSession?.user.id,
-                            myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
-                            onPollVote: { idx in
-                                guard let pid = propertyId, let poll = ChatPoll.decode(msg.body) else { return }
-                                Task { await messageService.togglePollVote(
-                                    messageId: msg.id, propertyId: pid,
-                                    optionIndex: idx, voterName: senderName, multi: poll.multi) }
-                            },
-                            onLongPress: { menuMessage = msg },
-                            isGroupStart: !prevSameSender,
-                            isGroupEnd: !nextSameSender,
-                            onQuotedTap: { if let rid = msg.replyTo { jumpToMessage(rid) } },
-                            isHighlighted: highlightedMessageId == msg.id
-                        )
-                        .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
-                        .id(msg.id)
-                    }
-                    // Pending (offline) messages — shown optimistically with a clock.
-                    ForEach(pendingOutbox) { pm in
-                        VStack(alignment: .trailing, spacing: 2) {
-                            HStack {
-                                Spacer(minLength: 60)
-                                HStack(spacing: 6) {
-                                    Text(pm.body ?? "")
-                                        .font(.system(size: 15))
-                                        .foregroundStyle(.white)
-                                    Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
-                                        .font(.system(size: 10))
-                                        .foregroundStyle(.white.opacity(0.75))
-                                }
-                                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                                .background(chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
-                                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                .opacity(0.85)
-                                .onTapGesture { Task { await flushOutbox() } }
-                                .contextMenu {
-                                    Button { Task { await flushOutbox() } } label: {
-                                        Label("Retry", systemImage: "arrow.clockwise")
-                                    }
-                                    Button(role: .destructive) { outbox.remove(pm.id) } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            }
-                            if !outbox.isOnline {
-                                Text("Not delivered · tap to retry")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                    .padding(.trailing, AppSpacing.xxs)
-                            }
-                        }
-                    }
-                    // Clearance so the newest message rests above the overlaid
-                    // input bar (which blurs the messages behind it = real glass).
-                    Color.clear.frame(height: chatBottomInset)
-                    Color.clear.frame(height: 1).id("CHAT_BOTTOM")
-                        .background(GeometryReader { g in
-                            Color.clear.preference(key: ChatBottomKey.self,
-                                                   value: g.frame(in: .named("CHATOUTER")).maxY)
-                        })
-                }
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: msgs.count)
-            }
-            .defaultScrollAnchor(.bottom)
-            .onPreferenceChange(ChatBottomKey.self) { maxY in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showJumpToLatest = maxY > outer.size.height + 40
-                }
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .onChange(of: messageService.messages.count) { old, new in
-                guard !messageService.messages.isEmpty else { return }
-                if old == 0 {
-                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                } else {
-                    withAnimation { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
-                }
-                if let pid = propertyId {
-                    Task {
-                        await messageService.markDelivered(propertyId: pid, delivererName: senderName)
-                        await messageService.markRead(propertyId: pid, readerName: senderName)
-                    }
-                }
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    // Land on the unread divider when there's a backlog, otherwise
-                    // rest at the newest message like usual.
-                    if unreadDividerId != nil {
-                        proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
-                    } else {
-                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                    }
-                }
-            }
-            .onChange(of: scrollTarget) { _, target in
-                guard let t = target else { return }
-                withAnimation { proxy.scrollTo(t, anchor: .center) }
-                scrollTarget = nil
-            }
-            } // end VStack (search + scroll)
-            .overlay(alignment: .bottom) {
-                if showJumpToLatest {
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
-                        }
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(AppFont.headline)
-                            .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.bottom, chatBottomInset + 8)
-                    .transition(.scale.combined(with: .opacity))
-                    .accessibilityLabel("Jump to latest message")
-                }
-            }
-            } // end ScrollViewReader
-        }
-        .coordinateSpace(name: "CHATOUTER")
-    }
-
-    // MARK: - Input bar
-
-    private var inputBar: some View {
-        VStack(spacing: 0) {
-            if editingMessage != nil {
-                HStack(spacing: 8) {
-                    Image(systemName: "pencil")
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 18)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Edit message")
-                            .font(AppFont.label).foregroundStyle(Color.accentColor)
-                        Text(editingMessage?.body ?? "")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
-                    }
-                    Spacer()
-                    Button {
-                        withAnimation { editingMessage = nil; editText = "" }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
-                    }.buttonStyle(.plain)
-                    .accessibilityLabel("Cancel edit")
-                }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-                .background(Color.primary.opacity(0.05))
-            }
-            if let replyingTo {
-                ChatReplyBanner(sender: replyingTo.senderName, snippet: pinnedSnippet(replyingTo)) {
-                    withAnimation { self.replyingTo = nil }
-                }
-            }
-            if !mentionedNames.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(Array(zip(mentionedIds, mentionedNames)), id: \.0) { id, name in
-                            HStack(spacing: 4) {
-                                Text("@\(name)")
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(Color.accentColor)
-                                Button {
-                                    mentionedIds.removeAll { $0 == id }
-                                    mentionedNames.removeAll { $0 == name }
-                                } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                                }
-                                .accessibilityLabel("Remove mention of \(name)")
-                            }
-                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
-                            .background(.blue.opacity(0.15), in: Capsule())
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
-                }
-            }
-
-            if audioRecorder.isRecording {
-                // Recording bar replaces input
-                HStack(spacing: 10) {
-                    Button {
-                        _ = audioRecorder.stop()
-                        HapticFeedback.warning()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.55))
-                            .frame(width: 30, height: 30)
-                            .background(Circle().fill(Color.primary.opacity(0.1)))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Cancel recording")
-
-                    ChatRecordingIndicator(durationText: audioRecorder.durationText)
-                        .gesture(
-                            DragGesture(minimumDistance: 40)
-                                .onEnded { val in
-                                    if val.translation.width < -40 {
-                                        _ = audioRecorder.stop()
-                                        HapticFeedback.warning()
-                                    }
-                                }
-                        )
-
-                    Button {
-                        if let url = audioRecorder.stop() {
-                            Task { await sendAudio(url: url) }
-                        }
-                    } label: {
-                        ZStack {
-                            Circle().fill(Color.accentColor).frame(width: 34, height: 34)
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xs)
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.primary)
-                        .tint(.accentColor)
-                        .lineLimit(1...6)
-                        .focused($focused)
-
-                    HStack(spacing: 0) {
-                        Button {
-                            focused = false
-                            showAttachmentSheet = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(AppFont.headline)
-                                .foregroundStyle(Color.primary.opacity(0.55))
-                                .frame(width: 30, height: 30)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add attachment")
-
-                        Button {
-                            focused = false
-                            showStickerPicker = true
-                        } label: {
-                            Image(systemName: "face.smiling")
-                                .font(AppFont.headline)
-                                .foregroundStyle(Color.primary.opacity(0.55))
-                                .frame(width: 30, height: 30)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.leading, 2)
-                        .accessibilityLabel("Stickers")
-
-                        Spacer()
-
-                        if editingMessage != nil {
-                            // Confirm edit (WhatsApp-style inline edit)
-                            Button {
-                                guard let m = editingMessage else { return }
-                                let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                if !newText.isEmpty, newText != (m.body ?? "") {
-                                    Task { await messageService.editMessage(id: m.id, newBody: newText) }
-                                }
-                                editingMessage = nil; editText = ""; focused = false
-                            } label: {
-                                ZStack {
-                                    Circle().fill(Color.accentColor).frame(width: 30, height: 30)
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            .accessibilityLabel("Confirm edit")
-                        } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            // Mic button — hold to record
-                            ZStack {
-                                Circle()
-                                    .fill(audioRecorder.isRecording ? Color.red.opacity(0.15) : Color.primary.opacity(0.12))
-                                    .frame(width: 30, height: 30)
-                                Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.secondaryText))
-                                    .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
-                            }
-                            .onLongPressGesture(minimumDuration: 0.3) {
-                                guard !audioRecorder.isRecording else { return }
-                                audioRecorder.start()
-                                HapticFeedback.impact(.medium)
-                            }
-                            .accessibilityLabel("Record voice message")
-                            .accessibilityHint("Double-tap and hold to record")
-                            .accessibilityAddTraits(.isButton)
-                        } else {
-                            // Send button
-                            Button {
-                                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                                Task { await sendText() }
-                            } label: {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.accentColor)
-                                        .frame(width: 30, height: 30)
-                                    if isSending {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                            .tint(.white)
-                                    } else {
-                                        Image(systemName: "arrow.up")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(.white)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(isSending)
-                            .accessibilityLabel("Send")
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, 10)
-                .liquidGlass(cornerRadius: 22)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xs)
-            }
-        }
-    }
 }

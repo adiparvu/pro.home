@@ -1,6 +1,6 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 import PhotosUI
-import Supabase
 import UniformTypeIdentifiers
 
 struct AddPropertyElementView: View {
@@ -40,6 +40,7 @@ struct AddPropertyElementView: View {
     @State private var isUploadingMedia = false
     @State private var mediaTarget: MediaTarget = .gallery
     @State private var showSourceDialog = false
+    @State private var showRemoveCoverConfirm = false
     @State private var showCamera = false
     @State private var showLibrary = false
     @State private var showFiles = false
@@ -58,11 +59,9 @@ struct AddPropertyElementView: View {
     private var canSave: Bool { name.trimmingCharacters(in: .whitespaces).count >= 2 }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
+        FormScaffold(title: "New element", saveLabel: "Add",
+                     canSave: canSave, error: .constant(nil),
+                     onSave: { save() }) {
                         // Type picker
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 10) {
@@ -71,7 +70,7 @@ struct AddPropertyElementView: View {
                                     Spacer()
                                     Button { showTypePicker = true } label: {
                                         HStack(spacing: 4) {
-                                            Image(systemName: "square.grid.2x2.fill").font(.system(size: 11))
+                                            Image(systemName: "square.grid.2x2.fill").font(AppFont.scaled(11))
                                             Text("All types").font(.caption.weight(.semibold))
                                         }
                                         .foregroundStyle(Color.accentColor)
@@ -268,26 +267,8 @@ struct AddPropertyElementView: View {
                             }
                         }
 
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
-                }
-            }
-            .navigationTitle("New element")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.secondary)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add") { save() }
-                        .fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color.brandPrimaryBlue : Color.secondary)
-                        .disabled(!canSave)
-                }
-            }
-            .sheet(isPresented: $showTypePicker) {
+        }
+        .sheet(isPresented: $showTypePicker) {
                 ElementTypePickerSheet(selected: elementType) { selectType($0) }
             }
             .confirmationDialog("Add photo", isPresented: $showSourceDialog, titleVisibility: .visible) {
@@ -320,7 +301,6 @@ struct AddPropertyElementView: View {
                     }
                 }
             }
-        }
     }
 
     // MARK: - Photos card
@@ -342,7 +322,7 @@ struct AddPropertyElementView: View {
                 } label: {
                     ZStack {
                         if let coverURL, let url = URL(string: coverURL) {
-                            AsyncImage(url: url) { phase in
+                            StorageImage(url: url) { phase in
                                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                                 else { Color.primary.opacity(AppOpacity.hairline) }
                             }
@@ -351,7 +331,7 @@ struct AddPropertyElementView: View {
                                 .fill(Color.primary.opacity(0.05))
                                 .overlay(
                                     VStack(spacing: 6) {
-                                        Image(systemName: "photo.badge.plus").font(.system(size: 24))
+                                        Image(systemName: "photo.badge.plus").font(AppFont.scaled(24))
                                         Text("Add cover").font(.caption)
                                     }.foregroundStyle(.secondary)
                                 )
@@ -363,9 +343,14 @@ struct AddPropertyElementView: View {
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Cover photo")
                 if coverURL != nil {
-                    Button(role: .destructive) { coverURL = nil } label: {
+                    Button(role: .destructive) { showRemoveCoverConfirm = true } label: {
                         Label("Remove cover", systemImage: "trash").font(.caption)
+                    }
+                    .confirmationDialog("Remove cover", isPresented: $showRemoveCoverConfirm, titleVisibility: .visible) {
+                        Button("Remove", role: .destructive) { coverURL = nil }
+                        Button("Cancel", role: .cancel) {}
                     }
                 }
 
@@ -375,7 +360,7 @@ struct AddPropertyElementView: View {
                     HStack(spacing: 10) {
                         ForEach(galleryURLs, id: \.self) { urlStr in
                             if let url = URL(string: urlStr) {
-                                AsyncImage(url: url) { phase in
+                                StorageImage(url: url) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
@@ -393,9 +378,10 @@ struct AddPropertyElementView: View {
                             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(width: 78, height: 78)
-                                .overlay(Image(systemName: "plus").font(.system(size: 20)).foregroundStyle(Color.accentColor))
+                                .overlay(Image(systemName: "plus").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Add photo")
                     }
                 }
             }
@@ -450,15 +436,12 @@ struct AddPropertyElementView: View {
 
     private func handlePicked(_ image: UIImage) async {
         guard let pid = propertyService.primary?.id,
-              let data = image.jpegData(compressionQuality: 0.82) else { return }
+              let data = image.uploadJPEG(quality: 0.82) else { return }
         isUploadingMedia = true
         defer { isUploadingMedia = false }
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
-        let path = "\(uid)/elements/\(pid.uuidString)/\(UUID().uuidString).jpg"
         do {
-            try await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            let url = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
+            let url = try await SignedStorage.uploadPublicImage(
+                data, folder: "elements/\(pid.uuidString)")
             await MainActor.run {
                 switch mediaTarget {
                 case .cover: coverURL = url
@@ -536,14 +519,14 @@ private struct TypeChip: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: type.icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFont.scaled(16, weight: .medium))
                     .foregroundStyle(isSelected ? type.accentColor : Color.secondary)
                     .frame(width: 32, height: 32)
                     .background(
                         Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline))
                     )
                 Text(LocalizedStringKey(type.displayName))
-                    .font(.system(size: 10))
+                    .font(AppFont.scaled(10))
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -580,8 +563,7 @@ private struct DateToggleRow: View {
                     .labelsHidden()
                     .onChange(of: isShown) { _, shown in
                         if shown {
-                            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                            stringValue = f.string(from: date)
+                            stringValue = AppDate.dayString(from: date)
                         } else {
                             stringValue = ""
                         }
@@ -592,8 +574,7 @@ private struct DateToggleRow: View {
                     .datePickerStyle(.compact)
                     .labelsHidden()
                     .onChange(of: date) { _, d in
-                        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                        stringValue = f.string(from: d)
+                        stringValue = AppDate.dayString(from: d)
                     }
             }
         }

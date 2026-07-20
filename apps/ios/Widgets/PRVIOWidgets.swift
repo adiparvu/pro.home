@@ -11,6 +11,10 @@ struct PRVIOWidgetEntry: TimelineEntry {
     let taskCatalog: [TaskCatalogEntry]
     let plantCatalog: [PlantCatalogEntry]
     var supplyCatalog: [SupplyCatalogEntry] = []
+    // Set only by the AppIntent providers (WidgetConfigIntents.swift); nil
+    // everywhere else, which renders exactly the unconfigured widget.
+    var tasksConfig: TasksWidgetConfigIntent? = nil
+    var plantsConfig: PlantsWidgetConfigIntent? = nil
 }
 
 // MARK: - Shared Timeline Provider
@@ -61,19 +65,36 @@ struct PRVIOWidgetBundle: WidgetBundle {
         LockScreenDeliveriesWidget()
         LockScreenMessagesWidget()
         LockScreenNextTaskWidget()
+        LockScreenUpcomingWidget()
+        LockScreenShoppingWidget()
         // Live Activities
         ShoppingLiveActivity()
         MaintenanceLiveActivity()
         DeliveryLiveActivity()
         PlantCareLiveActivity()
+        WorkSessionLiveActivity()
+        EmergencyLiveActivity()
+        IoTAlertLiveActivity()
+        EnergyLiveActivity()
+        CoverLiveActivity()
         // Notification Center + Smart Stack
         NotificationCenterWidget()
         // Control Center (iOS 18+)
         if #available(iOS 18.0, *) {
+            OpenAppControl()
             AddTaskControl()
             OpenChatControl()
             ShoppingControl()
             ScanControl()
+            PlantsControl()
+            DeliveriesControl()
+            FinancesControl()
+            DocumentsControl()
+            DigitalTwinControl()
+            AssistantControl()
+            // The one stateful control — a real device toggle (see
+            // ActuatorToggleControl).
+            ActuatorToggleControl()
         }
     }
 }

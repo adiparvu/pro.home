@@ -9,13 +9,29 @@ import ObjectiveC
 
 enum LanguageManager {
     static var currentBundle: Bundle? { _strings != nil ? Bundle.main : nil }
+    /// The locale every `String(localized:)` in the app resolves against (see
+    /// the shim at the bottom of this file). Modern Foundation resolves
+    /// `String(localized:)` in native Swift, bypassing the ObjC method the
+    /// swizzle exchanges — so the override must ride the `locale:` parameter,
+    /// which is part of the supported API, not the runtime.
+    private(set) static var activeLocale: Locale = .autoupdatingCurrent
     private(set) static var _strings: [String: String]? = nil
+    /// The chosen language's .lproj loaded as its own bundle — resolves through
+    /// the real localization machinery, covering formats the manual .strings
+    /// parser can't read (compiled catalogs, stringsdict plurals).
+    private(set) static var bundleOverride: Bundle? = nil
     private static var _isSwizzled = false
 
     static func apply(_ code: String) {
         let shortCode = String(code.prefix(2))
+        activeLocale = Locale(identifier: shortCode)
         _strings = loadStrings(code: code) ?? loadStrings(code: shortCode)
+        bundleOverride = lprojBundle(code: code) ?? lprojBundle(code: shortCode)
         ensureSwizzled()
+    }
+
+    private static func lprojBundle(code: String) -> Bundle? {
+        Bundle.main.path(forResource: code, ofType: "lproj").flatMap(Bundle.init(path:))
     }
 
     // Loads Localizable.strings for the given language code directly from the app bundle.
@@ -61,7 +77,9 @@ enum LanguageManager {
     }
 
     static func reset() {
+        activeLocale = .autoupdatingCurrent
         _strings = nil
+        bundleOverride = nil
         ensureSwizzled()
     }
 
@@ -76,23 +94,51 @@ enum LanguageManager {
     }
 }
 
+// MARK: - The one localization shim
+//
+// Every unqualified `String(localized: "…")` in this module resolves through
+// this initializer (same-module declarations win overload resolution against
+// imported ones). The critical detail: Foundation's `locale:` parameter only
+// formats interpolated values — it does NOT choose the localization table.
+// Table selection follows the BUNDLE, so the shim resolves against the chosen
+// language's .lproj loaded as its own bundle. That is what makes the in-app
+// switch deterministic: on iOS 17+ Foundation resolves `String(localized:)`
+// in native Swift, bypassing the ObjC swizzle, and `AppleLanguages` only
+// helps after a relaunch — the language bundle is the supported override.
+extension String {
+    init(localized keyAndValue: String.LocalizationValue, comment: StaticString? = nil) {
+        self.init(localized: keyAndValue, table: nil,
+                  bundle: LanguageManager.bundleOverride ?? .main,
+                  locale: LanguageManager.activeLocale, comment: comment)
+    }
+}
+
 extension Bundle {
     @objc(prvio_localizedStringForKey:value:table:)
     func prvio_localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
         // After swizzle: calling self.prvio_localizedString actually calls the original IMP.
-        guard self === Bundle.main, let strings = LanguageManager._strings else {
+        guard self === Bundle.main,
+              LanguageManager._strings != nil || LanguageManager.bundleOverride != nil else {
             return prvio_localizedString(forKey: key, value: value, table: tableName)
         }
-        if let result = strings[key] {
+        if let result = LanguageManager._strings?[key] {
             // A missing key causes the system to return either the key itself or the `value`
             // parameter (when non-nil/non-empty), so we treat both as "not found".
             let notFound = result == key || (!result.isEmpty && result == (value ?? ""))
             if !notFound { return result }
         }
+        // Second chance: the chosen language's lproj bundle through the ORIGINAL
+        // implementation (the swizzle is class-wide, so prvio_ on another
+        // instance is the pristine lookup) — handles compiled catalog formats.
+        if let override = LanguageManager.bundleOverride, override !== self {
+            let viaBundle = override.prvio_localizedString(forKey: key, value: value, table: tableName)
+            let notFound = viaBundle == key || (!viaBundle.isEmpty && viaBundle == (value ?? ""))
+            if !notFound { return viaBundle }
+        }
         let fallback = prvio_localizedString(forKey: key, value: value, table: tableName)
 #if DEBUG
         if fallback == key || (!fallback.isEmpty && fallback == (value ?? "")) {
-            print("[LanguageManager] ⚠️ Missing key '\(key)' in override dict and fallback bundle (table: \(tableName ?? "Localizable"))")
+            debugLog("[LanguageManager] ⚠️ Missing key '\(key)' in override dict and fallback bundle (table: \(tableName ?? "Localizable"))")
         }
 #endif
         return fallback

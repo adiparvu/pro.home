@@ -17,6 +17,9 @@ struct PublicProfile: Codable {
     var ownerPhone: String = ""
     var ownerAddress: String = ""
     var propertyName: String = ""
+    /// Optional (and decode-tolerant for pre-1151 items): shown on the
+    /// public page as a mailto row when set.
+    var ownerEmail: String? = nil
     var isEnabled: Bool = true
 }
 
@@ -30,6 +33,59 @@ struct LoanRecord: Identifiable, Codable {
     var returnedAt: Date?
     var isReturned: Bool { returnedAt != nil }
     var daysOut: Int { Calendar.current.dateComponents([.day], from: loanedAt, to: returnedAt ?? Date()).day ?? 0 }
+}
+
+extension LoanRecord {
+    /// Seconds past the promised return DAY — the promised date itself is
+    /// grace (the list's long-standing convention: overdue starts the
+    /// following midnight). nil = returned / on time / no promise made.
+    var overdueInterval: TimeInterval? {
+        guard returnedAt == nil, let due = expectedReturnDate else { return nil }
+        let deadline = Calendar.current.startOfDay(for: due).addingTimeInterval(86_400)
+        let elapsed = Date().timeIntervalSince(deadline)
+        return elapsed > 0 ? elapsed : nil
+    }
+}
+
+/// The escalating overdue ladder (user-decreed buckets, IMG_8635):
+/// 1h · 1d · 3d · 7d · 14d · 30d · 90d · 180d · 1y — the longer a loan
+/// sits past its promised return, the hotter its row reads.
+enum LoanOverdueTier: Int, CaseIterable {
+    case justPassed, hours, oneDay, threeDays, oneWeek, twoWeeks
+    case oneMonth, threeMonths, sixMonths, oneYear
+
+    init(overdueBy interval: TimeInterval) {
+        let hour: TimeInterval = 3_600, day: TimeInterval = 86_400
+        switch interval {
+        case ..<hour:        self = .justPassed
+        case ..<day:         self = .hours
+        case ..<(3 * day):   self = .oneDay
+        case ..<(7 * day):   self = .threeDays
+        case ..<(14 * day):  self = .oneWeek
+        case ..<(30 * day):  self = .twoWeeks
+        case ..<(90 * day):  self = .oneMonth
+        case ..<(180 * day): self = .threeMonths
+        case ..<(365 * day): self = .sixMonths
+        default:             self = .oneYear
+        }
+    }
+
+    /// Yellow → amber → oranges → reds → deep crimson → violet: one hue
+    /// ramp, hotter with every bucket, legible on both schemes.
+    var color: Color {
+        switch self {
+        case .justPassed:  Color(red: 0.93, green: 0.78, blue: 0.10)
+        case .hours:       Color(red: 1.00, green: 0.70, blue: 0.00)
+        case .oneDay:      Color(red: 1.00, green: 0.55, blue: 0.00)
+        case .threeDays:   Color(red: 1.00, green: 0.40, blue: 0.10)
+        case .oneWeek:     Color(red: 0.95, green: 0.27, blue: 0.20)
+        case .twoWeeks:    Color(red: 0.88, green: 0.12, blue: 0.15)
+        case .oneMonth:    Color(red: 0.75, green: 0.05, blue: 0.12)
+        case .threeMonths: Color(red: 0.62, green: 0.00, blue: 0.16)
+        case .sixMonths:   Color(red: 0.50, green: 0.00, blue: 0.28)
+        case .oneYear:     Color(red: 0.38, green: 0.00, blue: 0.42)
+        }
+    }
 }
 
 // MARK: - InventoryItem
@@ -69,7 +125,23 @@ struct InventoryItem: Identifiable, Codable {
 
     enum WarrantyStatus { case none, valid, expiringSoon, expired }
 
-    var categoryIcon: String {
+    var categoryIcon: String { InventoryCatalog.icon(for: category) }
+    var categoryColor: Color { InventoryCatalog.color(for: category) }
+}
+
+// MARK: - Category / location vocabulary
+//
+// The canonical value lists the add form, the filter chips and the PDF report
+// all share — one source of truth instead of per-view copies.
+
+enum InventoryCatalog {
+    static let categories = ["tools", "garden", "outdoor", "appliances", "electronics",
+                             "furniture", "vehicles", "sports", "security", "other"]
+    static let locations = ["garage", "garden", "basement", "attic", "shed",
+                            "balcony", "kitchen", "living room", "bedroom", "storage"]
+    static let conditions = ["excellent", "good", "fair", "poor"]
+
+    static func icon(for category: String) -> String {
         switch category {
         case "tools":       return "wrench.and.screwdriver.fill"
         case "garden":      return "leaf.fill"
@@ -84,7 +156,7 @@ struct InventoryItem: Identifiable, Codable {
         }
     }
 
-    var categoryColor: Color {
+    static func color(for category: String) -> Color {
         switch category {
         case "tools":       return .orange
         case "garden":      return Color(red: 0.2, green: 0.8, blue: 0.3)
@@ -100,6 +172,42 @@ struct InventoryItem: Identifiable, Codable {
     }
 }
 
+// MARK: - Localized labels for stored raw values
+//
+// Categories localize through their capitalized catalog key ("tools" →
+// "Tools"). Locations only uppercase the first letter — `.capitalized` would
+// turn "living room" into the key "Living Room", which doesn't exist.
+
+enum InventoryLabels {
+    static func category(_ raw: String) -> String {
+        String(localized: String.LocalizationValue(raw.capitalized))
+    }
+
+    static func location(_ raw: String) -> String {
+        guard let first = raw.first else { return raw }
+        return String(localized: String.LocalizationValue(first.uppercased() + raw.dropFirst()))
+    }
+}
+
+extension [InventoryItem] {
+    /// Distinct borrower names from every loan on record (current first,
+    /// then history), newest data first — real names the household actually
+    /// lends to, offered as one-tap suggestions.
+    var recentBorrowers: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for item in self {
+            let names = (item.currentLoan.map { [$0] } ?? []) + item.loanHistory.reversed()
+            for loan in names {
+                let name = loan.borrowerName.trimmingCharacters(in: .whitespaces)
+                guard !name.isEmpty, seen.insert(name.lowercased()).inserted else { continue }
+                out.append(name)
+            }
+        }
+        return out
+    }
+}
+
 // MARK: - DB-mapped types
 
 struct InventoryMetadata: Codable {
@@ -112,6 +220,45 @@ struct InventoryMetadata: Codable {
     var trackerType: String = ""
     var trackerIdentifier: String = ""
     var elementId: UUID? = nil
+
+    init() {}
+
+    /// Hand-written `init(from:)` below suppresses the synthesized
+    /// memberwise initializer — restored by hand for the write-path
+    /// payloads (`inventoryMetadata`).
+    init(location: String, currentLoan: LoanRecord?, loanHistory: [LoanRecord],
+         publicProfile: PublicProfile?, latitude: Double?, longitude: Double?,
+         trackerType: String, trackerIdentifier: String, elementId: UUID?) {
+        self.location = location
+        self.currentLoan = currentLoan
+        self.loanHistory = loanHistory
+        self.publicProfile = publicProfile
+        self.latitude = latitude
+        self.longitude = longitude
+        self.trackerType = trackerType
+        self.trackerIdentifier = trackerIdentifier
+        self.elementId = elementId
+    }
+
+    // Synthesized Codable makes every defaulted property a REQUIRED key,
+    // and array decoding is all-or-nothing — the four seed rows born with
+    // metadata `{}` (2026-06-10) failed here and ONE of them emptied the
+    // ENTIRE inventory for every member, masked for weeks by the local
+    // cache + in-place inserts (root-caused 2026-07-19, migration 171
+    // backfilled the data). Absent or malformed keys now fall back to
+    // their defaults so no single row can ever poison the list again.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        location = (try? c.decodeIfPresent(String.self, forKey: .location)) ?? "garage"
+        currentLoan = (try? c.decodeIfPresent(LoanRecord.self, forKey: .currentLoan)) ?? nil
+        loanHistory = (try? c.decodeIfPresent([LoanRecord].self, forKey: .loanHistory)) ?? []
+        publicProfile = (try? c.decodeIfPresent(PublicProfile.self, forKey: .publicProfile)) ?? nil
+        latitude = (try? c.decodeIfPresent(Double.self, forKey: .latitude)) ?? nil
+        longitude = (try? c.decodeIfPresent(Double.self, forKey: .longitude)) ?? nil
+        trackerType = (try? c.decodeIfPresent(String.self, forKey: .trackerType)) ?? ""
+        trackerIdentifier = (try? c.decodeIfPresent(String.self, forKey: .trackerIdentifier)) ?? ""
+        elementId = (try? c.decodeIfPresent(UUID.self, forKey: .elementId)) ?? nil
+    }
 }
 
 struct DBInventoryRecord: Codable {
@@ -125,7 +272,9 @@ struct DBInventoryRecord: Codable {
     var purchasePrice: Double?
     var warrantyExpires: String?
     var notes: String?
-    var metadata: InventoryMetadata
+    /// Optional so a SQL-NULL metadata column can never fail the row — the
+    /// same all-or-nothing array-decode trap the `{}` seed rows sprang.
+    var metadata: InventoryMetadata?
 
     enum CodingKeys: String, CodingKey {
         case id, name, brand, category, condition, notes, metadata
@@ -145,15 +294,16 @@ struct DBInventoryRecord: Codable {
         item.purchasePrice = purchasePrice ?? 0
         item.warrantyExpiresAt = warrantyExpires.flatMap { DateFormatter.isoDate.date(from: $0) }
         item.notes = notes ?? ""
-        item.location = metadata.location
-        item.currentLoan = metadata.currentLoan
-        item.loanHistory = metadata.loanHistory
-        item.publicProfile = metadata.publicProfile
-        item.latitude = metadata.latitude
-        item.longitude = metadata.longitude
-        item.trackerType = metadata.trackerType
-        item.trackerIdentifier = metadata.trackerIdentifier
-        item.elementId = metadata.elementId
+        let m = metadata ?? InventoryMetadata()
+        item.location = m.location
+        item.currentLoan = m.currentLoan
+        item.loanHistory = m.loanHistory
+        item.publicProfile = m.publicProfile
+        item.latitude = m.latitude
+        item.longitude = m.longitude
+        item.trackerType = m.trackerType
+        item.trackerIdentifier = m.trackerIdentifier
+        item.elementId = m.elementId
         return item
     }
 }
@@ -247,10 +397,7 @@ extension InventoryItem {
 }
 
 extension DateFormatter {
-    static let isoDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
+    /// The wire-format day formatter — one shared instance via `AppDate`,
+    /// so the POSIX locale + Gregorian calendar pinning lives in one place.
+    static let isoDate: DateFormatter = AppDate.day
 }

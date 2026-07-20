@@ -37,7 +37,7 @@ struct OnboardingView: View {
                     ReadyStep().tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: step)
+                .animation(AppMotion.springy, value: step)
 
                 navigationButtons
                     .padding(.horizontal, 32)
@@ -71,7 +71,7 @@ struct OnboardingView: View {
             if step > 0 {
                 Button {
                     HapticFeedback.impact(.light)
-                    withAnimation { step -= 1 }
+                    withAnimation(AppMotion.springy) { step -= 1 }
                 } label: {
                     Text("Back")
                         .font(AppFont.body)
@@ -86,7 +86,7 @@ struct OnboardingView: View {
             Button {
                 if step < 3 {
                     HapticFeedback.impact(.medium)
-                    withAnimation { step += 1 }
+                    withAnimation(AppMotion.springy) { step += 1 }
                 } else {
                     Task { await finish() }
                 }
@@ -150,7 +150,7 @@ struct OnboardingView: View {
                 newPropertyId = resp.value.id
             } catch {
                 #if DEBUG
-                print("[Onboarding] property insert error: \(error)")
+                debugLog("[Onboarding] property insert error: \(error)")
                 #endif
                 saveError = error.localizedDescription
             }
@@ -195,16 +195,16 @@ private struct WelcomeStep: View {
                     .fill(LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 120, height: 120)
                 Image(systemName: "house.fill")
-                    .font(.system(size: 52))
+                    .font(AppFont.scaled(52))
                     .foregroundStyle(.primary)
             }
             VStack(spacing: 12) {
                 Text("Welcome to PRVIO")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFont.scaled(28, weight: .bold))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                 Text("Your all-in-one property management companion. Let's get you set up in 3 quick steps.")
-                    .font(.system(size: 16))
+                    .font(AppFont.scaled(16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.sm)
@@ -227,10 +227,10 @@ private struct PropertyStep: View {
             Spacer()
             VStack(spacing: 8) {
                 Text("Your Property")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(26, weight: .bold))
                     .foregroundStyle(.primary)
                 Text("Tell us a bit about your property.")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
 
@@ -250,7 +250,7 @@ private struct PropertyStep: View {
                             type = t
                         } label: {
                             Text(LocalizedStringKey(t.capitalized))
-                                .font(.system(size: 13, weight: type == t ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: type == t ? .semibold : .regular))
                                 .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, AppSpacing.lg)
                                 .padding(.vertical, AppSpacing.sm)
@@ -270,11 +270,11 @@ private struct PropertyStep: View {
     private func fieldRow(icon: String, placeholder: String, text: Binding<String>) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.blue)
                 .frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
@@ -296,10 +296,10 @@ private struct FeaturesStep: View {
             Spacer()
             VStack(spacing: 8) {
                 Text("Everything You Need")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(26, weight: .bold))
                     .foregroundStyle(.primary)
                 Text("Packed with smart features to manage your property effortlessly.")
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
             }
@@ -310,7 +310,7 @@ private struct FeaturesStep: View {
                         ColoredIconBadge(icon: f.icon, color: f.color, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(LocalizedStringKey(f.title)).font(AppFont.subheadline).foregroundStyle(.primary)
-                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            Text(LocalizedStringKey(f.desc)).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         Spacer()
                     }
@@ -337,15 +337,15 @@ private struct ReadyStep: View {
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 120, height: 120)
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 52))
+                    .font(AppFont.scaled(52))
                     .foregroundStyle(.primary)
             }
             VStack(spacing: 12) {
                 Text("You're All Set!")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFont.scaled(28, weight: .bold))
                     .foregroundStyle(.primary)
                 Text("PRVIO is ready to help you manage your property smarter.")
-                    .font(.system(size: 16))
+                    .font(AppFont.scaled(16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.sm)

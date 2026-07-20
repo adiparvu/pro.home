@@ -5,7 +5,12 @@ import Charts
 
 struct SpendingReportView: View {
     @Environment(ReceiptService.self) private var receiptService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
+
+    private func money(_ amount: Double, whole: Bool = false) -> String {
+        CurrencyService.money(amount, code: appSettings.preferredCurrency, whole: whole)
+    }
 
     enum ReportPeriod: String, CaseIterable {
         case daily, weekly, monthly, yearly
@@ -65,7 +70,7 @@ struct SpendingReportView: View {
                         HapticFeedback.selection()
                     } label: {
                         Text(p.label)
-                            .font(.system(size: 13, weight: period == p ? .semibold : .regular))
+                            .font(AppFont.scaled(13, weight: period == p ? .semibold : .regular))
                             .foregroundStyle(period == p ? Color(UIColor.systemBackground) : Color.primary.opacity(0.6))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 9)
@@ -220,11 +225,11 @@ struct SpendingReportView: View {
                             AxisValueLabel {
                                 switch unit {
                                 case .month:
-                                    Text(date, format: .dateTime.month(.abbreviated)).font(.system(size: 9))
+                                    Text(date, format: .dateTime.month(.abbreviated)).font(AppFont.scaled(9))
                                 case .weekOfYear:
-                                    Text("W\(Calendar.current.component(.weekOfYear, from: date))").font(.system(size: 9))
+                                    Text("W\(Calendar.current.component(.weekOfYear, from: date))").font(AppFont.scaled(9))
                                 default:
-                                    Text(date, format: .dateTime.day().month(.abbreviated)).font(.system(size: 9))
+                                    Text(date, format: .dateTime.day().month(.abbreviated)).font(AppFont.scaled(9))
                                 }
                             }
                         }
@@ -233,7 +238,7 @@ struct SpendingReportView: View {
                 .chartYAxis {
                     AxisMarks(position: .leading) { val in
                         if let v = val.as(Double.self) {
-                            AxisValueLabel { Text(Receipt.format(v)).font(.system(size: 9)) }
+                            AxisValueLabel { Text(verbatim: money(v, whole: true)).font(AppFont.scaled(9)) }
                         }
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.04))
                     }
@@ -244,9 +249,9 @@ struct SpendingReportView: View {
                 let minDay = data.filter { $0.total > 0 }.min(by: { $0.total < $1.total })
                 if let maxDay, let minDay {
                     HStack {
-                        statBadge(icon: "arrow.up.circle.fill", value: Receipt.format(maxDay.total), color: .orange)
+                        statBadge(icon: "arrow.up.circle.fill", value: money(maxDay.total), color: .orange)
                         Spacer()
-                        statBadge(icon: "arrow.down.circle.fill", value: Receipt.format(minDay.total), color: Color.brandSuccess)
+                        statBadge(icon: "arrow.down.circle.fill", value: money(minDay.total), color: Color.brandSuccess)
                     }
                 }
             }
@@ -255,7 +260,7 @@ struct SpendingReportView: View {
 
     private func statBadge(icon: String, value: String, color: Color) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(color)
+            Image(systemName: icon).font(AppFont.scaled(11)).foregroundStyle(color)
             Text(value).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
         }
     }
@@ -264,16 +269,16 @@ struct SpendingReportView: View {
         HStack(spacing: 12) {
             GlassCard(padding: 14) {
                 VStack(spacing: 4) {
-                    Text(Receipt.format(total))
-                        .font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary).monospacedDigit()
-                    Text(String(localized: "report_total_spent")).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(verbatim: money(total))
+                        .font(AppFont.scaled(20, weight: .bold, design: .rounded)).foregroundStyle(.primary).monospacedDigit()
+                    Text(String(localized: "report_total_spent")).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
             }
             GlassCard(padding: 14) {
                 VStack(spacing: 4) {
-                    Text("\(count)").font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
-                    Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text("\(count)").font(AppFont.scaled(20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
+                    Text(label).font(AppFont.scaled(11)).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -290,23 +295,26 @@ struct SpendingReportView: View {
                 ForEach(cats.prefix(8)) { cat in
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
-                            Image(systemName: cat.icon).font(.system(size: 11)).foregroundStyle(cat.color)
-                            Text(cat.label).font(.system(size: 13, weight: .medium))
+                            Image(systemName: cat.icon).font(AppFont.scaled(11)).foregroundStyle(cat.color)
+                            Text(cat.label).font(AppFont.scaled(13, weight: .medium))
                             Spacer()
-                            Text(Receipt.format(cat.total)).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
+                            Text(verbatim: money(cat.total)).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
                             let pct = total > 0 ? cat.total / total * 100 : 0
                             Text(String(format: "%.0f%%", pct))
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                                 .frame(width: 35, alignment: .trailing)
                         }
-                        GeometryReader { geo in
-                            let pct = total > 0 ? cat.total / total : 0
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(cat.color).frame(width: geo.size.width * pct, height: 5)
+                        // Share bar without GeometryReader: scale a full-width fill.
+                        let frac = total > 0 ? cat.total / total : 0
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                            .frame(height: 5)
+                            .overlay(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(cat.color)
+                                    .scaleEffect(x: frac, y: 1, anchor: .leading)
                             }
-                        }
-                        .frame(height: 5)
+                            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                     }
                 }
             }
@@ -314,32 +322,26 @@ struct SpendingReportView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "chart.bar").font(.system(size: 40)).foregroundStyle(Color.primary.opacity(0.1))
-            Text(String(localized: "report_no_data")).font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.4))
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 40)
+        EmptyStateView(icon: "chart.bar", title: "report_no_data")
     }
 
     // MARK: - Data helpers
 
     private func last30Days() -> [DailySpend] {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else { return [] }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
         var grouped: [String: (Date, Double)] = [:]
         for r in receiptService.receipts {
-            guard let date = f.date(from: r.date), date >= cutoff else { continue }
+            guard let date = AppDate.day(from: r.date), date >= cutoff else { continue }
             grouped[r.date] = (date, (grouped[r.date]?.1 ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.0, total: $0.value.1) }.sorted { $0.date < $1.date }
     }
 
     private func last12Months() -> [DailySpend] {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM"; f.locale = Locale(identifier: "en_US_POSIX")
         var grouped: [String: (Date, Double)] = [:]
         for r in receiptService.receipts {
             let key = String(r.date.prefix(7))
-            guard let date = f.date(from: key) else { continue }
+            guard let date = AppDate.monthKey.date(from: key) else { continue }
             grouped[key] = (date, (grouped[key]?.1 ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.0, total: $0.value.1) }.sorted { $0.date < $1.date }.suffix(12).map { $0 }
@@ -354,10 +356,9 @@ struct SpendingReportView: View {
     }
 
     private func availableYears() -> [Int] {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
         var years = Set<Int>()
         for r in receiptService.receipts {
-            if let date = f.date(from: r.date) { years.insert(Calendar.current.component(.year, from: date)) }
+            if let date = AppDate.day(from: r.date) { years.insert(Calendar.current.component(.year, from: date)) }
         }
         let current = Calendar.current.component(.year, from: Date())
         years.insert(current)

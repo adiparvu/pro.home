@@ -3,6 +3,7 @@ import SwiftUI
 struct SupplyListDetailView: View {
     @Environment(SupplyService.self) private var supplyService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(ReceiptService.self) private var receiptService
     var list: SupplyList
 
     @State private var searchText = ""
@@ -10,12 +11,16 @@ struct SupplyListDetailView: View {
     @State private var showAddItem = false
     @State private var editingItem: SupplyItem? = nil
     @State private var showCompleted = false
+    @State private var priceHistoryTarget: PriceHistoryTarget? = nil
 
     private var listItems: [SupplyItem] { supplyService.items(for: list.id) }
 
     private var filtered: [SupplyItem] {
         listItems.filter { item in
-            let matchSearch = searchText.isEmpty || item.name.localizedCaseInsensitiveContains(searchText)
+            let matchSearch = searchText.isEmpty
+                || item.name.matchesSearch(searchText)
+                || (item.quantity ?? "").matchesSearch(searchText)
+                || SupplyLocation.displayName(for: item.location ?? "").matchesSearch(searchText)
             let matchCat = selectedCategory == nil || item.category == selectedCategory
             return matchSearch && matchCat
         }
@@ -26,16 +31,6 @@ struct SupplyListDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: list.name, subtitleKey: "SUPPLIES")
-
-            searchBar
-                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, AppSpacing.xs)
-
-            categoryChips
-                .padding(.bottom, AppSpacing.sm)
-
-            Divider().opacity(0.3)
-
             if listItems.isEmpty {
                 emptyListState
             } else if filtered.isEmpty {
@@ -45,13 +40,20 @@ struct SupplyListDetailView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(list.name)
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search items…"))
         .toolbar {
+            if !listItems.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    filterButton
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.title3)
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add item")
@@ -61,99 +63,74 @@ struct SupplyListDetailView: View {
             AddSupplyItemSheet(list: list, editingItem: nil)
                 .environment(supplyService)
                 .environment(propertyService)
+                .environment(receiptService)
         }
         .sheet(item: $editingItem) { item in
             AddSupplyItemSheet(list: list, editingItem: item)
                 .environment(supplyService)
                 .environment(propertyService)
+                .environment(receiptService)
+        }
+        .sheet(item: $priceHistoryTarget) { target in
+            ProductPriceHistorySheet(productName: target.name)
+                .environment(receiptService)
         }
         .floatingSpeedDial(.supplies)
     }
 
-    // MARK: Search bar
+    // MARK: Toolbar filter
 
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(AppFont.footnoteEmphasis)
-                .foregroundStyle(.secondary)
-            TextField("Search items…", text: $searchText)
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-                .tint(.accentColor)
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-    }
-
-    // MARK: Category chips
-
-    private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Spacer(minLength: 20)
-                chip(label: "All", id: nil)
-                ForEach(supplyCategories, id: \.id) { cat in
-                    let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
-                    if count > 0 || selectedCategory == cat.id {
-                        chip(label: cat.label, id: cat.id, count: count)
-                    }
-                }
-                Spacer(minLength: 20)
-            }
+    /// The permanent category chip row folded into the page's one circle
+    /// (the one-circle law) — same aggregated popover as Inventory. Options
+    /// mirror the retired chips exactly: only categories that actually hold
+    /// pending items (or the one currently selected, so it can be cleared)
+    /// appear, with their honest counts.
+    private var filterButton: some View {
+        GlassFilterButton(isActive: selectedCategory != nil, inToolbar: true) {
+            GlassFilterSection(title: "Category",
+                               options: categoryOptions,
+                               selection: $selectedCategory)
         }
     }
 
-    private func chip(label: String, id: String?, count: Int = 0) -> some View {
-        let isSelected = selectedCategory == id
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedCategory = id }
-            HapticFeedback.selection()
-        } label: {
-            HStack(spacing: 5) {
-                Text(LocalizedStringKey(label))
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                if count > 0 && !isSelected {
-                    Text("\(count)")
-                        .font(.system(size: 10, weight: .semibold))
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(Color.primary.opacity(0.12), in: Capsule())
-                }
+    private var categoryOptions: [GlassPickerOption<String?>] {
+        var options: [GlassPickerOption<String?>] = [
+            .init(value: nil, title: String(localized: "All"))
+        ]
+        for cat in supplyCategories {
+            let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
+            if count > 0 || selectedCategory == cat.id {
+                options.append(.init(value: cat.id,
+                                     title: String(localized: String.LocalizationValue(cat.label)),
+                                     count: count))
             }
-            .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
-            .background(isSelected ? list.swiftColor : Color.primary.opacity(0.08), in: Capsule())
         }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        return options
     }
 
     // MARK: Items scroll
 
     private var itemsScroll: some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+            // Headers are NOT pinned: they carry no background at all, so
+            // they must scroll with their rows instead of floating naked
+            // over them (IMG_8562 "nici aici, nici nicăieri").
+            LazyVStack(spacing: 0) {
                 if !pending.isEmpty {
                     Section {
                         GlassCard(padding: 0) {
                             VStack(spacing: 0) {
                                 ForEach(Array(pending.enumerated()), id: \.element.id) { idx, item in
-                                    SupplyItemRow(item: item, isLast: idx == pending.count - 1) {
-                                        Task { await supplyService.toggleComplete(item); HapticFeedback.success() }
-                                    } onEdit: {
-                                        editingItem = item
-                                    } onDelete: {
-                                        Task { await supplyService.deleteItem(item) }
-                                    }
+                                    SupplyItemRow(
+                                        item: item,
+                                        isLast: idx == pending.count - 1,
+                                        onToggle: { Task { await supplyService.toggleComplete(item); HapticFeedback.success() } },
+                                        onEdit: { editingItem = item },
+                                        onDelete: { Task { await supplyService.deleteItem(item) } },
+                                        onPriceHistory: receiptService.receiptItems.isEmpty
+                                            ? nil
+                                            : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
+                                    )
                                 }
                             }
                         }
@@ -169,13 +146,16 @@ struct SupplyListDetailView: View {
                             GlassCard(padding: 0) {
                                 VStack(spacing: 0) {
                                     ForEach(Array(completed.enumerated()), id: \.element.id) { idx, item in
-                                        SupplyItemRow(item: item, isLast: idx == completed.count - 1) {
-                                            Task { await supplyService.toggleComplete(item); HapticFeedback.selection() }
-                                        } onEdit: {
-                                            editingItem = item
-                                        } onDelete: {
-                                            Task { await supplyService.deleteItem(item) }
-                                        }
+                                        SupplyItemRow(
+                                            item: item,
+                                            isLast: idx == completed.count - 1,
+                                            onToggle: { Task { await supplyService.toggleComplete(item); HapticFeedback.selection() } },
+                                            onEdit: { editingItem = item },
+                                            onDelete: { Task { await supplyService.deleteItem(item) } },
+                                            onPriceHistory: receiptService.receiptItems.isEmpty
+                                                ? nil
+                                                : { priceHistoryTarget = PriceHistoryTarget(name: item.name) }
+                                        )
                                     }
                                 }
                             }
@@ -187,19 +167,24 @@ struct SupplyListDetailView: View {
                             withAnimation(.spring(response: 0.35)) { showCompleted.toggle() }
                             HapticFeedback.selection()
                         } label: {
+                            // Naked text — headers wear no chip, band or
+                            // material, ever; the chevron alone carries the
+                            // disclosure affordance.
                             HStack(spacing: 6) {
                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(AppFont.scaled(10, weight: .semibold))
                                 Text("COMPLETED · \(completed.count)")
                                     .font(AppFont.label)
                                     .tracking(0.5)
-                                Spacer()
                             }
                             .foregroundStyle(Color.brandSuccess)
-                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
-                            .background(appBackground)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, AppSpacing.xl + AppSpacing.xxs)
+                            .padding(.vertical, AppSpacing.xs)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(.isHeader)
                     }
                 }
 
@@ -210,15 +195,15 @@ struct SupplyListDetailView: View {
     }
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
-        HStack {
-            Text(title)
-                .font(AppFont.label)
-                .foregroundStyle(.secondary)
-                .tracking(0.5)
-            Spacer()
-        }
-        .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
-        .background(appBackground)
+        // Naked text — headers wear no chip, band or material, ever.
+        Text(title)
+            .font(AppFont.label)
+            .foregroundStyle(Color.backdropSecondaryText)
+            .tracking(0.5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.xl + AppSpacing.xxs)
+            .padding(.vertical, AppSpacing.xs)
+            .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: States
@@ -227,11 +212,11 @@ struct SupplyListDetailView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "cart")
-                .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
+                .font(AppFont.scaled(48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No items in this list")
                 .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tap + to add the first item.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
+                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -242,7 +227,7 @@ struct SupplyListDetailView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 36)).foregroundStyle(Color.primary.opacity(0.12))
+                .font(AppFont.scaled(36)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No results")
                 .font(AppFont.subheadline).foregroundStyle(Color.primary.opacity(0.4))
             Spacer()

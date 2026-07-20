@@ -70,6 +70,7 @@ final class AppSettings {
     /// resolves through `LanguageManager`'s freshly-rebuilt string table — re-reads
     /// in the new language on the next frame.
     func setLanguage(_ language: Language) {
+        UserDefaults.standard.set(true, forKey: "prvio.locale.explicit")
         LanguageManager.apply(language.rawValue)
         followSystemLanguage = false
         locale = language.rawValue
@@ -78,6 +79,7 @@ final class AppSettings {
 
     /// Follows the device language (best match among the supported languages).
     func useSystemLanguage() {
+        UserDefaults.standard.set(true, forKey: "prvio.locale.explicit")
         LanguageManager.applySystemLanguage()
         followSystemLanguage = true
         UserDefaults.standard.removeObject(forKey: "AppleLanguages")
@@ -96,6 +98,7 @@ final class AppSettings {
     private func visibleKey(_ host: FloatingButtonHost) -> String {
         "prvio.fab.\(host.rawValue).on"
     }
+    private static let fabMasterKey = "prvio.fab.enabled"
 
     func fabActions(_ host: FloatingButtonHost) -> [DashboardQuickAction] {
         _ = fabRevision  // observe floating-button config changes
@@ -103,7 +106,29 @@ final class AppSettings {
         return raw.split(separator: ",").compactMap { DashboardQuickAction(rawValue: String($0)) }
     }
 
+    /// The global gate for every floating button. Missing key → on, so the
+    /// dial keeps behaving exactly as before this switch existed.
+    var fabMasterEnabled: Bool {
+        _ = fabRevision  // observe floating-button config changes
+        return (UserDefaults.standard.object(forKey: Self.fabMasterKey) as? Bool) ?? true
+    }
+
+    func setFabMasterEnabled(_ on: Bool) {
+        // Only the gate key changes — the per-page keys stay untouched, so
+        // turning the master back on restores the previous per-page choices.
+        fabRevision &+= 1
+        UserDefaults.standard.set(on, forKey: Self.fabMasterKey)
+    }
+
+    /// What the pages actually render: master gate AND the per-page choice.
     func fabVisible(_ host: FloatingButtonHost) -> Bool {
+        fabMasterEnabled && fabPageVisible(host)
+    }
+
+    /// The per-page choice on its own, ignoring the master gate — the
+    /// settings UI reads this so page toggles don't all show "off" while
+    /// the master switch is off.
+    func fabPageVisible(_ host: FloatingButtonHost) -> Bool {
         _ = fabRevision  // observe floating-button config changes
         if UserDefaults.standard.object(forKey: visibleKey(host)) == nil { return host.defaultVisible }
         return UserDefaults.standard.bool(forKey: visibleKey(host))
@@ -113,6 +138,18 @@ final class AppSettings {
         // Direct UserDefaults writes aren't observable, so bump the revision.
         fabRevision &+= 1
         UserDefaults.standard.set(on, forKey: visibleKey(host))
+    }
+
+    /// Restores the factory floating-button configuration by clearing every
+    /// override key — defaults then come from the hosts themselves.
+    func resetFabConfiguration() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: Self.fabMasterKey)
+        for host in FloatingButtonHost.allCases {
+            defaults.removeObject(forKey: actionsKey(host))
+            defaults.removeObject(forKey: visibleKey(host))
+        }
+        fabRevision &+= 1
     }
 
     func isFabActionEnabled(_ host: FloatingButtonHost, _ action: DashboardQuickAction) -> Bool {
@@ -135,13 +172,8 @@ final class AppSettings {
         UserDefaults.standard.set(raw, forKey: actionsKey(host))
     }
 
-    var resolvedColorScheme: ColorScheme? {
-        switch theme {
-        case "light":  return .light
-        case "dark":   return .dark
-        default:       return nil   // system
-        }
-    }
+    // The color scheme now follows the mood engine (AppMood.swift); the
+    // stored `theme` remains only for the profile sync payload below.
 
     // Sync to Supabase profiles after sign-in
     func syncToProfile(userId: UUID) {
@@ -156,7 +188,7 @@ final class AppSettings {
             }
             _ = try? await supabase
                 .from("profiles")
-                .update(Prefs(locale: locale, theme: theme, updatedAt: ISO8601DateFormatter().string(from: Date())))
+                .update(Prefs(locale: locale, theme: theme, updatedAt: ISODate.string(from: Date())))
                 .eq("id", value: userId.uuidString)
                 .execute()
         }
@@ -164,8 +196,23 @@ final class AppSettings {
 
     // Load preferences from profile on first sign-in
     func loadFromProfile(_ profile: ProfileData) {
-        locale = profile.locale ?? locale
-        theme  = profile.theme  ?? theme
+        // The language picked on THIS device is authoritative: the server
+        // profile used to clobber it on every cold start (profile said "ro"
+        // forever), silently flipping the app back — and without even
+        // re-applying the string bundle. Only adopt the profile's locale
+        // when the user never made an explicit choice here, and apply it
+        // for real when we do.
+        let explicitChoice = UserDefaults.standard.bool(forKey: "prvio.locale.explicit")
+        if !explicitChoice, let remote = profile.locale, remote != locale {
+            locale = remote
+            LanguageManager.apply(remote)
+        }
+        // Same guard for the theme: the device's explicit choice is
+        // authoritative — the server profile only seeds it before the user
+        // ever touches the picker (this used to flip Light back to Dark on
+        // every cold start).
+        let explicitTheme = UserDefaults.standard.bool(forKey: "prvio.theme.explicit")
+        if !explicitTheme, let remote = profile.theme { theme = remote }
     }
 
     static let themes: [(code: String, label: String, icon: String)] = [

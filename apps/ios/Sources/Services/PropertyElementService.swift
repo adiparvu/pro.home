@@ -13,18 +13,19 @@ final class PropertyElementService {
     // MARK: - Elements CRUD
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if elements.isEmpty, let cached = ServiceCache.load([PropertyElement].self, entity: "elements", propertyId: propertyId) {
+            elements = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
-            elements = try await supabase
-                .from("property_elements")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("sort_order", ascending: true)
-                .execute()
-                .value
+            elements = try await PropertyRepo.fetch(table: "property_elements", propertyId: propertyId,
+                                                    scope: .strict, order: "sort_order", ascending: true,
+                                                    limit: 500)
+            ServiceCache.save(elements, entity: "elements", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -39,7 +40,7 @@ final class PropertyElementService {
                 .value
             elements.append(created)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -87,7 +88,7 @@ final class PropertyElementService {
                 elements[idx] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -108,7 +109,7 @@ final class PropertyElementService {
                 elements[idx].positionY = y
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -127,7 +128,7 @@ final class PropertyElementService {
                 elements[idx].coverPhotoUrl = url
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -148,7 +149,7 @@ final class PropertyElementService {
                 elements[idx].homekitAccessoryId = accessoryId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -170,7 +171,7 @@ final class PropertyElementService {
             if let i = elements.firstIndex(where: { $0.id == elementId }) {
                 elements[i].isFavorite = !newValue // revert
             }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -191,7 +192,7 @@ final class PropertyElementService {
                 elements[idx].technicalCondition = condition
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -215,7 +216,7 @@ final class PropertyElementService {
                 elements[idx].zoneId = zoneId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -234,7 +235,7 @@ final class PropertyElementService {
                 elements[idx].photoUrls = urls
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -252,7 +253,7 @@ final class PropertyElementService {
             elements.removeAll { $0.id == element.id }
             records.removeValue(forKey: element.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -269,7 +270,7 @@ final class PropertyElementService {
                 .value
             records[elementId] = loaded
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -284,7 +285,7 @@ final class PropertyElementService {
                 .value
             records[created.elementId, default: []].insert(created, at: 0)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -297,7 +298,7 @@ final class PropertyElementService {
                 .execute()
             records[record.elementId]?.removeAll { $0.id == record.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

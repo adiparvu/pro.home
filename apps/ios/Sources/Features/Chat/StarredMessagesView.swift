@@ -11,7 +11,7 @@ struct StarredMessagesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 if messages.isEmpty {
                     emptyState
                 } else {
@@ -39,23 +39,15 @@ struct StarredMessagesView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "flag.slash")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.primary.opacity(0.18))
-            Text("No starred messages")
-                .font(.system(size: 17, weight: .semibold))
-            Text("Mark a message to find it here later.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-            Spacer()
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "flag.slash",
+            title: "No starred messages",
+            message: "Mark a message to find it here later."
+        )
     }
 }
 
@@ -78,18 +70,18 @@ private struct StarredRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "flag.fill")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message.senderName)
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(sender?.swiftColor ?? .primary)
                 Text(snippet)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(2)
                 Text(message.timeDisplay)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             Spacer()

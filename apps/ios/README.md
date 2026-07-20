@@ -1,6 +1,6 @@
-# PRV House — iOS App
+# PRVIO — iOS App
 
-Native SwiftUI app for PRV House property management.
+Native SwiftUI app for PRVIO property management.
 
 ## Setup
 

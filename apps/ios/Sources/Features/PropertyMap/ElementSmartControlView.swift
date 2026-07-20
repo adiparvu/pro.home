@@ -8,7 +8,7 @@ struct ElementSmartControlSection: View {
     let elementId: UUID
 
     @Environment(PropertyElementService.self) private var elementService
-    @ObservedObject private var homeKit = HomeKitService.shared
+    var homeKit = HomeKitService.shared
     @State private var showPicker = false
 
     private var element: PropertyElement? { elementService.elements.first { $0.id == elementId } }
@@ -27,12 +27,12 @@ struct ElementSmartControlSection: View {
                 if let acc = linkedAccessory {
                     HStack(spacing: 12) {
                         Image(systemName: homeKit.isOn(acc) ? "power.circle.fill" : "power.circle")
-                            .font(.system(size: 26))
+                            .font(AppFont.scaled(26))
                             .foregroundStyle(homeKit.isOn(acc) ? Color.green : .secondary)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(acc.name).font(AppFont.subheadline)
                             Text(homeKit.isOn(acc) ? String(localized: "On") : String(localized: "Off"))
-                                .font(.system(size: 12)).foregroundStyle(.secondary)
+                                .font(AppFont.scaled(12)).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Button {
@@ -76,11 +76,11 @@ struct ElementSmartControlSection: View {
     private var picker: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 let accs = homeKit.allAccessories()
                 if accs.isEmpty {
                     VStack(spacing: 12) {
-                        Image(systemName: "homekit").font(.system(size: 40)).foregroundStyle(.secondary)
+                        Image(systemName: "homekit").font(AppFont.scaled(40)).foregroundStyle(.secondary)
                         Text("No HomeKit accessories found").font(.headline)
                         Text("Add accessories in Apple's Home app, then try again.")
                             .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -112,5 +112,6 @@ struct ElementSmartControlSection: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPicker = false } } }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

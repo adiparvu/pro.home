@@ -23,7 +23,7 @@ final class ElementNoteService {
                 .value
             notesByElement[elementId] = loaded
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -42,7 +42,7 @@ final class ElementNoteService {
                 .value
             notesByElement[elementId, default: []].insert(created, at: 0)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -71,7 +71,7 @@ final class ElementNoteService {
                 notesByElement[note.elementId] = arr
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -84,7 +84,7 @@ final class ElementNoteService {
                 .execute()
             notesByElement[note.elementId]?.removeAll { $0.id == note.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

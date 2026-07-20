@@ -1,3 +1,4 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 
 // MARK: - ZoneType Detection
@@ -58,9 +59,13 @@ struct ZoneDetailView: View {
     @Environment(AppRouter.self) var router
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var editingZone: PropertyZone? = nil
     @State private var showDeleteConfirm = false
+    /// Drives the water-ripple TimelineView: animate only while this view is
+    /// actually on screen, so the Canvas stops redrawing once we navigate away.
+    @State private var isRippleActive = false
 
     @State private var selectedElement: PropertyElement?
 
@@ -97,27 +102,31 @@ struct ZoneDetailView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(zone.name)
         .navigationBarTitleDisplayMode(.large)
+        .onAppear { isRippleActive = true }
+        .onDisappear { isRippleActive = false }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    ShareLink(item: shareText, preview: SharePreview(zone.name)) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.primary)
-                    }
-                    Menu {
-                        Button { editingZone = zone } label: {
-                            Label("Edit Zone", systemImage: "pencil")
-                        }
-                        Button(role: .destructive) { showDeleteConfirm = true } label: {
-                            Label("Delete Zone", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.primary)
-                    }
+                ShareLink(item: shareText, preview: SharePreview(zone.name)) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Share")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button { editingZone = zone } label: {
+                        Label("Edit Zone", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) { showDeleteConfirm = true } label: {
+                        Label("Delete Zone", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("More")
             }
         }
         .sheet(item: $editingZone) { z in
@@ -149,10 +158,12 @@ struct ZoneDetailView: View {
         ZStack(alignment: .bottom) {
             // Background: drone/cover photo if available, else type gradient
             if let urlStr = zone.photoUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    heroGradient
+                StorageImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        heroGradient
+                    }
                 }
                 // Dim photo so text/overlay remain readable
                 .overlay(Color.black.opacity(0.35))
@@ -160,8 +171,8 @@ struct ZoneDetailView: View {
                 heroGradient
             }
 
-            if zoneType == .water {
-                TimelineView(.animation) { timeline in
+            if zoneType == .water && !reduceMotion {
+                TimelineView(.animation(minimumInterval: nil, paused: !isRippleActive)) { timeline in
                     Canvas { context, size in
                         let t = timeline.date.timeIntervalSinceReferenceDate
                         let cx = size.width / 2
@@ -188,7 +199,7 @@ struct ZoneDetailView: View {
 
             // Zone icon centered
             Image(systemName: zone.icon)
-                .font(.system(size: 72, weight: .semibold))
+                .font(AppFont.scaled(72, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.9))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.bottom, 50)
@@ -196,7 +207,7 @@ struct ZoneDetailView: View {
             // Bottom bar: name + health badge
             HStack {
                 Text(zone.name)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
                 HStack(spacing: 5) {
@@ -204,7 +215,7 @@ struct ZoneDetailView: View {
                         .fill(zone.healthColor)
                         .frame(width: 8, height: 8)
                     Text("\(zone.healthScore)")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.scaled(14, weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 10)
@@ -244,10 +255,10 @@ struct ZoneDetailView: View {
     private func miniStatCard(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(color)
             Text(label)
-                .font(.system(size: 10))
+                .font(AppFont.scaled(10))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -260,13 +271,13 @@ struct ZoneDetailView: View {
     private var metricsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text("METRICS")
+                Text("Metrics")
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
                 if zoneType != .generic {
                     Text("Estimated")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFont.scaled(10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
@@ -371,16 +382,16 @@ struct ZoneDetailView: View {
                     .frame(width: 48, height: 48)
                 Image(systemName: icon)
                     .foregroundStyle(color)
-                    .font(.system(size: 18))
+                    .font(AppFont.scaled(18))
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(value)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(AppFont.scaled(20, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
                 Text(label)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -475,7 +486,7 @@ struct ZoneDetailView: View {
             router.selectedTab = .settings
         default:
             // Zone-specific actions (Water, Refill, Irrigate, etc.) → open Add Task prefilled
-            router.showAddTask = true
+            router.activeDestination = .newTask
         }
     }
 
@@ -487,7 +498,7 @@ struct ZoneDetailView: View {
                         .fill(color.opacity(0.15))
                         .frame(width: 48, height: 48)
                     Image(systemName: icon)
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                         .foregroundStyle(color)
                 }
                 Text(label)
@@ -502,7 +513,7 @@ struct ZoneDetailView: View {
 
     private var elementsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("OBJECTS IN ZONE")
+            Text("Objects in Zone")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(1.2)

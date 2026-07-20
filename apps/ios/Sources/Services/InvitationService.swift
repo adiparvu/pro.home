@@ -33,9 +33,7 @@ struct MemberInvitation: Identifiable, Codable, Hashable {
 
     var sentDisplay: String {
         guard let d = createdDate else { return "" }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "d MMM, HH:mm"
-        return fmt.string(from: d)
+        return AppDateDisplay.dayMonthCommaTime.string(from: d)
     }
 }
 
@@ -57,7 +55,7 @@ final class InvitationService {
                 .execute()
                 .value
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -70,7 +68,7 @@ final class InvitationService {
                 .execute()
             await load(propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 

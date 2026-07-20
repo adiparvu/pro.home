@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct AccountSwitcherSheet: View {
     @Environment(AuthService.self) private var auth
@@ -13,13 +14,27 @@ struct AccountSwitcherSheet: View {
             List {
                 Section {
                     ForEach(store.accounts) { account in
+                        let isCurrent = account.userId == auth.session?.user.id.uuidString
                         AccountRow(
                             account: account,
-                            isCurrent: account.userId == auth.session?.user.id.uuidString,
+                            isCurrent: isCurrent,
                             isSwitching: isSwitching
                         ) {
-                            guard account.userId != auth.session?.user.id.uuidString else { return }
+                            guard !isCurrent else { return }
                             Task { await switchTo(account) }
+                        }
+                        // Any saved account except the one you're signed into can
+                        // be removed from the device here — a stale account (e.g.
+                        // one you logged out of on another build) shouldn't linger.
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            if !isCurrent {
+                                Button(role: .destructive) {
+                                    HapticFeedback.impact(.medium)
+                                    store.remove(userId: account.userId)
+                                } label: {
+                                    Label("Remove", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }
@@ -42,6 +57,7 @@ struct AccountSwitcherSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Accounts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,6 +68,7 @@ struct AccountSwitcherSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.thinMaterial)
     }
 
     private func switchTo(_ account: SavedAccount) async {
@@ -61,7 +78,17 @@ struct AccountSwitcherSheet: View {
             try await auth.switchTo(account: account)
             dismiss()
         } catch {
-            switchError = "Could not switch account. Please sign in again."
+            // An auth-layer rejection means the server no longer accepts this
+            // refresh token (logged out elsewhere, revoked, or saved before
+            // build 945's logout cleanup) — it can never switch again, so the
+            // stale row self-heals out of the list instead of erroring
+            // forever. Network failures keep the account: it may still work.
+            if error is AuthError {
+                store.remove(userId: account.userId)
+                switchError = "That session has expired, so the account was removed from the list. Sign in again to add it back."
+            } else {
+                switchError = "Could not switch account. Please sign in again."
+            }
         }
         isSwitching = false
     }
@@ -85,7 +112,7 @@ private struct AccountRow: View {
                             .foregroundStyle(.primary)
                     }
                     Text(account.email)
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(Color.primary.opacity(0.55))
                 }
 
@@ -94,7 +121,7 @@ private struct AccountRow: View {
                 if isCurrent {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.accentColor)
-                        .font(.system(size: 18))
+                        .font(AppFont.scaled(18))
                 } else if isSwitching {
                     ProgressView()
                         .scaleEffect(0.8)
@@ -113,7 +140,7 @@ private struct AvatarCircle: View {
     var body: some View {
         Group {
             if let urlStr = account.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {
@@ -133,7 +160,7 @@ private struct AvatarCircle: View {
             Circle()
                 .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(account.initial)
-                .font(.system(size: 16, weight: .bold))
+                .font(AppFont.scaled(16, weight: .bold))
                 .foregroundStyle(.white)
         }
     }

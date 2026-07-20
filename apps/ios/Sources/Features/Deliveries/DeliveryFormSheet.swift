@@ -16,6 +16,10 @@ struct DeliveryFormSheet: View {
     @State private var expectedDate: Date
     @State private var notes: String
     @State private var isSaving = false
+    /// Once the user picks a carrier chip themselves, auto-detection stops
+    /// overriding it. Editing an existing delivery that already has a carrier
+    /// starts "touched" so its choice is never silently replaced.
+    @State private var carrierTouched: Bool
 
     private var isEditing: Bool { editingDelivery != nil }
 
@@ -29,6 +33,7 @@ struct DeliveryFormSheet: View {
         if let d = editingDelivery {
             _description    = State(initialValue: d.description)
             _carrier        = State(initialValue: d.carrier ?? Delivery.carrierOptions.first ?? "DHL")
+            _carrierTouched = State(initialValue: d.carrier != nil)
             _trackingNumber = State(initialValue: d.trackingNumber ?? "")
             _status         = State(initialValue: d.status)
             _notes          = State(initialValue: d.notes ?? "")
@@ -44,6 +49,7 @@ struct DeliveryFormSheet: View {
         } else {
             _description    = State(initialValue: "")
             _carrier        = State(initialValue: Delivery.carrierOptions.first ?? "DHL")
+            _carrierTouched = State(initialValue: false)
             _trackingNumber = State(initialValue: "")
             _status         = State(initialValue: "expected")
             _hasExpectedDate = State(initialValue: false)
@@ -55,7 +61,7 @@ struct DeliveryFormSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         descriptionField
@@ -79,6 +85,7 @@ struct DeliveryFormSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: Fields
@@ -87,7 +94,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("DESCRIPTION *")
             TextField("e.g. Laptop, Shoes, Book…", text: $description)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -102,7 +109,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("TRACKING CODE")
             TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15, design: .monospaced))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .autocorrectionDisabled()
@@ -112,6 +119,20 @@ struct DeliveryFormSheet: View {
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
+                // Recognize the courier from the code's format and pre-select it,
+                // until the user picks one themselves.
+                .onChange(of: trackingNumber) { _, new in
+                    guard !carrierTouched, let detected = Delivery.detectCarrier(from: new),
+                          detected != carrier else { return }
+                    withAnimation(.snappy) { carrier = detected }
+                }
+            if !carrierTouched, let detected = Delivery.detectCarrier(from: trackingNumber) {
+                Label(String(format: String(localized: "deliv_carrier_detected"), detected),
+                      systemImage: "wand.and.stars")
+                    .font(AppFont.scaled(11))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.leading, AppSpacing.xxs)
+            }
         }
     }
 
@@ -119,7 +140,7 @@ struct DeliveryFormSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(2...4)
@@ -141,10 +162,11 @@ struct DeliveryFormSheet: View {
                     ForEach(Delivery.carrierOptions, id: \.self) { c in
                         Button {
                             carrier = c
+                            carrierTouched = true
                             HapticFeedback.selection()
                         } label: {
                             Text(c)
-                                .font(.system(size: 13, weight: carrier == c ? .semibold : .regular))
+                                .font(AppFont.scaled(13, weight: carrier == c ? .semibold : .regular))
                                 .foregroundStyle(carrier == c ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, AppSpacing.base)
                                 .padding(.vertical, AppSpacing.sm)
@@ -173,16 +195,14 @@ struct DeliveryFormSheet: View {
                         HapticFeedback.selection()
                     } label: {
                         HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(statusColor(for: opt.id).opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: statusIcon(for: opt.id))
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(statusColor(for: opt.id))
-                            }
+                            Image(systemName: statusIcon(for: opt.id))
+                                .font(AppFont.footnoteEmphasis)
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.primary)
+                                .frame(width: 32, height: 32)
+                                .glassCircle()
                             Text(LocalizedStringKey(opt.label))
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
                             Spacer()
                             if status == opt.id {
@@ -209,17 +229,6 @@ struct DeliveryFormSheet: View {
         }
     }
 
-    private func statusColor(for id: String) -> Color {
-        switch id {
-        case "expected":         return .blue
-        case "out_for_delivery": return .orange
-        case "delivered":        return Color.brandSuccess
-        case "missed":           return .red
-        case "returned":         return .gray
-        default:                 return .gray
-        }
-    }
-
     private func statusIcon(for id: String) -> String {
         switch id {
         case "expected":         return "shippingbox.fill"
@@ -242,10 +251,10 @@ struct DeliveryFormSheet: View {
                     Toggle(isOn: $hasExpectedDate) {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
-                                .font(.system(size: 14))
+                                .font(AppFont.scaled(14))
                                 .foregroundStyle(Color.accentColor)
                             Text("Set estimated date")
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
                         }
                     }
@@ -272,27 +281,13 @@ struct DeliveryFormSheet: View {
     // MARK: Save button
 
     private var saveButton: some View {
-        Button { Task { await save() } } label: {
-            Group {
-                if isSaving {
-                    ProgressView().tint(.white)
-                } else {
-                    Text(LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"))
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
-            .foregroundStyle(
-                canSave ? Color.white : Color.primary.opacity(0.4)
-            )
+        GlassWideButton(
+            label: LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"),
+            isBusy: isSaving,
+            isEnabled: canSave
+        ) {
+            Task { await save() }
         }
-        .buttonStyle(.plain)
-        .disabled(!canSave)
     }
 
     // MARK: Helpers
@@ -304,16 +299,12 @@ struct DeliveryFormSheet: View {
     }
 
     private static func parseExpectedDate(_ string: String) -> Date? {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.date(from: string)
+        AppDate.day(from: string)
     }
 
     private func expectedDateString() -> String? {
         guard hasExpectedDate else { return nil }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.string(from: expectedDate)
+        return AppDate.dayString(from: expectedDate)
     }
 
     private func save() async {

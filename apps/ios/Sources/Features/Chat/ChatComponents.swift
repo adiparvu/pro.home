@@ -46,14 +46,14 @@ struct CallPickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 if members.isEmpty {
                     VStack(spacing: 12) {
                         Spacer()
                         Image(systemName: isVideo ? "video.slash.fill" : "phone.slash.fill")
-                            .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
+                            .font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.18))
                         Text("No family members yet")
-                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                     }
                 } else {
@@ -75,6 +75,7 @@ struct CallPickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -121,23 +122,22 @@ private struct MemberCallRow: View {
                     ZStack {
                         Circle().fill(member.swiftColor.opacity(0.18))
                         Text(member.initials)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFont.scaled(13, weight: .bold))
                             .foregroundStyle(member.swiftColor)
                     }
                     .frame(width: 38, height: 38)
-                    .overlay(Circle().strokeBorder(member.swiftColor, lineWidth: 1.5))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)
                             .font(AppFont.subheadline).foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.roleLabel))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
 
                 if callOptions.isEmpty {
                     Text("No contact info available")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 } else {
                     VStack(spacing: 6) {
                         ForEach(Array(callOptions.enumerated()), id: \.offset) { _, opt in
@@ -147,11 +147,11 @@ private struct MemberCallRow: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: opt.icon)
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.accentColor)
                                         .frame(width: 20)
                                     Text(opt.label)
-                                        .font(.system(size: 13))
+                                        .font(AppFont.scaled(13))
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "arrow.up.right")
@@ -198,71 +198,33 @@ struct ChatDateSeparator: View {
     }
 }
 
-/// The reply-preview banner shown above the composer while replying. Shared by
-/// the group and DM input bars — both pass a plain sender + snippet so it works
-/// across the two message types.
-struct ChatReplyBanner: View {
-    let sender: String
-    let snippet: String
-    var onCancel: () -> Void
+/// The precise "weekday, day month, time" stamp iMessage floats above the
+/// message you're replying to while in reply focus (IMG_8495) — e.g.
+/// "lun., 6 iul., 10:57". Unlike `ChatDateSeparator` (day only, periodic), this
+/// always carries the exact minute of the focused message, and it stays sharp
+/// while the rest of the thread recedes behind the reply blur.
+struct ReplyFocusTimestamp: View {
+    let dateStr: String
 
-    var body: some View {
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 38)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(String(format: String(localized: "Reply to %@"), sender))
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.accentColor)
-                Text(snippet)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.6))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Button(action: onCancel) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(Color.primary.opacity(0.35))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Cancel reply")
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-        .background(.regularMaterial)
+    private var label: String {
+        let d = ISODate.date(from: dateStr) ?? Date()
+        let out = DateFormatter()
+        out.locale = .current
+        // Template (not a fixed pattern) so the field order localizes: RO gives
+        // "lun., 6 iul., 10:57", EN "Mon, Jul 6, 10:57".
+        out.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
+        return out.string(from: d)
     }
-}
-
-/// The recording status pill (pulsing dot · elapsed time · "slide to cancel")
-/// shared by both input bars while a voice message is being recorded.
-struct ChatRecordingIndicator: View {
-    let durationText: String
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.red)
-                .frame(width: 8, height: 8)
-                .symbolEffect(.pulse)
-            Text(durationText)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-            Spacer(minLength: 0)
-            Image(systemName: "lessthan")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.3))
-            Text("Slide to cancel")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.4))
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 9)
-        .liquidGlass(cornerRadius: AppRadius.xl)
-        // One VoiceOver stop instead of "8 · lessthan · Slide to cancel".
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Recording voice message"))
-        .accessibilityValue(Text(durationText))
-        .accessibilityHint("Slide left to cancel")
+        Text(label)
+            .font(AppFont.caption2)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.xs)
+            .accessibilityLabel(Text(label))
     }
 }
 
@@ -282,513 +244,6 @@ struct UnreadDivider: View {
         .padding(.vertical, AppSpacing.xs)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Unread messages"))
-    }
-}
-
-// MARK: - Message Bubble
-
-struct MessageBubble: View {
-    let message: Message
-    let isOwn: Bool
-    let members: [FamilyMember]
-    var outgoingColor: Color? = nil
-    var readers: [MessageRead] = []
-    var deliverers: [MessageDelivery] = []
-    var onDelete: (() -> Void)? = nil
-    /// Aggregated reaction counts from DB (emoji → count). When provided, overrides local state.
-    var persistedReactions: [String: Int] = [:]
-    /// The current user's persisted reaction, if any.
-    var persistedMyReaction: String? = nil
-    /// Called when user toggles a reaction emoji; nil = use local-only state.
-    var onReact: ((String) -> Void)? = nil
-    /// The message this one replies to (for the quoted snippet), if any.
-    var repliedMessage: Message? = nil
-    var onReply: (() -> Void)? = nil
-    var onPin: (() -> Void)? = nil
-    var onMark: (() -> Void)? = nil
-    var onForward: (() -> Void)? = nil
-    var onEdit: (() -> Void)? = nil
-    var onDeleteForEveryone: (() -> Void)? = nil
-    var onDeleteForMe: (() -> Void)? = nil
-    var pollVotes: [PollVote] = []
-    var myUserId: UUID? = nil
-    var myAvatarURL: URL? = nil
-    var onPollVote: ((Int) -> Void)? = nil
-    var onLongPress: (() -> Void)? = nil
-    /// First message of a same-sender run — shows the sender's name label.
-    var isGroupStart: Bool = true
-    /// Last message of a same-sender run — anchors the avatar to this bubble.
-    var isGroupEnd: Bool = true
-    /// Tapping the quoted reply snippet jumps to the original message.
-    var onQuotedTap: (() -> Void)? = nil
-    /// Briefly tinted when the reader jumped here from a reply/pin.
-    var isHighlighted: Bool = false
-
-    private var isDeleted: Bool { message.deletedForAll == true }
-    private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
-    /// Speech-bubble background; the tail is drawn only on the last bubble of a
-    /// same-sender group so a run reads as one block ending in a single tail.
-    private var bubbleShape: ChatBubbleShape {
-        ChatBubbleShape(isOwn: isOwn, hasTail: isGroupEnd)
-    }
-
-    private var showsQuickForward: Bool {
-        // Forwarding is available only from the long-press menu — no inline arrow.
-        return false
-    }
-
-    private var forwardButton: some View {
-        Button { onForward?() } label: {
-            Image(systemName: "arrowshape.turn.up.right.fill")
-                .font(AppFont.captionEmphasis)
-                .foregroundStyle(Color.primary.opacity(0.6))
-                .frame(width: 34, height: 34)
-        }
-        .buttonStyle(.plain)
-        .glassCircle()
-        .accessibilityLabel("Forward")
-    }
-    private var linkURL: URL? {
-        guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }
-        return firstDetectedURL(in: body)
-    }
-
-    @State private var showReaders = false
-    @State private var localReactions: [String: Int] = [:]
-    @State private var localMyReaction: String? = nil
-    @State private var showReactionPicker = false
-    @State private var swipeOffset: CGFloat = 0
-    @State private var viewerItem: ImageViewerItem? = nil
-    @State private var videoItem: ImageViewerItem? = nil
-    @State private var filePreview: FilePreviewItem? = nil
-    @State private var showDetails = false
-
-    private var displayReactions: [String: Int] {
-        onReact != nil ? persistedReactions : localReactions
-    }
-    private var displayMyReaction: String? {
-        onReact != nil ? persistedMyReaction : localMyReaction
-    }
-
-    private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
-
-    private var sender: FamilyMember? {
-        members.first { $0.name == message.senderName }
-    }
-    private var seen: Bool { !readers.isEmpty }
-    /// 3-state tick: read (someone read) > delivered (someone received) > sent.
-    private var tickStatus: MessageTick.Status {
-        if !readers.isEmpty { return .read }
-        if !deliverers.isEmpty { return .delivered }
-        return .sent
-    }
-
-    // Swipe affordance, pinned to a screen edge (WhatsApp-style) rather than to
-    // the bubble: swipe-right-to-reply always shows the reply glyph on the LEFT
-    // edge of the screen (as in WhatsApp, for both your own and incoming
-    // messages); swipe-left-for-details shows the info glyph on the RIGHT edge.
-    // The glyph scales and fades in with the swipe so the gesture feels physical.
-    @ViewBuilder private var swipeIndicator: some View {
-        if swipeOffset > 12 {
-            let progress = min(1, (swipeOffset - 12) / 60)
-            HStack(spacing: 0) {
-                swipeGlyph("arrowshape.turn.up.left.fill", progress: progress)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .allowsHitTesting(false)
-        } else if swipeOffset < -12 {
-            let progress = min(1, (-swipeOffset - 12) / 60)
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                swipeGlyph("info.circle.fill", progress: progress)
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .allowsHitTesting(false)
-        }
-    }
-
-    private func swipeGlyph(_ symbol: String, progress: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(Color.primary.opacity(AppOpacity.hairline))
-                .frame(width: 34, height: 34)
-            Image(systemName: symbol)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-        }
-        .scaleEffect(0.55 + 0.45 * progress)
-        .opacity(Double(progress))
-    }
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            if isOwn {
-                Spacer(minLength: 60)
-                if showsQuickForward { forwardButton }
-            } else {
-                // Avatar anchors to the last bubble of a same-sender run; earlier
-                // bubbles reserve its width so they stay left-aligned with it.
-                if isGroupEnd {
-                    chatAvatar
-                } else {
-                    Color.clear.frame(width: 32, height: 32)
-                }
-            }
-
-            VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
-                if !isOwn, isGroupStart {
-                    Text(message.senderName)
-                        .font(AppFont.label)
-                        .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(AppOpacity.secondaryText))
-                        .padding(.leading, AppSpacing.xxs)
-                }
-                if let replied = repliedMessage, !isDeleted {
-                    quotedReply(replied)
-                        .contentShape(Rectangle())
-                        .onTapGesture { onQuotedTap?() }
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityHint("Jump to the replied message")
-                }
-                bubbleContent
-                    // Brief accent wash when the reader jumped here from a reply.
-                    .overlay {
-                        if isHighlighted {
-                            bubbleShape.fill(Color.accentColor.opacity(0.28))
-                                .allowsHitTesting(false)
-                                .transition(.opacity)
-                        }
-                    }
-                    .animation(.easeInOut(duration: 0.3), value: isHighlighted)
-                    // Reactions float over the bubble's bottom-sender corner; the
-                    // bottom padding reserves the overhang so they don't collide
-                    // with the timestamp row below.
-                    .overlay(alignment: isOwn ? .bottomTrailing : .bottomLeading) {
-                        if !displayReactions.isEmpty, !isDeleted {
-                            reactionPills.offset(x: isOwn ? -6 : 6, y: 12)
-                        }
-                    }
-                    .padding(.bottom, (!displayReactions.isEmpty && !isDeleted) ? 14 : 0)
-                    .offset(x: swipeOffset)
-                    .onLongPressGesture(minimumDuration: 0.3) {
-                        HapticFeedback.impact(.medium)
-                        onLongPress?()
-                    }
-                if let link = linkURL {
-                    LinkPreviewView(url: link)
-                }
-                // Audio bubbles render their own time + ticks inside.
-                if !message.isAudioMessage { statusRow }
-            }
-
-            if !isOwn {
-                if showsQuickForward { forwardButton }
-                Spacer(minLength: 60)
-            }
-        }
-        .contentShape(Rectangle())
-        .overlay { swipeIndicator }
-        .simultaneousGesture(
-            // Only a decisively horizontal drag engages the reply/details swipe;
-            // anything with real vertical travel is left to the scroll view, so
-            // scrolling with a finger on a bubble never nudges it or fires a reply.
-            DragGesture(minimumDistance: 24)
-                .onChanged { v in
-                    guard !isDeleted else { return }
-                    guard abs(v.translation.width) > abs(v.translation.height) * 2 else { return }
-                    // Track past the activation distance so the bubble doesn't jump.
-                    let w = v.translation.width
-                    swipeOffset = max(-90, min(90, w > 0 ? w - 24 : w + 24))
-                }
-                .onEnded { v in
-                    guard !isDeleted else { return }
-                    let horizontal = abs(v.translation.width) > abs(v.translation.height) * 2
-                    if horizontal, v.translation.width > 72 { onReply?(); HapticFeedback.impact(.light) }
-                    else if horizontal, v.translation.width < -90 { showDetails = true; HapticFeedback.impact(.light) }
-                    withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
-                }
-        )
-        .sheet(isPresented: $showReaders) {
-            SeenBySheet(readers: readers, deliverers: deliverers, members: members)
-        }
-        .fullScreenCover(item: $viewerItem) { item in
-            FullScreenImageViewer(url: item.url)
-        }
-        .sheet(item: $filePreview) { item in
-            FilePreviewSheet(url: item.url, filename: item.name)
-        }
-        .fullScreenCover(item: $videoItem) { item in
-            VideoPlayerSheet(url: item.url)
-        }
-        .sheet(isPresented: $showDetails) {
-            MessageDetailsView(message: message, readers: readers)
-        }
-        .sheet(isPresented: $showReactionPicker) {
-            ReactionPickerView(myReaction: displayMyReaction) { emoji in
-                if let onReact {
-                    onReact(emoji)
-                } else {
-                    toggleLocalReaction(emoji)
-                }
-            }
-            .presentationDetents([.height(100)])
-        }
-    }
-
-    @ViewBuilder
-    private var menuContent: some View {
-        if !isDeleted {
-            ForEach(Self.reactionEmojis, id: \.self) { emoji in
-                Button {
-                    if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
-                } label: { Text(emoji) }
-            }
-            Divider()
-            if let onReply {
-                Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-            }
-            if let onForward {
-                Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-            }
-            if message.attachmentType == nil, let body = message.body, !body.isEmpty {
-                Button { UIPasteboard.general.string = body } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-            }
-            if isOwn, message.body?.isEmpty == false, message.attachmentType == nil, let onEdit {
-                Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
-            }
-            Button { showDetails = true } label: {
-                Label("Details", systemImage: "info.circle")
-            }
-            if let onMark {
-                Button { onMark() } label: {
-                    Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
-                }
-            }
-            if let onPin {
-                Button { onPin() } label: {
-                    Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
-                }
-            }
-            Divider()
-        }
-        if isOwn, let onDeleteForEveryone, !isDeleted {
-            Button(role: .destructive) { onDeleteForEveryone() } label: {
-                Label("Delete for everyone", systemImage: "trash")
-            }
-        }
-        if let onDeleteForMe {
-            Button(role: .destructive) { onDeleteForMe() } label: {
-                Label("Delete for me", systemImage: "trash.slash")
-            }
-        } else if isOwn, let onDelete, isDeleted == false, onDeleteForEveryone == nil {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func quotedReply(_ replied: Message) -> some View {
-        let accent = outgoingColor ?? Color.accentColor
-        HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2.5).fill(accent).frame(width: 4, height: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(replied.senderName)
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(accent)
-                Text(Self.replyPreview(replied))
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.65))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 7)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .frame(maxWidth: 250, alignment: .leading)
-    }
-
-    /// A short, human-readable preview for a replied/pinned message — checks
-    /// the structured types (poll/event/attachments) before falling back to the
-    /// raw body so a poll/event never shows its JSON payload.
-    static func replyPreview(_ m: Message) -> String {
-        if m.isPollMessage { return "📊 Poll" }
-        if m.isEventMessage { return "📅 Event" }
-        if m.isAudioMessage { return "🎤 Voice message" }
-        if m.isImageMessage { return "📷 Photo" }
-        if m.isVideoMessage { return "🎥 Video" }
-        if m.isLocationMessage { return "📍 Location" }
-        if m.isStickerMessage { return "😀 Sticker" }
-        if m.isFileMessage { return "📎 File" }
-        if let b = m.body, !b.isEmpty { return b }
-        return "Attachment"
-    }
-
-    /// A single floating capsule of reactions that straddles the bubble's
-    /// bottom edge (see the overlay in `body`), rather than a separate row
-    /// underneath — the WhatsApp/iMessage placement. The reader's own reaction
-    /// gets a subtle accent chip inside the cluster.
-    private var reactionPills: some View {
-        HStack(spacing: 3) {
-            ForEach(Array(displayReactions.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
-                Button {
-                    if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
-                } label: {
-                    HStack(spacing: 2) {
-                        Text(emoji).font(.system(size: 13))
-                        if count > 1 {
-                            Text("\(count)").font(AppFont.label)
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        }
-                    }
-                    .padding(.horizontal, 3).padding(.vertical, 1)
-                    .background(displayMyReaction == emoji ? Color.accentColor.opacity(0.18) : Color.clear,
-                                in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(String(format: String(localized: "Reaction %@"), emoji)))
-                .accessibilityValue(count > 1 ? Text("\(count)") : Text(""))
-                .accessibilityAddTraits(displayMyReaction == emoji ? [.isButton, .isSelected] : .isButton)
-            }
-        }
-        .padding(.horizontal, 6).padding(.vertical, 3)
-        .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.1), radius: 1.5, y: 0.5)
-    }
-
-    private func toggleLocalReaction(_ emoji: String) {
-        if localMyReaction == emoji {
-            localMyReaction = nil
-            if let count = localReactions[emoji] {
-                if count <= 1 { localReactions.removeValue(forKey: emoji) }
-                else { localReactions[emoji] = count - 1 }
-            }
-        } else {
-            if let old = localMyReaction, let count = localReactions[old] {
-                if count <= 1 { localReactions.removeValue(forKey: old) }
-                else { localReactions[old] = count - 1 }
-            }
-            localMyReaction = emoji
-            localReactions[emoji, default: 0] += 1
-        }
-    }
-
-    @ViewBuilder
-    private var statusRow: some View {
-        if isOwn {
-            Button {
-                if seen || !deliverers.isEmpty { showReaders = true }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(message.timeDisplay)
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.3))
-                    if message.editedAt != nil, !isDeleted {
-                        Text("· edited")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.3))
-                    }
-                    if !isDeleted { MessageTick(status: tickStatus) }
-                }
-                .padding(.horizontal, AppSpacing.xxs)
-            }
-            .buttonStyle(.plain)
-            .disabled(!seen && deliverers.isEmpty)
-        } else {
-            HStack(spacing: 4) {
-                Text(message.timeDisplay)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.primary.opacity(0.3))
-                if message.editedAt != nil, !isDeleted {
-                    Text("· edited")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.3))
-                }
-            }
-            .padding(.horizontal, AppSpacing.xxs)
-        }
-    }
-
-    @ViewBuilder
-    private var chatAvatar: some View {
-        if let member = sender {
-            ZStack {
-                Circle()
-                    .fill(member.swiftColor.opacity(0.18))
-                Text(member.initials)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(member.swiftColor)
-            }
-            .frame(width: 32, height: 32)
-            .overlay(
-                Circle()
-                    .strokeBorder(member.swiftColor, lineWidth: 2)
-            )
-        } else {
-            Circle()
-                .fill(Color.primary.opacity(0.08))
-                .frame(width: 32, height: 32)
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1.5))
-        }
-    }
-
-    @ViewBuilder
-    private var bubbleContent: some View {
-        if isDeleted {
-            HStack(spacing: 6) {
-                Image(systemName: "slash.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.4))
-                Text("This message was deleted")
-                    .font(.system(size: 15))
-                    .italic()
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(Color.primary.opacity(AppOpacity.hairline), in: bubbleShape)
-        } else if message.isPollMessage, let poll = ChatPoll.decode(message.body) {
-            PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
-                       bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
-        } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
-            EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor)
-        } else if message.isStickerMessage, let stickerId = message.body {
-            StickerBubble(stickerId: stickerId)
-        } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
-            LocationBubble(lat: lat, lon: lon, isOwn: isOwn, label: message.senderName, hasTail: isGroupEnd)
-        } else if message.isAudioMessage, let urlStr = message.attachmentUrl {
-            AudioBubble(
-                audioValue: urlStr, isOwn: isOwn,
-                avatarURL: isOwn ? myAvatarURL : sender?.avatarUrl.flatMap { URL(string: $0) },
-                initials: sender?.initials ?? String(message.senderName.prefix(2)).uppercased(),
-                avatarColor: sender?.swiftColor ?? Color.gray,
-                timeText: message.timeDisplay,
-                tick: isOwn ? (tickStatus == .read ? .read : (tickStatus == .delivered ? .delivered : .sent)) : .none,
-                bubbleColor: ownBubbleColor,
-                hasTail: isGroupEnd
-            )
-        } else if message.isFileMessage {
-            ChatFileBubble(stored: message.attachmentUrl, name: message.body,
-                           isOwn: isOwn, ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd) { u, n in
-                filePreview = FilePreviewItem(url: u, name: n)
-            }
-        } else if message.isImageMessage, let urlStr = message.attachmentUrl {
-            ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
-                            ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd) { resolved in
-                viewerItem = ImageViewerItem(url: resolved)
-            }
-        } else if message.isVideoMessage, let urlStr = message.attachmentUrl {
-            ChatVideoBubble(stored: urlStr, isOwn: isOwn, hasTail: isGroupEnd) { resolved in videoItem = ImageViewerItem(url: resolved) }
-        } else {
-            Text(message.body ?? "")
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                .background(isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
-                            in: bubbleShape)
-        }
     }
 }
 
@@ -831,259 +286,285 @@ struct MessageTick: View {
 
 // MARK: - Bubble shape (shared)
 
-/// A speech-bubble background whose bottom corner nearest the sender tightens
-/// into a "tail" on the last bubble of a same-sender run — the iMessage /
-/// WhatsApp read for "this is where the group ends, and who it's from". Middle
-/// bubbles of a run stay fully rounded so the column reads as one block.
+/// A speech-bubble background that grows a real iMessage tail — a small curl
+/// merged into the bottom corner nearest the sender — on the LAST bubble of a
+/// same-sender run. Every bubble reserves the same `tail` strip on its sender
+/// side so a run's bodies stay edge-aligned; only the last bubble fills that
+/// strip with the tail curl, while earlier bubbles stay fully rounded and the
+/// column reads as one block. The tail is authored entirely within `rect` (it
+/// never protrudes past the view bounds), so the shape is safe as a `.fill`,
+/// a `.background(in:)`, a `.clipShape`, and an iOS 26 `.glassEffect(in:)` mask.
 struct ChatBubbleShape: Shape {
     let isOwn: Bool
     /// Draw the tail — true only on the last bubble of a same-sender group.
     var hasTail: Bool = true
+    /// Continuous corner radius of the bubble body.
     var radius: CGFloat = 18
-    var tailRadius: CGFloat = 5
+    /// How far the body is inset from the sender edge (and, on the last bubble,
+    /// how far the tail curl reaches back out to that edge).
+    var tail: CGFloat = 6
 
     func path(in rect: CGRect) -> Path {
-        UnevenRoundedRectangle(
-            topLeadingRadius: radius,
-            bottomLeadingRadius: hasTail && !isOwn ? tailRadius : radius,
-            bottomTrailingRadius: hasTail && isOwn ? tailRadius : radius,
-            topTrailingRadius: radius,
-            style: .continuous
-        ).path(in: rect)
+        let w = rect.width, h = rect.height
+        // Clamp so tiny bubbles (a single glyph) never self-intersect.
+        let r = min(radius, (w - tail) / 2, h / 2)
+        let t = min(tail, max(0, (w - 2 * r) / 2))
+        // How high up the sender edge the tail curl re-joins the body.
+        let th = min(9, h - r)
+
+        if isOwn {
+            // Body occupies [0, w - t]; tail curls out to the bottom-right (w, h).
+            var p = Path()
+            p.move(to: CGPoint(x: r, y: 0))
+            p.addLine(to: CGPoint(x: w - t - r, y: 0))
+            p.addQuadCurve(to: CGPoint(x: w - t, y: r), control: CGPoint(x: w - t, y: 0))
+            if hasTail {
+                p.addLine(to: CGPoint(x: w - t, y: h - th))
+                // Sweep out and down to the tip at the true bottom-right corner…
+                p.addQuadCurve(to: CGPoint(x: w, y: h),
+                               control: CGPoint(x: w - t * 0.5, y: h - th * 0.5))
+                // …then curl back in to the body's bottom-right corner.
+                p.addQuadCurve(to: CGPoint(x: w - t, y: h),
+                               control: CGPoint(x: w - t * 0.2, y: h))
+            } else {
+                p.addLine(to: CGPoint(x: w - t, y: h - r))
+                p.addQuadCurve(to: CGPoint(x: w - t - r, y: h), control: CGPoint(x: w - t, y: h))
+            }
+            p.addLine(to: CGPoint(x: r, y: h))
+            p.addQuadCurve(to: CGPoint(x: 0, y: h - r), control: CGPoint(x: 0, y: h))
+            p.addLine(to: CGPoint(x: 0, y: r))
+            p.addQuadCurve(to: CGPoint(x: r, y: 0), control: CGPoint(x: 0, y: 0))
+            p.closeSubpath()
+            return p
+        } else {
+            // Body occupies [t, w]; tail curls out to the bottom-left (0, h).
+            var p = Path()
+            p.move(to: CGPoint(x: t + r, y: 0))
+            p.addLine(to: CGPoint(x: w - r, y: 0))
+            p.addQuadCurve(to: CGPoint(x: w, y: r), control: CGPoint(x: w, y: 0))
+            p.addLine(to: CGPoint(x: w, y: h - r))
+            p.addQuadCurve(to: CGPoint(x: w - r, y: h), control: CGPoint(x: w, y: h))
+            if hasTail {
+                p.addLine(to: CGPoint(x: t, y: h))
+                // Sweep out and down to the tip at the true bottom-left corner…
+                p.addQuadCurve(to: CGPoint(x: 0, y: h),
+                               control: CGPoint(x: t * 0.5, y: h))
+                // …then curl back in and up the sender edge.
+                p.addQuadCurve(to: CGPoint(x: t, y: h - th),
+                               control: CGPoint(x: t * 0.5, y: h - th * 0.5))
+            } else {
+                p.addLine(to: CGPoint(x: t + r, y: h))
+                p.addQuadCurve(to: CGPoint(x: t, y: h - r), control: CGPoint(x: t, y: h))
+            }
+            p.addLine(to: CGPoint(x: t, y: r))
+            p.addQuadCurve(to: CGPoint(x: t + r, y: 0), control: CGPoint(x: t, y: 0))
+            p.closeSubpath()
+            return p
+        }
     }
 }
 
-// MARK: - Seen By Sheet
+// MARK: - Incoming bubble glass (iOS 26 Liquid Glass)
 
-private struct SeenBySheet: View {
-    let readers: [MessageRead]
-    var deliverers: [MessageDelivery] = []
-    let members: [FamilyMember]
-    @Environment(\.dismiss) private var dismiss
-
-    private func member(for name: String) -> FamilyMember? {
-        members.first { $0.name == name }
+extension View {
+    /// The received-bubble background: translucent Liquid Glass on iOS 26 (the
+    /// iMessage look), a system material on earlier systems, and — under Reduce
+    /// Transparency — the opaque iMessage gray, all in the tail-aware bubble
+    /// shape. Text over it stays `.primary`, which the system keeps legible on
+    /// glass and material in both light and dark.
+    func incomingBubbleGlass(hasTail: Bool, forcesOpaque: Bool = false) -> some View {
+        modifier(IncomingBubbleGlass(hasTail: hasTail, forcesOpaque: forcesOpaque))
     }
 
-    /// Members who received the message but have not read it yet.
-    private var deliveredOnly: [MessageDelivery] {
-        let readerNames = Set(readers.map { $0.readerName })
-        return deliverers
-            .filter { !readerNames.contains($0.delivererName) }
-            .sorted { $0.deliveredAt > $1.deliveredAt }
-    }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 10) {
-                        ForEach(readers.sorted { $0.readAt > $1.readAt }) { read in
-                            HStack(spacing: 12) {
-                                avatar(for: read)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(read.readerName.isEmpty ? "Member" : read.readerName)
-                                        .font(AppFont.subheadline)
-                                        .foregroundStyle(.primary)
-                                    Text("Seen \(read.readTimeDisplay)")
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                }
-                                Spacer()
-                                Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-                        }
-                        if !deliveredOnly.isEmpty {
-                            HStack {
-                                Text("Delivered")
-                                    .font(AppFont.captionStrong)
-                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                Spacer()
-                            }
-                            .padding(.top, AppSpacing.xs)
-                            ForEach(deliveredOnly) { d in
-                                HStack(spacing: 12) {
-                                    Text(d.delivererName.isEmpty ? "Member" : d.delivererName)
-                                        .font(AppFont.subheadline)
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundStyle(Color.primary.opacity(0.4))
-                                }
-                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
-                }
-            }
-            .navigationTitle("Seen by \(readers.count)")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
-                }
-            }
-        }
-    }
-
+    /// The one bubble-background entry point shared by the text and voice
+    /// bubbles: incoming → Liquid Glass; outgoing → the themed solid fill, or
+    /// the default iMessage-blue gradient when `gradient` is set.
+    /// `forcesOpaque` swaps the incoming glass for the opaque iMessage gray —
+    /// required for very long bodies, whose bubble outgrows the GPU texture
+    /// ceiling where blur/glass silently stops rendering (IMG_8557).
     @ViewBuilder
-    private func avatar(for read: MessageRead) -> some View {
-        let m = member(for: read.readerName)
-        let color = m?.swiftColor ?? .blue
-        ZStack {
-            Circle().fill(color.opacity(0.2))
-            Text(m?.initials ?? String(read.readerName.prefix(1)).uppercased())
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(color)
+    func chatBubbleBackground(isOwn: Bool, hasTail: Bool, fill: Color,
+                              gradient: Bool = false,
+                              forcesOpaque: Bool = false) -> some View {
+        if isOwn {
+            if gradient {
+                background(Color.imessageBlueGradient,
+                           in: ChatBubbleShape(isOwn: true, hasTail: hasTail))
+            } else {
+                background(fill, in: ChatBubbleShape(isOwn: true, hasTail: hasTail))
+            }
+        } else {
+            incomingBubbleGlass(hasTail: hasTail, forcesOpaque: forcesOpaque)
         }
-        .frame(width: 38, height: 38)
-        .overlay(Circle().strokeBorder(color, lineWidth: 1.5))
     }
 }
 
-// MARK: - Reaction Picker
+private struct IncomingBubbleGlass: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let hasTail: Bool
+    /// Solid gray instead of glass. Blur-backed effects render through a GPU
+    /// texture with a hard size ceiling; a pasted-log bubble thousands of
+    /// points tall exceeds it and the glass drops out entirely, leaving raw
+    /// text on the wallpaper (IMG_8557). Solid color has no ceiling.
+    var forcesOpaque: Bool = false
 
-struct ReactionPickerView: View {
-    let myReaction: String?
-    let onSelect: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
+    private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: false, hasTail: hasTail) }
 
-    private let emojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(emojis, id: \.self) { emoji in
-                Button {
-                    onSelect(emoji)
-                    dismiss()
-                } label: {
-                    Text(emoji)
-                        .font(.system(size: 28))
-                        .scaleEffect(myReaction == emoji ? 1.2 : 1.0)
-                        .padding(AppSpacing.sm)
-                        .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.clear,
-                                    in: Circle())
-                }
-                .buttonStyle(.plain)
-            }
+    func body(content: Content) -> some View {
+        if reduceTransparency || forcesOpaque {
+            // Honor the accessibility request explicitly: an opaque elevated
+            // surface with the exact iMessage gray, never a blur to read through.
+            content.background(Color.imessageIncoming, in: shape)
+        } else if #available(iOS 26, *) {
+            // Hairline edge on top of the glass: photo wallpapers washed the
+            // bare glass out (same legibility gap the composer bar had —
+            // IMG_8532), so the bubble keeps a defined boundary everywhere.
+            content.glassEffect(in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(0.12), lineWidth: 0.7))
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(0.06), lineWidth: 0.5))
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(appBackground.ignoresSafeArea())
     }
 }
 
-// MARK: - Chat file / video bubbles (resolve private signed URLs; legacy URLs pass through)
+// (ReactionPickerView is gone — its only presenter was a dead sheet in the
+// old MessageBubble; reactions live in the long-press ChatActionOverlay.)
 
-struct ChatFileBubble: View {
-    let stored: String?
-    let name: String?
-    let isOwn: Bool
-    let ownBubbleColor: Color
-    var hasTail: Bool = true
-    let onPreview: (URL, String) -> Void
-    @State private var url: URL?
+// MARK: - Presence ticker (shared)
+
+/// Re-evaluates its content on a fixed clock so presence-derived text can't
+/// freeze while visible: "last seen 5 minutes ago" keeps counting and an
+/// "online" that stopped heartbeating decays to "last seen" without needing a
+/// new realtime event. Pass the tick's date into `PresenceService.status(at:)`
+/// so the re-render actually re-evaluates the window.
+struct PresenceTicker<Content: View>: View {
+    var interval: TimeInterval = 30
+    @ViewBuilder let content: (Date) -> Content
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "doc.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(isOwn ? .white : Color.accentColor)
-            Text(name ?? "File")
-                .font(AppFont.footnote)
-                .foregroundStyle(isOwn ? .white : .primary)
-                .lineLimit(2)
-            if url != nil {
-                Spacer()
-                Image(systemName: "eye.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
-                    .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
-            }
+        TimelineView(.periodic(from: .now, by: interval)) { context in
+            content(context.date)
         }
-        .contentShape(Rectangle())
-        .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(
-            isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
-            in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
-        )
-        .frame(maxWidth: 240)
-        .task(id: stored ?? "") { if let stored { url = await ChatMedia.resolve(stored) } }
     }
 }
 
-struct ChatVideoBubble: View {
-    let stored: String
-    var isOwn: Bool = false
-    var hasTail: Bool = true
-    let onTap: (URL) -> Void
-    @State private var url: URL?
+// MARK: - On-demand in-thread search (shared by both chat engines)
 
-    private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: isOwn, hasTail: hasTail) }
+/// In-thread search summoned on demand instead of a bar pinned permanently
+/// under the header: `searchable` is attached only while search is open, so
+/// the field appears when the user asks for it (details page / magnifier
+/// button) and the native cancel removes it entirely — the thread's top edge
+/// stays clean the rest of the time.
+struct ChatOnDemandSearch: ViewModifier {
+    @Binding var text: String
+    @Binding var isPresented: Bool
+    let prompt: Text
 
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.85)
-                .frame(width: 200, height: 140)
-            Image(systemName: "play.circle.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.white.opacity(0.9))
+    func body(content: Content) -> some View {
+        Group {
+            if isPresented {
+                content.searchable(text: $text, isPresented: $isPresented,
+                                   placement: .navigationBarDrawer(displayMode: .always),
+                                   prompt: prompt)
+            } else {
+                content
+            }
         }
-        .clipShape(shape)
-        .contentShape(shape)
-        .onTapGesture { if let url { onTap(url) } }
-        .task(id: stored) { url = await ChatMedia.resolve(stored) }
+        .onChange(of: isPresented) { _, open in
+            // Leaving search must never keep filtering the thread.
+            if !open { text = "" }
+        }
     }
 }
 
-// MARK: - Chat image bubble (resolves private signed URLs; passes legacy URLs through)
+extension View {
+    /// Presents the system search field only while `isPresented` is true (see
+    /// ``ChatOnDemandSearch``).
+    func chatOnDemandSearch(text: Binding<String>, isPresented: Binding<Bool>,
+                            prompt: Text) -> some View {
+        modifier(ChatOnDemandSearch(text: text, isPresented: isPresented, prompt: prompt))
+    }
+}
 
-struct ChatImageBubble: View {
-    let stored: String
-    let caption: String?
-    let isOwn: Bool
-    let ownBubbleColor: Color
-    var hasTail: Bool = true
-    let onTap: (URL) -> Void
-    @State private var url: URL?
+// MARK: - At-bottom tracking (shared by both chat engines)
 
-    private var hasCaption: Bool { (caption?.isEmpty == false) }
+/// Robust "is the reader at (or within a bubble of) the bottom?" detection for
+/// a chat ScrollView, from live scroll geometry (iOS 18+). The bottom-sentinel
+/// onAppear/onDisappear fallback used alone goes stale: a LazyVStack culls and
+/// re-mounts the sentinel on its own schedule (keyboard presentation, a tall
+/// incoming bubble, deep scroll-back), which left the flag claiming "not at
+/// bottom" while the reader WAS there — so incoming messages didn't auto-follow
+/// until a manual scroll. Callers keep the sentinel only as the pre-iOS-18 path.
+struct ChatAtBottomModifier: ViewModifier {
+    /// Slack below which the reader still counts as "at the bottom" — roughly
+    /// one bubble, so a sub-point settle or a just-landed message never flips
+    /// the state.
+    var threshold: CGFloat = 120
+    let update: (Bool) -> Void
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            AsyncImage(url: url) { phase in
-                if case .success(let img) = phase {
-                    img.resizable().scaledToFill()
-                        .frame(maxWidth: 220, maxHeight: 160)
-                } else {
-                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
-                        .frame(width: 160, height: 120)
-                        .overlay(ProgressView().tint(.white))
-                }
+    /// True when live scroll geometry drives the detection on this OS, so
+    /// callers can mute the legacy sentinel toggles and avoid the two sources
+    /// fighting over the same state.
+    static var isGeometryDriven: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return false
+    }
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            // Quantized distance, NOT a Bool: a Bool transform emits only on
+            // threshold crossings, so a single emission evaluated mid keyboard
+            // or composer-inset animation could go stale and strand the jump
+            // button visible at the bottom rest. Buckets re-emit every ~40pt
+            // of real movement, so the state self-corrects on the next tick.
+            content.onScrollGeometryChange(for: CGFloat.self) { geometry in
+                // How much content lies below the visible span. visibleRect
+                // already accounts for every inset, so this stays ≤ 0 at rest
+                // on the newest message. The previous form re-added
+                // contentInsets.bottom on top of an offset that already spans
+                // it — in the group chat (compose bar + tab bar ≈ 150pt) the
+                // at-rest distance never dropped under the 120pt threshold,
+                // so the jump button burned permanently.
+                let distance = geometry.contentSize.height - geometry.visibleRect.maxY
+                return (distance / 40).rounded(.down)
+            } action: { _, bucket in
+                update(bucket * 40 < threshold)
             }
-            .onTapGesture { if let url { onTap(url) } }
-            if let caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.system(size: 15))
-                    .foregroundStyle(isOwn ? .white : .primary)
-                    .padding(.horizontal, 10).padding(.top, AppSpacing.xs)
-                    .frame(maxWidth: 220, alignment: .leading)
-            }
+        } else {
+            content
         }
-        .padding(hasCaption ? 4 : 0)
-        .background(hasCaption ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear)
-        // Clip the whole card (image + caption) to the bubble so a group ending
-        // on a photo carries the same tail as a text bubble.
-        .clipShape(ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
-        .task(id: stored) { url = await ChatMedia.resolve(stored) }
+    }
+}
+
+extension View {
+    /// Reports at-bottom transitions of a chat scroll view (see
+    /// ``ChatAtBottomModifier``). No-op below iOS 18 — pair with the bottom
+    /// sentinel for those systems.
+    func chatAtBottomTracking(threshold: CGFloat = 120,
+                              _ update: @escaping (Bool) -> Void) -> some View {
+        modifier(ChatAtBottomModifier(threshold: threshold, update: update))
+    }
+}
+
+// MARK: - Bottom-anchored transcript (iOS 18)
+
+/// Keeps a chat transcript glued to its newest message while the content's
+/// height settles — iOS 18's size-change scroll anchor, the system-native
+/// cure for the "opens at the last message, hops, then comes back" entry
+/// jump: the lazy rows' estimated first-pass heights change under the
+/// viewport and the system re-anchors the bottom edge itself, so no
+/// corrective `scrollTo` is needed (or visible). The anchor only holds
+/// while the reader IS at the bottom — up-thread reading is untouched.
+/// Pre-18, the manual entry snap + re-assert remains the fallback.
+struct ChatBottomAnchored: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.defaultScrollAnchor(.bottom, for: .sizeChanges)
+        } else {
+            content
+        }
     }
 }

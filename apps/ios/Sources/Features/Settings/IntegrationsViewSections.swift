@@ -15,7 +15,7 @@ extension IntegrationsView {
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 44, height: 44)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 19, weight: .semibold))
+                        .font(AppFont.scaled(19, weight: .semibold))
                         .foregroundStyle(.white)
                 }
 
@@ -24,7 +24,7 @@ extension IntegrationsView {
                         .font(AppFont.headline)
                         .foregroundStyle(.primary)
                     Text("Create your own integrations — each service gets its own secret key and posts straight into your chat.")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(2)
                 }
@@ -47,20 +47,27 @@ extension IntegrationsView {
                 IntegrationRowContent(
                     icon: "mic.fill", color: Color(red: 0.58, green: 0.25, blue: 0.95),
                     title: "Siri & Shortcuts",
-                    description: "Create tasks, water plants, and open features with your voice.",
-                    status: .deepLink("Configure"))
+                    description: "Create tasks, water plants, and open features with your voice.")
+            }
+            .buttonStyle(.plain)
+
+            Button { vm.activeSheet = .watchShowcase } label: {
+                IntegrationRowContent(
+                    icon: "applewatch", color: Color.brandSkyBlue,
+                    title: "Apple Watch",
+                    description: "ws_row_desc")
             }
             .buttonStyle(.plain)
 
             IntegrationRow(icon: "magnifyingglass", color: Color.brandSkyBlue,
                 title: "Spotlight Search",
                 description: "Tasks, plants, and documents appear in iOS Spotlight search results.",
-                status: .active("Active"), action: nil)
+                status: .active(String(localized: "Active")), action: nil)
 
             IntegrationRow(icon: "map.fill", color: Color(red: 0.25, green: 0.75, blue: 0.45),
                 title: "Apple Maps",
                 description: "View your property location and get directions in Maps.",
-                status: .deepLink("Open"),
+                status: .deepLink(String(localized: "Deschide")),
                 action: {
                     if let lat = vm.property?.latitude, let lon = vm.property?.longitude {
                         let coords = "\(lat),\(lon)"
@@ -83,7 +90,7 @@ extension IntegrationsView {
             IntegrationRow(icon: "moon.fill", color: Color(red: 0.35, green: 0.35, blue: 0.85),
                 title: "Focus Modes",
                 description: "PRVIO notifications respect your iOS Focus settings automatically.",
-                status: .active("Automatic"),
+                status: .active(String(localized: "Automatic")),
                 action: {
                     if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -95,12 +102,14 @@ extension IntegrationsView {
             IntegrationRow(icon: "icloud.fill", color: Color.brandSkyBlue,
                 title: "iCloud Backup",
                 description: "App data is included in your iPhone iCloud backup automatically.",
-                status: .active("Automatic"), action: nil)
+                status: .active(String(localized: "Automatic")), action: nil)
 
             IntegrationRow(icon: "cloud.fill", color: Color(red: 0.15, green: 0.45, blue: 0.95),
                 title: "iCloud Sync",
                 description: "Sincronizează documente și date între iPhone, iPad și Mac prin CloudKit.",
-                status: vm.iCloudAvailable ? .active("Activ") : .notConnected,
+                status: vm.iCloudAvailable
+                    ? .active(String(localized: "Active"))
+                    : .deepLink(String(localized: "Configure")),
                 action: {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -111,40 +120,30 @@ extension IntegrationsView {
                 IntegrationRowContent(
                     icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
                     title: "NFC Keys",
-                    description: "Scanează și gestionează tag-uri NFC pentru camere și echipamente — acces instant în Digital Twin.",
-                    status: vm.nfcAvailable ? .active("Disponibil") : .notConnected)
+                    description: "Scanează și gestionează tag-uri NFC pentru camere și echipamente — acces instant în Digital Twin.")
             }
             .buttonStyle(.plain)
         }
     }
 
     var paymentsSection: some View {
-        IntegrationGroup(title: "Plăți & Acces") {
-            IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.05, green: 0.05, blue: 0.05),
-                title: "Apple Pay",
-                description: "Plătești contractori și furnizori direct din aplicație cu Apple Pay.",
-                status: vm.applePayAvailable ? .active("Disponibil") : .notConnected,
-                action: nil)
+        IntegrationGroup(title: "Wallet & Acces") {
+            // Signed Wallet passes are generated on the NFC Keys page
+            // (AddToWalletButton → sign-pass edge function).
+            Button { vm.activeSheet = .nfcWallet } label: {
+                IntegrationRowContent(
+                    icon: "wallet.pass.fill", color: Color(red: 0.05, green: 0.45, blue: 0.95),
+                    title: "Wallet — Pașapoarte Acces",
+                    description: "Generează passes semnate pentru tag-urile NFC ale casei și adaugă-le în Apple Wallet.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(icon: "wallet.pass.fill", color: Color(red: 0.05, green: 0.45, blue: 0.95),
-                title: "Wallet — Pașapoarte Acces",
-                description: "Generează passes Wallet pentru contractori și oaspeți cu cod QR și dată de expirare.",
-                status: .deepLink("Configurează"),
-                action: {
-                    if let url = URL(string: "shoebox://") ?? URL(string: "https://www.apple.com/wallet/") {
-                        UIApplication.shared.open(url)
-                    }
-                })
-
+            // No in-app credentials manager ships yet — honest "Soon" pill.
             IntegrationRow(icon: "key.fill", color: Color(red: 0.55, green: 0.35, blue: 0.85),
                 title: "AutoFill Credențiale",
                 description: "Stochează parolele router, camere IP, panou solar — iOS AutoFill le sugerează automat.",
-                status: .deepLink("Gestionează"),
-                action: {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                })
+                status: .comingSoon,
+                action: nil)
         }
     }
 
@@ -160,53 +159,64 @@ extension IntegrationsView {
                 description: "Add overdue tasks to Reminders for quick action.",
                 status: vm.remindersStatus,
                 action: { Task { await vm.toggleReminders() } })
+            // No Google Calendar / Notion sync exists yet — honest "Soon" pills.
             IntegrationRow(icon: "calendar.badge.clock", color: Color.brandSkyBlue,
                 title: "Google Calendar",
                 description: "Sync household schedules with Google Calendar.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://calendar.google.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "doc.richtext.fill", color: Color(red: 0.15, green: 0.15, blue: 0.15),
                 title: "Notion",
                 description: "Export property documents and task lists to Notion.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.notion.so") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "arrow.triangle.2.circlepath", color: Color(red: 0.98, green: 0.55, blue: 0.1),
-                title: "IFTTT",
-                description: "Automate home routines with thousands of app connections.",
-                status: .deepLink("Connect"),
-                action: { if let url = URL(string: "https://ifttt.com/explore") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "bolt.shield.fill", color: Color(red: 0.35, green: 0.75, blue: 0.55),
-                title: "Zapier",
-                description: "Connect PRVIO to 5,000+ apps without code.",
-                status: .deepLink("Connect"),
-                action: { if let url = URL(string: "https://zapier.com/apps") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
+            // IFTTT/Zapier integrate today through PRVIO's webhook keys
+            // (Custom Integrations) — route to the real setup page.
+            NavigationLink { CustomIntegrationsView() } label: {
+                IntegrationRowContent(
+                    icon: "arrow.triangle.2.circlepath", color: Color(red: 0.98, green: 0.55, blue: 0.1),
+                    title: "IFTTT",
+                    description: "Declanșează mesaje în PRVIO din applet-urile IFTTT printr-un webhook cu cheie secretă.")
+            }
+            .buttonStyle(.plain)
+            NavigationLink { CustomIntegrationsView() } label: {
+                IntegrationRowContent(
+                    icon: "bolt.shield.fill", color: Color(red: 0.35, green: 0.75, blue: 0.55),
+                    title: "Zapier",
+                    description: "Conectează Zap-urile tale la PRVIO printr-un webhook cu cheie secretă.")
+            }
+            .buttonStyle(.plain)
         }
     }
 
     var localControllersSection: some View {
         IntegrationGroup(title: "Local Controllers") {
+            // The account's iot-event webhook (R4): URL + secret + example
+            // payload — alerts and history from anything that can POST JSON.
+            NavigationLink { IoTWebhookSetupView() } label: {
+                IntegrationRowContent(
+                    icon: "dot.radiowaves.up.forward", color: Color.brandPurple,
+                    title: "iot_wh_row_title",
+                    description: "iot_wh_row_desc")
+            }
+            .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "cpu.fill", color: Color(red: 0.05, green: 0.75, blue: 0.45),
                     title: "ESP32",
-                    description: "Connect ESP32 microcontrollers via HTTP REST. Auto-discovers sensors from JSON responses.",
-                    status: .deepLink("Manage"))
+                    description: "Connect ESP32 microcontrollers via HTTP REST. Auto-discovers sensors from JSON responses.")
             }
             .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "server.rack", color: Color(red: 0.85, green: 0.15, blue: 0.35),
                     title: "Raspberry Pi",
-                    description: "Poll a Raspberry Pi running Flask or FastAPI for sensor data over HTTP.",
-                    status: .deepLink("Manage"))
+                    description: "Poll a Raspberry Pi running Flask or FastAPI for sensor data over HTTP.")
             }
             .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "network", color: Color.brandSkyBlue,
                     title: "RS485 Modbus",
-                    description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
-                    status: .deepLink("Manage"))
+                    description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).")
             }
             .buttonStyle(.plain)
         }
@@ -219,60 +229,62 @@ extension IntegrationsView {
                 description: "Controlează becuri, prize și termostate smart din PRVIO fără să deschizi Casa.",
                 status: vm.homeKitStatus,
                 action: { vm.activateHomeKit() })
-            IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
-                title: "Home Assistant",
-                description: "Connect to your local Home Assistant for full smart home control.",
-                status: .comingSoon,
-                action: { if let url = URL(string: "homeassistant://navigate/lovelace/0") { UIApplication.shared.open(url) } })
+            // Home Assistant can post into the house chat today via a PRVIO
+            // webhook key — route to the real Custom Integrations setup.
+            NavigationLink { CustomIntegrationsView() } label: {
+                IntegrationRowContent(
+                    icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
+                    title: "Home Assistant",
+                    description: "Trimite evenimente din Home Assistant în chat-ul casei printr-un webhook PRVIO.")
+            }
+            .buttonStyle(.plain)
+            // No real backing for these yet — honest "Soon" pills, no dead links.
             IntegrationRow(icon: "lightbulb.fill", color: .yellow,
                 title: "Philips Hue",
                 description: "Control lights and scenes across all rooms.",
-                status: .comingSoon,
-                action: { if let url = URL(string: "hue://") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "thermometer.medium", color: .orange,
                 title: "Nest / Google Home",
                 description: "Monitor and adjust temperature remotely.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://home.google.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "speaker.wave.2.fill", color: Color(red: 0.0, green: 0.45, blue: 1.0),
                 title: "Sonos",
                 description: "Manage whole-home audio from your property dashboard.",
-                status: .comingSoon,
-                action: { if let url = URL(string: "sonos://") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "lock.shield.fill", color: Color.brandSkyBlue,
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
-                status: .comingSoon,
-                action: { if let url = URL(string: "august-connects://") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "lightswitch.on.fill", color: Color(red: 0.0, green: 0.65, blue: 0.55),
                 title: "IKEA TRÅDFRI",
                 description: "Control IKEA smart lighting and blinds.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.ikea.com/us/en/customer-service/smart-home/") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "atom", color: Color.brandSkyBlue,
                 title: "Matter & Thread",
                 description: "Compatible Matter devices work automatically via Apple Home.",
-                status: .active("Via HomeKit"), action: nil)
+                status: .active(String(localized: "Via HomeKit")), action: nil)
         }
     }
 
     var securitySection: some View {
         IntegrationGroup(title: "Security") {
-            IntegrationRow(icon: "camera.fill", color: .indigo,
-                title: "Security Cameras",
-                description: "View live feeds and motion alerts from your cameras.",
-                status: .deepLink("Set Up"),
-                action: { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } })
+            // Real camera integration: HomeKit accessories stream natively;
+            // RTSP cameras are polled via their HTTP snapshot endpoint.
+            Button { vm.activeSheet = .cameras } label: {
+                IntegrationRowContent(
+                    icon: "video.fill", color: .indigo,
+                    title: "cameras_title",
+                    description: "cameras_row_desc")
+            }
+            .buttonStyle(.plain)
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "Ring Doorbell",
                 description: "See who's at the door and get motion alerts.",
-                status: .comingSoon,
-                action: { if let url = URL(string: "ring://") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "sensor.tag.radiowaves.forward.fill", color: .purple,
                 title: "Arlo / Eufy",
                 description: "Integrate wireless security cameras and sensors.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.arlo.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
         }
     }
 
@@ -281,111 +293,121 @@ extension IntegrationsView {
             IntegrationRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.75, blue: 0.45),
                 title: "Revolut / Wise",
                 description: "Auto-import home expenses from your bank transactions.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://app.revolut.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "creditcard.fill", color: Color.brandSkyBlue,
                 title: "Open Banking",
                 description: "Connect your bank for automatic expense categorization.",
-                status: .deepLink("Learn More"),
-                action: { if let url = URL(string: "https://www.openbanking.org.uk") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "doc.text.viewfinder", color: .orange,
-                title: "Receipt Scanner",
-                description: "Scan and auto-categorize home improvement receipts.",
-                status: .deepLink("Scan Now"),
-                action: {
-                    if let url = URL(string: "prvio://scan") { UIApplication.shared.open(url) }
-                })
+                status: .comingSoon, action: nil)
+            // The OCR receipt scanner is real — open it directly.
+            Button { vm.activeSheet = .receiptScanner } label: {
+                IntegrationRowContent(
+                    icon: "doc.text.viewfinder", color: .orange,
+                    title: "Receipt Scanner",
+                    description: "Scan and auto-categorize home improvement receipts.")
+            }
+            .buttonStyle(.plain)
         }
     }
 
     var rentalsSection: some View {
         IntegrationGroup(title: "Rentals & Hospitality") {
+            // No rental-platform sync exists — honest "Soon" pills.
             IntegrationRow(icon: "house.and.flag.fill", color: .teal,
                 title: "Booking.com",
                 description: "Manage short-term rental bookings and guest access.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.booking.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "airplane.circle.fill", color: Color.brandDanger,
                 title: "Airbnb",
                 description: "Sync Airbnb calendar and automate guest check-ins.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.airbnb.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "bed.double.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "VRBO / HomeAway",
                 description: "Connect VRBO listings to track occupancy and revenue.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.vrbo.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
         }
     }
 
+    // Live courier tracking (Ship24 backend) lives on the Deliveries page —
+    // every courier row navigates there instead of pretending to link accounts.
     var deliveriesSection: some View {
         IntegrationGroup(title: "Coletărie & Curierat") {
-            IntegrationRow(
-                icon: "shippingbox.fill", color: Color(red: 0.95, green: 0.55, blue: 0.10),
-                title: "Fan Courier",
-                description: "Conectează contul Fan Courier pentru tracking live și import automat AWB.",
-                status: vm.courierStatus("fancourier"),
-                action: { vm.connectCourier("fancourier", deepLink: "fancourier://") })
+            NavigationLink { DeliveriesView() } label: {
+                IntegrationRowContent(
+                    icon: "shippingbox.fill", color: Color(red: 0.95, green: 0.55, blue: 0.10),
+                    title: "Fan Courier",
+                    description: "Urmărește coletele Fan Courier live în pagina Livrări.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(
-                icon: "box.truck.fill", color: Color(red: 0.80, green: 0.10, blue: 0.10),
-                title: "Cargus",
-                description: "Import automat colete Cargus din contul tău.",
-                status: vm.courierStatus("cargus"),
-                action: { vm.connectCourier("cargus", deepLink: "https://www.cargus.ro") })
+            NavigationLink { DeliveriesView() } label: {
+                IntegrationRowContent(
+                    icon: "box.truck.fill", color: Color(red: 0.80, green: 0.10, blue: 0.10),
+                    title: "Cargus",
+                    description: "Urmărește coletele Cargus live în pagina Livrări.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(
-                icon: "box.truck.fill", color: Color(red: 0.10, green: 0.45, blue: 0.85),
-                title: "Sameday",
-                description: "Urmărire live colete Sameday, inclusiv eMag.",
-                status: vm.courierStatus("sameday"),
-                action: { vm.connectCourier("sameday", deepLink: "sameday://") })
+            NavigationLink { DeliveriesView() } label: {
+                IntegrationRowContent(
+                    icon: "box.truck.fill", color: Color(red: 0.10, green: 0.45, blue: 0.85),
+                    title: "Sameday",
+                    description: "Urmărire live colete Sameday, inclusiv eMag, în pagina Livrări.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(
-                icon: "shippingbox.fill", color: Color(red: 0.90, green: 0.70, blue: 0.0),
-                title: "DHL",
-                description: "Tracking colete DHL Express și DHL Parcel.",
-                status: vm.courierStatus("dhl"),
-                action: { vm.connectCourier("dhl", deepLink: "dhlexpress://") })
+            NavigationLink { DeliveriesView() } label: {
+                IntegrationRowContent(
+                    icon: "shippingbox.fill", color: Color(red: 0.90, green: 0.70, blue: 0.0),
+                    title: "DHL",
+                    description: "Tracking colete DHL Express și DHL Parcel în pagina Livrări.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(
-                icon: "shippingbox.fill", color: Color(red: 0.45, green: 0.15, blue: 0.55),
-                title: "DPD",
-                description: "Tracking live colete DPD România.",
-                status: vm.courierStatus("dpd"),
-                action: { vm.connectCourier("dpd", deepLink: "https://www.dpd.com/ro") })
+            NavigationLink { DeliveriesView() } label: {
+                IntegrationRowContent(
+                    icon: "shippingbox.fill", color: Color(red: 0.45, green: 0.15, blue: 0.55),
+                    title: "DPD",
+                    description: "Tracking live colete DPD România în pagina Livrări.")
+            }
+            .buttonStyle(.plain)
 
-            IntegrationRow(
-                icon: "envelope.fill", color: Color(red: 0.15, green: 0.55, blue: 0.85),
-                title: "Import din Email",
-                description: "Conectează Gmail sau Outlook — PRVIO detectează automat AWB-urile din confirmările de comandă.",
-                status: vm.emailImportStatus,
-                action: { vm.activateEmailImport() })
+            // Real email-inbound setup: per-property forwarding address whose
+            // emails the backend parses into tracked deliveries.
+            Button { vm.activeSheet = .emailImport } label: {
+                IntegrationRowContent(
+                    icon: "envelope.fill", color: Color(red: 0.15, green: 0.55, blue: 0.85),
+                    title: "Import din Email",
+                    description: "Redirecționează confirmările de comandă către adresa ta PRVIO — AWB-urile sunt detectate automat.")
+            }
+            .buttonStyle(.plain)
         }
     }
 
     var energySection: some View {
         IntegrationGroup(title: "Energy & Environment") {
-            IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color.brandSuccess,
-                title: "Energy Provider",
-                description: "Import utility bills automatically from your energy supplier.",
-                status: .deepLink("Set Up"),
-                action: { if let url = URL(string: "https://www.enel.ro") { UIApplication.shared.open(url) } })
+            // Energy readings & costs are tracked in the in-app Utilities module.
+            NavigationLink { UtilityView() } label: {
+                IntegrationRowContent(
+                    icon: "bolt.horizontal.circle.fill", color: Color.brandSuccess,
+                    title: "Energy Provider",
+                    description: "Urmărește consumul și facturile de energie în modulul Utilități.")
+            }
+            .buttonStyle(.plain)
             IntegrationRow(icon: "sun.max.circle.fill", color: .yellow,
                 title: "Solar / PV System",
                 description: "Monitor solar panel output and energy savings.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://pvoutput.org") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
             IntegrationRow(icon: "car.fill", color: Color(red: 0.35, green: 0.75, blue: 0.35),
                 title: "EV Charging",
                 description: "Track charging sessions and energy costs for your EV.",
-                status: .deepLink("Open"),
-                action: { if let url = URL(string: "https://www.plugshare.com") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "drop.circle.fill", color: Color(red: 0.2, green: 0.6, blue: 0.9),
-                title: "Smart Water Meter",
-                description: "Monitor water consumption and detect leaks early.",
-                status: .deepLink("Set Up"),
-                action: { if let url = URL(string: "https://www.apator.com") { UIApplication.shared.open(url) } })
+                status: .comingSoon, action: nil)
+            NavigationLink { UtilityView() } label: {
+                IntegrationRowContent(
+                    icon: "drop.circle.fill", color: Color(red: 0.2, green: 0.6, blue: 0.9),
+                    title: "Smart Water Meter",
+                    description: "Monitorizează consumul lunar de apă în modulul Utilități.")
+            }
+            .buttonStyle(.plain)
         }
     }
 }
@@ -399,7 +421,6 @@ struct IntegrationGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -429,7 +450,7 @@ struct IntegrationRow: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .lineLimit(2)
                 }
@@ -501,12 +522,14 @@ struct IntegrationRow: View {
     }
 }
 
+/// Navigation-style row (chevron affordance) for rows that push or present a
+/// real destination — the tap target is supplied by the enclosing
+/// Button/NavigationLink.
 struct IntegrationRowContent: View {
     let icon: String
     let color: Color
     let title: LocalizedStringKey
     let description: LocalizedStringKey
-    let status: IntegrationStatus
 
     var body: some View {
         VStack(spacing: 0) {
@@ -518,7 +541,7 @@ struct IntegrationRowContent: View {
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .lineLimit(2)
                 }

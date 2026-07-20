@@ -81,7 +81,7 @@ struct QRCodeImage: View {
         }
     }
 
-    // A rounded white knockout carrying the PRV House "P" brand mark, centred over
+    // A rounded white knockout carrying the PRVIO "P" brand mark, centred over
     // the matrix — the same letterform the web app stamps into its QR codes, so a
     // code looks identical whichever platform generated it.
     private var centerMark: some View {
@@ -90,16 +90,20 @@ struct QRCodeImage: View {
             .fill(.white)
             .frame(width: badge, height: badge)
             .overlay(
-                PRVBrandMark()
-                    .fill(
+                // The approved monogram (P with the roof) replaces the old
+                // letterform — same white badge, same footprint.
+                Image("BrandMark")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(
                         LinearGradient(
                             colors: [Color(red: 0.16, green: 0.20, blue: 0.52),
                                      Color(red: 0.36, green: 0.20, blue: 0.68)],
                             startPoint: .top, endPoint: .bottom
-                        ),
-                        style: FillStyle(eoFill: true)
+                        )
                     )
-                    .frame(width: badge * 0.62, height: badge * 0.62)
+                    .frame(width: badge * 0.66, height: badge * 0.66)
             )
             .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
     }
@@ -135,39 +139,4 @@ struct QRCodeImage: View {
     }
 
     private static let maskCache = MaskCache()
-}
-
-// MARK: - PRV House "P" brand mark
-//
-// The canonical PRV House letterform, drawn from the same path the web uses
-// (100×100 viewBox): a solid stem plus a bowl with an even-odd counter cut out.
-private struct PRVBrandMark: Shape {
-    func path(in rect: CGRect) -> Path {
-        let s = rect.width / 100
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * s, y: rect.minY + y * s)
-        }
-        var path = Path()
-        // Stem: M18 10 h28 v80 h-28 Z
-        path.move(to: p(18, 10))
-        path.addLine(to: p(46, 10))
-        path.addLine(to: p(46, 90))
-        path.addLine(to: p(18, 90))
-        path.closeSubpath()
-        // Bowl outer: M46 10 L68 10 Q90 10 90 33 Q90 56 68 56 L46 56 Z
-        path.move(to: p(46, 10))
-        path.addLine(to: p(68, 10))
-        path.addQuadCurve(to: p(90, 33), control: p(90, 10))
-        path.addQuadCurve(to: p(68, 56), control: p(90, 56))
-        path.addLine(to: p(46, 56))
-        path.closeSubpath()
-        // Counter cutout (even-odd): M46 26 L65 26 Q74 26 74 33 Q74 40 65 40 L46 40 Z
-        path.move(to: p(46, 26))
-        path.addLine(to: p(65, 26))
-        path.addQuadCurve(to: p(74, 33), control: p(74, 26))
-        path.addQuadCurve(to: p(65, 40), control: p(74, 40))
-        path.addLine(to: p(46, 40))
-        path.closeSubpath()
-        return path
-    }
 }

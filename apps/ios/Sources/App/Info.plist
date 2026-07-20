@@ -51,12 +51,16 @@
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to attach photos to property records and tasks.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Used to save security camera snapshots to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Used for voice search to find tasks, documents, and finances hands-free.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Used to convert your voice into search queries across your property data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to share your location in Chat and tag item locations in Inventory.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Keeps live location sharing running for the period you chose, and — only if you turn on home presence — notices arrivals and departures in a small area around your home, even when PRVIO is in the background.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
@@ -75,20 +79,10 @@
 	<string>Used to communicate with local IoT controllers (ESP32, Raspberry Pi, RS485 Modbus gateways) on your home network.</string>
 	<key>NSHomeKitUsageDescription</key>
 	<string>Used to read and control HomeKit smart devices connected to your property.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Used to show and control what's playing on the home dashboard's media card.</string>
 	<key>NSGroupActivitiesUsageDescription</key>
 	<string>Used to share the Digital Twin with family members during a FaceTime call.</string>
-	<key>NSUbiquitousContainers</key>
-	<dict>
-		<key>iCloud.com.prvio.app</key>
-		<dict>
-			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<true/>
-			<key>NSUbiquitousContainerName</key>
-			<string>PRVIO</string>
-			<key>NSUbiquitousContainerSupportedFolderLevels</key>
-			<string>Any</string>
-		</dict>
-	</dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
@@ -111,10 +105,12 @@
 	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
+		<string>INSendMessageIntent</string>
 		<string>com.prvio.task</string>
 		<string>com.prvio.plants</string>
 		<string>com.prvio.chat</string>
 		<string>com.prvio.shopping</string>
+		<string>com.prvio.page</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
@@ -124,6 +120,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>

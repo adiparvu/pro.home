@@ -10,6 +10,11 @@ struct HomeScan: Identifiable, Codable, Hashable {
     var fileFormat: String   // "usdz" | "image" | "pdf"
     var notes: String = ""
     var createdAt: Date = Date()
+    /// Digital Twin link: the property element (building, annex…) this scan
+    /// belongs to. Optional — old saves decode with no link.
+    var elementId: UUID? = nil
+
+    var is3D: Bool { kind == "room3d" || kind == "site3d" || fileFormat == "usdz" }
 
     var kindLabel: String {
         switch kind {

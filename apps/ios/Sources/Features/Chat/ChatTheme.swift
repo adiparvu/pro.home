@@ -1,6 +1,109 @@
 import SwiftUI
+import UIKit
+import PhotosUI
 
 // MARK: - Chat theme (conversation background + bubble color)
+
+// MARK: - Custom chat wallpaper storage
+//
+// A user-uploaded chat background. Only the file name is persisted (not the
+// absolute path, which can change between app launches); the full URL is
+// reconstructed under the app's Documents directory on read.
+enum ChatBackgroundStore {
+    private static var dir: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    static func url(for fileName: String) -> URL? {
+        fileName.isEmpty ? nil : dir.appendingPathComponent(fileName)
+    }
+
+    /// Decoded wallpapers, keyed by file name. The chat re-evaluates its body
+    /// constantly (typing, presence, scroll) and the background used to hit
+    /// `UIImage(contentsOfFile:)` — a synchronous main-thread JPEG decode —
+    /// on every single pass, which read as a heavy entry stutter.
+    private static let decoded = NSCache<NSString, UIImage>()
+
+    /// The wallpaper image for a stored file name, decoded once and cached.
+    static func image(named fileName: String) -> UIImage? {
+        if let hit = decoded.object(forKey: fileName as NSString) { return hit }
+        guard let url = url(for: fileName),
+              let img = UIImage(contentsOfFile: url.path) else { return nil }
+        decoded.setObject(img, forKey: fileName as NSString)
+        return img
+    }
+
+    /// Cache-only lookup — never touches disk, safe on the hot render path.
+    static func cachedImage(named fileName: String) -> UIImage? {
+        decoded.object(forKey: fileName as NSString)
+    }
+
+    /// Cheap existence check (a stat, no decode) so the background chooser
+    /// can keep its fallback chain without paying for a synchronous decode.
+    static func imageExists(named fileName: String) -> Bool {
+        guard let url = url(for: fileName) else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// The wallpaper decoded off the main actor; the cache is filled so every
+    /// later body pass is a synchronous hit.
+    static func loadImage(named fileName: String) async -> UIImage? {
+        if let hit = cachedImage(named: fileName) { return hit }
+        guard let url = url(for: fileName) else { return nil }
+        let path = url.path
+        let img = await Task.detached(priority: .userInitiated) {
+            UIImage(contentsOfFile: path)
+        }.value
+        if let img { decoded.setObject(img, forKey: fileName as NSString) }
+        return img
+    }
+
+    /// Persist an image for the given scope and return the stored file name.
+    static func save(_ image: UIImage, scope: String?) -> String? {
+        let safe = (scope ?? "global").replacingOccurrences(of: "/", with: "_")
+        let name = "chatbg-\(safe).jpg"
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        do {
+            try data.write(to: dir.appendingPathComponent(name))
+            // The name is scope-stable, so a re-upload must drop the old decode.
+            decoded.removeObject(forKey: name as NSString)
+            return name
+        } catch { return nil }
+    }
+}
+
+// MARK: - iMessage bubble tokens
+//
+// The default PRVIO chat dresses its bubbles exactly like Apple Messages on
+// iOS 26: outgoing in the signature blue (a subtle top-to-bottom gradient) and
+// incoming in translucent Liquid Glass (rendered via `incomingBubbleGlass`,
+// with these gray stops as the Reduce-Transparency / pre-iOS-26 fallback so
+// text stays legible over any wallpaper). Custom chat themes keep their own
+// picked bubble colour and never see the gradient.
+extension Color {
+    /// Solid iMessage outgoing blue (#0A7CFF) — the base tint used for
+    /// readable-foreground computations and non-gradient surfaces.
+    static let imessageBlue = Color(red: 10 / 255, green: 124 / 255, blue: 255 / 255)
+
+    /// The received-bubble gray Messages falls back to when Liquid Glass is
+    /// unavailable or Reduce Transparency is on. Light #E9E9EB / dark #262628 —
+    /// the exact iMessage grays, adaptive to the interface style.
+    static var imessageIncoming: Color {
+        Color(uiColor: UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(red: 38 / 255, green: 38 / 255, blue: 40 / 255, alpha: 1)
+                : UIColor(red: 233 / 255, green: 233 / 255, blue: 235 / 255, alpha: 1)
+        })
+    }
+
+    /// The outgoing-bubble gradient: iMessage blue #0A7CFF (top) → #1E8FFF
+    /// (bottom). Applied only on the default theme; custom themes stay solid.
+    static var imessageBlueGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(red: 10 / 255, green: 124 / 255, blue: 255 / 255),
+                     Color(red: 30 / 255, green: 143 / 255, blue: 255 / 255)],
+            startPoint: .top, endPoint: .bottom)
+    }
+}
 
 struct ChatTheme: Identifiable {
     let id: String
@@ -8,6 +111,8 @@ struct ChatTheme: Identifiable {
     let outgoingBubble: Color
     let backgroundColors: [Color]?   // nil = app default background
     let isDark: Bool
+    var backgroundImage: String? = nil   // custom wallpaper file name (wins over colors)
+    var backgroundAnimation: String? = nil   // dynamic preset id (photo wins over it)
 
     static let all: [ChatTheme] = [
         ChatTheme(id: "appDefault", name: "Default",
@@ -60,30 +165,136 @@ struct ChatTheme: Identifiable {
     static func theme(for id: String) -> ChatTheme { all.first { $0.id == id } ?? all[0] }
 
     /// Resolves the effective theme from the saved theme id plus optional
-    /// per-user customizations (custom bubble colour, custom background).
-    static func resolved(themeID: String, bubbleHex: String, bgID: String) -> ChatTheme {
+    /// per-user customizations (custom bubble colour, custom background,
+    /// dynamic wallpaper). A photo wins over a dynamic preset, which wins
+    /// over a static gradient.
+    static func resolved(themeID: String, bubbleHex: String, bgID: String,
+                         bgImage: String = "", bgAnim: String = "") -> ChatTheme {
         let base = theme(for: themeID)
         let bubble: Color = (!bubbleHex.isEmpty ? Color(hex: bubbleHex) : nil) ?? base.outgoingBubble
         let bgTheme = bgID.isEmpty ? base : theme(for: bgID)
-        let isPlainDefault = themeID == "appDefault" && bubbleHex.isEmpty && bgID.isEmpty
+        let animPreset = bgImage.isEmpty ? AnimatedBackgroundPreset.preset(for: bgAnim) : nil
+        let isPlainDefault = themeID == "appDefault" && bubbleHex.isEmpty
+            && bgID.isEmpty && bgImage.isEmpty && bgAnim.isEmpty
         return ChatTheme(
             id: isPlainDefault ? "appDefault" : "custom",
             name: base.name,
             outgoingBubble: bubble,
             backgroundColors: bgTheme.backgroundColors,
-            isDark: bgTheme.isDark
+            isDark: animPreset?.isDark ?? bgTheme.isDark,
+            backgroundImage: bgImage.isEmpty ? nil : bgImage,
+            backgroundAnimation: animPreset?.id
         )
     }
 
+    /// The one authority for what a conversation actually shows.
+    ///
+    /// `scope == nil` resolves the global default. For a conversation scope,
+    /// THEME and BUBBLE fall back per-field to the global values, but the
+    /// three BACKGROUND keys are one setting: the picker clears the other two
+    /// ("" = explicitly none) when one is chosen, so a per-field fallback
+    /// would resurrect a stale global photo over a freshly picked preset —
+    /// the "background never changes" bug. If ANY scoped background key is
+    /// set, the scoped background layer wins wholesale.
+    static func effective(scope: String?, defaults d: UserDefaults = .standard) -> ChatTheme {
+        func nonEmpty(_ key: String) -> String? {
+            d.string(forKey: key).flatMap { $0.isEmpty ? nil : $0 }
+        }
+        let gTheme = nonEmpty("prvio.chatTheme") ?? "appDefault"
+        let gBubble = nonEmpty("prvio.chatBubbleHex") ?? ""
+        var bg = nonEmpty("prvio.chatBgID") ?? ""
+        var img = nonEmpty("prvio.chatBgImage") ?? ""
+        var anim = nonEmpty("prvio.chatBgAnim") ?? ""
+        var theme = gTheme
+        var bubble = gBubble
+        if let scope {
+            theme = nonEmpty("prvio.chatTheme.\(scope)") ?? gTheme
+            bubble = nonEmpty("prvio.chatBubbleHex.\(scope)") ?? gBubble
+            let sBg = d.string(forKey: "prvio.chatBgID.\(scope)") ?? ""
+            let sImg = d.string(forKey: "prvio.chatBgImage.\(scope)") ?? ""
+            let sAnim = d.string(forKey: "prvio.chatBgAnim.\(scope)") ?? ""
+            if !(sBg.isEmpty && sImg.isEmpty && sAnim.isEmpty) {
+                bg = sBg; img = sImg; anim = sAnim
+            }
+        }
+        return .resolved(themeID: theme, bubbleHex: bubble, bgID: bg,
+                         bgImage: img, bgAnim: anim)
+    }
+
+    /// True when this conversation has pinned ANY of its own theme keys —
+    /// i.e. it no longer follows the global theme live. Mirrors exactly
+    /// what `effective(scope:)` treats as an override ("" = unset).
+    static func hasOverride(scope: String, defaults d: UserDefaults = .standard) -> Bool {
+        ["prvio.chatTheme.", "prvio.chatBubbleHex.",
+         "prvio.chatBgID.", "prvio.chatBgImage.", "prvio.chatBgAnim."].contains {
+            d.string(forKey: $0 + scope).map { !$0.isEmpty } ?? false
+        }
+    }
+
+    /// Re-links a conversation to the global theme by REMOVING its scoped
+    /// keys (not copying values — a copy is exactly the "background never
+    /// follows the global again" bug the user hit). After this,
+    /// `effective(scope:)` falls through to the global keys live.
+    static func clearOverride(scope: String, defaults d: UserDefaults = .standard) {
+        for prefix in ["prvio.chatTheme.", "prvio.chatBubbleHex.",
+                       "prvio.chatBgID.", "prvio.chatBgImage.", "prvio.chatBgAnim."] {
+            d.removeObject(forKey: prefix + scope)
+        }
+    }
+
+    // The wallpaper must be anchored to the SCREEN, not to the message list's
+    // keyboard-shrunk frame. Ignoring the `.all` safe-area regions (container
+    // + keyboard) keeps the layer's bounds full-bleed — and the explicit
+    // screen-sized frame inside `ChatWallpaperAnchor` makes the render
+    // provably constant: even if some container re-proposes a smaller area
+    // (keyboard avoidance, composer growth, reply/edit strips), a fixed frame
+    // cannot rescale, so `scaledToFill` can never zoom or pan the photo.
     @ViewBuilder var background: some View {
-        if let cols = backgroundColors {
-            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+        // Cache hit short-circuits the file-system stat — the chat re-evaluates
+        // its body constantly, so the steady-state path must stay allocation-
+        // and syscall-free.
+        if let name = backgroundImage,
+           ChatBackgroundStore.cachedImage(named: name) != nil
+            || ChatBackgroundStore.imageExists(named: name) {
+            ChatWallpaperAnchor {
+                ChatWallpaperImage(name: name)
+            }
+        } else if let animID = backgroundAnimation,
+                  let preset = AnimatedBackgroundPreset.preset(for: animID) {
+            ChatWallpaperAnchor { AnimatedChatBackground(preset: preset) }
+        } else if let cols = backgroundColors {
+            ChatWallpaperAnchor {
+                LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+            }
         } else {
-            appBackground.ignoresSafeArea()
+            ChatWallpaperAnchor { appBackground }
+        }
+    }
+
+    /// The same visual layers as `background`, WITHOUT the screen-anchored
+    /// frame — for previews that render the theme INSIDE a card (Profile's
+    /// chat card, the hub's theme hero). The anchor's fixed
+    /// `UIScreen`-sized frame is the chat surface's keyboard contract; put
+    /// inside a card it inflates the card to full screen width, blowing
+    /// past the page's 20pt margins (IMG_8592). Here the card's own frame
+    /// + clip bound the layers instead.
+    @ViewBuilder var previewBackground: some View {
+        if let name = backgroundImage,
+           ChatBackgroundStore.cachedImage(named: name) != nil
+            || ChatBackgroundStore.imageExists(named: name) {
+            ChatWallpaperImage(name: name)
+        } else if let animID = backgroundAnimation,
+                  let preset = AnimatedBackgroundPreset.preset(for: animID) {
+            AnimatedChatBackground(preset: preset)
+        } else if let cols = backgroundColors {
+            LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+        } else {
+            appBackground
         }
     }
 
     /// WhatsApp-style bubble colour palette for the "Chat bubble" picker.
+    // (see ChatWallpaperAnchor below for how wallpaper layers stay motionless)
     static let bubblePalette: [Color] = [
         Color(red: 0.30, green: 0.69, blue: 0.45), Color(red: 0.82, green: 0.95, blue: 0.82),
         Color(red: 0.36, green: 0.30, blue: 0.85), Color(red: 0.88, green: 0.85, blue: 0.98),
@@ -108,13 +319,73 @@ struct ChatTheme: Identifiable {
     ]
 }
 
+// MARK: - Async wallpaper layer
+
+/// Renders a stored chat wallpaper without ever decoding JPEG bytes on the
+/// main actor. A cached decode paints on the very first body pass; a cold
+/// start shows the app background for the decode's few milliseconds, then
+/// settles on the exact same render as before.
+private struct ChatWallpaperImage: View {
+    let name: String
+    @State private var loaded: UIImage?
+
+    var body: some View {
+        Group {
+            if let img = loaded ?? ChatBackgroundStore.cachedImage(named: name) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    // Photos arrive raw; the stock themes are designed
+                    // gradients. A vertical scrim makes wallpapers read like
+                    // part of the set: stronger where the header and compose
+                    // bar live, lighter where bubbles carry their own contrast.
+                    .overlay(
+                        LinearGradient(stops: [
+                            .init(color: .black.opacity(0.28), location: 0),
+                            .init(color: .black.opacity(0.10), location: 0.25),
+                            .init(color: .black.opacity(0.10), location: 0.72),
+                            .init(color: .black.opacity(0.30), location: 1),
+                        ], startPoint: .top, endPoint: .bottom)
+                    )
+            } else {
+                appBackground
+            }
+        }
+        .task(id: name) {
+            guard ChatBackgroundStore.cachedImage(named: name) == nil else { return }
+            loaded = nil   // a reused view got a new wallpaper — drop the old one
+            loaded = await ChatBackgroundStore.loadImage(named: name)
+        }
+    }
+}
+
 // MARK: - Conversation theme picker (WhatsApp-style)
 
 struct ChatThemePicker: View {
-    @AppStorage("prvio.chatTheme") private var selected = "appDefault"
-    @AppStorage("prvio.chatBubbleHex") private var bubbleHex = ""
-    @AppStorage("prvio.chatBgID") private var bgID = ""
+    // scope == nil  -> global default (Chat Settings), writes prvio.chatTheme…
+    // scope == id   -> per-conversation override, writes prvio.chatTheme.<id>…
+    // Per-conversation keys default to the current global value so the picker
+    // opens showing the conversation's effective theme.
+    private let scope: String?
+    @AppStorage private var selected: String
+    @AppStorage private var bubbleHex: String
+    @AppStorage private var bgID: String
+    @AppStorage private var bgAnim: String
     @Environment(\.dismiss) private var dismiss
+
+    init(scope: String? = nil) {
+        self.scope = scope
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let d = UserDefaults.standard
+        let gTheme = scope == nil ? "appDefault" : (d.string(forKey: "prvio.chatTheme") ?? "appDefault")
+        let gBubble = scope == nil ? "" : (d.string(forKey: "prvio.chatBubbleHex") ?? "")
+        let gBg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgID") ?? "")
+        let gAnim = scope == nil ? "" : (d.string(forKey: "prvio.chatBgAnim") ?? "")
+        _selected  = AppStorage(wrappedValue: gTheme,  "prvio.chatTheme\(suffix)")
+        _bubbleHex = AppStorage(wrappedValue: gBubble, "prvio.chatBubbleHex\(suffix)")
+        _bgID      = AppStorage(wrappedValue: gBg,     "prvio.chatBgID\(suffix)")
+        _bgAnim    = AppStorage(wrappedValue: gAnim,   "prvio.chatBgAnim\(suffix)")
+    }
 
     private let columns = [GridItem(.flexible(), spacing: 10),
                            GridItem(.flexible(), spacing: 10),
@@ -128,9 +399,46 @@ struct ChatThemePicker: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 10) {
+                        // Per-conversation pickers lead with the way BACK:
+                        // once any scoped key was ever written, only this
+                        // row re-links the conversation to the global theme
+                        // (the keys are removed, not copied).
+                        if let scope {
+                            Button {
+                                ChatTheme.clearOverride(scope: scope)
+                                HapticFeedback.success()
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 14) {
+                                    Image(systemName: "globe")
+                                        .font(AppFont.scaled(16))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                                        .frame(width: 26)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("chat_theme_use_global")
+                                            .font(AppFont.scaled(16)).foregroundStyle(.primary)
+                                        Text("chat_theme_use_global_footer")
+                                            .font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer()
+                                    if !ChatTheme.hasOverride(scope: scope) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(AppFont.scaled(18))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
+                            .padding(.horizontal, AppSpacing.lg)
+                        }
+
                         Text("Themes")
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -140,10 +448,11 @@ struct ChatThemePicker: View {
                             ForEach(ChatTheme.all) { theme in
                                 Button {
                                     selected = theme.id
-                                    bubbleHex = ""; bgID = ""   // theme overrides customizations
+                                    bubbleHex = ""; bgID = ""; bgAnim = ""   // theme overrides customizations
                                     HapticFeedback.impact(.light)
                                 } label: {
-                                    thumb(theme, isSelected: selected == theme.id && bubbleHex.isEmpty && bgID.isEmpty)
+                                    thumb(theme, isSelected: selected == theme.id && bubbleHex.isEmpty
+                                                             && bgID.isEmpty && bgAnim.isEmpty)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -153,7 +462,7 @@ struct ChatThemePicker: View {
                         .padding(.horizontal, AppSpacing.lg)
 
                         Text("Both the chat bubble and the conversation background will change.")
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, AppSpacing.xl).padding(.top, 2)
 
@@ -164,7 +473,7 @@ struct ChatThemePicker: View {
 
                         VStack(spacing: 0) {
                             NavigationLink {
-                                BubbleColorPicker()
+                                BubbleColorPicker(scope: scope)
                             } label: {
                                 customRow(icon: "bubble.left.fill", label: "Chat bubble") {
                                     Circle().fill(bubbleColor).frame(width: 22, height: 22)
@@ -173,7 +482,7 @@ struct ChatThemePicker: View {
                             .buttonStyle(.plain)
                             Divider().padding(.leading, 52)
                             NavigationLink {
-                                BackgroundPicker()
+                                BackgroundPicker(scope: scope)
                             } label: {
                                 customRow(icon: "photo.fill", label: "Background") {
                                     backgroundSwatch
@@ -195,22 +504,31 @@ struct ChatThemePicker: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        // Sheet-presented: a glass backdrop instead of the opaque app
+        // background (the sub-pickers inherit the same NavigationStack).
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder private var backgroundSwatch: some View {
-        let cols = ChatTheme.theme(for: bgID.isEmpty ? selected : bgID).backgroundColors
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(cols.map { LinearGradient(colors: $0, startPoint: .top, endPoint: .bottom) }
-                  ?? LinearGradient(colors: [Color.primary.opacity(0.1)], startPoint: .top, endPoint: .bottom))
-            .frame(width: 30, height: 30)
+        if let preset = AnimatedBackgroundPreset.preset(for: bgAnim) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(preset.gradient)
+                .frame(width: 30, height: 30)
+        } else {
+            let cols = ChatTheme.theme(for: bgID.isEmpty ? selected : bgID).backgroundColors
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(cols.map { LinearGradient(colors: $0, startPoint: .top, endPoint: .bottom) }
+                      ?? LinearGradient(colors: [Color.primary.opacity(0.1)], startPoint: .top, endPoint: .bottom))
+                .frame(width: 30, height: 30)
+        }
     }
 
     private func customRow<Trailing: View>(icon: String, label: String,
                                             @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
-            Text(LocalizedStringKey(label)).font(.system(size: 16)).foregroundStyle(.primary)
+                .font(AppFont.scaled(16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
+            Text(LocalizedStringKey(label)).font(AppFont.scaled(16)).foregroundStyle(.primary)
             Spacer()
             trailing()
             Image(systemName: "chevron.right")
@@ -241,7 +559,7 @@ struct ChatThemePicker: View {
             .padding(AppSpacing.sm)
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFont.scaled(16, weight: .bold))
                     .foregroundStyle(.white, theme.outgoingBubble)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding(AppSpacing.xs)
@@ -260,8 +578,14 @@ struct ChatThemePicker: View {
 // MARK: - Chat bubble colour picker
 
 struct BubbleColorPicker: View {
-    @AppStorage("prvio.chatBubbleHex") private var bubbleHex = ""
+    @AppStorage private var bubbleHex: String
     @Environment(\.dismiss) private var dismiss
+
+    init(scope: String? = nil) {
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let g = scope == nil ? "" : (UserDefaults.standard.string(forKey: "prvio.chatBubbleHex") ?? "")
+        _bubbleHex = AppStorage(wrappedValue: g, "prvio.chatBubbleHex\(suffix)")
+    }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 4)
 
@@ -281,7 +605,7 @@ struct BubbleColorPicker: View {
                                 if bubbleHex == hex {
                                     Circle().strokeBorder(Color.primary, lineWidth: 3)
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(AppFont.scaled(20, weight: .bold))
                                         .foregroundStyle(color.isLight ? .black : .white)
                                 }
                             }
@@ -291,59 +615,280 @@ struct BubbleColorPicker: View {
             }
             .padding(AppSpacing.xl)
         }
-        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Chat bubble")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 // MARK: - Background (wallpaper) picker
+//
+// Restructured like the Messages background sheet: a live preview of the
+// current choice up top, then Your Photo (the personal option leads —
+// IMG_8611 "nu are ce căuta jos"), then Dynamic and Colors as HORIZONTAL
+// swatch rows — compact phone-shaped chips that scroll sideways instead of
+// the old page-length slab grid. Selection is exclusive across sections;
+// the storage keys record which kind won.
 
 struct BackgroundPicker: View {
-    @AppStorage("prvio.chatBgID") private var bgID = ""
+    private let scope: String?
+    @AppStorage private var bgID: String
+    @AppStorage private var bgImage: String   // custom wallpaper file name ("" = none)
+    @AppStorage private var bgAnim: String    // dynamic preset id ("" = none)
+    @State private var photoItem: PhotosPickerItem?
     @Environment(\.dismiss) private var dismiss
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
+    init(scope: String? = nil) {
+        self.scope = scope
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let d = UserDefaults.standard
+        let gBg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgID") ?? "")
+        let gImg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgImage") ?? "")
+        let gAnim = scope == nil ? "" : (d.string(forKey: "prvio.chatBgAnim") ?? "")
+        _bgID = AppStorage(wrappedValue: gBg, "prvio.chatBgID\(suffix)")
+        _bgImage = AppStorage(wrappedValue: gImg, "prvio.chatBgImage\(suffix)")
+        _bgAnim = AppStorage(wrappedValue: gAnim, "prvio.chatBgAnim\(suffix)")
+    }
+
+    /// Width of one preset chip in the horizontal rows — phone-shaped at the
+    /// tile's 0.62 aspect, six of them visible with a peek of the seventh.
+    private static let tileWidth: CGFloat = 84
+
+    private var usingPhoto: Bool { !bgImage.isEmpty }
+    private var usingDynamic: Bool { !usingPhoto && !bgAnim.isEmpty }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(ChatTheme.all) { theme in
-                    Button {
-                        bgID = theme.id
-                        HapticFeedback.impact(.light)
-                    } label: {
-                        ZStack {
-                            Group {
-                                if let cols = theme.backgroundColors {
-                                    LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
-                                } else {
-                                    appBackground
-                                }
-                            }
-                            if bgID == theme.id {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(.white, Color.accentColor)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                                    .padding(AppSpacing.xs)
-                            }
-                        }
-                        .aspectRatio(0.62, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(bgID == theme.id ? Color.accentColor : Color.primary.opacity(0.12),
-                                              lineWidth: bgID == theme.id ? 2.5 : 1)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
+            VStack(alignment: .leading, spacing: 22) {
+                livePreview
+                photoSection
+                dynamicSection
+                colorsSection
+                Spacer(minLength: 24)
             }
-            .padding(AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.sm)
         }
-        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Background")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data),
+                   let name = ChatBackgroundStore.save(img, scope: scope) {
+                    await MainActor.run {
+                        bgImage = name; bgID = ""; bgAnim = ""
+                        HapticFeedback.success()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Live preview — the actual background with sample bubbles on it.
+
+    private var livePreview: some View {
+        section(title: "Preview") {
+            ZStack {
+                ChatTheme.resolved(themeID: "appDefault", bubbleHex: "", bgID: bgID,
+                                   bgImage: bgImage, bgAnim: bgAnim).background
+                VStack(spacing: 8) {
+                    HStack {
+                        sampleBubble(fill: Color(.systemBackground).opacity(0.92), isOwn: false)
+                        Spacer(minLength: 90)
+                    }
+                    HStack {
+                        Spacer(minLength: 90)
+                        sampleBubble(fill: Color.accentColor, isOwn: true)
+                    }
+                }
+                .padding(AppSpacing.lg)
+            }
+            .frame(height: 150)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.7)
+            )
+        }
+    }
+
+    private func sampleBubble(fill: Color, isOwn: Bool) -> some View {
+        Capsule()
+            .fill(fill)
+            .frame(width: isOwn ? 96 : 128, height: 30)
+            .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
+    }
+
+    // MARK: Your photo (leads — the personal option is the page's point)
+
+    private var photoSection: some View {
+        section(title: "Your photo") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: AppSpacing.sm) {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        tile(selected: false) {
+                            VStack(spacing: 6) {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(AppFont.scaled(20, weight: .semibold))
+                                Text("Upload").font(AppFont.caption2)
+                            }
+                            .foregroundStyle(Color.accentColor)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.accentColor.opacity(0.1))
+                        }
+                        .frame(width: Self.tileWidth)
+                    }
+                    .buttonStyle(.plain)
+
+                    if usingPhoto, let img = ChatBackgroundStore.image(named: bgImage) {
+                        Button {
+                            HapticFeedback.impact(.light)  // already selected — tap re-affirms
+                        } label: {
+                            tile(selected: true) {
+                                // scaledToFill inside a clear overlay: the photo
+                                // fills the tile without inflating its layout —
+                                // a bare fill let portrait shots burst out of
+                                // the grid and cover the Upload tile.
+                                Color.clear
+                                    .overlay(Image(uiImage: img).resizable().scaledToFill())
+                                    .clipped()
+                            }
+                            .frame(width: Self.tileWidth)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if usingPhoto {
+                        Button(role: .destructive) {
+                            bgImage = ""; HapticFeedback.impact(.light)
+                        } label: {
+                            Label("Remove custom photo", systemImage: "trash")
+                                .font(AppFont.caption)
+                        }
+                        .padding(.leading, AppSpacing.sm)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+
+    // MARK: Dynamic (animated) presets — one horizontal swatch row
+
+    private var dynamicSection: some View {
+        section(title: "Dynamic") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: AppSpacing.sm) {
+                    ForEach(AnimatedBackgroundPreset.all) { preset in
+                        let isSel = usingDynamic && bgAnim == preset.id
+                        Button {
+                            bgAnim = preset.id; bgID = ""; bgImage = ""
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            VStack(spacing: AppSpacing.xs) {
+                                tile(selected: isSel) {
+                                    AnimatedChatBackground(preset: preset)
+                                }
+                                .frame(width: Self.tileWidth)
+                                Text(preset.name)
+                                    .font(AppFont.caption2)
+                                    .foregroundStyle(isSel ? AnyShapeStyle(.primary)
+                                                          : AnyShapeStyle(.secondary))
+                                    .lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Static gradient presets — one horizontal swatch row
+
+    private var colorsSection: some View {
+        section(title: "Colors") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: AppSpacing.sm) {
+                    ForEach(ChatTheme.all) { theme in
+                        let isSel = !usingPhoto && !usingDynamic && bgID == theme.id
+                        Button {
+                            bgID = theme.id; bgImage = ""; bgAnim = ""
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            tile(selected: isSel) {
+                                Group {
+                                    if let cols = theme.backgroundColors {
+                                        LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
+                                    } else {
+                                        appBackground
+                                    }
+                                }
+                            }
+                            .frame(width: Self.tileWidth)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Building blocks
+
+    private func section<Content: View>(title: LocalizedStringKey,
+                                        @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.xxs)
+            content()
+        }
+    }
+
+    @ViewBuilder
+    private func tile<Content: View>(selected: Bool, @ViewBuilder content: () -> Content) -> some View {
+        ZStack {
+            content()
+            if selected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(AppFont.scaled(18, weight: .bold))
+                    .foregroundStyle(.white, Color.accentColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(AppSpacing.xs)
+            }
+        }
+        .aspectRatio(0.62, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.12),
+                              lineWidth: selected ? 2.5 : 1)
+        )
+    }
+}
+
+// MARK: - Screen-anchored wallpaper layer
+
+/// Pins a chat wallpaper layer to the physical screen. Two guarantees stack:
+/// `.ignoresSafeArea(.all)` keeps the layer's bounds out of every safe-area
+/// negotiation (container AND keyboard), and the explicit screen-sized frame
+/// makes the render constant even if some ancestor still re-proposes a
+/// smaller area — a fixed frame cannot rescale, so `scaledToFill` content can
+/// never zoom or pan when the keyboard rises, the composer grows a line, or
+/// a reply/edit strip appears. Every chat surface (DM, group, communities,
+/// Yuna) draws its background through this one anchor.
+struct ChatWallpaperAnchor<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let size = UIScreen.main.bounds.size
+        content()
+            .frame(width: size.width, height: size.height)
+            .clipped()
+            .ignoresSafeArea(.all)
     }
 }

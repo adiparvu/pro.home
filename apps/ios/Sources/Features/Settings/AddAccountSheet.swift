@@ -55,6 +55,7 @@ struct AddAccountSheet: View {
                     .disabled(email.isEmpty || password.isEmpty || isLoading)
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Add account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -66,6 +67,7 @@ struct AddAccountSheet: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.thinMaterial)
     }
 
     private func signIn() async {

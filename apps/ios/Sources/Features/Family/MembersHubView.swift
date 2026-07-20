@@ -6,23 +6,40 @@ import SwiftUI
 // supervision), non-family members (tenants, workers, friends) and the
 // invitation audit trail (who was invited, when, and for how long the link is
 // still valid). Replaces the separate "Family Members" + "Supervision" rows.
+//
+// The Family/Others lists merge TWO real sources by auth user id:
+//  - property_members + profiles (AccountMemberService): everyone with an
+//    ACTIVE account — including the owner, who never gets a family_members
+//    row of their own (creating the property grants membership directly).
+//    This is why a partner's device used to show no owner here at all.
+//  - family_members (FamilyService): the hand-added roster, with or without
+//    a linked account.
+// An account linked to a roster row renders ONCE (live profile name, roster
+// contact details). The owner sorts first; your own row wears a "You · role"
+// badge; a green dot marks members online right now (PresenceService).
 
 struct MembersHubView: View {
-    @Environment(FamilyService.self) private var familyService
-    @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) var familyService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(PresenceService.self) var presenceService
 
-    @State private var invitationService = InvitationService()
+    @State var invitationService = InvitationService()
+    @State var accountService = AccountMemberService()
     @State private var segment: Segment = .family
+    @State var searchText = ""
     @State private var showAdd = false
-    @State private var editingMember: FamilyMember?
+    @State var editingMember: FamilyMember?
+    @State var reviewingAccount: AccountMember?
+    @State var showRevokedHistory = false
 
     enum Segment: String, CaseIterable, Identifiable {
-        case family, others, invitations
+        case family, others, accounts, invitations
         var id: String { rawValue }
         var title: LocalizedStringKey {
             switch self {
             case .family:      return "Family"
             case .others:      return "Others"
+            case .accounts:    return "Accounts"
             case .invitations: return "Invitations"
             }
         }
@@ -30,32 +47,110 @@ struct MembersHubView: View {
             switch self {
             case .family:      return "figure.2.and.child.holdinghands"
             case .others:      return "person.2.wave.2.fill"
+            case .accounts:    return "person.crop.circle.badge.checkmark"
             case .invitations: return "envelope.badge.clock.fill"
+            }
+        }
+
+        /// Same catalog entries as `title`, resolved for the segment
+        /// popover's `GlassPickerOption` (String titles).
+        var titleText: String {
+            switch self {
+            case .family:      return String(localized: "Family")
+            case .others:      return String(localized: "Others")
+            case .accounts:    return String(localized: "Accounts")
+            case .invitations: return String(localized: "Invitations")
             }
         }
     }
 
-    private static let familyRoles: Set<String> = ["owner", "partner", "member", "child"]
+    // Tenants are NOT family — they belong to the Tenants page and to the
+    // "others" section here (tenants, workers, friends), never to the
+    // family list.
+    private static let familyRoles: Set<String> = ["owner", "partner", "member", "teen", "child"]
 
-    private var familyMembers: [FamilyMember] {
-        familyService.members.filter { Self.familyRoles.contains($0.role) }
+    var children: [FamilyMember] {
+        familyService.members.filter { $0.role == "child" }
     }
-    private var otherMembers: [FamilyMember] {
-        familyService.members.filter { !Self.familyRoles.contains($0.role) }
+
+    // MARK: Unified people (accounts ∪ roster, deduped by user id)
+
+    var familyPeople: [HubPerson] { people(family: true) }
+    var otherPeople: [HubPerson] { people(family: false) }
+
+    private func people(family: Bool) -> [HubPerson] {
+        let myId = accountService.currentUserId
+        var rosterByUserId: [UUID: FamilyMember] = [:]
+        for m in familyService.members {
+            if let uid = m.userId { rosterByUserId[uid] = m }
+        }
+
+        var linkedUserIds: Set<UUID> = []
+        var result: [HubPerson] = []
+
+        // 1. Active accounts, split family/outsider by the typed property
+        //    role — the same gate RLS uses (PropertyRole.isFamilyMember).
+        for account in accountService.members where account.status == "active" {
+            guard let role = PropertyRole.resolve(account.role),
+                  role.isFamilyMember == family else { continue }
+            linkedUserIds.insert(account.userId)
+            result.append(HubPerson(account: account,
+                                    profile: accountService.profiles[account.userId],
+                                    member: rosterByUserId[account.userId],
+                                    isSelf: account.userId == myId))
+        }
+
+        // 2. Roster rows without an active account behind them.
+        for m in familyService.members {
+            guard Self.familyRoles.contains(m.role) == family else { continue }
+            if let uid = m.userId, linkedUserIds.contains(uid) { continue }
+            result.append(HubPerson(account: nil, profile: nil, member: m,
+                                    isSelf: m.userId != nil && m.userId == myId))
+        }
+
+        return result
+            .filter { $0.matchesSearch(searchText) }
+            .sorted { a, b in
+                if a.sortRank != b.sortRank { return a.sortRank < b.sortRank }
+                return a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
+            }
     }
-    private var children: [FamilyMember] {
-        familyMembers.filter { $0.role == "child" }
+
+    var filteredAccounts: [AccountMember] {
+        accountService.members.filter { account in
+            let profile = accountService.profiles[account.userId]
+            let haystack: [String] = [
+                profile?.bestName ?? "",
+                profile?.email ?? "",
+                account.nickname ?? "",          // the row title's fallback
+                account.role,                    // raw role slug
+                accountRoleLabelText(account.role) // the badge the row shows
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
+        }
+    }
+
+    var filteredInvitations: [MemberInvitation] {
+        invitationService.invitations.filter { inv in
+            let haystack: [String] = [
+                inv.email,
+                inv.name ?? "",
+                inv.role,                        // raw role slug
+                String(localized: String.LocalizationValue(
+                    kRoleLabels[inv.role] ?? inv.role.capitalized)), // visible label
+                inv.sentDisplay                  // the visible "Sent …" date
+            ]
+            return haystack.contains { $0.matchesSearch(searchText) }
+        }
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Members", subtitleKey: "HOUSEHOLD")
-                segmentPicker
-
                 switch segment {
                 case .family:      familySection
                 case .others:      othersSection
+                case .accounts:    accountsSection
                 case .invitations: invitationsSection
                 }
 
@@ -64,17 +159,31 @@ struct MembersHubView: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.sm)
         }
+        .refreshable {
+            await familyService.load()
+            if let pid = propertyService.primary?.id {
+                async let a: Void = invitationService.load(propertyId: pid)
+                async let b: Void = accountService.load(propertyId: pid)
+                async let c: Void = presenceService.load(propertyId: pid)
+                _ = await (a, b, c)
+            }
+        }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Members")
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                segmentButton
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     HapticFeedback.impact(.light)
                     showAdd = true
                 } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.accentColor)
                 }
                 .accessibilityLabel("Add member")
@@ -91,6 +200,11 @@ struct MembersHubView: View {
                 .environment(familyService)
                 .environment(propertyService)
         }
+        .sheet(item: $reviewingAccount) { account in
+            AccountReviewSheet(member: account,
+                               profile: accountService.profiles[account.userId],
+                               service: accountService)
+        }
         .task { reload() }
     }
 
@@ -98,266 +212,40 @@ struct MembersHubView: View {
         Task {
             await familyService.load()
             if let pid = propertyService.primary?.id {
-                await invitationService.load(propertyId: pid)
+                async let a: Void = invitationService.load(propertyId: pid)
+                async let b: Void = accountService.load(propertyId: pid)
+                async let c: Void = presenceService.load(propertyId: pid)
+                _ = await (a, b, c)
+                // Idempotent — live join/leave flips the green dots instantly.
+                await presenceService.subscribe(propertyId: pid)
             }
         }
     }
 
-    // MARK: Segment picker
+    // MARK: Segment circle
 
-    private var segmentPicker: some View {
-        HStack(spacing: 6) {
-            ForEach(Segment.allCases) { seg in
-                let selected = segment == seg
-                Button {
-                    HapticFeedback.selection()
-                    withAnimation(.snappy) { segment = seg }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: seg.icon).font(.system(size: 11, weight: .semibold))
-                        Text(seg.title).font(AppFont.captionEmphasis)
-                        if seg == .invitations, pendingInviteCount > 0 {
-                            Text("\(pendingInviteCount)")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .padding(.horizontal, 5).padding(.vertical, 1)
-                                .background(Color.orange.opacity(0.25), in: Capsule())
-                        }
-                    }
-                    .foregroundStyle(selected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
-                    .frame(maxWidth: .infinity)
-                    .background(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.primary.opacity(0.05)),
-                                in: Capsule())
-                }
-                .buttonStyle(.plain)
-            }
+    /// One circle (the one-circle law): the four-capsule segment row that
+    /// used to sit at the top of the page, as a single-select view section
+    /// in the page's one glass trigger. A segment switches the view, it
+    /// never narrows a list — so the trigger never claims the filtered
+    /// accent dot; the invitations row keeps its honest pending count.
+    private var segmentButton: some View {
+        GlassFilterButton(inToolbar: true) {
+            GlassFilterSection(
+                title: "cal_mode_picker",
+                options: Segment.allCases.map { seg in
+                    GlassPickerOption(value: seg,
+                                      icon: seg.icon,
+                                      title: seg.titleText,
+                                      count: seg == .invitations && pendingInviteCount > 0
+                                          ? pendingInviteCount : nil)
+                },
+                selection: $segment)
         }
     }
 
     private var pendingInviteCount: Int {
         invitationService.invitations.filter { !$0.accepted && !$0.isRevoked && !$0.isExpired }.count
-    }
-
-    // MARK: Family segment
-
-    private var familySection: some View {
-        VStack(spacing: 14) {
-            if !children.isEmpty {
-                NavigationLink {
-                    SupervisionView()
-                        .environment(familyService)
-                } label: {
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: "eyes", color: Color.brandPurple)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Supervision").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                            Text("Screen rules and protection for children")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        }
-                        Spacer()
-                        Text("\(children.count)")
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.brandPurple)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.primary.opacity(0.25))
-                    }
-                    .padding(AppSpacing.base)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                }
-                .buttonStyle(.plain)
-            }
-
-            memberList(familyMembers, empty: "No family members yet")
-        }
-    }
-
-    // MARK: Others segment
-
-    private var othersSection: some View {
-        memberList(otherMembers, empty: "No tenants, workers or friends yet")
-    }
-
-    @ViewBuilder
-    private func memberList(_ members: [FamilyMember], empty: LocalizedStringKey) -> some View {
-        if members.isEmpty {
-            emptyState(icon: "person.crop.circle.badge.questionmark", text: empty)
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(members.enumerated()), id: \.element.id) { idx, member in
-                    Button { editingMember = member } label: {
-                        MemberHubRow(member: member)
-                    }
-                    .buttonStyle(.plain)
-                    if idx < members.count - 1 {
-                        Rectangle().fill(Color.primary.opacity(0.05))
-                            .frame(height: 0.5).padding(.leading, 66)
-                    }
-                }
-            }
-            .liquidGlass(cornerRadius: AppRadius.lg)
-        }
-    }
-
-    // MARK: Invitations segment
-
-    @ViewBuilder
-    private var invitationsSection: some View {
-        if invitationService.isLoading && invitationService.invitations.isEmpty {
-            ProgressView().padding(.top, 40)
-        } else if invitationService.invitations.isEmpty {
-            emptyState(icon: "envelope.open",
-                       text: "No invitations sent yet. Add a member with an email to invite them.")
-        } else {
-            VStack(spacing: 12) {
-                ForEach(invitationService.invitations) { inv in
-                    InvitationRow(invitation: inv,
-                                  onResend: { resend(inv) },
-                                  onRevoke: { revoke(inv) })
-                }
-            }
-        }
-    }
-
-    private func resend(_ inv: MemberInvitation) {
-        guard let pid = propertyService.primary?.id else { return }
-        Task {
-            let err = await familyService.sendInvite(
-                to: inv.email, name: inv.name ?? "", role: inv.role,
-                propertyId: pid, propertyName: propertyService.primary?.name)
-            if err == nil { HapticFeedback.success() }
-            await invitationService.load(propertyId: pid)
-        }
-    }
-
-    private func revoke(_ inv: MemberInvitation) {
-        guard let pid = propertyService.primary?.id else { return }
-        Task {
-            await invitationService.revoke(inv, propertyId: pid)
-            HapticFeedback.impact(.medium)
-        }
-    }
-
-    private func emptyState(icon: String, text: LocalizedStringKey) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 34))
-                .foregroundStyle(Color.primary.opacity(0.25))
-            Text(text)
-                .font(AppFont.subheadline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 44)
-    }
-}
-
-// MARK: - Member row
-
-private struct MemberHubRow: View {
-    let member: FamilyMember
-
-    var body: some View {
-        HStack(spacing: 12) {
-            MemberAvatar(member: member, size: 42)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(member.name)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.primary)
-                if let email = member.email, !email.isEmpty {
-                    Text(email)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        .lineLimit(1)
-                }
-            }
-            Spacer()
-            Text(LocalizedStringKey(kRoleLabels[member.role] ?? member.role.capitalized))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(member.swiftColor)
-                .padding(.horizontal, 9).padding(.vertical, 4)
-                .background(member.swiftColor.opacity(0.14), in: Capsule())
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.25))
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 11)
-        .contentShape(Rectangle())
-    }
-}
-
-// MARK: - Invitation row
-
-private struct InvitationRow: View {
-    let invitation: MemberInvitation
-    let onResend: () -> Void
-    let onRevoke: () -> Void
-
-    private var status: (text: LocalizedStringKey, color: Color) {
-        if invitation.isRevoked { return ("Revoked", .red) }
-        if invitation.accepted { return ("Accepted", Color.brandSuccess) }
-        if invitation.isExpired { return ("Expired", .gray) }
-        let d = max(invitation.daysLeft, 0)
-        return (d == 1 ? "Expires in 1 day" : "Expires in \(d) days", .orange)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "envelope.fill", color: status.color, size: 36)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(invitation.name?.isEmpty == false ? invitation.name! : invitation.email)
-                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                    Text(invitation.email)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        .lineLimit(1)
-                }
-                Spacer()
-                Text(status.text)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(status.color)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(status.color.opacity(0.13), in: Capsule())
-            }
-            HStack(spacing: 10) {
-                Label {
-                    Text(String(format: String(localized: "Sent %@"), invitation.sentDisplay))
-                        .font(.system(size: 11))
-                } icon: {
-                    Image(systemName: "paperplane").font(.system(size: 10))
-                }
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-
-                Text(LocalizedStringKey(kRoleLabels[invitation.role] ?? invitation.role.capitalized))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-
-                Spacer()
-
-                if !invitation.accepted && !invitation.isRevoked {
-                    Button { onResend() } label: {
-                        Text("Resend")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .buttonStyle(.plain)
-                }
-                if !invitation.isRevoked {
-                    Button(role: .destructive) { onRevoke() } label: {
-                        Text("Revoke")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.red)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding(AppSpacing.base)
-        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 }
 
@@ -380,6 +268,12 @@ struct EditMemberSheet: View {
     @State private var confirmDelete = false
     @State private var errorMessage: String?
 
+    /// Empty is fine (e-mail is optional); non-empty must pass the shared
+    /// EmailFormat authority — same rule as the add-member and tenant flows.
+    private var emailFieldOK: Bool {
+        email.trimmingCharacters(in: .whitespaces).isEmpty || EmailFormat.isValid(email)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -391,23 +285,14 @@ struct EditMemberSheet: View {
                             Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
                                 .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
                             Text(String(name.prefix(2)).uppercased())
-                                .font(.system(size: 26, weight: .bold))
+                                .font(AppFont.scaled(26, weight: .bold))
                                 .foregroundStyle(Color(hex: color) ?? .blue)
                         }
                         .frame(width: 76, height: 76)
                         .padding(.top, AppSpacing.sm)
 
-                        HStack(spacing: 10) {
-                            ForEach(kColors, id: \.self) { c in
-                                Button { color = c } label: {
-                                    Circle().fill(Color(hex: c) ?? .blue)
-                                        .frame(width: 28, height: 28)
-                                        .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-
+                        // Colour swatches removed (IMG_8664) — the member's
+                        // colour is a stable identity set at add time.
                         VStack(spacing: 0) {
                             editRow(icon: "person.fill", tint: .blue, placeholder: "Name", text: $name)
                             div
@@ -419,8 +304,8 @@ struct EditMemberSheet: View {
                             div
                             HStack(spacing: 12) {
                                 Image(systemName: kRoleIcons[role] ?? "person.fill")
-                                    .font(.system(size: 14)).foregroundStyle(.purple).frame(width: 28)
-                                Text("Role").font(.system(size: 15)).foregroundStyle(.primary)
+                                    .font(AppFont.scaled(14)).foregroundStyle(.purple).frame(width: 28)
+                                Text("Role").font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 Spacer()
                                 Picker("", selection: $role) {
                                     ForEach(kRoles.filter { $0 != "owner" } + (role == "owner" ? ["owner"] : []), id: \.self) { r in
@@ -433,8 +318,22 @@ struct EditMemberSheet: View {
                         }
                         .liquidGlass(cornerRadius: AppRadius.lg)
 
+                        if !emailFieldOK {
+                            Label {
+                                Text("This e-mail address doesn't look valid")
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(Color.brandDanger)
+                            } icon: {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(AppFont.scaled(11))
+                                    .foregroundStyle(Color.brandDanger)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, AppSpacing.xxs)
+                        }
+
                         if let err = errorMessage {
-                            Text(err).font(.system(size: 13)).foregroundStyle(.red)
+                            Text(err).font(AppFont.scaled(13)).foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
                         }
 
@@ -470,7 +369,9 @@ struct EditMemberSheet: View {
                         if isSaving { ProgressView().tint(.accentColor) }
                         else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
                     }
-                    .disabled(isSaving || name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(isSaving
+                              || name.trimmingCharacters(in: .whitespaces).isEmpty
+                              || !emailFieldOK)
                 }
             }
             .confirmationDialog("Remove this member?", isPresented: $confirmDelete, titleVisibility: .visible) {
@@ -520,9 +421,9 @@ struct EditMemberSheet: View {
     private func editRow(icon: String, tint: Color, placeholder: LocalizedStringKey,
                          text: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(tint).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(tint).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard)
                 .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
         }

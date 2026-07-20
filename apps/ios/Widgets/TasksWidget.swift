@@ -8,7 +8,11 @@ struct TasksWidget: Widget {
     let kind = "TasksWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
+        // Configurable (Edit Widget): priority + overdue-only filters over the
+        // same catalog the static widget rendered. Placed widgets migrate with
+        // the intent's defaults, which reproduce the unfiltered widget.
+        AppIntentConfiguration(kind: kind, intent: TasksWidgetConfigIntent.self,
+                               provider: TasksConfigProvider()) { entry in
             TasksWidgetView(entry: entry)
         }
         .configurationDisplayName(NSLocalizedString("widget_tasks_name", comment: ""))
@@ -22,40 +26,52 @@ struct TasksWidget: Widget {
 struct TasksWidgetSmallView: View {
     let entry: PRVIOWidgetEntry
 
+    /// Counts honor the configured filter; the default configuration falls
+    /// back to the snapshot's authoritative totals (identical pre-config look).
+    private var counts: (open: Int, overdue: Int) {
+        if let cfg = entry.tasksConfig, cfg.isFiltering {
+            let filtered = cfg.filter(entry.taskCatalog)
+            return (filtered.count, filtered.filter { $0.isOverdue ?? false }.count)
+        }
+        return (entry.snapshot.openTaskCount, entry.snapshot.overdueTaskCount)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "checklist")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.blue)
+                    .widgetAccentable()
                 Spacer()
-                if entry.snapshot.overdueTaskCount > 0 {
-                    Text("\(entry.snapshot.overdueTaskCount)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                if counts.overdue > 0 {
+                    Text("\(counts.overdue)")
+                        .font(AppFont.scaled(28, weight: .bold, design: .rounded))
                         .foregroundStyle(.red)
+                        .widgetAccentable()
                 } else {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(AppFont.scaled(24))
                         .foregroundStyle(.green)
                 }
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.snapshot.overdueTaskCount > 0
+                Text(counts.overdue > 0
                      ? NSLocalizedString("widget_overdue_label", comment: "")
                      : NSLocalizedString("widget_tasks_label", comment: ""))
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(.secondary)
-                Text(entry.snapshot.overdueTaskCount > 0
-                     ? "\(entry.snapshot.overdueTaskCount) \(NSLocalizedString("widget_overdue", comment: ""))"
-                     : "\(entry.snapshot.openTaskCount) \(NSLocalizedString("widget_open", comment: ""))")
-                    .font(.system(size: 13, weight: .semibold))
+                Text(counts.overdue > 0
+                     ? "\(counts.overdue) \(NSLocalizedString("widget_overdue", comment: ""))"
+                     : "\(counts.open) \(NSLocalizedString("widget_open", comment: ""))")
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://tasks"))
     }
 }
@@ -66,7 +82,9 @@ struct TasksMediumView: View {
     let entry: PRVIOWidgetEntry
 
     var pendingTasks: [TaskCatalogEntry] {
-        entry.taskCatalog.filter { !$0.isCompleted }.prefix(3).map { $0 }
+        let pending = entry.tasksConfig?.filter(entry.taskCatalog)
+            ?? entry.taskCatalog.filter { !$0.isCompleted }
+        return pending.prefix(3).map { $0 }
     }
 
     private func makeCompleteTaskIntent(id: UUID, title: String, priority: String) -> CompleteTaskIntent {
@@ -80,17 +98,18 @@ struct TasksMediumView: View {
             HStack {
                 Label {
                     Text("TASKS")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "checklist")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.blue)
+                        .widgetAccentable()
                 }
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
                     Text(String(format: String(localized: "%d overdue"), entry.snapshot.overdueTaskCount))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(.red)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -103,7 +122,7 @@ struct TasksMediumView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text("All tasks are complete!")
-                        .font(.system(size: 13))
+                        .font(AppFont.scaled(13))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxHeight: .infinity)
@@ -115,13 +134,13 @@ struct TasksMediumView: View {
                                 .fill(task.priority == "high" ? Color.red : task.priority == "medium" ? Color.orange : Color.blue)
                                 .frame(width: 6, height: 6)
                             Text(task.title)
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
                             Button(intent: makeCompleteTaskIntent(id: task.id, title: task.title, priority: task.priority)) {
                                 Image(systemName: "circle")
-                                    .font(.system(size: 16))
+                                    .font(AppFont.scaled(16))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
@@ -131,7 +150,7 @@ struct TasksMediumView: View {
             }
         }
         .padding(14)
-        .containerBackground(for: .widget) { Color.clear }
+        .moodContainerBackground()
         .widgetURL(URL(string: "prvio://tasks"))
     }
 }

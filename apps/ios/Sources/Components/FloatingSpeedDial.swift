@@ -11,8 +11,15 @@ struct FloatingSpeedDial: View {
     var trailingPadding: CGFloat = 20
 
     @State private var expanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isMenu: Bool { actions.count > 1 }
+
+    /// The dial's spring, flattened to a plain fade when the user asks for
+    /// reduced motion.
+    private var dialAnimation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.72)
+    }
 
     var body: some View {
         if actions.isEmpty {
@@ -24,24 +31,39 @@ struct FloatingSpeedDial: View {
                         .ignoresSafeArea()
                         .onTapGesture { collapse() }
                         .transition(.opacity)
+                        .accessibilityHidden(true)
                 }
 
-                VStack(alignment: .trailing, spacing: 12) {
-                    if expanded && isMenu {
-                        ForEach(actions) { action in
-                            actionRow(action)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                                    removal: .opacity
-                                ))
-                        }
+                // On iOS 26 the dial's glass shapes (FAB, action pills and
+                // circles) render as ONE Liquid Glass group: a single blended
+                // pass instead of a separate material layer per element, and
+                // the shapes can morph into each other while expanding.
+                Group {
+                    if #available(iOS 26.0, *) {
+                        GlassEffectContainer { dialStack }
+                    } else {
+                        dialStack
                     }
-                    mainButton
                 }
                 .padding(.trailing, trailingPadding)
                 .padding(.bottom, bottomPadding)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        }
+    }
+
+    private var dialStack: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            if expanded && isMenu {
+                ForEach(actions) { action in
+                    actionRow(action)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                }
+            }
+            mainButton
         }
     }
 
@@ -51,22 +73,41 @@ struct FloatingSpeedDial: View {
         Button {
             HapticFeedback.impact(.medium)
             if isMenu {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded.toggle() }
+                withAnimation(dialAnimation) { expanded.toggle() }
             } else if let only = actions.first {
                 onSelect(only)
             }
         } label: {
-            Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
-                .font(.system(size: isMenu ? 22 : 20, weight: .bold))
-                .foregroundStyle(.primary)
-                .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
-                .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
-                .frame(width: 58, height: 58)
-                .contentShape(Circle())
+            // The app's monogram is the FAB's face (user's brand mark);
+            // expanding swaps it for the close affordance.
+            Group {
+                if isMenu && !expanded {
+                    Image("BrandMark")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30, height: 30)
+                } else if isMenu {
+                    Image(systemName: "xmark")
+                        .font(AppFont.scaled(20, weight: .bold))
+                } else {
+                    Image(systemName: actions.first?.icon ?? "plus")
+                        .font(AppFont.scaled(20, weight: .bold))
+                }
+            }
+            .foregroundStyle(.primary)
+            .animation(dialAnimation, value: expanded)
+            .frame(width: 58, height: 58)
+            .contentShape(Circle())
+            // Inside the label, not on the Button: an interactive glass
+            // layer wrapping the Button swallows the first tap (IMG_8572).
+            .glassCircle(interactive: true)
         }
         .buttonStyle(.plain)
-        .glassCircle()
         .shadow(color: Color.primary.opacity(0.22), radius: 20, y: 6)
+        .accessibilityLabel(isMenu ? String(localized: "Quick actions") : (actions.first?.title ?? ""))
+        .accessibilityHint(isMenu ? String(localized: "Opens the quick actions menu") : "")
+        .accessibilityValue(isMenu && expanded ? String(localized: "Expanded") : "")
     }
 
     private func actionRow(_ action: DashboardQuickAction) -> some View {
@@ -84,22 +125,22 @@ struct FloatingSpeedDial: View {
                     .allowsHitTesting(false)
                     .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
-                ZStack {
-                    Circle()
-                        .fill(action.color.opacity(0.18))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: action.icon)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(action.color)
-                }
-                .shadow(color: action.color.opacity(0.25), radius: 8, y: 3)
+                // Native pattern: Liquid Glass circle with a primary glyph —
+                // no tinted discs (the colour survives only in the page that
+                // configures the action, not on the button).
+                Image(systemName: action.icon)
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .glassCircle(interactive: true)
+                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
             }
         }
         .buttonStyle(.plain)
     }
 
     private func collapse() {
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded = false }
+        withAnimation(dialAnimation) { expanded = false }
     }
 }
 

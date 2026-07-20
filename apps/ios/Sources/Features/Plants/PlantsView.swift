@@ -5,16 +5,34 @@ import SwiftUI
 struct PlantsView: View {
     @Environment(PlantService.self) private var plantService
     @Environment(PropertyService.self) private var propertyService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
+    @State private var searchText = ""
+
+    private var filteredNeedingWater: [Plant] {
+        plantService.plantsNeedingWater.filter(matchesSearch)
+    }
+
+    private var filteredHealthy: [Plant] {
+        plantService.healthyPlants.filter(matchesSearch)
+    }
+
+    private func matchesSearch(_ plant: Plant) -> Bool {
+        let haystack: [String] = [
+            plant.name,
+            plant.species ?? "",
+            plant.notes ?? "",
+            plant.wateringLabel,
+            plant.lastWateredDisplay,
+            plant.healthScore.map(String.init) ?? ""
+        ]
+        return haystack.contains { $0.matchesSearch(searchText) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "Plants", subtitleKey: "PROPERTY")
-
             if propertyService.primary == nil {
                 noPropertyState
             } else if plantService.isLoading && plantService.plants.isEmpty {
@@ -26,8 +44,10 @@ struct PlantsView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Plants")
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -35,7 +55,7 @@ struct PlantsView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(AppFont.title3)
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add plant")
@@ -76,6 +96,9 @@ struct PlantsView: View {
             activity.title = String(localized: "Plants — PRVIO")
             activity.userInfo = ["tab": "plants"]
             activity.isEligibleForHandoff = true
+            // Siri Suggestions may propose reopening this screen at the
+            // habitual moment — prediction learns from these publishes.
+            activity.isEligibleForPrediction = true
             activity.isEligibleForSearch = true
         }
     }
@@ -98,18 +121,6 @@ struct PlantsView: View {
             }
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: ScrollOffsetKey.self,
-                        value: geo.frame(in: .named("plantsScroll")).minY
-                    )
-                }
-            )
-        }
-        .coordinateSpace(name: "plantsScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            tabBarVis.scrollOffset = y
         }
     }
 
@@ -146,12 +157,15 @@ struct PlantsView: View {
     private func statCell(value: String, label: LocalizedStringKey, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(color)
                 .contentTransition(.numericText())
+            // Explicit token color, never hierarchical `.secondary` inside
+            // glass — the vibrancy compositor can eat it entirely
+            // (IMG_8652, the same law as the player controls).
             Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(AppFont.scaled(11))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -161,22 +175,26 @@ struct PlantsView: View {
 
     private var plantsGrid: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if !plantService.plantsNeedingWater.isEmpty {
+            if !filteredNeedingWater.isEmpty {
                 sectionBlock(
                     title: "NEEDS WATER",
                     icon: "drop.fill",
                     iconColor: Color(red: 1.0, green: 0.62, blue: 0.1),
-                    plants: plantService.plantsNeedingWater
+                    plants: filteredNeedingWater
                 )
             }
 
-            if !plantService.healthyPlants.isEmpty {
+            if !filteredHealthy.isEmpty {
                 sectionBlock(
                     title: "HEALTHY",
                     icon: "leaf.fill",
                     iconColor: Color(red: 0.15, green: 0.80, blue: 0.4),
-                    plants: plantService.healthyPlants
+                    plants: filteredHealthy
                 )
+            }
+
+            if !searchText.isEmpty && filteredNeedingWater.isEmpty && filteredHealthy.isEmpty {
+                EmptyStateView(icon: "magnifyingglass", title: "No results")
             }
         }
     }
@@ -189,7 +207,7 @@ struct PlantsView: View {
                     .foregroundStyle(iconColor)
                 Text(title)
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.backdropSecondaryText)
                     .tracking(0.5)
             }
             .padding(.leading, AppSpacing.xxs)
@@ -211,33 +229,14 @@ struct PlantsView: View {
     // MARK: - States
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Text("🪴")
-                .font(.system(size: 60))
-            Text("No plants added")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Add plants to track\nwatering and their health status.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-            Button { showAddPlant = true } label: {
-                Label("Add first plant", systemImage: "plus")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 13)
-                    .background(
-                        Color.accentColor,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-            }
-            .buttonStyle(.plain)
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "leaf.fill",
+            title: "No plants added",
+            message: "Add plants to track\nwatering and their health status.",
+            actionLabel: "Add first plant",
+            action: { showAddPlant = true }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
 
     private var loadingState: some View {
@@ -250,16 +249,10 @@ struct PlantsView: View {
     }
 
     private var noPropertyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "house.slash")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.primary.opacity(0.12))
-            Text("No property added")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "house.slash",
+            title: "No property added"
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -271,6 +264,22 @@ struct PlantCard: View {
     let plant: Plant
     let onTap: () -> Void
 
+    private var emojiBanner: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    plant.healthColor.opacity(0.18),
+                    plant.healthColor.opacity(0.07)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Text(plant.emoji)
+                .font(AppFont.scaled(44))
+        }
+        .frame(height: 80)
+    }
+
     var body: some View {
         Button(action: {
             HapticFeedback.impact(.light)
@@ -279,18 +288,38 @@ struct PlantCard: View {
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     ZStack {
-                        LinearGradient(
-                            colors: [
-                                plant.healthColor.opacity(0.18),
-                                plant.healthColor.opacity(0.07)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .frame(height: 80)
-
-                        Text(plant.emoji)
-                            .font(.system(size: 44))
+                        // The real hero photo when one exists; the emoji banner
+                        // is also the stand-in while it loads or fails.
+                        if let urlStr = plant.photoUrl, !urlStr.isEmpty {
+                            StorageImage(source: urlStr, targetSize: 180) { phase in
+                                if case .success(let img) = phase {
+                                    img.resizable().scaledToFill()
+                                } else {
+                                    emojiBanner
+                                }
+                            }
+                            .frame(height: 80)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                        } else {
+                            emojiBanner
+                        }
+                    }
+                    // The persisted Health Score (P6) as a passive badge — the
+                    // pipeline stored it on every recompute but no surface read
+                    // it back until now. Shown only when a real score exists.
+                    .overlay(alignment: .topTrailing) {
+                        if let score = plant.healthScore {
+                            Text(verbatim: "\(score)")
+                                .font(AppFont.scaled(11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 3)
+                                .background(PlantHealthScore.color(for: score).opacity(0.9),
+                                            in: Capsule())
+                                .padding(6)
+                                .accessibilityLabel(Text("plant_score_title"))
+                                .accessibilityValue(Text(verbatim: "\(score)"))
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -301,8 +330,8 @@ struct PlantCard: View {
 
                         if let species = plant.species, !species.isEmpty {
                             Text(species)
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
+                                .font(AppFont.scaled(12))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .lineLimit(1)
                         }
 
@@ -317,10 +346,10 @@ struct PlantCard: View {
 
                         HStack(spacing: 4) {
                             Image(systemName: "drop.fill")
-                                .font(.system(size: 9))
+                                .font(AppFont.scaled(9))
                                 .foregroundStyle(Color.primary.opacity(0.3))
                             Text(LocalizedStringKey(plant.lastWateredDisplay))
-                                .font(.system(size: 11))
+                                .font(AppFont.scaled(11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
                         }
                     }
@@ -347,6 +376,8 @@ struct PlantCard: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+        // Long-press: the PreviewCard as the system-lifted preview, with the
+        // existing quick actions beneath.
         .contextMenu {
             Button {
                 HapticFeedback.success()
@@ -370,6 +401,80 @@ struct PlantCard: View {
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        } preview: {
+            PlantPreviewCard(plant: plant)
+        }
+    }
+}
+
+// MARK: - Long-press preview (PreviewCard)
+//
+// Real data only: the plant's own photo when one exists (emoji disc
+// otherwise), name, species as the subtitle (omitted when unset), the next
+// watering and last watering, the location when set, and the health status
+// as a tinted state chip. All value strings come from the model's existing
+// localized computed properties.
+struct PlantPreviewCard: View {
+    let plant: Plant
+
+    var body: some View {
+        PreviewCard(
+            title: Text(verbatim: plant.name),
+            subtitle: plant.species.flatMap { $0.isEmpty ? nil : Text(verbatim: $0) },
+            tint: plant.healthColor,
+            details: details,
+            chips: [
+                PreviewCardChip(icon: plant.healthIcon,
+                                text: Text(verbatim: plant.localizedHealthLabel),
+                                tint: plant.healthColor)
+            ]
+        ) {
+            photo
+        }
+    }
+
+    private var details: [PreviewCardDetail] {
+        var rows: [PreviewCardDetail] = [
+            // "Needs water" / "Water today" / "In N days" — the next watering.
+            PreviewCardDetail(icon: "drop.fill",
+                              label: Text("Watering"),
+                              value: Text(verbatim: plant.wateringLabel)),
+            PreviewCardDetail(icon: "clock.arrow.circlepath",
+                              label: Text("Last watered"),
+                              value: Text(verbatim: plant.lastWateredDisplay)),
+        ]
+        if let location = plant.location, !location.isEmpty {
+            rows.append(PreviewCardDetail(icon: "mappin.and.ellipse",
+                                          label: Text("Location"),
+                                          value: Text(verbatim: location)))
+        }
+        return rows
+    }
+
+    /// The plant's real photo when one exists; the emoji on a health-tinted
+    /// disc otherwise (also the stand-in while the photo loads or fails).
+    @ViewBuilder private var photo: some View {
+        if let urlStr = plant.photoUrl, !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    emojiDisc
+                }
+            }
+            .frame(width: 54, height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        } else {
+            emojiDisc.frame(width: 54, height: 54)
+        }
+    }
+
+    private var emojiDisc: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(plant.healthColor.opacity(AppOpacity.tintedFill))
+            Text(verbatim: plant.emoji)
+                .font(AppFont.scaled(30))
         }
     }
 }

@@ -30,7 +30,12 @@ struct PaintColor: Identifiable, Codable, Equatable {
     var finish: PaintFinish?
     var hexColor: String?
     var notes: String?
+    var photoUrl: String?
     var createdAt: String
+    /// "yyyy-MM-dd" — the day this color was last actually used (migration 165).
+    var lastUsedAt: String?
+    /// Where a leftover can still sits, if any ("o cutie de 2,5L în garaj").
+    var leftoverNote: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -41,11 +46,18 @@ struct PaintColor: Identifiable, Codable, Equatable {
         case colorName  = "color_name"
         case brand, code, finish, notes
         case hexColor   = "hex_color"
+        case photoUrl   = "photo_url"
         case createdAt  = "created_at"
+        case lastUsedAt = "last_used_at"
+        case leftoverNote = "leftover_note"
     }
 
     var swatchColor: Color {
-        guard let hex = hexColor, !hex.isEmpty else {
+        // Entries saved with a RAL code but no hex still get their real
+        // color from the built-in catalog.
+        let stored = (hexColor?.isEmpty == false ? hexColor : nil)
+            ?? code.flatMap(PaintCatalog.hex(forCode:))
+        guard let hex = stored, !hex.isEmpty else {
             return Color.primary.opacity(0.3)
         }
         let cleaned = hex.trimmingCharacters(in: .init(charactersIn: "#"))
@@ -60,6 +72,14 @@ struct PaintColor: Identifiable, Codable, Equatable {
     }
 
     var finishDisplay: String { finish?.displayName ?? String(localized: "Unknown") }
+
+    /// The stored surface value through the form's localized catalog
+    /// ("walls" → "Pereți"); unknown legacy values show as stored.
+    var surfaceDisplay: String {
+        let key = "paint_surface_\(surface)"
+        let localized = String(localized: String.LocalizationValue(key))
+        return localized == key ? surface : localized
+    }
 }
 
 struct NewPaintColorPayload: Encodable {
@@ -73,6 +93,7 @@ struct NewPaintColorPayload: Encodable {
     let finish: String?
     let hexColor: String?
     let notes: String?
+    let photoUrl: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -83,6 +104,7 @@ struct NewPaintColorPayload: Encodable {
         case colorName  = "color_name"
         case brand, code, finish, notes
         case hexColor   = "hex_color"
+        case photoUrl   = "photo_url"
         case createdAt  = "created_at"
     }
 }

@@ -12,24 +12,33 @@ struct FinancialRecord: Identifiable, Codable {
     var description: String?
     let createdAt: String
     var sharedMemberIds: [String] = []   // family_members.id shared this row with (see migration 094)
+    /// Free-form labels. The appliance service book rides here:
+    /// ["service", "appliance:<uuid>"] links a repair expense to its appliance.
+    var tags: [String] = []
+    /// Recurring template flag (migration 015): rows with `is_recurring` are
+    /// cloned server-side on `next_occurrence` by a daily pg_cron job.
+    /// Optional so cached rows written before the columns existed still decode.
+    var isRecurring: Bool?
+    var recurrenceInterval: String?   // "monthly" | "yearly"
+    var nextOccurrence: String?       // "YYYY-MM-DD"
 
     enum CodingKeys: String, CodingKey {
-        case id, title, amount, currency, type, category, date, description
+        case id, title, amount, currency, type, category, date, description, tags
         case propertyId = "property_id"
         case createdAt = "created_at"
         case sharedMemberIds = "shared_member_ids"
+        case isRecurring = "is_recurring"
+        case recurrenceInterval = "recurrence_interval"
+        case nextOccurrence = "next_occurrence"
     }
 
     var dateFormatted: String {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: date) else { return date }
-        let out = DateFormatter(); out.dateFormat = "MMM d"
-        return out.string(from: d)
+        guard let d = AppDate.day(from: date) else { return date }
+        return AppDate.monthDay.string(from: d)
     }
 
     var isIncome: Bool { type == "income" }
     var amountDisplay: String {
-        let sym = currency == "EUR" ? "€" : currency == "USD" ? "$" : currency
-        return String(format: "\(sym)%.0f", amount)
+        CurrencyService.money(amount, code: currency)
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Supabase
 
 @MainActor
 @Observable
@@ -7,6 +8,11 @@ final class TaskService {
     var tasks: [MaintenanceTask] = []
     var isLoading = false
     var error: String?
+
+    private var realtimeChannel: RealtimeChannelV2?
+    private var subscribedPropertyId: UUID?
+    private var postgresSubs: [RealtimeSubscription] = []
+    private var realtimeReload: Task<Void, Never>?
 
     var openCount: Int {
         tasks.filter { $0.status == "pending" || $0.status == "in_progress" }.count
@@ -16,31 +22,82 @@ final class TaskService {
     }
     var completedThisWeek: Int {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return tasks.filter { t in
             guard t.isCompleted else { return false }
-            if let d = f.date(from: t.updatedAt) { return d >= weekAgo }
+            // Tolerant of every server shape (Z / +00:00 / microseconds) —
+            // trigger-touched rows previously failed to parse and vanished
+            // from this count.
+            if let d = AppDate.timestamp(from: t.updatedAt) { return d >= weekAgo }
             return false
         }.count
     }
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if tasks.isEmpty, let cached = ServiceCache.load([MaintenanceTask].self, entity: "tasks", propertyId: pid) {
+            tasks = cached
+        }
         isLoading = true
-        defer { isLoading = false }
         do {
-            tasks = try await supabase
-                .from("maintenance_tasks")
-                .select()
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            tasks = try await PropertyRepo.fetch(table: "maintenance_tasks", propertyId: pid, limit: 500)
+            ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
+            isLoading = false
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            // A transient refresh failure must not throw a blocking alert
+            // over already-displayed cached data — only report when there
+            // is nothing on screen to stand behind.
+            if tasks.isEmpty { self.error = error.recordableDescription }
+        }
+        // The spinner ends with the FETCH — the realtime subscribe below can
+        // stall on a flaky websocket handshake, and while it hung inside the
+        // old `defer` window a member with an empty list stared at an
+        // infinite spinner (the "page never loads" report).
+        isLoading = false
+        if let pid { await subscribeRealtime(propertyId: pid) }
+    }
+
+    // MARK: - Live family sync
+    //
+    // Any insert/update/delete on this home's tasks re-pulls the list, so a
+    // task completed on one phone appears on every other family member's
+    // phone in seconds — no pull-to-refresh. Events are coalesced so a burst
+    // of changes costs one reload.
+
+    private func subscribeRealtime(propertyId: UUID) async {
+        guard subscribedPropertyId != propertyId else { return }
+        if let ch = realtimeChannel {
+            await realtimeAnon.removeChannel(ch)
+            realtimeChannel = nil
+            postgresSubs.removeAll()
+        }
+        let channel = realtimeAnon.channel("maintenance_tasks:\(propertyId.uuidString)")
+        postgresSubs.append(channel.onPostgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: "maintenance_tasks",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.scheduleRealtimeReload() }
+        })
+        try? await channel.subscribeWithError()
+        realtimeChannel = channel
+        subscribedPropertyId = propertyId
+    }
+
+    private func scheduleRealtimeReload() {
+        realtimeReload?.cancel()
+        realtimeReload = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            // Quiet in the background (0x8BADF00D scene-update watchdog, b1036).
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
+            await self?.load()
         }
     }
 
-    func addTask(_ payload: NewTaskPayload) async throws {
+    @discardableResult
+    func addTask(_ payload: NewTaskPayload) async throws -> MaintenanceTask {
         let new: MaintenanceTask = try await supabase
             .from("maintenance_tasks")
             .insert(payload)
@@ -49,6 +106,7 @@ final class TaskService {
             .execute()
             .value
         tasks.insert(new, at: 0)
+        return new
     }
 
     func tasks(forElement elementId: UUID) -> [MaintenanceTask] {
@@ -65,14 +123,14 @@ final class TaskService {
             try await supabase
                 .from("maintenance_tasks")
                 .update(ElementLink(element_id: elementId?.uuidString,
-                                    updated_at: ISO8601DateFormatter().string(from: Date())))
+                                    updated_at: ISODate.string(from: Date())))
                 .eq("id", value: task.id.uuidString)
                 .execute()
             if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[idx].elementId = elementId
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -80,7 +138,7 @@ final class TaskService {
         let newStatus = task.isCompleted ? "pending" : "completed"
         let update = TaskStatusUpdate(
             status: newStatus,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISODate.string(from: Date())
         )
         do {
             try await supabase
@@ -92,12 +150,28 @@ final class TaskService {
                 tasks[idx].status = newStatus
                 tasks[idx].updatedAt = update.updatedAt
             }
-            // Completing a tracked task finishes its Live Activity.
+            // Completing a tracked task finishes its Live Activity, and the
+            // real completion is donated so Siri Suggestions learn it.
             if newStatus == "completed" {
                 LiveActivityService.shared.completeMaintenance(taskTitle: task.title)
+                SiriDonations.taskCompleted(id: task.id, title: task.title,
+                                            priority: task.priority)
             }
+            // Keep the linked Apple Reminder in step (both directions:
+            // completing here checks it off, reopening here unchecks it).
+            TaskCalendarSync.setReminderCompleted(taskId: task.id, newStatus == "completed")
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
+        }
+    }
+
+    /// Reconciles tasks with Apple Reminders: anything the user checked off
+    /// in the Reminders app completes here too. Runs on foreground; silent
+    /// no-op without full Reminders access or when nothing is linked.
+    func syncFromReminders() async {
+        for id in TaskCalendarSync.completedLinkedTaskIds() {
+            guard let task = tasks.first(where: { $0.id == id }), !task.isCompleted else { continue }
+            await toggleComplete(task)
         }
     }
 
@@ -105,7 +179,11 @@ final class TaskService {
         _ task: MaintenanceTask,
         title: String, description: String?,
         dueDate: String?, priority: String, category: String,
-        assigneeIds: [String], assigneeNames: [String]
+        assigneeIds: [String], assigneeNames: [String],
+        photoUrls: [String]? = nil,
+        locationName: String?? = .none,
+        locationLat: Double?? = .none,
+        locationLon: Double?? = .none
     ) async throws {
         struct TaskFieldUpdate: Encodable {
             let title: String
@@ -116,19 +194,49 @@ final class TaskService {
             let assigneeIds: [String]
             let assigneeNames: [String]
             let updatedAt: String
+            let photoUrls: [String]?
+            let locationName: String?
+            let locationLat: Double?
+            let locationLon: Double?
             enum CodingKeys: String, CodingKey {
                 case title, description, priority, category
                 case dueDate       = "due_date"
                 case assigneeIds   = "assignee_ids"
                 case assigneeNames = "assignee_names"
                 case updatedAt     = "updated_at"
+                case photoUrls     = "photo_urls"
+                case locationName  = "location_name"
+                case locationLat   = "location_lat"
+                case locationLon   = "location_lon"
+            }
+            // Explicit encode: location keys write SQL NULL when nil so
+            // clearing a location persists (synthesized Codable would omit
+            // them and the old value would survive the save).
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(title, forKey: .title)
+                try c.encode(description, forKey: .description)
+                try c.encode(dueDate, forKey: .dueDate)
+                try c.encode(priority, forKey: .priority)
+                try c.encode(category, forKey: .category)
+                try c.encode(assigneeIds, forKey: .assigneeIds)
+                try c.encode(assigneeNames, forKey: .assigneeNames)
+                try c.encode(updatedAt, forKey: .updatedAt)
+                try c.encode(photoUrls ?? [], forKey: .photoUrls)
+                try c.encode(locationName, forKey: .locationName)
+                try c.encode(locationLat, forKey: .locationLat)
+                try c.encode(locationLon, forKey: .locationLon)
             }
         }
         let update = TaskFieldUpdate(
             title: title, description: description,
             dueDate: dueDate, priority: priority, category: category,
             assigneeIds: assigneeIds, assigneeNames: assigneeNames,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISODate.string(from: Date()),
+            photoUrls: photoUrls ?? task.photoUrls,
+            locationName: locationName ?? task.locationName,
+            locationLat: locationLat ?? task.locationLat,
+            locationLon: locationLon ?? task.locationLon
         )
         try await supabase
             .from("maintenance_tasks")
@@ -144,6 +252,24 @@ final class TaskService {
             tasks[idx].assigneeIds = assigneeIds
             tasks[idx].assigneeNames = assigneeNames
             tasks[idx].updatedAt = update.updatedAt
+            tasks[idx].photoUrls = update.photoUrls ?? []
+            tasks[idx].locationName = update.locationName
+            tasks[idx].locationLat = update.locationLat
+            tasks[idx].locationLon = update.locationLon
+        }
+    }
+
+    /// Best-effort server mirror of a task's total worked seconds (from the
+    /// work-session timer). Silent no-op until the `worked_seconds` column
+    /// exists — the App Group total in WorkSessionStore is the authority, so
+    /// this never surfaces an error and self-heals once the migration ships.
+    nonisolated static func persistWorkedSeconds(taskId: UUID, total: TimeInterval) {
+        struct WorkedUpdate: Encodable { let worked_seconds: Int }
+        Task {
+            _ = try? await supabase.from("maintenance_tasks")
+                .update(WorkedUpdate(worked_seconds: Int(total.rounded())))
+                .eq("id", value: taskId.uuidString)
+                .execute()
         }
     }
 
@@ -155,8 +281,13 @@ final class TaskService {
                 .eq("id", value: task.id.uuidString)
                 .execute()
             tasks.removeAll { $0.id == task.id }
+            // A running session can't outlive its task — drop it without
+            // banking time or marking a now-deleted task done.
+            if WorkSessionStore.shared.isTiming(task.id) { WorkSessionStore.shared.cancel() }
+            // A deleted task must stop steering its Apple Reminder.
+            TaskReminderLinks.unlink(taskId: task.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

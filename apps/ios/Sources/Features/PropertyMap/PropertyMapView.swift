@@ -5,7 +5,6 @@ struct PropertyMapView: View {
     @Environment(PropertyElementService.self) var elementService
     @Environment(CurrencyService.self) var currencyService
     @Environment(AppSettings.self) var appSettings
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showHealthDashboard = false
     @State var selectedLayer: PropertyLayer? = nil
@@ -93,16 +92,6 @@ struct PropertyMapView: View {
                     Spacer(minLength: 110)
                 }
                 .padding(.top, AppSpacing.sm)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.preference(key: ScrollOffsetKey.self,
-                                               value: geo.frame(in: .named("mapScroll")).minY)
-                    }
-                )
-            }
-            .coordinateSpace(name: "mapScroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { y in
-                tabBarVis.scrollOffset = y
             }
             .refreshable {
                 guard let pid = propertyService.primary?.id else { return }

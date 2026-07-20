@@ -1,11 +1,10 @@
 import SwiftUI
 
-// MARK: - PRVIO Timeline — matches dark mockup (chronological events + filter chips)
+// MARK: - PRVIO Timeline — matches dark mockup (chronological events + aggregated toolbar filter)
 
 struct PRVIOTimelineView: View {
     @Environment(TaskService.self) var taskService
     @Environment(PropertyElementService.self) var elementService
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum TimeFilter: String, CaseIterable {
         case today  = "Today"
@@ -21,18 +20,38 @@ struct PRVIOTimelineView: View {
             case .day:      return 24 * 3600
             }
         }
+
+        /// Same catalog keys the chips resolved (`LocalizedStringKey(rawValue)`),
+        /// as plain strings for `GlassPickerOption.title`.
+        var title: String {
+            switch self {
+            case .today:     return String(localized: "Today")
+            case .fiveMin:   return String(localized: "5m")
+            case .thirtyMin: return String(localized: "30m")
+            case .day:       return String(localized: "24h")
+            }
+        }
     }
 
     @State private var filter: TimeFilter = .today
+    @State private var searchText = ""
 
     private var filteredEvents: [TimelineEvent] {
         let all = buildEvents()
-        guard let interval = filter.interval else {
+        let timed: [TimelineEvent]
+        if let interval = filter.interval {
+            let cutoff = Date().addingTimeInterval(-interval)
+            timed = all.filter { $0.date >= cutoff }
+        } else {
             // "Today" → events from today only
-            return all.filter { Calendar.current.isDateInToday($0.date) || $0.date > Date() }
+            timed = all.filter { Calendar.current.isDateInToday($0.date) || $0.date > Date() }
         }
-        let cutoff = Date().addingTimeInterval(-interval)
-        return all.filter { $0.date >= cutoff }
+        guard !searchText.isEmpty else { return timed }
+        return timed.filter {
+            $0.title.matchesSearch(searchText)
+                || $0.subtitle.matchesSearch(searchText)
+                || $0.timeLabel.matchesSearch(searchText)
+        }
     }
 
     private var groupedEvents: [(String, [TimelineEvent])] {
@@ -47,11 +66,6 @@ struct PRVIOTimelineView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                filterChipsRow
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.xxs)
-                    .padding(.bottom, 10)
-
                 if groupedEvents.isEmpty {
                     emptyState
                         .padding(.top, 60)
@@ -92,45 +106,46 @@ struct PRVIOTimelineView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, AppSpacing.sm)
-            .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredEvents.count)")
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(.regularMaterial, in: Capsule())
+            }
+            // The one aggregated filter — replaces the chip row that
+            // sat above the list. `inToolbar` because iOS 26 wraps
+            // toolbar controls in system glass (IMG_8315 class).
+            ToolbarItem(placement: .topBarTrailing) {
+                GlassFilterButton(isActive: filter != .today, inToolbar: true) {
+                    GlassFilterSection(options: timeFilterOptions, selection: $filter)
+                }
             }
         }
     }
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(TimeFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                        withAnimation(.spring(response: 0.3)) { filter = f }
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
+    // MARK: - Filter options
+
+    /// The exact time ranges the chip row drove, for the aggregated popover.
+    private var timeFilterOptions: [GlassPickerOption<TimeFilter>] {
+        TimeFilter.allCases.map { GlassPickerOption(value: $0, title: $0.title) }
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 42, weight: .light))
+                .font(AppFont.scaled(42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No events")
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("No activity in this time range")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(0.3))
         }
         .frame(maxWidth: .infinity)
@@ -138,10 +153,8 @@ struct PRVIOTimelineView: View {
 
     private func sectionHeader(_ label: LocalizedStringKey) -> some View {
         Text(label)
-            .textCase(.uppercase)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            .kerning(0.8)
+            .foregroundStyle(Color.backdropSecondaryText)
     }
 
     private func buildEvents() -> [TimelineEvent] {
@@ -231,12 +244,18 @@ struct TimelineEvent: Identifiable {
         return df.string(from: date)
     }
 
+    /// Shared formatter — timeLabel now also runs inside the search filter
+    /// (once per event per keystroke), so it must not allocate per call.
+    private static let shortTimeFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.timeStyle = .short
+        return df
+    }()
+
     var timeLabel: String {
         let cal = Calendar.current
         if cal.isDateInToday(date) || cal.isDateInYesterday(date) {
-            let df = DateFormatter()
-            df.timeStyle = .short
-            return df.string(from: date)
+            return Self.shortTimeFormatter.string(from: date)
         }
         return ""
     }
@@ -264,7 +283,7 @@ struct TimelineEventCard: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                 Text(LocalizedStringKey(event.subtitle))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 

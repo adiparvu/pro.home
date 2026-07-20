@@ -20,7 +20,6 @@ struct CustomIntegrationsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 22) {
-                PageHeader(titleKey: "Custom integrations")
 
                 heroCard
 
@@ -41,7 +40,7 @@ struct CustomIntegrationsView: View {
                 addButton
 
                 if let err = service.error {
-                    Text(err).font(.system(size: 12)).foregroundStyle(.red)
+                    Text(err).font(AppFont.scaled(12)).foregroundStyle(.red)
                 }
 
                 Spacer(minLength: 60)
@@ -50,8 +49,13 @@ struct CustomIntegrationsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Custom integrations")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                GuideInfoButton(topic: IoTGuides.integrations)
+            }
+        }
         .task {
             if let pid = propertyId { await service.load(propertyId: pid) }
         }
@@ -79,7 +83,7 @@ struct CustomIntegrationsView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.primary)
                 Text("Every service you connect gets its own name and secret key. Anything that can send a web request — automations, servers, sensors, bots — posts straight into your house chat.")
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -90,39 +94,17 @@ struct CustomIntegrationsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "puzzlepiece.extension.fill")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            Text("No integrations yet")
-                .font(AppFont.subheadline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-            Text("Each integration gets its own key that you can pause, rotate or revoke at any time.")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xxl)
+        EmptyStateView(
+            icon: "puzzlepiece.extension.fill",
+            title: "No integrations yet",
+            message: "Each integration gets its own key that you can pause, rotate or revoke at any time."
+        )
     }
 
     private var addButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
+        GlassWideButton(icon: "plus", label: "Add integration") {
             showAdd = true
-        } label: {
-            Label("Add integration", systemImage: "plus")
-                .font(AppFont.subheadline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .foregroundStyle(.white)
-                .background(
-                    LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                                   startPoint: .leading, endPoint: .trailing),
-                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                )
         }
-        .buttonStyle(.plain)
     }
 }
 
@@ -169,12 +151,12 @@ private struct IntegrationCardRow: View {
             HStack(spacing: 4) {
                 Circle().fill(Color.brandSuccess).frame(width: 6, height: 6)
                 Text("Last used \(date, format: .relative(presentation: .named))")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
         } else {
             Text("Never used yet")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
     }
@@ -203,24 +185,23 @@ private struct IntegrationIdentityEditor: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            ZStack {
-                Circle().fill(tint.opacity(0.18)).frame(width: 76, height: 76)
-                Image(systemName: icon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(tint)
-            }
-            .animation(.smooth(duration: 0.25), value: icon)
-            .animation(.smooth(duration: 0.25), value: color)
+            Image(systemName: icon)
+                .font(AppFont.scaled(32, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 76, height: 76)
+                .glassCircle()
+                .animation(.smooth(duration: 0.25), value: icon)
+                .animation(.smooth(duration: 0.25), value: color)
 
             TextField("Integration name", text: $name, prompt: Text("e.g. Home Assistant"))
-                .font(.system(size: 17, weight: .semibold))
+                .font(AppFont.scaled(17, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .padding(.vertical, AppSpacing.md)
                 .padding(.horizontal, AppSpacing.lg)
                 .liquidGlass(cornerRadius: AppRadius.lg)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("ICON")
+                Text("Icon")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
@@ -230,7 +211,7 @@ private struct IntegrationIdentityEditor: View {
                             HapticFeedback.selection()
                         } label: {
                             Image(systemName: symbol)
-                                .font(.system(size: 15, weight: .medium))
+                                .font(AppFont.body)
                                 .foregroundStyle(icon == symbol ? tint : Color.primary.opacity(AppOpacity.mediumText))
                                 .frame(width: 36, height: 36)
                                 .background(
@@ -243,7 +224,7 @@ private struct IntegrationIdentityEditor: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("COLOR")
+                Text("Color")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 HStack(spacing: 12) {
@@ -258,7 +239,7 @@ private struct IntegrationIdentityEditor: View {
                                 .overlay {
                                     if color == hex {
                                         Image(systemName: "checkmark")
-                                            .font(.system(size: 11, weight: .bold))
+                                            .font(AppFont.scaled(11, weight: .bold))
                                             .foregroundStyle(.white)
                                     }
                                 }
@@ -295,7 +276,7 @@ private struct IntegrationEditorSheet: View {
                     IntegrationIdentityEditor(name: $name, icon: $icon, color: $color)
 
                     Text("After you create it, open the integration to copy its secret key into the external service.")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .multilineTextAlignment(.center)
 
@@ -304,7 +285,6 @@ private struct IntegrationEditorSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle(Text("Add integration"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -329,6 +309,7 @@ private struct IntegrationEditorSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -374,7 +355,7 @@ private struct IntegrationDetailSheet: View {
                     dangerSection
 
                     if let err = service.error {
-                        Text(err).font(.system(size: 12)).foregroundStyle(.red)
+                        Text(err).font(AppFont.scaled(12)).foregroundStyle(.red)
                     }
 
                     Spacer(minLength: 40)
@@ -382,7 +363,6 @@ private struct IntegrationDetailSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle(Text(integration.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -419,11 +399,12 @@ private struct IntegrationDetailSheet: View {
                 Text("This immediately cuts off the service using this key.")
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var connectionSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CONNECTION")
+            Text("Connection")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -438,7 +419,7 @@ private struct IntegrationDetailSheet: View {
                 Task { await service.rotateToken(integration) }
             } label: {
                 Label("Rotate token", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
@@ -446,7 +427,7 @@ private struct IntegrationDetailSheet: View {
 
             let sample = "{\n  \"token\": \"\(integration.token.uuidString.lowercased())\",\n  \"text\": \"Salut din \(integration.name)!\"\n}"
             Text(sample)
-                .font(.system(size: 12, design: .monospaced))
+                .font(AppFont.scaled(12, design: .monospaced))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(AppSpacing.base)
@@ -458,7 +439,7 @@ private struct IntegrationDetailSheet: View {
                 }
             if copied == "sample" {
                 Label("Copied", systemImage: "checkmark")
-                    .font(.system(size: 11)).foregroundStyle(Color.brandSuccess)
+                    .font(AppFont.scaled(11)).foregroundStyle(Color.brandSuccess)
                     .padding(.leading, AppSpacing.xxs)
             }
         }
@@ -475,7 +456,7 @@ private struct IntegrationDetailSheet: View {
         } label: {
             HStack(spacing: 8) {
                 switch testState {
-                case .running: ProgressView().tint(.white)
+                case .running: ProgressView()
                 case .ok:      Image(systemName: "checkmark.circle.fill")
                 case .failed:  Image(systemName: "xmark.circle.fill")
                 case .idle:    Image(systemName: "paperplane.fill")
@@ -485,12 +466,8 @@ private struct IntegrationDetailSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(
-                LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                               startPoint: .leading, endPoint: .trailing),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
+            .foregroundStyle(testState == .running ? AnyShapeStyle(.secondary) : AnyShapeStyle(.white))
+            .glassProminent(in: Capsule(), enabled: testState != .running)
         }
         .buttonStyle(.plain)
         .disabled(testState == .running)
@@ -517,7 +494,7 @@ private struct IntegrationDetailSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                 Text(masked ? String(value.prefix(8)) + "••••••••" : value)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(AppFont.scaled(12, design: .monospaced))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
             }
@@ -528,10 +505,11 @@ private struct IntegrationDetailSheet: View {
                 HapticFeedback.selection()
             } label: {
                 Image(systemName: copied == key ? "checkmark" : "doc.on.doc")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(copied == key ? Color.brandSuccess : Color.accentColor)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(copied == key ? Text("Copied") : Text("Copy"))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .liquidGlass(cornerRadius: AppRadius.lg)

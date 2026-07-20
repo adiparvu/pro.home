@@ -48,8 +48,14 @@ final class ProactiveEngine {
 
     // MARK: - Analysis
 
-    func analyze(appliances: [Appliance], elements: [PropertyElement]) {
+    func analyze(appliances: [Appliance], elements: [PropertyElement],
+                 records: [FinancialRecord] = [], tasks: [MaintenanceTask] = []) {
         var fresh: [ProactiveInsight] = []
+
+        // The butler speaks from YOUR numbers, not generic tips: the biggest
+        // month-over-month expense swing, and task momentum when work piles up.
+        if let money = financialDeltaInsight(records) { fresh.append(money) }
+        if let momentum = taskMomentumInsight(tasks) { fresh.append(momentum) }
 
         // Warranties expiring within 30 days
         let expiringSoon = appliances.filter { $0.isWarrantyExpiringSoon }
@@ -129,8 +135,20 @@ final class ProactiveEngine {
     func scheduleNotifications(for insights: [ProactiveInsight]) {
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.warrantyAlerts) else { return }
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: insights.map { "proactive-\($0.id)" })
-        for insight in insights.filter({ !$0.isDismissed && $0.category == .warranty }) {
+        // Insight ids are deterministic and analyze() reruns on every launch
+        // and background refresh — without this ledger the same warranty
+        // warnings re-fired (5s trigger) at every single app open.
+        let ledgerKey = "prvio.proactive.notified"
+        var notified = Set(UserDefaults.standard.stringArray(forKey: ledgerKey) ?? [])
+        defer {
+            // Prune to the current generation so the ledger can't grow
+            // unbounded; a vanished insight that ever returns may alert again.
+            let live = Set(insights.map { $0.id.uuidString })
+            UserDefaults.standard.set(Array(notified.intersection(live)), forKey: ledgerKey)
+        }
+        for insight in insights.filter({ !$0.isDismissed && $0.category == .warranty
+                                         && !notified.contains($0.id.uuidString) }) {
+            notified.insert(insight.id.uuidString)
             let content = UNMutableNotificationContent()
             content.title = insight.title
             content.body = insight.body
@@ -198,6 +216,71 @@ final class ProactiveEngine {
         try? BGTaskScheduler.shared.submit(request)
     }
 
+    // MARK: - Data-driven insights
+
+    /// The expense category that moved the most vs last month — only spoken
+    /// when the swing is meaningful (≥20% and ≥50 in currency), so it reads
+    /// as intelligence, not noise.
+    private func financialDeltaInsight(_ records: [FinancialRecord]) -> ProactiveInsight? {
+        guard !records.isEmpty else { return nil }
+        let cal = Calendar.current
+        let now = Date()
+        guard let lastMonth = cal.date(byAdding: .month, value: -1, to: now) else { return nil }
+        let thisKey = AppDate.monthKey.string(from: now)
+        let lastKey = AppDate.monthKey.string(from: lastMonth)
+
+        var thisMonth: [String: Double] = [:]
+        var prevMonth: [String: Double] = [:]
+        for r in records where r.type == "expense" {
+            if r.date.hasPrefix(thisKey) { thisMonth[r.category, default: 0] += r.amount }
+            else if r.date.hasPrefix(lastKey) { prevMonth[r.category, default: 0] += r.amount }
+        }
+
+        var best: (category: String, delta: Double, pct: Int)? = nil
+        for (category, previous) in prevMonth where previous > 0 {
+            let current = thisMonth[category] ?? 0
+            let delta = current - previous
+            let pct = Int((delta / previous) * 100)
+            guard abs(pct) >= 20, abs(delta) >= 50 else { continue }
+            if abs(delta) > abs(best?.delta ?? 0) { best = (category, delta, pct) }
+        }
+        guard let best else { return nil }
+
+        let rising = best.delta > 0
+        return ProactiveInsight(
+            id: deterministicID("fin-\(thisKey)-\(best.category)"),
+            title: String(format: rising
+                ? String(localized: "%@ spending up %d%%")
+                : String(localized: "%@ spending down %d%%"),
+                best.category.capitalized, abs(best.pct)),
+            body: String(format: rising
+                ? String(localized: "You've spent %d more on %@ than last month. Worth a look at the entries.")
+                : String(localized: "You've spent %d less on %@ than last month. Whatever changed — it's working."),
+                Int(abs(best.delta)), best.category),
+            category: .financial,
+            createdAt: Date(),
+            isDismissed: false
+        )
+    }
+
+    /// When overdue work piles up, name it — with the oldest task as the
+    /// concrete place to start.
+    private func taskMomentumInsight(_ tasks: [MaintenanceTask]) -> ProactiveInsight? {
+        let overdue = tasks.filter { $0.isOverdue && !$0.isCompleted }
+        guard overdue.count >= 3 else { return nil }
+        let oldest = overdue.min { ($0.dueDate ?? "") < ($1.dueDate ?? "") }
+        let weekKey = AppDate.weekKey.string(from: Date())
+        return ProactiveInsight(
+            id: deterministicID("momentum-\(weekKey)"),
+            title: String(format: String(localized: "%d tasks are overdue"), overdue.count),
+            body: String(format: String(localized: "Start with the oldest: \"%@\". Clearing one gets the streak going."),
+                         oldest?.title ?? ""),
+            category: .maintenance,
+            createdAt: Date(),
+            isDismissed: false
+        )
+    }
+
     // MARK: - Private
 
     private func persist() {
@@ -232,12 +315,7 @@ final class ProactiveEngine {
 
     private func parseDateStr(_ str: String?) -> Date? {
         guard let str else { return nil }
-        let fmts = ["yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"]
-        for fmt in fmts {
-            let f = DateFormatter(); f.dateFormat = fmt
-            if let d = f.date(from: str) { return d }
-        }
-        return nil
+        return AppDate.day(from: str)
     }
 
     private struct SeasonalHint { let title: String; let body: String }

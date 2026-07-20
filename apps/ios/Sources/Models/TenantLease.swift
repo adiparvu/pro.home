@@ -1,0 +1,58 @@
+import Foundation
+
+/// Lease/contract details for a tenant (a `family_members` row with role
+/// "tenant"). Kept in its own table so the people table stays lean.
+struct TenantLease: Codable, Identifiable, Hashable {
+    let id: UUID
+    let propertyId: UUID
+    let memberId: UUID
+    var leaseStart: String?
+    var leaseEnd: String?
+    var monthlyRent: Double?
+    var currency: String
+    var deposit: Double?
+    var paymentDay: Int?
+    var occupants: Int?
+    var notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, currency, deposit, occupants, notes
+        case propertyId  = "property_id"
+        case memberId    = "member_id"
+        case leaseStart  = "lease_start"
+        case leaseEnd    = "lease_end"
+        case monthlyRent = "monthly_rent"
+        case paymentDay  = "payment_day"
+    }
+
+    /// "1.200 EUR / month" style summary, or nil when no rent captured.
+    var rentDisplay: String? {
+        guard let rent = monthlyRent else { return nil }
+        return "\(CurrencyService.amount(rent)) \(currency)"
+    }
+
+    var endDisplay: String? {
+        guard let end = leaseEnd else { return nil }
+        guard let d = AppDate.day(from: end) else { return end }
+        return AppDate.medium.string(from: d)
+    }
+
+    /// Days until the lease ends (negative = already ended); nil for
+    /// open-ended leases or unparseable dates.
+    var daysUntilEnd: Int? {
+        guard let end = leaseEnd, let d = AppDate.day(from: end) else { return nil }
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: d).day
+    }
+
+    /// Ending within the renewal window (60 days) but not yet over.
+    var isEndingSoon: Bool {
+        guard let days = daysUntilEnd else { return false }
+        return days >= 0 && days <= 60
+    }
+
+    var hasEnded: Bool {
+        guard let days = daysUntilEnd else { return false }
+        return days < 0
+    }
+}

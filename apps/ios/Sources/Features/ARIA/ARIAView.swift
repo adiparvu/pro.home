@@ -1,10 +1,5 @@
 import SwiftUI
 
-private struct ARIABottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 // MARK: - Proposed action model
 
 struct ARIAProposedAction {
@@ -22,9 +17,40 @@ struct ARIAView: View {
     @Environment(ApplianceService.self) private var applianceService
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
-    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
+    @AppStorage("prvio.aria.personality") private var aiTone: String = "balanced"
+    // Context access — the "What ARIA can see" switches. They ride along with
+    // every request; the aria-chat edge function refuses to load (or offer
+    // tools over) any domain the owner has switched off.
+    @AppStorage("prvio.aria.showTasks") private var allowTasks = true
+    @AppStorage("prvio.aria.showFinances") private var allowFinances = true
+    @AppStorage("prvio.aria.showProperty") private var allowProperty = true
+    @AppStorage("prvio.aria.showFamily") private var allowFamily = true
+    @AppStorage("prvio.aria.showPlants") private var allowPlants = true
+    /// "auto" follows the app language; "ro"/"en" force the reply language.
+    @AppStorage("prvio.aria.responseLanguage") private var responseLanguage = "auto"
+    @State private var showSettings = false
+    @State private var themeRefresh = 0
+
+    // The assistant's conversation is a real chat: it takes the same
+    // per-conversation theme system as every other conversation (scope
+    // "aria"). ChatTheme.effective is the one authority — it applies the
+    // "background keys are one setting" rule and falls back to the global
+    // default, both of which the old hand-rolled per-key read skipped
+    // (the "changing the background does nothing" bug).
+    private var chatTheme: ChatTheme {
+        _ = themeRefresh
+        return .effective(scope: "aria")
+    }
+    // Same resolution as the DM thread (the unified bubble language this
+    // screen follows): the stock accent bubble for the default theme, the
+    // theme's outgoing colour otherwise — DMBubble's
+    // `outgoingColor ?? Color.accentColor` fallback, expressed directly.
+    private var ownBubbleColor: Color {
+        chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
+    }
+
     @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false
@@ -36,106 +62,152 @@ struct ARIAView: View {
     @AppStorage("prvio.followSystemLang")  private var followSystemLanguage: Bool = true
     @State private var speech = SpeechRecognizer()
     @State private var showJumpToLatest = false
+    /// False until the first batch of messages lands — the initial fill must
+    /// not animate (bubbles springing into place read as an entry flash).
+    @State private var chatDidLoad = false
 
     var body: some View {
-        ZStack {
-            appBackground.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                messageList
-                inputBar
+        messageList
+            // The ONE composer bar, mounted the same way as every other chat
+            // surface: as a bottom safe-area inset, so the keyboard lifts it
+            // through the system mechanism instead of an overlay hack (which
+            // also left the list scrolling underneath it).
+            .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+            .background(chatTheme.background)
+            .onChange(of: speech.transcript) { _, t in
+                if !t.isEmpty { input = t }
             }
-        }
-        .navigationTitle(assistantName)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    HapticFeedback.selection()
-                    onDismiss?()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.primary)
+            // iMessage-style header, same as the group chat: no bar, the
+            // conversation slides under a progressive blur and only the
+            // identity pill floats on top.
+            .overlay(alignment: .top) { ChatTopBlur() }
+            .overlay {
+                if isLoadingHistory && messages.isEmpty {
+                    MessageSkeleton()
                 }
-                .accessibilityLabel("Close")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                MemberAvatarStack(
-                    members: familyService.members,
-                    ownerAvatarUrl: profileService.profile?.avatarUrl,
-                    ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
-                    ringColor: avatarRingColor(for: avatarRingColorName)
-                )
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: $showSettings) { ARIASettingsView() }
+            .onChange(of: showSettings) { _, open in
+                // Coming back from settings re-reads the (possibly changed) theme.
+                if !open { themeRefresh &+= 1 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    withAnimation { messages = ARIAMessage.welcome }
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.primary)
+            .onAppear { themeRefresh &+= 1 }
+            .onReceive(NotificationCenter.default.publisher(for: .ariaHistoryCleared)) { _ in
+                withAnimation(AppMotion.state) { messages = ARIAMessage.welcome }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        HapticFeedback.selection()
+                        onDismiss?()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(AppFont.headline)
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityLabel("Close")
                 }
-                .accessibilityLabel("Reset messages")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { ARIASettingsView() } label: {
-                    Image(systemName: "gearshape")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.primary)
+                // One entry point, like a DM: tapping the assistant's identity
+                // opens its settings (name, avatar, background, personality,
+                // history). No avatar stack, no scattered toolbar buttons.
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        HapticFeedback.selection()
+                        showSettings = true
+                    } label: {
+                        ChatHeaderPill {
+                            HStack(spacing: 8) {
+                                ARIAAvatar(size: 28)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(assistantName)
+                                        .font(AppFont.subheadline)
+                                        .foregroundStyle(.primary)
+                                    Text("AI Assistant")
+                                        .font(AppFont.scaled(11))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                }
+                                Image(systemName: "chevron.right")
+                                    .font(AppFont.label)
+                                    .foregroundStyle(Color.primary.opacity(0.35))
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Settings")
                 }
-                .accessibilityLabel("Settings")
             }
-        }
-        .task { await loadHistory() }
+            .task { await loadHistory() }
     }
 
-    // MARK: - Messages
+    // MARK: - Message list
 
     private var messageList: some View {
         ScrollViewReader { proxy in
-            GeometryReader { outer in
-            ScrollView {
-                if isLoadingHistory {
-                    VStack { Spacer(minLength: 40); ProgressView().tint(.white); Spacer() }
-                } else {
-                    LazyVStack(spacing: 12) {
-                        ForEach(messages) { msg in
-                            ARIAMessageBubble(message: msg)
-                                .id(msg.id)
-                        }
-                        if isThinking {
-                            ThinkingBubble().id("thinking")
-                        }
-                        Color.clear.frame(height: 1).id("ARIA_BOTTOM")
-                            .background(GeometryReader { g in
-                                Color.clear.preference(key: ARIABottomKey.self,
-                                                       value: g.frame(in: .named("ariaScroll")).minY)
-                            })
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: 2) {
+                    ForEach(Array(messages.enumerated()), id: \.element.id) { idx, msg in
+                        // Consecutive messages from the same speaker form a
+                        // visual group: middle bubbles stay fully rounded, only
+                        // the last one carries the tail (and, for the
+                        // assistant, the avatar) — same read as the group chat.
+                        let prevSame = idx > 0 && messages[idx - 1].role == msg.role
+                        let nextSame = idx < messages.count - 1 && messages[idx + 1].role == msg.role
+                        ARIAMessageRow(
+                            message: msg,
+                            isGroupEnd: !nextSame,
+                            ownBubbleColor: ownBubbleColor
+                        )
+                        .padding(.top, prevSame ? 0 : 6)
+                        .id(msg.id)
                     }
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.vertical, AppSpacing.sm)
-                    .padding(.bottom, AppSpacing.xl)
+                    if isThinking {
+                        ARIATypingBubble(assistantName: assistantName)
+                            .padding(.top, 6)
+                            .id("ARIA_TYPING")
+                    }
+                    // Jump-button sentinel — visibility follows the marker
+                    // entering/leaving the lazy render window.
+                    Color.clear.frame(height: 1).id("ARIA_BOTTOM")
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                        }
+                        .onDisappear {
+                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                        }
                 }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                // The composer inset already keeps the newest message above
+                // the bar (safe-area mounting, same as the group chat) — this
+                // is just breathing room, matching ChatView.
+                .padding(.bottom, AppSpacing.md)
+                .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil,
+                           value: messages.count)
+                .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil,
+                           value: isThinking)
             }
-            .coordinateSpace(name: "ariaScroll")
-            .onPreferenceChange(ARIABottomKey.self) { minY in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showJumpToLatest = minY > outer.size.height + 60
+            .defaultScrollAnchor(.bottom)
+            .scrollDismissesKeyboard(.immediately)
+            .onChange(of: messages.count) { old, _ in
+                guard !messages.isEmpty else { return }
+                defer { chatDidLoad = true }
+                if old == 0 {
+                    proxy.scrollTo("ARIA_BOTTOM", anchor: .bottom)
+                } else {
+                    withAnimation { proxy.scrollTo("ARIA_BOTTOM", anchor: .bottom) }
                 }
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: messages.count) {
-                withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
             }
             .onChange(of: isThinking) {
-                if isThinking { withAnimation { proxy.scrollTo("thinking", anchor: .bottom) } }
+                if isThinking { withAnimation { proxy.scrollTo("ARIA_BOTTOM", anchor: .bottom) } }
             }
             .overlay(alignment: .bottom) {
                 if showJumpToLatest {
                     Button {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            proxy.scrollTo(messages.last?.id, anchor: .bottom)
+                            proxy.scrollTo("ARIA_BOTTOM", anchor: .bottom)
                         }
                         HapticFeedback.impact(.light)
                     } label: {
@@ -145,192 +217,51 @@ struct ARIAView: View {
                             .frame(width: 40, height: 40)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Jump to latest")
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.bottom, 10)
                     .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel("Jump to latest message")
                 }
             }
-            } // end GeometryReader
         }
     }
 
-    // MARK: - Input bar — matches mockup: text field + [mic|waveform|cloud] + glowing orb
+    // MARK: - Composer — the shared chat bar (dictation + stop, no attachments)
 
-    private var inputBar: some View {
-        VStack(spacing: 0) {
-            // Action confirmation banner
+    private var composer: some View {
+        ChatComposerBar(
+            text: $input,
+            focused: $focused,
+            config: ChatComposerConfig(
+                placeholder: "Message…",
+                onSendText: { sendRaw() },
+                dictation: voiceInputEnabled ? ChatComposerDictation(
+                    isListening: speech.isListening,
+                    onTap: {
+                        HapticFeedback.impact(.light)
+                        if speech.isListening {
+                            speech.stop()
+                        } else {
+                            focused = false
+                            Task { await speech.startListening() }
+                        }
+                    }
+                ) : nil,
+                isResponding: isThinking,
+                onStopResponding: { isThinking = false }
+            )
+        ) {
+            // Action confirmation banner rides above the field, inside the bar.
             if let action = proposedAction {
                 ARIAActionBanner(
                     action: action,
                     onConfirm: { confirmAction(action) },
-                    onCancel: { proposedAction = nil }
+                    onCancel: { withAnimation(AppMotion.state) { proposedAction = nil } }
                 )
-                .padding(.horizontal, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.top, AppSpacing.sm)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            VStack(spacing: 10) {
-                // Text field row
-                HStack(spacing: 10) {
-                    TextField("aria_placeholder", text: $input, axis: .vertical)
-                        .font(.system(size: 15))
-                        .lineLimit(1...5)
-                        .focused($focused)
-                        .onChange(of: speech.transcript) { _, t in
-                            if !t.isEmpty { input = t }
-                        }
-                    if !input.isEmpty {
-                        Button {
-                            input = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                // Icon buttons + orb row
-                HStack(spacing: 0) {
-                    // Left: 3 icon buttons matching mockup
-                    HStack(spacing: 16) {
-                        // Mic button
-                        Button {
-                            HapticFeedback.impact(.light)
-                            if speech.isListening {
-                                speech.stop()
-                            } else {
-                                focused = false
-                                Task { await speech.startListening() }
-                            }
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(speech.isListening
-                                        ? Color.red.opacity(0.2)
-                                        : Color.primary.opacity(0.1))
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "mic.fill")
-                                    .font(AppFont.headline)
-                                    .foregroundStyle(speech.isListening
-                                        ? .red
-                                        : Color(red: 0.55, green: 0.70, blue: 1.0))
-                                    .symbolEffect(.pulse, isActive: speech.isListening)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(speech.isListening ? "Stop voice input" : "Voice input")
-
-                        // Waveform / equalizer button
-                        Button {
-                            HapticFeedback.impact(.light)
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.primary.opacity(0.1))
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "waveform")
-                                    .font(AppFont.headline)
-                                    .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Audio mode")
-
-                        // Cloud / AI mode button
-                        Button {
-                            HapticFeedback.impact(.light)
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.primary.opacity(0.1))
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "icloud")
-                                    .font(AppFont.headline)
-                                    .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Cloud mode")
-                    }
-
-                    Spacer()
-
-                    // Right: large glowing blue orb (send / stop)
-                    Button {
-                        speech.stop()
-                        if isThinking { isThinking = false } else { sendRaw() }
-                    } label: {
-                        ZStack {
-                            // Outer glow ring
-                            Circle()
-                                .fill(Color(red: 0.25, green: 0.45, blue: 0.95).opacity(0.25))
-                                .frame(width: 66, height: 66)
-                                .blur(radius: 10)
-
-                            // Mid glow
-                            Circle()
-                                .fill(
-                                    RadialGradient(
-                                        colors: [
-                                            Color.brandSkyBlue.opacity(0.5),
-                                            Color.clear
-                                        ],
-                                        center: .center, startRadius: 0, endRadius: 32
-                                    )
-                                )
-                                .frame(width: 60, height: 60)
-
-                            // Core orb
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.brandSkyBlue,
-                                            Color(red: 0.30, green: 0.38, blue: 0.98)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 52, height: 52)
-                                .shadow(color: Color.brandSkyBlue.opacity(0.8), radius: 14, y: 3)
-
-                            // Inner highlight
-                            Circle()
-                                .fill(Color.white.opacity(0.18))
-                                .frame(width: 18, height: 18)
-                                .offset(x: -8, y: -8)
-                                .blur(radius: 4)
-
-                            if isThinking {
-                                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(.white)
-                                    .frame(width: 14, height: 14)
-                            } else {
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isThinking)
-                }
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .padding(.top, AppSpacing.md)
-            .padding(.bottom, 10)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .top) {
-                Divider().opacity(0.15)
             }
         }
     }
@@ -353,7 +284,8 @@ struct ARIAView: View {
             } else {
                 messages = history.map { ARIAMessage(
                     role: $0.role == "user" ? .user : .aria,
-                    content: $0.content
+                    content: $0.content,
+                    date: ISODate.date(from: $0.createdAt) ?? Date()
                 )}
             }
         } catch {
@@ -364,22 +296,46 @@ struct ARIAView: View {
     private func sendRaw() {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        speech.stop()
         input = ""
         messages.append(ARIAMessage(role: .user, content: text))
+        MessageSounds.sent()
         isThinking = true
 
         Task {
             do {
                 let propId = propertyService.primary?.id.uuidString
-                let lang = followSystemLanguage
-                    ? (Language.devicePreferred.rawValue)
-                    : currentLocale
+                // Reply language: the assistant's own setting wins; "auto"
+                // follows the app language exactly as before.
+                let lang: String
+                switch responseLanguage {
+                case ARIAResponseLanguage.romanian.rawValue,
+                     ARIAResponseLanguage.english.rawValue:
+                    lang = responseLanguage
+                default:
+                    lang = followSystemLanguage
+                        ? Language.devicePreferred.rawValue
+                        : currentLocale
+                }
                 struct ARIAChatPayload: Encodable {
                     let message: String
                     let property_id: String?
                     let language: String
+                    let tone: String
+                    let assistant_name: String
+                    let allow_tasks: Bool
+                    let allow_finances: Bool
+                    let allow_property: Bool
+                    let allow_family: Bool
+                    let allow_plants: Bool
                 }
-                let payload = ARIAChatPayload(message: text, property_id: propId, language: lang)
+                let payload = ARIAChatPayload(message: text, property_id: propId, language: lang,
+                                              tone: aiTone, assistant_name: assistantName,
+                                              allow_tasks: allowTasks,
+                                              allow_finances: allowFinances,
+                                              allow_property: allowProperty,
+                                              allow_family: allowFamily,
+                                              allow_plants: allowPlants)
                 let rawResponse: Data = try await supabase.functions
                     .invoke("aria-chat", options: .init(body: payload))
 
@@ -404,7 +360,7 @@ struct ARIAView: View {
                     if let replyText, !replyText.isEmpty {
                         messages.append(ARIAMessage(role: .aria, content: replyText))
                     }
-                    withAnimation {
+                    withAnimation(AppMotion.springy) {
                         proposedAction = buildProposedAction(tool: tool, input: actionInput)
                     }
                 } else if let reply = json["reply"] as? String {
@@ -544,75 +500,114 @@ struct ARIAView: View {
     }
 }
 
-// MARK: - Message Bubble
+// MARK: - Message row — the unified chat's bubble anatomy (shape, tail, colors)
 
-private struct ARIAMessageBubble: View {
+/// The assistant thread's counterpart of `DMBubble`: the same row geometry the
+/// shared renderer (`ChatMessageBubbleShared`) draws — bottom-aligned HStack,
+/// 72pt clearance on the opposite side, a 3pt bubble→status column — with the
+/// DM bubble language: `ChatTextBubbleView` for the user's messages and the
+/// DM incoming fill for the assistant's, time row underneath in the shared
+/// status-row style. Replicated minimally instead of mounting
+/// `ChatMessageBubbleShared` itself because that renderer hard-wires the
+/// swipe/long-press affordances and per-row bubble-frame tracking that a
+/// passive assistant thread has no use for.
+private struct ARIAMessageRow: View {
     let message: ARIAMessage
-    var isUser: Bool { message.role == .user }
+    /// Last bubble of a same-speaker run — carries the tail (and the avatar
+    /// for the assistant), exactly like the DM/group chat's grouping.
+    let isGroupEnd: Bool
+    let ownBubbleColor: Color
+
+    private var isUser: Bool { message.role == .user }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if isUser { Spacer(minLength: 48) }
-
-            if !isUser {
-                ZStack {
-                    Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
-                    Image(systemName: "sparkles")
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
+            if isUser {
+                Spacer(minLength: 72)
+            } else if isGroupEnd {
+                ARIAAvatar(size: 28)
+            } else {
+                Color.clear.frame(width: 28, height: 1)
             }
 
-            Text(LocalizedStringKey(message.content))
-                .font(.body)
-                .foregroundStyle(isUser ? .white : .primary)
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, 10)
-                .background(
-                    isUser
-                        ? AnyShapeStyle(LinearGradient(
-                            colors: [Color(red: 0.25, green: 0.45, blue: 0.95), Color(red: 0.35, green: 0.30, blue: 0.90)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing))
-                        : AnyShapeStyle(.ultraThinMaterial),
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(isUser ? 0 : 0.08), lineWidth: 0.5)
-                )
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 3) {
+                if isUser {
+                    // The DM's own-message bubble, verbatim — theme fill with
+                    // luminance-adaptive text lives inside ChatTextBubbleView.
+                    ChatTextBubbleView(text: message.content, isOwn: true,
+                                       hasTail: isGroupEnd, fill: ownBubbleColor)
+                } else {
+                    ARIAAssistantBubble(text: message.content, hasTail: isGroupEnd)
+                }
+                // Time under the bubble — the shared renderer's status row,
+                // minus the states an assistant thread doesn't have
+                // (ticks, edited, pinned, starred).
+                Text(message.timeDisplay)
+                    .font(AppFont.scaled(10))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .padding(.horizontal, AppSpacing.xxs)
+            }
 
-            if !isUser { Spacer(minLength: 48) }
+            if !isUser { Spacer(minLength: 72) }
         }
+        // Same per-row breathing room DMBubble adds around itself.
+        .padding(.vertical, 1)
     }
 }
 
-// MARK: - Thinking Bubble
+/// `ChatTextBubbleView`'s incoming variant (opaque system fill so it stays
+/// legible over any wallpaper, and satisfies Reduce Transparency) with one
+/// difference: the assistant's replies carry inline Markdown, which
+/// `Text(LocalizedStringKey:)` renders and the shared view's plain `Text`
+/// deliberately does not. Kept as a minimal local replica; if
+/// `ChatTextBubbleView` ever grows a Markdown switch, this view collapses
+/// into it.
+private struct ARIAAssistantBubble: View {
+    let text: String
+    var hasTail: Bool = true
 
-private struct ThinkingBubble: View {
-    @State private var phase = 0
+    var body: some View {
+        Text(LocalizedStringKey(text))
+            .font(AppFont.scaled(15))
+            .foregroundStyle(.primary)
+            .tint(Color.accentColor)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+            .background(Color(.secondarySystemBackground),
+                        in: ChatBubbleShape(isOwn: false, hasTail: hasTail))
+    }
+}
+
+// MARK: - Typing indicator — the chat's three-dot bubble while the AI thinks
+
+private struct ARIATypingBubble: View {
+    let assistantName: String
+    @State private var bounce = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            ZStack {
-                Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
-                Image(systemName: "sparkles")
-                    .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-            }
+            ARIAAvatar(size: 28)
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
                         .fill(Color.primary.opacity(AppOpacity.mediumText))
-                        .frame(width: 6, height: 6)
-                        .scaleEffect(phase == i ? 1.3 : 0.8)
-                        .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
+                        .frame(width: 7, height: 7)
+                        .scaleEffect(bounce ? 1.0 : 0.55)
+                        .animation(reduceMotion ? nil
+                                   : .easeInOut(duration: 0.5).repeatForever(autoreverses: true)
+                                       .delay(Double(i) * 0.16),
+                                   value: bounce)
                 }
             }
-            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-            .liquidGlass(cornerRadius: 18)
-            Spacer(minLength: 48)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 12)
+            // Same opaque incoming fill as the message bubbles above it.
+            .background(Color(.secondarySystemBackground),
+                        in: ChatBubbleShape(isOwn: false, hasTail: true))
+            Spacer(minLength: 72)
         }
-        .onAppear { phase = 1 }
+        .onAppear { bounce = true }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(assistantName) \(String(localized: "typing…"))"))
     }
 }
 
@@ -623,6 +618,12 @@ struct ARIAMessage: Identifiable {
     enum Role { case user, aria }
     let role: Role
     let content: String
+    /// Persisted send time for history rows; `now` for messages appended live.
+    var date = Date()
+
+    /// The clock shown under every bubble — same formatter as the DM/group
+    /// threads (HH:mm; the calendar date belongs to day separators, not here).
+    var timeDisplay: String { ISODate.timeOnly.string(from: date) }
 
     static var welcome: [ARIAMessage] {
         [ARIAMessage(role: .aria, content: String(localized: "aria_welcome"))]
@@ -640,7 +641,7 @@ private struct ARIAActionBanner: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(AppFont.scaled(12, weight: .bold))
                     .foregroundStyle(.yellow)
                 Text(action.displayText)
                     .font(AppFont.footnoteEmphasis)
@@ -652,10 +653,10 @@ private struct ARIAActionBanner: View {
                 Button(action: onConfirm) {
                     Text("Confirm")
                         .font(AppFont.captionEmphasis)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppSpacing.sm)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .mediaGlass(in: RoundedRectangle(cornerRadius: 10, style: .continuous), interactive: true)
                 }
                 .buttonStyle(.plain)
 

@@ -29,25 +29,28 @@ final class SupplyService {
     // MARK: Load
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if lists.isEmpty, let cached = ServiceCache.load([SupplyList].self, entity: "supplies.lists", propertyId: propertyId) {
+            lists = cached
+        }
+        if items.isEmpty, let cached = ServiceCache.load([SupplyItem].self, entity: "supplies.items", propertyId: propertyId) {
+            items = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
-            async let fetchedLists: [SupplyList] = supabase
-                .from("supply_lists")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
-            async let fetchedItems: [SupplyItem] = supabase
-                .from("supply_items")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
+            async let fetchedLists: [SupplyList] = PropertyRepo.fetch(
+                table: "supply_lists", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 500)
+            async let fetchedItems: [SupplyItem] = PropertyRepo.fetch(
+                table: "supply_items", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 1000)
             lists = try await fetchedLists
             items = try await fetchedItems
+            ServiceCache.save(lists, entity: "supplies.lists", propertyId: propertyId)
+            ServiceCache.save(items, entity: "supplies.items", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -65,7 +68,7 @@ final class SupplyService {
     }
 
     func updateList(_ list: SupplyList) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = SupplyListUpdate(name: list.name, icon: list.icon,
                                    color: list.color, note: list.note, updatedAt: now)
         do {
@@ -75,7 +78,7 @@ final class SupplyService {
                 .eq("id", value: list.id.uuidString)
                 .select().single().execute().value
             if let i = lists.firstIndex(where: { $0.id == list.id }) { lists[i] = updated }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func deleteList(_ list: SupplyList) async {
@@ -85,7 +88,7 @@ final class SupplyService {
             try await supabase
                 .from("supply_lists").delete()
                 .eq("id", value: list.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     // MARK: Items
@@ -100,7 +103,7 @@ final class SupplyService {
     }
 
     func updateItem(_ item: SupplyItem) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = SupplyItemUpdate(name: item.name, quantity: item.quantity,
                                    category: item.category, priority: item.priority,
                                    notes: item.notes, isCompleted: item.isCompleted,
@@ -110,21 +113,31 @@ final class SupplyService {
             try await supabase
                 .from("supply_items").update(upd)
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func toggleComplete(_ item: SupplyItem) async {
         var updated = item
         updated.isCompleted.toggle()
-        updated.updatedAt = ISO8601DateFormatter().string(from: Date())
+        updated.updatedAt = ISODate.string(from: Date())
         await updateItem(updated)
+        // Checking OFF (never unchecking) is donated so Siri Suggestions
+        // learn the shopping rhythm.
+        if updated.isCompleted {
+            SiriDonations.supplyChecked(id: item.id, name: item.name)
+        }
         // Keep the shopping Live Activity in sync with this list's progress.
         let listId = item.listId
         let listName = lists.first { $0.id == listId }?.name ?? String(localized: "Shopping list")
+        // Publish the next still-unbought item so the island's check-off button
+        // acts on a real, list-scoped id (the shared catalog isn't list-scoped).
+        let next = items(for: listId).first { !$0.isCompleted }
         LiveActivityService.shared.syncShopping(
             listName: listName,
             bought: completedCount(for: listId),
-            total: items(for: listId).count)
+            total: items(for: listId).count,
+            nextItemId: next?.id,
+            nextItemName: next?.name)
     }
 
     func deleteItem(_ item: SupplyItem) async {
@@ -133,6 +146,6 @@ final class SupplyService {
             try await supabase
                 .from("supply_items").delete()
                 .eq("id", value: item.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 }

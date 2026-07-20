@@ -5,18 +5,25 @@ import SwiftUI
 struct ReceiptDetailView: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     let receipt: Receipt
     @State private var showDeleteConfirm = false
+    @State private var resolvedImageURL: URL?
 
     private var items: [ReceiptItem] { receiptService.items(for: receipt.id) }
+
+    private func money(_ amount: Double) -> String {
+        CurrencyService.money(amount, code: appSettings.preferredCurrency)
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
                     heroCard
+                    if let path = receipt.imageUrl, !path.isEmpty { photoSection(path: path) }
                     if !items.isEmpty { itemsSection }
                     notesSection
                     deleteButton
@@ -43,28 +50,60 @@ struct ReceiptDetailView: View {
         }
     }
 
+    // MARK: - Photo
+
+    /// The attached receipt image, resolved from its private-bucket path to a
+    /// short-lived signed URL when the section appears.
+    private func photoSection(path: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("add_receipt_photo")
+                .font(AppFont.label).foregroundStyle(.secondary)
+                .padding(.leading, AppSpacing.xxs)
+            GlassCard(padding: 6) {
+                Group {
+                    if let url = resolvedImageURL {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image): image.resizable().scaledToFit()
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .font(AppFont.scaled(28))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity).frame(height: 120)
+                            default:
+                                ProgressView().frame(maxWidth: .infinity).frame(height: 120)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity).frame(height: 120)
+                    }
+                }
+            }
+        }
+        .task(id: path) { resolvedImageURL = await ReceiptService.resolveImage(path) }
+    }
+
     // MARK: - Hero
 
     private var heroCard: some View {
         GlassCard(padding: 20) {
             HStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(receipt.categoryColor.opacity(0.15))
-                        .frame(width: 60, height: 60)
-                    Image(systemName: receipt.categoryIcon)
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(receipt.categoryColor)
-                }
+                Image(systemName: receipt.categoryIcon)
+                    .font(AppFont.scaled(26, weight: .semibold))
+                    .foregroundStyle(receipt.categoryColor)
+                    .frame(width: 60, height: 60)
+                    .glassRoundedRect(AppRadius.lg)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                     HStack(spacing: 10) {
                         Text(receipt.formattedDate)
-                            .font(.system(size: 13))
+                            .font(AppFont.scaled(13))
                             .foregroundStyle(.secondary)
                         Text(ReceiptCategory.label(for: receipt.category))
                             .font(AppFont.caption)
@@ -77,12 +116,12 @@ struct ReceiptDetailView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(receipt.formattedTotal)
+                    Text(verbatim: money(receipt.total))
                         .font(AppFont.title2)
                         .foregroundStyle(.primary)
                         .monospacedDigit()
                     Text(String(localized: "receipt_total_label"))
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -100,25 +139,36 @@ struct ReceiptDetailView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                         VStack(spacing: 0) {
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.name)
-                                        .font(AppFont.footnote)
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(2)
-                                    if item.quantity != 1 {
-                                        Text(String(format: "%.0f × %@", item.quantity, Receipt.format(item.unitPrice)))
-                                            .font(.system(size: 11))
-                                            .foregroundStyle(.secondary)
+                            // Each line is a real purchase — link it to the
+                            // product's price history across all receipts.
+                            NavigationLink {
+                                ProductPriceHistoryView(productName: item.name)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name)
+                                            .font(AppFont.footnote)
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(2)
+                                        if item.quantity != 1 {
+                                            Text(String(format: "%.0f × %@", item.quantity, money(item.unitPrice)))
+                                                .font(AppFont.scaled(11))
+                                                .foregroundStyle(.secondary)
+                                        }
                                     }
+                                    Spacer()
+                                    Text(verbatim: money(item.totalPrice))
+                                        .font(AppFont.footnoteEmphasis)
+                                        .foregroundStyle(.primary)
+                                        .monospacedDigit()
+                                    Image(systemName: "chevron.right")
+                                        .font(AppFont.scaled(10))
+                                        .foregroundStyle(Color.primary.opacity(0.25))
                                 }
-                                Spacer()
-                                Text(Receipt.format(item.totalPrice))
-                                    .font(AppFont.footnoteEmphasis)
-                                    .foregroundStyle(.primary)
-                                    .monospacedDigit()
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                            .buttonStyle(.plain)
                             if idx < items.count - 1 {
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                             }
@@ -131,8 +181,8 @@ struct ReceiptDetailView: View {
                         Text(String(localized: "receipt_total_label"))
                             .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Spacer()
-                        Text(receipt.formattedTotal)
-                            .font(.system(size: 15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
+                        Text(verbatim: money(receipt.total))
+                            .font(AppFont.scaled(15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                 }
@@ -146,11 +196,11 @@ struct ReceiptDetailView: View {
     private var notesSection: some View {
         if let notes = receipt.notes, !notes.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("NOTES")
+                Text("Notes")
                     .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 14) {
                     Text(notes)
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

@@ -22,9 +22,9 @@ struct ElementTagsSection: View {
                             HStack(spacing: 8) {
                                 ForEach(el.tags, id: \.self) { tag in
                                     HStack(spacing: 5) {
-                                        Text(tag).font(.system(size: 13, weight: .medium))
+                                        Text(tag).font(AppFont.scaled(13, weight: .medium))
                                         Button { remove(tag, el) } label: {
-                                            Image(systemName: "xmark.circle.fill").font(.system(size: 12))
+                                            Image(systemName: "xmark.circle.fill").font(AppFont.scaled(12))
                                         }
                                         .buttonStyle(.plain)
                                         .accessibilityLabel("Remove tag \(tag)")
@@ -46,7 +46,7 @@ struct ElementTagsSection: View {
                             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             .onSubmit { add(el) }
                         Button { add(el) } label: {
-                            Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Color.accentColor)
+                            Image(systemName: "plus.circle.fill").font(AppFont.scaled(22)).foregroundStyle(Color.accentColor)
                         }
                         .buttonStyle(.plain)
                         .disabled(newTag.trimmingCharacters(in: .whitespaces).isEmpty)

@@ -15,43 +15,23 @@ struct EditProfileView: View {
     @State private var socialLinks: [SocialLink] = []
     @State private var error: String?
 
-    private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "other"]
+    private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "pinterest", "other"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)
-                        field("Last Name", placeholder: "Last name", text: $lastName)
-                        field("First Name", placeholder: "First name", text: $firstName)
-                        birthDateField
-                        field("Phone", placeholder: "+1 xxx xxx xxxx", text: $phone)
-                            .keyboardType(.phonePad)
-                        field("Email", placeholder: "name@example.com", text: $email)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                        socialSection
-                        notesField
-
-                        if let error {
-                            Text(LocalizedStringKey(error))
-                                .font(.system(size: 13))
-                                .foregroundStyle(.red)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        saveButton
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.lg)
-                    .padding(.bottom, 40)
-                }
-            }
-            .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
+        FormScaffold(title: "Edit Profile", saveLabel: "Save",
+                     isSaving: profileService.isSaving,
+                     error: $error, onSave: { save() }) {
+            field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)
+            field("Last Name", placeholder: "Last name", text: $lastName)
+            field("First Name", placeholder: "First name", text: $firstName)
+            birthDateField
+            field("Phone", placeholder: "+1 xxx xxx xxxx", text: $phone)
+                .keyboardType(.phonePad)
+            field("Email", placeholder: "name@example.com", text: $email)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+            socialSection
+            notesField
         }
         .onAppear { loadCurrentValues() }
     }
@@ -62,7 +42,7 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel(label)
             TextField(placeholder, text: text)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
@@ -71,7 +51,7 @@ struct EditProfileView: View {
 
     private func fieldLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
-            .font(.system(size: 13, weight: .medium))
+            .font(AppFont.scaled(13, weight: .medium))
             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -84,12 +64,13 @@ struct EditProfileView: View {
                     DatePicker("", selection: $birthDate, in: ...Date(), displayedComponents: .date)
                         .labelsHidden()
                     Spacer()
-                    Button { withAnimation { hasBirthDate = false } } label: {
+                    Button { withAnimation(AppMotion.state) { hasBirthDate = false } } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear date"))
                 } else {
-                    Button { withAnimation { hasBirthDate = true } } label: {
+                    Button { withAnimation(AppMotion.state) { hasBirthDate = true } } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundStyle(.tint)
                             Text("Add date of birth").foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -108,7 +89,7 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("Notes")
             TextField("Notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
                 .padding(AppSpacing.base)
@@ -129,31 +110,33 @@ struct EditProfileView: View {
                             socialLinks.append(SocialLink(platform: p, handle: ""))
                             HapticFeedback.selection()
                         } label: {
-                            Label(SocialLink(platform: p, handle: "").platformLabel, systemImage: SocialLink(platform: p, handle: "").platformIcon)
+                            // Text-only on purpose: system menus can only
+                            // render SF Symbols, and no symbol is the real
+                            // brand mark — an honest name beats a fake icon.
+                            Text(SocialLink(platform: p, handle: "").platformLabel)
                         }
                     }
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                    Image(systemName: "plus")
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.tint)
+                        .frame(width: 34, height: 34)
+                        .glassCircle()
                 }
+                .accessibilityLabel(Text("Add account"))
             }
 
             if socialLinks.isEmpty {
                 Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .padding(.vertical, AppSpacing.xxs)
             } else {
                 ForEach($socialLinks) { $link in
                     HStack(spacing: 10) {
-                        Image(systemName: link.platformIcon)
-                            .font(.system(size: 14))
-                            .foregroundStyle(link.platformColor)
-                            .frame(width: 26, height: 26)
-                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                        SocialBrandIcon(platform: link.platform, size: 26)
                         TextField(link.platformLabel, text: $link.handle)
-                            .font(.system(size: 15))
+                            .font(AppFont.scaled(15))
                             .foregroundStyle(.primary)
                             .textInputAutocapitalization(.never)
                         Button {
@@ -164,30 +147,13 @@ struct EditProfileView: View {
                                 .foregroundStyle(.red.opacity(0.8))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Delete"))
                     }
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .liquidGlass(cornerRadius: AppRadius.md)
                 }
             }
         }
-    }
-
-    private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if profileService.isSaving {
-                    ProgressView().tint(.black)
-                } else {
-                    Text("Save Changes").font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.lg)
-            .background(.white)
-            .foregroundStyle(.black)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .disabled(profileService.isSaving)
     }
 
     // MARK: - Load / Save
@@ -201,8 +167,7 @@ struct EditProfileView: View {
         email = p.email
         notes = p.notes ?? ""
         socialLinks = p.socialLinks ?? []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        if let bd = p.birthDate, let d = iso.date(from: bd) {
+        if let bd = p.birthDate, let d = AppDate.day(from: bd) {
             birthDate = d
             hasBirthDate = true
         }
@@ -210,7 +175,6 @@ struct EditProfileView: View {
 
     private func save() {
         error = nil
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         // Combine first/last into full name (keeps existing displays working).
         let composedFull = [firstName, lastName]
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -225,7 +189,7 @@ struct EditProfileView: View {
                     fullName: composedFull,
                     firstName: firstName,
                     lastName: lastName,
-                    birthDate: hasBirthDate ? iso.string(from: birthDate) : nil,
+                    birthDate: hasBirthDate ? AppDate.dayString(from: birthDate) : nil,
                     phone: phone,
                     email: email,
                     socialLinks: cleanedLinks,
@@ -234,7 +198,7 @@ struct EditProfileView: View {
                 HapticFeedback.success()
                 dismiss()
             } catch {
-                self.error = error.localizedDescription
+                self.error = error.recordableDescription
             }
         }
     }

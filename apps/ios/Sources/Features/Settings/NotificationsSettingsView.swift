@@ -6,14 +6,24 @@ struct NotificationsSettingsView: View {
     @Environment(NotificationScheduler.self) private var scheduler
     @Environment(TaskService.self) private var taskService
     @Environment(DocumentService.self) private var documentService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(PlantService.self) private var plantService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showOpenSettings = false
 
+    /// The household conversation the per-chat tones/mute screen scopes to —
+    /// same resolution the chat hub used before the row moved here (IMG_8591).
+    private var groupName: String {
+        (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup")
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "Notifications")
                 permissionCard
                 if authStatus == .authorized || authStatus == .provisional {
                     preferencesSection
@@ -24,8 +34,8 @@ struct NotificationsSettingsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.large)
         .task { await checkStatus() }
         .alert("Open Settings", isPresented: $showOpenSettings) {
             Button("Open Settings") {
@@ -45,20 +55,17 @@ struct NotificationsSettingsView: View {
         GlassCard {
             VStack(spacing: 16) {
                 HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .fill(statusColor.opacity(0.18))
-                            .frame(width: 48, height: 48)
-                        Image(systemName: statusIcon)
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(statusColor)
-                    }
+                    Image(systemName: statusIcon)
+                        .font(AppFont.scaled(20, weight: .semibold))
+                        .foregroundStyle(statusColor)
+                        .frame(width: 48, height: 48)
+                        .glassRoundedRect(AppRadius.md)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(statusTitle)
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
@@ -95,36 +102,51 @@ struct NotificationsSettingsView: View {
 
     private var preferencesSection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            group("TASKS & DOCUMENTS") {
-                NotifToggleRow(icon: "checklist", color: .blue,
-                               title: "Task reminders",
-                               subtitle: "Due today, 3 days ahead and overdue",
-                               value: bind(\.taskReminders, reschedule: true))
+            group("Tasks & Documents") {
+                deadlineRow(icon: "checklist", color: .blue,
+                            title: "Task reminders",
+                            subtitle: "notif_sub_tasks",
+                            enabled: bind(\.taskReminders, reschedule: true),
+                            lead: leadBind(\.taskLeadDays),
+                            isOn: scheduler.taskReminders)
                 divider
-                NotifToggleRow(icon: "doc.badge.clock.fill", color: .orange,
-                               title: "Document expiry",
-                               subtitle: "Alerts 30 and 7 days before expiry",
-                               value: bind(\.documentExpiry, reschedule: true))
+                deadlineRow(icon: "doc.badge.clock.fill", color: .orange,
+                            title: "Document expiry",
+                            subtitle: "notif_sub_documents",
+                            enabled: bind(\.documentExpiry, reschedule: true),
+                            lead: leadBind(\.documentLeadDays),
+                            isOn: scheduler.documentExpiry)
             }
 
-            group("PROPERTY & FINANCES") {
-                NotifToggleRow(icon: "shield.lefthalf.filled", color: .teal,
-                               title: "Object warranties",
-                               subtitle: "Expiring warranties for objects in the twin",
-                               value: bind(\.warrantyAlerts))
+            group("Property & Finances") {
+                deadlineRow(icon: "shield.lefthalf.filled", color: .teal,
+                            title: "Object warranties",
+                            subtitle: "notif_sub_warranties",
+                            enabled: bind(\.warrantyAlerts, reschedule: true),
+                            lead: leadBind(\.warrantyLeadDays),
+                            isOn: scheduler.warrantyAlerts)
                 divider
                 NotifToggleRow(icon: "shippingbox.fill", color: .indigo,
                                title: "Inventory & loans",
                                subtitle: "Reminder to return borrowed items",
                                value: bind(\.inventoryLoans))
                 divider
-                NotifToggleRow(icon: "banknote.fill", color: Color.brandSuccess,
-                               title: "Financial alerts",
-                               subtitle: "Upcoming rents & large transactions",
-                               value: bind(\.financialAlerts))
+                deadlineRow(icon: "banknote.fill", color: Color.brandSuccess,
+                            title: "Financial alerts",
+                            subtitle: "notif_sub_financial",
+                            enabled: bind(\.financialAlerts, reschedule: true),
+                            lead: leadBind(\.financialLeadDays),
+                            isOn: scheduler.financialAlerts)
+                divider
+                deadlineRow(icon: "key.fill", color: Color.brandSkyBlue,
+                            title: "notif_leases_title",
+                            subtitle: "notif_sub_leases",
+                            enabled: bind(\.leaseAlerts, reschedule: true),
+                            lead: leadBind(\.leaseLeadDays),
+                            isOn: scheduler.leaseAlerts)
             }
 
-            group("COMMUNICATION") {
+            group("Communication") {
                 NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
                                title: "Chat",
                                subtitle: "New messages in chat",
@@ -134,16 +156,23 @@ struct NotificationsSettingsView: View {
                                title: "Mentions",
                                subtitle: "When you are mentioned with @",
                                value: bind(\.mentions))
+                divider
+                // Per-conversation mute + tones, moved here from the chat
+                // hub (IMG_8591) — notification preferences live together.
+                NavSettingsRow(icon: "bell.fill", color: .red,
+                               label: "Notificări chat", value: groupName) {
+                    ConversationNotificationsView(convId: "group", subtitle: groupName)
+                }
             }
 
-            group("AUTOMATIONS") {
+            group("Automations") {
                 NotifToggleRow(icon: "gearshape.2.fill", color: .yellow,
                                title: "Automations",
                                subtitle: "Alerts from property automations",
                                value: bind(\.automationAlerts))
             }
 
-            group("SUMMARY") {
+            group("Summary") {
                 NotifToggleRow(icon: "newspaper.fill", color: .purple,
                                title: "Weekly summary",
                                subtitle: "Every Monday at 9:00",
@@ -170,6 +199,22 @@ struct NotificationsSettingsView: View {
         }
     }
 
+    /// A deadline category: its on/off toggle, and — while on — a "notify N
+    /// days before" picker. Both changes re-run the scheduler so the effect is
+    /// immediate, matching what the calendar shows.
+    @ViewBuilder
+    private func deadlineRow(icon: String, color: Color,
+                             title: LocalizedStringKey, subtitle: LocalizedStringKey,
+                             enabled: Binding<Bool>, lead: Binding<Int>, isOn: Bool) -> some View {
+        VStack(spacing: 0) {
+            NotifToggleRow(icon: icon, color: color, title: title, subtitle: subtitle, value: enabled)
+            if isOn {
+                leadDivider
+                NotifLeadRow(lead: lead)
+            }
+        }
+    }
+
     private func bind(_ keyPath: ReferenceWritableKeyPath<NotificationScheduler, Bool>, reschedule doReschedule: Bool = false) -> Binding<Bool> {
         Binding(
             get: { scheduler[keyPath: keyPath] },
@@ -181,7 +226,28 @@ struct NotificationsSettingsView: View {
         )
     }
 
+    /// A lead-time picker binding — every change reschedules so the new lead
+    /// takes effect right away.
+    private func leadBind(_ keyPath: ReferenceWritableKeyPath<NotificationScheduler, Int>) -> Binding<Int> {
+        Binding(
+            get: { scheduler[keyPath: keyPath] },
+            set: { newVal in
+                scheduler[keyPath: keyPath] = newVal
+                HapticFeedback.selection()
+                reschedule()
+            }
+        )
+    }
+
     private var divider: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.05))
+            .frame(height: 0.5)
+            .padding(.leading, 52)
+    }
+
+    /// Tighter divider between a toggle and its own lead-time picker.
+    private var leadDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
@@ -241,18 +307,18 @@ struct NotificationsSettingsView: View {
             }
         } catch {
             #if DEBUG
-            print("[Notifications] permission error: \(error)")
+            debugLog("[Notifications] permission error: \(error)")
             #endif
         }
     }
 
     private func reschedule() {
-        Task {
-            await scheduler.reschedule(
-                tasks: taskService.tasks,
-                documents: documentService.documents
-            )
-        }
+        let agenda = HouseAgenda.upcomingYear(
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values))
+        Task { await scheduler.reschedule(agenda: agenda) }
     }
 }
 
@@ -270,10 +336,10 @@ private struct NotifToggleRow: View {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
@@ -282,5 +348,55 @@ private struct NotifToggleRow: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
+    }
+}
+
+// MARK: - Lead-time picker row
+
+/// "Notify … days before" — a compact Menu that reads like an inline value,
+/// aligned with the toggle above it. Options come from the scheduler so the
+/// list stays in one place.
+private struct NotifLeadRow: View {
+    @Binding var lead: Int
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "clock.badge")
+                .font(AppFont.scaled(13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.35))
+                .frame(width: 40, alignment: .center)
+            Text("notif_notify_before")
+                .font(AppFont.scaled(13))
+                .foregroundStyle(Color.primary.opacity(0.5))
+            Spacer()
+            Menu {
+                ForEach(NotificationScheduler.leadOptions, id: \.self) { days in
+                    Button {
+                        lead = days
+                    } label: {
+                        if days == lead { Label(daysLabel(days), systemImage: "checkmark") }
+                        else { Text(daysLabel(days)) }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(daysLabel(lead))
+                        .font(AppFont.scaled(13, weight: .medium))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(AppFont.scaled(10, weight: .semibold))
+                }
+                .foregroundStyle(Color.brandPrimaryBlue)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, 5)
+                .background(Color.brandPrimaryBlue.opacity(0.12),
+                            in: Capsule())
+            }
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 8)
+    }
+
+    private func daysLabel(_ days: Int) -> String {
+        String(format: String(localized: "notif_days_count"), days)
     }
 }

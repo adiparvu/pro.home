@@ -8,6 +8,7 @@
 // Pass Type ID to register in Apple Developer portal: pass.com.prvio.app.nfctag
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 // @ts-ignore
 import forge from "npm:node-forge@1.3.1"
 // @ts-ignore
@@ -41,41 +42,79 @@ function passBackgroundColor(linkedType: string): string {
   }
 }
 
+// Passes are signed with PRVIO's organization certificate, so the content
+// must stay tightly bounded: visible text is clamped and stripped of control
+// characters, the linked type comes from a whitelist, and the UID keeps only
+// hex-like characters. NFC tags live device-local (NFCTagStore) — there is no
+// server table to check ownership against — so the enforceable server-side
+// contract is: authenticated household users only, bounded content.
+const LINKED_TYPES = new Set(["zone", "appliance", "element", "none"])
+
+function cleanText(value: unknown, max: number): string {
+  if (typeof value !== "string") return ""
+  return value.replace(/[\u0000-\u001F\u007F]/g, "").trim().slice(0, max)
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS })
   }
 
   try {
-    const { tagId, tagName, linkedType, linkedName, uid } = await req.json()
+    // Only signed-in PRVIO users may mint a pass under the org certificate.
+    // supabase.functions.invoke forwards the session JWT automatically.
+    const authHeader = req.headers.get("Authorization") ?? ""
+    const authed = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    )
+    const { data: userData, error: userError } = await authed.auth.getUser()
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      })
+    }
+
+    const body = await req.json()
+    const tagName = cleanText(body.tagName, 48) || "NFC Tag"
+    const linkedName = cleanText(body.linkedName, 48)
+    const linkedType = LINKED_TYPES.has(body.linkedType) ? body.linkedType as string : "none"
+    const uid = cleanText(body.uid, 32).replace(/[^0-9a-fA-F:\-]/g, "")
+    // The serial must be OUR shape, never caller-chosen free text.
+    const tagId = typeof body.tagId === "string"
+        && /^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$/.test(body.tagId)
+      ? body.tagId
+      : crypto.randomUUID()
 
     // ----- Build pass.json -----
     const passJson = {
       formatVersion: 1,
       passTypeIdentifier: PASS_TYPE_ID,
-      serialNumber: tagId ?? crypto.randomUUID(),
+      serialNumber: tagId,
       teamIdentifier: TEAM_ID,
       organizationName: "PRVIO",
-      description: tagName ?? "NFC Tag",
+      description: tagName,
       foregroundColor: "rgb(255,255,255)",
-      backgroundColor: passBackgroundColor(linkedType ?? "none"),
+      backgroundColor: passBackgroundColor(linkedType),
       labelColor: "rgb(180,180,180)",
       generic: {
         primaryFields: [
-          { key: "name", label: "TAG", value: tagName ?? "NFC Tag" },
+          { key: "name", label: "TAG", value: tagName },
         ],
         secondaryFields: [
           {
             key: "linked",
-            label: (linkedType ?? "none").toUpperCase(),
-            value: linkedName && linkedName.trim() ? linkedName : "Standalone",
+            label: linkedType.toUpperCase(),
+            value: linkedName ? linkedName : "Standalone",
           },
         ],
         auxiliaryFields: [
-          { key: "uid", label: "UID", value: (uid ?? "").substring(0, 16).toUpperCase() },
+          { key: "uid", label: "UID", value: uid.substring(0, 16).toUpperCase() },
         ],
         backFields: [
-          { key: "full_uid", label: "Full UID", value: uid ?? "" },
+          { key: "full_uid", label: "Full UID", value: uid },
           { key: "app", label: "App", value: "PRVIO — Smart Home" },
         ],
       },
@@ -163,7 +202,7 @@ serve(async (req) => {
       headers: {
         ...CORS,
         "Content-Type": "application/vnd.apple.pkpass",
-        "Content-Disposition": `attachment; filename="${tagId ?? "pass"}.pkpass"`,
+        "Content-Disposition": `attachment; filename="${tagId}.pkpass"`,
       },
     })
   } catch (err) {

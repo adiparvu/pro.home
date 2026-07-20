@@ -17,6 +17,7 @@ struct AppearanceView: View {
     ]
 
     private var currentAccentLabel: LocalizedStringKey {
+        if appSettings.accentColor == "auto" { return "mood_accent_auto" }
         if appSettings.accentColor.hasPrefix("#") { return "Custom" }
         return accentOptions.first(where: { $0.name == appSettings.accentColor })?.labelKey ?? "Blue"
     }
@@ -47,7 +48,6 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "Appearance")
                 themeSection
                 accentSection
                 hapticSection
@@ -58,126 +58,63 @@ struct AppearanceView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Appearance")
+        .navigationBarTitleDisplayMode(.large)
         .task { await currencyService.refresh() }
     }
 
     // MARK: - Theme
 
+    /// The theme's current selection, stated the way iOS Settings states a
+    /// row's value ("Temă   Automat ›"). Backgrounds retired 2026-07-19.
+    private var moodRowValue: String {
+        AppMoodEngine.shared.appearance.localizedTitle
+    }
+
+    /// The app's color scheme follows the background mood engine (Auto /
+    /// Dimineața / Zi / Noaptea), so the old Dark/Light/System rows would
+    /// be dead controls — the mood row is the single scheme control now.
+    /// (`appSettings.theme` stays stored for profile compatibility.)
     private var themeSection: some View {
         SettingsGroup(title: "Theme") {
-            ForEach(AppSettings.themes, id: \.code) { theme in
-                ThemeOptionRow(
-                    icon: theme.icon,
-                    title: LocalizedStringKey(theme.label),
-                    isSelected: appSettings.theme == theme.code,
-                    accentColor: currentColor
-                ) {
-                    withAnimation(.spring(response: 0.3)) { appSettings.theme = theme.code }
-                    HapticFeedback.selection()
-                    if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
-                }
+            NavSettingsRow(icon: "circle.lefthalf.filled", color: .brandGold,
+                           label: "appearance_title",
+                           value: moodRowValue) {
+                BackgroundMoodView()
+            }
+            // The weather stage's command page (returned 2026-07-20 with
+            // the F1–F4 engine): pin an atmosphere, choose your hours,
+            // gate the particle effects and the live-weather reaction.
+            NavSettingsRow(icon: "cloud.sun.fill", color: .brandPrimaryBlue,
+                           label: "mood_settings_title") {
+                WeatherStageSettingsView()
+            }
+            NavSettingsRow(icon: "textformat.size", color: .brandSkyBlue,
+                           label: "textsize_title",
+                           value: TextSizePreference.shared.rowValue) {
+                TextSizeView()
+            }
+            // The app-icon gallery lives here in Aspect (Appearance), beside the
+            // mood and text-size controls — it is a look-and-feel choice.
+            NavSettingsRow(icon: "app.fill", color: .brandPurple,
+                           label: "App Icon") {
+                AppIconPickerView()
             }
         }
     }
 
     // MARK: - Currency
 
+    // Currency earned its own page (it's a financial preference, not a
+    // visual one) — Appearance keeps a single value-stating row into it.
     private var currencySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Currency")
-
-            VStack(spacing: 0) {
-                ForEach(CurrencyService.supported, id: \.code) { cur in
-                    let isSelected = appSettings.preferredCurrency == cur.code
-                    Button {
-                        withAnimation(.spring(response: 0.3)) {
-                            appSettings.preferredCurrency = cur.code
-                        }
-                        if let uid = auth.session?.user.id {
-                            appSettings.syncToProfile(userId: uid)
-                        }
-                    } label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
-                                    .frame(width: 40, height: 40)
-                                Text(cur.symbol)
-                                    .font(AppFont.subheadline)
-                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: "\(cur.code) — ") + Text(LocalizedStringKey(cur.name))
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.primary)
-                                if isSelected {
-                                    Text(currencyService.rateDisplay(for: cur.code))
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Color.primary.opacity(0.4))
-                                        .transition(.opacity)
-                                }
-                            }
-
-                            Spacer()
-
-                            if currencyService.isLoading && isSelected {
-                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(AppOpacity.mediumText))
-                            } else if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(.tint)
-                                    .transition(.scale.combined(with: .opacity))
-                            } else {
-                                Circle()
-                                    .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
-                                    .frame(width: 20, height: 20)
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, AppSpacing.md)
-                    }
-                    .buttonStyle(.plain)
-
-                    if cur.code != CurrencyService.supported.last?.code {
-                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 68)
-                    }
-                }
+        SettingsGroup(title: "Currency") {
+            NavSettingsRow(icon: "coloncurrencysign.circle.fill", color: Color.brandSuccess,
+                           label: "currency_row_label",
+                           value: appSettings.preferredCurrency) {
+                CurrencyView()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 10))
-                Text("BNR rates · Updated \(currencyService.lastUpdatedDisplay)")
-                    .font(.system(size: 11))
-            }
-            .foregroundStyle(Color.primary.opacity(0.3))
-            .padding(.leading, AppSpacing.xxs)
-
-            Button {
-                Task { await forceFetch() }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(AppFont.caption)
-                    Text("Refresh rates now")
-                        .font(AppFont.caption)
-                }
-                .foregroundStyle(.tint)
-                .padding(.leading, AppSpacing.xxs)
-            }
-            .buttonStyle(.plain)
-            .disabled(currencyService.isLoading)
         }
-    }
-
-    private func forceFetch() async {
-        UserDefaults.standard.removeObject(forKey: "prvio.bnr.ratesDate")
-        await currencyService.refresh()
     }
 
     // MARK: - Accent Color
@@ -189,9 +126,9 @@ struct AppearanceView: View {
                     ColoredIconBadge(icon: "paintpalette.fill", color: appSettings.accentEnabled ? currentColor : Color.primary.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Accent Color")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(accentSubtitle)
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Toggle("", isOn: Binding(
@@ -208,6 +145,13 @@ struct AppearanceView: View {
 
                 if appSettings.accentEnabled {
                     Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
+
+                // "Automat" first: the accent follows the living background's
+                // mood (morning gold / day sky / night ember). The swatch
+                // previews the CURRENT mood's accent, honestly.
+                autoAccentRow
+
+                Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
 
                 HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
@@ -258,6 +202,58 @@ struct AppearanceView: View {
         }
     }
 
+    /// "Automat" stores the `"auto"` sentinel; the root `.tint` and
+    /// `avatarRingColor(for:)` resolve it to the resolved mood's palette
+    /// accent (morning gold, day sky, night ember). The swatch previews the
+    /// CURRENT mood's accent — exactly what the app is tinted with now.
+    private var autoAccentRow: some View {
+        let isSelected = appSettings.accentColor == "auto"
+        let moodAccent = AppMoodEngine.shared.resolved.palette.accent
+        return Button {
+            withAnimation(.spring(response: 0.28)) {
+                appSettings.accentColor = "auto"
+                HapticFeedback.selection()
+            }
+            if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(moodAccent).frame(width: 26, height: 26)
+                    Image(systemName: "sparkles")
+                        .font(AppFont.scaled(11, weight: .semibold))
+                        .foregroundStyle(.white)
+                    if isSelected {
+                        Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
+                        Circle().strokeBorder(moodAccent, lineWidth: 1.5).frame(width: 32, height: 32)
+                    }
+                }
+                .frame(width: 32, height: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("mood_accent_auto")
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Text("mood_accent_auto_caption")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(AppFont.scaled(20))
+                        .foregroundStyle(moodAccent)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
     // MARK: - Haptic
 
     private var hapticSection: some View {
@@ -267,9 +263,9 @@ struct AppearanceView: View {
                 ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Haptic feedback")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Text("Vibrations on app interactions")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 Toggle("", isOn: $appSettings.hapticEnabled)
@@ -285,40 +281,9 @@ struct AppearanceView: View {
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .foregroundStyle(Color.backdropSecondaryText)
             .padding(.leading, AppSpacing.xxs)
-            .textCase(.uppercase)
     }
 }
 
-// MARK: - Theme Row
-
-private struct ThemeOptionRow: View {
-    let icon: String
-    let title: LocalizedStringKey
-    let isSelected: Bool
-    var accentColor: Color = .blue
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ColoredIconBadge(icon: icon, color: isSelected ? accentColor : Color.primary.opacity(0.4), size: 36)
-                Text(title)
-                    .font(.system(size: 15)).foregroundStyle(.primary)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20)).foregroundStyle(accentColor)
-                        .transition(.scale.combined(with: .opacity))
-                } else {
-                    Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
-                        .frame(width: 20, height: 20)
-                }
-            }
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
-        }
-        .buttonStyle(.plain)
-    }
-}
 

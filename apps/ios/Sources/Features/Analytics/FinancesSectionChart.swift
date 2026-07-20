@@ -6,11 +6,26 @@ extension FinancesSection {
     // MARK: - Range Chart Data
 
     var rangeChartData: [(label: String, income: Double, expenses: Double)] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let cal = Calendar.current
         let now = Date()
 
-        func parseDate(_ r: FinancialRecord) -> Date? { iso.date(from: r.date) }
+        func parseDate(_ r: FinancialRecord) -> Date? { AppDate.day(from: r.date) }
+        // Converted sums — raw amounts across currencies used to be added
+        // together, skewing every bucket that mixed EUR and RON records.
+        func summed(_ recs: [FinancialRecord], _ type: String) -> Double {
+            recs.filter { $0.type == type }
+                .reduce(0) { $0 + convertToPreferred($1.amount, from: $1.currency) }
+        }
+        // Scanned receipts belong to the same expense ledger the KPIs and the
+        // donut read — the chart must not disagree with the cards above it.
+        // (Receipts carry no currency column: household preferred currency.)
+        func receiptSum(_ start: Date, _ end: Date) -> Double {
+            receiptService.receipts.reduce(0) { acc, r in
+                guard r.total > 0, let d = AppDate.day(from: r.date),
+                      d >= start, d < end else { return acc }
+                return acc + r.total
+            }
+        }
 
         func dayBuckets(days: Int) -> [(String, Double, Double)] {
             let lbl = DateFormatter(); lbl.dateFormat = days <= 7 ? "EEE" : "d"
@@ -22,9 +37,8 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= start && d < end
                 }
-                return (lbl.string(from: day),
-                        recs.filter { $0.type == "income" }.reduce(0) { $0 + $1.amount },
-                        recs.filter { $0.type == "expense" }.reduce(0) { $0 + $1.amount })
+                return (lbl.string(from: day), summed(recs, "income"),
+                        summed(recs, "expense") + receiptSum(start, end))
             }
         }
 
@@ -39,9 +53,8 @@ extension FinancesSection {
                     guard let d = parseDate(r) else { return false }
                     return d >= cursor && d < next
                 }
-                buckets.append((lbl.string(from: cursor),
-                                recs.filter { $0.type == "income" }.reduce(0) { $0 + $1.amount },
-                                recs.filter { $0.type == "expense" }.reduce(0) { $0 + $1.amount }))
+                buckets.append((lbl.string(from: cursor), summed(recs, "income"),
+                                summed(recs, "expense") + receiptSum(cursor, next)))
                 cursor = next
             }
             return buckets
@@ -74,22 +87,14 @@ extension FinancesSection {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(ChartRange.allCases, id: \.self) { r in
-                    Button {
+                    GlassFilterChip(label: String(localized: String.LocalizationValue(r.rawValue)),
+                                    isSelected: chartRange == r) {
                         if r == .custom {
                             showCustomSheet = true
                         } else {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = r }
                         }
-                    } label: {
-                        Text(LocalizedStringKey(r.rawValue))
-                            .font(.system(size: 12, weight: chartRange == r ? .semibold : .regular))
-                            .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 5)
-                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
-                                        in: Capsule())
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -107,6 +112,10 @@ extension FinancesSection {
 
                 let data = rangeChartData
                 let hasData = data.contains { $0.income > 0 || $0.expenses > 0 }
+                // Revolut-style load-in (IMG_8648): every y-value rides the
+                // reveal factor, so the whole chart grows from the baseline.
+                let reveal = chartReveal ? 1.0 : 0.0
+                let axisLabels = thinnedLabels(data.map(\.label))
 
                 if !hasData {
                     emptyChartPlaceholder
@@ -115,7 +124,7 @@ extension FinancesSection {
                         ForEach(data, id: \.label) { item in
                             AreaMark(
                                 x: .value("Period", item.label),
-                                y: .value("Income", item.income)
+                                y: .value("Income", item.income * reveal)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -128,7 +137,7 @@ extension FinancesSection {
 
                             LineMark(
                                 x: .value("Period", item.label),
-                                y: .value("Income", item.income)
+                                y: .value("Income", item.income * reveal)
                             )
                             .foregroundStyle(Color.brandSuccess)
                             .lineStyle(StrokeStyle(lineWidth: 2))
@@ -138,7 +147,7 @@ extension FinancesSection {
 
                             AreaMark(
                                 x: .value("Period", item.label),
-                                y: .value("Expenses", item.expenses)
+                                y: .value("Expenses", item.expenses * reveal)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -150,7 +159,7 @@ extension FinancesSection {
 
                             LineMark(
                                 x: .value("Period", item.label),
-                                y: .value("Expenses", item.expenses)
+                                y: .value("Expenses", item.expenses * reveal)
                             )
                             .foregroundStyle(.red.opacity(0.75))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 4]))
@@ -162,17 +171,27 @@ extension FinancesSection {
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
                                 .foregroundStyle(Color.primary.opacity(0.05))
                             AxisValueLabel().foregroundStyle(.secondary)
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                         }
                     }
                     .chartXAxis {
-                        AxisMarks { _ in
+                        // At most ~6 labels regardless of range — 13 monthly
+                        // buckets used to print 13 overlapping labels (IMG_8647).
+                        AxisMarks(values: axisLabels) { _ in
                             AxisValueLabel().foregroundStyle(.secondary)
-                                .font(.system(size: 10))
+                                .font(AppFont.scaled(10))
                         }
                     }
                     .frame(height: 160)
                     .animation(.easeInOut(duration: 0.25), value: chartRange)
+                    .onAppear {
+                        guard !chartReveal else { return }
+                        if reduceMotion {
+                            chartReveal = true
+                        } else {
+                            withAnimation(.smooth(duration: 0.9)) { chartReveal = true }
+                        }
+                    }
                 }
 
                 HStack(spacing: 16) {
@@ -190,6 +209,7 @@ extension FinancesSection {
                                    in: customStart..., displayedComponents: .date)
                     }
                 }
+                .scrollContentBackground(.hidden)
                 .navigationTitle("Custom range")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -206,15 +226,23 @@ extension FinancesSection {
                 }
             }
             .presentationDetents([.medium])
+            .presentationBackground(.ultraThinMaterial)
         }
     }
 
     // MARK: - Helpers
 
+    /// At most six axis labels, evenly strided over the buckets — the axis
+    /// stays legible from 7 day-buckets up to 13+ month-buckets.
+    func thinnedLabels(_ labels: [String]) -> [String] {
+        let step = max(1, Int((Double(labels.count) / 6.0).rounded(.up)))
+        return labels.enumerated().filter { $0.offset % step == 0 }.map(\.element)
+    }
+
     var emptyChartPlaceholder: some View {
         VStack(spacing: 10) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 28))
+                .font(AppFont.scaled(28))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Add transactions to see the chart")
                 .font(.subheadline)

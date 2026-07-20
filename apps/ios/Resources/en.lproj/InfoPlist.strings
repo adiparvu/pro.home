@@ -1,0 +1,20 @@
+/* Permission prompts — the system renders these from InfoPlist.strings in
+   the user's language; the Info.plist values are the en fallback. */
+"NSCameraUsageDescription" = "Used to scan documents and capture property photos.";
+"NSPhotoLibraryUsageDescription" = "Used to attach photos to property records and tasks.";
+"NSPhotoLibraryAddUsageDescription" = "Used to save security camera snapshots to your photo library.";
+"NSMicrophoneUsageDescription" = "Used for voice search to find tasks, documents, and finances hands-free.";
+"NSSpeechRecognitionUsageDescription" = "Used to convert your voice into search queries across your property data.";
+"NSLocationWhenInUseUsageDescription" = "Used to share your location in Chat and tag item locations in Inventory.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Keeps live location sharing running for the period you chose, and — only if you turn on home presence — notices arrivals and departures in a small area around your home, even when PRVIO is in the background.";
+"NSFaceIDUsageDescription" = "Use Face ID to unlock PRVIO quickly and securely.";
+"NSCalendarsFullAccessUsageDescription" = "Used to sync your maintenance tasks and reminders with Apple Calendar.";
+"NSCalendarsWriteOnlyAccessUsageDescription" = "Used to add family birthdays as annual reminders in Apple Calendar.";
+"NSRemindersFullAccessUsageDescription" = "Used to add overdue tasks to Apple Reminders for quick action.";
+"NSContactsUsageDescription" = "Used to sync family members to your iPhone Contacts.";
+"NSSiriUsageDescription" = "Used to add tasks, water plants, and open PRVIO with your voice.";
+"NFCReaderUsageDescription" = "Used to scan NFC tags on appliances and rooms to open them instantly in PRVIO.";
+"NSLocalNetworkUsageDescription" = "Used to communicate with local IoT controllers (ESP32, Raspberry Pi, RS485 Modbus gateways) on your home network.";
+"NSHomeKitUsageDescription" = "Used to read and control HomeKit smart devices connected to your property.";
+"NSAppleMusicUsageDescription" = "Used to show and control what's playing on the home dashboard's media card.";
+"NSGroupActivitiesUsageDescription" = "Used to share the Digital Twin with family members during a FaceTime call.";

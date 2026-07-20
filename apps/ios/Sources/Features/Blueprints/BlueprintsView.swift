@@ -14,17 +14,54 @@ struct BlueprintsView: View {
     @State private var renameText = ""
     @State private var showSaveAsZone = false
     @State private var pendingZoneName = ""
+    // Bumped when a per-plan lock toggles so the (UserDefaults-backed) badges refresh.
+    @State private var lockRefresh = 0
+    @State private var searchText = ""
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+
+    /// Runs `action` immediately for unlocked plans; locked ones require
+    /// Face ID / passcode first.
+    private func withLockCheck(_ scan: HomeScan, _ action: @escaping () -> Void) {
+        guard ItemLockStore.isLocked(scan.id.uuidString, in: .plans) else { action(); return }
+        Task {
+            if await PrivacyAuth.authenticate(reason: String(localized: "Unlock \"\(scan.name)\"")) {
+                await MainActor.run { action() }
+            }
+        }
+    }
+
+    /// Locking is free; removing a lock itself requires authentication.
+    private func toggleLock(_ scan: HomeScan) {
+        let id = scan.id.uuidString
+        if ItemLockStore.isLocked(id, in: .plans) {
+            Task {
+                if await PrivacyAuth.authenticate(reason: String(localized: "Remove lock from \"\(scan.name)\"")) {
+                    await MainActor.run {
+                        ItemLockStore.setLocked(id, in: .plans, false)
+                        HapticFeedback.success()
+                        lockRefresh += 1
+                    }
+                }
+            }
+        } else {
+            ItemLockStore.setLocked(id, in: .plans, true)
+            HapticFeedback.success()
+            lockRefresh += 1
+        }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
                 quickActions
+                floorsNav
                 buriedNav
 
                 if service.scans.isEmpty {
                     emptyState
+                } else if !searchText.isEmpty && filteredScans.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else {
                     scansGrid
                 }
@@ -37,6 +74,8 @@ struct BlueprintsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in
@@ -107,6 +146,38 @@ struct BlueprintsView: View {
         }
     }
 
+    private var floorsNav: some View {
+        NavigationLink {
+            FloorPlansView()
+        } label: {
+            GlassCard {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                            .fill(LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "square.3.layers.3d")
+                            .font(AppFont.title3)
+                            .foregroundStyle(.primary)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("floors_title")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        Text("floors_subtitle")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     private var buriedNav: some View {
         NavigationLink {
             BuriedUtilitiesView(service: service)
@@ -126,17 +197,17 @@ struct BlueprintsView: View {
                             .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     if !service.utilities.isEmpty {
                         Text("\(service.utilities.count)")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFont.scaled(13, weight: .bold))
                             .foregroundStyle(Color.primary.opacity(0.6))
                     }
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.scaled(13, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
             }
@@ -146,22 +217,46 @@ struct BlueprintsView: View {
 
     // MARK: - Grid
 
+    private var filteredScans: [HomeScan] {
+        service.scans.filter {
+            $0.name.matchesSearch(searchText) || $0.kindLabel.matchesSearch(searchText)
+        }
+    }
+
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SAVED PLANS & MODELS")
+            let _ = lockRefresh   // re-render badges when a lock toggles
+            Text("Saved Plans & Models")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(service.scans) { scan in
+                ForEach(filteredScans) { scan in
+                    let locked = ItemLockStore.isLocked(scan.id.uuidString, in: .plans)
                     ScanCard(scan: scan, thumbnail: service.image(for: scan))
-                        .onTapGesture { previewItem = scan }
+                        .overlay(alignment: .topTrailing) {
+                            if locked {
+                                Image(systemName: "lock.fill")
+                                    .font(AppFont.label)
+                                    .foregroundStyle(.teal)
+                                    .padding(6)
+                                    .background(.ultraThinMaterial, in: Circle())
+                                    .padding(AppSpacing.xs)
+                            }
+                        }
+                        .onTapGesture { withLockCheck(scan) { previewItem = scan } }
                         .contextMenu {
                             Button {
-                                renameText = scan.name
-                                renameItem = scan
+                                withLockCheck(scan) {
+                                    renameText = scan.name
+                                    renameItem = scan
+                                }
                             } label: { Label("Rename", systemImage: "pencil") }
+                            Button { toggleLock(scan) } label: {
+                                Label(locked ? "Remove Face ID lock" : "Lock with Face ID",
+                                      systemImage: locked ? "lock.open" : "lock")
+                            }
                             Button(role: .destructive) {
                                 HapticFeedback.warning()
                                 service.deleteScan(scan)
@@ -173,21 +268,11 @@ struct BlueprintsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer(minLength: 30)
-            Image(systemName: "ruler.fill")
-                .font(.system(size: 46))
-                .foregroundStyle(Color.primary.opacity(0.16))
-            Text("No plans yet")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-            Spacer(minLength: 30)
-        }
+        EmptyStateView(
+            icon: "ruler.fill",
+            title: "No plans yet",
+            message: "Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built."
+        )
     }
 
     private func defaultScanName() -> String {

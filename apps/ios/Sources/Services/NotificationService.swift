@@ -1,6 +1,8 @@
 import SwiftUI
 import Observation
 import Supabase
+import UIKit
+import UserNotifications
 
 // MARK: - Model
 
@@ -35,22 +37,28 @@ struct AppNotification: Identifiable, Codable, Hashable {
         }
     }
 
-    var date: Date? {
-        let f1 = ISO8601DateFormatter()
-        f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        return f1.date(from: createdAt) ?? f2.date(from: createdAt)
-    }
+    var date: Date? { ISODate.date(from: createdAt) }
+
+    // The system relative formatter owns pluralization ("acum 1 oră" /
+    // "acum 5 ore" / "ieri") — hand-built "%lld h ago" keys can't, because
+    // the xcstrings pipeline has no plural support.
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        f.dateTimeStyle = .named
+        return f
+    }()
 
     var timeDisplay: String {
         guard let date else { return "" }
         let diff = Date().timeIntervalSince(date)
         if diff < 60 { return String(localized: "Just now") }
-        if diff < 3600 { return String(localized: "\(Int(diff / 60))m ago") }
-        if diff < 86400 { return String(localized: "\(Int(diff / 3600))h ago") }
-        let df = DateFormatter(); df.dateStyle = .short; df.timeStyle = .short
-        return df.string(from: date)
+        // Within a week the human phrase wins; older items get a short date —
+        // never the technical write-time clock.
+        if diff < 6 * 86400 {
+            return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
+        }
+        return AppDate.medium.string(from: date)
     }
 }
 
@@ -62,14 +70,19 @@ struct AppNotification: Identifiable, Codable, Hashable {
 
 struct NotificationCategory: Identifiable, Hashable {
     let module: String
-    let label: LocalizedStringKey
+    /// Raw string-catalog key for the display name. Kept as the key (not a
+    /// resolved value) so both `Text` paths and plain-`String` contexts
+    /// (`GlassPickerOption.title`) localize through the exact same entry.
+    let labelKey: String
     let icon: String
     let color: Color
 
     var id: String { module }
 
-    // LocalizedStringKey isn't Hashable, so synthesis can't be used — identity
-    // is the module slug alone.
+    var label: LocalizedStringKey { LocalizedStringKey(labelKey) }
+    var title: String { String(localized: String.LocalizationValue(labelKey)) }
+
+    // Identity is the module slug alone.
     static func == (lhs: NotificationCategory, rhs: NotificationCategory) -> Bool {
         lhs.module == rhs.module
     }
@@ -78,36 +91,40 @@ struct NotificationCategory: Identifiable, Hashable {
     }
 
     static func forModule(_ module: String?) -> NotificationCategory {
-        let m = module ?? "system"
+        var m = module ?? "system"
+        // Two writers, one product concept: the generator writes
+        // "maintenance", the assignment trigger writes "tasks". Without the
+        // alias the panel grew two chips both labelled "Tasks".
+        if m == "maintenance" { m = "tasks" }
         if let known = known[m] { return known }
-        return NotificationCategory(module: m, label: LocalizedStringKey(m.capitalized),
+        return NotificationCategory(module: m, labelKey: m.capitalized,
                                     icon: "bell.fill", color: .blue)
     }
 
     private static let known: [String: NotificationCategory] = [
-        "chat":        .init(module: "chat", label: "Chat",
+        "chat":        .init(module: "chat", labelKey: "Chat",
                              icon: "bubble.left.and.bubble.right.fill", color: .blue),
-        "maintenance": .init(module: "maintenance", label: "Tasks",
-                             icon: "wrench.fill", color: .orange),
-        "garden":      .init(module: "garden", label: "Garden",
+        "tasks":       .init(module: "tasks", labelKey: "Tasks",
+                             icon: "checklist", color: .orange),
+        "garden":      .init(module: "garden", labelKey: "Garden",
                              icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)),
-        "documents":   .init(module: "documents", label: "Documents",
+        "documents":   .init(module: "documents", labelKey: "Documents",
                              icon: "doc.fill", color: .orange),
-        "document":    .init(module: "document", label: "Documents",
+        "document":    .init(module: "document", labelKey: "Documents",
                              icon: "doc.fill", color: .orange),
-        "finance":     .init(module: "finance", label: "Finances",
+        "finance":     .init(module: "finance", labelKey: "Finances",
                              icon: "creditcard.fill", color: Color(red: 0.20, green: 0.78, blue: 0.35)),
-        "inventory":   .init(module: "inventory", label: "Inventory",
+        "inventory":   .init(module: "inventory", labelKey: "Inventory",
                              icon: "archivebox.fill", color: .brown),
-        "security":    .init(module: "security", label: "Security",
+        "security":    .init(module: "security", labelKey: "Security",
                              icon: "lock.shield.fill", color: .red),
-        "family":      .init(module: "family", label: "Family",
+        "family":      .init(module: "family", labelKey: "Family",
                              icon: "person.2.fill", color: .purple),
-        "aria":        .init(module: "aria", label: "System",
+        "aria":        .init(module: "aria", labelKey: "System",
                              icon: "sparkles", color: Color(red: 0.45, green: 0.30, blue: 0.95)),
-        "system":      .init(module: "system", label: "System",
+        "system":      .init(module: "system", labelKey: "System",
                              icon: "gearshape.fill", color: Color(.systemGray)),
-        "delivery":    .init(module: "delivery", label: "Deliveries",
+        "delivery":    .init(module: "delivery", labelKey: "Deliveries",
                              icon: "shippingbox.fill", color: .orange),
     ]
 }
@@ -142,14 +159,14 @@ final class NotificationService {
                 .value
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
     /// Keeps the list and the dashboard badge live while the app is open.
     func subscribeRealtime(userId: UUID) async {
         guard realtimeChannel == nil else { return }
-        let channel = supabase.realtimeV2.channel("notifications:\(userId.uuidString)")
+        let channel = realtimeAnon.channel("notifications:\(userId.uuidString)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -165,7 +182,7 @@ final class NotificationService {
     func unsubscribe() async {
         postgresSubs.removeAll()
         if let ch = realtimeChannel {
-            await supabase.realtimeV2.removeChannel(ch)
+            await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
         }
     }
@@ -175,7 +192,8 @@ final class NotificationService {
         reloadTask?.cancel()
         reloadTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
+            // Quiet in the background (0x8BADF00D scene-update watchdog, b1036).
+            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
             await self?.load(userId: userId)
         }
     }
@@ -198,7 +216,46 @@ final class NotificationService {
             if let i = notifications.firstIndex(where: { $0.id == notification.id }) {
                 notifications[i].status = "unread"
             }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
+        }
+    }
+
+    /// One write for a whole inbox group (a coalesced chat sender or a
+    /// task's daily duplicates) — same optimistic/rollback contract as the
+    /// single-row path.
+    func markRead(_ group: [AppNotification]) async {
+        let ids = group.filter(\.isUnread).map(\.id)
+        guard !ids.isEmpty else { return }
+        let snapshot = notifications
+        for i in notifications.indices where ids.contains(notifications[i].id) {
+            notifications[i].status = "read"
+        }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .in("id", values: ids.map(\.uuidString))
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.recordableDescription
+        }
+    }
+
+    func dismiss(_ group: [AppNotification]) async {
+        let ids = Set(group.map(\.id))
+        guard !ids.isEmpty else { return }
+        let snapshot = notifications
+        notifications.removeAll { ids.contains($0.id) }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "dismissed"])
+                .in("id", values: ids.map(\.uuidString))
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.recordableDescription
         }
     }
 
@@ -214,8 +271,57 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
+    }
+
+    /// Marks every unread notification for one module read — called when the
+    /// user opens that module's surface (e.g. a chat thread), so the in-app bell
+    /// and the springboard badge stop claiming items the user is now looking at.
+    /// Any rows already loaded flip optimistically; the server is always updated;
+    /// then the icon badge is reconciled to the TRUE remaining unread count.
+    func markModuleRead(_ module: String, userId: UUID) async {
+        for i in notifications.indices
+        where notifications[i].module == module && notifications[i].isUnread {
+            notifications[i].status = "read"
+        }
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .eq("user_id", value: userId.uuidString)
+                .eq("module", value: module)
+                .eq("status", value: "unread")
+                .execute()
+        } catch {
+            // Leave the optimistic flip; a later load() reconciles. (Matches the
+            // rest of this type: local stays authoritative, the server catches up.)
+            self.error = error.recordableDescription
+        }
+        await reconcileBadge(userId: userId)
+    }
+
+    /// Sets the springboard icon badge to the real number of unread
+    /// notifications on the server — never a blind 0. If the count can't be
+    /// confirmed (offline), it falls back to the best local truth rather than
+    /// fabricating a value.
+    func reconcileBadge(userId: UUID) async {
+        struct IDRow: Decodable { let id: UUID }
+        let remaining: Int
+        if let rows: [IDRow] = try? await supabase
+            .from("notifications")
+            .select("id")
+            .eq("user_id", value: userId.uuidString)
+            .eq("status", value: "unread")
+            .execute()
+            .value {
+            remaining = rows.count
+        } else {
+            remaining = unreadCount
+        }
+        // Springboard badge lives on the notification center in iOS 17+
+        // (UIApplication.setBadgeCount doesn't exist).
+        try? await UNUserNotificationCenter.current().setBadgeCount(remaining)
     }
 
     func dismiss(_ notification: AppNotification) async {
@@ -229,7 +335,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -245,7 +351,7 @@ final class NotificationService {
                 .execute()
         } catch {
             notifications = snapshot
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

@@ -32,81 +32,62 @@ struct AddUtilitySheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        scanSection
+        FormScaffold(title: "Add Bill",
+                     canSave: !amount.isEmpty,
+                     error: .constant(nil),
+                     onSave: {
+            guard let pid = propertyId else { dismiss(); return }
+            let readingDate = AppDate.dayString(from: month)
+            let appUnit = units[type] ?? "other"
+            let entry = NewUtilityEntry(
+                propertyId: pid,
+                appCategory: type,
+                meterType: UtilityService.meterType(for: type),
+                readingDate: readingDate,
+                readingValue: Double(consumption.replacingOccurrences(of: ",", with: ".")) ?? 0,
+                unit: UtilityService.dbUnit(for: appUnit),
+                cost: Double(amount.replacingOccurrences(of: ",", with: "."))
+            )
+            onSave(entry); HapticFeedback.success(); dismiss()
+        }) {
+            scanSection
 
-                        if let result = scanResult {
-                            scanResultBanner(result)
-                        }
+            if let result = scanResult {
+                scanResultBanner(result)
+            }
 
-                        GlassCard {
-                            HStack {
-                                Text("Type").font(.system(size: 15)).foregroundStyle(.primary)
-                                Spacer()
-                                Picker("", selection: $type) {
-                                    ForEach(types, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
-                                }.tint(Color.primary.opacity(AppOpacity.mediumText))
-                            }
-                        }
-
-                        GlassCard {
-                            VStack(spacing: 0) {
-                                HStack {
-                                    Text("Amount (€)").font(.system(size: 15)).foregroundStyle(.primary)
-                                    Spacer()
-                                    TextField("0.00", text: $amount)
-                                        .font(AppFont.headline).foregroundStyle(.primary)
-                                        .tint(.accentColor).keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.trailing).frame(width: 100)
-                                }.padding(.vertical, AppSpacing.xxs)
-                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
-                                HStack {
-                                    Text("Consumption (\(units[type] ?? "units"))").font(.system(size: 15)).foregroundStyle(.primary)
-                                    Spacer()
-                                    TextField("0", text: $consumption)
-                                        .font(.system(size: 16)).foregroundStyle(.primary)
-                                        .tint(.accentColor).keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.trailing).frame(width: 100)
-                                }.padding(.vertical, AppSpacing.xxs)
-                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
-                                DatePicker("Month", selection: $month, displayedComponents: [.date])
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                            }
-                        }
-                        Spacer(minLength: 20)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
+            GlassCard {
+                HStack {
+                    Text("Type").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Spacer()
+                    Picker("", selection: $type) {
+                        ForEach(types, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
+                    }.tint(Color.primary.opacity(AppOpacity.mediumText))
                 }
             }
-            .navigationTitle("Add Bill").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        guard let pid = propertyId else { dismiss(); return }
-                        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                        let readingDate = f.string(from: month)
-                        let appUnit = units[type] ?? "other"
-                        let entry = NewUtilityEntry(
-                            propertyId: pid,
-                            appCategory: type,
-                            meterType: UtilityService.meterType(for: type),
-                            readingDate: readingDate,
-                            readingValue: Double(consumption.replacingOccurrences(of: ",", with: ".")) ?? 0,
-                            unit: UtilityService.dbUnit(for: appUnit),
-                            cost: Double(amount.replacingOccurrences(of: ",", with: "."))
-                        )
-                        onSave(entry); HapticFeedback.success(); dismiss()
-                    }
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(amount.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
-                    .disabled(amount.isEmpty)
+
+            GlassCard {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Amount (€)").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                        Spacer()
+                        TextField("0.00", text: $amount)
+                            .font(AppFont.headline).foregroundStyle(.primary)
+                            .tint(.accentColor).keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing).frame(width: 100)
+                    }.padding(.vertical, AppSpacing.xxs)
+                    Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
+                    HStack {
+                        Text("Consumption (\(units[type] ?? "units"))").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                        Spacer()
+                        TextField("0", text: $consumption)
+                            .font(AppFont.scaled(16)).foregroundStyle(.primary)
+                            .tint(.accentColor).keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing).frame(width: 100)
+                    }.padding(.vertical, AppSpacing.xxs)
+                    Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
+                    DatePicker("Month", selection: $month, displayedComponents: [.date])
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 }
             }
         }
@@ -164,7 +145,7 @@ struct AddUtilitySheet: View {
                 .disabled(isProcessing)
             }
             Text("Auto-extracts amount, consumption, and month from your bill")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
     }
@@ -172,7 +153,7 @@ struct AddUtilitySheet: View {
     private func scanResultBanner(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+            Text(text).font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -234,7 +215,9 @@ struct AddUtilitySheet: View {
         for pattern in amountPatterns {
             if let match = text.firstMatch(pattern: pattern) {
                 amount = match.replacingOccurrences(of: ",", with: ".")
-                found.append("amount €\(amount)")
+                // The invoice's currency isn't known at scan time — don't
+                // stamp a € onto what might be a RON amount.
+                found.append("amount \(amount)")
                 break
             }
         }

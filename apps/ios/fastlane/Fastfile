@@ -191,6 +191,9 @@ platform :ios do
 
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp' 'PRVIOWatch' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.watchkitapp.widgets' 'PRVIOWatchWidgets' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.notificationservice' 'PRVIONotificationService' 'SU92TVZT8W'")
 
     # App Groups (group.com.prvio.app) are registered and linked in the Apple
     # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
@@ -295,12 +298,143 @@ platform :ios do
           })
           puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..400]}"
         end
+
+        # Communication Notifications (sender avatars on chat pushes) must be
+        # enabled on both the app and the notification-service extension, or
+        # sigh's profiles lack com.apple.developer.usernotifications.communication
+        # and the export fails / the avatar silently never renders.
+        if ["com.prvio.app", "com.prvio.app.notificationservice"].include?(bundle_id)
+          comm_cap = caps.find { |c| c.dig("attributes","capabilityType") == "USERNOTIFICATIONS_COMMUNICATION" }
+          if comm_cap
+            puts "  USERNOTIFICATIONS_COMMUNICATION already enabled (id=#{comm_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "USERNOTIFICATIONS_COMMUNICATION" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable USERNOTIFICATIONS_COMMUNICATION → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+        end
+
+        # The NFC wallet needs the Tag Reading capability on the APP bundle —
+        # without it the regenerated profile lacks the readersession
+        # entitlement and readingAvailable stays false on real devices.
+        if bundle_id == "com.prvio.app"
+          nfc_cap = caps.find { |c| c.dig("attributes","capabilityType") == "NFC_TAG_READING" }
+          if nfc_cap
+            puts "  NFC_TAG_READING already enabled (id=#{nfc_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "NFC_TAG_READING" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable NFC_TAG_READING → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
+          # The Cameras page streams HomeKit camera accessories — without the
+          # HomeKit capability the regenerated profile lacks the
+          # com.apple.developer.homekit entitlement and HMHomeManager reports
+          # no homes on real devices.
+          hk_cap = caps.find { |c| c.dig("attributes","capabilityType") == "HOMEKIT" }
+          if hk_cap
+            puts "  HOMEKIT already enabled (id=#{hk_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "HOMEKIT" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable HOMEKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
+          # The smart-home dashboard's network card shows the real Wi-Fi SSID —
+          # NEHotspotNetwork.fetchCurrent returns nothing unless the profile
+          # carries com.apple.developer.networking.wifi-info, which needs the
+          # capability on the App ID.
+          wifi_cap = caps.find { |c| c.dig("attributes","capabilityType") == "ACCESS_WIFI_INFORMATION" }
+          if wifi_cap
+            puts "  ACCESS_WIFI_INFORMATION already enabled (id=#{wifi_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "ACCESS_WIFI_INFORMATION" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable ACCESS_WIFI_INFORMATION → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
+          # Universal links (QR labels → straight into the app): without the
+          # capability the regenerated profile is stripped of the
+          # associated-domains entitlement and xparvu.com links keep opening
+          # Safari instead of PRVIO.
+          ad_cap = caps.find { |c| c.dig("attributes","capabilityType") == "ASSOCIATED_DOMAINS" }
+          if ad_cap
+            puts "  ASSOCIATED_DOMAINS already enabled (id=#{ad_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "ASSOCIATED_DOMAINS" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable ASSOCIATED_DOMAINS → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
+          # The property weather card fetches through WeatherKit — the
+          # capability must be on the App ID or the entitlement is stripped
+          # from the regenerated profile and every fetch fails with a JWT
+          # authentication error.
+          wk_cap = caps.find { |c| c.dig("attributes","capabilityType") == "WEATHERKIT" }
+          if wk_cap
+            puts "  WEATHERKIT already enabled (id=#{wk_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "WEATHERKIT" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable WEATHERKIT → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+
+          # Chat push notifications go through APNs — the capability must be on
+          # the App ID or sigh's regenerated profile is stripped of the
+          # aps-environment entitlement, and every registerForRemoteNotifications
+          # fails on device with error 3000 ("no valid aps-environment
+          # entitlement"). This is what keeps DM and group messages from
+          # delivering a push.
+          push_cap = caps.find { |c| c.dig("attributes","capabilityType") == "PUSH_NOTIFICATIONS" }
+          if push_cap
+            puts "  PUSH_NOTIFICATIONS already enabled (id=#{push_cap["id"]})"
+          else
+            rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+              data: {
+                type: "bundleIdCapabilities",
+                attributes: { capabilityType: "PUSH_NOTIFICATIONS" },
+                relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+              }
+            })
+            puts "  enable PUSH_NOTIFICATIONS → HTTP #{rc.code}: #{rc.body[0..400]}"
+          end
+        end
       end
       puts "\nsetup_app_groups done."
       $stdout.flush
     RUBY
 
-    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets'")
+    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets' 'com.prvio.app.watchkitapp' 'com.prvio.app.watchkitapp.widgets' 'com.prvio.app.notificationservice'")
 
     # Wait for Developer Portal capability changes to propagate before sigh().
     sleep(12)
@@ -329,7 +463,68 @@ platform :ios do
     )
     widgets_uuid = ENV["SIGH_UUID"]
     UI.message("Widgets profile UUID: #{widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.watchkitapp",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWatch_AppStore.mobileprovision",
+      force:          true
+    )
+    watch_uuid = ENV["SIGH_UUID"]
+    UI.message("Watch profile UUID: #{watch_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.watchkitapp.widgets",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWatchWidgets_AppStore.mobileprovision",
+      force:          true
+    )
+    watch_widgets_uuid = ENV["SIGH_UUID"]
+    UI.message("Watch widgets profile UUID: #{watch_widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.notificationservice",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIONotificationService_AppStore.mobileprovision",
+      force:          true
+    )
+    notification_service_uuid = ENV["SIGH_UUID"]
+    UI.message("Notification service profile UUID: #{notification_service_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
+
+    # ── Watch profiles MUST carry the app group ─────────────────────────────
+    # The ASC API cannot ASSOCIATE an app group with a bundle id (the PATCH
+    # above 409s: APP_GROUPS_IDENTIFIER is not a valid settings key; only the
+    # developer-portal UI performs the association). The watch bundle ids were
+    # created via the API, so they never got it — and a watch binary that
+    # claims group.com.prvio.app under a profile that doesn't grant it is
+    # KILLED AT LAUNCH on real devices: the app opens for a second and exits,
+    # forever, on every watch. Verify here and scream with the exact fix.
+    {
+      "PRVIOWatch_AppStore"        => "com.prvio.app.watchkitapp",
+      "PRVIOWatchWidgets_AppStore" => "com.prvio.app.watchkitapp.widgets",
+    }.each do |profile_name, bundle_id|
+      groups = sh("security cms -D -i /tmp/#{profile_name}.mobileprovision 2>/dev/null | grep -A6 'application-groups' || true", log: false).to_s
+      if groups.include?("group.com.prvio.app")
+        UI.success("#{profile_name}: application-groups includes group.com.prvio.app ✓")
+      else
+        UI.important("=" * 76)
+        UI.important("#{profile_name} has NO group.com.prvio.app — the WATCH APP WILL")
+        UI.important("CRASH AT LAUNCH on real devices (opens ~1s, exits, every time).")
+        UI.important("One-time manual fix (the API cannot do this):")
+        UI.important("  developer.apple.com → Certificates, Identifiers & Profiles →")
+        UI.important("  Identifiers → #{bundle_id} → App Groups → Configure →")
+        UI.important("  tick group.com.prvio.app → Save. Then rerun the deploy —")
+        UI.important("  sigh(force: true) regenerates the profile with the group.")
+        UI.important("=" * 76)
+      end
+    end
 
     # Manual signing: bake cert + profile UUID into the project file per-target
     # so xcodebuild flags don't bleed into SPM package targets.
@@ -352,6 +547,36 @@ platform :ios do
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          widgets_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWatch"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.watchkitapp",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          watch_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWatchWidgets"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.watchkitapp.widgets",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          watch_widgets_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIONotificationService"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.notificationservice",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          notification_service_uuid
     )
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
@@ -383,6 +608,18 @@ platform :ios do
     actool_plist = "/tmp/actool_partial_info.plist"
     FileUtils.rm_f(actool_plist)
 
+    # Alternate app icons must be named explicitly or actool leaves them out
+    # of BOTH Assets.car and the partial Info.plist — which makes
+    # UIApplication.supportsAlternateIcons false on device ("Icons not
+    # available"). Derive the list from the catalog so new icon sets are
+    # picked up automatically, no hand-maintained flag list.
+    alternate_icons = Dir.glob(File.join(project_dir, "Resources", "Assets.xcassets", "*.appiconset"))
+      .map { |p| File.basename(p, ".appiconset") }
+      .reject { |n| n == "AppIcon" }
+      .sort
+    alternate_flags = alternate_icons.map { |n| "--alternate-app-icon '#{n}' " }.join
+    UI.message("Compiling #{alternate_icons.size} alternate app icons")
+
     sh(
       "xcrun actool '#{project_dir}/Resources/Assets.xcassets' " \
       "--compile '#{archive_app}' " \
@@ -392,28 +629,58 @@ platform :ios do
       "--minimum-deployment-target 17.0 " \
       "--platform iphoneos " \
       "--app-icon AppIcon " \
+      "#{alternate_flags}" \
       "--output-partial-info-plist '#{actool_plist}' 2>&1"
     )
 
-    if File.exist?(actool_plist)
-      sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1 || true")
-      UI.success("Merged actool partial plist into bundle Info.plist")
-    end
+    raise "actool did not produce a partial Info.plist" unless File.exist?(actool_plist)
 
-    # Ensure localised string files are present in the archive — XcodeGen may add
-    # .lproj directories as plain folder references whose .strings contents are not
-    # compiled by ibtool. Copy them explicitly so every language is guaranteed.
+    # Replace any stale icon declarations, merge actool's, then verify the
+    # alternates actually landed — a silent miss here is exactly the
+    # "This device doesn't allow changing the app icon" bug.
+    sh("/usr/libexec/PlistBuddy -c 'Delete :CFBundleIcons' '#{archive_app}/Info.plist' 2>/dev/null || true")
+    sh("/usr/libexec/PlistBuddy -c 'Delete :CFBundleIcons~ipad' '#{archive_app}/Info.plist' 2>/dev/null || true")
+    sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1")
+    sh("/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundleAlternateIcons' '#{archive_app}/Info.plist' > /dev/null")
+    UI.success("Merged actool partial plist — #{alternate_icons.size} alternate icons declared")
+
+    # Ensure localised string files are present in the archive. The
+    # Localizable.xcstrings catalog is NOT compiled by the XcodeGen project;
+    # the "Generate localization tables" build phase (scripts/
+    # compile_xcstrings.rb) now installs the tables into every build, and
+    # this step re-installs them into the archive as belt-and-suspenders. Build each
+    # language's table by merging the legacy .lproj file (older translations)
+    # with the xcstrings catalog (single source of truth for everything new —
+    # xcstrings wins on conflicts), and install it into BOTH the app bundle and
+    # the widget extension — the widgets previously shipped with no
+    # localisation at all and rendered raw keys in the gallery.
+    require "json"
+    catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings"), encoding: "UTF-8"))
+    strings_targets = [archive_app, File.join(archive_app, "PlugIns", "PRVIOWidgets.appex")]
     %w[en ro fr nl de].each do |lang|
-      lproj_dir = File.join(archive_app, "#{lang}.lproj")
-      FileUtils.mkdir_p(lproj_dir)
-      src = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
-      dst = File.join(lproj_dir, "Localizable.strings")
-      if File.exist?(src)
-        FileUtils.cp(src, dst)
-        UI.success("Copied #{lang}.lproj/Localizable.strings into archive")
-      else
-        UI.error("Source not found: #{src}")
+      merged = {}
+
+      legacy = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
+      if File.exist?(legacy)
+        File.read(legacy, encoding: "UTF-8").scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
+          un = ->(s) { s.gsub('\\n', "\n").gsub('\\"', '"').gsub('\\\\', '\\') }
+          merged[un.call(k)] = un.call(v)
+        end
       end
+
+      catalog["strings"].each do |key, info|
+        value = info.dig("localizations", lang, "stringUnit", "value")
+        value ||= info.dig("localizations", "en", "stringUnit", "value")
+        merged[key] = value if value
+      end
+
+      content = merged.map { |k, v| "#{k.to_json} = #{v.to_json};" }.join("\n") + "\n"
+      strings_targets.each do |bundle|
+        lproj_dir = File.join(bundle, "#{lang}.lproj")
+        FileUtils.mkdir_p(lproj_dir)
+        File.write(File.join(lproj_dir, "Localizable.strings"), content)
+      end
+      UI.success("Installed #{lang}.lproj/Localizable.strings (#{merged.size} keys) into app + widgets")
     end
 
     export_options_path = "/tmp/ExportOptions.plist"
@@ -434,6 +701,12 @@ platform :ios do
           <string>#{profile_uuid}</string>
           <key>com.prvio.app.widgets</key>
           <string>#{widgets_uuid}</string>
+          <key>com.prvio.app.watchkitapp</key>
+          <string>#{watch_uuid}</string>
+          <key>com.prvio.app.watchkitapp.widgets</key>
+          <string>#{watch_widgets_uuid}</string>
+          <key>com.prvio.app.notificationservice</key>
+          <string>#{notification_service_uuid}</string>
         </dict>
       </dict>
       </plist>

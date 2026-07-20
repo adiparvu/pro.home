@@ -14,10 +14,9 @@ struct ElementCostTimeline: View {
     }
 
     private var points: [Point] {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
         let withCost: [(Date, Double)] = records.compactMap { r in
             guard let c = r.cost, c != 0,
-                  let d = f.date(from: String(r.recordDate.prefix(10))) else { return nil }
+                  let d = AppDate.day(from: String(r.recordDate.prefix(10))) else { return nil }
             return (d, c)
         }.sorted { $0.0 < $1.0 }
         var run = 0.0

@@ -53,21 +53,19 @@ struct PageHeader<Leading: View, Trailing: View>: View {
                         .font(AppFont.label)
                         .foregroundStyle(.secondary)
                         .tracking(1.4)
-                        .textCase(.uppercase)
                 } else if let subtitle {
                     Text(LocalizedStringKey(subtitle))
                         .font(AppFont.label)
                         .foregroundStyle(.secondary)
                         .tracking(1.4)
-                        .textCase(.uppercase)
                 }
                 if let titleKey = _titleKey {
                     Text(titleKey)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                 } else {
                     Text(title)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(34, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                 }
             }

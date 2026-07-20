@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 // Notes section embedded in the element detail. Notes can be locked; locked
 // notes are encrypted and revealed only after Face ID / PIN unlock.
@@ -13,6 +12,7 @@ struct ElementNotesSection: View {
     private let lock = NoteLockManager.shared
 
     @State private var editorNote: ElementNote?      // existing note being edited
+    @State private var noteToDelete: ElementNote?    // pending delete confirmation
     @State private var showNewEditor = false
     @State private var showPINSheet = false
     @State private var pinPurpose: PINPurpose = .unlock
@@ -30,7 +30,7 @@ struct ElementNotesSection: View {
                     Spacer()
                     Button { showNewEditor = true } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
                     .accessibilityLabel("Add note")
                 }
@@ -61,6 +61,20 @@ struct ElementNotesSection: View {
                 showPINSheet = false
             }
         }
+        .confirmationDialog("Delete this note?",
+                            isPresented: Binding(
+                                get: { noteToDelete != nil },
+                                set: { if !$0 { noteToDelete = nil } }
+                            ),
+                            titleVisibility: .visible,
+                            presenting: noteToDelete) { note in
+            Button("Delete", role: .destructive) {
+                Task { await noteService.delete(note) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("This action cannot be undone.")
+        }
     }
 
     @ViewBuilder
@@ -70,7 +84,7 @@ struct ElementNotesSection: View {
                 HStack(spacing: 10) {
                     Image(systemName: "lock.fill").foregroundStyle(.orange)
                     Text("Locked note — tap to unlock")
-                        .font(.system(size: 14)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(14)).foregroundStyle(.secondary)
                     Spacer()
                     Image(systemName: lock.biometryAvailable ? "faceid" : "key.fill")
                         .foregroundStyle(.secondary)
@@ -82,31 +96,35 @@ struct ElementNotesSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 10) {
                     if note.isLocked {
-                        Image(systemName: "lock.open.fill").font(.system(size: 12)).foregroundStyle(.orange).padding(.top, 2)
+                        Image(systemName: "lock.open.fill").font(AppFont.scaled(12)).foregroundStyle(.orange).padding(.top, 2)
                     }
                     Text(noteService.displayBody(note))
-                        .font(.system(size: 14)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(14)).foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Menu {
                         Button { editorNote = note } label: { Label("Edit", systemImage: "pencil") }
-                        Button(role: .destructive) { Task { await noteService.delete(note) } } label: {
+                        Button(role: .destructive) { noteToDelete = note } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                     }
+                    .accessibilityLabel("More")
                 }
 
                 // Checklist
                 if !note.checklist.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         ForEach(note.checklist) { item in
-                            Button { Task { await noteService.toggleChecklistItem(note, itemId: item.id) } } label: {
+                            Button {
+                                HapticFeedback.selection()
+                                Task { await noteService.toggleChecklistItem(note, itemId: item.id) }
+                            } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                         .foregroundStyle(item.done ? Color.green : .secondary)
                                     Text(item.text)
-                                        .font(.system(size: 13))
+                                        .font(AppFont.scaled(13))
                                         .strikethrough(item.done)
                                         .foregroundStyle(item.done ? .secondary : .primary)
                                     Spacer()
@@ -123,7 +141,7 @@ struct ElementNotesSection: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(note.photos, id: \.self) { u in
-                                AsyncImage(url: URL(string: u)) { phase in
+                                StorageImage(source: u) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
@@ -174,14 +192,14 @@ struct ElementNoteEditorSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         GlassCard(padding: 12) {
                             TextEditor(text: $body_)
                                 .frame(minHeight: 140)
                                 .scrollContentBackground(.hidden)
-                                .font(.system(size: 15))
+                                .font(AppFont.scaled(15))
                         }
                         GlassCard(padding: 14) {
                             Toggle(isOn: $locked) {
@@ -238,6 +256,7 @@ struct ElementNoteEditorSheet: View {
                 photoURLs = existing.photoUrls
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var checklistCard: some View {
@@ -246,22 +265,32 @@ struct ElementNoteEditorSheet: View {
                 Label("Checklist", systemImage: "checklist").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 ForEach($checklist) { $item in
                     HStack(spacing: 8) {
-                        Button { item.done.toggle() } label: {
+                        Button {
+                            HapticFeedback.selection()
+                            item.done.toggle()
+                        } label: {
                             Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(item.done ? Color.green : .secondary)
-                        }.buttonStyle(.plain)
-                        TextField("Item", text: $item.text).font(.system(size: 14))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(item.done ? "Mark as incomplete" : "Mark as complete")
+                        TextField("Item", text: $item.text).font(AppFont.scaled(14))
                         Button { checklist.removeAll { $0.id == item.id } } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
-                        }.buttonStyle(.plain)
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color.secondaryTextColor)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove")
                     }
                 }
                 HStack(spacing: 8) {
-                    TextField("Add item", text: $newItem).font(.system(size: 14))
+                    TextField("Add item", text: $newItem).font(AppFont.scaled(14))
                         .onSubmit(addChecklistItem)
                     Button(action: addChecklistItem) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
-                    }.buttonStyle(.plain).disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Add item")
                 }
             }
         }
@@ -275,14 +304,15 @@ struct ElementNoteEditorSheet: View {
                     Spacer()
                     if uploading { ProgressView().scaleEffect(0.7) }
                     PhotosPicker(selection: $photoItem, matching: .images) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus.circle.fill").font(AppFont.scaled(20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add photo")
                 }
                 if !photoURLs.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(photoURLs, id: \.self) { u in
-                                AsyncImage(url: URL(string: u)) { phase in
+                                StorageImage(source: u) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
@@ -309,14 +339,9 @@ struct ElementNoteEditorSheet: View {
     }
 
     private func uploadNotePhoto(_ image: UIImage) async -> String? {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
-        let path = "\(uid)/notes/\(element.id.uuidString)/\(UUID().uuidString).jpg"
-        do {
-            try await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            return try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
-        } catch { return nil }
+        guard let data = image.uploadJPEG(quality: 0.8) else { return nil }
+        return try? await SignedStorage.uploadPublicImage(
+            data, folder: "notes/\(element.id.uuidString)")
     }
 
     private func save() async {
@@ -351,10 +376,10 @@ struct NotePINSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 18) {
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 44)).foregroundStyle(.orange)
+                        .font(AppFont.scaled(44)).foregroundStyle(.orange)
                     Text(mode == .setup ? "Set a PIN for locked notes" : "Enter your PIN")
                         .font(.headline)
                     SecureField("PIN (min 4 digits)", text: $pin)
@@ -380,6 +405,7 @@ struct NotePINSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func submit() {

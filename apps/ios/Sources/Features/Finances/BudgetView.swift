@@ -26,6 +26,7 @@ struct BudgetView: View {
             EditBudgetSheet(
                 category: item.value,
                 current: budgetService.budget(for: item.value),
+                currencySymbol: financialService.currencySymbol,
                 onSave: { amount in
                     budgetService.setBudget(amount, for: item.value)
                     HapticFeedback.success()
@@ -46,7 +47,7 @@ struct BudgetView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("This month")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
 
@@ -56,36 +57,37 @@ struct BudgetView: View {
                 let progress = total > 0 ? min(spent / total, 1.0) : 0
 
                 HStack(alignment: .bottom, spacing: 4) {
-                    Text(financialService.currencySymbol + String(format: "%.0f", spent))
-                        .font(.system(size: 32, weight: .bold))
+                    Text(financialService.moneyDisplay(spent))
+                        .font(AppFont.scaled(32, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text("/ " + financialService.currencySymbol + String(format: "%.0f", total))
-                        .font(.system(size: 15))
+                    Text("/ " + financialService.moneyDisplay(total))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .padding(.bottom, AppSpacing.xxs)
                 }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 8)
+                // Progress bar without GeometryReader: scale a full-width fill.
+                Capsule()
+                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    .frame(height: 8)
+                    .overlay(alignment: .leading) {
                         Capsule()
                             .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : Color.blue)
-                            .frame(width: geo.size.width * progress, height: 8)
+                            .scaleEffect(x: progress, y: 1, anchor: .leading)
                             .animation(.spring(response: 0.5), value: progress)
                     }
-                }
-                .frame(height: 8)
+                    .clipShape(Capsule())
 
                 HStack {
                     Label(remaining >= 0
-                          ? String(format: String(localized: "%@%lld remaining"), financialService.currencySymbol, Int(abs(remaining)))
-                          : String(format: String(localized: "%@%lld over budget"), financialService.currencySymbol, Int(abs(remaining))),
+                          ? String(format: String(localized: "%@ remaining"), financialService.moneyDisplay(abs(remaining)))
+                          : String(format: String(localized: "%@ over budget"), financialService.moneyDisplay(abs(remaining))),
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
                         .font(AppFont.caption)
                         .foregroundStyle(remaining >= 0 ? Color.brandSuccess : Color.red)
                     Spacer()
                     Text(String(format: String(localized: "%.0f%% used"), progress * 100))
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
@@ -96,7 +98,7 @@ struct BudgetView: View {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("PER CATEGORY")
+            Text("Per Category")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -106,7 +108,6 @@ struct BudgetView: View {
                     let budget = budgetService.budget(for: cat)
                     let spent  = spentFor(cat)
                     let progress = budgetService.spendingProgress(for: cat, spent: spent)
-                    let sym = financialService.currencySymbol
 
                     Button { editingCategory = cat; HapticFeedback.selection() } label: {
                         GlassCard(padding: 14) {
@@ -119,33 +120,33 @@ struct BudgetView: View {
                                     Spacer()
                                     VStack(alignment: .trailing, spacing: 1) {
                                         if budget > 0 {
-                                            Text("\(sym)\(Int(spent)) / \(sym)\(Int(budget))")
+                                            Text("\(financialService.moneyDisplay(spent)) / \(financialService.moneyDisplay(budget))")
                                                 .font(AppFont.captionEmphasis)
                                                 .foregroundStyle(progress > 0.9 ? .red : .white)
                                         } else {
                                             Text("Set budget")
-                                                .font(.system(size: 12))
+                                                .font(AppFont.scaled(12))
                                                 .foregroundStyle(Color.accentColor)
                                         }
                                         if budget > 0 {
                                             Text(String(format: "%.0f%%", progress * 100))
-                                                .font(.system(size: 10))
+                                                .font(AppFont.scaled(10))
                                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                         }
                                     }
                                 }
 
                                 if budget > 0 {
-                                    GeometryReader { geo in
-                                        ZStack(alignment: .leading) {
-                                            Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
+                                    Capsule()
+                                        .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                                        .frame(height: 5)
+                                        .overlay(alignment: .leading) {
                                             Capsule()
                                                 .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : categoryColor(cat))
-                                                .frame(width: geo.size.width * progress, height: 5)
+                                                .scaleEffect(x: progress, y: 1, anchor: .leading)
                                                 .animation(.spring(response: 0.5), value: progress)
                                         }
-                                    }
-                                    .frame(height: 5)
+                                        .clipShape(Capsule())
                                 }
                             }
                         }
@@ -194,6 +195,8 @@ struct BudgetView: View {
 private struct EditBudgetSheet: View {
     let category: String
     let current: Double
+    /// The household's real currency symbol — this sheet used to hardcode "€".
+    let currencySymbol: String
     let onSave: (Double) -> Void
 
     @State private var amount: String = ""
@@ -203,19 +206,19 @@ private struct EditBudgetSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 24) {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("MONTHLY BUDGET")
+                            Text("Monthly Budget")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             HStack(spacing: 8) {
-                                Text("€")
-                                    .font(.system(size: 32, weight: .light))
+                                Text(verbatim: currencySymbol)
+                                    .font(AppFont.scaled(32, weight: .light))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)
-                                    .font(.system(size: 40, weight: .light))
+                                    .font(AppFont.scaled(40, weight: .light))
                                     .foregroundStyle(.primary)
                                     .tint(.accentColor)
                                     .keyboardType(.decimalPad)
@@ -245,6 +248,7 @@ private struct EditBudgetSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear {
             amount = current > 0 ? String(Int(current)) : ""
             focused = true

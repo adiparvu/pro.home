@@ -1,6 +1,6 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 import PhotosUI
-import Supabase
 
 /// Edit a zone's metadata — name, colour, icon, layer and cover photo.
 struct ZoneEditSheet: View {
@@ -49,7 +49,7 @@ struct ZoneEditSheet: View {
                     preview
                     field("NAME") {
                         TextField("Zone name", text: $name)
-                            .font(.system(size: 16))
+                            .font(AppFont.scaled(16))
                             .padding(AppSpacing.base)
                             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     }
@@ -117,13 +117,15 @@ struct ZoneEditSheet: View {
                         .resizable()
                         .scaledToFill()
                 } else if let urlStr = photoUrl, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { img in img.resizable().scaledToFill() }
-                        placeholder: { Color.primary.opacity(AppOpacity.hairline) }
+                    StorageImage(url: url) { phase in
+                        if let img = phase.image { img.resizable().scaledToFill() }
+                        else { Color.primary.opacity(AppOpacity.hairline) }
+                    }
                 } else {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.plus")
-                                .font(.system(size: 26, weight: .light))
+                                .font(AppFont.scaled(26, weight: .light))
                             Text("Add cover photo")
                                 .font(AppFont.caption)
                         }
@@ -156,7 +158,7 @@ struct ZoneEditSheet: View {
     private var preview: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(AppFont.scaled(22, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 54, height: 54)
                 .background(tint, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
@@ -168,10 +170,10 @@ struct ZoneEditSheet: View {
                         Text(LocalizedStringKey(name))
                     }
                 }
-                .font(.system(size: 18, weight: .bold))
+                .font(AppFont.scaled(18, weight: .bold))
                 .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.4) : .primary)
                 Text(LocalizedStringKey(layer.displayName))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -282,20 +284,20 @@ struct ZoneEditSheet: View {
         updated.photoUrl = photoUrl
 
         if let data = pendingPhotoData {
-            let path = "zones/\(zone.id.uuidString)/cover.jpg"
-            let compressed = UIImage(data: data).flatMap { $0.jpegData(compressionQuality: 0.82) } ?? data
+            // The `photos` bucket never existed — zone covers live in the public
+            // `documents` bucket like other property imagery.
+            let path = "zones/\(zone.id.uuidString.lowercased())/cover.jpg"
+            // Decode + recompress off the main actor — the sheet stays
+            // responsive while a multi-megapixel cover is squeezed down.
+            let compressed = await Task.detached(priority: .userInitiated) {
+                UIImage(data: data).flatMap { $0.uploadJPEG(quality: 0.82) } ?? data
+            }.value
             do {
-                try await supabase.storage
-                    .from("photos")
-                    .upload(path, data: compressed,
-                            options: FileOptions(contentType: "image/jpeg", upsert: true))
-                updated.photoUrl = try supabase.storage
-                    .from("photos")
-                    .getPublicURL(path: path)
-                    .absoluteString
+                updated.photoUrl = try await SignedStorage.uploadPublicImage(
+                    compressed, path: path, upsert: true)
             } catch {
                 #if DEBUG
-                print("[ZoneEditSheet] photo upload error: \(error)")
+                debugLog("[ZoneEditSheet] photo upload error: \(error)")
                 #endif
             }
         }

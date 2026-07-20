@@ -2,7 +2,12 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// MARK: - Dashboard — matches dark mockup exactly
+// MARK: - Dashboard — the smart-home-first home tab (reference fidelity)
+//
+// Top to bottom: header, room/scene chips, the now-playing media card, the
+// staggered device hero grid (always populated), and the user-configurable
+// widgets. The classic dashboard sections (aerial hero, Today, insights)
+// moved off this page by explicit product decision — only widgets survive.
 
 struct DashboardView: View {
     @Environment(AuthService.self) var auth
@@ -14,14 +19,30 @@ struct DashboardView: View {
     @Environment(FamilyService.self) var familyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) var router
-    @Environment(PropertyZoneService.self) private var zoneService
+    // Not private: DashboardWidgets.swift (extension, separate file) builds
+    // the seasonal widget's honesty context from the mapped zones.
+    @Environment(PropertyZoneService.self) var zoneService
     @Environment(PlantService.self) var plantService
-    @Environment(DeliveryService.self) private var deliveryService
+    // Not private: DashboardWidgets.swift (extension, separate file) renders
+    // the Deliveries widget from it.
+    @Environment(DeliveryService.self) var deliveryService
     @Environment(PropertyElementService.self) private var elementService
-    @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(InventoryService.self) var inventoryService
     @Environment(ContractorService.self) var contractorService
-    @Environment(ProactiveEngine.self) var proactiveEngine
+    @Environment(SupplyService.self) var supplyService
+    @Environment(PhotoJournalService.self) var photoJournalService
+    // Feeds the hero grid's "Next up" card (warranty deadlines are part of
+    // the house agenda). Not private: DashboardWidgets.swift builds the
+    // calendar preview + warranties widget from these.
+    @Environment(ApplianceService.self) var applianceService
+    // Calendar events belong to the same agenda — without this the "Next up"
+    // card silently skipped everything the user put in the house calendar.
+    @Environment(CalendarEventService.self) var calendarEventService
+    // The wave-2 widget services (not private — DashboardWidgets.swift, the
+    // extension in a separate file, renders their cards).
+    @Environment(PantryService.self) var pantryService
+    @Environment(PropertyValueService.self) var propertyValueService
+    @Environment(SeasonalChecklistService.self) var seasonalService
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -30,21 +51,106 @@ struct DashboardView: View {
         )
     )
     @State var geocodedCoordinate: CLLocationCoordinate2D?
-    @State private var selectedSection: PropertySection? = nil
     @State var pulsing = false
-    @State private var showNotifications = false
     @State private var notificationService = NotificationService()
-    @State private var showEditProfile = false
-    @State private var showSearch = false
-    @State private var showWidgetPicker = false
-    @State private var showHealthDetail = false
-    @State var isEditingWidgets = false
-    @State var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
+    // A single presentation slot. Multiple stacked `.sheet(isPresented:)` on one
+    // view conflict in SwiftUI (only the last reliably presents), which is why
+    // search / notifications / profile silently did nothing. One `.sheet(item:)`
+    // driven by this enum fixes all of them.
+    @State private var activeSheet: DashboardSheet?
+
+    private enum DashboardSheet: Int, Identifiable {
+        case notifications, editProfile, hub, widgetPicker
+        var id: Int { rawValue }
+    }
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
 
-    private let sections = PropertySection.all
-
     var body: some View {
+        ZStack {
+            // The app-wide living mood backdrop (dimineața / zi / noapte) —
+            // the same glassmorphism ground every other tab sits on. The
+            // content above is fully adaptive, so it follows the mood's
+            // color scheme instead of pinning dark.
+            appBackground.ignoresSafeArea()
+            scrollContent
+        }
+        .floatingSpeedDial(.home)
+        .navigationBarHidden(true)
+        .task(id: propertyService.primary?.id) {
+            if let pid = propertyService.primary?.id {
+                await zoneService.load(propertyId: pid)
+            }
+            // Feed the temperature dial from the property's stored
+            // coordinates. The shared PropertyWeather cache is UserDefaults —
+            // not observable — so a write landing after the first render
+            // never re-rendered the dial; WeatherKitService IS observable but
+            // only the weather widget used to populate it. Refresh the cache
+            // AND mirror into the observable service so the dial updates the
+            // moment a reading lands. Both paths no-op when fresh.
+            if let lat = propertyService.primary?.latitude,
+               let lon = propertyService.primary?.longitude {
+                await PropertyWeather.refreshIfStale(latitude: lat, longitude: lon)
+                if WeatherKitService.shared.currentWeather == nil {
+                    await WeatherKitService.shared.fetch(
+                        for: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                }
+            }
+        }
+        .task(id: auth.session?.user.id) {
+            guard let uid = auth.session?.user.id else { return }
+            await notificationService.load(userId: uid)
+            await notificationService.subscribeRealtime(userId: uid)
+        }
+        // Router integration: a route change closes whatever local sheet
+        // (search / notifications / health) is still up so the new
+        // destination can actually present. The router presents its own
+        // notification center from MainTabView; the bell keeps this local one.
+        .onChange(of: router.dismissGeneration) { _, _ in
+            activeSheet = nil
+        }
+        .onChange(of: activeSheet) { _, sheet in
+            router.hasLocalPresentation = (sheet != nil)
+        }
+        .onDisappear {
+            // A tab switch mid-sheet must not leave the router thinking a
+            // local presentation is still up (routes would park forever).
+            if activeSheet == nil { router.hasLocalPresentation = false }
+        }
+        .sheet(item: $activeSheet, onDismiss: { router.drainPending() }) { sheet in
+            switch sheet {
+            case .notifications:
+                NavigationStack {
+                    NotificationCenterView(service: notificationService)
+                        .environment(auth)
+                        .environment(router)
+                }
+                .presentationDragIndicator(.visible)
+            case .editProfile:
+                NavigationStack {
+                    EditProfileView()
+                        .environment(profileService)
+                }
+            case .hub:
+                // The home hub (search lives inside it, unchanged). The
+                // explicit environments are what GlobalSearchSheet — now
+                // nested one level deeper — always received here.
+                SmartHomeHubSheet()
+                    .environment(taskService)
+                    .environment(documentService)
+                    .environment(plantService)
+                    .environment(deliveryService)
+                    .environment(familyService)
+                    .environment(financialService)
+                    .environment(elementService)
+                    .environment(zoneService)
+                    .environment(router)
+            case .widgetPicker:
+                WidgetPickerSheet()
+            }
+        }
+    }
+
+    private var scrollContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 // ── Header ──────────────────────────────────────────────
@@ -53,18 +159,18 @@ struct DashboardView: View {
 
                 Spacer().frame(height: 14)
 
-                // ── Aerial Hero Card ─────────────────────────────────────
-                aerialHero
+                // ── Smart Home (S2.6): room/scene chips, the now-playing
+                //    media card, and the always-populated hero grid ────────
+                SmartHomeSection()
                     .padding(.horizontal, AppSpacing.lg)
 
-                // ── Proactive Insights (fixed after hero) ────────────────
-                if !proactiveEngine.activeInsights.isEmpty {
-                    Spacer().frame(height: 14)
-                    ProactiveInsightsStrip(engine: proactiveEngine)
-                        .padding(.horizontal, AppSpacing.lg)
-                }
+                // ── Estate OS (E1): the "Domeniul" strip — the property's
+                //    spaces. Always rendered; with zero zones the strip
+                //    shows one honest create-first-space card instead. ─────
+                Spacer().frame(height: 22)
+                EstateDomainStrip()
 
-                // ── Reorderable sections ──────────────────────────────────
+                // ── Widgets — the classic dashboard's one survivor here ──
                 ForEach(sectionOrder) { section in
                     sectionView(section)
                 }
@@ -72,338 +178,162 @@ struct DashboardView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, topSafeArea + 6)
-            .trackTabScroll()
             .padding(.bottom, AppSpacing.xl)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self,
-                                           value: geo.frame(in: .named("dashScroll")).minY)
-                }
-            )
-        }
-        .coordinateSpace(name: "dashScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
-                tabBarVis.scrollOffset = y
-            }
-        }
-        .background(appBackground.ignoresSafeArea())
-        .floatingSpeedDial(.home)
-        .navigationBarHidden(true)
-        .onAppear { startPulse() }
-        .task(id: propertyService.primary?.id) { await resolveMapCoordinate() }
-        .task(id: propertyService.primary?.id) {
-            if let pid = propertyService.primary?.id {
-                await zoneService.load(propertyId: pid)
-            }
-        }
-        .task(id: auth.session?.user.id) {
-            guard let uid = auth.session?.user.id else { return }
-            await notificationService.load(userId: uid)
-            await notificationService.subscribeRealtime(userId: uid)
-        }
-        .sheet(isPresented: $showNotifications) {
-            NavigationStack {
-                NotificationCenterView(service: notificationService)
-                    .environment(auth)
-                    .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showEditProfile) {
-            NavigationStack {
-                EditProfileView()
-                    .environment(profileService)
-            }
-        }
-        .sheet(isPresented: $showSearch) {
-            GlobalSearchSheet()
-                .environment(taskService)
-                .environment(documentService)
-                .environment(plantService)
-                .environment(deliveryService)
-                .environment(familyService)
-                .environment(financialService)
-                .environment(elementService)
-                .environment(router)
-        }
-        .sheet(isPresented: $showWidgetPicker) {
-            WidgetPickerSheet()
-        }
-        .sheet(isPresented: $showHealthDetail) {
-            let score = propertyService.primary?.healthScore ?? 87
-            NavigationStack {
-                PropertyHealthDetailView(
-                    score: score,
-                    maintenancePct: min(100, max(0, score - 10)),
-                    utilitiesPct: min(100, max(0, score + 5)),
-                    securityPct: min(100, max(0, score - 3)),
-                    tasksPct: taskService.tasks.isEmpty ? 0 :
-                        Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
-                )
-            }
         }
     }
 
     // MARK: - Header
 
+    /// The reference's airy smart-home header: the hamburger-style menu
+    /// glyph on the left (a REAL control — it opens the home hub: search,
+    /// devices, cameras, rooms, pairing), the small date beside it, bell +
+    /// avatar on the right, and the LARGE light-weight two-line greeting
+    /// beneath.
     private var dashHeader: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: AppSpacing.base) {
+            HStack(alignment: .center, spacing: 10) {
+                Button { HapticFeedback.impact(.light); activeSheet = .hub } label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.plain)
+                .glassCircle()
+                .accessibilityLabel(Text("hub_title"))
+
                 Text(dateString)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                Text(displayName.isEmpty ? greetingText : "\(greetingText), \(displayName)")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(AppFont.scaled(13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
+
+                Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
+                    Image(systemName: "bell.fill")
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .overlay(alignment: .topTrailing) {
+                            // Numeric badge ONLY while there are unread
+                            // notifications — no static status dots.
+                            if notificationService.unreadCount > 0 {
+                                Text(notificationService.unreadCount > 99
+                                     ? "99+" : "\(notificationService.unreadCount)")
+                                    .font(AppFont.scaled(10, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 4.5).padding(.vertical, 1.5)
+                                    .background(Color.red, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(Color.primary.opacity(AppOpacity.tintedFill), lineWidth: 1))
+                                    .offset(x: -2, y: 4)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .glassCircle()
+                .accessibilityLabel(Text("Notifications"))
+                .accessibilityValue(Text(verbatim: notificationService.unreadCount > 0
+                                         ? "\(notificationService.unreadCount)" : ""))
+
+                // The avatar goes straight to the Profile page itself — pushed,
+                // so the dashboard stays underneath.
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.push(.profile)
+                } label: {
+                    avatarCircle
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Profile"))
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                // Composed from Texts so both parts resolve through the
+                // in-app locale — never the device language. LIGHT weight —
+                // the reference greeting is thin and airy.
+                greetingTitle
+                    .font(AppFont.scaled(38, weight: .light))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
+                Text("sh_greeting_subtitle")
+                    .font(AppFont.scaled(15, weight: .regular))
+                    .foregroundStyle(.secondary)
             }
-
-            Spacer(minLength: 8)
-
-            Button { HapticFeedback.impact(.light); showSearch = true } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(AppFont.headline)
-                    .foregroundStyle(Color.primary.opacity(0.75))
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel("Search")
-
-            Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
-                Image(systemName: "bell.fill")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.75))
-                    .frame(width: 40, height: 40)
-                    .overlay(alignment: .topTrailing) {
-                        if notificationService.unreadCount > 0 {
-                            Text("\(min(notificationService.unreadCount, 99))")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4.5).padding(.vertical, 1.5)
-                                .background(Color.red, in: Capsule())
-                                .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
-                                .offset(x: -2, y: 4)
-                        } else if hasNotifications {
-                            Circle()
-                                .fill(Color.brandSuccess)
-                                .frame(width: 10, height: 10)
-                                .overlay(Circle().strokeBorder(.black.opacity(0.55), lineWidth: 1.5))
-                                .offset(x: -8, y: 8)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(notificationService.unreadCount > 0 || hasNotifications
-                                ? "Notifications, new" : "Notifications")
-
-            Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
-                avatarCircle
-            }
-            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
         }
     }
 
-    private var dateString: String {
+    /// One formatter for the app's lifetime — the header re-renders on
+    /// every scroll tick, and DateFormatter construction is too expensive
+    /// to pay per frame. Main-actor only, so mutating the locale is safe.
+    private static let headerFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEEE, MMM d"
-        f.locale = .current
-        return f.string(from: Date())
-    }
+        return f
+    }()
 
-    private var hasNotifications: Bool {
-        taskService.overdueCount > 0 || !proactiveEngine.activeInsights.isEmpty
+    private var dateString: String {
+        let f = Self.headerFormatter
+        // Follow the language chosen in the app, not the device.
+        if f.locale != appSettings.appLocale { f.locale = appSettings.appLocale }
+        return f.string(from: Date())
     }
 
     private var avatarCircle: some View {
         ZStack {
             Circle()
                 .fill(LinearGradient(
-                    colors: [Color(red: 0.25, green: 0.82, blue: 0.48),
-                             Color(red: 0.18, green: 0.60, blue: 0.88)],
+                    colors: [Color.brandSuccess, Color.brandPrimaryBlue],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
             if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                             .frame(width: 42, height: 42)
                             .clipShape(Circle())
                     } else {
                         Text(avatarInitial)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(AppFont.scaled(15, weight: .bold))
                             .foregroundStyle(.white)
                     }
                 }
             } else {
                 Text(avatarInitial)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(AppFont.scaled(15, weight: .bold))
                     .foregroundStyle(.white)
             }
         }
         .frame(width: 42, height: 42)
-        .overlay(Circle().strokeBorder(Color.brandSuccess.opacity(0.55), lineWidth: 1.5))
-    }
-
-    // MARK: - Aerial background (drone photo or canvas illustration)
-
-    @ViewBuilder private var aerialBackground: some View {
-        if let primary = propertyService.primary {
-            AerialCanvasView(
-                property: primary,
-                elements: elementService.elements,
-                showNames: false
-            )
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-        } else {
-            AerialPropertyView(
-                property: propertyService.primary,
-                zones: zoneService.zones,
-                elements: elementService.elements,
-                cornerRadius: 20
-            )
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Aerial Hero Card
-
-    private var aerialHero: some View {
-        ZStack(alignment: .bottomLeading) {
-            aerialBackground
-
-            Button {
-                HapticFeedback.impact(.light)
-                router.selectedTab = .digitalTwin
-            } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(AppFont.captionEmphasis)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .glassCircle()
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Expand Digital Twin")
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-
-            if let name = propertyService.primary?.name {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(name)
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(.white.opacity(0.9))
-                    if let addr = propertyService.primary?.addressLine1 {
-                        Text(addr)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
-                .padding(.bottom, 2)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
-    }
-
-    // MARK: - Property Health Card
-
-    private var propertyHealthCard: some View {
-        let score = propertyService.primary?.healthScore ?? 87
-        let tasksPct = taskService.tasks.isEmpty ? 0 :
-            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
-        return PropertyHealthDashCard(
-            score: score,
-            maintenancePct: min(100, max(0, score - 10)),
-            utilitiesPct: min(100, max(0, score + 5)),
-            securityPct: min(100, max(0, score - 3)),
-            tasksPct: tasksPct
-        )
-    }
-
-    // MARK: - Stats Strip
-
-    private var dashStatsStrip: some View {
-        DashStatsStrip(items: [
-            .init(value: "\(zoneService.zones.count)", label: "Zones",
-                  action: { router.selectedTab = .digitalTwin }),
-            .init(value: "\(elementService.elements.count)", label: "Objects",
-                  action: { router.selectedTab = .digitalTwin }),
-            .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks",
-                  action: { router.selectedTab = .tasks }),
-            .init(value: "\(taskService.overdueCount)", label: "Alerts",
-                  action: { showNotifications = true })
-        ])
     }
 
     // MARK: - Widget section header
 
+    /// The widgets strip's header: the app's uppercase section-label voice,
+    /// and the "+" as a glass circle like the header controls.
     private var widgetSectionHeader: some View {
         HStack {
-            Text("OVERVIEW")
+            Text("Overview")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .kerning(1.1)
+                .foregroundStyle(.secondary)
             Spacer()
-            if isEditingWidgets {
-                Button {
-                    HapticFeedback.impact(.light)
-                    HomeWidgetType.save(editableWidgets)
-                    HomeSectionType.save(sectionOrder)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        isEditingWidgets = false
-                    }
-                } label: {
-                    Text("Done")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Color.accentColor.opacity(0.1), in: Capsule())
-                }
-                .buttonStyle(.plain)
-            } else {
-                HStack(spacing: 8) {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        editableWidgets = HomeWidgetType.load()
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isEditingWidgets = true
-                        }
-                    } label: {
-                        Image(systemName: "arrow.up.arrow.down")
-                            .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .accessibilityLabel("Reorder widgets")
-
-                    Button {
-                        HapticFeedback.impact(.light)
-                        showWidgetPicker = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .accessibilityLabel("Add widget")
-                }
+            // One entry point: the + opens the widget manager, which owns
+            // adding, removing, resizing AND drag-reordering (the separate
+            // reorder button duplicated it and is gone).
+            Button {
+                HapticFeedback.impact(.light)
+                activeSheet = .widgetPicker
+            } label: {
+                Image(systemName: "plus")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(.primary)
+                    .frame(width: 32, height: 32)
             }
+            .buttonStyle(.plain)
+            .glassCircle()
+            .accessibilityLabel("Add widget")
         }
     }
 
@@ -412,25 +342,11 @@ struct DashboardView: View {
     @ViewBuilder
     private func sectionView(_ section: HomeSectionType) -> some View {
         switch section {
-        case .healthCard:
-            Group {
-                Spacer().frame(height: 14)
-                Button {
-                    HapticFeedback.impact(.light)
-                    showHealthDetail = true
-                } label: {
-                    propertyHealthCard
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, AppSpacing.lg)
-            }
-
-        case .statsStrip:
-            Group {
-                Spacer().frame(height: 14)
-                dashStatsStrip
-                    .padding(.horizontal, AppSpacing.lg)
-            }
+        case .healthCard, .statsStrip:
+            // Retired from the home screen (only the widgets section
+            // survived the smart-home redesign); health lives in the
+            // Digital Twin tab, counters in the widgets themselves.
+            EmptyView()
 
         case .widgets:
             Group {
@@ -446,13 +362,41 @@ struct DashboardView: View {
 
     // MARK: - Greeting text
 
-    private var greetingText: String {
+    private var greetingTitle: Text {
+        let base = Text(greetingKey)
+        return displayName.isEmpty ? base : base + Text(verbatim: ", \(displayName)")
+    }
+
+    private var greetingKey: LocalizedStringKey {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
-        case 5..<12:  return String(localized: "Good morning")
-        case 12..<18: return String(localized: "Good afternoon")
-        case 18..<22: return String(localized: "Good evening")
-        default:      return String(localized: "Good night")
+        case 5..<12:  return "Good morning"
+        case 12..<18: return "Good afternoon"
+        case 18..<22: return "Good evening"
+        default:      return "Good night"
         }
+    }
+
+    // MARK: - Next agenda item (feeds the House Briefing widget)
+
+    /// The house agenda's next upcoming entry — at/after now, within the
+    /// next 30 days — built from the exact services the in-app calendar
+    /// reads, skipping completed tasks. Timed items compare against the
+    /// clock; day-precision items count from the start of today.
+    /// Not private: DashboardWidgets.swift (extension, separate file) feeds
+    /// it to the House Briefing widget.
+    var nextAgendaItem: AgendaItem? {
+        let cal = Calendar.current
+        let now = Date()
+        guard let end = cal.date(byAdding: .day, value: 30, to: now) else { return nil }
+        let startOfToday = cal.startOfDay(for: now)
+        return HouseAgenda.items(
+            in: now...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
+            .first { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
     }
 }

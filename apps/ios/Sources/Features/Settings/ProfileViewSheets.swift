@@ -13,7 +13,7 @@ struct ChangeEmailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         emailField("envelope.fill", "New email address", $email, keyboard: .emailAddress)
@@ -24,7 +24,7 @@ struct ChangeEmailSheet: View {
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
                     Text("A verification link will be sent to your new address. Your email will only change after you confirm it.")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                     Spacer()
                 }
@@ -44,13 +44,14 @@ struct ChangeEmailSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func emailField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).autocorrectionDisabled().textInputAutocapitalization(.never)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
@@ -70,7 +71,7 @@ struct ChangePasswordSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         passField("lock.fill", "New password", $password)
@@ -82,11 +83,11 @@ struct ChangePasswordSheet: View {
 
                     if !password.isEmpty && password.count < 6 {
                         Text("Password must be at least 6 characters")
-                            .font(.system(size: 12)).foregroundStyle(.orange)
+                            .font(AppFont.scaled(12)).foregroundStyle(.orange)
                     }
                     if !confirm.isEmpty && password != confirm {
                         Text("Passwords don't match")
-                            .font(.system(size: 12)).foregroundStyle(.red)
+                            .font(AppFont.scaled(12)).foregroundStyle(.red)
                     }
                     Spacer()
                 }
@@ -106,13 +107,14 @@ struct ChangePasswordSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func passField(_ icon: String, _ ph: String, _ b: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
             SecureField(ph, text: b)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 }

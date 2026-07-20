@@ -16,16 +16,19 @@ struct MemberProfileSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         profileHeader
                         quickActions
+                        // The tenant's lease, first-class (IMG_8651): every
+                        // real field the contract carries, absent stays absent.
+                        leaseSection
                         if resolvedMember.email != nil || resolvedMember.phone != nil || resolvedMember.birthday != nil {
                             contactSection
                         }
-                        if let links = resolvedMember.socialLinks, !links.isEmpty {
-                            socialSection(links)
+                        if !SocialLinksRow.displayable(resolvedMember.socialLinks).isEmpty {
+                            socialSection
                         }
                         Spacer(minLength: 40)
                     }
@@ -54,78 +57,196 @@ struct MemberProfileSheet: View {
                 DirectMessageView(member: resolvedMember)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var profileHeader: some View {
         VStack(spacing: 10) {
-            MemberAvatar(member: resolvedMember, size: 80)
+            headerAvatar
             Text(resolvedMember.name)
-                .font(.system(size: 22, weight: .bold))
+                .font(AppFont.scaled(22, weight: .bold))
                 .foregroundStyle(.primary)
+            // Quiet role capsule on clear glass — no colored fill or
+            // contour (user-decreed, IMG_8650).
             Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
                 .font(AppFont.label)
-                .foregroundStyle(resolvedMember.swiftColor)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xxs)
-                .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
+                .glassCapsule()
+        }
+    }
+
+    // Header avatar: the member's photo when one exists, otherwise their
+    // initials in `.primary` on a clear Liquid Glass disc — never a tinted
+    // colour fill.
+    //
+    // The photo check goes through the LIVE profile directory FIRST (the
+    // authority every other surface uses), roster snapshot second. Gating
+    // on the snapshot alone left account holders — whose photo lives only
+    // in the directory — on initials here while the chat header showed
+    // their photo (IMG_8589). Reading the @Observable directory also
+    // subscribes the sheet, so late hydration repaints it.
+    @ViewBuilder
+    private var headerAvatar: some View {
+        let live = MemberDirectory.shared.avatarString(userId: resolvedMember.userId,
+                                                       fallback: resolvedMember.avatarUrl)
+        if let urlStr = live, !urlStr.isEmpty {
+            MemberAvatar(member: resolvedMember, size: 80)
+        } else {
+            Text(resolvedMember.initials)
+                .font(AppFont.scaled(26, weight: .bold))
+                .foregroundStyle(.primary)
+                .frame(width: 80, height: 80)
+                .glassCircle()
         }
     }
 
     private var quickActions: some View {
         HStack(spacing: 12) {
+            // Call is always offered: over the phone line when we have a
+            // number, over FaceTime Audio via e-mail otherwise.
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
+                profileActionBtn(icon: "phone.fill", label: "Call") {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
-                profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
+            } else if let email = resolvedMember.email, !email.isEmpty {
+                profileActionBtn(icon: "phone.fill", label: "Call") {
+                    if let url = URL(string: "facetime-audio://\(email)") { UIApplication.shared.open(url) }
+                }
+                profileActionBtn(icon: "video.fill", label: "FaceTime") {
+                    if let url = URL(string: "facetime://\(email)") { UIApplication.shared.open(url) }
+                }
+            }
+            if let phone = resolvedMember.phone, !phone.isEmpty {
+                profileActionBtn(icon: "video.fill", label: "FaceTime") {
                     if let url = URL(string: "facetime://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
-                profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp", color: Color(red: 0.16, green: 0.72, blue: 0.37)) {
+                profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp") {
                     let num = phone.filter { $0.isNumber }
                     if let url = URL(string: "https://wa.me/\(num)") { UIApplication.shared.open(url) }
                 }
                 if let tg = resolvedMember.socialLinks?.first(where: { $0.platform == "telegram" }) {
                     let handle = tg.handle.replacingOccurrences(of: "@", with: "")
-                    profileActionBtn(icon: "paperplane.fill", label: "Telegram", color: Color(red: 0.13, green: 0.60, blue: 0.87)) {
+                    profileActionBtn(icon: "paperplane.fill", label: "Telegram") {
                         if let url = URL(string: "tg://resolve?domain=\(handle)") ?? URL(string: "https://t.me/\(handle)") {
                             UIApplication.shared.open(url)
                         }
                     }
                 }
             }
-            profileActionBtn(icon: "bubble.left.fill", label: "Message", color: .purple) {
+            profileActionBtn(icon: "bubble.left.fill", label: "Message") {
                 showDM = true
             }
             if let email = resolvedMember.email, !email.isEmpty {
-                profileActionBtn(icon: "envelope.fill", label: "Email", color: .orange) {
+                profileActionBtn(icon: "envelope.fill", label: "Email") {
                     if let url = URL(string: "mailto:\(email)") { UIApplication.shared.open(url) }
                 }
             }
         }
     }
 
-    private func profileActionBtn(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(AppFont.title3)
-                    .foregroundStyle(color)
-                    .frame(width: 52, height: 52)
-                    .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(color.opacity(0.2), lineWidth: 0.5))
-                Text(label)
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(0.6))
+    // Round liquid-glass action discs — the profile actions read like the
+    // system Contacts card, per the app's Liquid Glass language:
+    // a 52pt clear glass circle, a monochrome hierarchical glyph, and an
+    // 11pt secondary label. Never tinted.
+    private func profileActionBtn(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        GlassActionButton(icon: icon, label: label, action: action)
+            .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Lease (tenants only)
+
+    private struct LeaseRow: Identifiable {
+        let id = UUID()
+        let icon: String
+        let color: Color
+        let label: LocalizedStringKey
+        let value: String
+    }
+
+    private func leaseRows(_ lease: TenantLease) -> [LeaseRow] {
+        var rows: [LeaseRow] = []
+        let start = lease.leaseStart.flatMap(AppDate.day(from:))
+            .map { AppDate.medium.string(from: $0) }
+        let period = [start, lease.endDisplay].compactMap { $0 }
+        if !period.isEmpty {
+            rows.append(LeaseRow(icon: "calendar", color: .purple,
+                                 label: "tenant_lease_period",
+                                 value: period.joined(separator: " – ")))
+        }
+        if let rent = lease.rentDisplay {
+            rows.append(LeaseRow(icon: "banknote.fill", color: Color.brandSuccess,
+                                 label: "Monthly rent",
+                                 value: "\(rent)/\(String(localized: "month"))"))
+        }
+        if let day = lease.paymentDay {
+            rows.append(LeaseRow(icon: "calendar.badge.clock", color: .orange,
+                                 label: "Payment day",
+                                 value: String(format: String(localized: "tenant_day_fmt"), day)))
+        }
+        if let deposit = lease.deposit {
+            rows.append(LeaseRow(icon: "shield.lefthalf.filled", color: .blue,
+                                 label: "Deposit",
+                                 value: "\(CurrencyService.amount(deposit)) \(lease.currency)"))
+        }
+        if let occupants = lease.occupants {
+            rows.append(LeaseRow(icon: "person.2.fill", color: .teal,
+                                 label: "Occupants",
+                                 value: "\(occupants)"))
+        }
+        return rows
+    }
+
+    @ViewBuilder private var leaseSection: some View {
+        if resolvedMember.role == "tenant",
+           let lease = familyService.leases[resolvedMember.id] {
+            let rows = leaseRows(lease)
+            if !rows.isEmpty || lease.notes?.isEmpty == false {
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionLabel(String(localized: "Lease"))
+                    VStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 { divider }
+                            detailRow(icon: row.icon, color: row.color,
+                                      label: row.label, value: row.value)
+                        }
+                        if let notes = lease.notes, !notes.isEmpty {
+                            if !rows.isEmpty { divider }
+                            HStack(alignment: .top, spacing: 12) {
+                                ColoredIconBadge(icon: "note.text", color: .gray, size: 36)
+                                Text(verbatim: notes)
+                                    .font(AppFont.scaled(13))
+                                    .foregroundStyle(Color.primary.opacity(0.75))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
+                        }
+                    }
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                }
             }
         }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
+    }
+
+    private func detailRow(icon: String, color: Color,
+                           label: LocalizedStringKey, value: String) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color, size: 36)
+            Text(label).font(AppFont.scaled(13)).foregroundStyle(.secondary)
+            Spacer(minLength: AppSpacing.sm)
+            Text(verbatim: value)
+                .font(AppFont.scaled(14))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
     }
 
     private var contactSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("CONTACT")
+            sectionLabel("Contact")
             VStack(spacing: 0) {
                 if let email = resolvedMember.email, !email.isEmpty {
                     contactRow(icon: "envelope.fill", color: .orange, value: email)
@@ -146,34 +267,17 @@ struct MemberProfileSheet: View {
         }
     }
 
-    private func socialSection(_ links: [SocialLink]) -> some View {
+    private var socialSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("SOCIAL NETWORKS")
-            HStack(spacing: 12) {
-                ForEach(links) { link in
-                    Button {
-                        if let url = link.openURL { UIApplication.shared.open(url) }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(link.platformColor.opacity(0.13))
-                                .frame(width: 46, height: 46)
-                            Image(systemName: link.platformIcon)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(link.platformColor)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(link.platformLabel) profile")
-                }
-            }
+            sectionLabel(String(localized: "soc_section_title"))
+            SocialLinksRow(links: resolvedMember.socialLinks ?? [])
         }
     }
 
     private func contactRow(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color, size: 36)
-            Text(value).font(.system(size: 14)).foregroundStyle(.primary)
+            Text(value).font(AppFont.scaled(14)).foregroundStyle(.primary)
             Spacer()
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)

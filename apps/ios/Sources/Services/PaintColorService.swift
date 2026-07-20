@@ -20,14 +20,11 @@ final class PaintColorService {
         isLoading = true
         defer { isLoading = false }
         do {
-            colors = try await supabase
-                .from("paint_colors")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("room_name", ascending: true)
-                .execute().value
+            colors = try await PropertyRepo.fetch(table: "paint_colors", propertyId: propertyId,
+                                                  scope: .strict, order: "room_name", ascending: true,
+                                                  limit: 500)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -39,7 +36,36 @@ final class PaintColorService {
                 .select().single().execute().value
             colors.append(inserted)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
+        }
+    }
+
+    /// Full-row update by id (everything editable; identity/created stay).
+    private struct UpdatePayload: Encodable {
+        let room_name: String, surface: String, color_name: String
+        let brand: String?, code: String?, finish: String?
+        let hex_color: String?, notes: String?, photo_url: String?
+        let last_used_at: String?, leftover_note: String?
+    }
+
+    func update(_ color: PaintColor) async {
+        let payload = UpdatePayload(
+            room_name: color.roomName, surface: color.surface, color_name: color.colorName,
+            brand: color.brand, code: color.code, finish: color.finish?.rawValue,
+            hex_color: color.hexColor, notes: color.notes, photo_url: color.photoUrl,
+            last_used_at: color.lastUsedAt, leftover_note: color.leftoverNote)
+        do {
+            let fresh: PaintColor = try await supabase
+                .from("paint_colors")
+                .update(payload)
+                .eq("id", value: color.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+            if let i = colors.firstIndex(where: { $0.id == color.id }) { colors[i] = fresh }
+        } catch {
+            self.error = error.recordableDescription
         }
     }
 
@@ -50,7 +76,7 @@ final class PaintColorService {
                 .from("paint_colors").delete()
                 .eq("id", value: color.id.uuidString).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

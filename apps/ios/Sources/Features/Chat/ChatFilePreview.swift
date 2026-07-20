@@ -23,10 +23,10 @@ struct FilePreviewSheet: View {
                 } else if failed {
                     VStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 28))
+                            .font(AppFont.scaled(28))
                             .foregroundStyle(.secondary)
                         Text("Couldn't open this file")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(.secondary)
                         Link("Open in browser", destination: url)
                             .font(AppFont.footnote)

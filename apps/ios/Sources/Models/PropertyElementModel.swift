@@ -118,9 +118,7 @@ struct PropertyElement: Identifiable, Codable, Equatable {
 
     var warrantyStatus: WarrantyStatus {
         guard let until = warrantyUntil else { return .none }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        guard let date = formatter.date(from: until) else { return .none }
+        guard let date = AppDate.day(from: until) else { return .none }
         let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
         if days < 0 { return .expired }
         if days <= 90 { return .expiringSoon }

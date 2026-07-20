@@ -12,14 +12,11 @@ struct BuriedUtilityRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(utility.swiftColor.opacity(0.2))
-                        .overlay(Circle().strokeBorder(utility.swiftColor.opacity(0.5), lineWidth: 1.5))
-                    Image(systemName: utility.icon)
-                        .font(AppFont.headline)
-                        .foregroundStyle(utility.swiftColor)
-                }
-                .frame(width: 42, height: 42)
+                Image(systemName: utility.icon)
+                    .font(AppFont.headline)
+                    .foregroundStyle(utility.swiftColor)
+                    .frame(width: 42, height: 42)
+                    .glassCircle()
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(utility.name)
@@ -31,22 +28,22 @@ struct BuriedUtilityRow: View {
                             .foregroundStyle(utility.swiftColor)
                         Text("·").foregroundStyle(Color.primary.opacity(0.3))
                         Text(LocalizedStringKey(utility.depthDisplay))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         if utility.lengthM > 0 {
                             Text("·").foregroundStyle(Color.primary.opacity(0.3))
                             Text(LocalizedStringKey(utility.lengthDisplay))
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                     }
                 }
                 Spacer()
                 if photo != nil {
                     Image(systemName: "photo.fill")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.3))
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.3))
                 }
                 if utility.hasLocation {
                     Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.3))
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.3))
                 }
             }
         }
@@ -63,7 +60,7 @@ struct BuriedUtilityDetailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if let photo {
@@ -101,8 +98,8 @@ struct BuriedUtilityDetailSheet: View {
                         if !utility.notes.isEmpty {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("NOTES").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                    Text(utility.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
+                                    Text("Notes").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    Text(utility.notes).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.8))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -133,11 +130,12 @@ struct BuriedUtilityDetailSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func detailRow(_ label: LocalizedStringKey, _ value: String, color: Color = .white) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text(label).font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(LocalizedStringKey(value)).font(AppFont.footnoteEmphasis).foregroundStyle(color)
         }
@@ -174,7 +172,7 @@ struct AddBuriedUtilitySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         typePicker
@@ -209,18 +207,19 @@ struct AddBuriedUtilitySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var typePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+            Text("Type").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(BuriedUtilityKind.all, id: \.self) { t in
                         Button { type = t } label: {
                             HStack(spacing: 5) {
-                                Image(systemName: BuriedUtilityKind.icon(t)).font(.system(size: 11))
-                                Text(LocalizedStringKey(BuriedUtilityKind.label(t))).font(.system(size: 13, weight: type == t ? .semibold : .regular))
+                                Image(systemName: BuriedUtilityKind.icon(t)).font(AppFont.scaled(11))
+                                Text(LocalizedStringKey(BuriedUtilityKind.label(t))).font(AppFont.scaled(13, weight: type == t ? .semibold : .regular))
                             }
                             .foregroundStyle(type == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
@@ -237,8 +236,8 @@ struct AddBuriedUtilitySheet: View {
             fieldRow("textformat", "Name (e.g. Main power cable)", $name)
             div
             HStack(spacing: 12) {
-                Image(systemName: "arrow.down.to.line").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                Text("Depth (cm)").font(.system(size: 15)).foregroundStyle(.primary)
+                Image(systemName: "arrow.down.to.line").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                Text("Depth (cm)").font(AppFont.scaled(15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("60", text: $depth)
                     .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
@@ -246,8 +245,8 @@ struct AddBuriedUtilitySheet: View {
             }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             div
             HStack(spacing: 12) {
-                Image(systemName: "ruler").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                Text("Length (m)").font(.system(size: 15)).foregroundStyle(.primary)
+                Image(systemName: "ruler").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                Text("Length (m)").font(AppFont.scaled(15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("0", text: $length)
                     .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
@@ -266,7 +265,7 @@ struct AddBuriedUtilitySheet: View {
                 Toggle(isOn: $tagLocation) {
                     HStack(spacing: 10) {
                         Image(systemName: "mappin.circle.fill").foregroundStyle(.red)
-                        Text("Tag current location").font(.system(size: 15)).foregroundStyle(.primary)
+                        Text("Tag current location").font(AppFont.scaled(15)).foregroundStyle(.primary)
                     }
                 }
                 .tint(.accentColor)
@@ -276,11 +275,11 @@ struct AddBuriedUtilitySheet: View {
                 if tagLocation {
                     if let loc = locMgr.location {
                         Text(String(format: "📍 %.5f, %.5f", loc.coordinate.latitude, loc.coordinate.longitude))
-                            .font(.system(size: 12)).foregroundStyle(.green)
+                            .font(AppFont.scaled(12)).foregroundStyle(.green)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         Text(LocalizedStringKey(locMgr.denied ? "Location denied — enable in Settings." : "Getting location…"))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -294,12 +293,12 @@ struct AddBuriedUtilitySheet: View {
                 Toggle(isOn: $useInstalledDate) {
                     HStack(spacing: 10) {
                         Image(systemName: "calendar").foregroundStyle(Color.accentColor)
-                        Text("Installation date").font(.system(size: 15)).foregroundStyle(.primary)
+                        Text("Installation date").font(AppFont.scaled(15)).foregroundStyle(.primary)
                     }
                 }.tint(.accentColor)
                 if useInstalledDate {
                     DatePicker("Date", selection: $installedDate, displayedComponents: [.date])
-                        .font(.system(size: 14)).foregroundStyle(.primary).tint(.accentColor)
+                        .font(AppFont.scaled(14)).foregroundStyle(.primary).tint(.accentColor)
                 }
             }
         }
@@ -324,8 +323,8 @@ struct AddBuriedUtilitySheet: View {
 
     private func fieldRow(_ icon: String, _ placeholder: String, _ text: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(placeholder, text: text).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(placeholder, text: text).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 

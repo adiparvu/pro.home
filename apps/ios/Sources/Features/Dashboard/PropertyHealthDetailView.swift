@@ -9,6 +9,9 @@ struct PropertyHealthDetailView: View {
     var utilitiesPct: Int
     var securityPct: Int
     var tasksPct: Int
+    /// The score's story in one sentence, computed from real data by the
+    /// caller ("Pulling the score down: 3 overdue tasks, 2 documents…").
+    var narrative: String? = nil
 
     @Environment(\.dismiss) private var dismiss
 
@@ -68,23 +71,31 @@ struct PropertyHealthDetailView: View {
                     .frame(width: 160, height: 160)
                 VStack(spacing: 4) {
                     Text("\(score)")
-                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(56, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                     Text("/ 100")
-                        .font(.system(size: 14))
+                        .font(AppFont.scaled(14))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
 
             VStack(spacing: 6) {
                 Text(scoreLabel)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(AppFont.scaled(22, weight: .bold))
                     .foregroundStyle(scoreColor)
                 Text(scoreDescription)
-                    .font(.system(size: 14))
+                    .font(AppFont.scaled(14))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.xl)
+                if let narrative {
+                    Text(narrative)
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(scoreColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, 2)
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -102,7 +113,7 @@ struct PropertyHealthDetailView: View {
     private var categoryBreakdownCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Breakdown")
-                .font(.system(size: 17, weight: .bold))
+                .font(AppFont.scaled(17, weight: .bold))
                 .foregroundStyle(.primary)
 
             categoryRow(
@@ -160,7 +171,7 @@ struct PropertyHealthDetailView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("\(pct)%")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.scaled(14, weight: .bold))
                         .foregroundStyle(pct >= 80 ? color : pct >= 60 ? .orange : .red)
                 }
                 GeometryReader { geo in
@@ -173,7 +184,7 @@ struct PropertyHealthDetailView: View {
                 }
                 .frame(height: 5)
                 Text(detail)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
@@ -188,7 +199,7 @@ struct PropertyHealthDetailView: View {
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.brandPurple)
                 Text("How to Improve")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(AppFont.scaled(17, weight: .bold))
                     .foregroundStyle(.primary)
             }
 
@@ -205,13 +216,13 @@ struct PropertyHealthDetailView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                         Text(tip.body)
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
                     Text("+\(tip.points)pts")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(tip.color)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(tip.color.opacity(0.12), in: Capsule())
@@ -234,7 +245,7 @@ struct PropertyHealthDetailView: View {
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("The property health score is calculated from four categories: Maintenance (30%), Utilities (25%), Security (25%), and Tasks completion (20%). Completing tasks, keeping documents current, and resolving alerts all raise your score.")
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(Color.primary.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -250,40 +261,40 @@ struct PropertyHealthDetailView: View {
     }
 
     private var scoreLabel: String {
-        score >= 90 ? "Excelent" :
-        score >= 80 ? "Bun" :
-        score >= 65 ? "Satisfăcător" :
-        score >= 50 ? "Necesită atenție" : "Critică"
+        score >= 90 ? String(localized: "Excellent") :
+        score >= 80 ? String(localized: "Good") :
+        score >= 65 ? String(localized: "Fair") :
+        score >= 50 ? String(localized: "Needs attention") : String(localized: "Critical")
     }
 
     private var scoreDescription: String {
         score >= 80
-            ? "Proprietatea ta este bine întreținută. Continuă să rezolvi sarcinile la timp."
-            : "Există zone care necesită atenție. Urmărește sugestiile de mai jos pentru a ridica scorul."
+            ? String(localized: "Your property is well maintained. Keep resolving tasks on time.")
+            : String(localized: "Some areas need attention. Follow the suggestions below to raise the score.")
     }
 
     private var maintenanceDetail: String {
-        maintenancePct >= 80 ? "Bun — echipamente funcționale" :
-        maintenancePct >= 60 ? "Câteva echipamente necesită verificare" :
-        "Mai multe echipamente necesită inspecție"
+        maintenancePct >= 80 ? String(localized: "Good — equipment running fine") :
+        maintenancePct >= 60 ? String(localized: "A few appliances need a check") :
+        String(localized: "Several appliances need inspection")
     }
 
     private var utilitiesDetail: String {
-        utilitiesPct >= 80 ? "Facturi la zi, consum normal" :
-        utilitiesPct >= 60 ? "Verifică facturile restante" :
-        "Facturi neachitate sau consum anormal"
+        utilitiesPct >= 80 ? String(localized: "Bills up to date, normal usage") :
+        utilitiesPct >= 60 ? String(localized: "Check outstanding bills") :
+        String(localized: "Unpaid bills or unusual usage")
     }
 
     private var securityDetail: String {
-        securityPct >= 80 ? "Sisteme de securitate active" :
-        securityPct >= 60 ? "Unele verificări recomandate" :
-        "Securitate necesită atenție urgentă"
+        securityPct >= 80 ? String(localized: "Security systems active") :
+        securityPct >= 60 ? String(localized: "Some checks recommended") :
+        String(localized: "Security needs urgent attention")
     }
 
     private var tasksDetail: String {
-        tasksPct >= 90 ? "Toate sarcinile finalizate" :
-        tasksPct >= 60 ? "Sarcini active în progres" :
-        "Sarcini restante — prioritizează-le"
+        tasksPct >= 90 ? String(localized: "All tasks completed") :
+        tasksPct >= 60 ? String(localized: "Active tasks in progress") :
+        String(localized: "Overdue tasks — prioritize them")
     }
 
     private struct Tip {
@@ -298,32 +309,32 @@ struct PropertyHealthDetailView: View {
         var tips: [Tip] = []
         if maintenancePct < 85 {
             tips.append(.init(icon: "wrench.and.screwdriver", color: .orange,
-                title: "Verifică echipamentele",
-                body: "Adaugă o inspecție anuală la boiler, sistem electric și instalații sanitare.",
+                title: String(localized: "Check your equipment"),
+                body: String(localized: "Add a yearly inspection for the boiler, electrical system and plumbing."),
                 points: 8))
         }
         if utilitiesPct < 90 {
             tips.append(.init(icon: "bolt.fill", color: Color.brandSkyBlue,
-                title: "Actualizează facturile",
-                body: "Introduc chitanțele de utilități pentru a menține istoricul complet.",
+                title: String(localized: "Update your bills"),
+                body: String(localized: "Log utility receipts to keep the history complete."),
                 points: 5))
         }
         if securityPct < 85 {
             tips.append(.init(icon: "lock.shield.fill", color: Color.brandPurple,
-                title: "Îmbunătățește securitatea",
-                body: "Adaugă camere sau senzori în zonele neacoperite ale proprietății.",
+                title: String(localized: "Improve security"),
+                body: String(localized: "Add cameras or sensors to uncovered areas of the property."),
                 points: 7))
         }
         if tasksPct < 80 {
             tips.append(.init(icon: "checklist", color: Color.brandSuccess,
-                title: "Rezolvă sarcinile restante",
-                body: "Completează sarcinile scadente — fiecare task finalizat ridică scorul.",
+                title: String(localized: "Resolve overdue tasks"),
+                body: String(localized: "Complete due tasks — every finished task raises the score."),
                 points: 3))
         }
         if tips.isEmpty {
             tips.append(.init(icon: "star.fill", color: .yellow,
-                title: "Proprietate în stare excelentă!",
-                body: "Menține ritmul: verificări lunare + documente actualizate + sarcini la zi.",
+                title: String(localized: "Property in excellent shape!"),
+                body: String(localized: "Keep the rhythm: monthly checks + updated documents + tasks on time."),
                 points: 0))
         }
         return tips

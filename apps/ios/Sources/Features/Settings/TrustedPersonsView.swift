@@ -1,6 +1,11 @@
 import SwiftUI
+import Supabase
 
 // MARK: - Model
+//
+// A row in the `trusted_persons` table (RLS: each user sees only their own
+// rows). The capability flags are STORED on the account but not yet enforced
+// by any backend flow — the footer says so plainly.
 
 struct TrustedPerson: Identifiable, Codable {
     var id: UUID = UUID()
@@ -9,6 +14,13 @@ struct TrustedPerson: Identifiable, Codable {
     var canEmergencyAccess: Bool = false
     var canApproveRecovery: Bool = false
     var canTransferOwnership: Bool = false
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email
+        case canEmergencyAccess   = "can_emergency_access"
+        case canApproveRecovery   = "can_approve_recovery"
+        case canTransferOwnership = "can_transfer_ownership"
+    }
 
     var initials: String {
         let parts = name.split(separator: " ")
@@ -19,23 +31,86 @@ struct TrustedPerson: Identifiable, Codable {
     }
 }
 
+// MARK: - PostgREST payloads
+
+private struct TrustedPersonInsert: Encodable {
+    let id: String
+    let user_id: String
+    let name: String
+    let email: String
+    let can_emergency_access: Bool
+    let can_approve_recovery: Bool
+    let can_transfer_ownership: Bool
+
+    init(_ person: TrustedPerson, userId: UUID) {
+        id = person.id.uuidString
+        user_id = userId.uuidString
+        name = person.name
+        email = person.email
+        can_emergency_access = person.canEmergencyAccess
+        can_approve_recovery = person.canApproveRecovery
+        can_transfer_ownership = person.canTransferOwnership
+    }
+}
+
+private struct TrustedPersonUpdate: Encodable {
+    let name: String
+    let email: String
+    let can_emergency_access: Bool
+    let can_approve_recovery: Bool
+    let can_transfer_ownership: Bool
+
+    init(_ person: TrustedPerson) {
+        name = person.name
+        email = person.email
+        can_emergency_access = person.canEmergencyAccess
+        can_approve_recovery = person.canApproveRecovery
+        can_transfer_ownership = person.canTransferOwnership
+    }
+}
+
+/// The shape the pre-account builds wrote to UserDefaults (default camelCase
+/// Codable keys) — decoded once, migrated into the table, then deleted.
+private struct LegacyTrustedPerson: Decodable {
+    let id: UUID
+    let name: String
+    let email: String
+    let canEmergencyAccess: Bool
+    let canApproveRecovery: Bool
+    let canTransferOwnership: Bool
+}
+
 // MARK: - Main view
 
 struct TrustedPersonsView: View {
     @State private var persons: [TrustedPerson] = []
     @State private var showAdd = false
+    @State private var editingPerson: TrustedPerson? = nil
+    @State private var isLoading = true
+    @State private var loadFailed = false
+    @State private var syncFailed = false
 
-    private let key = "prvio.trustedPersons"
+    /// Pre-account device-local store; migrated silently into the table.
+    private static let legacyKey = "prvio.trustedPersons"
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                if persons.isEmpty {
+                if isLoading {
+                    loadingState
+                } else if loadFailed && persons.isEmpty {
+                    errorState
+                } else if persons.isEmpty {
                     emptyState
                 } else {
                     personsList
                 }
-                addButton
+                if !isLoading && !(loadFailed && persons.isEmpty) {
+                    addButton
+                }
+                if syncFailed {
+                    syncErrorText
+                }
                 footerText
                 Spacer(minLength: 100)
             }
@@ -45,11 +120,16 @@ struct TrustedPersonsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Persoane de încredere")
         .navigationBarTitleDisplayMode(.large)
-        .onAppear { load() }
+        .task { await load() }
+        .refreshable { await load() }
         .sheet(isPresented: $showAdd) {
-            AddTrustedPersonSheet { person in
-                persons.append(person)
-                save()
+            TrustedPersonSheet { person in
+                Task { await add(person) }
+            }
+        }
+        .sheet(item: $editingPerson) { person in
+            TrustedPersonSheet(editing: person) { updated in
+                Task { await update(updated) }
             }
         }
     }
@@ -58,7 +138,7 @@ struct TrustedPersonsView: View {
 
     private var personsList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("PERSOANE DE ÎNCREDERE")
+            Text("Persoane de încredere")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, AppSpacing.xxs)
@@ -71,15 +151,25 @@ struct TrustedPersonsView: View {
                             .frame(height: 0.4)
                             .padding(.leading, 62)
                     }
-                    personRow(person)
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                persons.removeAll { $0.id == person.id }
-                                save()
-                            } label: {
-                                Label("Șterge", systemImage: "trash")
-                            }
+                    Button {
+                        editingPerson = person
+                    } label: {
+                        personRow(person)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button {
+                            editingPerson = person
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
                         }
+                        Button(role: .destructive) {
+                            Task { await delete(person) }
+                        } label: {
+                            Label("Șterge", systemImage: "trash")
+                        }
+                    }
                 }
             }
             .liquidGlass(cornerRadius: AppRadius.xl)
@@ -97,7 +187,7 @@ struct TrustedPersonsView: View {
                     ))
                     .frame(width: 40, height: 40)
                 Text(person.initials)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.scaled(14, weight: .bold))
                     .foregroundStyle(.white)
             }
 
@@ -106,7 +196,7 @@ struct TrustedPersonsView: View {
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(person.email)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
                     .lineLimit(1)
                 if person.canEmergencyAccess || person.canApproveRecovery || person.canTransferOwnership {
@@ -114,6 +204,9 @@ struct TrustedPersonsView: View {
                 }
             }
             Spacer()
+            Image(systemName: "chevron.right")
+                .font(AppFont.caption)
+                .foregroundStyle(Color.primary.opacity(0.28))
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
@@ -135,35 +228,47 @@ struct TrustedPersonsView: View {
 
     private func permTag(_ label: String, color: Color) -> some View {
         Text(LocalizedStringKey(label))
-            .font(.system(size: 10, weight: .semibold))
+            .font(AppFont.scaled(10, weight: .semibold))
             .foregroundStyle(color)
             .padding(.horizontal, AppSpacing.xs)
             .padding(.vertical, 2)
             .background(color.opacity(0.12), in: Capsule())
     }
 
-    // MARK: - Empty state
+    // MARK: - Loading / empty / error states
+
+    private var loadingState: some View {
+        ProgressView()
+            .padding(.vertical, AppSpacing.xxl)
+            .frame(maxWidth: .infinity)
+    }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.hairline))
-                    .frame(width: 64, height: 64)
-                Image(systemName: "person.2.badge.key.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(Color.primary.opacity(0.3))
-            }
-            Text("Nicio persoană de încredere")
-                .font(AppFont.body)
-                .foregroundStyle(.primary)
-            Text("Adaugă persoane care te pot ajuta cu recuperarea contului")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        EmptyStateView(
+            icon: "person.2.badge.key.fill",
+            title: "Nicio persoană de încredere",
+            message: "Adaugă persoane care te pot ajuta cu recuperarea contului"
+        )
+    }
+
+    /// Honest failure: when the account list can't be fetched we say so —
+    /// never an empty state that pretends the account has no trusted people.
+    private var errorState: some View {
+        EmptyStateView(
+            icon: "wifi.exclamationmark",
+            title: "trusted_persons_error_title",
+            message: "trusted_persons_error_msg",
+            actionLabel: "Retry",
+            action: { Task { await load() } }
+        )
+    }
+
+    private var syncErrorText: some View {
+        Text("trusted_persons_sync_error")
+            .font(AppFont.scaled(12))
+            .foregroundStyle(Color.brandDanger)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, AppSpacing.sm)
     }
 
     // MARK: - Add button
@@ -184,33 +289,127 @@ struct TrustedPersonsView: View {
         .buttonStyle(.plain)
     }
 
+    // Honest copy: capabilities are stored on the account, but no backend
+    // flow enforces them yet — say so instead of implying they work.
     private var footerText: some View {
-        Text("Persoanele de încredere te pot ajuta cu recuperarea contului și accesul de urgență.")
-            .font(.system(size: 12))
+        Text("trusted_persons_footer")
+            .font(AppFont.scaled(12))
             .foregroundStyle(Color.primary.opacity(0.38))
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.sm)
     }
 
-    // MARK: - Persistence
+    // MARK: - Persistence (trusted_persons table, RLS self-only)
 
-    private func load() {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([TrustedPerson].self, from: data)
-        else { return }
-        persons = decoded
+    private func load() async {
+        await migrateLegacyStoreIfNeeded()
+        do {
+            persons = try await supabase.from("trusted_persons")
+                .select("id,name,email,can_emergency_access,can_approve_recovery,can_transfer_ownership")
+                .order("created_at")
+                .execute().value
+            loadFailed = false
+            syncFailed = false
+        } catch {
+            loadFailed = true
+        }
+        isLoading = false
     }
 
-    private func save() {
-        if let data = try? JSONEncoder().encode(persons) {
-            UserDefaults.standard.set(data, forKey: key)
+    /// Optimistic append; reverted honestly if the insert fails.
+    private func add(_ person: TrustedPerson) async {
+        guard let userId = supabase.auth.currentSession?.user.id else { return }
+        persons.append(person)
+        do {
+            _ = try await supabase.from("trusted_persons")
+                .insert(TrustedPersonInsert(person, userId: userId))
+                .execute()
+            syncFailed = false
+        } catch {
+            persons.removeAll { $0.id == person.id }
+            syncFailed = true
+            HapticFeedback.error()
         }
+    }
+
+    /// Optimistic in-place edit (capability toggles included); reverted on failure.
+    private func update(_ person: TrustedPerson) async {
+        guard let idx = persons.firstIndex(where: { $0.id == person.id }) else { return }
+        let previous = persons[idx]
+        persons[idx] = person
+        do {
+            _ = try await supabase.from("trusted_persons")
+                .update(TrustedPersonUpdate(person))
+                .eq("id", value: person.id.uuidString)
+                .execute()
+            syncFailed = false
+        } catch {
+            if let i = persons.firstIndex(where: { $0.id == person.id }) {
+                persons[i] = previous
+            }
+            syncFailed = true
+            HapticFeedback.error()
+        }
+    }
+
+    /// Optimistic removal; restored if the delete fails.
+    private func delete(_ person: TrustedPerson) async {
+        guard let idx = persons.firstIndex(where: { $0.id == person.id }) else { return }
+        persons.remove(at: idx)
+        do {
+            _ = try await supabase.from("trusted_persons")
+                .delete()
+                .eq("id", value: person.id.uuidString)
+                .execute()
+            syncFailed = false
+        } catch {
+            persons.insert(person, at: min(idx, persons.count))
+            syncFailed = true
+            HapticFeedback.error()
+        }
+    }
+
+    // MARK: - One-time silent migration (UserDefaults → table)
+    //
+    // Upsert keeps a retried migration idempotent (same client-side ids);
+    // the key is removed only after the write succeeds, so a failed attempt
+    // simply retries on the next visit. Silent by design.
+
+    private func migrateLegacyStoreIfNeeded() async {
+        let defaults = UserDefaults.standard
+        guard let data = defaults.data(forKey: Self.legacyKey) else { return }
+        guard let legacy = try? JSONDecoder().decode([LegacyTrustedPerson].self, from: data) else {
+            // Undecodable leftovers can never migrate — drop them.
+            defaults.removeObject(forKey: Self.legacyKey)
+            return
+        }
+        guard let userId = supabase.auth.currentSession?.user.id else { return }
+        if legacy.isEmpty {
+            defaults.removeObject(forKey: Self.legacyKey)
+            return
+        }
+        let rows = legacy.map {
+            TrustedPersonInsert(
+                TrustedPerson(id: $0.id, name: $0.name, email: $0.email,
+                              canEmergencyAccess: $0.canEmergencyAccess,
+                              canApproveRecovery: $0.canApproveRecovery,
+                              canTransferOwnership: $0.canTransferOwnership),
+                userId: userId
+            )
+        }
+        do {
+            _ = try await supabase.from("trusted_persons")
+                .upsert(rows)
+                .execute()
+            defaults.removeObject(forKey: Self.legacyKey)
+        } catch { /* silent — next visit retries */ }
     }
 }
 
-// MARK: - Add sheet
+// MARK: - Add / edit sheet
 
-private struct AddTrustedPersonSheet: View {
+private struct TrustedPersonSheet: View {
+    var editing: TrustedPerson? = nil
     let onSave: (TrustedPerson) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -232,7 +431,7 @@ private struct AddTrustedPersonSheet: View {
                     VStack(spacing: 20) {
                         // Info fields
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("DETALII")
+                            Text("Details")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, AppSpacing.xxs)
@@ -247,7 +446,7 @@ private struct AddTrustedPersonSheet: View {
 
                         // Permissions
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("PERMISIUNI")
+                            Text("Permissions")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, AppSpacing.xxs)
@@ -277,7 +476,9 @@ private struct AddTrustedPersonSheet: View {
                     .padding(.top, AppSpacing.lg)
                 }
             }
-            .navigationTitle("Adaugă persoană")
+            // Text() on each branch keeps the LocalizedStringKey overload —
+            // a bare ternary of literals would resolve to String (verbatim).
+            .navigationTitle(editing == nil ? Text("Adaugă persoană") : Text("trusted_person_edit_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -286,13 +487,12 @@ private struct AddTrustedPersonSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") {
-                        let person = TrustedPerson(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            email: email.trimmingCharacters(in: .whitespaces),
-                            canEmergencyAccess: canEmergencyAccess,
-                            canApproveRecovery: canApproveRecovery,
-                            canTransferOwnership: canTransferOwnership
-                        )
+                        var person = editing ?? TrustedPerson(name: "", email: "")
+                        person.name = name.trimmingCharacters(in: .whitespaces)
+                        person.email = email.trimmingCharacters(in: .whitespaces)
+                        person.canEmergencyAccess = canEmergencyAccess
+                        person.canApproveRecovery = canApproveRecovery
+                        person.canTransferOwnership = canTransferOwnership
                         onSave(person)
                         dismiss()
                     }
@@ -301,14 +501,23 @@ private struct AddTrustedPersonSheet: View {
                     .disabled(!isValid)
                 }
             }
+            .onAppear {
+                if let editing {
+                    name = editing.name
+                    email = editing.email
+                    canEmergencyAccess = editing.canEmergencyAccess
+                    canApproveRecovery = editing.canApproveRecovery
+                    canTransferOwnership = editing.canTransferOwnership
+                }
+            }
         }
     }
 
-    private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+    private func fieldRow(icon: String, color: Color, placeholder: LocalizedStringKey, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
                 .keyboardType(keyboard)
@@ -324,10 +533,10 @@ private struct AddTrustedPersonSheet: View {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(title))
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(subtitle))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()

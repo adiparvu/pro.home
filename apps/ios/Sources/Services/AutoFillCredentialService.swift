@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Security
 import AuthenticationServices
 
@@ -13,10 +14,12 @@ private enum KeychainStore {
 
     static func save(_ data: Data) {
         let query: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String:   data
+            kSecClass as String:          kSecClassGenericPassword,
+            kSecAttrService as String:    service,
+            kSecAttrAccount as String:    account,
+            kSecValueData as String:      data,
+            // Passwords stay on this device and out of backups.
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         SecItemDelete(query as CFDictionary)
         SecItemAdd(query as CFDictionary, nil)
@@ -46,7 +49,8 @@ private enum KeychainStore {
 }
 
 @MainActor
-final class AutoFillCredentialService: ObservableObject {
+@Observable
+final class AutoFillCredentialService {
     static let shared = AutoFillCredentialService()
 
     struct PropertyCredential: Identifiable, Codable {
@@ -84,7 +88,7 @@ final class AutoFillCredentialService: ObservableObject {
         }
     }
 
-    @Published var credentials: [PropertyCredential] = []
+    var credentials: [PropertyCredential] = []
 
     private init() { load() }
 

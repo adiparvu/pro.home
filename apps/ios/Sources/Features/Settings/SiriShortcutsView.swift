@@ -1,33 +1,35 @@
 import SwiftUI
 import AppIntents
 
+// MARK: - Siri & Shortcuts
+//
+// The voice manual. One source of truth (`entries`) mirrors every shortcut
+// registered in PRVIOShortcutsProvider — all ten, grouped the way you think
+// (navigate / act / ask) — and the example phrases shown are the REAL ones
+// Siri accepts, localized exactly like AppShortcuts.xcstrings, so what you
+// read is what you can say.
+
 struct SiriShortcutsView: View {
     @State private var donated = false
     @State private var showActivatedBanner = false
 
+    private static let shortcutCount = PRVIOShortcutsProvider.appShortcuts.count
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(titleKey: "Siri & Shortcuts", subtitleKey: "PRVIO")
 
                 headerCard
 
                 if showActivatedBanner {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
-                        Text("All \(PRVIOShortcutsProvider.appShortcuts.count) shortcuts activated for Siri!")
-                            .font(AppFont.footnote)
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(AppSpacing.base)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(red: 0.15, green: 0.80, blue: 0.40).opacity(0.1),
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    activatedBanner
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
-                shortcutsSection
+                ForEach(SiriCommandGroup.all) { group in
+                    section(group)
+                }
+
                 donateSection
 
                 Spacer(minLength: 110)
@@ -36,8 +38,8 @@ struct SiriShortcutsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Siri & Shortcuts")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: Header
@@ -45,24 +47,22 @@ struct SiriShortcutsView: View {
     private var headerCard: some View {
         GlassCard {
             HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
+                // Siri's colour lives on the glyph — the surface stays glass.
+                Image(systemName: "waveform")
+                    .font(AppFont.scaled(22, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(colors: [Color.brandSkyBlue, Color.brandPurple],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .frame(width: 48, height: 48)
+                    .mediaGlass(in: Circle())
+
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Siri Commands")
                         .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Control PRVIO with your voice")
-                        .font(.system(size: 12))
+                        .font(AppFont.scaled(12))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -70,82 +70,90 @@ struct SiriShortcutsView: View {
         }
     }
 
-    // MARK: Shortcuts list
+    private var activatedBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.brandSuccess)
+            Text(String(format: String(localized: "siri_activated_banner"), Self.shortcutCount))
+                .font(AppFont.footnote)
+                .foregroundStyle(.primary)
+        }
+        .padding(AppSpacing.base)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .mediaGlass(in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    }
 
-    private let shortcuts: [(icon: String, color: Color, title: String, phrases: [String])] = [
-        ("house.fill",    .blue,
-         "Open PRVIO",    ["\"Open PRVIO\"", "\"Show PRVIO dashboard\""]),
-        ("checklist",     Color.brandSuccess,
-         "New Task",      ["\"Add task in PRVIO\"", "\"New task in PRVIO\""]),
-        ("drop.fill",     Color(red: 0.15, green: 0.65, blue: 1.0),
-         "Water Plant",   ["\"Water plant in PRVIO\"", "\"Mark plant watered in PRVIO\""]),
-        ("leaf.fill",     Color(red: 0.15, green: 0.72, blue: 0.37),
-         "Open Plants",   ["\"Open plants in PRVIO\"", "\"Show plants in PRVIO\""]),
-        ("cart.fill",     Color.brandSkyBlue,
-         "Shopping List", ["\"Open shopping in PRVIO\"", "\"Shopping list PRVIO\""]),
-        ("message.fill",  Color.brandPrimaryBlue,
-         "Chat",          ["\"Open chat in PRVIO\"", "\"Chat PRVIO\""]),
-        ("sparkles",      Color.brandPurple,
-         "Ask ARIA",      ["\"Ask ARIA in PRVIO\"", "\"Talk to PRVIO\""]),
-    ]
+    // MARK: Command groups
 
-    private var shortcutsSection: some View {
+    private func section(_ group: SiriCommandGroup) -> some View {
         VStack(spacing: 0) {
-            sectionHeader("AVAILABLE COMMANDS")
+            Text(group.title)
+                .font(AppFont.label)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, AppSpacing.sm)
+
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
-                    ForEach(Array(shortcuts.enumerated()), id: \.offset) { idx, s in
-                        shortcutRow(icon: s.icon, color: s.color, title: LocalizedStringKey(s.title), phrases: s.phrases)
-                        if idx < shortcuts.count - 1 { rowDivider }
+                    ForEach(Array(group.commands.enumerated()), id: \.element.id) { idx, cmd in
+                        row(cmd)
+                        if idx < group.commands.count - 1 {
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.05))
+                                .frame(height: 0.5)
+                                .padding(.leading, 60)
+                        }
                     }
                 }
             }
         }
     }
 
-    private func shortcutRow(icon: String, color: Color, title: LocalizedStringKey, phrases: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func row(_ cmd: SiriCommand) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(color.opacity(0.14))
-                        .frame(width: 32, height: 32)
-                    Image(systemName: icon)
-                        .font(AppFont.footnote)
-                        .foregroundStyle(color)
-                }
-                Text(title)
+                Image(systemName: cmd.icon)
+                    .font(AppFont.footnote)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(cmd.tint)
+                    .frame(width: 34, height: 34)
+                    .mediaGlass(in: Circle())
+
+                Text(cmd.title)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "mic.fill")
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.25))
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(phrases, id: \.self) { phrase in
+                ForEach(cmd.phrases, id: \.self) { phrase in
                     HStack(spacing: 6) {
-                        Image(systemName: "quote.bubble.fill")
-                            .font(.system(size: 9))
+                        Image(systemName: "quote.opening")
+                            .font(AppFont.scaled(9))
                             .foregroundStyle(Color.primary.opacity(0.3))
                         Text(LocalizedStringKey(phrase))
-                            .font(.system(size: 12))
+                            .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .italic()
                     }
                 }
             }
-            .padding(.leading, 44)
+            .padding(.leading, 46)
         }
         .padding(AppSpacing.base)
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: Donate + Shortcuts app link
+    // MARK: Activate + Shortcuts app link
 
     private var donateSection: some View {
         VStack(spacing: 12) {
-            Button {
+            GlassWideButton(icon: donated ? "checkmark.circle.fill" : "wand.and.stars",
+                            label: donated ? "siri_activated" : "Activate Siri Commands") {
                 guard !donated else { return }
                 Task {
                     PRVIOShortcutsProvider.updateAppShortcutParameters()
@@ -155,29 +163,9 @@ struct SiriShortcutsView: View {
                         showActivatedBanner = true
                     }
                     try? await Task.sleep(for: .seconds(3))
-                    withAnimation { donated = false; showActivatedBanner = false }
+                    withAnimation(AppMotion.state) { donated = false; showActivatedBanner = false }
                 }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
-                        .font(AppFont.headline)
-                    Text(LocalizedStringKey(donated ? "Commands Activated!" : "Activate Siri Commands"))
-                        .font(AppFont.headline)
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(
-                    donated
-                        ? AnyShapeStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
-                        : AnyShapeStyle(LinearGradient(
-                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
-                            startPoint: .leading, endPoint: .trailing)),
-                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                )
             }
-            .buttonStyle(.plain)
-            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: donated)
 
             ShortcutsLink {
                 HStack(spacing: 8) {
@@ -186,37 +174,75 @@ struct SiriShortcutsView: View {
                     Text("View in Shortcuts App")
                         .font(AppFont.subheadline)
                 }
-                .foregroundStyle(Color.brandPurple)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .background(Color.brandPurple.opacity(0.1),
-                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.brandPurple.opacity(0.25), lineWidth: 1))
+                .mediaGlass(in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
-            Text("Activate once — Siri learns all \(shortcuts.count) commands. To remove, go to iPhone Settings › Siri.")
-                .font(.system(size: 11))
+            Text(String(format: String(localized: "siri_footer"), Self.shortcutCount))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppSpacing.sm)
         }
     }
+}
 
-    // MARK: Helpers
+// MARK: - Command catalogue (mirrors PRVIOShortcutsProvider, grouped)
 
-    private func sectionHeader(_ text: LocalizedStringKey) -> some View {
-        Text(text)
-            .font(AppFont.label)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, AppSpacing.sm)
-    }
+private struct SiriCommand: Identifiable {
+    let id: String
+    let icon: String
+    let tint: Color
+    let title: LocalizedStringKey
+    /// The REAL spoken phrases (same wording AppShortcuts.xcstrings registers).
+    /// Kept as key strings — LocalizedStringKey isn't Hashable, so ForEach
+    /// needs a Hashable identity; Text re-wraps them at render time.
+    let phrases: [String]
+}
 
-    private var rowDivider: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.05))
-            .frame(height: 0.5)
-            .padding(.horizontal, AppSpacing.base)
-    }
+private struct SiriCommandGroup: Identifiable {
+    let id: String
+    let title: LocalizedStringKey
+    let commands: [SiriCommand]
+
+    static let all: [SiriCommandGroup] = [
+        SiriCommandGroup(id: "nav", title: "siri_sec_nav", commands: [
+            SiriCommand(id: "open", icon: "house.fill", tint: .blue,
+                        title: "Open PRVIO",
+                        phrases: ["siri_ph_open_1", "siri_ph_open_2"]),
+            SiriCommand(id: "plants", icon: "leaf.fill", tint: Color.brandSuccess,
+                        title: "Open Plants",
+                        phrases: ["siri_ph_plants_1", "siri_ph_plants_2"]),
+            SiriCommand(id: "shopping", icon: "cart.fill", tint: .orange,
+                        title: "Shopping List",
+                        phrases: ["siri_ph_shopping_1", "siri_ph_shopping_2"]),
+            SiriCommand(id: "chat", icon: "message.fill", tint: Color.brandPrimaryBlue,
+                        title: "Chat",
+                        phrases: ["siri_ph_chat_1", "siri_ph_chat_2"]),
+        ]),
+        SiriCommandGroup(id: "act", title: "siri_sec_actions", commands: [
+            SiriCommand(id: "newtask", icon: "checklist", tint: .blue,
+                        title: "New Task",
+                        phrases: ["siri_ph_newtask_1", "siri_ph_newtask_2"]),
+            SiriCommand(id: "complete", icon: "checkmark.circle.fill", tint: Color.brandSuccess,
+                        title: "siri_complete_task",
+                        phrases: ["siri_ph_complete_1", "siri_ph_complete_2"]),
+            SiriCommand(id: "water", icon: "drop.fill", tint: Color.brandSkyBlue,
+                        title: "siri_water_plant",
+                        phrases: ["siri_ph_water_1", "siri_ph_water_2"]),
+            SiriCommand(id: "checkoff", icon: "cart.badge.minus", tint: .orange,
+                        title: "siri_check_item",
+                        phrases: ["siri_ph_check_1", "siri_ph_check_2"]),
+            SiriCommand(id: "quick", icon: "bolt.fill", tint: Color.brandWarning,
+                        title: "siri_quick_action",
+                        phrases: ["siri_ph_quick_1", "siri_ph_quick_2"]),
+        ]),
+        SiriCommandGroup(id: "aria", title: "siri_sec_assistant", commands: [
+            SiriCommand(id: "aria", icon: "sparkles", tint: Color.brandPurple,
+                        title: "Ask ARIA",
+                        phrases: ["siri_ph_aria_1", "siri_ph_aria_2"]),
+        ]),
+    ]
 }

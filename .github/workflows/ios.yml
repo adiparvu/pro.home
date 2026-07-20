@@ -15,6 +15,11 @@ concurrency:
 jobs:
   deploy:
     name: Build & Upload to TestFlight
+    # Uploads are on-demand only (owner's call) — pushes run just the tests.
+    # Trigger from the Actions tab (Run Workflow), or push a commit whose
+    # message carries the [deploy] marker (the API dispatch needs a
+    # permission this integration doesn't have).
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy]')
     runs-on: macos-26
     timeout-minutes: 45
 
@@ -41,17 +46,27 @@ jobs:
         run: |
           xcodebuild -version
           for i in 1 2 3; do
-            sudo xcodebuild -downloadPlatform iOS && break
+            sudo xcodebuild -downloadPlatform iOS && sudo xcodebuild -downloadPlatform watchOS && break
             echo "downloadPlatform attempt $i failed, retrying..."
             sleep 10
           done || echo "downloadPlatform failed; continuing — platform is usually preinstalled"
+
+      # The full Ruby patch version (e.g. 3.3.12) scopes the gem cache below.
+      # Native gems (json's parser.bundle) are linked against the runner's
+      # libruby dylib; when GitHub bumps the patch (3.3.11 -> 3.3.12) a cache
+      # keyed only on Gemfile.lock restores extensions built for the old dylib,
+      # and `require 'json'` dies with "linked to incompatible libruby". Keying
+      # (and the restore-keys fallback) on the Ruby version rebuilds them.
+      - name: Ruby version for cache key
+        id: rubyver
+        run: echo "v=$(ruby -e 'print RUBY_VERSION')" >> "$GITHUB_OUTPUT"
 
       - name: Cache Gems
         uses: actions/cache@v4
         with:
           path: apps/ios/vendor/bundle
-          key: gems-${{ hashFiles('apps/ios/Gemfile.lock') }}
-          restore-keys: gems-
+          key: gems-${{ steps.rubyver.outputs.v }}-${{ hashFiles('apps/ios/Gemfile.lock') }}
+          restore-keys: gems-${{ steps.rubyver.outputs.v }}-
 
       - name: Cache SPM packages
         uses: actions/cache@v4
@@ -80,3 +95,54 @@ jobs:
           IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
           IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
         run: bundle exec fastlane beta
+
+  test:
+    name: Unit Tests
+    runs-on: macos-26
+    timeout-minutes: 35
+
+    defaults:
+      run:
+        working-directory: apps/ios
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Install iOS platform
+        run: |
+          xcodebuild -version
+          for i in 1 2 3; do
+            sudo xcodebuild -downloadPlatform iOS && sudo xcodebuild -downloadPlatform watchOS && break
+            echo "downloadPlatform attempt $i failed, retrying..."
+            sleep 10
+          done || echo "downloadPlatform failed; continuing — platform is usually preinstalled"
+
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ hashFiles('apps/ios/project.yml') }}
+          restore-keys: spm-
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Run unit tests on a simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -E "iPhone" | head -1 | sed -E 's/^ *(.+) \([0-9A-Fa-f-]+\) \(.*/\1/' | xargs)
+          if [ -z "$DEVICE" ]; then echo "No iPhone simulator available"; exit 1; fi
+          echo "Using simulator: $DEVICE"
+          set -o pipefail
+          xcodebuild test \
+            -project PRVIO.xcodeproj \
+            -scheme PRVIO \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            -derivedDataPath /tmp/TestDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | awk '/Test Suite|Test Case|error:|\*\* TEST/'
+          # awk is display-only and always exits 0, so with pipefail the
+          # step's verdict is xcodebuild's real exit code — never swallowed.

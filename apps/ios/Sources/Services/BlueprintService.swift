@@ -91,6 +91,19 @@ final class BlueprintService {
         saveScans()
     }
 
+    /// Link (or unlink, with nil) a scan to a Digital Twin element, so the
+    /// element's pin can offer the 3D model directly.
+    func linkScan(_ s: HomeScan, toElement elementId: UUID?) {
+        guard let idx = scans.firstIndex(where: { $0.id == s.id }) else { return }
+        scans[idx].elementId = elementId
+        saveScans()
+    }
+
+    /// The first 3D scan linked to the given element, if any.
+    func scan(forElement elementId: UUID) -> HomeScan? {
+        scans.first { $0.elementId == elementId && $0.is3D }
+    }
+
     func image(for scan: HomeScan) -> UIImage? {
         guard scan.fileFormat == "image" else { return nil }
         return UIImage(contentsOfFile: fileURL(scan.fileName).path)

@@ -1,9 +1,16 @@
 import SwiftUI
 import ContactsUI
 
-// MARK: - WhatsApp-style attachment grid
+// MARK: - iMessage-style attachment menu
 
+/// The iOS 26 iMessage "+" menu, faithfully. Two independent motions, exactly
+/// like Apple's: the whole conversation BLURS behind a full-screen backdrop
+/// that fades in, while the menu PANEL springs up from the "+" corner.
+/// Presented as a plain overlay by the chat views — this view owns both the
+/// entrance and the exit (it animates itself out, then clears `isPresented`),
+/// so the caller must NOT wrap it in a transition.
 struct ChatAttachmentSheet: View {
+    @Binding var isPresented: Bool
     var onPhotos: () -> Void
     var onCamera: () -> Void
     var onLocation: (() -> Void)? = nil
@@ -11,65 +18,111 @@ struct ChatAttachmentSheet: View {
     var onContact: () -> Void
     var onPoll: (() -> Void)? = nil
     var onEvent: (() -> Void)? = nil
-    @Environment(\.dismiss) private var dismiss
+    var onSendLater: (() -> Void)? = nil
 
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()),
-                           GridItem(.flexible()), GridItem(.flexible())]
+    /// Drives both motions. Flipped true on appear (spring in) and false on
+    /// dismiss (the view stays mounted through the exit because `isPresented`
+    /// only clears after the animation lands).
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private func pick(_ action: @escaping () -> Void) {
-        dismiss()
-        // Let the sheet finish dismissing before presenting the next one.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: action)
+    private var entrance: Animation {
+        reduceMotion ? .easeOut(duration: 0.2)
+                     : .spring(response: 0.34, dampingFraction: 0.82)
+    }
+    private var exit: Animation {
+        reduceMotion ? .easeIn(duration: 0.18) : .snappy(duration: 0.26)
+    }
+
+    /// Animate the menu closed, THEN unmount and (optionally) run the picked
+    /// action so the next surface presents over a settled screen.
+    private func dismiss(then action: (() -> Void)? = nil) {
+        withAnimation(exit) { shown = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            isPresented = false
+            action?()
+        }
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                LazyVGrid(columns: columns, spacing: 22) {
-                    option("Photos", "photo.on.rectangle.angled", .blue) { pick(onPhotos) }
-                    option("Camera", "camera.fill", Color(white: 0.25)) { pick(onCamera) }
-                    if let onLocation {
-                        option("Location", "location.fill", .green) { pick(onLocation) }
-                    }
-                    option("Contact", "person.crop.circle.fill", Color(white: 0.45)) { pick(onContact) }
-                    if let onDocument {
-                        option("Document", "doc.fill", .blue) { pick(onDocument) }
-                    }
-                    if let onPoll {
-                        option("Poll", "chart.bar.fill", .orange) { pick(onPoll) }
-                    }
-                    if let onEvent {
-                        option("Event", "calendar", .red) { pick(onEvent) }
-                    }
+        ZStack(alignment: .bottomLeading) {
+            // Full-screen frosted backdrop — the conversation blurs behind the
+            // menu, exactly like iMessage (a bare dim read as flat). Fades on
+            // its OWN opacity, independent of the panel's scale.
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(Color.black.opacity(0.12))
+                .ignoresSafeArea()
+                .opacity(shown ? 1 : 0)
+                .contentShape(Rectangle())
+                .onTapGesture { dismiss() }
+                .accessibilityLabel(Text("Cancel"))
+                .accessibilityAddTraits(.isButton)
+
+            // The menu panel: springs up FROM the "+" corner (bottom-leading
+            // anchor) and fades, over the already-blurred backdrop.
+            VStack(alignment: .leading, spacing: 2) {
+                row("Camera", "camera.fill", [Color(white: 0.35), Color(white: 0.15)]) { dismiss(then: onCamera) }
+                row("Photos", "photo.on.rectangle.angled", [.pink, .orange]) { dismiss(then: onPhotos) }
+                if let onPoll {
+                    row("Poll", "chart.bar.fill", [.yellow, .orange]) { dismiss(then: onPoll) }
                 }
-                .padding(AppSpacing.xxl)
-                .frame(maxHeight: .infinity, alignment: .top)
+                if let onEvent {
+                    row("Event", "calendar", [.red, .pink]) { dismiss(then: onEvent) }
+                }
+                if let onLocation {
+                    row("Location", "location.fill", [.green, .teal]) { dismiss(then: onLocation) }
+                }
+                row("Contact", "person.crop.circle.fill", [.blue, .cyan]) { dismiss(then: onContact) }
+                if let onDocument {
+                    row("Document", "doc.fill", [.indigo, .blue]) { dismiss(then: onDocument) }
+                }
+                if let onSendLater {
+                    row("Send Later", "clock.badge", [.brandSkyBlue, .blue]) { dismiss(then: onSendLater) }
+                }
             }
-            .navigationTitle("Share")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            }
+            .padding(.vertical, AppSpacing.sm)
+            .padding(.horizontal, AppSpacing.xs)
+            .frame(width: 300, alignment: .leading)
+            // Native Liquid Glass (iOS 26 `.glassEffect`), matching the
+            // long-press action menu — the NON-clear variant, so it reads like
+            // Apple's own menu without the wallpaper smear the interactive clear
+            // glass produced (IMG_8305). Pre-26 falls back to system material.
+            .liquidGlass(cornerRadius: 26)
+            .overlay(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.22), radius: 22, y: 8)
+            .scaleEffect(shown ? 1 : 0.55, anchor: .bottomLeading)
+            .opacity(shown ? 1 : 0)
+            .padding(.leading, AppSpacing.base)
+            .padding(.bottom, AppSpacing.md)
         }
-        .presentationDetents([.height(320), .medium])
-        .presentationDragIndicator(.visible)
+        .onAppear { withAnimation(entrance) { shown = true } }
     }
 
-    private func option(_ label: String, _ icon: String, _ color: Color, _ action: @escaping () -> Void) -> some View {
+    private func row(_ label: LocalizedStringKey, _ icon: String, _ colors: [Color],
+                     _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            HStack(spacing: AppSpacing.base) {
                 ZStack {
-                    Circle().fill(color.opacity(0.18))
+                    Circle()
+                        .fill(LinearGradient(colors: colors,
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(color)
+                        .font(AppFont.headline)
+                        .foregroundStyle(.white)
                 }
-                .frame(width: 60, height: 60)
-                Text(LocalizedStringKey(label))
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .frame(width: 34, height: 34)
+                Text(label)
+                    .font(AppFont.scaled(17))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
             }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, 9)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

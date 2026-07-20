@@ -23,6 +23,21 @@ struct AddPlantSheet: View {
     @State private var showFileImporter = false
     @State private var showPhotoMenu = false
     @State private var showLibrary = false
+    @State private var showSpeciesCatalog = false
+    @State private var pickedSpecies: PlantSpecies?
+
+    // Plant OS P1 — general information (all optional, collapsed by default).
+    @State private var nickname = ""
+    @State private var latinName = ""
+    @State private var family = ""
+    @State private var genus = ""
+    @State private var cultivar = ""
+    @State private var origin = ""
+    @State private var climateZone = ""
+    @State private var placement = ""      // "" / indoor / outdoor / both
+    @State private var toxicCats = false
+    @State private var toxicDogs = false
+    @State private var toxicKids = false
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
@@ -31,9 +46,10 @@ struct AddPlantSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
+                        catalogSection
                         emojiPickerSection
                         plantPhotoSection
                         nameField
@@ -41,6 +57,7 @@ struct AddPlantSheet: View {
                         locationField
                         healthPickerSection
                         wateringIntervalSection
+                        generalInfoSection
                         notesField
                         if let error {
                             Text(error)
@@ -86,51 +103,93 @@ struct AddPlantSheet: View {
                 }
             }
             .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
+            .sheet(isPresented: $showSpeciesCatalog) {
+                PlantSpeciesPicker { picked in
+                    apply(picked)
+                }
+            }
         }
+        .presentationBackground(.thinMaterial)
+    }
+
+    // MARK: Species catalog
+
+    /// One tap prefills name + species (Latin) + emoji + watering interval
+    /// from the built-in horticultural catalog; everything stays editable.
+    private var catalogSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Button { showSpeciesCatalog = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "leaf.fill")
+                        .font(AppFont.scaled(14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                    Text("plant_catalog_row")
+                        .font(AppFont.scaled(15))
+                        .foregroundStyle(Color.accentColor)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(AppSpacing.base)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(
+                Color.primary.opacity(AppOpacity.subtleFill),
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            )
+
+            if let picked = pickedSpecies {
+                HStack(spacing: AppSpacing.xs) {
+                    Text(picked.emoji)
+                        .font(AppFont.caption)
+                    Text(picked.name)
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(picked.latin)
+                        .font(AppFont.caption)
+                        .italic()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Image(systemName: picked.light.symbol)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(Text(LocalizedStringKey(picked.light.titleKey)))
+                }
+                .padding(.horizontal, AppSpacing.xxs)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(.smooth(duration: 0.25), value: pickedSpecies)
+    }
+
+    private func apply(_ picked: PlantSpecies) {
+        pickedSpecies = picked
+        name = picked.name
+        species = picked.latin
+        selectedEmoji = picked.emoji
+        wateringIntervalDays = picked.wateringDays
     }
 
     // MARK: Emoji picker
 
+    /// The shared searchable picker (Components/EmojiPickerField). It keeps
+    /// the historical 16-emoji strip as favorites, and a catalog pick that
+    /// carries an emoji outside the strip (🍅, 🍎…) still surfaces as the
+    /// first, selected tile instead of being lost.
     private var emojiPickerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("EMOJI")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(Plant.emojiOptions, id: \.self) { emoji in
-                        Button {
-                            selectedEmoji = emoji
-                            HapticFeedback.selection()
-                        } label: {
-                            Text(emoji)
-                                .font(.system(size: 30))
-                                .frame(width: 52, height: 52)
-                                .background(
-                                    selectedEmoji == emoji
-                                        ? Color.accentColor.opacity(0.15)
-                                        : Color.primary.opacity(AppOpacity.hairline),
-                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                        .strokeBorder(
-                                            selectedEmoji == emoji ? Color.accentColor : Color.clear,
-                                            lineWidth: 2
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 1)
-            }
-        }
+        EmojiPickerField(selection: $selectedEmoji, favorites: Plant.emojiOptions)
     }
 
     // MARK: Plant photo
 
     private var plantPhotoSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("FOTOGRAFIE (OPȚIONAL)")
+            fieldLabel("PHOTO (OPTIONAL)")
             Button { showPhotoMenu = true } label: {
                 ZStack {
                     if let data = selectedImageData, let img = UIImage(data: data) {
@@ -145,10 +204,10 @@ struct AddPlantSheet: View {
                             .overlay(
                                 VStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
-                                        .font(.system(size: 24))
+                                        .font(AppFont.scaled(24))
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
-                                    Text("Adaugă fotografie")
-                                        .font(.system(size: 13, weight: .medium))
+                                    Text("Add photo")
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
@@ -161,7 +220,7 @@ struct AddPlantSheet: View {
                                     selectedImageData = nil
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(AppFont.scaled(22))
                                         .foregroundStyle(.white)
                                         .shadow(radius: 2)
                                 }
@@ -183,11 +242,11 @@ struct AddPlantSheet: View {
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5
                     )
             )
-            .confirmationDialog("Fotografie plantă", isPresented: $showPhotoMenu) {
-                Button("Cameră") { showCamera = true }
-                Button("Bibliotecă") { showLibrary = true }
-                Button("Fișiere") { showFileImporter = true }
-                Button("Anulează", role: .cancel) {}
+            .confirmationDialog("Plant photo", isPresented: $showPhotoMenu) {
+                Button("Camera") { showCamera = true }
+                Button("Library") { showLibrary = true }
+                Button("Files") { showFileImporter = true }
+                Button("Cancel", role: .cancel) {}
             }
         }
     }
@@ -198,7 +257,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NAME *")
             TextField("Plant name", text: $name)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -213,7 +272,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("SPECIES (OPTIONAL)")
             TextField("e.g. Monstera deliciosa", text: $species)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -228,7 +287,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Living room, Balcony, Kitchen", text: $location)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
@@ -243,7 +302,7 @@ struct AddPlantSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Notes about this plant…", text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...5)
@@ -266,19 +325,25 @@ struct AddPlantSheet: View {
                         healthStatus = opt.id
                         HapticFeedback.selection()
                     } label: {
-                        Text(LocalizedStringKey(opt.label))
-                            .font(.system(size: 13, weight: healthStatus == opt.id ? .semibold : .regular))
-                            .foregroundStyle(
-                                healthStatus == opt.id ? .white : Color.primary.opacity(0.65)
+                        HStack(spacing: 5) {
+                            if healthStatus == opt.id {
+                                Image(systemName: "checkmark")
+                                    .font(AppFont.label)
+                                    .symbolRenderingMode(.hierarchical)
+                            }
+                            Text(LocalizedStringKey(opt.label))
+                                .font(AppFont.scaled(13, weight: healthStatus == opt.id ? .semibold : .regular))
+                        }
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .mediaGlass(in: Capsule(), interactive: true)
+                        .overlay(
+                            Capsule().strokeBorder(
+                                healthStatus == opt.id ? Color.primary.opacity(0.35) : Color.clear,
+                                lineWidth: 1.5
                             )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(
-                                healthStatus == opt.id
-                                    ? healthColorFor(opt.id)
-                                    : Color.primary.opacity(AppOpacity.subtleFill),
-                                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            )
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -293,11 +358,11 @@ struct AddPlantSheet: View {
             fieldLabel("WATERING INTERVAL")
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(wateringIntervalDays == 1 ? "Every \(wateringIntervalDays) day" : "Every \(wateringIntervalDays) days")
-                        .font(.system(size: 15))
+                    Text(Plant.wateringIntervalDisplay(wateringIntervalDays))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Text("You'll be notified when it's time to water")
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -312,30 +377,70 @@ struct AddPlantSheet: View {
         }
     }
 
+    // MARK: General information (P1) — collapsed, optional botanical identity
+
+    private var generalInfoSection: some View {
+        DisclosureGroup {
+            VStack(spacing: 12) {
+                infoField("plant_gi_nickname", text: $nickname)
+                infoField("plant_gi_latin", text: $latinName)
+                infoField("plant_gi_family", text: $family)
+                infoField("plant_gi_genus", text: $genus)
+                infoField("plant_gi_cultivar", text: $cultivar)
+                infoField("plant_gi_origin", text: $origin)
+                infoField("plant_gi_climate", text: $climateZone)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    fieldLabel("plant_gi_placement")
+                    Picker("", selection: $placement) {
+                        Text("plant_place_unset").tag("")
+                        Text("plant_place_indoor").tag("indoor")
+                        Text("plant_place_outdoor").tag("outdoor")
+                        Text("plant_place_both").tag("both")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    fieldLabel("plant_gi_toxicity")
+                    Toggle("plant_tox_cats", isOn: $toxicCats).font(AppFont.scaled(14))
+                    Toggle("plant_tox_dogs", isOn: $toxicDogs).font(AppFont.scaled(14))
+                    Toggle("plant_tox_kids", isOn: $toxicKids).font(AppFont.scaled(14))
+                }
+                .tint(.accentColor)
+            }
+            .padding(.top, AppSpacing.sm)
+        } label: {
+            Text("plant_gi_title").font(AppFont.scaled(15, weight: .semibold)).foregroundStyle(.primary)
+        }
+        .tint(.accentColor)
+        .padding(AppSpacing.base)
+        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                   in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    }
+
+    private func infoField(_ label: LocalizedStringKey, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            fieldLabel(label)
+            TextField("", text: text)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                .autocorrectionDisabled()
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
+                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                           in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        }
+    }
+
+    private func gi(_ s: String) -> String? {
+        let t = s.trimmingCharacters(in: .whitespaces); return t.isEmpty ? nil : t
+    }
+
     // MARK: Save button
 
     private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if isSaving {
-                    ProgressView().tint(.white)
-                } else {
-                    Text("Add plant")
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
-            .foregroundStyle(
-                canSave ? Color.white : Color.primary.opacity(0.4)
-            )
+        GlassWideButton(label: "Add plant", isBusy: isSaving, isEnabled: canSave) {
+            save()
         }
-        .buttonStyle(.plain)
-        .disabled(!canSave)
     }
 
     // MARK: Helpers
@@ -344,16 +449,6 @@ struct AddPlantSheet: View {
         Text(text)
             .font(AppFont.label)
             .foregroundStyle(.secondary)
-    }
-
-    private func healthColorFor(_ id: String) -> Color {
-        switch id {
-        case "great":       return Color(red: 0.15, green: 0.80, blue: 0.4)
-        case "good":        return Color(red: 0.25, green: 0.72, blue: 0.35)
-        case "needs_water": return Color(red: 1.0,  green: 0.62, blue: 0.1)
-        case "critical":    return .red
-        default:            return .gray
-        }
     }
 
     private func save() {
@@ -375,48 +470,36 @@ struct AddPlantSheet: View {
             notes: notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces),
             emoji: selectedEmoji,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            info: {
+                var i = PlantGeneralInfo()
+                i.nickname = gi(nickname); i.latinName = gi(latinName)
+                i.botanicalFamily = gi(family); i.genus = gi(genus)
+                i.cultivar = gi(cultivar); i.origin = gi(origin)
+                i.climateZone = gi(climateZone); i.placement = gi(placement)
+                i.toxicCats = toxicCats; i.toxicDogs = toxicDogs; i.toxicKids = toxicKids
+                return i
+            }()
         )
         Task {
             do {
                 let plant = try await plantService.add(payload)
-                if let data = selectedImageData {
-                    PlantImageStore.save(data, for: plant.id)
+                if let data = selectedImageData, let image = UIImage(data: data) {
+                    // Upload + photo_url — the hero used to be written only to a
+                    // device-local file no view ever read, so cards always fell
+                    // back to the emoji. Now it syncs like every other photo.
+                    await plantService.setHeroPhoto(image, for: plant.id)
                 }
                 HapticFeedback.success()
                 dismiss()
             } catch {
-                self.error = error.localizedDescription
+                self.error = error.recordableDescription
             }
             isSaving = false
         }
     }
 }
 
-// MARK: - Local image store for plants
-
-enum PlantImageStore {
-    private static func url(for id: UUID) -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("plant_\(id.uuidString).jpg")
-    }
-
-    static func save(_ data: Data, for id: UUID) {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
-        try? compressed.write(to: url(for: id))
-    }
-
-    static func load(for id: UUID) -> UIImage? {
-        guard let data = try? Data(contentsOf: url(for: id)) else { return nil }
-        return UIImage(data: data)
-    }
-
-    static func delete(for id: UUID) {
-        try? FileManager.default.removeItem(at: url(for: id))
-    }
-}
+// (PlantImageStore is gone — it wrote the add-form hero photo to a
+// device-local file that no view ever read back. The hero now uploads through
+// PlantService.setHeroPhoto and syncs via photo_url like every other photo.)

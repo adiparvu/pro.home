@@ -2,16 +2,20 @@ import SwiftUI
 import CoreLocation
 
 // MARK: - Shared background
-
-var appBackground: Color {
-    Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.04, green: 0.04, blue: 0.08, alpha: 1)
-            : UIColor(red: 0.96, green: 0.96, blue: 0.985, alpha: 1)
-    })
-}
+//
+// `appBackground` lives in Components/AppBackdrop.swift now — it became the
+// living mood backdrop (AppBackdrop), not a flat color. Same name, same
+// call sites; only the definition moved out of this feature file.
 
 // MARK: - Home Widget Card
+//
+// Dashboard-only (the widgets strip under the smart-home grid): native
+// Liquid Glass, so the whole page speaks the app's one language. Content
+// and layout are untouched — icon + badge row, big value, subtitle, title —
+// only the material changed: `liquidGlass` card, adaptive `.primary`/
+// `.secondary` type over the mood backdrop, and the shared press
+// micro-interaction. Semantic icon colors (danger red, success green,
+// warning orange) are passed in unchanged by the callers.
 
 struct HomeWidget: View {
     let icon: String
@@ -23,17 +27,20 @@ struct HomeWidget: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     Image(systemName: icon)
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(AppFont.scaled(22, weight: .semibold))
                         .foregroundStyle(iconColor)
                         .frame(width: 36, height: 36)
                     Spacer()
                     if badge > 0 {
                         Text("\(min(badge, 99))")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(AppFont.scaled(11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                             .background(Color.red, in: Capsule())
@@ -41,163 +48,25 @@ struct HomeWidget: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(value)
-                        .font(.system(size: 22, weight: .bold))
+                        .font(AppFont.scaled(22, weight: .bold))
                         .foregroundStyle(.primary)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .font(AppFont.scaled(11))
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
                 Text(title)
                     .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .foregroundStyle(.secondary)
             }
             .padding(AppSpacing.base)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // Inside the label so the glass scales WITH the pressed card.
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
-        .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.lg)
-    }
-}
-
-// MARK: - Dash Quick Action Button
-
-struct DashQuickActionButton: View {
-    let icon: String
-    let label: LocalizedStringKey
-    let color: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 7) {
-                ZStack {
-                    Circle()
-                        .fill(color.opacity(0.13))
-                        .frame(width: 50, height: 50)
-                    Image(systemName: icon)
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(color)
-                }
-                Text(label)
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(0.55))
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Property Core Marker
-
-struct PropertyCoreMarker: View {
-    @Binding var pulsing: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                Circle()
-                    .fill(Color(red: 0.2, green: 0.85, blue: 0.45).opacity(pulsing ? 0.08 : 0.22))
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(pulsing ? 1.15 : 0.9)
-                    .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: pulsing)
-
-                Circle()
-                    .fill(Color(red: 0.2, green: 0.85, blue: 0.45).opacity(pulsing ? 0.15 : 0.3))
-                    .frame(width: 58, height: 58)
-                    .scaleEffect(pulsing ? 1.08 : 0.95)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(0.2), value: pulsing)
-
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color(red: 0.25, green: 0.92, blue: 0.5), Color(red: 0.1, green: 0.75, blue: 0.35)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ))
-                    .frame(width: 42, height: 42)
-                    .shadow(color: Color(red: 0.2, green: 0.9, blue: 0.45).opacity(0.8), radius: 16)
-                    .shadow(color: Color(red: 0.2, green: 0.9, blue: 0.45).opacity(0.4), radius: 30)
-
-                Image(systemName: "house.fill")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Property Point Marker
-
-struct PropertyPointMarker: View {
-    let section: PropertySection
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                if isSelected {
-                    Circle()
-                        .fill(section.color.opacity(0.2))
-                        .frame(width: 48, height: 48)
-                }
-                Circle()
-                    .fill(isSelected
-                        ? LinearGradient(colors: [section.color, section.color.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        : LinearGradient(colors: [Color.black.opacity(0.6), Color.black.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .frame(width: 32, height: 32)
-                    .overlay(Circle().strokeBorder(isSelected ? section.color : .white.opacity(0.3), lineWidth: 1.5))
-                    .shadow(color: isSelected ? section.color.opacity(0.5) : .black.opacity(0.3), radius: isSelected ? 8 : 4)
-                Image(systemName: section.icon)
-                    .font(AppFont.captionStrong)
-                    .foregroundStyle(.white)
-            }
-            .scaleEffect(isSelected ? 1.15 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Thumbnail Card
-
-struct ThumbnailCard: View {
-    let section: PropertySection
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .fill(isSelected
-                            ? LinearGradient(colors: [section.color, section.color.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            : LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .frame(width: 72, height: 72)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                                .strokeBorder(isSelected ? section.color.opacity(0.5) : .white.opacity(0.15), lineWidth: 1)
-                        )
-                        .shadow(color: isSelected ? section.color.opacity(0.4) : .black.opacity(0.2), radius: isSelected ? 12 : 4)
-                    Image(systemName: section.icon)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
-                }
-                Text(LocalizedStringKey(section.name))
-                    .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
-                    .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
-                    .lineLimit(1)
-            }
-        }
-        .buttonStyle(.plain)
-        .scaleEffect(isSelected ? 1.05 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        .buttonStyle(SmartCardPressStyle())
     }
 }
 
@@ -233,453 +102,6 @@ struct PropertySection: Identifiable {
     ]
 }
 
-// MARK: - Health Score Card
-
-struct HealthScoreCard: View {
-    let score: Int
-    let isLoading: Bool
-
-    private var color: Color {
-        score >= 80 ? Color(red: 0.25, green: 0.88, blue: 0.55)
-            : score >= 55 ? Color.orange
-            : Color.red
-    }
-    private var label: LocalizedStringKey {
-        score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention"
-    }
-    private var healthMessage: LocalizedStringKey {
-        score >= 80 ? "Everything looks on track." : "Some tasks need attention."
-    }
-
-    var body: some View {
-        GlassCard {
-            HStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 9)
-                    Circle()
-                        .trim(from: 0, to: isLoading ? 0 : CGFloat(score) / 100)
-                        .stroke(color, style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 1.1, dampingFraction: 0.8), value: score)
-                    VStack(spacing: 1) {
-                        Text(isLoading ? "–" : "\(score)")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundStyle(.primary)
-                        Text("/ 100")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                    }
-                }
-                .frame(width: 88, height: 88)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Property Health")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
-                    Text(isLoading ? "Loading…" : label)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(color)
-                    Text(isLoading ? " " : healthMessage)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                        .lineLimit(2)
-                }
-                Spacer()
-            }
-        }
-    }
-}
-
-// MARK: - Stat Card
-
-struct DashStatCard: View {
-    let value: String
-    let label: LocalizedStringKey
-    let color: Color
-
-    var body: some View {
-        GlassCard(padding: 14) {
-            VStack(spacing: 4) {
-                Text(value)
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(color)
-                Text(label)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.xxs)
-        }
-    }
-}
-
-// MARK: - Dash Task Row
-
-struct DashTaskRow: View {
-    let task: MaintenanceTask
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(task.priorityColor)
-                .frame(width: 7, height: 7)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(task.title)
-                    .font(AppFont.footnote)
-                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.white)
-                    .strikethrough(task.isCompleted, color: Color.primary.opacity(AppOpacity.disabled))
-                    .lineLimit(1)
-                Text(task.dueDateDisplay)
-                    .font(.system(size: 11))
-                    .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
-            }
-
-            Spacer()
-
-            Text(task.statusDisplay)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, AppSpacing.xxs)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 11)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-    }
-}
-
-// MARK: - Finances Snapshot
-
-struct FinancesSnapshotCard: View {
-    let income: Double
-    let expenses: Double
-    let net: Double
-    let symbol: String
-    var isLoading: Bool = false
-
-    var body: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("Finances")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text("This month")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.4))
-                }
-                if isLoading {
-                    HStack { Spacer(); ProgressView().tint(.white).scaleEffect(0.8); Spacer() }
-                } else {
-                    HStack(spacing: 0) {
-                        FinStat(label: "Income", value: formatted(income), color: Color(red: 0.25, green: 0.88, blue: 0.55))
-                        Rectangle().fill(Color.primary.opacity(0.08)).frame(width: 0.5, height: 34)
-                        FinStat(label: "Expenses", value: formatted(expenses), color: .orange)
-                        Rectangle().fill(Color.primary.opacity(0.08)).frame(width: 0.5, height: 34)
-                        FinStat(label: "Net", value: formatted(net), color: net >= 0 ? .white : .red)
-                    }
-                }
-            }
-        }
-    }
-
-    private func formatted(_ value: Double) -> String {
-        String(format: "\(symbol)%.0f", value)
-    }
-}
-
-private struct FinStat: View {
-    let label: LocalizedStringKey
-    let value: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 3) {
-            Text(value)
-                .font(AppFont.subheadline)
-                .foregroundStyle(color)
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - PropertyHealthGauge (compact overlay for AerialPropertyView)
-
-struct PropertyHealthGauge: View {
-    let score: Int
-    var size: CGFloat = 80
-
-    private var scoreColor: Color {
-        switch score {
-        case 80...: return Color.brandSuccess
-        case 55..<80: return .orange
-        default: return .red
-        }
-    }
-
-    private var label: String {
-        switch score {
-        case 80...: return String(localized: "Good")
-        case 55..<80: return String(localized: "Fair")
-        default: return String(localized: "Poor")
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            // Background card
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-                )
-
-            VStack(spacing: 2) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.10), lineWidth: size * 0.075)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(score) / 100)
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [scoreColor.opacity(0.7), scoreColor]),
-                                center: .center,
-                                startAngle: .degrees(-90),
-                                endAngle: .degrees(270)
-                            ),
-                            style: StrokeStyle(lineWidth: size * 0.075, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 1.0, dampingFraction: 0.8), value: score)
-
-                    Text("\(score)")
-                        .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: size * 0.62, height: size * 0.62)
-
-                Text(label)
-                    .font(.system(size: size * 0.115, weight: .semibold))
-                    .foregroundStyle(scoreColor)
-            }
-            .padding(size * 0.10)
-        }
-        .frame(width: size, height: size)
-        .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
-    }
-}
-
-// MARK: - StatChip (horizontal stats row)
-
-struct StatChip: View {
-    let icon: String
-    let label: LocalizedStringKey
-    let value: String
-    var color: Color = .primary
-    var action: (() -> Void)? = nil
-
-    var body: some View {
-        Button(action: action ?? {}) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(AppFont.captionStrong)
-                    .foregroundStyle(color)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(value)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text(label)
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-        }
-        .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: AppRadius.md)
-        .allowsHitTesting(action != nil)
-    }
-}
-
-// MARK: - CategoryFilterChip (used across Zones, Objects screens)
-
-struct CategoryFilterChip: View {
-    let label: LocalizedStringKey
-    var isActive: Bool
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: { HapticFeedback.selection(); action() }) {
-            Text(label)
-                .font(.system(size: 13, weight: isActive ? .semibold : .medium))
-                .foregroundStyle(isActive ? .primary : Color.primary.opacity(0.55))
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.vertical, AppSpacing.sm)
-        }
-        .buttonStyle(.plain)
-        .background {
-            Capsule()
-                .fill(isActive ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.primary.opacity(AppOpacity.hairline)))
-                .overlay {
-                    if isActive {
-                        Capsule().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
-                    }
-                }
-        }
-    }
-}
-
-// MARK: - PropertyHealthDashCard (detailed health breakdown for Dashboard)
-
-struct PropertyHealthDashCard: View {
-    let score: Int
-    var maintenancePct: Int = 50
-    var utilitiesPct: Int  = 85
-    var securityPct: Int   = 80
-    var tasksPct: Int      = 6
-
-    private var scoreColor: Color {
-        score >= 80 ? Color.brandSuccess :
-        score >= 55 ? .orange : .red
-    }
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 18) {
-            // Circular gauge
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.06), lineWidth: 9)
-                Circle()
-                    .trim(from: 0, to: CGFloat(score) / 100)
-                    .stroke(
-                        AngularGradient(
-                            colors: [scoreColor.opacity(0.7), scoreColor],
-                            center: .center,
-                            startAngle: .degrees(-90),
-                            endAngle: .degrees(270)
-                        ),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 1) {
-                    Text("\(score)")
-                        .font(AppFont.title)
-                        .foregroundStyle(.white)
-                    Text("Health")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(scoreColor)
-                }
-            }
-            .frame(width: 88, height: 88)
-
-            // Sub-metrics
-            VStack(alignment: .leading, spacing: 8) {
-                metricRow("wrench.and.screwdriver", label: "Maintenance", pct: maintenancePct, color: .orange)
-                metricRow("bolt.fill", label: "Utilities", pct: utilitiesPct, color: Color.brandSkyBlue)
-                metricRow("lock.shield.fill", label: "Security", pct: securityPct, color: Color.brandPurple)
-                metricRow("checklist", label: "Tasks", pct: tasksPct, color: Color.brandSuccess)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(AppSpacing.lg)
-        .background {
-            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
-                )
-        }
-        .shadow(color: .black.opacity(0.25), radius: 16, y: 4)
-    }
-
-    private func metricRow(_ icon: String, label: LocalizedStringKey, pct: Int, color: Color) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 14)
-            Text(label)
-                .font(AppFont.caption2)
-                .foregroundStyle(Color.primary.opacity(0.65))
-                .frame(width: 74, alignment: .leading)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.08)).frame(height: 4)
-                    Capsule().fill(color).frame(width: geo.size.width * CGFloat(pct) / 100, height: 4)
-                }
-                .frame(height: 4)
-            }
-            .frame(height: 4)
-            Text("\(pct)%")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .frame(width: 28, alignment: .trailing)
-        }
-    }
-}
-
-// MARK: - DashStatsStrip (bottom stats strip on Dashboard)
-
-struct DashStatsStrip: View {
-    struct StatItem {
-        let value: String
-        let label: LocalizedStringKey
-        var action: (() -> Void)? = nil
-    }
-    let items: [StatItem]
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
-                if idx > 0 {
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.12))
-                        .frame(width: 1, height: 28)
-                }
-                Button {
-                    HapticFeedback.impact(.light)
-                    item.action?()
-                } label: {
-                    VStack(spacing: 2) {
-                        Text(item.value)
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
-                        Text(item.label)
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.base)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(item.action == nil)
-            }
-        }
-        .background {
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
-                )
-        }
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 3)
-    }
-}
-
 // MARK: - Proactive Insights Strip
 
 struct ProactiveInsightsStrip: View {
@@ -690,14 +112,14 @@ struct ProactiveInsightsStrip: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(Color.brandPurple)
                     Text("Property Insights")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                     Text("\(engine.activeInsights.count)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.scaled(11, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Color.brandPurple, in: Capsule())
@@ -728,14 +150,14 @@ private struct InsightRow: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                 Text(insight.body)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .lineLimit(2)
             }
             Spacer()
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFont.scaled(10, weight: .bold))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             .accessibilityLabel("Dismiss")

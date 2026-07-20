@@ -1,4 +1,16 @@
 import UIKit
+import AudioToolbox
+
+// MARK: - Message sounds
+
+/// The sounds Messages itself plays. SystemSoundID 1004 is the system
+/// "message sent" swoosh — the exact sound iMessage uses — and, like
+/// iMessage, it respects the ring/silent switch.
+enum MessageSounds {
+    static func sent() {
+        AudioServicesPlaySystemSound(1004)
+    }
+}
 
 enum HapticFeedback {
     private static var enabled: Bool {

@@ -6,26 +6,26 @@ extension DashboardView {
 
     // MARK: - Widget Grid
 
-    var enabledWidgets: [HomeWidgetType] { HomeWidgetType.load() }
+    var enabledWidgets: [HomeWidgetConfig] { HomeWidgetConfig.load() }
 
-    // Groups widgets into rows: full-width widgets get their own row,
-    // half-width widgets are paired left-right.
-    var widgetRows: [[HomeWidgetType]] {
-        var rows: [[HomeWidgetType]] = []
-        var halfPending: HomeWidgetType? = nil
-        for widget in enabledWidgets {
-            if widget.isFullWidth {
+    // Groups widgets into rows honouring each widget's CHOSEN size:
+    // full-width widgets get their own row, half-width ones pair left-right.
+    var widgetRows: [[HomeWidgetConfig]] {
+        var rows: [[HomeWidgetConfig]] = []
+        var halfPending: HomeWidgetConfig? = nil
+        for config in enabledWidgets {
+            if config.size == .full {
                 if let pending = halfPending {
                     rows.append([pending])
                     halfPending = nil
                 }
-                rows.append([widget])
+                rows.append([config])
             } else {
                 if let pending = halfPending {
-                    rows.append([pending, widget])
+                    rows.append([pending, config])
                     halfPending = nil
                 } else {
-                    halfPending = widget
+                    halfPending = config
                 }
             }
         }
@@ -34,24 +34,14 @@ extension DashboardView {
     }
 
     var widgetGrid: some View {
-        Group {
-            if isEditingWidgets {
-                widgetReorderList
-            } else {
-                widgetNormalGrid
-            }
-        }
-    }
-
-    private var widgetNormalGrid: some View {
         VStack(spacing: 12) {
             ForEach(Array(widgetRows.enumerated()), id: \.offset) { _, row in
-                if row.count == 1 && row[0].isFullWidth {
+                if row.count == 1 && row[0].size == .full {
                     widgetView(for: row[0])
                 } else {
                     HStack(spacing: 12) {
-                        ForEach(row) { type in
-                            widgetView(for: type)
+                        ForEach(row) { config in
+                            widgetView(for: config)
                                 .frame(maxWidth: .infinity)
                         }
                         if row.count == 1 {
@@ -63,81 +53,19 @@ extension DashboardView {
         }
     }
 
-    private var widgetReorderList: some View {
-        let sectionCount = sectionOrder.count
-        let widgetCount = editableWidgets.count
-        let totalRows = sectionCount + widgetCount
-        return List {
-            Section {
-                ForEach(sectionOrder) { sec in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(sec.color.opacity(0.15))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: sec.icon)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(sec.color)
-                        }
-                        Text(sec.title)
-                            .font(AppFont.body)
-                            .foregroundStyle(.primary)
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
-                }
-                .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
-            } header: {
-                Text("Sections")
-                    .font(AppFont.label)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-            }
-
-            Section {
-                ForEach(editableWidgets) { type in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(type.color.opacity(0.15))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: type.icon)
-                                .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(type.color)
-                        }
-                        Text(type.title)
-                            .font(AppFont.body)
-                            .foregroundStyle(.primary)
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
-                }
-                .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
-            } header: {
-                Text("Overview Widgets")
-                    .font(AppFont.label)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-            }
-        }
-        .listStyle(.plain)
-        .environment(\.editMode, .constant(.active))
-        .frame(height: max(200, CGFloat(totalRows) * 56 + 80))
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
-        )
-    }
-
+    // Widget accents since the Liquid Glass reskin: DECORATIVE icon tints
+    // share the app accent; SEMANTIC state colors (danger red, warning
+    // orange, success green) are kept exactly — they carry meaning, not
+    // decoration, and read on both mood schemes.
     @ViewBuilder
-    func widgetView(for type: HomeWidgetType) -> some View {
+    func widgetView(for config: HomeWidgetConfig) -> some View {
+        let type = config.type
+        let size = config.size
         switch type {
         case .tasks:
             HomeWidget(
                 icon: "checklist",
-                iconColor: taskService.overdueCount > 0 ? .red : Color.brandSkyBlue,
+                iconColor: taskService.overdueCount > 0 ? .red : Color.accentColor,
                 title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? String(localized: "urgent") : String(localized: "active"),
@@ -152,29 +80,29 @@ extension DashboardView {
                 title: "Finances",
                 value: netFormatted,
                 subtitle: String(localized: "this month")
-            ) { router.showFinances = true }
+            ) { router.navigate(to: .finances) }
 
         case .documents:
             HomeWidget(
                 icon: "doc.fill",
                 iconColor: documentService.expiringDocs.isEmpty
-                    ? Color(red: 0.55, green: 0.55, blue: 0.95) : .orange,
+                    ? Color.accentColor : .orange,
                 title: "Documents",
                 value: documentService.expiringDocs.isEmpty
                     ? "\(documentService.documents.count)"
                     : "\(documentService.expiringDocs.count)",
                 subtitle: documentService.expiringDocs.isEmpty ? String(localized: "total") : String(localized: "expiring soon"),
                 badge: documentService.expiringDocs.count
-            ) { router.showDocuments = true }
+            ) { router.navigate(to: .documents(id: nil)) }
 
         case .family:
             HomeWidget(
                 icon: "person.2.fill",
-                iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
+                iconColor: Color.accentColor,
                 title: "Family",
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? String(localized: "member") : String(localized: "members")
-            ) { router.showFamily = true }
+            ) { router.navigate(to: .family) }
 
         case .healthScore:
             HomeWidget(
@@ -188,31 +116,46 @@ extension DashboardView {
         case .inventory:
             HomeWidget(
                 icon: "shippingbox.fill",
-                iconColor: .orange,
+                iconColor: Color.accentColor,
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
                 subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
-            ) { router.showInventoryView = true }
+            ) { router.navigate(to: .inventory) }
 
         case .contractors:
             HomeWidget(
                 icon: "hammer.fill",
-                iconColor: Color(red: 0.9, green: 0.65, blue: 0.2),
+                iconColor: Color.accentColor,
                 title: "Contractors",
                 value: "\(contractorService.contractors.count)",
                 subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
-            ) { router.showContractors = true }
+            ) { router.navigate(to: .contractors) }
 
         case .weather:
-            WeatherWidget(
-                cityName: propertyService.primary?.city ?? "",
-                coordinate: propertyService.primary.flatMap {
-                    guard let lat = $0.latitude, let lon = $0.longitude else { return nil }
-                    return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            if size == .full {
+                WeatherWidget(
+                    cityName: propertyService.primary?.city ?? "",
+                    coordinate: propertyService.primary.flatMap {
+                        guard let lat = $0.latitude, let lon = $0.longitude else { return nil }
+                        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                    }
+                ) {
+                    if let url = URL(string: "weather://") {
+                        UIApplication.shared.open(url)
+                    }
                 }
-            ) {
-                if let url = URL(string: "weather://") {
-                    UIApplication.shared.open(url)
+            } else {
+                // Half size: a compact tile that opens the forecast.
+                HomeWidget(
+                    icon: "cloud.sun.fill",
+                    iconColor: Color.accentColor,
+                    title: "Weather",
+                    value: propertyService.primary?.city ?? "–",
+                    subtitle: String(localized: "Tap for forecast")
+                ) {
+                    if let url = URL(string: "weather://") {
+                        UIApplication.shared.open(url)
+                    }
                 }
             }
 
@@ -220,7 +163,7 @@ extension DashboardView {
             HomeWidget(
                 icon: "leaf.fill",
                 iconColor: plantService.plantsNeedingWater.isEmpty
-                    ? Color(red: 0.25, green: 0.78, blue: 0.45)
+                    ? Color.brandSuccess
                     : .orange,
                 title: "Plants",
                 value: "\(plantService.plants.count)",
@@ -228,15 +171,154 @@ extension DashboardView {
                     ? String(localized: "all good")
                     : "\(plantService.plantsNeedingWater.count) need water",
                 badge: plantService.plantsNeedingWater.count
-            ) { router.showWaterPlant = true }
+            ) { router.navigate(to: .plants(id: nil)) }
 
         case .calendar:
-            CalendarLargeWidget {
-                if let url = URL(string: "calshow://") {
-                    UIApplication.shared.open(url)
+            // The widget now belongs to OUR calendar: it previews the house
+            // agenda (events, tasks, deadlines) and opens the in-app page —
+            // no more bouncing out to Apple Calendar.
+            if size == .full {
+                CalendarLargeWidget(upcoming: upcomingAgendaItems) {
+                    router.navigate(to: .calendar)
+                }
+            } else {
+                HomeWidget(
+                    icon: "calendar",
+                    iconColor: Color.accentColor,
+                    title: "Calendar",
+                    value: "\(Calendar.current.component(.day, from: Date()))",
+                    subtitle: upcomingAgendaItems.first?.title
+                        ?? Date().formatted(.dateTime.weekday(.wide))
+                ) {
+                    router.navigate(to: .calendar)
                 }
             }
+
+        case .deliveries:
+            HomeWidget(
+                icon: "shippingbox.and.arrow.backward.fill",
+                iconColor: Color.accentColor,
+                title: "Deliveries",
+                value: "\(deliveryService.activeDeliveries.count)",
+                subtitle: String(localized: "in transit"),
+                badge: deliveryService.activeDeliveries.count
+            ) { router.navigate(to: .deliveries) }
+
+        case .shopping:
+            HomeWidget(
+                icon: "cart.fill",
+                iconColor: Color.accentColor,
+                title: "Shopping list",
+                value: "\(supplyService.totalPending)",
+                subtitle: String(localized: "to buy")
+            ) { router.navigate(to: .supplies) }
+
+        case .journal:
+            HomeWidget(
+                icon: "photo.stack.fill",
+                iconColor: Color.accentColor,
+                title: "Photo Journal",
+                value: "\(photoJournalService.entries.count)",
+                subtitle: String(localized: "memories")
+            ) { router.navigate(to: .photoJournal) }
+
+        case .briefing:
+            // The composed "state of the home" card; at half width it keeps
+            // the lead sentence and the single most useful fact.
+            HouseBriefingCard(nextItem: nextAgendaItem, compact: size == .half)
+
+        case .presence:
+            FamilyPresenceWidget { router.navigate(to: .family) }
+
+        case .budget:
+            BudgetRingWidget { router.navigate(to: .finances) }
+
+        case .pantry:
+            HomeWidget(
+                icon: "basket.fill",
+                iconColor: pantryService.lowStock.isEmpty ? Color.accentColor : .orange,
+                title: "Pantry",
+                value: pantryService.lowStock.isEmpty
+                    ? "\(pantryService.items.count)"
+                    : "\(pantryService.lowStock.count)",
+                subtitle: pantryService.lowStock.isEmpty
+                    ? String(localized: "stocked")
+                    : String(localized: "low stock"),
+                badge: pantryService.lowStock.count
+            ) { router.navigate(to: .pantry) }
+
+        case .insights:
+            ProactiveInsightsCard(compact: size == .half)
+
+        case .propertyValue:
+            PropertyValueSparkWidget { router.navigate(to: .propertyDetails) }
+
+        case .seasonal:
+            seasonalWidget
+
+        case .warranties:
+            HomeWidget(
+                icon: "checkmark.seal.fill",
+                iconColor: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? Color.brandSuccess : .orange,
+                title: "Warranties",
+                value: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? "\(applianceService.appliances.count)"
+                    : "\(applianceService.appliancesExpiringWarranty.count)",
+                subtitle: applianceService.appliancesExpiringWarranty.isEmpty
+                    ? String(localized: "all good")
+                    : String(localized: "expiring soon"),
+                badge: applianceService.appliancesExpiringWarranty.count
+            ) { router.navigate(to: .appliances) }
+
+        case .houseFeed:
+            TodayAtHomeCard(compact: size == .half) {
+                router.navigate(to: .houseFeed)
+            }
+
+        case .whoHome:
+            WhoIsHomeCard { router.navigate(to: .family) }
         }
+    }
+
+    // MARK: - Agenda + seasonal widget helpers
+
+    /// The next few agenda entries the full-width calendar widget previews —
+    /// the same filter the "Next up" card applies, just more of it.
+    var upcomingAgendaItems: [AgendaItem] {
+        let cal = Calendar.current
+        let now = Date()
+        guard let end = cal.date(byAdding: .day, value: 30, to: now) else { return [] }
+        let startOfToday = cal.startOfDay(for: now)
+        return Array(HouseAgenda.items(
+            in: now...end,
+            tasks: taskService.tasks, documents: documentService.documents,
+            appliances: applianceService.appliances, members: familyService.members,
+            financial: financialService.records, plants: plantService.plants,
+            leases: Array(familyService.leases.values),
+            events: calendarEventService.events)
+            .filter { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
+            .prefix(3))
+    }
+
+    /// Current-season progress from the SHARED checklist service, computed
+    /// against the same honesty context the checklist page uses (property
+    /// kind + mapped zones).
+    private var seasonalWidget: some View {
+        let season = Season.current
+        let context = SeasonalPropertyContext(
+            kind: propertyService.primary.flatMap { PropertyKind(rawValue: $0.propertyType) },
+            mappedSpaceKinds: Set(zoneService.zones.map(\.resolvedSpaceKind)),
+            hasMappedZones: !zoneService.zones.isEmpty)
+        let rows = seasonalService.rows(for: season, context: context).filter(\.isVisible)
+        let done = rows.filter { seasonalService.isCompleted($0.id, season: season) }.count
+        return HomeWidget(
+            icon: season.icon,
+            iconColor: season.color,
+            title: "Seasonal",
+            value: rows.isEmpty ? "–" : "\(done)/\(rows.count)",
+            subtitle: season.displayName
+        ) { router.navigate(to: .seasonal) }
     }
 
     // MARK: - Helpers
@@ -260,9 +342,8 @@ extension DashboardView {
     }
 
     var netFormatted: String {
-        let sym = financialService.currencySymbol
-        let abs = Int(Swift.abs(financialService.currentMonthNet))
-        return financialService.currentMonthNet >= 0 ? "+\(abs)\(sym)" : "-\(abs)\(sym)"
+        let net = financialService.currentMonthNet
+        return "\(net >= 0 ? "+" : "")" + financialService.moneyDisplay(net)
     }
 
     var propertyCoordinate: CLLocationCoordinate2D {
@@ -305,6 +386,13 @@ extension DashboardView {
                     center: coord,
                     span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
                 ))
+                // This branch only runs when the property row has NO stored
+                // coordinates — the case MainTabView's launch refresh can't
+                // cover. Feed the geocoded point to Apple Weather so the
+                // smart-home temperature dial gets a real reading; the 1h
+                // cache in `refreshIfStale` makes repeat calls free.
+                await PropertyWeather.refreshIfStale(latitude: coord.latitude,
+                                                     longitude: coord.longitude)
             }
         } catch {
             // geocoding failed — map keeps last known position
@@ -333,6 +421,7 @@ extension DashboardView {
     }
 
     func startPulse() {
+        guard !UIAccessibility.isReduceMotionEnabled else { return }
         withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
             pulsing = true
         }

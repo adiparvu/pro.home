@@ -50,7 +50,7 @@ final class GlobalAutomationService {
                 )
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return []
         }
     }
@@ -73,7 +73,7 @@ final class GlobalAutomationService {
             }
             try await supabase.from("property_automations").insert(rows).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 import SwiftUI
+import UIKit
+import Supabase
 
 @MainActor
 @Observable
@@ -11,19 +13,8 @@ final class ReceiptService {
     var isLoading = false
     var error: String?
 
-    private let isoDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
-
-    private let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
+    private let isoDate: DateFormatter = AppDate.day
+    private let monthFormatter: DateFormatter = AppDate.monthKey
 
     // MARK: - Computed
 
@@ -46,9 +37,7 @@ final class ReceiptService {
 
     func monthDisplayName(_ key: String) -> String {
         guard let date = monthFormatter.date(from: key) else { return key }
-        let f = DateFormatter()
-        f.dateFormat = "LLLL yyyy"
-        return f.string(from: date).capitalized
+        return AppDateDisplay.fullMonthYear.string(from: date).capitalized
     }
 
     func receiptsForMonth(_ monthKey: String) -> [Receipt] {
@@ -93,12 +82,9 @@ final class ReceiptService {
     func spendForYear(_ year: Int) -> [DailySpend] {
         var grouped: [String: (date: Date, total: Double)] = [:]
         let filtered = receipts.filter { $0.date.hasPrefix("\(year)") }
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        f.locale = Locale(identifier: "en_US_POSIX")
         for r in filtered {
             let key = String(r.date.prefix(7))
-            guard let date = f.date(from: key) else { continue }
+            guard let date = AppDate.monthKey.date(from: key) else { continue }
             grouped[key] = (date: grouped[key]?.date ?? date, total: (grouped[key]?.total ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.date, total: $0.value.total) }
@@ -154,29 +140,110 @@ final class ReceiptService {
             .sorted { $0.0 < $1.0 }
     }
 
+    // MARK: - Price history (per product, lexicon-normalized)
+
+    /// Every real purchase of `productName` read off scanned receipts,
+    /// newest first. Matching goes through the product lexicon so
+    /// "Lapte Zuzu 1.5%" and "Milk" land on the same product; nothing is
+    /// interpolated — every entry is a line that exists on a stored receipt.
+    func priceEntries(matching productName: String) -> [ProductPriceEntry] {
+        let target = ReceiptProductLexicon.fold(
+            ReceiptProductLexicon.normalize(productName))
+        guard !target.isEmpty else { return [] }
+        let receiptsById = Dictionary(uniqueKeysWithValues: receipts.map { ($0.id, $0) })
+        return receiptItems.compactMap { item -> ProductPriceEntry? in
+            let itemKey = ReceiptProductLexicon.fold(
+                ReceiptProductLexicon.normalize(item.name))
+            guard itemKey == target
+                || ReceiptProductLexicon.match(item.name, against: productName)
+                    >= ReceiptProductLexicon.matchThreshold else { return nil }
+            guard let receipt = receiptsById[item.receiptId],
+                  let date = isoDate.date(from: receipt.date) else { return nil }
+            return ProductPriceEntry(
+                id: item.id,
+                date: date,
+                price: item.unitPrice > 0 ? item.unitPrice : item.totalPrice,
+                store: receipt.storeName,
+                receipt: receipt)
+        }
+        .sorted { $0.date > $1.date }
+    }
+
+    /// All scanned products grouped by their lexicon-normalized name,
+    /// each with its purchase entries (newest first). Ordered by purchase
+    /// count, then recency — the products the household actually tracks.
+    func productPriceGroups() -> [ProductPriceGroup] {
+        let receiptsById = Dictionary(uniqueKeysWithValues: receipts.map { ($0.id, $0) })
+        var groups: [String: (display: String, entries: [ProductPriceEntry])] = [:]
+        for item in receiptItems {
+            let display = ReceiptProductLexicon.normalize(item.name)
+            let key = ReceiptProductLexicon.fold(display)
+            guard !key.isEmpty,
+                  let receipt = receiptsById[item.receiptId],
+                  let date = isoDate.date(from: receipt.date) else { continue }
+            let entry = ProductPriceEntry(
+                id: item.id,
+                date: date,
+                price: item.unitPrice > 0 ? item.unitPrice : item.totalPrice,
+                store: receipt.storeName,
+                receipt: receipt)
+            groups[key, default: (display, [])].entries.append(entry)
+        }
+        return groups.map { key, value in
+            ProductPriceGroup(id: key,
+                              name: value.display,
+                              entries: value.entries.sorted { $0.date > $1.date })
+        }
+        .sorted {
+            if $0.entries.count != $1.entries.count {
+                return $0.entries.count > $1.entries.count
+            }
+            return ($0.entries.first?.date ?? .distantPast)
+                 > ($1.entries.first?.date ?? .distantPast)
+        }
+    }
+
+    /// The most frequently scanned product names (lexicon-normalized),
+    /// excluding anything that already matches a name in `excluding` —
+    /// real purchase history only, for "you buy this often" suggestions.
+    func frequentProducts(excluding excludedNames: [String], limit: Int = 6) -> [String] {
+        let groups = productPriceGroups()
+        guard !groups.isEmpty else { return [] }
+        let excludedKeys = Set(excludedNames.map {
+            ReceiptProductLexicon.fold(ReceiptProductLexicon.normalize($0))
+        })
+        return groups
+            .filter { group in
+                guard !excludedKeys.contains(group.id) else { return false }
+                return !excludedNames.contains {
+                    ReceiptProductLexicon.match(group.name, against: $0)
+                        >= ReceiptProductLexicon.matchThreshold
+                }
+            }
+            .prefix(limit)
+            .map(\.name)
+    }
+
     // MARK: - Load
 
     func load(propertyId: UUID) async {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let fr: [Receipt] = supabase
-                .from("receipts").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("date", ascending: false).execute().value
-            async let fi: [ReceiptItem] = supabase
-                .from("receipt_items").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true).execute().value
-            async let fb: [HouseholdBudget] = supabase
-                .from("household_budgets").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("month", ascending: false).execute().value
+            async let fr: [Receipt] = PropertyRepo.fetch(
+                table: "receipts", propertyId: propertyId,
+                scope: .strict, order: "date", limit: 1000)
+            async let fi: [ReceiptItem] = PropertyRepo.fetch(
+                table: "receipt_items", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 1000)
+            async let fb: [HouseholdBudget] = PropertyRepo.fetch(
+                table: "household_budgets", propertyId: propertyId,
+                scope: .strict, order: "month", limit: 500)
             receipts = try await fr
             receiptItems = try await fi
             budgets = try await fb
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -201,8 +268,40 @@ final class ReceiptService {
         return inserted
     }
 
+    // MARK: - Receipt image (private, property-scoped `receipt-media` bucket)
+
+    private static let mediaBucket = "receipt-media"
+
+    /// Uploads a receipt photo to the private receipt-media bucket and returns
+    /// its storage path (`{propertyId}/{uuid}.jpg`), or nil on failure. The
+    /// path is stored in the receipt's `image_url`; reads resolve short-lived
+    /// signed URLs (the same pattern plant/chat media use).
+    func uploadReceiptImage(_ image: UIImage, propertyId: UUID) async -> String? {
+        guard let data = image.uploadJPEG(quality: 0.8, maxDimension: 2048) else { return nil }
+        let path = "\(propertyId.uuidString)/\(UUID().uuidString).jpg"
+        do {
+            try await supabase.storage.from(Self.mediaBucket)
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            return path
+        } catch {
+            self.error = error.recordableDescription
+            return nil
+        }
+    }
+
+    /// Resolves a stored receipt-image path to a displayable signed URL (legacy
+    /// full URLs pass through), cached under the signing window.
+    static func resolveImage(_ stored: String) async -> URL? {
+        if stored.hasPrefix("http") { return URL(string: stored) }
+        if let cached = await ReceiptURLCache.shared.get(stored) { return cached }
+        guard let url = try? await supabase.storage.from(mediaBucket)
+            .createSignedURL(path: stored, expiresIn: 3600) else { return nil }
+        await ReceiptURLCache.shared.set(stored, url: url)
+        return url
+    }
+
     func updateReceipt(_ receipt: Receipt) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewReceiptPayload(
             propertyId: receipt.propertyId,
             storeName: receipt.storeName,
@@ -220,7 +319,7 @@ final class ReceiptService {
                 .eq("id", value: receipt.id.uuidString)
                 .select().single().execute().value
             if let i = receipts.firstIndex(where: { $0.id == receipt.id }) { receipts[i] = updated }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     func deleteReceipt(_ receipt: Receipt) async {
@@ -229,29 +328,56 @@ final class ReceiptService {
         do {
             try await supabase.from("receipts").delete()
                 .eq("id", value: receipt.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
     }
 
     // MARK: - Budgets
 
-    func upsertBudget(propertyId: UUID, category: String, monthlyLimit: Double) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+    @discardableResult
+    func upsertBudget(propertyId: UUID, category: String, monthlyLimit: Double) async -> Bool {
+        let month = currentMonthKey
+        let now = ISODate.string(from: Date())
         let payload = BudgetUpsertPayload(
             propertyId: propertyId, category: category,
-            monthlyLimit: monthlyLimit, month: currentMonthKey,
+            monthlyLimit: monthlyLimit, month: month,
             createdAt: now, updatedAt: now
         )
         do {
-            let upserted: HouseholdBudget = try await supabase
+            // Write only — do NOT decode a `.select().single()` return. The
+            // read-back couples the write's success to a second round-trip and
+            // to decoding the row shape; a hiccup there used to look like the
+            // save silently failing. We upsert, then reflect the value locally
+            // and reconcile ids from a reload.
+            try await supabase
                 .from("household_budgets")
                 .upsert(payload, onConflict: "property_id,category,month")
-                .select().single().execute().value
-            if let i = budgets.firstIndex(where: { $0.id == upserted.id }) {
-                budgets[i] = upserted
+                .execute()
+            error = nil
+            if let i = budgets.firstIndex(where: {
+                $0.propertyId == propertyId && $0.category == category && $0.month == month
+            }) {
+                budgets[i].monthlyLimit = monthlyLimit
+                budgets[i].updatedAt = now
             } else {
-                budgets.insert(upserted, at: 0)
+                await loadBudgets(propertyId: propertyId)
             }
-        } catch { self.error = error.localizedDescription }
+            return true
+        } catch {
+            self.error = error.recordableDescription
+            return false
+        }
+    }
+
+    /// Re-fetch just the budgets for a property (used after an insert to pick
+    /// up the server-assigned id without reloading receipts).
+    func loadBudgets(propertyId: UUID) async {
+        do {
+            budgets = try await PropertyRepo.fetch(
+                table: "household_budgets", propertyId: propertyId,
+                scope: .strict, order: "month", limit: 500)
+        } catch {
+            self.error = error.recordableDescription
+        }
     }
 
     func deleteBudget(_ budget: HouseholdBudget) async {
@@ -259,6 +385,42 @@ final class ReceiptService {
         do {
             try await supabase.from("household_budgets").delete()
                 .eq("id", value: budget.id.uuidString).execute()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = error.recordableDescription }
+    }
+}
+
+// MARK: - Price history models
+
+/// One real purchase of a product, read off a stored receipt line.
+struct ProductPriceEntry: Identifiable {
+    let id: UUID
+    let date: Date
+    /// Unit price when the receipt states one; otherwise the line total.
+    let price: Double
+    let store: String
+    let receipt: Receipt
+}
+
+/// A product (lexicon-normalized name) with all its scanned purchases,
+/// newest first.
+struct ProductPriceGroup: Identifiable {
+    let id: String        // folded normalized name
+    let name: String
+    let entries: [ProductPriceEntry]
+}
+
+// MARK: - Signed-URL cache for receipt images
+
+private actor ReceiptURLCache {
+    static let shared = ReceiptURLCache()
+    private var entries: [String: (url: URL, expiresAt: Date)] = [:]
+    private let ttl: TimeInterval = 50 * 60
+
+    func get(_ key: String) -> URL? {
+        guard let e = entries[key], e.expiresAt > Date() else { return nil }
+        return e.url
+    }
+    func set(_ key: String, url: URL) {
+        entries[key] = (url, Date().addingTimeInterval(ttl))
     }
 }

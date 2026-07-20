@@ -1,6 +1,6 @@
 import QRCode from 'qrcode'
 
-// PRV House "P" letterform in a white rounded square, centered at (cx, cy)
+// PRVIO "P" letterform in a white rounded square, centered at (cx, cy)
 function prvLogoOverlay(cx: number, cy: number, pixelSize: number, dark: string): string {
   const half = pixelSize / 2
   // In a 100-unit viewBox: stem at x=18..46, bowl outer M46,10→M46,56 curving through x=90

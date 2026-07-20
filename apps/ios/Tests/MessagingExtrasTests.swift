@@ -30,16 +30,32 @@ final class MessagingExtrasTests: XCTestCase {
 
     // MARK: - Event date formatting
 
-    func testChatEventDateDisplayFormatted() {
+    func testChatEventScheduleDisplayFormatted() {
         let ev = ChatEvent(t: "X", d: nil, date: "2026-06-28T18:00:00Z", loc: nil)
-        XCTAssertFalse(ev.dateDisplay.isEmpty)
-        XCTAssertNotEqual(ev.dateDisplay, ev.date)   // formatted, not raw ISO
+        XCTAssertFalse(ev.scheduleDisplay.isEmpty)
+        XCTAssertNotEqual(ev.scheduleDisplay, ev.date)   // formatted, not raw ISO
     }
 
     func testChatEventBadDateFallsBack() {
         let ev = ChatEvent(t: "X", d: nil, date: "garbage", loc: nil)
         XCTAssertNil(ev.parsedDate)
-        XCTAssertEqual(ev.dateDisplay, "garbage")
+        XCTAssertEqual(ev.scheduleDisplay, "garbage")
+    }
+
+    func testChatEventTimedRangeShowsBothTimes() {
+        let ev = ChatEvent(t: "X", d: nil, date: "2026-06-28T18:00:00Z", loc: nil,
+                           end: "2026-06-28T20:00:00Z")
+        XCTAssertFalse(ev.isAllDay)
+        XCTAssertNotNil(ev.parsedEnd)
+        // Same-day timed range renders "start–end" with both wall-clock times.
+        XCTAssertTrue(ev.scheduleDisplay.contains("–"))
+    }
+
+    func testChatEventAllDayHidesTimes() {
+        let ev = ChatEvent(t: "X", d: nil, date: "2026-06-28T00:00:00Z", loc: nil,
+                           end: "2026-06-28T00:00:00Z", allDay: true)
+        XCTAssertTrue(ev.isAllDay)
+        XCTAssertFalse(ev.scheduleDisplay.contains(":"))   // no wall-clock time
     }
 
     // MARK: - Read receipts / reactions decoding

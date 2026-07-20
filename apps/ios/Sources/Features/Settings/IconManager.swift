@@ -1,5 +1,30 @@
 import SwiftUI
 import Observation
+import UIKit
+
+// MARK: - Alternate-icon switching (alert-free path retired)
+
+extension UIApplication {
+    /// There is NO reliable alert-free icon switch anymore. The old probe
+    /// (`responds(to:)` on the private setter) proved untrustworthy in the
+    /// field: on current iOS the selector still EXISTS — so the probe said
+    /// yes — but invoking it presents the same "You have changed the icon"
+    /// system alert as the public API (observed on device in build 1049,
+    /// IMG_8538). "The selector exists" is not "the alert is suppressed",
+    /// so every automatic mood/appearance swap now stands down permanently;
+    /// only a user-initiated apply may switch the icon, with Apple's
+    /// standard one-time alert as direct feedback.
+    static var supportsSilentIconSwitching: Bool { false }
+
+    /// Public-API passthrough, kept so the manual apply path reads the same.
+    /// The private-selector invocation is gone for good — it stopped being
+    /// silent, and shipping a `unsafeBitCast` onto a private setter is an
+    /// App Store risk with zero remaining benefit.
+    func setAlternateIconNameSilently(_ iconName: String?,
+                                      completion: ((Error?) -> Void)? = nil) {
+        setAlternateIconName(iconName, completionHandler: completion)
+    }
+}
 
 // MARK: - App Icon theme model
 //
@@ -34,6 +59,16 @@ struct AppIconTheme: Identifiable, Equatable {
     var isDefault: Bool { lightIcon == nil && darkIcon == nil }
 
     var story: String { Locale.appIsRomanian ? storyRO : storyEN }
+
+    /// The merged day/night asset for pair themes: ONE alternate icon whose
+    /// dark variant iOS renders by itself — no setAlternateIconName on theme
+    /// change, so the system "You have changed the icon" alert never fires
+    /// for appearance switches. Naming: "…Light" pairs drop the suffix
+    /// ("AppIconGlass"), joined singles gain "Set" ("AppIconRoseMochaSet").
+    var pairedIcon: String? {
+        guard hasPair, let lightIcon else { return nil }
+        return lightIcon.hasSuffix("Light") ? String(lightIcon.dropLast(5)) : lightIcon + "Set"
+    }
 
     /// The alternate icon name to install for a given appearance (nil = primary).
     func iconName(isDark: Bool) -> String? {
@@ -116,8 +151,8 @@ enum AppIconCatalog {
             category: .signature,
             lightPreview: "PrimaryLight", darkPreview: "PrimaryDark", lightIcon: nil, darkIcon: nil),
         pair("glass", "Liquid Glass", base: "Glass", .signature,
-             "Sticlă lichidă, lumină care curge. Iconul iOS 26, translucid și viu.",
-             "Liquid glass, flowing light. The iOS 26 icon — translucent and alive."),
+             "Sticlă lichidă, lumină care curge. Translucid și viu, ca sistemul.",
+             "Liquid glass, flowing light. Translucent and alive, like the system."),
         pair("classic", "Clasic", base: "Classic", .signature,
              "Bleumarin și aur. Clasicul care nu iese niciodată din modă.",
              "Navy and gold. The classic that never goes out of style."),
@@ -132,18 +167,20 @@ enum AppIconCatalog {
         pair("metallic", "Metalic", base: "Metallic", .elegant,
              "Metal șlefuit, reflexii reci. Precizie industrială, rafinată.",
              "Brushed metal, cool reflections. Industrial precision, refined."),
-        single("gold-noir", "Aur Nocturn", asset: "GoldNoir", .elegant,
-               "Aur masiv pe negru profund. Sobru, scump, memorabil.",
-               "Solid gold on deep black. Sober, expensive, unforgettable."),
-        single("metallic-gold", "Aur Lichid", asset: "MetallicGold", .elegant,
-               "Aur topit sub sticlă. Lumina alunecă pe fiecare curbă.",
-               "Molten gold under glass. Light glides across every curve."),
-        single("rose-mocha", "Rose Mocha", asset: "RoseMocha", .elegant,
-               "Roz-cafeniu, cald ca o cafea de seară.",
-               "Rosy mocha, warm as an evening coffee."),
-        single("rose-noir", "Rose Noir", asset: "RoseNoir", .elegant,
-               "Cupru trandafiriu pe noapte adâncă. Contrast dramatic.",
-               "Rose copper on deep night. Dramatic contrast."),
+        // Two single designs joined into a day/night set: liquid gold by
+        // day, gold on black by night.
+        AppIconTheme(id: "metallic-gold", name: "Aur Lichid",
+            storyRO: "Aur topit ziua, aur pe negru profund noaptea.",
+            storyEN: "Molten gold by day, gold on deep black by night.",
+            category: .elegant,
+            lightPreview: "MetallicGold", darkPreview: "GoldNoir",
+            lightIcon: "AppIconMetallicGold", darkIcon: "AppIconGoldNoir"),
+        AppIconTheme(id: "rose-mocha", name: "Rose Mocha",
+            storyRO: "Roz-cafeniu cald ziua, cupru pe noapte adâncă seara.",
+            storyEN: "Warm rosy mocha by day, rose copper on deep night after dark.",
+            category: .elegant,
+            lightPreview: "RoseMocha", darkPreview: "RoseNoir",
+            lightIcon: "AppIconRoseMocha", darkIcon: "AppIconRoseNoir"),
         single("silver-noir", "Argint Nocturn", asset: "SilverNoir", .elegant,
                "Argint pur pe umbră. Sobrietate lucioasă.",
                "Pure silver on shadow. Glossy restraint."),
@@ -167,12 +204,12 @@ enum AppIconCatalog {
         single("forest-royal", "Pădure Regală", asset: "ForestRoyal", .nature,
                "Verde smarald și aur regal. Natura, la rang de coroană.",
                "Emerald green and royal gold. Nature, crowned."),
-        single("emerald-gloss", "Smarald Lucios", asset: "EmeraldGloss", .nature,
-               "Smarald sub un strat de sticlă. Verde profund, lustruit.",
-               "Emerald under a coat of glass. Deep green, polished."),
-        single("emerald-marble", "Smarald Marmură", asset: "EmeraldMarble", .nature,
-               "Marmură verde cu vinișoare de lumină. Solid și scump.",
-               "Green marble veined with light. Solid and rich."),
+        AppIconTheme(id: "emerald-marble", name: "Smarald Marmură",
+            storyRO: "Marmură verde ziua, smarald lustruit sub sticlă noaptea.",
+            storyEN: "Green marble by day, polished emerald under glass by night.",
+            category: .nature,
+            lightPreview: "EmeraldMarble", darkPreview: "EmeraldGloss",
+            lightIcon: "AppIconEmeraldMarble", darkIcon: "AppIconEmeraldGloss"),
         single("lavender-royal", "Lavandă Regală", asset: "LavenderRoyal", .nature,
                "Mov profund și aur. Un câmp de lavandă la asfințit.",
                "Deep purple and gold. A lavender field at sundown."),
@@ -230,11 +267,62 @@ enum AppIconCatalog {
                "Just the outline, nothing more. Pure clarity."),
     ]
 
-    static func theme(id: String) -> AppIconTheme { all.first { $0.id == id } ?? all[0] }
+    /// Ids of singles that were merged into day/night pairs keep resolving.
+    private static let mergedIDs = ["gold-noir": "metallic-gold",
+                                    "rose-noir": "rose-mocha",
+                                    "emerald-gloss": "emerald-marble"]
+
+    static func theme(id: String) -> AppIconTheme {
+        let resolved = mergedIDs[id] ?? id
+        return all.first { $0.id == resolved } ?? all[0]
+    }
 
     static func theme(forIconName name: String?) -> AppIconTheme {
         guard let name else { return all[0] }
-        return all.first { $0.lightIcon == name || $0.darkIcon == name } ?? all[0]
+        return all.first {
+            $0.lightIcon == name || $0.darkIcon == name || $0.pairedIcon == name
+        } ?? all[0]
+    }
+}
+
+// MARK: - Icon families (carousel page = family, swatches = its variants)
+//
+// The picker browses FAMILIES — one hero icon per page — and offers each
+// family's related designs as swatch "tints" below, like the system icon
+// customizers. Every catalog theme belongs to exactly one family (verified
+// by AppIconFamilyTests), so nothing can silently drop out of the gallery.
+
+struct IconFamily: Identifiable, Equatable {
+    let id: String
+    let variantIDs: [String]
+    var variants: [AppIconTheme] { variantIDs.map(AppIconCatalog.theme(id:)) }
+}
+
+enum AppIconFamilies {
+    static let all: [IconFamily] = [
+        IconFamily(id: "default",     variantIDs: ["default"]),
+        IconFamily(id: "glass",       variantIDs: ["glass"]),
+        IconFamily(id: "classic",     variantIDs: ["classic"]),
+        IconFamily(id: "roseGold",    variantIDs: ["roseGold", "rose-mocha"]),
+        IconFamily(id: "baroque",     variantIDs: ["baroque", "baroque-cream", "baroque-floral"]),
+        IconFamily(id: "metallic",    variantIDs: ["metallic", "metallic-gold"]),
+        IconFamily(id: "noir-metals", variantIDs: ["silver-noir"]),
+        IconFamily(id: "forest",      variantIDs: ["forest", "forest-royal"]),
+        IconFamily(id: "emerald",     variantIDs: ["emerald", "emerald-marble"]),
+        IconFamily(id: "sunset",      variantIDs: ["sunset"]),
+        IconFamily(id: "lavender",    variantIDs: ["lavender", "lavender-royal"]),
+        IconFamily(id: "arctic",      variantIDs: ["arctic"]),
+        IconFamily(id: "crimson",     variantIDs: ["crimson"]),
+        IconFamily(id: "dazzle",      variantIDs: ["dazzle", "dazzle-splatter", "dazzle-cosmic", "dazzle-floral"]),
+        IconFamily(id: "neon",        variantIDs: ["noir", "neon-magenta"]),
+        IconFamily(id: "retro",       variantIDs: ["retro-vapor", "retro-pixel", "vapor-pixel"]),
+        IconFamily(id: "midnight",    variantIDs: ["midnight"]),
+        IconFamily(id: "carbon",      variantIDs: ["carbon"]),
+        IconFamily(id: "minimal",     variantIDs: ["minimal", "minimal-outline"]),
+    ]
+
+    static func family(containing themeID: String) -> IconFamily {
+        all.first { $0.variantIDs.contains(themeID) } ?? all[0]
     }
 }
 
@@ -243,6 +331,7 @@ enum AppIconCatalog {
 struct IconColorSchemeWatcher: View {
     var iconManager: IconManager
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Color.clear
@@ -252,47 +341,224 @@ struct IconColorSchemeWatcher: View {
             .onAppear {
                 iconManager.colorSchemeChanged(isDark: colorScheme == .dark)
             }
+            .onChange(of: scenePhase) { _, phase in
+                // Foreground is the one moment iOS reliably allows icon
+                // changes — retry a mood face a too-early launch attempt
+                // could not install (no-op when the icon is already right).
+                if phase == .active { iconManager.sceneBecameActive() }
+            }
     }
 }
 
 // MARK: - Icon Manager
+
+/// One face of a paired (day/night) icon theme.
+enum IconFace: String {
+    case light, dark
+}
 
 @MainActor
 @Observable
 final class IconManager {
     var selected: AppIconTheme
 
+    /// When set, this exact half of a pair stays installed regardless of the
+    /// system appearance — the user explicitly chose it. nil = the pair rides
+    /// the merged day/night asset and switches automatically.
+    var pinnedFace: IconFace? {
+        didSet { UserDefaults.standard.set(pinnedFace?.rawValue, forKey: "prvio.pinnedIconFace") }
+    }
+
     @ObservationIgnored @AppStorage("prvio.selectedIconThemeId") private var savedId: String = "default"
-    @ObservationIgnored @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true
+
+    /// Observable (unlike `@AppStorage`, which Observation ignores) so the
+    /// picker can react when the toggle flips — e.g. to make pair faces
+    /// individually selectable. Persists to the same key as before.
+    var autoSwitch: Bool {
+        didSet { UserDefaults.standard.set(autoSwitch, forKey: "prvio.autoSwitchIcon") }
+    }
+
+    /// "Iconița urmează atmosfera" (Settings → Aspect → Fundal): the icon
+    /// installs the selected pair's face for the RESOLVED MOOD — night mood
+    /// → dark face, morning/day → light face — instead of riding the merged
+    /// asset (which follows the SYSTEM appearance, something the mood does
+    /// not control). Default OFF. Flip it through `setFollowsMood(_:)`.
+    private(set) var followsMood: Bool {
+        didSet { UserDefaults.standard.set(followsMood, forKey: "app.mood.autoIcon") }
+    }
 
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
+
+    /// A manual pick owns the icon for a beat — any appearance-driven
+    /// re-apply landing inside this window is dropped, so the icon can never
+    /// visibly flip right after the user chose it.
+    @ObservationIgnored private var suppressAutoUntil: Date = .distantPast
+
+    @ObservationIgnored private var moodObserver: NSObjectProtocol?
 
     init() {
         let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         selected = AppIconCatalog.theme(id: id)
+        autoSwitch = (UserDefaults.standard.object(forKey: "prvio.autoSwitchIcon") as? Bool) ?? true
+        pinnedFace = UserDefaults.standard.string(forKey: "prvio.pinnedIconFace").flatMap(IconFace.init)
+        followsMood = (UserDefaults.standard.object(forKey: "app.mood.autoIcon") as? Bool) ?? false
+
+        // The engine announces every resolved-mood change while the app runs.
+        moodObserver = NotificationCenter.default.addObserver(
+            forName: .appMoodResolvedChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.moodDidChange() }
+        }
+        // The mood may have rolled over while the app was closed, and iOS
+        // only changes icons with the app foregrounded — catch up now (the
+        // engine's launch resolution is already current, so no notification
+        // will fire for it).
+        if followsMood {
+            Task { @MainActor [weak self] in self?.moodDidChange() }
+        }
+    }
+
+    deinit {
+        if let moodObserver { NotificationCenter.default.removeObserver(moodObserver) }
     }
 
     var supportsAlternateIcons: Bool { UIApplication.shared.supportsAlternateIcons }
 
-    func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
-        let name = theme.iconName(isDark: isDark)
+    /// The exact alternate-icon name currently installed (nil = primary).
+    /// Lets the picker mark the precise pair face that is applied.
+    var appliedIconName: String? { lastAppliedName }
+
+    /// True when the mood-following option can actually do something: the
+    /// selected theme must be a pair with installable alternate faces (the
+    /// default primary icon has none — iOS already day/night-switches it
+    /// with the SYSTEM appearance, which the mood does not drive).
+    var canFollowMood: Bool {
+        selected.hasPair && !selected.isDefault && supportsAlternateIcons
+            // Without the alert-free path, every mood flip would surface the
+            // system's "changed the icon" modal — the feature honestly
+            // reports itself unavailable instead (the Fundal caption says why).
+            && UIApplication.supportsSilentIconSwitching
+    }
+
+    /// The resolved mood's darkness — the one signal `followsMood` rides.
+    private var moodIsDark: Bool {
+        AppMoodEngine.shared.resolved.palette.colorScheme == .dark
+    }
+
+    /// The asset to install for a theme: an explicitly pinned face wins;
+    /// then a mood-following pair installs the exact face for the resolved
+    /// mood; otherwise pair themes with auto-switch ride the merged
+    /// day/night asset (iOS adapts it silently with the system appearance);
+    /// auto-switch off falls back to the face matching the current
+    /// appearance.
+    private func resolvedName(for theme: AppIconTheme, isDark: Bool) -> String? {
+        if theme.hasPair {
+            if let face = pinnedFace { return theme.iconName(isDark: face == .dark) }
+            if followsMood, !theme.isDefault { return theme.iconName(isDark: moodIsDark) }
+            if autoSwitch, let paired = theme.pairedIcon { return paired }
+        }
+        return theme.iconName(isDark: isDark)
+    }
+
+    /// What `apply` would install right now — lets the picker decide whether
+    /// the shown configuration is already the active one.
+    func expectedName(for theme: AppIconTheme, isDark: Bool) -> String? {
+        resolvedName(for: theme, isDark: isDark)
+    }
+
+    func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false,
+               automatic: Bool = false) {
+        // An AUTOMATIC swap (mood tick, scene activation, appearance
+        // migration) that cannot be silent must not happen at all — the
+        // public fallback would put the system alert on screen at every
+        // mood change. Manual applies keep the fallback: one alert as
+        // direct feedback for a deliberate tap is honest.
+        if automatic, !UIApplication.supportsSilentIconSwitching { return }
+        let name = resolvedName(for: theme, isDark: isDark)
         guard force || name != lastAppliedName else { return }
-        UIApplication.shared.setAlternateIconName(name) { [weak self] error in
-            guard error == nil else { return }
+        // Commit state synchronously, *before* the async system call. It used
+        // to be committed inside the completion, so anything reading
+        // `selected`/`lastAppliedName` right after Apply — the colour-scheme
+        // watcher, the Apply bar, an immediate second tap — still saw the
+        // previous theme and could re-install the old icon.
+        lastAppliedName = name
+        selected = theme
+        savedId = theme.id
+        // The public found-item pages wear this icon — refresh their
+        // mirror and repoint published rows (IMG_8709: change the app
+        // icon, the pages change with it).
+        PublicAppIconMirror.sync()
+        UIApplication.shared.setAlternateIconNameSilently(name) { [weak self] error in
+            guard error != nil else { return }
+            // The system rejected the change — roll back to what is actually
+            // installed, unless a newer apply already superseded this one.
             Task { @MainActor [weak self] in
-                self?.lastAppliedName = name
-                self?.selected = theme
-                self?.savedId = theme.id
+                guard let self, self.lastAppliedName == name else { return }
+                let actual = UIApplication.shared.alternateIconName
+                self.lastAppliedName = actual
+                self.selected = AppIconCatalog.theme(forIconName: actual)
+                self.savedId = self.selected.id
             }
         }
     }
 
-    func select(_ theme: AppIconTheme, isDark: Bool) {
+    /// `pinFace` non-nil installs exactly that half of a pair and keeps it
+    /// through appearance changes; nil restores automatic day/night.
+    ///
+    /// Honest interplay with "Iconița urmează atmosfera": pinning a face is
+    /// a direct contradiction of the mood driving the face, so the manual
+    /// choice wins and the option turns itself off (its caption on the
+    /// Fundal page says so). Picking a new THEME keeps the option on — the
+    /// mood then drives the new design's day/night faces.
+    func select(_ theme: AppIconTheme, isDark: Bool, pinFace: IconFace? = nil) {
+        pinnedFace = theme.hasPair ? pinFace : nil
+        if pinFace != nil { followsMood = false }
+        suppressAutoUntil = Date().addingTimeInterval(2.5)
         apply(theme, isDark: isDark, force: true)
     }
 
+    // MARK: Mood-following icon
+
+    /// The Fundal page's toggle. Turning it on releases any pinned face
+    /// (the pin would contradict the mood) and immediately installs the
+    /// resolved mood's face; turning it off restores the standard behavior
+    /// (paired themes ride the merged day/night asset with the system).
+    func setFollowsMood(_ on: Bool) {
+        guard on != followsMood else { return }
+        followsMood = on
+        if on { pinnedFace = nil }
+        guard canFollowMood else { return }
+        apply(selected, isDark: moodIsDark)
+    }
+
+    /// Resolved mood changed (engine notification / launch catch-up):
+    /// install the matching face. `apply` no-ops when the right face is
+    /// already installed, so morning→day never touches the system.
+    private func moodDidChange() {
+        guard followsMood, canFollowMood else { return }
+        apply(selected, isDark: moodIsDark, automatic: true)
+    }
+
+    /// Scene became active: retry the mood face in case the launch-time
+    /// attempt ran before iOS considered the app foregrounded (a failed
+    /// apply rolls `lastAppliedName` back, so this retry is never a no-op
+    /// masked by stale state — and a clean state makes it free).
+    func sceneBecameActive() {
+        guard followsMood, canFollowMood else { return }
+        apply(selected, isDark: moodIsDark, automatic: true)
+    }
+
+    /// Appearance changes no longer install anything — the merged pair asset
+    /// carries both variants and iOS switches them itself, silently. The one
+    /// job left is migrating users still on a legacy per-face name (installed
+    /// before the merge) onto the merged asset, once. A mood-following icon
+    /// deliberately KEEPS its per-face name, so the migration skips it.
     func colorSchemeChanged(isDark: Bool) {
-        guard autoSwitch, selected.hasPair else { return }
-        apply(selected, isDark: isDark)
+        guard pinnedFace == nil, !followsMood,
+              autoSwitch, selected.hasPair, let paired = selected.pairedIcon,
+              lastAppliedName != nil, lastAppliedName != paired,
+              AppIconCatalog.theme(forIconName: lastAppliedName).id == selected.id else { return }
+        guard Date() >= suppressAutoUntil else { return }
+        apply(selected, isDark: isDark, automatic: true)
     }
 }

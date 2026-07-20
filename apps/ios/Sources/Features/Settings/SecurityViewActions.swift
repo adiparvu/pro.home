@@ -20,6 +20,7 @@ extension SecurityView {
         do {
             try await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: id))
             totpFactorId = nil
+            await AccountSecurityService.shared.recordEvent("totp_disabled")
             HapticFeedback.success()
         } catch {
             alertMessage = String(localized: "Could not disable. Please try again.")
@@ -51,6 +52,7 @@ extension SecurityView {
         guard let email = auth.session?.user.email else { return }
         do {
             try await supabase.auth.resetPasswordForEmail(email)
+            await AccountSecurityService.shared.recordEvent("password_reset_requested")
             passwordResetSent = true
             alertMessage = String(format: String(localized: "Reset email sent to %@. Check your inbox."), email)
             showPasswordAlert = true
@@ -67,19 +69,7 @@ extension SecurityView {
         isExporting = true
         Task {
             do {
-                let userId = try await supabase.auth.session.user.id
-                let tasksData   = (try? await supabase.from("maintenance_tasks").select().execute().data)   ?? Data()
-                let recordsData = (try? await supabase.from("financial_records").select().execute().data)   ?? Data()
-                let docsData    = (try? await supabase.from("documents").select().execute().data)            ?? Data()
-                let tasks     = (try? JSONSerialization.jsonObject(with: tasksData))   as? [[String: Any]] ?? []
-                let records   = (try? JSONSerialization.jsonObject(with: recordsData)) as? [[String: Any]] ?? []
-                let docs      = (try? JSONSerialization.jsonObject(with: docsData))    as? [[String: Any]] ?? []
-                let export: [String: Any] = [
-                    "exported_at": ISO8601DateFormatter().string(from: Date()),
-                    "user_id": userId.uuidString,
-                    "tasks": tasks, "financial_records": records, "documents": docs
-                ]
-                let data = try JSONSerialization.data(withJSONObject: export, options: .prettyPrinted)
+                let data = try await AccountDeletionService.exportJSON()
                 let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("prvio_export.json")
                 try data.write(to: tmp)
                 await MainActor.run { isExporting = false; exportItem = ExportItem(url: tmp) }
@@ -98,42 +88,12 @@ extension SecurityView {
     func deleteAccount() async {
         isDeletingAccount = true
         do {
-            let userId = try await supabase.auth.session.user.id
-            let uid = userId.uuidString
-
-            // User-scoped records (keyed by user_id or created_by).
-            let userScopedTables = [
-                "maintenance_tasks", "financial_records", "documents",
-                "contractors", "aria_messages", "audit_log"
-            ]
-            for table in userScopedTables {
-                _ = try? await supabase.from(table).delete().eq("user_id", value: uid).execute()
-            }
-
-            // Messaging tables (different column names).
-            _ = try? await supabase.from("messages").delete().eq("sender_id", value: uid).execute()
-            _ = try? await supabase.from("message_reads").delete().eq("user_id", value: uid).execute()
-            _ = try? await supabase.from("message_reactions").delete().eq("user_id", value: uid).execute()
-            _ = try? await supabase.from("direct_messages").delete().eq("sender_id", value: uid).execute()
-            _ = try? await supabase.from("dm_participants").delete().eq("user_id", value: uid).execute()
-
-            // Properties — FK cascade should remove zones, elements, plants,
-            // appliances, supplies, receipts, photo journals, paint colors,
-            // property values, and inventory items.
-            _ = try? await supabase.from("properties").delete().eq("owner_id", value: uid).execute()
-
-            // Revoke MFA factors before deleting the auth user.
-            if let factors = try? await supabase.auth.mfa.listFactors() {
-                for factor in factors.totp {
-                    _ = try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factor.id))
-                }
-            }
-
-            // Profile is keyed by the user id directly.
-            _ = try? await supabase.from("profiles").delete().eq("id", value: uid).execute()
-
-            try? await supabase.auth.signOut()
-        } catch { try? await supabase.auth.signOut() }
+            try await AccountDeletionService.deleteAccount()
+        } catch {
+            alertMessage = String(format: String(localized: "delete_account_failed_fmt"),
+                                  error.localizedDescription)
+            showPasswordAlert = true
+        }
         isDeletingAccount = false
     }
 }

@@ -29,13 +29,21 @@ final class AuthService {
     }
 
     private func listenToAuthChanges() async {
+        // Realtime channel auth rides the client's accessToken closure (see
+        // SupabaseClient — the ES256 session JWT was re-proven working on
+        // joins, 2026-07-16). Channels keep the JWT they JOINED with, so on
+        // every refresh the fresh token is pushed over the socket to all
+        // subscribed channels — without this, a long-lived subscription ages
+        // past its join-time token and the server closes it.
         for await (event, session) in supabase.auth.authStateChanges {
             switch event {
             case .initialSession, .signedIn, .userUpdated:
                 self.session = session
+                if let s = session { Task { await realtimeAnon.setAuth(s.accessToken) } }
             case .tokenRefreshed:
                 self.session = session
                 if let s = session {
+                    Task { await realtimeAnon.setAuth(s.accessToken) }
                     AccountsStore.shared.updateTokens(
                         userId: s.user.id.uuidString,
                         accessToken: s.accessToken,
@@ -104,8 +112,31 @@ final class AuthService {
 
     func signOut() async throws {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
+        let signedOutUserId = session?.user.id.uuidString
+        // Unbind this device from the leaving account BEFORE the session dies
+        // (RLS only lets an account delete its own binding). Other accounts
+        // signed into this phone keep their bindings — and their pushes.
+        await PushTokenService.unbindCurrentAccount()
         try await supabase.auth.signOut()
         session = nil
+        // Signing out of an account removes it from the quick-switch list — a
+        // logged-out account must not linger in the Accounts sheet. (Switching
+        // accounts goes through switchTo/setSession, not signOut, so this only
+        // fires on an explicit logout.)
+        if let signedOutUserId { AccountsStore.shared.remove(userId: signedOutUserId) }
+        // The next account must never see this household's cached data.
+        ServiceCache.clear()
+        SignedStorage.clearCache()
+        // Spotlight indexed this household's tasks/plants/supplies/documents
+        // into SYSTEM search; indexing is additive and nothing ever pruned
+        // it, so a logged-out household stayed searchable on the device —
+        // and the next account inherited it (audit: privacy gap).
+        await SpotlightService.shared.deindexAll()
+        // Logout bypasses reloadWorld (session is now nil), so the watch would
+        // keep its last owner payload forever — wipe the App Group glance data
+        // and tell the wrist to clear its own cache.
+        SharedDataStore.clearWatchData()
+        WatchSyncService.shared.pushCleared()
     }
 
     func switchTo(account: SavedAccount) async throws {
@@ -114,5 +145,19 @@ final class AuthService {
             refreshToken: account.refreshToken
         )
         self.session = restored
+        // Account switch = different household visibility; drop the old cache.
+        ServiceCache.clear()
+        SignedStorage.clearCache()
+        // …and the old household's Spotlight index — reloadWorld(.accountSwitch)
+        // re-indexes exactly the new account's world right after.
+        await SpotlightService.shared.deindexAll()
+        // Wipe the wrist immediately; reloadWorld(.accountSwitch) then re-pushes
+        // the new account's role-scoped payload, so the watch never briefly
+        // shows the previous account's glance data.
+        SharedDataStore.clearWatchData()
+        WatchSyncService.shared.pushCleared()
+        // Bind this device to the account we just became — bindings are per
+        // (token, user), so the previous account keeps receiving its pushes too.
+        await PushTokenService.bindCurrentAccount()
     }
 }

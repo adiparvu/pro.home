@@ -16,10 +16,12 @@ private let categoryIcons: [String: (icon: String, color: Color)] = [
     "investment":  ("chart.line.uptrend.xyaxis",.blue),
     "dining":      ("fork.knife",               .orange),
     "shopping":    ("bag.fill",                 .pink),
+    "taxes":       ("building.columns.fill",    .brown),
+    "supplies":    ("shippingbox.fill",         .mint),
     "other":       ("ellipsis.circle.fill",     Color.primary.opacity(0.6)),
 ]
 
-private func catStyle(_ category: String) -> (icon: String, color: Color) {
+func catStyle(_ category: String) -> (icon: String, color: Color) {
     categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(AppOpacity.mediumText))
 }
 
@@ -29,7 +31,7 @@ extension FinancesView {
 
     // MARK: Hero
 
-    var heroSection: some View {
+    func heroSection(net: Double, insight: FinanceInsight?) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 20) {
                 Button {
@@ -45,11 +47,7 @@ extension FinancesView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Previous month")
 
-                Text(monthLabel)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color.primary.opacity(0.6))
-                    .contentTransition(.identity)
-                    .id(displayedMonth)
+                monthMenu
 
                 Button {
                     withAnimation(.spring(response: 0.3)) {
@@ -70,14 +68,23 @@ extension FinancesView {
 
             VStack(spacing: 4) {
                 Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Text(fmtSigned(net))
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(44, weight: .bold, design: .rounded))
                     .foregroundStyle(net >= 0 ? Color.primary : .red)
                     .contentTransition(.numericText(countsDown: net < 0))
                     .animation(.spring(response: 0.4), value: net)
+
+                if let insight {
+                    insightText(insight)
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, AppSpacing.xxs)
+                        .transition(.opacity)
+                }
             }
             .padding(.top, AppSpacing.xs)
             .padding(.bottom, AppSpacing.xxl)
@@ -85,41 +92,106 @@ extension FinancesView {
         .padding(.horizontal, AppSpacing.xl)
     }
 
+    /// Month label doubles as a jump menu (last 12 months) — the arrows stay
+    /// for single steps, the menu removes the eleven-tap walk to last year.
+    private var monthMenu: some View {
+        Menu {
+            ForEach(jumpMonths, id: \.self) { m in
+                Button {
+                    withAnimation(.spring(response: 0.3)) { displayedMonth = m }
+                } label: {
+                    if Calendar.current.isDate(m, equalTo: displayedMonth, toGranularity: .month) {
+                        Label(monthMenuLabel(m), systemImage: "checkmark")
+                    } else {
+                        Text(monthMenuLabel(m))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(monthLabel)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .contentTransition(.identity)
+                    .id(displayedMonth)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(AppFont.scaled(9, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("fin_choose_month")
+    }
+
+    private var jumpMonths: [Date] {
+        let cal = Calendar.current
+        let current = cal.startOfMonth(Date())
+        return (0..<12).compactMap { cal.date(byAdding: .month, value: -$0, to: current) }
+    }
+
+    private func monthMenuLabel(_ month: Date) -> String {
+        AppDate.monthYear.string(from: month).capitalized
+    }
+
+    private func insightText(_ insight: FinanceInsight) -> Text {
+        switch insight {
+        case .comparison(let percent, let less, let previousMonth):
+            return less
+                ? Text("fin_insight_less_spent \(percent) \(previousMonth)")
+                : Text("fin_insight_more_spent \(percent) \(previousMonth)")
+        case .topCategory(let category, let amount):
+            let name = String(localized: String.LocalizationValue(category.capitalized))
+            return Text("fin_insight_top_category \(name) \(fmt(amount))")
+        }
+    }
+
     // MARK: KPI Strip
 
-    var kpiStrip: some View {
+    /// The month's three numbers as pure data content — the tap-to-filter
+    /// these tiles used to carry lives in the toolbar's one filter circle
+    /// now (one-circle law), so the strip is a dashboard, never chrome.
+    func kpiStrip(income: Double, expenses: Double) -> some View {
         HStack(spacing: 0) {
-            kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess, icon: "arrow.down.left")
+            kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess,
+                    icon: "arrow.down.left")
+
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
-            kpiCell(label: "Expenses", value: fmt(expenses), color: .red, icon: "arrow.up.right")
+
+            kpiCell(label: "Expenses", value: fmt(expenses), color: .red,
+                    icon: "arrow.up.right")
+
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
+
             let savingsRate = income > 0 ? max(0, (income - expenses) / income * 100) : 0
             kpiCell(label: "Savings", value: String(format: "%.0f%%", savingsRate),
                     color: savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 10 ? .orange : .red,
                     icon: "percent")
         }
-        .padding(.vertical, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .padding(.horizontal, AppSpacing.xl)
     }
 
-    private func kpiCell(label: LocalizedStringKey, value: String, color: Color, icon: String) -> some View {
+    private func kpiCell(label: LocalizedStringKey, value: String, color: Color,
+                         icon: String) -> some View {
         VStack(spacing: 5) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.scaled(9, weight: .bold))
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(AppFont.scaled(16, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.4), value: value)
             }
             Text(label)
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.xs)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Quick Actions
@@ -131,7 +203,8 @@ extension FinancesView {
                     .environment(budgetService)
                     .environment(financialService)
             } label: {
-                actionTile(icon: "chart.pie.fill", label: "Budget", color: .blue)
+                actionTile(icon: "chart.pie.fill", label: "Budget", color: .blue,
+                           progress: budgetProgress)
             }
             .buttonStyle(.plain)
 
@@ -142,22 +215,49 @@ extension FinancesView {
         }
     }
 
-    private func actionTile(icon: String, label: LocalizedStringKey, color: Color) -> some View {
+    /// Current-month budget usage, or nil when no budget is set — the same
+    /// math as BudgetView's summary card so the two never disagree.
+    private var budgetProgress: Double? {
+        let total = budgetService.totalBudget()
+        guard total > 0 else { return nil }
+        return min(financialService.currentMonthExpenses / total, 1.0)
+    }
+
+    private func actionTile(icon: String, label: LocalizedStringKey, color: Color,
+                            progress: Double? = nil) -> some View {
         HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(color.opacity(0.18))
-                    .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(color)
-            }
+            Image(systemName: icon)
+                .font(AppFont.footnoteEmphasis)
+                .foregroundStyle(color)
+                .frame(width: 36, height: 36)
+                .glassRoundedRect(10)
             Text(label)
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
             Spacer()
+            if let progress {
+                HStack(spacing: 5) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.primary.opacity(0.1), lineWidth: 3)
+                        Circle()
+                            .trim(from: 0, to: max(progress, 0.02))
+                            .stroke(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : color,
+                                    style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: 18, height: 18)
+                    Text(verbatim: "\(Int((progress * 100).rounded()))%")
+                        .font(AppFont.scaled(11, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .monospacedDigit()
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: String(format: String(localized: "%.0f%% used"),
+                                                          progress * 100)))
+            }
             Image(systemName: "chevron.right")
-                .font(.system(size: 11))
+                .font(AppFont.scaled(11))
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
@@ -167,19 +267,19 @@ extension FinancesView {
     // MARK: Transaction List
 
     @ViewBuilder
-    var transactionList: some View {
-        if filteredRecords.isEmpty {
+    func transactionList(_ filtered: [FinancialRecord]) -> some View {
+        if filtered.isEmpty {
             emptyState
         } else {
-            VStack(spacing: 16) {
-                ForEach(groupedRecords, id: \.date) { group in
+            // Lazy on purpose: this is the app's longest list — eager VStack
+            // built every row (with a currency conversion each) on open.
+            LazyVStack(spacing: 16) {
+                ForEach(grouped(filtered), id: \.date) { group in
                     VStack(spacing: 0) {
                         HStack {
                             Text(groupDateLabel(group.date))
                                 .font(AppFont.captionStrong)
                                 .foregroundStyle(Color.primary.opacity(0.4))
-                                .textCase(.uppercase)
-                                .kerning(0.5)
                             Spacer()
                             let dayTotal = group.records.reduce(0.0) { sum, r in
                                 let v = currencyService.convert(r.amount, from: r.currency, to: preferred)
@@ -195,6 +295,21 @@ extension FinancesView {
                             ForEach(Array(group.records.enumerated()), id: \.element.id) { idx, record in
                                 let displayAmt = currencyService.formatted(record.amount, from: record.currency, preferred: preferred)
                                 FinancialRecordRow(record: record, displayAmount: displayAmt)
+                                    // Long-press menu: rows live in a VStack, where
+                                    // swipeActions is a List-only no-op — this is
+                                    // the interaction that actually fires. Edit
+                                    // opens the shared form seeded with the row
+                                    // (audit fix: records were write-once).
+                                    .contentShape(Rectangle())
+                                    .contextMenu {
+                                        Button {
+                                            editingRecord = record
+                                        } label: { Label("Edit", systemImage: "pencil") }
+                                        Button(role: .destructive) {
+                                            HapticFeedback.warning()
+                                            Task { await financialService.delete(record) }
+                                        } label: { Label("Delete", systemImage: "trash") }
+                                    }
                                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
@@ -214,48 +329,32 @@ extension FinancesView {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.hairline))
-                    .frame(width: 72, height: 72)
-                Image(systemName: "banknote")
-                    .font(.system(size: 28))
-                    .foregroundStyle(Color.primary.opacity(0.25))
-            }
-            Text("No transactions")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.55))
-            Text("Add your first transaction by tapping +")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 48)
+        EmptyStateView(
+            icon: "banknote",
+            title: "No transactions",
+            message: "Add your first transaction by tapping +"
+        )
     }
 
     // MARK: Helpers
 
     private var monthLabel: String {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        f.locale = .current
-        return isCurrentMonth ? String(localized: "Current month") : f.string(from: displayedMonth).capitalized
+        isCurrentMonth ? String(localized: "Current month") : monthMenuLabel(displayedMonth)
     }
 
     private func groupDateLabel(_ dateStr: String) -> String {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: dateStr) else { return dateStr }
+        guard let d = AppDate.day(from: dateStr) else { return dateStr }
         if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
         if Calendar.current.isDateInYesterday(d) { return String(localized: "Yesterday") }
         let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = .current
         return out.string(from: d)
     }
 
-    private func fmt(_ value: Double) -> String {
-        preferred == "RON"
-            ? String(format: "%.0f %@", value, currencyService.symbol(for: preferred))
-            : String(format: "%@%.0f", currencyService.symbol(for: preferred), value)
+    /// Every aggregate on this page goes through the app's single money
+    /// authority: locale-aware separators and symbol placement
+    /// ("2.243 €" in Romanian, "€2,243" in English), rounded, never truncated.
+    func fmt(_ value: Double) -> String {
+        CurrencyService.money(value, code: preferred, whole: true)
     }
 
     private func fmtSigned(_ value: Double) -> String {
@@ -273,21 +372,18 @@ struct FinancialRecordRow: View {
     var body: some View {
         let style = catStyle(record.category)
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(style.color.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: style.icon)
-                    .font(.system(size: 17))
-                    .foregroundStyle(style.color)
-            }
+            Image(systemName: style.icon)
+                .font(AppFont.scaled(17))
+                .foregroundStyle(style.color)
+                .frame(width: 44, height: 44)
+                .glassRoundedRect(AppRadius.md)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.title)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(record.category.capitalized))
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }
 
@@ -298,7 +394,7 @@ struct FinancialRecordRow: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(record.isIncome ? Color.brandSuccess : .primary)
                 Text(record.dateFormatted)
-                    .font(.system(size: 11))
+                    .font(AppFont.scaled(11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
         }

@@ -57,24 +57,25 @@ struct AddToWalletButton: UIViewRepresentable {
 // MARK: - NFCWalletView
 
 struct NFCWalletView: View {
-    @StateObject private var nfc = NFCScanService.shared
+    @State private var nfc = NFCScanService.shared
 
     @State private var tags: [NFCTag] = []
     @State private var showAddSheet    = false
     @State private var pendingUID: String?
     @State private var addingTagId: UUID?
+    @State private var writingTagId: UUID?
     @State private var showScanError   = false
     @State private var scanErrorMsg    = ""
     @State private var showWalletError = false
     @State private var walletErrorMsg  = ""
-
-    private let storageKey = "prvio.nfcTags"
+    @State private var showWriteError   = false
+    @State private var writeErrorMsg    = ""
+    @State private var showWriteSuccess = false
 
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(titleKey: "NFC Keys", subtitleKey: "INTEGRATIONS")
 
                 if tags.isEmpty {
                     emptyState
@@ -92,8 +93,8 @@ struct NFCWalletView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("NFC Keys")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if nfc.isScanning {
@@ -101,7 +102,7 @@ struct NFCWalletView: View {
                 } else {
                     Button { scanForNewTag() } label: {
                         Label("Scan Tag", systemImage: "wave.3.right.circle.fill")
-                            .font(.system(size: 19, weight: .medium))
+                            .font(AppFont.scaled(19, weight: .medium))
                             .foregroundStyle(.primary)
                     }
                 }
@@ -123,6 +124,14 @@ struct NFCWalletView: View {
         .alert("Apple Wallet", isPresented: $showWalletError) {
             Button("OK", role: .cancel) {}
         } message: { Text(walletErrorMsg) }
+        .alert("Write Tag", isPresented: $showWriteError) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(writeErrorMsg) }
+        .alert("Tag written", isPresented: $showWriteSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Scanning it with an iPhone now opens the linked page directly.")
+        }
     }
 
     // MARK: - Card section (card + controls)
@@ -137,7 +146,7 @@ struct NFCWalletView: View {
                         HStack(spacing: 8) {
                             ProgressView().tint(.primary)
                             Text("Adding…")
-                                .font(.system(size: 13))
+                                .font(AppFont.scaled(13))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(height: 44)
@@ -150,6 +159,25 @@ struct NFCWalletView: View {
                 }
 
                 Spacer()
+
+                if writingTagId == tag.id {
+                    ProgressView()
+                        .tint(.primary)
+                        .frame(width: 44, height: 44)
+                } else {
+                    Button {
+                        writeTag(tag)
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(AppFont.captionEmphasis)
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .background(Color.primary.opacity(0.08),
+                                        in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Write Tag"))
+                }
 
                 Button {
                     rescanTag(tag)
@@ -166,7 +194,7 @@ struct NFCWalletView: View {
 
                 Button(role: .destructive) {
                     HapticFeedback.warning()
-                    withAnimation {
+                    withAnimation(AppMotion.state) {
                         tags.removeAll { $0.id == tag.id }
                         saveTags()
                     }
@@ -179,6 +207,7 @@ struct NFCWalletView: View {
                                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text("Delete"))
             }
         }
     }
@@ -196,7 +225,7 @@ struct NFCWalletView: View {
             HStack {
                 Spacer()
                 Image(systemName: "wave.3.right")
-                    .font(.system(size: 90, weight: .ultraLight))
+                    .font(AppFont.scaled(90, weight: .ultraLight))
                     .foregroundStyle(.white.opacity(0.08))
                     .offset(x: 20, y: 0)
             }
@@ -206,12 +235,12 @@ struct NFCWalletView: View {
                 // Top row
                 HStack(alignment: .top) {
                     Text("PRVIO")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(AppFont.scaled(11, weight: .bold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.65))
                         .tracking(3)
                     Spacer()
                     Image(systemName: tag.icon)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(AppFont.scaled(24, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
 
@@ -219,7 +248,7 @@ struct NFCWalletView: View {
 
                 // Tag name
                 Text(tag.name)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(AppFont.scaled(24, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
@@ -229,7 +258,7 @@ struct NFCWalletView: View {
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(tag.typeLabel.uppercased())
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(AppFont.scaled(9, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.55))
                             .tracking(1.5)
                         Text(tag.linkedName.isEmpty ? "Standalone" : tag.linkedName)
@@ -239,7 +268,7 @@ struct NFCWalletView: View {
                     }
                     Spacer()
                     Text(tag.uid.prefix(12).uppercased())
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(AppFont.scaled(10, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
                 }
             }
@@ -269,7 +298,7 @@ struct NFCWalletView: View {
 
     private func scanForNewTag() {
         guard NFCScanService.isSupported else {
-            scanErrorMsg = "NFC is not available on this device."
+            scanErrorMsg = String(localized: "NFC is not available on this device.")
             showScanError = true
             return
         }
@@ -292,52 +321,96 @@ struct NFCWalletView: View {
         }
     }
 
+    // MARK: - Write deep link to the physical tag
+
+    /// Writes `prvio://nfc/<tagId>` as an NDEF URI record, so scanning the
+    /// physical tag with the iPhone opens the app straight on the linked
+    /// zone, appliance or element.
+    private func writeTag(_ tag: NFCTag) {
+        guard NFCScanService.isSupported else {
+            scanErrorMsg = String(localized: "NFC is not available on this device.")
+            showScanError = true
+            return
+        }
+        guard let url = URL(string: "prvio://nfc/\(tag.id.uuidString)") else { return }
+        HapticFeedback.impact(.medium)
+        writingTagId = tag.id
+        nfc.write(url: url,
+                  prompt: String(localized: "Hold iPhone near the tag to write the link")) { result in
+            writingTagId = nil
+            switch result {
+            case .success:
+                HapticFeedback.success()
+                showWriteSuccess = true
+            case .failure(.canceled):
+                break
+            case .failure(let error):
+                writeErrorMsg = error.errorDescription ?? ""
+                showWriteError = true
+            }
+        }
+    }
+
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                Image(systemName: "wave.3.right")
-                    .font(.system(size: 34, weight: .light))
-                    .foregroundStyle(Color.blue.opacity(0.45))
-            }
-            Text("No NFC tags yet")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Scan an NFC tag to link it to a room,\nappliance, or element in your property.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button { scanForNewTag() } label: {
-                Label("Scan First Tag", systemImage: "wave.3.right.circle.fill")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
+            EmptyStateView(
+                icon: "wave.3.right",
+                title: "No NFC tags yet",
+                message: "Scan an NFC tag to link it to a room,\nappliance, or element in your property.",
+                actionLabel: "Scan First Tag",
+                action: { scanForNewTag() }
+            )
             .disabled(!NFCScanService.isSupported)
+
+            emptyStateInfoCard
+
             Spacer()
         }
     }
 
-    // MARK: - Persistence
+    /// What a registered tag unlocks — shown while the wallet is still empty.
+    private var emptyStateInfoCard: some View {
+        GlassCard(padding: 14) {
+            VStack(spacing: 0) {
+                infoRow(icon: "wallet.pass",
+                        text: "Add your tags to Apple Wallet")
+                Rectangle()
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
+                    .frame(height: 0.4)
+                    .padding(.leading, 36)
+                infoRow(icon: "link",
+                        text: "Written tags open the linked page directly")
+            }
+        }
+        .padding(.horizontal, AppSpacing.xl)
+    }
+
+    private func infoRow(icon: String, text: LocalizedStringKey) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(AppFont.footnote)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 26)
+            Text(text)
+                .font(AppFont.caption)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, AppSpacing.sm)
+    }
+
+    // MARK: - Persistence (NFCTagStore — same "prvio.nfcTags" key as always)
 
     private func saveTags() {
-        if let data = try? JSONEncoder().encode(tags) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
+        NFCTagStore.save(tags)
     }
 
     private func loadTags() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let saved = try? JSONDecoder().decode([NFCTag].self, from: data) else { return }
-        tags = saved
+        tags = NFCTagStore.load()
     }
 }
 
@@ -363,18 +436,18 @@ struct NFCTagNameSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         // UID preview
                         GlassCard(padding: 14) {
                             HStack(spacing: 10) {
                                 Image(systemName: "wave.3.right")
-                                    .font(.system(size: 14))
+                                    .font(AppFont.scaled(14))
                                     .foregroundStyle(.blue)
                                     .frame(width: 26)
                                 Text("Tag ID: \(uid.prefix(16))…")
-                                    .font(.system(size: 13, design: .monospaced))
+                                    .font(AppFont.scaled(13, design: .monospaced))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
@@ -386,9 +459,8 @@ struct NFCTagNameSheet: View {
                                 Text("Name")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 TextField("e.g. Front Door, Garage, Boiler Room", text: $name)
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(.primary)
                                     .tint(.accentColor)
                             }
@@ -401,7 +473,6 @@ struct NFCTagNameSheet: View {
                                 Text("Links to")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 Picker("", selection: $linkedType) {
                                     Text("Zone / Room").tag("zone")
                                     Text("Appliance").tag("appliance")
@@ -411,8 +482,10 @@ struct NFCTagNameSheet: View {
                                 .pickerStyle(.segmented)
 
                                 if linkedType != "none" {
-                                    TextField("Name of linked \(linkedType)", text: $linkedName)
-                                        .font(.system(size: 15))
+                                    TextField(linkedType == "zone" ? "nfc_linked_name_zone"
+                                              : linkedType == "appliance" ? "nfc_linked_name_appliance"
+                                              : "nfc_linked_name_element", text: $linkedName)
+                                        .font(AppFont.scaled(15))
                                         .foregroundStyle(.primary)
                                         .tint(.accentColor)
                                         .padding(.top, AppSpacing.xxs)
@@ -427,7 +500,6 @@ struct NFCTagNameSheet: View {
                                 Text("Icon")
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
                                     ForEach(iconOptions, id: \.self) { icon in
                                         Button {
@@ -435,7 +507,7 @@ struct NFCTagNameSheet: View {
                                             HapticFeedback.selection()
                                         } label: {
                                             Image(systemName: icon)
-                                                .font(.system(size: 18, weight: .medium))
+                                                .font(AppFont.scaled(18, weight: .medium))
                                                 .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(AppOpacity.mediumText))
                                                 .frame(width: 44, height: 44)
                                                 .background(
@@ -482,5 +554,6 @@ struct NFCTagNameSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

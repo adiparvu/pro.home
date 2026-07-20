@@ -73,7 +73,7 @@ struct TrustedContactView: View {
                                         startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.badge.shield.checkmark.fill")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(AppFont.scaled(28, weight: .semibold))
                     .foregroundStyle(.white)
             }
 
@@ -83,7 +83,7 @@ struct TrustedContactView: View {
                 .multilineTextAlignment(.center)
 
             Text("This person can be notified in emergency situations related to your home. Information is stored locally on the device.")
-                .font(.system(size: 13))
+                .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
@@ -107,11 +107,13 @@ struct TrustedContactView: View {
         }
     }
 
-    private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+    // `placeholder` is a LocalizedStringKey, not String — a String parameter
+    // reaches TextField's verbatim initializer and Romanian never applies.
+    private func fieldRow(icon: String, color: Color, placeholder: LocalizedStringKey, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             TextField(placeholder, text: text)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .keyboardType(keyboard)
@@ -134,7 +136,7 @@ struct TrustedContactView: View {
         Button { showRemoveConfirm = true } label: {
             HStack(spacing: 8) {
                 Image(systemName: "trash.fill")
-                    .font(.system(size: 13))
+                    .font(AppFont.scaled(13))
                 Text("Remove trusted contact")
                     .font(AppFont.footnote)
             }
@@ -153,7 +155,7 @@ struct TrustedContactView: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             Text("Contact saved")
-                .font(.system(size: 13, weight: .medium))
+                .font(AppFont.scaled(13, weight: .medium))
         }
         .foregroundStyle(.primary)
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -170,11 +172,11 @@ struct TrustedContactView: View {
         savedPhone = phone.trimmingCharacters(in: .whitespaces)
         savedRelationship = relationship.trimmingCharacters(in: .whitespaces)
         Task {
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(150))
             isSaving = false
-            withAnimation { saved = true }
+            withAnimation(AppMotion.state) { saved = true }
             try? await Task.sleep(for: .milliseconds(2500))
-            withAnimation { saved = false }
+            withAnimation(AppMotion.state) { saved = false }
         }
     }
 

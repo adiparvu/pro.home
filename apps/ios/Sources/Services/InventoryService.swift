@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import UserNotifications
+import UIKit
 
 @MainActor
 @Observable
@@ -11,26 +12,27 @@ final class InventoryService {
 
     private(set) var currentPropertyId: UUID?
     private(set) var currentUserId: UUID?
+    private var cachedPropertyName: (id: UUID, name: String)?
 
     init() {}
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if items.isEmpty, let cached = ServiceCache.load([InventoryItem].self, entity: "inventory", propertyId: propertyId) {
+            items = cached
+        }
         currentPropertyId = propertyId
         currentUserId = supabase.auth.currentSession?.user.id
         isLoading = true
         defer { isLoading = false }
         do {
-            let records: [DBInventoryRecord] = try await supabase
-                .from("inventory_items")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            let records: [DBInventoryRecord] = try await PropertyRepo.fetch(
+                table: "inventory_items", propertyId: propertyId, scope: .strict, limit: 1000)
             items = records.map { $0.toInventoryItem() }
+            ServiceCache.save(items, entity: "inventory", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -45,9 +47,13 @@ final class InventoryService {
                 .single()
                 .execute()
                 .value
-            items.insert(record.toInventoryItem(), at: 0)
+            let saved = record.toInventoryItem()
+            items.insert(saved, at: 0)
+            // Photos are stored locally under the draft id; the DB assigns
+            // the real id on insert, so move them over.
+            InventoryImageStore.migrate(from: item.id, to: saved.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -66,7 +72,7 @@ final class InventoryService {
                 items[i] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -79,8 +85,9 @@ final class InventoryService {
                 .eq("id", value: item.id.uuidString)
                 .execute()
             items.removeAll { $0.id == item.id }
+            InventoryImageStore.deleteAll(for: item.id)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -90,6 +97,8 @@ final class InventoryService {
         updated.currentLoan = record
         await update(updated)
         scheduleLoanReminders(for: updated, loan: record)
+        // The public QR page shows live loan status — keep it in step.
+        await syncPublicProfile(for: updated)
     }
 
     func markReturned(_ item: InventoryItem) async {
@@ -101,6 +110,8 @@ final class InventoryService {
         }
         cancelLoanNotifications(for: item)
         await update(updated)
+        // A return clears the loan line on the public QR page.
+        await syncPublicProfile(for: updated)
     }
 
     func itemByQR(_ qrString: String) -> InventoryItem? {
@@ -115,6 +126,12 @@ final class InventoryService {
            let uuid = UUID(uuidString: String(qrString.dropFirst(prefix.count))) {
             return items.first { $0.id == uuid }
         }
+        // The app's own printed labels encode https://…/i/<uuid> — the id is
+        // the trailing path component, not a query item.
+        if let url = URL(string: qrString),
+           let uuid = UUID(uuidString: url.lastPathComponent) {
+            return items.first { $0.id == uuid }
+        }
         return nil
     }
 
@@ -124,13 +141,47 @@ final class InventoryService {
         }
         struct Payload: Encodable {
             let item_uuid, item_name, owner_name, owner_phone, owner_address, property_name, user_id: String
+            let owner_email: String?
+            let latitude: Double?
+            let longitude: Double?
+            let app_icon_url: String?
+            let loaned_to: String?
+            let loaned_at: String?
         }
         guard let uid = supabase.auth.currentSession?.user.id else { return }
+        // The page's "belongs to property X" line names the REAL property
+        // entity — the manually-typed contact field is only the fallback
+        // (IMG_8707: "să apară proprietatea, nu ownerul").
+        let propertyName = await activePropertyName() ?? profile.propertyName
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
-                        owner_address: profile.ownerAddress, property_name: profile.propertyName,
-                        user_id: uid.uuidString)
+                        owner_address: profile.ownerAddress, property_name: propertyName,
+                        user_id: uid.uuidString,
+                        owner_email: profile.ownerEmail,
+                        latitude: item.latitude, longitude: item.longitude,
+                        app_icon_url: await publicAppIconURL(),
+                        loaned_to: item.currentLoan?.borrowerName,
+                        loaned_at: item.currentLoan.map { ISODate.string(from: $0.loanedAt) })
         _ = try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
+    }
+
+    /// The owner's chosen app icon, mirrored publicly — one STABLE path per
+    /// user, so every published page shares one URL and an icon change
+    /// repaints them all by overwriting the object (IMG_8709).
+    private func publicAppIconURL() async -> String? {
+        await PublicAppIconMirror.uploadCurrentIcon()
+    }
+
+    /// The property ENTITY's name for the public page, cached per property.
+    private func activePropertyName() async -> String? {
+        guard let pid = currentPropertyId else { return nil }
+        if let cached = cachedPropertyName, cached.id == pid { return cached.name }
+        struct Row: Decodable { let name: String }
+        guard let row: Row = try? await supabase.from("properties")
+            .select("name").eq("id", value: pid.uuidString)
+            .single().execute().value else { return nil }
+        cachedPropertyName = (pid, row.name)
+        return row.name
     }
 
     func removePublicProfile(for item: InventoryItem) async {
@@ -139,6 +190,8 @@ final class InventoryService {
 
     var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }
     var loanedCount: Int { items.filter { $0.isLoaned }.count }
+    /// Items that have a warranty on record (valid, expiring or expired).
+    var warrantyCount: Int { items.filter { $0.warrantyExpiresAt != nil }.count }
     var expiringWarrantyCount: Int { items.filter { $0.warrantyStatus == .expiringSoon }.count }
 
     // MARK: - Private
@@ -159,6 +212,10 @@ final class InventoryService {
             content.title = String(localized: "Item Not Returned")
             content.body = body
             content.sound = .default
+            // Quick actions (IMG_8612): view the item / mark it returned.
+            content.categoryIdentifier = "LOAN"
+            content.userInfo = ["loanItemId": item.id.uuidString,
+                                "deepLink": "prvio://inventory/\(item.id.uuidString)"]
             let request = UNNotificationRequest(
                 identifier: "inventory.loan.\(item.id.uuidString).\(days)",
                 content: content,
@@ -166,10 +223,68 @@ final class InventoryService {
             )
             center.add(request)
         }
+        // The day the borrower PROMISED to return it — the one reminder
+        // that actually matters, on the date itself at 09:00.
+        if let due = loan.expectedReturnDate {
+            var comps = Calendar.current.dateComponents([.year, .month, .day], from: due)
+            comps.hour = 9
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Item Not Returned")
+            content.body = String(format: String(localized: "inv_due_today_fmt"),
+                                  item.name, loan.borrowerName)
+            content.sound = .default
+            content.categoryIdentifier = "LOAN"
+            content.userInfo = ["loanItemId": item.id.uuidString,
+                                "deepLink": "prvio://inventory/\(item.id.uuidString)"]
+            center.add(UNNotificationRequest(
+                identifier: "inventory.loan.\(item.id.uuidString).due",
+                content: content,
+                trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
+        }
     }
 
     private func cancelLoanNotifications(for item: InventoryItem) {
-        let ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
+        var ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
+        ids.append("inventory.loan.\(item.id.uuidString).due")
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+}
+
+// MARK: - Public app-icon mirror (IMG_8709)
+//
+// The found-item page's badge must BE the app's icon — including after the
+// user changes it. One stable public path per user ({uid}/app-icons/
+// current.jpg) makes that automatic: same URL on every row, new bytes on
+// every icon change. `sync()` additionally repoints every already-published
+// row, healing pages that predate the mirror without a re-save.
+
+enum PublicAppIconMirror {
+    /// Uploads the CURRENT theme's preview to the stable public path and
+    /// returns its URL. {auth-uid}/… on purpose: storage UPSERT needs
+    /// INSERT+UPDATE, and the documents UPDATE policy is uid-folder-scoped
+    /// (build 1170's lesson — root paths are silently denied).
+    @MainActor
+    static func uploadCurrentIcon() async -> String? {
+        guard let uid = supabase.auth.currentSession?.user.id else { return nil }
+        let themeId = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
+        let theme = AppIconCatalog.theme(id: themeId)
+        guard let image = UIImage(named: theme.lightPreview),
+              let data = image.uploadJPEG(quality: 0.9, maxDimension: 256) else { return nil }
+        let path = "\(uid.uuidString.lowercased())/app-icons/current.jpg"
+        return try? await SignedStorage.uploadPublicImage(data, path: path, upsert: true)
+    }
+
+    /// Refreshes the mirror AND points every published Lost&Found row at
+    /// it. Fire-and-forget from the icon picker's apply.
+    static func sync() {
+        Task { @MainActor in
+            guard let url = await uploadCurrentIcon(),
+                  let uid = supabase.auth.currentSession?.user.id else { return }
+            struct Patch: Encodable { let app_icon_url: String }
+            _ = try? await supabase.from("public_items")
+                .update(Patch(app_icon_url: url))
+                .eq("user_id", value: uid.uuidString)
+                .execute()
+        }
     }
 }

@@ -10,26 +10,24 @@ final class DateParsingTests: XCTestCase {
 
     // MARK: - Plain (no fractional seconds)
 
-    func testParsesPlainInternetDateTime() {
+    func testParsesPlainInternetDateTime() throws {
         // The plain formatter path: "…T00:00:00Z" has no fractional seconds.
-        let d = ISODate.date(from: "1970-01-01T00:00:00Z")
-        XCTAssertNotNil(d)
-        XCTAssertEqual(d?.timeIntervalSince1970, 0, accuracy: 0.0001)
+        let d = try XCTUnwrap(ISODate.date(from: "1970-01-01T00:00:00Z"))
+        XCTAssertEqual(d.timeIntervalSince1970, 0, accuracy: 0.0001)
     }
 
-    func testParsesPlainNonEpoch() {
+    func testParsesPlainNonEpoch() throws {
         // 2000-01-01T00:00:00Z == 946684800s since the Unix epoch.
-        let d = ISODate.date(from: "2000-01-01T00:00:00Z")
-        XCTAssertEqual(d?.timeIntervalSince1970, 946684800, accuracy: 0.0001)
+        let d = try XCTUnwrap(ISODate.date(from: "2000-01-01T00:00:00Z"))
+        XCTAssertEqual(d.timeIntervalSince1970, 946684800, accuracy: 0.0001)
     }
 
     // MARK: - Fractional seconds
 
-    func testParsesFractionalSeconds() {
+    func testParsesFractionalSeconds() throws {
         // The fractional formatter path: ".500" must be honored.
-        let d = ISODate.date(from: "1970-01-01T00:00:00.500Z")
-        XCTAssertNotNil(d)
-        XCTAssertEqual(d?.timeIntervalSince1970, 0.5, accuracy: 0.0001)
+        let d = try XCTUnwrap(ISODate.date(from: "1970-01-01T00:00:00.500Z"))
+        XCTAssertEqual(d.timeIntervalSince1970, 0.5, accuracy: 0.0001)
     }
 
     func testFractionalAndPlainAgreeOnSameInstant() {

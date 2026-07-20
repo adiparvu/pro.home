@@ -2,7 +2,8 @@ name: PRVIO
 options:
   bundleIdPrefix: com.prvio
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "17.1"
+    watchOS: "10.0"
   xcodeVersion: "26.0"
   swift: "5.10"
   createIntermediateGroups: true
@@ -11,7 +12,11 @@ options:
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
-    from: "2.0.0"
+    # Pinned EXACTLY: `from:` re-resolved the latest 2.x on every CI build, so
+    # the SDK could drift silently between builds mid-diagnosis. 2.52.0 is the
+    # release whose Realtime source this app's connection handling was audited
+    # against (one-shot reconnect → app-side watchdog). Upgrades are deliberate.
+    exactVersion: "2.52.0"
 
 targets:
   PRVIO:
@@ -23,6 +28,10 @@ targets:
       - path: Resources/Assets.xcassets
       - path: Resources/Localizable.xcstrings
       - path: Resources/AppShortcuts.xcstrings
+      # App Store submission requirement: the privacy manifest must sit at
+      # the bundle root. Extension/watch targets carry their own copies
+      # (picked up from their source dirs).
+      - path: Resources/PrivacyInfo.xcprivacy
     dependencies:
       - package: Supabase
         product: Supabase
@@ -49,29 +58,81 @@ targets:
       - sdk: WeatherKit.framework
       - sdk: CoreNFC.framework
       - sdk: HomeKit.framework
+      - sdk: MediaPlayer.framework
+      - sdk: NetworkExtension.framework
       - sdk: LinkPresentation.framework
       - sdk: PassKit.framework
-      - sdk: GroupActivities.framework
-      - sdk: FamilyControls.framework
       - sdk: AuthenticationServices.framework
-      - sdk: CloudKit.framework
       - sdk: Network.framework
       - target: PRVIOWidgets
+      - target: PRVIOWatch
+      - target: PRVIONotificationService
     entitlements:
+      # XcodeGen GENERATES this file from `properties` on every `generate`,
+      # overwriting whatever is on disk — so `properties` is the single source
+      # of truth for the app's entitlements, NOT the hand-written file. Every
+      # capability the signed binary needs must be listed here or it is stripped
+      # at build time (the profile allowing it is necessary but not sufficient).
       path: Sources/App/PRVIO.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
+        # APNs push for chat. Without this key in the generated entitlements the
+        # binary is signed with no aps-environment, and registerForRemoteNotifications
+        # fails on device with error 3000 — no DM/group message ever delivers a push.
+        aps-environment: production
+        # Communication Notifications (sender avatars on chat pushes) —
+        # claimed now that the one-time portal step is done (capability
+        # ticked on com.prvio.app + the notification-service App ID, and the
+        # app group associated there, same as the watch ids).
+        com.apple.developer.usernotifications.communication: true
+        # WeatherKit restored: the dashboard weather card calls
+        # WeatherService unconditionally, so without this key every fetch
+        # died on a JWT auth error and the card sat silently dead. The
+        # Fastfile already enables the WEATHERKIT capability portal-side on
+        # every run, so the regenerated profile carries it.
+        com.apple.developer.weatherkit: true
+        # HomeKit restored for the smart-home dashboard (SmartHomeService):
+        # the Fastfile already enables the HOMEKIT capability portal-side on
+        # every run, so the regenerated profile carries it. The validation
+        # failure that parked this block was NFC-specific (ITMS-90778 "NDEF
+        # is disallowed") — HomeKit is a plain capability. If an upload ever
+        # rejects it, revert THIS key only.
+        com.apple.developer.homekit: true
+        # Universal links: the printed QR labels encode
+        # https://xparvu.com/i/<uuid> — with this entitlement (plus the AASA
+        # file the Cloudflare worker serves at /.well-known/) scanning a
+        # label opens PRVIO straight on the item for property members. The
+        # Fastfile enables the matching capability portal-side every run.
+        com.apple.developer.associated-domains:
+          - applinks:xparvu.com
+        # Access WiFi Information — the smart-home network card shows the real
+        # SSID via NEHotspotNetwork.fetchCurrent, which returns nothing without
+        # this entitlement (plus precise-location authorization at runtime).
+        # The Fastfile enables the matching capability portal-side every run.
+        com.apple.developer.networking.wifi-info: true
+        # NFC is deliberately NOT restored: restoring it as-is fails App
+        # Store upload validation on SDK 26.5 (ITMS-90778 "NDEF is
+        # disallowed"); NFCScanService checks readingAvailable so nothing
+        # crashes without it. It returns once verified to pass validation.
+    postBuildScripts:
+      # The .xcstrings catalog is copied raw by this project, not compiled —
+      # this phase generates the per-language .lproj tables into the product
+      # so every build (unit-test host, simulator, archive) is localized.
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app
         SWIFT_VERSION: 5.10
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.1"
         INFOPLIST_FILE: Sources/App/Info.plist
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "659"
+        CURRENT_PROJECT_VERSION: "1181"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -79,7 +140,7 @@ targets:
         # referenced icons that weren't actually in the compiled catalog and got the
         # binary rejected by App Store Connect (ITMS-90895). Keep this in sync with the
         # AppIcon*.appiconset folders (every set except the primary AppIcon).
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconArcticDark AppIconArcticLight AppIconBaroqueCream AppIconBaroqueDark AppIconBaroqueFloral AppIconBaroqueLight AppIconCarbonDark AppIconCarbonLight AppIconClassicDark AppIconClassicLight AppIconCrimson AppIconDazzle AppIconDazzleCosmic AppIconDazzleFloral AppIconDazzleSplatter AppIconEmeraldDark AppIconEmeraldGloss AppIconEmeraldLight AppIconEmeraldMarble AppIconForestDark AppIconForestLight AppIconForestRoyal AppIconGlassDark AppIconGlassLight AppIconGoldNoir AppIconLavenderDark AppIconLavenderLight AppIconLavenderRoyal AppIconMetallicDark AppIconMetallicGold AppIconMetallicLight AppIconMidnight AppIconMinimalDark AppIconMinimalLight AppIconMinimalOutline AppIconNeonMagenta AppIconNoir AppIconRetroPixel AppIconRetroVapor AppIconRoseGoldDark AppIconRoseGoldLight AppIconRoseMocha AppIconRoseNoir AppIconSilverNoir AppIconSunsetDark AppIconSunsetLight AppIconVaporPixel"
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconArcticDark AppIconArcticLight AppIconBaroqueCream AppIconBaroqueDark AppIconBaroqueFloral AppIconBaroqueLight AppIconCarbonDark AppIconCarbonLight AppIconClassicDark AppIconClassicLight AppIconCrimson AppIconDazzle AppIconDazzleCosmic AppIconDazzleFloral AppIconDazzleSplatter AppIconEmeraldDark AppIconEmeraldGloss AppIconEmeraldLight AppIconEmeraldMarble AppIconForestDark AppIconForestLight AppIconForestRoyal AppIconGlassDark AppIconGlassLight AppIconGoldNoir AppIconLavenderDark AppIconLavenderLight AppIconLavenderRoyal AppIconMetallicDark AppIconMetallicGold AppIconMetallicLight AppIconMidnight AppIconMinimalDark AppIconMinimalLight AppIconMinimalOutline AppIconNeonMagenta AppIconNoir AppIconRetroPixel AppIconRetroVapor AppIconRoseGoldDark AppIconRoseGoldLight AppIconRoseMocha AppIconRoseNoir AppIconSilverNoir AppIconSunsetDark AppIconSunsetLight AppIconVaporPixel AppIconArctic AppIconBaroque AppIconCarbon AppIconClassic AppIconEmerald AppIconEmeraldMarbleSet AppIconForest AppIconGlass AppIconLavender AppIconMetallic AppIconMetallicGoldSet AppIconMinimal AppIconRoseGold AppIconRoseMochaSet AppIconSunset"
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
         STRINGS_FILE_INPUT_ENCODING: UTF-8
@@ -102,7 +163,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.tests
         SWIFT_VERSION: "5.10"
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.1"
         DEVELOPMENT_TEAM: SU92TVZT8W
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRVIO.app/PRVIO"
@@ -116,10 +177,18 @@ targets:
       - path: Sources/Components/DesignSystem.swift
       - path: Sources/Services/SharedDataStore.swift
       - path: Sources/Intents/PRVIOEntities.swift
+      - path: Sources/Intents/ControlIntents.swift
       - path: Sources/Intents/TaskIntents.swift
       - path: Sources/Intents/PlantIntents.swift
       - path: Sources/Intents/SupplyIntents.swift
+      # Interactive Live Activity buttons (LiveActivityIntent) — the widget must
+      # SEE these types to render Button(intent:); they run in the app's process.
+      - path: Sources/Intents/LiveActivityActionIntents.swift
       - path: Sources/LiveActivities/PRVIOLiveActivities.swift
+      - path: Sources/LiveActivities/LiveActivityKind.swift
+      # Compiled here only so the LiveActivityIntents (shared file above)
+      # type-check; the haptic fires in the app's process at runtime.
+      - path: Sources/Utils/HapticFeedback.swift
     resources:
       - path: Resources/Localizable.xcstrings
       - path: Resources/Assets.xcassets
@@ -128,21 +197,36 @@ targets:
       - sdk: AppIntents.framework
       - sdk: ActivityKit.framework
     entitlements:
-      path: Sources/App/PRVIO.entitlements
+      # MUST be its own file — sharing the app's path made XcodeGen regenerate
+      # Sources/App/PRVIO.entitlements from THESE properties (app group only),
+      # clobbering the app's aps-environment/NFC/HomeKit/WeatherKit keys and
+      # silently shipping the app with push disabled.
+      path: Widgets/PRVIOWidgets.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
+    postBuildScripts:
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.widgets
         SWIFT_VERSION: "5.10"
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        # 18.0 (app stays 17.1): supplementalActivityFamilies — the Watch
+        # Smart Stack presentation for Live Activities — is iOS 18-only and
+        # Widget.body has no result builder, so it cannot be #available-gated.
+        # An embedded extension may require a newer OS than its container
+        # (the classic WidgetKit-on-iOS-12-apps pattern); every iOS 17 device
+        # can run iOS 18, so only not-yet-updated devices lose widget surfaces.
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         INFOPLIST_FILE: Widgets/Info.plist
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "659"
+        CURRENT_PROJECT_VERSION: "1181"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
@@ -151,3 +235,151 @@ targets:
         Release:
           SWIFT_OPTIMIZATION_LEVEL: "-O"
           SWIFT_COMPILATION_MODE: wholemodule
+
+  PRVIONotificationService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NotificationService
+    dependencies:
+      - sdk: UserNotifications.framework
+      - sdk: Intents.framework
+    entitlements:
+      # Own file (never share the app's path — see PRVIOWidgets note above).
+      # Both capabilities were enabled portal-side (one-time manual step).
+      path: NotificationService/PRVIONotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+        com.apple.developer.usernotifications.communication: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.notificationservice
+        SWIFT_VERSION: "5.10"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.1"
+        INFOPLIST_FILE: NotificationService/Info.plist
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1181"
+        STRINGS_FILE_INPUT_ENCODING: UTF-8
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          SWIFT_COMPILATION_MODE: wholemodule
+
+  PRVIOWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Watch
+        excludes:
+          - "Widgets/**"
+          - "Info.plist"
+      - path: Sources/Services/SharedDataStore.swift
+    dependencies:
+      - target: PRVIOWatchWidgets
+    entitlements:
+      path: Watch/PRVIOWatch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+    postBuildScripts:
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.watchkitapp
+        SWIFT_VERSION: "5.10"
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1181"
+        # Full manual plist (the proven widgets pattern) — no generate+merge
+        # behavior to trust; NSUserActivityTypes is guaranteed in the build.
+        INFOPLIST_FILE: Watch/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
+        TARGETED_DEVICE_FAMILY: "4"
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          SWIFT_COMPILATION_MODE: wholemodule
+
+  PRVIOWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: Watch/Widgets
+        excludes:
+          - "Info.plist"
+      - path: Sources/Services/SharedDataStore.swift
+    postBuildScripts:
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
+    entitlements:
+      path: Watch/Widgets/PRVIOWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.watchkitapp.widgets
+        SWIFT_VERSION: "5.10"
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1181"
+        INFOPLIST_FILE: Watch/Widgets/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        # RelevanceKit only exists on watchOS 11+ — a hard link makes the
+        # widget extension undyld-loadable on watchOS 10 devices.
+        OTHER_LDFLAGS: "-weak_framework RelevanceKit"
+        # Belt-and-braces for the weak link above: `import RelevanceKit` makes
+        # the compiler embed a STRONG `-framework RelevanceKit` autolink hint
+        # (LC_LINKER_OPTION) in every object file, which some linker versions
+        # let override -weak_framework — reintroducing the hard link and the
+        # dyld kill on watchOS 10 hardware (Series 4/5 never get watchOS 11).
+        # Disabling autolink for this one framework guarantees the ONLY
+        # linkage is the explicit weak one; every RelevanceKit use is already
+        # #available-gated, so nothing resolves it at runtime on watchOS 10.
+        OTHER_SWIFT_FLAGS: "-Xfrontend -disable-autolink-framework -Xfrontend RelevanceKit"
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          SWIFT_COMPILATION_MODE: wholemodule
+
+schemes:
+  PRVIO:
+    build:
+      targets:
+        PRVIO: all
+        PRVIOTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      coverageTargets: [PRVIO]
+      targets: [PRVIOTests]
+    archive:
+      config: Release

@@ -7,8 +7,20 @@ struct BuriedUtilitiesView: View {
     var service: BlueprintService
     @State private var showAdd = false
     @State private var detailItem: BuriedUtility?
+    @State private var searchText = ""
 
     private var mapped: [BuriedUtility] { service.utilities.filter { $0.hasLocation } }
+
+    private var filteredUtilities: [BuriedUtility] {
+        guard !searchText.isEmpty else { return service.utilities }
+        return service.utilities.filter {
+            $0.name.matchesSearch(searchText)
+                || $0.typeLabel.matchesSearch(searchText)
+                || $0.notes.matchesSearch(searchText)
+                || $0.depthDisplay.matchesSearch(searchText)
+                || $0.lengthDisplay.matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -23,7 +35,7 @@ struct BuriedUtilitiesView: View {
                             emptyState
                         } else {
                             legend
-                            ForEach(service.utilities) { u in
+                            ForEach(filteredUtilities) { u in
                                 BuriedUtilityRow(utility: u, photo: service.utilityPhoto(u))
                                     .onTapGesture { detailItem = u }
                                     .swipeActions(edge: .trailing) {
@@ -42,6 +54,8 @@ struct BuriedUtilitiesView: View {
         }
         .navigationTitle("Underground")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -49,7 +63,7 @@ struct BuriedUtilitiesView: View {
                     HapticFeedback.impact(.medium)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(AppFont.scaled(17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add buried line")
@@ -73,7 +87,7 @@ struct BuriedUtilitiesView: View {
                         Circle().fill(u.swiftColor).frame(width: 28, height: 28)
                             .overlay(Circle().strokeBorder(.white, lineWidth: 2))
                         Image(systemName: u.icon)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.scaled(12, weight: .bold))
                             .foregroundStyle(.primary)
                     }
                     .shadow(radius: 3)
@@ -121,7 +135,7 @@ struct BuriedUtilitiesView: View {
                     HStack(spacing: 5) {
                         Circle().fill(BuriedUtilityKind.color(t)).frame(width: 8, height: 8)
                         Text(LocalizedStringKey(BuriedUtilityKind.label(t)))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
             }
@@ -130,16 +144,10 @@ struct BuriedUtilitiesView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer(minLength: 40)
-            Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
-                .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.16))
-            Text("No buried lines mapped")
-                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center).padding(.horizontal, 28)
-            Spacer(minLength: 40)
-        }
+        EmptyStateView(
+            icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
+            title: "No buried lines mapped",
+            message: "Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again."
+        )
     }
 }

@@ -368,6 +368,54 @@
           }
         }
       }
+    },
+    "Open the garage in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the garage in ${applicationName}"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deschide garajul în ${applicationName}"
+          }
+        }
+      }
+    },
+    "${applicationName} open the garage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName} open the garage"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName} deschide garajul"
+          }
+        }
+      }
+    },
+    "Open the gate in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the gate in ${applicationName}"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deschide poarta în ${applicationName}"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

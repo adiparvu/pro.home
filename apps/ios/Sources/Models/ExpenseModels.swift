@@ -24,17 +24,11 @@ struct Receipt: Identifiable, Codable, Hashable {
     }
 
     var dateValue: Date {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f.date(from: date) ?? Date()
+        AppDate.day(from: date) ?? Date()
     }
 
     var formattedDate: String {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f.string(from: dateValue)
+        AppDate.medium.string(from: dateValue)
     }
 
     var categoryColor: Color { ReceiptCategory.color(for: category) }
@@ -43,13 +37,9 @@ struct Receipt: Identifiable, Codable, Hashable {
     var formattedTotal: String { Receipt.format(total) }
 
     static func format(_ amount: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        f.groupingSeparator = ","
-        f.decimalSeparator = "."
-        return f.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
+        // Locale-aware separators — a Romanian user reads "1.234,56",
+        // not the hardcoded US "1,234.56" this used to force.
+        Decimal(amount).formatted(.number.precision(.fractionLength(2)))
     }
 }
 

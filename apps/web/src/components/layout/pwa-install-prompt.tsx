@@ -33,7 +33,7 @@ function markDismissed() {
   }
 }
 
-// Inline "P" mark SVG for PRV House
+// Inline "P" mark SVG for PRVIO
 function PRVLogo() {
   return (
     <svg
@@ -124,7 +124,7 @@ export function PwaInstallPrompt() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">PRV House</p>
+            <p className="text-sm font-semibold text-foreground">PRVIO</p>
             {showIOSInstructions ? (
               <>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -134,7 +134,7 @@ export function PwaInstallPrompt() {
             ) : (
               <>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Install PRV House for the best experience
+                  Install PRVIO for the best experience
                 </p>
                 <button
                   type="button"
@@ -161,7 +161,7 @@ export function PwaInstallPrompt() {
       {/* Toast */}
       {showToast && (
         <div className="fixed bottom-[200px] md:bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">
-          PRV House installed!
+          PRVIO installed!
         </div>
       )}
     </>

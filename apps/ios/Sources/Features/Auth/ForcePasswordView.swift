@@ -38,18 +38,16 @@ struct ForcePasswordView: View {
             appBackground.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
-                    ZStack {
-                        Circle().fill(Color.accentColor.opacity(0.14))
-                            .frame(width: 84, height: 84)
-                        Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 38))
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .padding(.top, 48)
+                    Image(systemName: "lock.shield.fill")
+                        .font(AppFont.scaled(38))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 84, height: 84)
+                        .glassCircle()
+                        .padding(.top, 48)
 
                     VStack(spacing: 8) {
                         Text("Secure your account")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(AppFont.scaled(24, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text("You signed in with an invitation link. Set a strong password to protect your account — you'll use it for future sign-ins.")
                             .font(AppFont.subheadline)
@@ -59,6 +57,14 @@ struct ForcePasswordView: View {
                     }
 
                     VStack(spacing: 0) {
+                        // A `.username` field (the signed-in email) lets iCloud
+                        // Keychain associate the new password with this account
+                        // when it prompts to save. Read-only — the account is
+                        // fixed once you're on this screen.
+                        if let email = auth.session?.user.email, !email.isEmpty {
+                            usernameRow(email)
+                            Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                        }
                         secureRow(icon: "key.fill", placeholder: "New password", text: $password)
                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                         secureRow(icon: "key.fill", placeholder: "Confirm password", text: $confirm)
@@ -71,19 +77,19 @@ struct ForcePasswordView: View {
                             let ok = rule.passes(password)
                             HStack(spacing: 8) {
                                 Image(systemName: ok ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(ok ? Color.brandSuccess : Color.primary.opacity(0.25))
                                 Text(rule.label)
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .foregroundStyle(ok ? .primary : Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
                         if !confirm.isEmpty && confirm != password {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.system(size: 13)).foregroundStyle(.red)
+                                    .font(AppFont.scaled(13)).foregroundStyle(.red)
                                 Text("Passwords don't match")
-                                    .font(.system(size: 13)).foregroundStyle(.red)
+                                    .font(AppFont.scaled(13)).foregroundStyle(.red)
                             }
                         }
                     }
@@ -92,33 +98,13 @@ struct ForcePasswordView: View {
                     .liquidGlass(cornerRadius: AppRadius.lg)
 
                     if let err = errorMessage {
-                        Text(err).font(.system(size: 13)).foregroundStyle(.red)
+                        Text(err).font(AppFont.scaled(13)).foregroundStyle(.red)
                             .multilineTextAlignment(.center)
                     }
 
-                    Button {
+                    GlassWideButton(label: "Set password", isBusy: isSaving, isEnabled: canSave) {
                         Task { await save() }
-                    } label: {
-                        Group {
-                            if isSaving { ProgressView().tint(.white) }
-                            else {
-                                Text("Set password")
-                                    .font(AppFont.subheadline)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .foregroundStyle(.white)
-                        .background(
-                            canSave
-                                ? AnyShapeStyle(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                                                               startPoint: .leading, endPoint: .trailing))
-                                : AnyShapeStyle(Color.primary.opacity(0.15)),
-                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!canSave)
 
                     Spacer(minLength: 30)
                 }
@@ -140,11 +126,31 @@ struct ForcePasswordView: View {
 
     private func secureRow(icon: String, placeholder: LocalizedStringKey, text: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14))
+            Image(systemName: icon).font(AppFont.scaled(14))
                 .foregroundStyle(Color.accentColor).frame(width: 28)
             SecureField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                // Both fields use `.newPassword` so iOS offers/fills the same
+                // suggested strong password into password AND confirm together,
+                // and iCloud Keychain saves it on submit.
                 .textContentType(.newPassword)
+        }
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+    }
+
+    private func usernameRow(_ email: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "envelope.fill").font(AppFont.scaled(14))
+                .foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField("Email", text: .constant(email))
+                .font(AppFont.scaled(15))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .textContentType(.username)
+                .keyboardType(.emailAddress)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .disabled(true)
+                .accessibilityLabel(Text("Email"))
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }

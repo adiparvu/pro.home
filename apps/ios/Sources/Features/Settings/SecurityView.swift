@@ -23,15 +23,17 @@ struct SecurityView: View {
     @State private var showBackupCodes = false
     @State private var showAuditLog = false
     @State private var showTrustedPersons = false
+    @State private var sectionLock = SectionLockManager.shared
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(titleKey: "Security")
+                checkupSection
                 mfaSection
                 sessionsSection
                 advancedSection
                 biometricSection
+                sectionLocksSection
                 dataSection
                 Spacer(minLength: 100)
             }
@@ -39,10 +41,11 @@ struct SecurityView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Security")
+        .navigationBarTitleDisplayMode(.large)
         .task { checkBiometrics() }
         .task { await loadFactors() }
+        .task { await AccountSecurityService.shared.refreshBackupCodeCount() }
         .sheet(isPresented: $showTOTPEnroll) {
             TOTPEnrollView { Task { await loadFactors() } }
         }
@@ -77,10 +80,109 @@ struct SecurityView: View {
         }
     }
 
+    // MARK: - Security checkup
+    //
+    // A real score from real signals only — every point maps to a switch the
+    // user can actually flip on this page. Nothing is estimated or guessed.
+
+    private struct CheckupSignal {
+        let passed: Bool
+        let weight: Int
+        let recommendation: LocalizedStringKey
+    }
+
+    @AppStorage("prvio.trustedContact.name") private var trustedContactName = ""
+
+    private var checkupSignals: [CheckupSignal] {
+        [
+            .init(passed: totpFactorId != nil, weight: 30,
+                  recommendation: "Turn on the authenticator app (two-step sign-in)"),
+            .init(passed: (AccountSecurityService.shared.unusedBackupCodes ?? 0) > 0, weight: 15,
+                  recommendation: "Generate backup codes for your account"),
+            .init(passed: biometricsEnabled, weight: 20,
+                  recommendation: "Require Face ID to open PRVIO"),
+            .init(passed: autoLockMinutes != 0, weight: 10,
+                  recommendation: "Set an auto-lock interval"),
+            .init(passed: !sectionLock.protectedSections.isEmpty, weight: 10,
+                  recommendation: "Lock at least one sensitive section"),
+            .init(passed: !trustedContactName.isEmpty, weight: 15,
+                  recommendation: "Add an emergency trusted contact"),
+        ]
+    }
+
+    private var checkupScore: Int {
+        checkupSignals.filter(\.passed).reduce(0) { $0 + $1.weight }
+    }
+
+    private var checkupColor: Color {
+        switch checkupScore {
+        case ..<50:  return .brandDanger
+        case ..<80:  return .brandWarning
+        default:     return .brandSuccess
+        }
+    }
+
+    private var checkupSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.base) {
+            HStack(spacing: AppSpacing.lg) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.primary.opacity(AppOpacity.hairline), lineWidth: 6)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(checkupScore) / 100)
+                        .stroke(checkupColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text(verbatim: "\(checkupScore)")
+                        .font(AppFont.scaled(20, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .monospacedDigit()
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Security checkup")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                    Text(checkupScore == 100
+                         ? "Everything on this page is switched on."
+                         : "Each recommendation below maps to a control on this page.")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.top, AppSpacing.base)
+
+            let missing = checkupSignals.filter { !$0.passed }.prefix(3)
+            if !missing.isEmpty {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    ForEach(Array(missing.enumerated()), id: \.offset) { _, signal in
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(AppFont.footnote)
+                                .foregroundStyle(checkupColor)
+                                .symbolRenderingMode(.hierarchical)
+                            Text(signal.recommendation)
+                                .font(AppFont.scaled(13))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, AppSpacing.base)
+            }
+            Color.clear.frame(height: AppSpacing.xs)
+        }
+        .liquidGlass(cornerRadius: AppRadius.xl)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Security checkup"))
+        .accessibilityValue(Text(verbatim: "\(checkupScore)/100"))
+    }
+
     // MARK: - MFA
 
     private var mfaSection: some View {
-        secGroup(title: "Multi-factor authentication (MFA)", footer: "Requires an additional security check at sign-in. If you fail this check, you will have the option to recover your account.") {
+        secGroup(title: "Multi-factor authentication (MFA)", footer: "Requires an additional security check at sign-in. If you can't pass it, a one-time backup code unlocks the app.") {
             Button {
                 if totpFactorId != nil { showRemoveTOTP = true } else { showTOTPEnroll = true }
             } label: {
@@ -88,16 +190,16 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "apps.iphone", color: .indigo)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Authenticator app")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("TOTP codes (Google Authenticator, 1Password…)")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     if totpFactorId != nil {
                         Text("Enabled").font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.brandSuccess)
                     } else {
-                        Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                        Text("Disabled").font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -114,9 +216,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "key.horizontal.fill", color: .teal)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Backup codes")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text("Emergency access codes for account recovery")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                        Text("One-time codes that unlock two-step sign-in")
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -138,9 +240,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "macbook.and.iphone", color: .blue)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Active sessions")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(UIDevice.current.model)
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -156,7 +258,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "person.badge.shield.checkmark.fill", color: .green)
                     Text("Trusted persons")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -171,7 +273,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "list.clipboard.fill", color: .indigo)
                     Text("Activity log")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -193,9 +295,9 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "key.fill", color: .orange)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Advanced account security")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("Change password or email")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     if passwordResetSent {
@@ -215,9 +317,11 @@ struct SecurityView: View {
                 ColoredIconBadge(icon: "lock.shield.fill", color: .purple)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Lockdown mode")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
-                    Text("Requires more secure sign-in methods")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    // Honest subtitle: this is what the toggle actually does
+                    // (AppLockManager forces the lock on every background).
+                    Text("Locks PRVIO every time you leave the app")
+                        .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 Toggle("", isOn: $lockModeEnabled)
@@ -239,9 +343,9 @@ struct SecurityView: View {
                     )
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LocalizedStringKey(biometricType == .faceID ? "Require Face ID" : "Require Touch ID"))
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text("Face ID or passcode to access PRVIO")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Toggle("", isOn: $biometricsEnabled)
@@ -260,13 +364,13 @@ struct SecurityView: View {
                     ColoredIconBadge(icon: "timer", color: .cyan)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-lock")
-                            .font(.system(size: 15)).foregroundStyle(.primary)
+                            .font(AppFont.scaled(15)).foregroundStyle(.primary)
                         Text(LocalizedStringKey(autoLockDescription))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                            .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Text(autoLockLabel)
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
@@ -274,6 +378,33 @@ struct SecurityView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Locked sections
+
+    private var sectionLocksSection: some View {
+        secGroup(
+            title: "Locked sections",
+            footer: "Require Face ID, Touch ID, or your passcode before these sections open. They re-lock every time you leave the app."
+        ) {
+            let sections = SectionLockManager.Section.allCases
+            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: section.icon, color: section.color)
+                    Text(section.titleKey)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { sectionLock.isProtected(section) },
+                        set: { sectionLock.setProtected(section, $0) }
+                    ))
+                    .labelsHidden().tint(.accentColor)
+                }
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
+
+                if index < sections.count - 1 { divider }
+            }
         }
     }
 
@@ -285,7 +416,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "square.and.arrow.up.fill", color: .cyan)
                     Text("Export my data")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
                     Spacer()
                     if isExporting {
                         ProgressView().scaleEffect(0.8)
@@ -304,7 +435,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "trash.fill", color: .red)
                     Text("Delete account")
-                        .font(.system(size: 15)).foregroundStyle(.red)
+                        .font(AppFont.scaled(15)).foregroundStyle(.red)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
@@ -323,14 +454,13 @@ struct SecurityView: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
-                .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
                 .liquidGlass(cornerRadius: AppRadius.xl)
 
             if let footer {
                 Text(footer)
-                    .font(.system(size: 12))
+                    .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .padding(.horizontal, AppSpacing.sm)
                     .padding(.top, 2)
@@ -338,14 +468,17 @@ struct SecurityView: View {
         }
     }
 
-    private func statusRow(icon: String, color: Color, title: String, status: String) -> some View {
+    // LocalizedStringKey, NOT String — plain String parameters rendered the
+    // literals verbatim and silently skipped the Romanian translations that
+    // already existed for them (IMG_8534).
+    private func statusRow(icon: String, color: Color, title: LocalizedStringKey, status: LocalizedStringKey) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(title)
-                .font(.system(size: 15)).foregroundStyle(.primary)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
             Text(status)
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(0.38))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
     }

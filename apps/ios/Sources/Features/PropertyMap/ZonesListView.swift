@@ -1,6 +1,7 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 
-// MARK: - Zones List — matches dark mockup (filter chips + zone rows)
+// MARK: - Zones List — matches dark mockup (aggregated toolbar filter + zone rows)
 
 struct ZonesListView: View {
     @Environment(PropertyZoneService.self) var zoneService
@@ -11,9 +12,9 @@ struct ZonesListView: View {
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
     @Environment(AppRouter.self) var router
-    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ZoneFilter = .all
+    @State private var searchText = ""
 
     enum ZoneFilter: String, CaseIterable {
         case all       = "All"
@@ -29,11 +30,24 @@ struct ZonesListView: View {
             case .utilities: return .utility
             }
         }
+
+        /// Same catalog keys the chips resolved (`LocalizedStringKey(rawValue)`),
+        /// as plain strings for `GlassPickerOption.title`.
+        var title: String {
+            switch self {
+            case .all:       return String(localized: "All")
+            case .general:   return String(localized: "General")
+            case .buildings: return String(localized: "Buildings")
+            case .utilities: return String(localized: "Utilities")
+            }
+        }
     }
 
     private var filteredZones: [PropertyZone] {
-        guard let layer = filter.layer else { return zoneService.zones }
-        return zoneService.zones.filter { $0.layer == layer }
+        var zones = zoneService.zones
+        if let layer = filter.layer { zones = zones.filter { $0.layer == layer } }
+        guard !searchText.isEmpty else { return zones }
+        return zones.filter { $0.name.matchesSearch(searchText) }
     }
 
     private func elementCount(in zone: PropertyZone) -> Int {
@@ -47,10 +61,6 @@ struct ZonesListView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                filterChipsRow
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.base)
-
                 if filteredZones.isEmpty {
                     emptyState
                         .padding(.top, 60)
@@ -81,68 +91,62 @@ struct ZonesListView: View {
                 Spacer(minLength: 120)
             }
             .padding(.top, AppSpacing.sm)
-            .trackTabScroll()
         }
-        .background(appBackground.ignoresSafeArea())
+        // Smart-home warm skin: the blurred cover-photo backdrop with the
+        // content resolving in the dark scheme, like every twin surface.
+        .environment(\.colorScheme, .dark)
+        .background { SmartHomeBackdrop(photoSource: propertyService.primary?.photoUrl) }
         .navigationTitle("Zones")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .searchable(text: $searchText,
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    Text("\(filteredZones.count)")
-                        .font(AppFont.captionEmphasis)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(.regularMaterial, in: Capsule())
-
-                    Button {
-                        HapticFeedback.impact(.light)
-                        router.selectedTab = .digitalTwin
-                    } label: {
-                        Image(systemName: "map.fill")
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                            .frame(width: 34, height: 34)
-                    }
-                    .buttonStyle(.plain)
-                    .glassCircle()
-                    .accessibilityLabel("Open Digital Twin")
+                Text("\(filteredZones.count)")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.smartTextSecondary)
+            }
+            // The one aggregated filter — replaces the chip row that
+            // sat above the list. `inToolbar` because iOS 26 wraps
+            // toolbar controls in system glass (IMG_8315 class).
+            ToolbarItem(placement: .topBarTrailing) {
+                GlassFilterButton(isActive: filter != .all, inToolbar: true) {
+                    GlassFilterSection(options: zoneFilterOptions, selection: $filter)
                 }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.selectedTab = .digitalTwin
+                } label: {
+                    // No .glassCircle() in a toolbar — iOS 26 wraps the
+                    // control in its own glass, so a custom circle doubled
+                    // it (IMG_8315 class).
+                    Image(systemName: "map.fill")
+                        .font(AppFont.scaled(17, weight: .semibold))
+                        .foregroundStyle(Color.smartTextPrimary)
+                }
+                .accessibilityLabel("Open Digital Twin")
             }
         }
     }
 
-    // MARK: - Filter chips
+    // MARK: - Filter options
 
-    private var filterChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(ZoneFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                        withAnimation(.spring(response: 0.3)) { filter = f }
-                    }
-                }
-            }
-            .padding(.vertical, 2)
-        }
+    /// The exact filters the chip row drove, for the aggregated popover.
+    private var zoneFilterOptions: [GlassPickerOption<ZoneFilter>] {
+        ZoneFilter.allCases.map { GlassPickerOption(value: $0, title: $0.title) }
     }
 
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "square.stack.3d.up.slash")
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text("No zones")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            Text("Open the Digital Twin to draw your first zone")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "square.stack.3d.up.slash",
+            title: "No zones",
+            message: "Open the Digital Twin to draw your first zone"
+        )
     }
 }
 
@@ -169,17 +173,17 @@ struct ZoneListRow: View {
                     .fill(zone.tint.opacity(0.18))
                     .frame(width: 46, height: 46)
                 Image(systemName: zone.icon)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(AppFont.scaled(19, weight: .semibold))
                     .foregroundStyle(zone.tint)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(zone.name)
                     .font(AppFont.subheadline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.smartTextPrimary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.smartTextSecondary)
             }
 
             Spacer()
@@ -190,22 +194,24 @@ struct ZoneListRow: View {
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)
                 .padding(.vertical, AppSpacing.xxs)
-                .background(zone.healthColor.opacity(0.15), in: Capsule())
+                .background(zone.healthColor.opacity(AppOpacity.tintedFill), in: Capsule())
 
             Image(systemName: "chevron.right")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.25))
+                .foregroundStyle(Color.smartTextSecondary)
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
-                )
+                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.smartGlassFill)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(SmartHomeTheme.glassStrokeGradient, lineWidth: 1)
+        )
         .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 }

@@ -10,9 +10,17 @@ struct ConvSwipeAction: Identifiable {
     let action: () -> Void
 }
 
+/// How a swipe row dresses: `.card` = its own Liquid Glass rounded card
+/// (Send Later queue); `.plain` = naked content in a continuous list —
+/// the iOS-Messages look the conversation list uses (IMG_8556), where
+/// hairline dividers, not cards, separate rows. Top-level (not nested in
+/// the generic row) so the helper modifiers reference one concrete type.
+enum SwipeRowStyle { case card, plain }
+
 struct SwipeableRow<Content: View>: View {
     var leading: [ConvSwipeAction] = []
     var trailing: [ConvSwipeAction] = []
+    var style: SwipeRowStyle = .card
     @ViewBuilder var content: () -> Content
 
     @State private var offset: CGFloat = 0
@@ -28,23 +36,28 @@ struct SwipeableRow<Content: View>: View {
 
     var body: some View {
         ZStack {
-            // Action buttons only exist while actively swiping — avoids a colour
-            // "flash" behind rows during list/filter transitions.
+            // Action buttons TRACK the finger (offset-linked), so they are
+            // never parked under the still-covering row — which is what
+            // forced the old bright material backing behind the sliding
+            // content (the "white sticker" band, IMG_8732). With the
+            // buttons riding the reveal, the row keeps the naked page
+            // background at every phase of the gesture.
             if offset > 0 {
                 HStack(spacing: 0) {
                     ForEach(leading) { actionButton($0) }
                     Spacer(minLength: 0)
                 }
+                .offset(x: offset - leadingWidth)
             } else if offset < 0 {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
                     ForEach(trailing) { actionButton($0) }
                 }
+                .offset(x: trailingWidth + offset)
             }
 
             content()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .modifier(SwipeRowDress(style: style, isSwiping: offset != 0))
                 .offset(x: offset)
                 .overlay {
                     if offset != 0 {
@@ -71,7 +84,7 @@ struct SwipeableRow<Content: View>: View {
                         }
                 )
         }
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .clipShape(SwipeRowClip(style: style))
     }
 
     private func actionButton(_ a: ConvSwipeAction) -> some View {
@@ -82,7 +95,7 @@ struct SwipeableRow<Content: View>: View {
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: a.icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(AppFont.scaled(20, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(LocalizedStringKey(a.label))
                     .font(AppFont.label)
@@ -96,5 +109,39 @@ struct SwipeableRow<Content: View>: View {
             .padding(.horizontal, 3).padding(.vertical, 2)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// `.card` keeps the row's own Liquid Glass; `.plain` stays NAKED on the
+/// page background through the whole gesture — the buttons ride the
+/// reveal, so nothing ever needs to be masked (IMG_8732).
+private struct SwipeRowDress: ViewModifier {
+    let style: SwipeRowStyle
+    let isSwiping: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch style {
+        case .card:
+            content.liquidGlass(cornerRadius: AppRadius.lg)
+        case .plain:
+            content
+        }
+    }
+}
+
+/// Card rows clip to their rounded rect; plain rows clip to a plain
+/// rectangle so the swipe offset stays contained without rounding a
+/// continuous list's edges.
+private struct SwipeRowClip: Shape {
+    let style: SwipeRowStyle
+
+    func path(in rect: CGRect) -> Path {
+        switch style {
+        case .card:
+            return RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).path(in: rect)
+        case .plain:
+            return Rectangle().path(in: rect)
+        }
     }
 }

@@ -11,18 +11,19 @@ final class PropertyZoneService {
     var error: String?
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if zones.isEmpty, let cached = ServiceCache.load([PropertyZone].self, entity: "zones", propertyId: propertyId) {
+            zones = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
-            zones = try await supabase
-                .from("property_zones")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("sort_order", ascending: true)
-                .execute()
-                .value
+            zones = try await PropertyRepo.fetch(table: "property_zones", propertyId: propertyId,
+                                                 scope: .strict, order: "sort_order", ascending: true,
+                                                 limit: 500)
+            ServiceCache.save(zones, entity: "zones", propertyId: propertyId)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -39,7 +40,7 @@ final class PropertyZoneService {
             zones.append(created)
             return created
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
             return nil
         }
     }
@@ -55,9 +56,10 @@ final class PropertyZoneService {
             polygon: zone.polygon,
             imagePolygon: zone.imagePolygon,
             photoUrl: zone.photoUrl,
+            avatarUrl: zone.avatarUrl,
             sortOrder: zone.sortOrder,
             createdAt: zone.createdAt,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISODate.string(from: Date())
         )
         do {
             let updated: PropertyZone = try await supabase
@@ -72,7 +74,7 @@ final class PropertyZoneService {
                 zones[idx] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -85,7 +87,7 @@ final class PropertyZoneService {
                 .execute()
             zones.removeAll { $0.id == zone.id }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -100,7 +102,7 @@ final class PropertyZoneService {
         icon: String = "square.dashed",
         layer: PropertyLayer = .property
     ) async -> PropertyZone? {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewPropertyZone(
             propertyId: propertyId,
             name: name,
@@ -129,7 +131,7 @@ final class PropertyZoneService {
         icon: String = "square.dashed",
         layer: PropertyLayer = .property
     ) async -> PropertyZone? {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let payload = NewPropertyZone(
             propertyId: propertyId,
             name: name,

@@ -51,9 +51,13 @@ struct LinkPreviewView: View {
     @State private var title: String?
     @State private var image: UIImage?
     @State private var loaded = false
+    @State private var showPlayer = false
 
     var body: some View {
-        Link(destination: url) {
+        Button {
+            HapticFeedback.impact(.light)
+            showPlayer = true
+        } label: {
             VStack(alignment: .leading, spacing: 0) {
                 if let image {
                     Image(uiImage: image)
@@ -69,7 +73,7 @@ struct LinkPreviewView: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     Text(url.host ?? url.absoluteString)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
@@ -82,6 +86,19 @@ struct LinkPreviewView: View {
         }
         .buttonStyle(.plain)
         .onAppear(perform: load)
+        .overlay {
+            // Video links advertise themselves with a play badge, WhatsApp-style.
+            if VideoEmbed.isVideoLink(url), image != nil {
+                Image(systemName: "play.circle.fill")
+                    .font(AppFont.scaled(40))
+                    .foregroundStyle(.white, .black.opacity(0.45))
+                    .allowsHitTesting(false)
+                    .offset(y: -14)
+            }
+        }
+        .sheet(isPresented: $showPlayer) {
+            InAppLinkPlayerSheet(url: url)
+        }
     }
 
     private func load() {

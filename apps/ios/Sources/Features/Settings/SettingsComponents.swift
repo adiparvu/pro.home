@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Settings Group (iOS 26/27 liquid glass)
+// MARK: - Settings Group (Liquid Glass)
 
 struct SettingsGroup<Content: View>: View {
     let title: LocalizedStringKey
@@ -9,7 +9,6 @@ struct SettingsGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
@@ -26,6 +25,9 @@ struct NavSettingsRow<D: View>: View {
     let icon: String
     let color: Color
     let label: LocalizedStringKey
+    /// Optional current value shown before the chevron, the way iOS Settings
+    /// states a row's value ("Mesaje care dispar   7 zile ›").
+    var value: String? = nil
     @ViewBuilder let destination: () -> D
 
     var body: some View {
@@ -36,9 +38,15 @@ struct NavSettingsRow<D: View>: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: icon, color: color)
                     Text(label)
-                        .font(.system(size: 15))
+                        .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
                     Spacer()
+                    if let value {
+                        Text(value)
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .lineLimit(1)
+                    }
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
@@ -72,7 +80,7 @@ struct TapSettingsRow: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
                 Text(label)
-                    .font(.system(size: 15))
+                    .font(AppFont.scaled(15))
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -98,7 +106,7 @@ struct ToggleSettingsRow: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: $value)
@@ -124,11 +132,11 @@ struct InfoSettingsRow: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.system(size: 14))
+                .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(0.38))
         }
         .padding(.horizontal, AppSpacing.base)
@@ -159,40 +167,5 @@ struct ColoredIconBadge: View {
                 .symbolRenderingMode(.hierarchical)
                 .symbolEffect(.bounce, value: bounce)
         }
-    }
-}
-
-// MARK: - Settings Placeholder
-
-struct SettingsPlaceholder: View {
-    let icon: String
-    let title: LocalizedStringKey
-    let description: LocalizedStringKey
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: icon)
-                .font(.system(size: 52))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text(title)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.primary)
-            Text(description)
-                .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Text("Coming soon")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-            Spacer()
-        }
-        .background(appBackground.ignoresSafeArea())
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }

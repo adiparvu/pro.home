@@ -25,6 +25,13 @@ struct ChatActionOverlay: View {
     /// When the pressed message is a photo, its stored attachment value so the
     /// overlay elevates the real image instead of a "📷 Photo" text preview.
     var imageStored: String? = nil
+    /// When the pressed message is a voice note, its stored audio value so the
+    /// overlay elevates the real waveform player instead of a "🎤 Voice message"
+    /// text preview — mirrors `imageStored` for photos.
+    var audioStored: String? = nil
+    /// Deleted-for-all messages take no reactions — only the actions passed in
+    /// (typically just Delete), matching WhatsApp.
+    var reactionsDisabled: Bool = false
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
@@ -40,7 +47,9 @@ struct ChatActionOverlay: View {
                 .onTapGesture { onDismiss() }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 12) {
-                reactionPill
+                if !reactionsDisabled {
+                    reactionPill
+                }
                 bubble
                 menu
             }
@@ -62,7 +71,7 @@ struct ChatActionOverlay: View {
                     HapticFeedback.impact(.light); onReact(e); onDismiss()
                 } label: {
                     Text(e)
-                        .font(.system(size: 28))
+                        .font(AppFont.scaled(28))
                         .scaleEffect(myReaction == e ? 1.2 : 1)
                         .padding(AppSpacing.xxs)
                         .background(myReaction == e ? Color.accentColor.opacity(0.18) : Color.clear, in: Circle())
@@ -84,7 +93,7 @@ struct ChatActionOverlay: View {
             .accessibilityLabel("More reactions")
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
-        .background(.regularMaterial, in: Capsule())
+        .glassCapsule()
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
         .sheet(isPresented: $showEmojiPicker) {
             EmojiGridPicker { e in
@@ -97,8 +106,13 @@ struct ChatActionOverlay: View {
 
     @ViewBuilder
     private var bubble: some View {
-        if imageStored != nil {
-            AsyncImage(url: imageURL) { phase in
+        if let audioStored {
+            // The real voice-bar the bubble renders — same component, so the
+            // waveform, play glyph and duration match the message exactly.
+            AudioBubble(audioValue: audioStored, isOwn: isOwn, bubbleColor: bubbleColor)
+                .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+        } else if imageStored != nil {
+            StorageImage(url: imageURL) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
                 } else {
@@ -114,7 +128,7 @@ struct ChatActionOverlay: View {
             }
         } else {
             Text(previewText)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .foregroundStyle(isOwn ? .white : .primary)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                 .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
@@ -132,10 +146,10 @@ struct ChatActionOverlay: View {
                 } label: {
                     HStack {
                         Text(LocalizedStringKey(item.label))
-                            .font(.system(size: 17))
+                            .font(AppFont.scaled(17))
                         Spacer()
                         Image(systemName: item.icon)
-                            .font(.system(size: 17))
+                            .font(AppFont.scaled(17))
                     }
                     .foregroundStyle(item.destructive ? Color.red : Color.primary)
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
@@ -146,7 +160,7 @@ struct ChatActionOverlay: View {
             }
         }
         .frame(width: 240)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .liquidGlass(cornerRadius: AppRadius.lg)
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
     }
 }
@@ -181,7 +195,7 @@ struct EmojiGridPicker: View {
                                     Button {
                                         HapticFeedback.impact(.light); onSelect(e)
                                     } label: {
-                                        Text(e).font(.system(size: 30))
+                                        Text(e).font(AppFont.scaled(30))
                                             .frame(maxWidth: .infinity, minHeight: 42)
                                     }
                                     .buttonStyle(.plain)
@@ -192,11 +206,11 @@ struct EmojiGridPicker: View {
                 }
                 .padding(AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Reactions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .presentationDetents([.medium, .large])
+        .presentationBackground(.thinMaterial)
     }
 }

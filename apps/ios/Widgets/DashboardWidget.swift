@@ -20,34 +20,54 @@ struct DashboardWidget: Widget {
 
 private struct AerialBackground: View {
     var body: some View {
-        Image("aerial_property")
-            .resizable()
-            .scaledToFill()
+        ZStack {
+            // Premium branded gradient base — always renders, so the widget looks
+            // intentional even if the aerial image can't load in the extension.
+            LinearGradient(
+                colors: [Color(red: 0.16, green: 0.20, blue: 0.52),
+                         Color(red: 0.28, green: 0.22, blue: 0.60),
+                         Color(red: 0.36, green: 0.20, blue: 0.68)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            RadialGradient(colors: [.white.opacity(0.14), .clear],
+                           center: .topTrailing, startRadius: 8, endRadius: 320)
+            // The property photo on top when available.
+            Image("aerial_property")
+                .resizable()
+                .scaledToFill()
+        }
     }
 }
 
 // MARK: - Small View
 
 struct DashboardSmallView: View {
+    // Tinted Home Screen (iOS 18): the system strips the aerial
+    // containerBackground, so the legibility scrim must go with it — a
+    // tinted slab over nothing reads as a stain.
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.72)],
-                startPoint: .center, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.72)],
+                    startPoint: .center, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 if let name = entry.snapshot.propertyName {
                     Text(name)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(AppFont.scaled(13, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                        .widgetAccentable()
                 }
                 HStack(spacing: 10) {
                     miniStat(icon: "checklist",
-                             value: "\(entry.snapshot.overdueTaskCount)",
+                             value: "\(entry.snapshot.openTaskCount)",
                              color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
                     miniStat(icon: "leaf.fill",
                              value: "\(entry.snapshot.plantsNeedingWater)",
@@ -63,10 +83,11 @@ struct DashboardSmallView: View {
     private func miniStat(icon: String, value: String, color: Color) -> some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(AppFont.scaled(10, weight: .semibold))
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
         }
     }
@@ -75,27 +96,31 @@ struct DashboardSmallView: View {
 // MARK: - Medium View
 
 struct DashboardMediumView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.78)],
-                startPoint: .top, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.78)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 if let name = entry.snapshot.propertyName {
                     Text(name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFont.scaled(15, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                        .widgetAccentable()
                 }
 
                 HStack(spacing: 0) {
                     statPill(icon: "checklist",
-                             value: "\(entry.snapshot.overdueTaskCount)",
-                             label: NSLocalizedString("widget_overdue", comment: ""),
+                             value: "\(entry.snapshot.openTaskCount)",
+                             label: NSLocalizedString("widget_open", comment: ""),
                              color: entry.snapshot.overdueTaskCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5))
                     statPill(icon: "leaf.fill",
                              value: "\(entry.snapshot.plantsNeedingWater)",
@@ -105,10 +130,10 @@ struct DashboardMediumView: View {
                              value: "\(entry.snapshot.activeDeliveryCount)",
                              label: NSLocalizedString("widget_deliveries", comment: ""),
                              color: entry.snapshot.activeDeliveryCount > 0 ? .blue : .white.opacity(0.5))
-                    statPill(icon: "square.and.pencil",
-                             value: "\(entry.snapshot.openTaskCount)",
-                             label: NSLocalizedString("widget_open", comment: ""),
-                             color: .white.opacity(0.6))
+                    statPill(icon: "exclamationmark.triangle.fill",
+                             value: "\(entry.snapshot.overdueTaskCount)",
+                             label: NSLocalizedString("widget_overdue", comment: ""),
+                             color: entry.snapshot.overdueTaskCount > 0 ? .red : .white.opacity(0.6))
                 }
             }
             .padding(.horizontal, 14)
@@ -121,13 +146,14 @@ struct DashboardMediumView: View {
     private func statPill(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(AppFont.scaled(20, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 9, weight: .medium))
+                .font(AppFont.scaled(9, weight: .medium))
                 .foregroundStyle(.white.opacity(0.65))
         }
         .frame(maxWidth: .infinity)
@@ -137,6 +163,7 @@ struct DashboardMediumView: View {
 // MARK: - Large View
 
 struct DashboardLargeView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: PRVIOWidgetEntry
 
     var pendingTasks: [TaskCatalogEntry] {
@@ -149,31 +176,34 @@ struct DashboardLargeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.55), .black.opacity(0.82)],
-                startPoint: .top, endPoint: .bottom
-            )
+            if renderingMode == .fullColor {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.55), .black.opacity(0.82)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
 
             VStack(alignment: .leading, spacing: 12) {
                 // Property name + time
                 HStack(alignment: .firstTextBaseline) {
                     if let name = entry.snapshot.propertyName {
                         Text(name)
-                            .font(.system(size: 17, weight: .bold))
+                            .font(AppFont.scaled(17, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
+                            .widgetAccentable()
                     }
                     Spacer()
                     Text(relativeTime)
-                        .font(.system(size: 11))
+                        .font(AppFont.scaled(11))
                         .foregroundStyle(.white.opacity(0.55))
                 }
 
                 // Stats row
                 HStack(spacing: 0) {
                     largeStat(icon: "checklist",
-                              value: "\(entry.snapshot.overdueTaskCount)",
-                              label: "Overdue",
+                              value: "\(entry.snapshot.openTaskCount)",
+                              label: "Tasks",
                               color: entry.snapshot.overdueTaskCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5))
                     largeStat(icon: "leaf.fill",
                               value: "\(entry.snapshot.plantsNeedingWater)",
@@ -195,13 +225,13 @@ struct DashboardLargeView: View {
                 if !pendingTasks.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("URGENT")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(AppFont.scaled(9, weight: .bold))
                             .foregroundStyle(.white.opacity(0.5))
                         ForEach(pendingTasks, id: \.id) { task in
                             HStack(spacing: 6) {
                                 Circle().fill(Color.red).frame(width: 5, height: 5)
                                 Text(task.title)
-                                    .font(.system(size: 12))
+                                    .font(AppFont.scaled(12))
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
                             }
@@ -213,14 +243,14 @@ struct DashboardLargeView: View {
                 if !needsWater.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("NEEDS WATER")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(AppFont.scaled(9, weight: .bold))
                             .foregroundStyle(.white.opacity(0.5))
                         HStack(spacing: 10) {
                             ForEach(needsWater, id: \.id) { plant in
                                 HStack(spacing: 4) {
-                                    Text(plant.emoji).font(.system(size: 13))
+                                    Text(plant.emoji).font(AppFont.scaled(13))
                                     Text(plant.name)
-                                        .font(.system(size: 11))
+                                        .font(AppFont.scaled(11))
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
                                 }
@@ -238,13 +268,14 @@ struct DashboardLargeView: View {
     private func largeStat(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(color)
+                .widgetAccentable()
             Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(AppFont.title2)
                 .foregroundStyle(.white)
             Text(label)
-                .font(.system(size: 9, weight: .medium))
+                .font(AppFont.scaled(9, weight: .medium))
                 .foregroundStyle(.white.opacity(0.65))
         }
         .frame(maxWidth: .infinity)

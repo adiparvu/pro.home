@@ -31,7 +31,7 @@ final class WeatherKitService {
             hourlyForecast = Array(weather.1.forecast.prefix(24))
             dailyForecast = Array(weather.2.forecast.prefix(7))
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
         isLoading = false
     }

@@ -138,7 +138,7 @@ struct ContactsInviteView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 content
             }
             .navigationTitle("New contact")
@@ -165,6 +165,7 @@ struct ContactsInviteView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder private var content: some View {
@@ -197,7 +198,7 @@ struct ContactsInviteView: View {
                         } label: {
                             contactRow(c, trailing: {
                                 Image(systemName: "bubble.left.fill")
-                                    .font(.system(size: 15))
+                                    .font(AppFont.scaled(15))
                                     .foregroundStyle(Color.accentColor)
                             })
                         }
@@ -226,7 +227,7 @@ struct ContactsInviteView: View {
             ZStack {
                 Circle().fill(Color.accentColor.opacity(0.18))
                 Text(c.initials.isEmpty ? "?" : c.initials)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
             }
             .frame(width: 40, height: 40)
@@ -234,7 +235,7 @@ struct ContactsInviteView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(c.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
                 if let detail = c.primaryDetail {
-                    Text(detail).font(.system(size: 12))
+                    Text(detail).font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).lineLimit(1)
                 }
             }
@@ -308,10 +309,10 @@ struct ContactsInviteView: View {
     }
 
     private func show(_ message: String) {
-        withAnimation { banner = message }
+        withAnimation(AppMotion.state) { banner = message }
         Task {
             try? await Task.sleep(for: .seconds(2.5))
-            withAnimation { if banner == message { banner = nil } }
+            withAnimation(AppMotion.state) { if banner == message { banner = nil } }
         }
     }
 
@@ -319,12 +320,12 @@ struct ContactsInviteView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "person.crop.circle.badge.questionmark")
-                .font(.system(size: 46, weight: .light))
+                .font(AppFont.scaled(46, weight: .light))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Text("Contacts access is off")
                 .font(AppFont.headline).foregroundStyle(.primary)
             Text("Allow access to invite people straight from your address book.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                .font(AppFont.scaled(13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
@@ -337,15 +338,12 @@ struct ContactsInviteView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "person.2.slash")
-                .font(.system(size: 44, weight: .light))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            Text("No contacts found").font(AppFont.headline).foregroundStyle(.primary)
-            Button { onManualEntry() } label: { Text("Add manually").font(AppFont.subheadline) }
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "person.2.slash",
+            title: "No contacts found",
+            actionLabel: "Add manually",
+            action: onManualEntry
+        )
     }
 
     // Stable per-name color so a contact looks consistent between sessions.

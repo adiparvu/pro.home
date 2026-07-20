@@ -26,11 +26,44 @@ evolution. Build for the future, not only for the current feature.
 
 ## Apple design philosophy
 
-Every screen must feel like it belongs on iOS 26+, using Apple's latest
-design language, at a visual quality comparable to Apple's own apps. Use
-Liquid Glass thoughtfully throughout. The app should always feel premium,
-elegant, minimal, immersive, refined, fluid, modern, and native. Never ship
-generic UI — every component should look intentionally designed.
+The bar is ALWAYS the CURRENT WWDC cycle (permanent, user-decreed).
+Today that is **WWDC26+ / iOS 27+** — the minimum reference for every
+design decision, proposal, report and comment; next year it becomes
+WWDC27+/iOS 28+, and so on, forever. Every screen must feel like it
+belongs on the newest OS at a visual quality comparable to Apple's own
+apps, so the app can keep being developed on the newest standard instead
+of re-fighting the same drift every cycle.
+
+- BAR vs FLOOR (user-decreed, 2026-07): the bar — what we design
+  against, mine docs for, and cite when proposing — is ALWAYS the
+  current cycle (WWDC26+/iOS 27+ today). Older OS versions may appear
+  ONLY as technical floors: deployment targets, `#available` gates,
+  and where-an-API-appeared facts. NEVER present a previous cycle as
+  "the newest"/"the standard" in any proposal, report, comment, or
+  user-facing copy — frame capabilities from the current cycle down,
+  never from a past cycle up.
+- When a current-cycle API needs a newer SDK than the CI toolchain
+  ships, say so explicitly, adopt the current cycle's design guidance
+  NOW, and queue the API adoption for the moment the toolchain allows.
+
+- The SOURCE OF TRUTH is developer.apple.com — the HIG, the framework
+  docs and the current WWDC session pages — fetched FRESH, never
+  recalled from memory: each WWDC postdates the model's training, so
+  memory is wrong by construction. The proven loop: parallel doc-mining
+  agents over the official pages → a gap map against this codebase
+  (must/should/taste) → implement the musts as deploy trains.
+- On every new WWDC (or when the user says "update to WWDC(N)"), rerun
+  that loop across the whole app: app structure and bars, menus, Liquid
+  Glass/materials, components, icons/typography, and the new SDK APIs.
+- Prefer the SYSTEM implementation over rebuilding it: WWDC26's lesson
+  (menus) is permanent — when Apple ships a native component with the
+  behavior we want, adopt it instead of imitating it.
+
+Use Liquid Glass thoughtfully throughout. The app should always feel
+premium, elegant, minimal, immersive, refined, fluid, modern, and
+native. Never ship generic UI — every component should look
+intentionally designed. When Apple's newest visual language and an
+older iOS convention disagree, always choose the newest.
 
 ### Liquid Glass rules
 
@@ -39,6 +72,44 @@ generic UI — every component should look intentionally designed.
 - Glass must never reduce readability.
 - Spacing should always feel balanced.
 - Every screen should immediately communicate premium quality.
+
+### Menus — the one-circle law, on the SYSTEM menu (permanent, user-decreed)
+
+- Each page exposes ONE circular glass trigger (toolbar-preferred, top
+  trailing) that aggregates EVERYTHING: view modes, filters, sorts, one-shot
+  actions (share/print/export), and anything that would otherwise live in an
+  "…" menu, a capsule row, or stat tiles. No permanent chip rows, capsules,
+  or tile strips on the page body.
+- The presentation is the NATIVE SwiftUI `Menu` (per Apple's WWDC26
+  guidance: the morph-from-trigger entrance, the glass card, the stacked
+  submenu are the system's, "out of the box" — never rebuild them, and
+  never paint a custom background over system Liquid Glass). The trigger
+  and blocks live in Components/GlassFilterButton.swift: single-select
+  groups are inline `Picker`s, booleans are `Toggle`s, one-shot actions are
+  `Button(role:)` — the system runs them after dismissal, no mailbox.
+- HIG row anatomy is law: icons uniformly per group (all rows or none),
+  icon trailing the label, destructive actions carry the REAL
+  `.destructive` role and sit at the END, counts/badges stay on page
+  content — they are not menu anatomy.
+- Menu-in-menu (IMG_8580–8582): a facet with its options is a NESTED
+  `Menu` whose label is the facet title + current value — the system
+  presents it as the stacked card over the dimmed parent, exactly Photos.
+  Use `GlassDrillMenu` (Components/GlassDrillMenu.swift) for pages with 4+
+  facets; flat sections stay the default for 2–3 groups. Keep a submenu to
+  roughly five options (HIG) — beyond that, prefer flat sections.
+- NO exceptions (user-decreed, IMG_8593): every page presents the native
+  `Menu` — the `richContent` popover path has zero users and stays
+  dormant. Content that "doesn't fit a menu" gets rethought until it
+  does (Activity's People section became plain single-select options;
+  search fields and avatars are not menu anatomy), or it moves onto the
+  page — it never resurrects the custom popover.
+
+### Headers — no borders, ever (permanent, user-decreed)
+
+Day headers and section headers are NAKED text: no glass chip, no capsule,
+no material band, no background of any kind, on any page (IMG_8554 →
+IMG_8559 → IMG_8562 "nici aici, nici nicăieri"). Unpin such headers so
+rows never scroll beneath bare glyphs.
 
 ### Motion design
 

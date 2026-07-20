@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Supabase
 
 extension PropertyElementDetailView {
 
@@ -119,7 +118,7 @@ extension PropertyElementDetailView {
                     if isUploading { ProgressView().scaleEffect(0.7) }
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 5, matching: .images) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20))
+                            .font(AppFont.scaled(20))
                             .foregroundStyle(Color.accentColor)
                     }
                 }
@@ -131,7 +130,7 @@ extension PropertyElementDetailView {
                         HStack(spacing: 10) {
                             ForEach(localElement.photos, id: \.self) { urlStr in
                                 if let url = URL(string: urlStr) {
-                                    AsyncImage(url: url) { phase in
+                                    StorageImage(url: url) { phase in
                                         if case .success(let img) = phase {
                                             img.resizable().scaledToFill()
                                         } else {
@@ -158,12 +157,11 @@ extension PropertyElementDetailView {
     var locationSection: some View {
         GlassCard(padding: 14) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
-                        .font(.system(size: 17))
-                        .foregroundStyle(Color.accentColor)
-                }
+                Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
+                    .font(AppFont.scaled(17))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 40, height: 40)
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Map location").font(.subheadline.weight(.medium))
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Not placed" : "Placed on map"))
@@ -172,9 +170,9 @@ extension PropertyElementDetailView {
                 Spacer()
                 Button { showLocationPicker = true } label: {
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Place" : "Change"))
-                        .font(.caption.weight(.semibold)).foregroundStyle(.white)
+                        .font(.caption.weight(.semibold)).foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
-                        .background(Capsule().fill(Color.accentColor))
+                        .glassCapsule()
                 }
                 .buttonStyle(.plain)
             }
@@ -186,14 +184,11 @@ extension PropertyElementDetailView {
         isUploading = true
         defer { isUploading = false }
         var urls = localElement.photos
-        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            let path = "\(uid)/elements/\(localElement.id.uuidString)/\(UUID().uuidString).jpg"
-            _ = try? await supabase.storage.from("documents")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            if let url = try? supabase.storage.from("documents").getPublicURL(path: path) {
-                urls.append(url.absoluteString)
+            if let url = try? await SignedStorage.uploadPublicImage(
+                data, folder: "elements/\(localElement.id.uuidString)") {
+                urls.append(url)
             }
         }
         await elementService.updatePhotos(elementId: localElement.id, urls: urls)
@@ -220,10 +215,10 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Add", systemImage: "plus")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
 
@@ -245,7 +240,7 @@ extension PropertyElementDetailView {
         GlassCard {
             VStack(spacing: 10) {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                    .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                 Text("No records")
                     .font(.subheadline).foregroundStyle(.secondary)
                 Text("Add the first job, cost or note")
@@ -271,16 +266,16 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
             if linked.isEmpty {
                 GlassCard {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.fill")
-                            .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                            .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                         Text("No linked documents")
                             .font(.subheadline).foregroundStyle(.secondary)
                         Text("Link manuals, warranties or invoices to this item")
@@ -317,16 +312,16 @@ extension PropertyElementDetailView {
                 } label: {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color.brandPrimaryBlue))
+                        .glassCapsule()
                 }
             }
             if linked.isEmpty {
                 GlassCard {
                     VStack(spacing: 10) {
                         Image(systemName: "checklist")
-                            .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                            .font(AppFont.scaled(32)).foregroundStyle(Color.secondary.opacity(0.5))
                         Text("No linked tasks")
                             .font(.subheadline).foregroundStyle(.secondary)
                         Text("Link maintenance tasks to this item")
@@ -349,9 +344,7 @@ extension PropertyElementDetailView {
     // MARK: - Helpers
 
     func formatted(date: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: date) else { return date }
-        let out = DateFormatter(); out.dateStyle = .medium; out.locale = .current
-        return out.string(from: d)
+        guard let d = AppDate.day(from: date) else { return date }
+        return AppDate.medium.string(from: d)
     }
 }

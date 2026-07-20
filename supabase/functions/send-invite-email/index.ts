@@ -212,7 +212,11 @@ function mapRole(r?: string): string {
     case 'tenant': return 'tenant'
     case 'worker': case 'contractor': case 'service_provider': return 'service_provider'
     case 'guest': case 'friend': return 'guest'
-    default: return 'guest'
+    // A silent guest fallback once cost a PARTNER her family access (empty
+    // chat, closed realtime channel — the has_family_access gate): an
+    // unknown role string is a caller bug and must fail loudly, never
+    // quietly grant the most restricted role.
+    default: throw new Error(`send-invite-email: unknown role "${r}"`)
   }
 }
 

@@ -1,0 +1,20 @@
+/* Prompturile de permisiuni în română — primul text pe care îl citește un
+   utilizator român despre aplicație (audit: apăreau doar în engleză). */
+"NSCameraUsageDescription" = "Folosită pentru a scana documente și a fotografia proprietatea.";
+"NSPhotoLibraryUsageDescription" = "Folosită pentru a atașa fotografii la evidențele și sarcinile proprietății.";
+"NSPhotoLibraryAddUsageDescription" = "Folosită pentru a salva capturi de la camerele de securitate în galeria ta foto.";
+"NSMicrophoneUsageDescription" = "Folosit pentru căutarea vocală prin sarcini, documente și finanțe, fără mâini.";
+"NSSpeechRecognitionUsageDescription" = "Folosită pentru a transforma vocea ta în căutări prin datele proprietății.";
+"NSLocationWhenInUseUsageDescription" = "Folosită pentru a-ți partaja locația în Chat și a marca locul obiectelor în Inventar.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Menține partajarea locației live pe perioada aleasă și — doar dacă activezi prezența acasă — observă sosirile și plecările într-o zonă restrânsă în jurul casei, chiar și când PRVIO e în fundal.";
+"NSFaceIDUsageDescription" = "Folosește Face ID pentru a debloca PRVIO rapid și în siguranță.";
+"NSCalendarsFullAccessUsageDescription" = "Folosit pentru a sincroniza sarcinile de întreținere și mementourile cu Calendarul Apple.";
+"NSCalendarsWriteOnlyAccessUsageDescription" = "Folosit pentru a adăuga zilele de naștere ale familiei ca mementouri anuale în Calendarul Apple.";
+"NSRemindersFullAccessUsageDescription" = "Folosit pentru a adăuga sarcinile întârziate în Mementouri Apple, pentru acțiune rapidă.";
+"NSContactsUsageDescription" = "Folosit pentru a sincroniza membrii familiei cu Contactele de pe iPhone.";
+"NSSiriUsageDescription" = "Folosit pentru a adăuga sarcini, a uda plantele și a deschide PRVIO cu vocea.";
+"NFCReaderUsageDescription" = "Folosit pentru a scana etichetele NFC de pe aparate și camere și a le deschide instant în PRVIO.";
+"NSLocalNetworkUsageDescription" = "Folosită pentru a comunica cu controlerele IoT locale (ESP32, Raspberry Pi, gateway-uri RS485 Modbus) din rețeaua casei.";
+"NSHomeKitUsageDescription" = "Folosit pentru a citi și controla dispozitivele inteligente HomeKit conectate la proprietate.";
+"NSAppleMusicUsageDescription" = "Folosită pentru a afișa și controla ce se redă pe cardul media al panoului de bord.";
+"NSGroupActivitiesUsageDescription" = "Folosită pentru a partaja Geamănul Digital cu familia în timpul unui apel FaceTime.";

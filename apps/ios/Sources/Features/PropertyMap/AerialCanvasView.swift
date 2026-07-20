@@ -1,3 +1,4 @@
+// Unreferenced since tab 2 became Spațiile casei (user decision) — safe to delete in a cleanup pass.
 import SwiftUI
 import UIKit
 
@@ -11,11 +12,38 @@ import UIKit
 //   • The image is STATIC (no Ken Burns) so pins stay locked to image features.
 //   • Pins are positioned purely by normalised positionX/positionY (0–1).
 
+/// A programmatic "fly-to" request: normalized target + a token so the same
+/// point can be requested twice in a row and still animate.
+struct MapFocus: Equatable {
+    let point: CGPoint
+    let token: UUID
+
+    init(point: CGPoint) {
+        self.point = point
+        self.token = UUID()
+    }
+}
+
 struct AerialCanvasView: View {
     let property: PropertyModel
     let elements: [PropertyElement]
     var zones: [PropertyZone] = []
     var interactive: Bool = false
+    /// When set, the canvas zooms in and centers on this normalized point
+    /// (search results, "show on map" actions).
+    var focus: MapFocus? = nil
+    // Live layers (Faza 3): all optional, all rendered over the same photo.
+    /// Zones drawn with a dashed "underground" outline (buried utilities).
+    var dashedZoneIds: Set<UUID> = []
+    /// Per-zone fill/stroke override (health tinting).
+    var zoneTintOverride: [UUID: Color] = [:]
+    /// Pulsing badge color per element id (open tasks: red = urgent/overdue).
+    var elementBadges: [UUID: Color] = [:]
+    /// Photo-count bubbles anchored at zone centroids (journal layer).
+    var journalBadges: [TwinJournalBadge] = []
+    var onJournalBadgeTap: (UUID) -> Void = { _ in }
+    /// Elements with a linked 3D scan get a "3D" badge on their pin.
+    var threeDElementIds: Set<UUID> = []
     var pinMode: Bool = false
     var zoneDrawMode: Bool = false
     var draftZonePoints: [CGPoint] = []   // normalized 0–1
@@ -42,6 +70,12 @@ struct AerialCanvasView: View {
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
 
+    // Aerial photo pyramid: the smallest level that stays crisp at the
+    // current zoom. Upgraded when a pinch ends, never downgraded.
+    @Environment(\.displayScale) private var displayScale
+    @State private var aerialUIImage: UIImage?
+    @State private var canvasSize: CGSize = .zero
+
     // Pinch-to-zoom / pan (view-only; reset while editing)
     @State private var zoomScale: CGFloat = 1
     @State private var lastZoom: CGFloat = 1
@@ -56,6 +90,9 @@ struct AerialCanvasView: View {
             .onEnded { _ in
                 lastZoom = zoomScale
                 if zoomScale <= 1.01 { withAnimation(.spring(response: 0.3)) { zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero } }
+                // Sharpen after the fingers lift: fetch the pyramid level
+                // that matches the new zoom (GPU keeps scaling meanwhile).
+                Task { await upgradeAerialImage() }
             }
     }
 
@@ -68,6 +105,36 @@ struct AerialCanvasView: View {
 
     private func resetZoom() {
         zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero
+    }
+
+    /// Zoom in and center the given normalized point, clamped so the photo
+    /// keeps covering the viewport (no empty edges).
+    private func flyTo(_ p: CGPoint, size: CGSize) {
+        let scale: CGFloat = max(zoomScale, 2.4)
+        let maxX = (scale - 1) * size.width / 2
+        let maxY = (scale - 1) * size.height / 2
+        let target = CGSize(
+            width: min(max((0.5 - p.x) * size.width * scale, -maxX), maxX),
+            height: min(max((0.5 - p.y) * size.height * scale, -maxY), maxY)
+        )
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
+            zoomScale = scale
+            panOffset = target
+        }
+        lastZoom = scale
+        lastPan = target
+        Task { await upgradeAerialImage() }
+    }
+
+    /// Swap in the pyramid level matching the current viewport × zoom.
+    private func upgradeAerialImage() async {
+        let side = max(canvasSize.width, canvasSize.height)
+        guard side > 0 else { return }
+        let needed = side * displayScale * zoomScale
+        let currentPixels = aerialUIImage.map { $0.size.width * $0.scale }
+        if let img = await AerialImagePyramid.shared.image(atLeast: needed, currentWidth: currentPixels) {
+            aerialUIImage = img
+        }
     }
 
     private var visibleElements: [PropertyElement] {
@@ -151,6 +218,13 @@ struct AerialCanvasView: View {
                     }
                 }
 
+                // Journal layer: photo-count bubbles at zone centroids.
+                if !pinMode && !zoneDrawMode && !reshapeMode {
+                    ForEach(journalBadges) { badge in
+                        journalBadgeView(badge, size: geo.size)
+                    }
+                }
+
                 if interactive && reshapeMode { reshapeOverlay(size: geo.size) }
 
                 if interactive && pinMode { placeBanner }
@@ -162,6 +236,10 @@ struct AerialCanvasView: View {
             .onChange(of: pinMode) { _, on in if on { resetZoom() } }
             .onChange(of: zoneDrawMode) { _, on in if on { resetZoom() } }
             .onChange(of: reshapeMode) { _, on in if on { resetZoom() } }
+            .onChange(of: focus) { _, f in
+                guard let f, canZoom else { return }
+                flyTo(f.point, size: geo.size)
+            }
         }
         .clipped()
     }
@@ -170,24 +248,36 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func aerialImage(size: CGSize) -> some View {
-        Group {
-            if let ui = UIImage(named: "aerial_property") {
+        ZStack {
+            Color(red: 0.06, green: 0.12, blue: 0.07)
+            if let ui = aerialUIImage {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFill()
-            } else {
-                Color(red: 0.06, green: 0.12, blue: 0.07)
+                    // scaledToFill overflows the frame and .clipped() clips
+                    // only DRAWING, not hit testing — the invisible overflow
+                    // was eating taps hundreds of points above the card (the
+                    // dead dashboard header). The photo is never a tap target.
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
         }
         .frame(width: size.width, height: size.height)
         .clipped()
+        .animation(.easeInOut(duration: 0.18), value: aerialUIImage)
+        .task(id: Int(size.width)) {
+            canvasSize = size
+            await upgradeAerialImage()
+        }
     }
 
     // MARK: - Pins
 
     @ViewBuilder
     private func pinView(_ el: PropertyElement, size: CGSize) -> some View {
-        let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames)
+        let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames,
+                                   badge: elementBadges[el.id],
+                                   has3D: threeDElementIds.contains(el.id))
             .position(pinPoint(el, size))
         if interactive {
             let base = pin
@@ -265,7 +355,7 @@ struct AerialCanvasView: View {
                     .overlay(Circle().fill(Color.accentColor.opacity(0.55)))
                     .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 1.5))
                     .frame(width: 34, height: 34)
-                Text("\(els.count)").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                Text("\(els.count)").font(AppFont.scaled(14, weight: .bold)).foregroundStyle(.white)
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
         }
@@ -278,6 +368,36 @@ struct AerialCanvasView: View {
         let nx = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionX
         let ny = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
         return CGPoint(x: nx * size.width, y: ny * size.height)
+    }
+
+    // MARK: - Journal badges
+
+    @ViewBuilder
+    private func journalBadgeView(_ badge: TwinJournalBadge, size: CGSize) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            onJournalBadgeTap(badge.id)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "photo.fill")
+                    .font(AppFont.scaled(10, weight: .bold))
+                Text("\(badge.count)")
+                    .font(AppFont.scaled(11, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 4)
+            .background {
+                ZStack {
+                    Capsule().fill(.ultraThinMaterial)
+                    Capsule().fill(Color.orange.opacity(0.45))
+                }
+            }
+            .overlay(Capsule().strokeBorder(.white.opacity(0.6), lineWidth: 1))
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+        }
+        .buttonStyle(.plain)
+        .position(x: badge.point.x * size.width, y: badge.point.y * size.height - 22)
+        .accessibilityLabel("Journal photos")
     }
 
     private func clampNorm(_ p: CGPoint, in size: CGSize) -> CGPoint {
@@ -293,9 +413,16 @@ struct AerialCanvasView: View {
     private func zoneShape(_ zone: PropertyZone, size: CGSize) -> some View {
         let pts = zone.imagePoints
         let interactable = interactive && !pinMode && !zoneDrawMode && !reshapeMode
+        let tint = zoneTintOverride[zone.id] ?? zone.tint
+        let dashed = dashedZoneIds.contains(zone.id)
         ZStack {
-            NormPolygon(points: pts).fill(zone.tint.opacity(0.22))
-            NormPolygon(points: pts).stroke(zone.tint, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+            NormPolygon(points: pts).fill(tint.opacity(dashed ? 0.12 : 0.22))
+            NormPolygon(points: pts).stroke(
+                tint,
+                style: dashed
+                    ? StrokeStyle(lineWidth: 2, lineJoin: .round, dash: [7, 5])
+                    : StrokeStyle(lineWidth: 2, lineJoin: .round)
+            )
         }
         .contentShape(NormPolygon(points: pts))
         .onTapGesture { if interactable { onZoneTap(zone) } }
@@ -400,6 +527,10 @@ private struct AerialElementPin: View {
     let element: PropertyElement
     var dragging: Bool = false
     var showName: Bool = true
+    /// Live-layer badge (open tasks) — pulses unless Reduce Motion is on.
+    var badge: Color? = nil
+    /// Shows the "3D" chip when a scan is linked to this element.
+    var has3D: Bool = false
 
     private let size: CGFloat = 28
 
@@ -408,7 +539,7 @@ private struct AerialElementPin: View {
             ZStack {
                 if let cover = element.coverPhotoUrl, let url = URL(string: cover) {
                     // Cover thumbnail pin
-                    AsyncImage(url: url) { phase in
+                    StorageImage(url: url) { phase in
                         if case .success(let img) = phase { img.resizable().scaledToFill() }
                         else { element.elementType.accentColor.opacity(0.5) }
                     }
@@ -423,18 +554,35 @@ private struct AerialElementPin: View {
                         .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1))
                         .frame(width: size, height: size)
                     Image(systemName: element.elementType.icon)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppFont.scaled(12, weight: .bold))
                         .foregroundStyle(.white)
                 }
             }
             .overlay(alignment: .topTrailing) {
                 if element.isFavorite {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFont.scaled(9, weight: .bold))
                         .foregroundStyle(.yellow)
                         .padding(2)
                         .background(Circle().fill(.black.opacity(0.55)))
                         .offset(x: 4, y: -4)
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if let badge {
+                    PulsingBadge(color: badge)
+                        .offset(x: -5, y: -5)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if has3D {
+                    Text(verbatim: "3D")
+                        .font(AppFont.scaled(7, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4).padding(.vertical, 1.5)
+                        .background(Capsule().fill(Color.brandPurple))
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.8), lineWidth: 0.8))
+                        .offset(x: 6, y: 3)
                 }
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
@@ -442,7 +590,7 @@ private struct AerialElementPin: View {
 
             if showName {
                 Text(element.name)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(AppFont.scaled(9, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)

@@ -31,10 +31,106 @@ enum PushTokenService {
         }
     }
 
+    /// Ensures the device is registered for push once the user is signed in.
+    /// If permission was never asked (the common case — it used to live only
+    /// behind a Settings toggle, so most people never granted it and no APNs
+    /// token ever existed, which is why chat pushes never arrived), request it
+    /// now that the user is inside the app and the value is obvious. Then
+    /// register with APNs and flush any token captured before sign-in. Idempotent
+    /// and safe to call on every foreground/login.
+    static func ensureRegistered() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            logDebug("ensure", detail: "status=\(statusName(settings.authorizationStatus))")
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                    logDebug("request", detail: "granted=\(granted)")
+                    guard granted else { return }
+                    DispatchQueue.main.async {
+                        logDebug("register", detail: "from=request")
+                        UIApplication.shared.registerForRemoteNotifications()
+                    }
+                }
+            case .authorized, .provisional:
+                DispatchQueue.main.async {
+                    logDebug("register", detail: "from=authorized")
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            default:
+                break // explicitly denied — respect it; the Settings page can re-prompt to system settings
+            }
+        }
+        // A token that landed before login is still sitting in UserDefaults —
+        // upload it now that there's a session to attach it to.
+        Task { await uploadPendingIfNeeded() }
+    }
+
+    private static func statusName(_ s: UNAuthorizationStatus) -> String {
+        switch s {
+        case .notDetermined: return "notDetermined"
+        case .denied: return "denied"
+        case .authorized: return "authorized"
+        case .provisional: return "provisional"
+        case .ephemeral: return "ephemeral"
+        @unknown default: return "unknown"
+        }
+    }
+
+    /// Fire-and-forget diagnostics row so we can see, from the server, why APNs
+    /// registration succeeds or fails on TestFlight (the device-side error is
+    /// otherwise silent in Release). Temporary — remove once push is confirmed.
+    /// Debug builds only: Release compiles this to a no-op so shipping builds
+    /// never write diagnostics rows.
+    static func logDebug(_ event: String, detail: String? = nil) {
+        #if DEBUG
+        struct DebugRow: Encodable {
+            let user_id: String?
+            let event: String
+            let detail: String?
+            let app_version: String?
+        }
+        let row = DebugRow(
+            user_id: supabase.auth.currentSession?.user.id.uuidString,
+            event: event,
+            detail: detail,
+            app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        )
+        Task { try? await supabase.from("push_debug").insert(row).execute() }
+        #endif
+    }
+
+    /// The device's current APNs token, kept so account switches can bind the
+    /// incoming account and sign-out can unbind exactly the leaving one.
+    private static let currentTokenKey = "push.token.current"
+
     /// Called from AppDelegate once APNs hands us a token.
     static func handle(deviceToken: Data) async {
         let hex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        UserDefaults.standard.set(hex, forKey: currentTokenKey)
         await upload(hex: hex)
+    }
+
+    /// Binds the device token to the CURRENT session's account. Called after an
+    /// account switch: bindings are per (token, user), so every account signed
+    /// into this phone keeps receiving its own pushes — like any multi-account
+    /// messenger. No-op until APNs has issued a token.
+    static func bindCurrentAccount() async {
+        guard let hex = UserDefaults.standard.string(forKey: currentTokenKey), !hex.isEmpty else { return }
+        await upload(hex: hex)
+    }
+
+    /// Removes ONLY the signed-out account's binding for this device. Must run
+    /// while that account's session is still valid (RLS lets an account delete
+    /// only its own rows). Other accounts' bindings survive.
+    static func unbindCurrentAccount() async {
+        guard let hex = UserDefaults.standard.string(forKey: currentTokenKey), !hex.isEmpty,
+              let uid = supabase.auth.currentSession?.user.id else { return }
+        _ = try? await supabase.from("device_tokens")
+            .delete()
+            .eq("token", value: hex)
+            .eq("user_id", value: uid.uuidString)
+            .execute()
     }
 
     /// Re-uploads a token that arrived before the user was signed in.
@@ -64,14 +160,20 @@ enum PushTokenService {
             app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         )
         do {
+            // Conflict target is (token, user_id): a phone signed into several
+            // accounts holds one binding per account, so switching accounts
+            // ADDS a binding instead of stealing the token from the previous
+            // account — all signed-in accounts keep receiving their pushes.
             try await supabase
                 .from("device_tokens")
-                .upsert(row, onConflict: "token")
+                .upsert(row, onConflict: "token,user_id")
                 .execute()
             UserDefaults.standard.removeObject(forKey: pendingKey)
+            logDebug("upload", detail: "ok env=\(environment)")
         } catch {
+            logDebug("upload", detail: "err=\(error.localizedDescription)")
 #if DEBUG
-            print("[Push] token upload failed: \(error)")
+            debugLog("[Push] token upload failed: \(error)")
 #endif
         }
     }

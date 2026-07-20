@@ -48,7 +48,10 @@ struct Message: Identifiable, Codable {
     var date: Date? { ISODate.date(from: createdAt) }
 
     var isLocationMessage: Bool { attachmentType == "location" }
-    var isImageMessage: Bool    { attachmentType == "image" }
+    // Live Photos ride the image pipeline (photo runs, previews, gallery);
+    // isLiveMessage adds the badge and the press-to-play viewer on top.
+    var isImageMessage: Bool    { attachmentType == "image" || attachmentType == "live" }
+    var isLiveMessage: Bool     { attachmentType == "live" }
     var isVideoMessage: Bool    { attachmentType == "video" }
     var isFileMessage: Bool     { attachmentType == "file" }
     var isStickerMessage: Bool  { attachmentType == "sticker" }
@@ -117,8 +120,7 @@ struct MessageRead: Identifiable, Codable, Hashable {
 
     var readTimeDisplay: String {
         let d = ISODate.date(from: readAt) ?? Date()
-        let out = DateFormatter()
-        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        let out = Calendar.current.isDateInToday(d) ? ISODate.timeOnly : AppDateDisplay.dayMonthTime
         return out.string(from: d)
     }
 }

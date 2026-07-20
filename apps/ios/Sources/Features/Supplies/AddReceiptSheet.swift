@@ -1,10 +1,12 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - Add Receipt (manual entry)
 
 struct AddReceiptSheet: View {
     @Environment(ReceiptService.self) private var receiptService
     @Environment(PropertyService.self) private var propertyService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var storeName = ""
@@ -15,36 +17,81 @@ struct AddReceiptSheet: View {
     @State private var items: [EditableReceiptItem] = []
     @State private var isSaving = false
     @State private var error: String?
+    @State private var showScanner = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var pickedImage: UIImage?
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 22) {
-                        storeField
-                        dateField
-                        categoryField
-                        itemsSection
-                        totalField
-                        notesField
-                        if let error {
-                            Text(LocalizedStringKey(error)).font(.caption).foregroundStyle(.red).padding(.horizontal)
-                        }
-                        saveButton
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
-                }
-            }
-            .navigationTitle(String(localized: "add_receipt_title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel")) { dismiss() }
+        FormScaffold(title: "add_receipt_title",
+                     saveLabel: "Save",
+                     canSave: canSave,
+                     isSaving: isSaving,
+                     error: $error,
+                     onSave: { Task { await save() } }) {
+            scanHero
+            storeField
+            dateField
+            categoryField
+            itemsSection
+            totalField
+            photoField
+            notesField
+        }
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    pickedImage = image
                 }
             }
         }
+        .sheet(isPresented: $showScanner) {
+            // The scanner runs the full scan → parse → save; when it saves, it
+            // dismisses this manual form too, so the user isn't dropped back on
+            // an empty sheet.
+            ReceiptScannerView(onSaved: { dismiss() })
+                .environment(receiptService)
+                .environment(propertyService)
+        }
+    }
+
+    // MARK: - Scan hero
+    //
+    // A receipt screen's fastest path is the camera — point it at the receipt
+    // and store, date, total and line items fill themselves. Manual entry
+    // stays right below for when there's nothing to scan.
+    private var scanHero: some View {
+        Button {
+            showScanner = true
+            HapticFeedback.impact(.medium)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.viewfinder.fill")
+                    .font(AppFont.scaled(20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("add_receipt_scan_title")
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(.primary)
+                    Text("add_receipt_scan_sub")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+            .padding(AppSpacing.base)
+            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Fields
@@ -52,7 +99,7 @@ struct AddReceiptSheet: View {
     private var storeField: some View {
         formField("STORE") {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
-                .font(.system(size: 16))
+                .font(AppFont.scaled(16))
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -74,8 +121,8 @@ struct AddReceiptSheet: View {
                     ForEach(ReceiptCategory.all, id: \.id) { cat in
                         Button { category = cat.id; HapticFeedback.selection() } label: {
                             HStack(spacing: 5) {
-                                Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
-                                Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
+                                Image(systemName: ReceiptCategory.icon(for: cat.id)).font(AppFont.scaled(11))
+                                Text(LocalizedStringKey(cat.label)).font(AppFont.scaled(13))
                             }
                             .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
@@ -93,7 +140,7 @@ struct AddReceiptSheet: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("ITEMS")
+                Text("Items")
                     .font(AppFont.label).foregroundStyle(.secondary)
                 Spacer()
                 Button {
@@ -101,7 +148,7 @@ struct AddReceiptSheet: View {
                     HapticFeedback.selection()
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.scaled(16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add item")
@@ -113,7 +160,7 @@ struct AddReceiptSheet: View {
                         ForEach($items) { $item in
                             HStack(spacing: 8) {
                                 TextField(String(localized: "add_receipt_item_name"), text: $item.name)
-                                    .font(.system(size: 13))
+                                    .font(AppFont.scaled(13))
                                     .frame(maxWidth: .infinity)
                                 TextField("0.00", text: $item.priceText)
                                     .font(AppFont.captionEmphasis)
@@ -125,7 +172,7 @@ struct AddReceiptSheet: View {
                                     items.removeAll { $0.id == item.id }
                                 } label: {
                                     Image(systemName: "minus.circle.fill")
-                                        .font(.system(size: 16)).foregroundStyle(.red.opacity(0.7))
+                                        .font(AppFont.scaled(16)).foregroundStyle(.red.opacity(0.7))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -134,15 +181,24 @@ struct AddReceiptSheet: View {
                     }
                 }
 
-                // Auto-compute total from items
-                let computed = items.compactMap { Double($0.priceText) }.reduce(0, +)
-                if computed > 0 && total.isEmpty {
+                // The items' sum, offered whenever it differs from the entered
+                // total — so an empty total fills in one tap and a mismatch
+                // (items say 50, total says 45) surfaces instead of hiding.
+                let computed = items.compactMap { Double($0.priceText.replacingOccurrences(of: ",", with: ".")) }.reduce(0, +)
+                let computedStr = String(format: "%.2f", computed)
+                if computed > 0, total != computedStr {
                     Button {
-                        total = String(format: "%.2f", computed)
+                        total = computedStr
+                        HapticFeedback.selection()
                     } label: {
-                        Text(String(format: String(localized: "add_receipt_use_computed"), Receipt.format(computed)))
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.accentColor)
+                        HStack(spacing: 4) {
+                            Image(systemName: "equal.circle")
+                                .font(AppFont.scaled(11, weight: .semibold))
+                            Text(String(format: String(localized: "add_receipt_use_computed"),
+                                        CurrencyService.money(computed, code: appSettings.preferredCurrency)))
+                                .font(AppFont.scaled(12))
+                        }
+                        .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, AppSpacing.xxs)
@@ -161,32 +217,58 @@ struct AddReceiptSheet: View {
         }
     }
 
+    private var photoField: some View {
+        formField("add_receipt_photo") {
+            if let pickedImage {
+                HStack(spacing: 12) {
+                    Image(uiImage: pickedImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    Text("add_receipt_photo_attached")
+                        .font(AppFont.scaled(13))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    Spacer()
+                    Button {
+                        self.pickedImage = nil
+                        photoItem = nil
+                        HapticFeedback.selection()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(AppFont.scaled(18))
+                            .foregroundStyle(Color.primary.opacity(0.3))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Remove photo"))
+                }
+            } else {
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(AppFont.scaled(16, weight: .medium))
+                            .foregroundStyle(Color.accentColor)
+                        Text("add_receipt_photo_add")
+                            .font(AppFont.scaled(14))
+                            .foregroundStyle(Color.accentColor)
+                        Spacer()
+                    }
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                }
+            }
+        }
+    }
+
     private var notesField: some View {
         formField("NOTES (OPTIONAL)") {
             TextField(String(localized: "add_receipt_notes_placeholder"), text: $notes, axis: .vertical)
-                .font(.system(size: 15))
+                .font(AppFont.scaled(15))
                 .lineLimit(2...4)
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
-    }
-
-    private var saveButton: some View {
-        Button { Task { await save() } } label: {
-            Group {
-                if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                else {
-                    Text(String(localized: "add_receipt_save"))
-                        .font(AppFont.headline)
-                }
-            }
-            .foregroundStyle(Color(UIColor.systemBackground))
-            .frame(maxWidth: .infinity).frame(height: 52)
-            .background(canSave ? Color.accentColor : Color.primary.opacity(0.25),
-                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!canSave || isSaving)
     }
 
     private var canSave: Bool {
@@ -212,13 +294,20 @@ struct AddReceiptSheet: View {
         let now = ISO8601DateFormatter().string(from: Date())
         let dateStr = ReceiptParser.isoDate(date)
 
+        // Upload the attached photo (if any) to the private receipt-media bucket
+        // first, storing only its path on the receipt.
+        var imagePath: String? = nil
+        if let pickedImage {
+            imagePath = await receiptService.uploadReceiptImage(pickedImage, propertyId: propId)
+        }
+
         let payload = NewReceiptPayload(
             propertyId: propId,
             storeName: storeName.trimmingCharacters(in: .whitespaces),
             date: dateStr,
             total: totalDouble,
             category: category,
-            imageUrl: nil,
+            imageUrl: imagePath,
             notes: notes.isEmpty ? nil : notes,
             createdAt: now,
             updatedAt: now
@@ -243,7 +332,7 @@ struct AddReceiptSheet: View {
             HapticFeedback.success()
             dismiss()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

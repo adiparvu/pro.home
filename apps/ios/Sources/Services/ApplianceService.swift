@@ -17,18 +17,19 @@ final class ApplianceService {
     }
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if appliances.isEmpty, let cached = ServiceCache.load([Appliance].self, entity: "appliances", propertyId: propertyId) {
+            appliances = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
-            appliances = try await supabase
-                .from("appliances")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
+            appliances = try await PropertyRepo.fetch(table: "appliances", propertyId: propertyId,
+                                                      scope: .strict, ascending: true, limit: 500)
+            ServiceCache.save(appliances, entity: "appliances", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -40,12 +41,12 @@ final class ApplianceService {
                 .select().single().execute().value
             appliances.append(inserted)
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
     func update(_ appliance: Appliance) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = ISODate.string(from: Date())
         let upd = ApplianceUpdate(
             name: appliance.name,
             brand: appliance.brand,
@@ -69,7 +70,7 @@ final class ApplianceService {
                 appliances[i] = updated
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 
@@ -80,7 +81,7 @@ final class ApplianceService {
                 .from("appliances").delete()
                 .eq("id", value: appliance.id.uuidString).execute()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.recordableDescription
         }
     }
 }

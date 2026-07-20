@@ -72,31 +72,69 @@ serve(async (req) => {
   const cronSecret = Deno.env.get('CRON_SECRET')
 
   if (!keyId || !teamId || !p8 || !bundleId) {
-    return new Response(JSON.stringify({ error: 'APNs not configured' }), {
+    // Report WHICH secret names are visible (booleans only, never values) so a
+    // missing/misnamed one is obvious from the response instead of a generic
+    // "not configured".
+    return new Response(JSON.stringify({
+      error: 'APNs not configured',
+      present: {
+        APNS_KEY_ID: !!keyId,
+        APNS_TEAM_ID: !!teamId,
+        APNS_PRIVATE_KEY: !!p8,
+        APNS_BUNDLE_ID: !!bundleId,
+      },
+    }), {
       status: 503,
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   }
-  if (!cronSecret || req.headers.get('x-cron-secret') !== cronSecret) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
-  }
-
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // Pull unpushed chat notifications.
+  // Two accepted callers: the legacy CRON_SECRET env, and the vault-held
+  // webhook secret the notifications trigger sends (chat_push_secret() is
+  // executable only with the service role, so anon clients can't read it).
+  const provided = (req.headers.get('x-cron-secret') ?? '').trim()
+  let authorized = !!cronSecret && provided === cronSecret.trim()
+  if (!authorized && provided) {
+    const { data: vaultSecret } = await admin.rpc('chat_push_secret')
+    authorized = typeof vaultSecret === 'string' && provided === vaultSecret.trim()
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Build the APNs JWT BEFORE claiming any rows. If the key is bad/rotated
+  // this throws here — and because nothing has been stamped yet, the batch
+  // stays unpushed and a later sweep retries it (instead of the old behaviour,
+  // which claimed the rows first and then lost the whole batch on a JWT error).
+  let jwt: string
+  try {
+    jwt = await makeApnsJwt(p8, keyId, teamId)
+  } catch (e) {
+    return new Response(JSON.stringify({ error: `APNs JWT: ${e instanceof Error ? e.message : e}` }), {
+      status: 500,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Claim unpushed instant notifications atomically: the insert trigger can
+  // fire this function several times in a burst, and stamping pushed_at
+  // up-front means each row is sent by exactly one invocation. Chat rows are
+  // always instant; other modules opt in via metadata.instant (migration 145
+  // uses it for task assignments).
   const { data: notes, error } = await admin
     .from('notifications')
-    .select('id, user_id, title, body')
-    .eq('module', 'chat')
+    .update({ pushed_at: new Date().toISOString() })
+    .or('module.eq.chat,metadata->>instant.eq.true')
     .is('pushed_at', null)
-    .limit(200)
+    .select('id, user_id, title, body, module, resource_type, resource_id, metadata')
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -110,10 +148,25 @@ serve(async (req) => {
     })
   }
 
-  const jwt = await makeApnsJwt(p8, keyId, teamId)
-  const nowISO = new Date().toISOString()
+  // Per-recipient unread chat count for the springboard badge, cached so a
+  // burst to the same user is one query.
+  const badgeCache = new Map<string, number>()
+  async function unreadBadge(userId: string): Promise<number> {
+    if (badgeCache.has(userId)) return badgeCache.get(userId)!
+    const { count } = await admin
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('module', 'chat')
+      .eq('status', 'unread')
+    const c = count ?? 0
+    badgeCache.set(userId, c)
+    return c
+  }
+
   let sent = 0
-  const pushedIds: string[] = []
+  const deadTokens: string[] = []
+  const retryIds: string[] = []
 
   for (const n of notes) {
     const { data: tokens } = await admin
@@ -122,13 +175,88 @@ serve(async (req) => {
       .eq('user_id', n.user_id)
       .eq('platform', 'ios')
 
-    for (const t of tokens ?? []) {
+    if (!tokens || tokens.length === 0) continue // nothing to deliver, nothing to retry
+
+    let anySuccess = false
+    let anyTransient = false
+
+    // Tapping the push must land in the right place. Chat rows carry the
+    // conversation identity in metadata (stamped by the DB triggers,
+    // migration 144) as a custom `chat` key; task rows (migration 145) carry
+    // the task id as a custom `task` key. thread-id groups banners per
+    // conversation / per module.
+    const meta = (n.metadata ?? {}) as Record<string, unknown>
+    const isChat = n.module === 'chat'
+    let custom: Record<string, unknown>
+    let threadId: string
+    // The app registers the MESSAGE category (inline "Reply" text action) —
+    // without `category` in the payload iOS shows no reply field at all when
+    // the notification is pulled down. Community (sub-group) pushes get it
+    // too now that the app routes replies via chatInfo.group_id — but only
+    // when group_id is actually present, because a reply that lands in the
+    // wrong conversation is worse than no reply button.
+    let category: string | null = null
+    if (isChat) {
+      const chatInfo: Record<string, unknown> = {
+        kind: (meta.kind as string) ?? (n.resource_type === 'direct_message' ? 'dm' : 'chat'),
+        peer_user_id: (meta.peer_user_id as string) ?? null,
+        peer_name: (meta.peer_name as string) ?? null,
+        group_id: (meta.group_id as string) ?? null,
+        // Rich-notification extras (migration 146): the service extension
+        // renders the sender's avatar and attaches voice/photo media.
+        sender_id: (meta.sender_id as string) ?? (meta.peer_user_id as string) ?? null,
+        avatar_url: typeof meta.avatar_url === 'string' && meta.avatar_url.startsWith('http')
+          ? meta.avatar_url : null,
+        media_kind: (meta.media_kind as string) ?? null,
+        media_url: null as string | null,
+      }
+      // chat-media is a private bucket — sign the path so the notification
+      // extension can download it without credentials. Legacy public URLs
+      // pass through untouched.
+      const mediaPath = typeof meta.media_path === 'string' ? meta.media_path : null
+      if (mediaPath) {
+        if (mediaPath.startsWith('http')) {
+          chatInfo.media_url = mediaPath
+        } else {
+          const { data: signed } = await admin.storage
+            .from('chat-media')
+            .createSignedUrl(mediaPath, 600)
+          chatInfo.media_url = signed?.signedUrl ?? null
+        }
+      }
+      threadId = (chatInfo.peer_user_id as string) ?? (chatInfo.group_id as string) ?? 'chat'
+      custom = { chat: chatInfo }
+      if (chatInfo.kind !== 'community' || chatInfo.group_id) category = 'MESSAGE'
+    } else if (n.resource_type === 'task' && n.resource_id) {
+      threadId = 'tasks'
+      custom = { task: { id: n.resource_id } }
+    } else {
+      threadId = n.module ?? 'app'
+      custom = {}
+    }
+    const badge = isChat ? await unreadBadge(n.user_id) : 0
+
+    for (const t of tokens) {
       const payload = {
         aps: {
-          alert: { title: n.title ?? 'New message', body: n.body ?? '' },
+          alert: {
+            title: n.title ?? 'New message',
+            // The app encodes an optional subject line into the body as
+            // {subject}\u001E{text} (MessageSubject) — banners render the
+            // human form, never the raw control character.
+            body: (n.body ?? '').replaceAll('\u001E', ' — '),
+          },
           sound: 'default',
-          'thread-id': 'chat',
+          // The springboard badge means "unread chat"; non-chat pushes leave
+          // whatever badge is showing untouched.
+          ...(isChat ? { badge } : {}),
+          // Wake the Notification Service Extension so it can add the sender
+          // avatar + media attachment before the banner shows.
+          ...(isChat ? { 'mutable-content': 1 } : {}),
+          ...(category ? { category } : {}),
+          'thread-id': threadId,
         },
+        ...custom,
       }
       try {
         const res = await fetch(`https://${apnsHost(t.environment)}/3/device/${t.token}`, {
@@ -140,19 +268,41 @@ serve(async (req) => {
           },
           body: JSON.stringify(payload),
         })
-        if (res.ok) sent++
+        if (res.ok) {
+          sent++
+          anySuccess = true
+        } else {
+          // 410 Unregistered / 400 BadDeviceToken are permanent — reap the
+          // dead token so it stops wasting every future send. Everything else
+          // (429/500/503, network) is transient → eligible for a retry.
+          let reason = ''
+          try { reason = ((await res.json())?.reason ?? '') as string } catch { /* no body */ }
+          if (res.status === 410 || (res.status === 400 && reason === 'BadDeviceToken') || reason === 'Unregistered') {
+            deadTokens.push(t.token)
+          } else {
+            anyTransient = true
+          }
+        }
       } catch (_e) {
-        // best-effort; leave pushed_at unset so a later run can retry
+        anyTransient = true
       }
     }
-    pushedIds.push(n.id)
+
+    // Had tokens, nothing landed, and the failures were transient → un-claim
+    // so the next sweep tries again (bounded by the message eventually being
+    // read, which stops mattering).
+    if (!anySuccess && anyTransient) retryIds.push(n.id)
   }
 
-  if (pushedIds.length > 0) {
-    await admin.from('notifications').update({ pushed_at: nowISO }).in('id', pushedIds)
+  if (deadTokens.length > 0) {
+    await admin.from('device_tokens').delete().in('token', deadTokens)
+  }
+  if (retryIds.length > 0) {
+    await admin.from('notifications').update({ pushed_at: null }).in('id', retryIds)
   }
 
-  return new Response(JSON.stringify({ sent, processed: pushedIds.length }), {
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({ sent, processed: notes.length, reaped: deadTokens.length, retry: retryIds.length }),
+    { headers: { ...CORS, 'Content-Type': 'application/json' } },
+  )
 })

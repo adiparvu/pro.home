@@ -14,16 +14,16 @@ struct LockScreenView: View {
                 PRVIOLogoView(size: 84)
                 VStack(spacing: 6) {
                     Text("PRVIO is locked")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFont.scaled(20, weight: .bold))
                         .foregroundStyle(.primary)
                     if manager.authFailed {
                         Text("Authentication failed. Try again.")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.red)
                             .multilineTextAlignment(.center)
                     } else {
                         Text("Authenticate to continue")
-                            .font(.system(size: 14))
+                            .font(AppFont.scaled(14))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .multilineTextAlignment(.center)
                     }
@@ -37,10 +37,10 @@ struct LockScreenView: View {
                         Text("Unlock")
                     }
                     .font(AppFont.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.lg)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous), interactive: true)
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 32)

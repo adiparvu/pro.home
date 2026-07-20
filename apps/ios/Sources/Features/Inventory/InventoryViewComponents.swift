@@ -7,40 +7,77 @@ import UniformTypeIdentifiers
 
 struct InventoryRow: View {
     let item: InventoryItem
+    var isFavorite: Bool = false
 
     var body: some View {
         GlassCard {
             HStack(spacing: 12) {
-                if let img = InventoryImageStore.load(for: item.id) {
+                if let img = InventoryImageStore.avatar(for: item.id) {
+                    // Round photo avatar (IMG_8632) — cover photo, or the
+                    // first gallery photo when no cover was set.
                     Image(uiImage: img)
                         .resizable().scaledToFill()
                         .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
+                        .overlay(alignment: .bottomTrailing) {
+                            // Keep the category icon visible alongside the photo.
+                            ZStack {
+                                Circle()
+                                    .fill(item.categoryColor)
+                                    .frame(width: 17, height: 17)
+                                    .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 0.5))
+                                Image(systemName: item.categoryIcon)
+                                    .font(AppFont.scaled(8, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            .offset(x: 3, y: 3)
+                        }
                 } else {
-                    ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
+                    // No photo: a round Liquid Glass disc with the category
+                    // colour on the icon ONLY — no tinted fill around it
+                    // (user-decreed, IMG_8632).
+                    Image(systemName: item.categoryIcon)
+                        .font(AppFont.scaled(17, weight: .medium))
+                        .foregroundStyle(item.categoryColor)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
+                    HStack(spacing: 5) {
+                        Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
+                        if isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(AppFont.scaled(10))
+                                .foregroundStyle(.yellow)
+                        }
+                    }
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
-                            Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                            Text(item.brand).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                         }
-                        Text(LocalizedStringKey(item.location.capitalized)).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text(verbatim: InventoryLabels.location(item.location)).font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
-                        Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")
-                            .font(.system(size: 10, weight: .medium)).foregroundStyle(.orange)
+                        loanStatus(loan)
                     }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        Text(CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)).font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
-                    case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
-                    case .expired:     Image(systemName: "xmark.shield.fill").font(.system(size: 11)).foregroundStyle(.red.opacity(0.7))
+                    case .expiringSoon:
+                        // Amber expiry date — the <30-day window at a glance.
+                        if let exp = item.warrantyExpiresAt {
+                            HStack(spacing: 3) {
+                                Image(systemName: "exclamationmark.shield.fill").font(AppFont.scaled(11))
+                                Text(exp.formatted(.dateTime.day().month(.abbreviated))).font(AppFont.scaled(10, weight: .medium))
+                            }.foregroundStyle(.orange)
+                        }
+                    case .expired:     Image(systemName: "xmark.shield.fill").font(AppFont.scaled(11)).foregroundStyle(.red.opacity(0.7))
                     default: EmptyView()
                     }
                 }
@@ -48,17 +85,78 @@ struct InventoryRow: View {
         }
         .overlay {
             if item.isLoaned {
-                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(loanAccent.opacity(overdueTier == nil ? 0.45 : 0.65),
+                                  lineWidth: 1.5)
             }
         }
+        // The escalation's glow — hotter buckets throw a warmer halo.
+        .shadow(color: overdueTier.map { $0.color.opacity(0.3) } ?? .clear,
+                radius: overdueTier == nil ? 0 : 9, y: 2)
+    }
+
+    // MARK: Loan escalation (IMG_8635)
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The current escalation bucket — nil while the promise still holds.
+    private var overdueTier: LoanOverdueTier? {
+        item.currentLoan?.overdueInterval.map { LoanOverdueTier(overdueBy: $0) }
+    }
+
+    /// Calm blue while on time; the bucket's heat once the term is blown.
+    private var loanAccent: Color {
+        overdueTier?.color ?? Color.brandSkyBlue
+    }
+
+    /// "La Vasile · până la 12 aug." in calm blue while the promise holds;
+    /// past it, a second pulsing line says exactly HOW LONG the return is
+    /// overdue, in the escalation bucket's color.
+    @ViewBuilder private func loanStatus(_ loan: LoanRecord) -> some View {
+        Label(loanLine(loan), systemImage: "person.fill")
+            .font(AppFont.scaled(10, weight: .medium))
+            .foregroundStyle(loanAccent)
+        if let tier = overdueTier, let interval = loan.overdueInterval {
+            Label(overdueLine(interval), systemImage: "exclamationmark.triangle.fill")
+                .font(AppFont.scaled(10, weight: .semibold))
+                .foregroundStyle(tier.color)
+                .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
+        }
+    }
+
+    private func loanLine(_ loan: LoanRecord) -> String {
+        if let due = loan.expectedReturnDate {
+            return String(format: String(localized: "inv_loaned_due"),
+                          loan.borrowerName,
+                          due.formatted(.dateTime.day().month(.abbreviated)))
+        }
+        return String(format: String(localized: "inv_loaned_short"),
+                      loan.borrowerName,
+                      loan.loanedAt.formatted(.dateTime.day().month(.abbreviated)))
+    }
+
+    /// One-unit, locale-aware: "3 zile", "2 săptămâni", "1 an".
+    private static let overdueFormatter: DateComponentsFormatter = {
+        let f = DateComponentsFormatter()
+        f.allowedUnits = [.year, .month, .weekOfMonth, .day, .hour]
+        f.maximumUnitCount = 1
+        f.unitsStyle = .full
+        return f
+    }()
+
+    private func overdueLine(_ interval: TimeInterval) -> String {
+        String(format: String(localized: "inv_overdue_by"),
+               Self.overdueFormatter.string(from: interval) ?? "")
     }
 }
 
 // MARK: - Add Item Sheet
 
 struct AddInventorySheet: View {
+    var editing: InventoryItem? = nil
     let onSave: (InventoryItem) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var didPopulate = false
 
     @State private var name = ""
     @State private var category = "tools"
@@ -74,15 +172,18 @@ struct AddInventorySheet: View {
     @State private var notes = ""
     @State private var selectedImageData: Data?
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var receiptImageData: Data?
+    @State private var receiptPhotoItem: PhotosPickerItem?
+    @State private var showSerialScanner = false
     @State private var showCamera = false
     @State private var showFileImporter = false
     @State private var showPhotoMenu = false
     @State private var showLibrary = false
     @State private var isSaving = false
 
-    private let categories = ["tools","garden","outdoor","appliances","electronics","furniture","vehicles","sports","security","other"]
-    private let locations = ["garage","garden","basement","attic","shed","balcony","kitchen","living room","bedroom","storage"]
-    private let conditions = ["excellent","good","fair","poor"]
+    private let categories = InventoryCatalog.categories
+    private let locations = InventoryCatalog.locations
+    private let conditions = InventoryCatalog.conditions
 
     var body: some View {
         NavigationStack {
@@ -96,14 +197,16 @@ struct AddInventorySheet: View {
                             div
                             picker("folder.fill", "Category", $category, categories)
                             div
-                            picker("mappin.circle.fill", "Location", $location, locations)
+                            // Locations localize with sentence-case keys —
+                            // `.capitalized` would miss "Living room".
+                            picker("mappin.circle.fill", "Location", $location, locations, display: InventoryLabels.location)
                             div
-                            picker("sparkles", "Condition", $condition, conditions)
+                            picker("checkmark.seal", "Condition", $condition, conditions)
                         }
                         card {
                             field("building.2.fill", "Brand", $brand)
                             div
-                            field("number", "Număr de serie", $serial)
+                            serialField
                             div
                             field("eurosign.circle.fill", "Valoare (€)", $price, keyboard: .decimalPad)
                         }
@@ -122,15 +225,17 @@ struct AddInventorySheet: View {
                                 div
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
-                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(.system(size: 15)).foregroundStyle(.primary)
+                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(AppFont.scaled(15)).foregroundStyle(.primary)
                                 }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
+                                div
+                                receiptRow
                             }
                         }
                         card {
                             HStack(spacing: 12) {
-                                Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                                Image(systemName: "note.text").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 TextField("Note (opțional)", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
+                                    .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
@@ -138,7 +243,9 @@ struct AddInventorySheet: View {
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
-            .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(editing != nil ? String(localized: "Edit Item") : String(localized: "Adaugă articol"))
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear { populateFromEditing() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
@@ -152,6 +259,13 @@ struct AddInventorySheet: View {
                     selectedImageData = image.jpegData(compressionQuality: 0.85)
                 }
                 .ignoresSafeArea()
+            }
+            .fullScreenCover(isPresented: $showSerialScanner) {
+                SerialScannerSheet { text in
+                    serial = text
+                    showSerialScanner = false
+                    HapticFeedback.success()
+                }
             }
             .fileImporter(
                 isPresented: $showFileImporter,
@@ -167,6 +281,13 @@ struct AddInventorySheet: View {
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self) {
                         selectedImageData = data
+                    }
+                }
+            }
+            .onChange(of: receiptPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        receiptImageData = data
                     }
                 }
             }
@@ -189,10 +310,10 @@ struct AddInventorySheet: View {
                             .overlay(
                                 VStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
-                                        .font(.system(size: 28))
+                                        .font(AppFont.scaled(28))
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(AppFont.scaled(13, weight: .medium))
                                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
@@ -205,7 +326,7 @@ struct AddInventorySheet: View {
                                     selectedImageData = nil
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(AppFont.scaled(22))
                                         .foregroundStyle(.white)
                                         .shadow(radius: 2)
                                 }
@@ -238,10 +359,26 @@ struct AddInventorySheet: View {
         .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
     }
 
+    private func populateFromEditing() {
+        guard let e = editing, !didPopulate else { return }
+        didPopulate = true
+        name = e.name; category = e.category; location = e.location
+        brand = e.brand; serial = e.serialNumber; condition = e.condition
+        if let d = e.purchaseDate { hasPurchaseDate = true; purchaseDate = d }
+        if e.purchasePrice > 0 { price = String(Int(e.purchasePrice)) }
+        if let w = e.warrantyExpiresAt { hasWarranty = true; warrantyDate = w }
+        notes = e.notes
+        selectedImageData = InventoryImageStore.load(for: e.id)?
+            .jpegData(compressionQuality: 0.85)
+        receiptImageData = InventoryImageStore.loadReceipt(for: e.id)?
+            .jpegData(compressionQuality: 0.85)
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        var item = InventoryItem(name: name)
+        var item = editing ?? InventoryItem(name: name)
+        item.name = name.trimmingCharacters(in: .whitespaces)
         item.category = category; item.location = location; item.brand = brand
         item.serialNumber = serial; item.condition = condition
         item.purchaseDate = hasPurchaseDate ? purchaseDate : nil
@@ -249,7 +386,14 @@ struct AddInventorySheet: View {
         item.warrantyExpiresAt = hasWarranty ? warrantyDate : nil
         item.notes = notes
         if let data = selectedImageData {
-            InventoryImageStore.save(data, for: item.id)
+            await InventoryImageStore.save(data, for: item.id)
+        } else if editing != nil {
+            InventoryImageStore.delete(for: item.id)
+        }
+        if let data = receiptImageData {
+            await InventoryImageStore.saveReceipt(data, for: item.id)
+        } else if editing != nil {
+            InventoryImageStore.deleteReceipt(for: item.id)
         }
         onSave(item)
         HapticFeedback.success()
@@ -261,24 +405,80 @@ struct AddInventorySheet: View {
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
-    private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+    /// Serial-number field with a Live Text scan button — VisionKit reads the
+    /// label with the camera and fills the field. Hidden on hardware without
+    /// data-scanning support, so the control is never dead.
+    private var serialField: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+            Image(systemName: "number").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField("Număr de serie", text: $serial)
+                .font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.characters)
+            if DataScannerViewController.isSupported {
+                Button { HapticFeedback.impact(.light); showSerialScanner = true } label: {
+                    Image(systemName: "text.viewfinder")
+                        .font(AppFont.scaled(16, weight: .medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("inv_scan_serial"))
+            }
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
-    private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
+
+    /// Warranty proof — an optional receipt/invoice photo kept alongside the
+    /// item's other local photos.
+    private var receiptRow: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+            Image(systemName: "doc.text.image").font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            if let data = receiptImageData, let img = UIImage(data: data) {
+                Image(uiImage: img)
+                    .resizable().scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                Text("inv_receipt").font(AppFont.scaled(15)).foregroundStyle(.primary)
+                Spacer()
+                Button { receiptImageData = nil; receiptPhotoItem = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFont.scaled(18))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("inv_receipt_remove"))
+            } else {
+                PhotosPicker(selection: $receiptPhotoItem, matching: .images) {
+                    HStack {
+                        Text("inv_receipt_attach").font(AppFont.scaled(15)).foregroundStyle(Color.accentColor)
+                        Spacer()
+                        Image(systemName: "plus.circle.fill")
+                            .font(AppFont.scaled(16))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+            }
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
+    }
+
+    private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(ph, text: b).font(AppFont.scaled(15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+    }
+    private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String],
+                        display: @escaping (String) -> String = InventoryLabels.category) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(verbatim: display($0)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.scaled(14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            Text(label).font(AppFont.scaled(15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: b).tint(.accentColor).labelsHidden()
         }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
@@ -299,15 +499,15 @@ struct QRScannerSheet: View {
             } else {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 16) {
-                    Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.25))
-                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
+                    Image(systemName: "camera.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
                 }
             }
             VStack {
                 HStack {
                     Spacer()
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 30))
+                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(30))
                             .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
                     }
                     .accessibilityLabel("Close scanner")
@@ -325,13 +525,20 @@ struct QRScannerSheet: View {
 }
 
 struct DataScannerRepresentable: UIViewControllerRepresentable {
+    /// What VisionKit should recognize — defaults to the QR configuration
+    /// used by the inventory QR sheet.
+    var recognizedDataTypes: Set<DataScannerViewController.RecognizedDataType> = [.barcode(symbologies: [.qr])]
+    /// Barcodes fire on first recognition. Freeform text waits for an
+    /// explicit tap on the highlighted line instead — auto-filling on first
+    /// detection would happily grab the wrong label off a crowded sticker.
+    var firesOnFirstRecognition = true
     let onScan: (String) -> Void
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let vc = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.qr])],
+            recognizedDataTypes: recognizedDataTypes,
             qualityLevel: .accurate,
-            recognizesMultipleItems: false,
+            recognizesMultipleItems: !firesOnFirstRecognition,
             isHighFrameRateTrackingEnabled: false,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
@@ -343,22 +550,89 @@ struct DataScannerRepresentable: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {}
-    func makeCoordinator() -> Coordinator { Coordinator(onScan: onScan) }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(firesOnFirstRecognition: firesOnFirstRecognition, onScan: onScan)
+    }
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let firesOnFirstRecognition: Bool
         let onScan: (String) -> Void
         private var fired = false
-        init(onScan: @escaping (String) -> Void) { self.onScan = onScan }
+
+        init(firesOnFirstRecognition: Bool, onScan: @escaping (String) -> Void) {
+            self.firesOnFirstRecognition = firesOnFirstRecognition
+            self.onScan = onScan
+        }
+
+        private func payload(of item: RecognizedItem) -> String? {
+            switch item {
+            case .barcode(let b): return b.payloadStringValue
+            case .text(let t):    return t.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            @unknown default:     return nil
+            }
+        }
+
+        private func deliver(_ value: String, from scanner: DataScannerViewController) {
+            guard !fired, !value.isEmpty else { return }
+            fired = true
+            scanner.stopScanning()
+            DispatchQueue.main.async { self.onScan(value) }
+        }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
-            guard !fired else { return }
+            guard firesOnFirstRecognition else { return }
             for item in addedItems {
-                if case .barcode(let b) = item, let value = b.payloadStringValue {
-                    fired = true
-                    dataScanner.stopScanning()
-                    DispatchQueue.main.async { self.onScan(value) }
+                if let value = payload(of: item) {
+                    deliver(value, from: dataScanner)
                     return
                 }
+            }
+        }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            if let value = payload(of: item) { deliver(value, from: dataScanner) }
+        }
+    }
+}
+
+// MARK: - Serial number scanner (Live Text)
+
+/// Camera capture for the serial-number field: VisionKit highlights the text
+/// it recognizes and the user taps the correct line to fill the field.
+struct SerialScannerSheet: View {
+    let onScan: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            if DataScannerViewController.isSupported {
+                DataScannerRepresentable(recognizedDataTypes: [.text()],
+                                         firesOnFirstRecognition: false,
+                                         onScan: onScan)
+                    .ignoresSafeArea()
+            } else {
+                appBackground.ignoresSafeArea()
+                VStack(spacing: 16) {
+                    Image(systemName: "camera.fill").font(AppFont.scaled(44)).foregroundStyle(Color.primary.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(AppFont.scaled(15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
+                }
+            }
+            VStack {
+                HStack {
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill").font(AppFont.scaled(30))
+                            .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
+                    }
+                    .accessibilityLabel("Close scanner")
+                    .padding(AppSpacing.xl)
+                }
+                Spacer()
+                Text("inv_scan_serial_hint")
+                    .font(AppFont.body).foregroundStyle(.primary)
+                    .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
+                    .background(Color.black.opacity(0.5), in: Capsule())
+                    .padding(.bottom, 60)
             }
         }
     }
@@ -372,14 +646,19 @@ enum InventoryImageStore {
             .appendingPathComponent("inventory_\(id.uuidString).jpg")
     }
 
-    static func save(_ data: Data, for id: UUID) {
-        let compressed: Data
-        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
-            compressed = jpg
-        } else {
-            compressed = data
-        }
-        try? compressed.write(to: url(for: id))
+    /// Recompression is a full decode + JPEG encode — real CPU time that has
+    /// no business on the main actor. Same bytes end up on disk as before.
+    static func save(_ data: Data, for id: UUID) async {
+        let dest = url(for: id)
+        await Task.detached(priority: .utility) {
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            try? compressed.write(to: dest)
+        }.value
     }
 
     static func load(for id: UUID) -> UIImage? {
@@ -387,7 +666,111 @@ enum InventoryImageStore {
         return UIImage(data: data)
     }
 
+    /// The list/tile avatar: the cover photo when one was set, otherwise the
+    /// first gallery photo — an item photographed either way still shows
+    /// itself in the list instead of falling back to the category icon.
+    static func avatar(for id: UUID) -> UIImage? {
+        if let cover = load(for: id) { return cover }
+        guard let first = galleryURLs(for: id).first,
+              let data = try? Data(contentsOf: first) else { return nil }
+        return UIImage(data: data)
+    }
+
     static func delete(for id: UUID) {
         try? FileManager.default.removeItem(at: url(for: id))
+    }
+
+    /// The DB assigns a fresh id on insert, so images saved under the local
+    /// draft id must be moved to the persisted id — otherwise the photo is
+    /// orphaned and the item never shows it.
+    static func migrate(from oldId: UUID, to newId: UUID) {
+        guard oldId != newId else { return }
+        try? FileManager.default.moveItem(at: url(for: oldId), to: url(for: newId))
+        try? FileManager.default.moveItem(at: receiptURL(for: oldId), to: receiptURL(for: newId))
+        let oldDir = galleryDir(for: oldId, create: false)
+        if FileManager.default.fileExists(atPath: oldDir.path) {
+            try? FileManager.default.moveItem(at: oldDir, to: galleryDir(for: newId, create: false))
+        }
+    }
+
+    static func deleteAll(for id: UUID) {
+        delete(for: id)
+        deleteReceipt(for: id)
+        try? FileManager.default.removeItem(at: galleryDir(for: id, create: false))
+    }
+
+    // MARK: Receipt / invoice photo (warranty proof)
+
+    private static func receiptURL(for id: UUID) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inventory_receipt_\(id.uuidString).jpg")
+    }
+
+    static func saveReceipt(_ data: Data, for id: UUID) async {
+        let dest = receiptURL(for: id)
+        await Task.detached(priority: .utility) {
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            try? compressed.write(to: dest)
+        }.value
+    }
+
+    static func loadReceipt(for id: UUID) -> UIImage? {
+        guard let data = try? Data(contentsOf: receiptURL(for: id)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func deleteReceipt(for id: UUID) {
+        try? FileManager.default.removeItem(at: receiptURL(for: id))
+    }
+
+    // MARK: Gallery (additional photos, separate from the cover)
+
+    private static func galleryDir(for id: UUID, create: Bool = true) -> URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inventory_gallery", isDirectory: true)
+            .appendingPathComponent(id.uuidString, isDirectory: true)
+        if create {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+
+    static func galleryURLs(for id: UUID) -> [URL] {
+        let dir = galleryDir(for: id, create: false)
+        let files = (try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? []
+        // File names start with a sortable timestamp — lexicographic == chronological.
+        return files.filter { $0.pathExtension == "jpg" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    @discardableResult
+    static func addGalleryImage(_ data: Data, for id: UUID) async -> URL? {
+        let stamp = String(format: "%013.0f", Date().timeIntervalSince1970 * 1000)
+        let dest = galleryDir(for: id)
+            .appendingPathComponent("\(stamp)-\(UUID().uuidString.lowercased()).jpg")
+        return await Task.detached(priority: .utility) { () -> URL? in
+            let compressed: Data
+            if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+                compressed = jpg
+            } else {
+                compressed = data
+            }
+            do {
+                try compressed.write(to: dest)
+                return dest
+            } catch {
+                return nil
+            }
+        }.value
+    }
+
+    static func removeGalleryImage(at url: URL) {
+        try? FileManager.default.removeItem(at: url)
     }
 }

@@ -24,7 +24,7 @@ final class ProfileService {
                 .value
         } catch {
             #if DEBUG
-            print("[ProfileService] load error: \(error)")
+            debugLog("[ProfileService] load error: \(error)")
             #endif
         }
     }
@@ -44,6 +44,10 @@ final class ProfileService {
         isSaving = true
         defer { isSaving = false }
         func clean(_ s: String?) -> String? { (s?.isEmpty ?? true) ? nil : s }
+        // Identity names are trimmed at the door (belt to migration 172's
+        // DB trigger): an edge space in display_name forked the DM keys.
+        let fullName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let payload = ProfileUpdate(
             fullName: fullName,
@@ -75,23 +79,52 @@ final class ProfileService {
 
     func uploadAvatar(_ image: UIImage) async throws {
         guard let userId = profile?.id,
-              let data = image.jpegData(compressionQuality: 0.85) else { return }
+              let data = image.uploadJPEG(quality: 0.85, maxDimension: 1024) else { return }
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
 
-        let path = "\(userId.uuidString)/avatar.jpg"
+        // Avatars live in the public "documents" bucket, on the same path the
+        // web app writes to — the dedicated "avatars" bucket rejects uploads
+        // for invited accounts. A fresh timestamped filename means no
+        // overwrite (so no storage update policy is needed) and doubles as a
+        // cache-buster; the previous file is removed best-effort afterwards.
+        let oldPath = Self.documentsStoragePath(fromPublicURL: profile?.avatarUrl)
+        let path = "avatars/\(userId.uuidString.lowercased())/\(Int(Date().timeIntervalSince1970)).jpg"
         try await supabase.storage
-            .from("avatars")
-            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
+            .from("documents")
+            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
 
-        let publicURL = try supabase.storage.from("avatars").getPublicURL(path: path)
-        let urlString = publicURL.absoluteString + "?v=\(Int(Date().timeIntervalSince1970))"
+        let urlString = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
 
         try await supabase.from("profiles")
             .update(["avatar_url": urlString])
             .eq("id", value: userId.uuidString)
             .execute()
         profile?.avatarUrl = urlString
+
+        // The directory is the one authority every avatar reads from, so a
+        // synchronous write here repaints the new photo on the Family page,
+        // notifications, chat and everywhere else the instant the upload
+        // returns — no screen keeps showing yesterday's picture. The signed
+        // cache is cleared so the fresh path is signed immediately rather than
+        // serving a still-valid URL for the previous file.
+        MemberDirectory.shared.setAvatar(userId: userId, urlString: urlString)
+        SignedStorage.clearCache()
+
+        if let oldPath, oldPath != path {
+            _ = try? await supabase.storage.from("documents").remove(paths: [oldPath])
+        }
+    }
+
+    /// Extracts the in-bucket path from a public "documents" bucket URL,
+    /// so an old avatar can be cleaned up after a new one is uploaded.
+    private static func documentsStoragePath(fromPublicURL urlString: String?) -> String? {
+        guard let urlString,
+              let range = urlString.range(of: "/object/public/documents/") else { return nil }
+        let tail = String(urlString[range.upperBound...])
+        guard let path = tail.split(separator: "?").first.map(String.init),
+              !path.isEmpty else { return nil }
+        return path.removingPercentEncoding ?? path
     }
 
     func updateEmail(_ newEmail: String) async throws {
