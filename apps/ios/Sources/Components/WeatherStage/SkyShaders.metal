@@ -312,15 +312,22 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     if (cloudiness > 0.02) {
         // Perspective: features compress toward the horizon (distance).
         float2 cuv = float2(uv.x * 1.6 * mix(1.0, 2.1, uv.y), uv.y * 3.2);
-        float2 flow = float2(t * 0.016 * driftBoost * driftSign, 0.0);
-        // Domain warp: bend the sampling space with a second fBM so the
-        // deck billows and curls instead of tiling.
-        float2 warpP = cuv * 1.9 + flow * 0.8;
+        // Advection carries a whisper of vertical drift — real decks never
+        // slide on a perfectly horizontal rail.
+        float2 flow = float2(t * 0.012 * driftBoost * driftSign, t * 0.0025);
+        // Domain warp with its OWN slow clock, decoupled from the advection:
+        // the warp field creeping at a different rate is what makes the
+        // shapes continuously MORPH — grow, split, dissolve — instead of
+        // translating rigidly like a printed drawing ("nu doar desene").
+        float2 warpP = cuv * 1.9 + flow * 0.8 + float2(t * 0.006, -t * 0.004);
         float2 warp = float2(fbm(warpP), fbm(warpP + float2(5.2, 1.3))) - 0.5;
         float2 q = cuv * 2.2 + warp * 0.9 + flow;
         // Billowed detail: folding the octave (1-|2x-1|) turns smooth noise
         // into cauliflower lobes — the cumulus signature the plain sum lacks.
-        float billow = 1.0 - abs(2.0 * fbm(q * 2.1 + float2(7.0, 3.0)) - 1.0);
+        // Counter-drifted on a third clock so the fine lobes churn against
+        // the large forms the way real convection does.
+        float billow = 1.0 - abs(2.0 * fbm(q * 2.1 + float2(7.0, 3.0)
+                                           - flow * 0.35 + float2(-t * 0.004, t * 0.003)) - 1.0);
         float base = fbm5(q) * 0.70 + billow * 0.30;
         // Habitat band: densest mid-sky, thinner overhead and low.
         float bandV = smoothstep(0.02, 0.25, uv.y) * (1.0 - 0.5 * smoothstep(0.75, 1.0, uv.y));

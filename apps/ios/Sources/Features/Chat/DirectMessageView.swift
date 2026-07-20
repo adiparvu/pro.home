@@ -157,7 +157,24 @@ struct DirectMessageView: View {
     }
 
     var thread: DMThread {
-        if let member { return DMThread(member: member) }
+        if let member {
+            var t = DMThread(member: member)
+            // Ground-truth guard (IMG_8718/8719: "Bianca" opened EMPTY with
+            // 263 messages on the server): conversation heads derive the
+            // peer id from the MESSAGES themselves, server-side. When a
+            // roster snapshot disagrees — a contact relinked to a new
+            // account, or a stale cached user_id pointing at an orphaned
+            // duplicate profile — trusting it addresses an empty parallel
+            // thread. The head's id wins; the roster keeps display data
+            // and the historic store key.
+            if let head = directMessageService.conversationHeads.first(where: {
+                $0.peerMemberId == member.id
+                    || DirectMessage.nameMatches($0.peerName, member.name)
+            }), let hid = head.peerUserId, hid != t.peerUserId {
+                t.peerUserId = hid
+            }
+            return t
+        }
         if let peer { return DMThread(peer: peer) }
         // Unreachable: both initializers guarantee a member or a peer.
         return DMThread(peer: ChatPeer(id: UUID(), displayName: "?"))
