@@ -29,6 +29,7 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
     private var transitions: [String] = []
     private var watchdogStarted = false
     private var _lastConnectedAt: Date?
+    private var _lastDisconnectAt: Date?
     private static let cap = 80
 
     /// When the socket last reached `.connected`. After a reconnect the
@@ -40,6 +41,18 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
     var lastConnectedAt: Date? {
         lock.lock(); defer { lock.unlock() }
         return _lastConnectedAt
+    }
+
+    /// True within `seconds` of a RE-connect — a `.connected` that followed
+    /// a real disconnect. In that window the previous topics may survive
+    /// server-side as orphans whose stale phx_close (topic-matched, join_ref
+    /// unchecked by SDK 2.52) kills any join the app adds (b1182 field log).
+    /// A cold launch has no disconnect on record, so first subscribes stay
+    /// instant.
+    func inRejoinGrace(seconds: TimeInterval) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        guard _lastDisconnectAt != nil, let connected = _lastConnectedAt else { return false }
+        return Date().timeIntervalSince(connected) < seconds
     }
 
     private static let clock: DateFormatter = {
@@ -88,6 +101,7 @@ final class RealtimeFlightRecorder: SupabaseLogger, @unchecked Sendable {
         let stamped = "\(name)@\(Self.clock.string(from: Date()))"
         lock.lock(); defer { lock.unlock() }
         if status == .connected { _lastConnectedAt = Date() }
+        if status == .disconnected { _lastDisconnectAt = Date() }
         transitions.append(stamped)
         if transitions.count > Self.cap { transitions.removeFirst(transitions.count - Self.cap) }
     }

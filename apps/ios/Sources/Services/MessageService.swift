@@ -71,6 +71,8 @@ final class MessageService {
     private var reloadTasks: [String: Task<Void, Never>] = [:]
     /// Last heartbeat-driven channel rebuild — the 30s backoff's clock.
     private var lastRebuildAt: Date?
+    /// The post-confirm stale-close kill watch (b1182) — one per subscribe.
+    private var killWatchTask: Task<Void, Never>?
 
     func sendTyping() { syncActivity(); activity.sendTyping() }
 
@@ -271,10 +273,15 @@ final class MessageService {
         // socket (code 1006). Holding a channel for this scope moments after
         // a reconnect means the rejoin owns it: stand down and let it land —
         // the 3s heartbeat retries after the grace if it genuinely died.
-        if realtimeChannel != nil, subscribedPropertyId == propertyId,
-           currentGroupId == groupId,
-           let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
-           Date().timeIntervalSince(connectedAt) < 10 { return }
+        // The grace holds even with NO channel object (b1182 field log): our
+        // previous join may live on server-side as an orphan whose stale
+        // phx_close — topic-matched, join_ref unchecked by SDK 2.52 — kills
+        // any join added in the window. Cold launches have no disconnect on
+        // record, so the first-ever subscribe stays instant; a scope SWITCH
+        // proceeds too (a fresh topic no orphan close can touch).
+        if RealtimeFlightRecorder.shared.inRejoinGrace(seconds: 10),
+           realtimeChannel == nil
+            || (subscribedPropertyId == propertyId && currentGroupId == groupId) { return }
         // Only ONE subscribe in flight. The open-thread `.task` and the 3s
         // heartbeat both call this; a second entrant must step aside rather than
         // run `unsubscribe()`, which cancels the first's `subscribeWithError()`
@@ -421,6 +428,38 @@ final class MessageService {
         realtimeChannel = channel
         subscribedPropertyId = propertyId
         refreshRealtimeStatus()
+        armStaleCloseKillWatch(on: channel, propertyId: propertyId, groupId: groupId)
+    }
+
+    /// Stale-close kill detector (b1182) — see DirectMessageService: a join
+    /// the server just confirmed that flips to `.unsubscribed` within
+    /// seconds, without local teardown, was killed by an earlier join's
+    /// phx_close. Count the strike; on the breaker's threshold bounce the
+    /// socket (shedding every orphan) and resubscribe once, cleanly.
+    private func armStaleCloseKillWatch(on ch: RealtimeChannelV2,
+                                        propertyId: UUID, groupId: UUID?) {
+        killWatchTask?.cancel()
+        killWatchTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+            guard self.realtimeChannel === ch,
+                  self.subscribedPropertyId == propertyId,
+                  ch.status == .unsubscribed,
+                  realtimeAnon.status == .connected,
+                  !AppLifecycle.isBackgrounded else { return }
+            RealtimeFlightRecorder.shared.note("chat: confirmed join killed by stale close")
+            guard RealtimeStormBreaker.shouldBounceSocket() else { return }
+            // Recovery in its OWN task: unsubscribe() cancels this very watch
+            // task, and a self-cancelled task must not carry the bounce. The
+            // immediate resubscribe may stand down behind the fresh rejoin
+            // grace — the heartbeat completes it right after.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.unsubscribe()
+                await RealtimeStormBreaker.bounceSocket(reason: "chat stale-close kill")
+                await self.subscribeRealtime(propertyId: propertyId, groupId: groupId)
+            }
+        }
     }
 
     // MARK: - Realtime diagnostics
@@ -568,6 +607,8 @@ final class MessageService {
     }
 
     func unsubscribe() async {
+        killWatchTask?.cancel()
+        killWatchTask = nil
         subscribedPropertyId = nil
         if let ch = realtimeChannel {
             // Real leave from EVERY state (removeChannel skips the leave when

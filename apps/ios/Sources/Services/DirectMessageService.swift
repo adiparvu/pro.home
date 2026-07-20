@@ -225,6 +225,8 @@ final class DirectMessageService {
     @ObservationIgnored private var isSubscribing = false
     /// Last heartbeat-driven channel rebuild — the 30s backoff's clock.
     @ObservationIgnored private var lastRebuildAt: Date?
+    /// The post-confirm stale-close kill watch (b1182) — one per subscribe.
+    @ObservationIgnored private var killWatchTask: Task<Void, Never>?
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -699,9 +701,14 @@ final class DirectMessageService {
         // answers with close after close until the socket dies (1006).
         // Holding a channel for this property right after a reconnect means
         // the rejoin owns it: stand down; the heartbeat retries post-grace.
-        if channel != nil, subscribedPropertyId == propertyId,
-           let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
-           Date().timeIntervalSince(connectedAt) < 10 { return }
+        // The grace holds even with NO channel object (b1182 field log): our
+        // previous join may live on server-side as an orphan whose stale
+        // phx_close — topic-matched, join_ref unchecked by SDK 2.52 — kills
+        // any join added in the window. Cold launches have no disconnect on
+        // record, so the first-ever subscribe stays instant; a property
+        // SWITCH proceeds too (a fresh topic no orphan close can touch).
+        if RealtimeFlightRecorder.shared.inRejoinGrace(seconds: 10),
+           channel == nil || subscribedPropertyId == propertyId { return }
         // Only ONE subscribe in flight. Both the open-thread `.task` and the 3s
         // heartbeat call this; a second entrant must step aside rather than run
         // `unsubscribe()` (which cancels the first's `subscribeWithError()` with
@@ -867,6 +874,44 @@ final class DirectMessageService {
         subscribedPropertyId = propertyId
         runBroadcastSelfTest(on: ch)
         refreshRealtimeStatus()
+        armStaleCloseKillWatch(on: ch, propertyId: propertyId, myName: myName)
+    }
+
+    /// Stale-close kill detector (b1182 field log): a join the server just
+    /// CONFIRMED that flips to `.unsubscribed` within seconds — without any
+    /// local teardown — was murdered by the phx_close of an EARLIER join on
+    /// this topic (join_ref unchecked in SDK 2.52). Rejoining the same topic
+    /// only arms the next close, so the chain never converges on its own.
+    /// Each detected kill counts as a storm strike; on the breaker's
+    /// threshold the socket bounces (shedding every server-side orphan) and
+    /// ONE clean resubscribe follows — convergence in two cycles instead of
+    /// minutes of heartbeat whack-a-mole.
+    private func armStaleCloseKillWatch(on ch: RealtimeChannelV2,
+                                        propertyId: UUID, myName: String) {
+        killWatchTask?.cancel()
+        killWatchTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+            // Still OUR current channel, same scope, not torn down locally —
+            // yet unsubscribed on a connected socket: the kill signature.
+            guard self.channel === ch,
+                  self.subscribedPropertyId == propertyId,
+                  ch.status == .unsubscribed,
+                  realtimeAnon.status == .connected,
+                  !AppLifecycle.isBackgrounded else { return }
+            RealtimeFlightRecorder.shared.note("dm: confirmed join killed by stale close")
+            guard RealtimeStormBreaker.shouldBounceSocket() else { return }
+            // Recovery in its OWN task: unsubscribe() cancels this very watch
+            // task, and a self-cancelled task must not carry the bounce. The
+            // immediate resubscribe may stand down behind the fresh rejoin
+            // grace — the heartbeat completes it right after.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.unsubscribe()
+                await RealtimeStormBreaker.bounceSocket(reason: "dm stale-close kill")
+                await self.subscribeRealtime(propertyId: propertyId, myName: myName)
+            }
+        }
     }
 
     /// Sends a nonce to ourselves over the just-subscribed channel and waits for
@@ -1052,6 +1097,8 @@ final class DirectMessageService {
     }
 
     func unsubscribe() async {
+        killWatchTask?.cancel()
+        killWatchTask = nil
         postgresSubs.removeAll()
         typingSub = nil
         newMsgSub = nil
