@@ -216,98 +216,149 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     float windAbs = abs(gust);
     float driftSign = gust >= 0.0 ? 1.0 : -1.0;
 
-    // ---- Sky gradient by sun elevation (day ↔ golden hour ↔ night) ----
+    // ---- Sky v6 (brief "first-party Apple"): the base is a physically-
+    // based SINGLE-SCATTERING solve in HDR, not painted color stops.
+    //  · Rayleigh — wavelength-selective molecular scattering (βb>βg>βr)
+    //    builds the deep blue zenith, the airmass-whitened horizon and,
+    //    through the sun's own slanted transmittance, the entire sunset
+    //    palette (orange horizon under a purple-blue upper sky) with no
+    //    hand-placed gradient anywhere;
+    //  · Mie — aerosol forward scattering (Henyey–Greenstein, g = 0.76):
+    //    the warm aureole hugging the sun, the cinematic haze, the bloom.
+    // Everything accumulates in HDR and is graded ONCE through the ACES
+    // fit at the end of the pass; the hash dither below kills banding.
     float day = smoothstep(-0.12, 0.35, sunElev);       // 0 night → 1 day
     float dusk = exp(-pow(sunElev * 3.2, 2.0));         // horizon warmth band
+    float night = 1.0 - day;
 
-    float3 zenithDay   = float3(0.16, 0.38, 0.72);
-    float3 horizonDay  = float3(0.62, 0.78, 0.92);
-    float3 zenithNight = float3(0.010, 0.016, 0.042);
-    float3 horizonNight = float3(0.045, 0.06, 0.11);
-    float3 zenith  = mix(zenithNight,  zenithDay,  day);
-    float3 horizon = mix(horizonNight, horizonDay, day);
-    // Golden-hour injection, weighted toward the sun's side of the sky.
-    float sunSide = 1.0 - abs(uv.x - sunAz);
-    horizon = mix(horizon, float3(0.98, 0.55, 0.26), dusk * (0.45 + 0.45 * sunSide));
-    zenith  = mix(zenith,  float3(0.42, 0.27, 0.45), dusk * 0.35);
+    // Composition (rule of thirds): the celestial bodies never sit on the
+    // screen's center line — an azimuth wandering through the middle is
+    // nudged to the nearest third, preserving the negative space the UI
+    // lives in.
+    float azOff = sunAz - 0.5;
+    float sunAzC = 0.5 + (azOff >= 0.0 ? 1.0 : -1.0) * clamp(abs(azOff), 0.17, 0.42);
 
-    float3 sky = mix(zenith, horizon, pow(uv.y, 1.35));
-    // A low warm ember band deepens golden hour near the ground.
-    sky += float3(0.90, 0.40, 0.20) * dusk * pow(uv.y, 3.0) * 0.15;
-    // Aerial perspective (v4): toward the horizon the light crosses ~10×
-    // more air, so the blue washes toward pale white on an exponential
-    // airmass curve — the single strongest photographic cue a linear
-    // gradient can't fake.
-    float airMass = 1.0 / (max(1.0 - uv.y, 0.03) * 0.9 + 0.10);
-    float whiten = (1.0 - exp(-airMass * 0.16)) * day * (1.0 - cloudiness * 0.4);
-    sky = mix(sky, float3(0.88, 0.91, 0.95), whiten * 0.55);
-
-    // Belt of Venus: with the sun just below the horizon, the sky OPPOSITE
-    // it wears a rosy band over the rising blue-grey earth shadow — the
-    // twilight signature real skies never skip.
-    float below = smoothstep(0.02, -0.10, sunElev) * (1.0 - smoothstep(-0.10, -0.22, sunElev));
-    if (below > 0.01) {
-        float antiSide = smoothstep(0.2, 0.9, 1.0 - abs(uv.x - (1.0 - sunAz)));
-        float venusBand = exp(-pow((uv.y - 0.78) * 8.0, 2.0));
-        float shadowBand = smoothstep(0.82, 1.0, uv.y);
-        sky += float3(0.80, 0.42, 0.42) * venusBand * antiSide * below * (1.0 - cloudiness * 0.7) * 0.16;
-        sky = mix(sky, float3(0.16, 0.19, 0.28), shadowBand * antiSide * below * 0.22);
-    }
-
-    // ---- Sun & moon v2 (IMG_8724-8727 "nu desene"): both bodies render
-    // in ASPECT-TRUE screen space — the old normalized-uv metric stretched
-    // every disc into an oval sticker. The sun gains limb darkening,
-    // layered bloom, horizon flattening at low elevation and cloud
-    // occlusion; heavy overcast leaves only a diffuse bright smudge.
+    // Geometry shared by the phase functions and both bodies: aspect-true
+    // space (v5) keeps every disc and glow round on any screen.
     float aspect = bounds.w / max(bounds.z, 1.0);
-    float2 sunPos = float2(sunAz, 0.78 - clamp(sunElev, 0.0, 1.0) * 0.55);
+    float2 sunPos = float2(sunAzC, 0.78 - clamp(sunElev, 0.0, 1.0) * 0.55);
     // Legacy anisotropic metric — kept for every directional TINT (cloud
     // rim, fog diffusion, shadow taps) tuned against it.
     float dSun = distance(uv * float2(1.0, 1.4), sunPos * float2(1.0, 1.4));
     float2 auv = float2(uv.x, uv.y * aspect);
     float2 sunA = float2(sunPos.x, sunPos.y * aspect);
     float dSunA = distance(auv, sunA);
-    // Low sun: the glow flattens into a wide band hugging the horizon —
-    // never a round blob sitting "on the ground".
     float lowSun = smoothstep(0.45, 0.05, sunElev);
+
+    // Airmass along the view ray and along the sun's path (Kasten-shaped:
+    // ~1 overhead, ~10 grazing the horizon).
+    float sinView = sin(mix(1.35, 0.02, uv.y));
+    float amView = 1.0 / (sinView + 0.09);
+    float amSun  = 1.0 / (max(sunElev, 0.015) + 0.09);
+    const float3 betaR = float3(0.115, 0.266, 0.650);   // relative Rayleigh β
+    // Sunlight surviving its slanted path — golden then red, for free.
+    float3 Tsun = exp(-betaR * amSun * 0.60);
+    // Light feeding the air the eye looks THROUGH: horizon rays arrive
+    // through reddened air, overhead rays barely any — sunset lives low
+    // while the zenith keeps its cool blue-violet upper sky.
+    float horizonness = clamp((amView - 1.0) * 0.14, 0.0, 1.0);
+    float3 incident = exp(-betaR * amSun * 0.60 * mix(0.30, 1.05, horizonness));
+    // In-scatter saturates with airmass: aerial perspective and the pale
+    // horizon are consequences of the solve, not a bolted-on whiten.
+    float3 inScatter = 1.0 - exp(-betaR * amView * 0.75);
+
+    // Phase functions, from the screen-space angle to the sun.
+    float cosTheta = cos(min(dSunA * 2.6, 3.14159));
+    float phR = 0.64 * (1.0 + cosTheta * cosTheta);
+    const float gHG = 0.76;
+    float phM = (1.0 - gHG * gHG) / pow(1.0 + gHG * gHG - 2.0 * gHG * cosTheta, 1.5);
+
+    // HDR assembly: the day solve ↔ a soft blue-gray night, sun-blended.
+    float3 dayHDR = inScatter * incident * phR * 1.18;
+    dayHDR += Tsun * phM * 0.020 * (1.0 + horizonness * 1.5)
+            * (1.0 - cloudiness * 0.55);                // cinematic haze veil
+    float3 nightHDR = float3(0.012, 0.018, 0.035)
+                    + float3(0.028, 0.042, 0.070) * horizonness;
+    float3 sky = mix(nightHDR, dayHDR, day);
+
+    // Belt of Venus: with the sun just below the horizon, the sky OPPOSITE
+    // it wears a rosy band over the rising blue-grey earth shadow — the
+    // twilight signature real skies never skip.
+    float below = smoothstep(0.02, -0.10, sunElev) * (1.0 - smoothstep(-0.10, -0.22, sunElev));
+    if (below > 0.01) {
+        float antiSide = smoothstep(0.2, 0.9, 1.0 - abs(uv.x - (1.0 - sunAzC)));
+        float venusBand = exp(-pow((uv.y - 0.78) * 8.0, 2.0));
+        float shadowBand = smoothstep(0.82, 1.0, uv.y);
+        sky += float3(0.80, 0.42, 0.42) * venusBand * antiSide * below * (1.0 - cloudiness * 0.7) * 0.16;
+        sky = mix(sky, float3(0.16, 0.19, 0.28), shadowBand * antiSide * below * 0.22);
+    }
+
+    // ---- Sun (v5 geometry, v6 light): the disc wears the PHYSICAL colour
+    // of the surviving sunlight (Tsun), so it whitens high and reddens
+    // into the horizon on the same curve as the sky around it. Low sun:
+    // the glow flattens into a wide band hugging the horizon — never a
+    // round blob sitting "on the ground".
     float2 gm = (auv - sunA) * float2(1.0 - lowSun * 0.45, 1.0 + lowSun * 1.3);
     float dGlow = length(gm);
-    float3 sunCol = mix(float3(1.0, 0.97, 0.90), float3(1.0, 0.62, 0.30),
-                        clamp(dusk + lowSun * 0.4, 0.0, 1.0));
+    float3 sunCol = Tsun / max(max(Tsun.r, max(Tsun.g, Tsun.b)), 1e-3);
     // The DISC exists only above the horizon under a mostly-clear sky.
     float discVis = day * smoothstep(-0.04, 0.03, sunElev)
                   * (1.0 - smoothstep(0.30, 0.70, cloudiness));
     float sunCore = smoothstep(0.034, 0.023, dSunA);
     float limb = 1.0 - 0.30 * smoothstep(0.012, 0.032, dSunA);
-    float bloom = exp(-dGlow * dGlow * 160.0) * 0.85 + exp(-dGlow * dGlow * 20.0) * 0.35;
-    sky += sunCol * (sunCore * limb * discVis
+    // Layered bloom accumulated in HDR — the ACES rolloff at the end
+    // compresses it exactly the way a lens does (very subtle, per brief).
+    float bloom = exp(-dGlow * dGlow * 160.0) * 1.00 + exp(-dGlow * dGlow * 20.0) * 0.36;
+    sky += sunCol * (sunCore * limb * discVis * 1.30
                    + bloom * day * (1.0 - cloudiness * 0.55) * 0.60);
     // Through an overcast deck the sun survives as a broad diffuse patch.
     sky += sunCol * exp(-dGlow * dGlow * 9.0) * day
          * smoothstep(0.30, 0.85, cloudiness) * 0.12;
-    // Mie aureole (v4): forward scattering wraps a warm veil ~10–20° around
-    // the sun — a real sky never cuts from disc straight to blue.
-    float mie = exp(-dSunA * 5.5) * day * (1.0 - cloudiness * 0.6);
-    sky += float3(1.0, 0.86, 0.62) * mie * 0.18;
 
-    float night = 1.0 - day;
+    // Light rays through the haze (brief): slow radial shafts carved by
+    // noise in the ANGLE around a low sun — they breathe with the field's
+    // own drift, never the spokes of a painted wheel.
+    if (day > 0.02 && lowSun > 0.05) {
+        float2 dirS = (auv - sunA) / max(dSunA, 1e-4);
+        float shaft = fbm(dirS * 2.4 + float2(t * 0.010, -t * 0.007));
+        shaft = smoothstep(0.52, 0.86, shaft);
+        float rayAmt = shaft * exp(-dSunA * 2.4) * lowSun * day
+                     * (0.30 + 0.70 * cloudiness)
+                     * (1.0 - smoothstep(0.72, 1.0, cloudiness));
+        sky += Tsun * rayAmt * 0.30;
+    }
+
+    // Floating dust in the beam (brief): sparse illuminated motes adrift
+    // through the sunlit air — alive inside the bloom, subliminal
+    // everywhere else.
+    if (day > 0.3 && cloudiness < 0.6) {
+        float2 mp = auv * 34.0 + float2(t * 0.045, t * 0.021);
+        float2 mc = floor(mp);
+        float mh = hash12(mc);
+        float mote = step(0.986, mh);
+        float md = length(fract(mp) - float2(0.30 + 0.40 * fract(mh * 17.0),
+                                             0.30 + 0.40 * fract(mh * 29.0)));
+        float dusty = mote * smoothstep(0.10, 0.0, md)
+                    * (0.5 + 0.5 * sin(t * (0.5 + mh) + mh * 40.0));
+        sky += Tsun * dusty * exp(-dSunA * 3.0) * day * (1.0 - cloudiness) * 0.10;
+    }
+
     if (night > 0.01) {
-        // Airglow: real night skies are never pure black — a faint cool
-        // lift near the horizon keeps depth (and text contrast) alive.
-        sky += float3(0.045, 0.07, 0.11) * night * smoothstep(0.55, 1.0, uv.y) * 0.55;
         // Distant-glow warmth hugging the night horizon (v4) — inhabited
         // skies are never cold all the way to the ground.
         sky += float3(0.085, 0.065, 0.045) * night * pow(uv.y, 3.5) * 0.35;
 
-        // Stars v2: ROUND dots with per-star size, brightness and twinkle
-        // cadence — no more square grid pixels.
+        // Stars v3 (brief): round dots with per-star size, brightness and
+        // a SLOW twinkle cadence — and they fade toward the horizon, where
+        // the thicker air of the same solve swallows them.
+        float starAlt = smoothstep(1.02, 0.50, uv.y);
         float2 sp = uv * float2(160.0, 260.0);
         float2 sc = floor(sp);
         float sh = hash12(sc);
         float s1 = step(0.9955, sh);
         float srad = 0.10 + 0.22 * fract(sh * 57.0);
         float sdot = smoothstep(srad, 0.0, length(fract(sp) - 0.5));
-        float tw = 0.55 + 0.45 * sin(t * (1.0 + fract(sh * 91.0) * 2.4) + sh * 40.0);
+        float tw = 0.55 + 0.45 * sin(t * (0.55 + fract(sh * 91.0) * 1.5) + sh * 40.0);
         float2 sp2 = uv * float2(70.0, 120.0) + 31.7;
         float2 sc2 = floor(sp2);
         float sh2 = hash12(sc2);
@@ -318,18 +369,18 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
                               fract(sh * 23.0));
         sky += (starTint * s1 * sdot * 0.8 * tw
               + float3(0.9, 0.93, 1.0) * s2 * sdot2 * 1.0) * night
-             * (1.0 - cloudiness);
+             * (1.0 - cloudiness) * starAlt;
 
         // The Milky Way: a faint tilted dust band, fBM-mottled.
         float mwBand = exp(-pow((uv.y - (0.55 - uv.x * 0.25)) * 6.0, 2.0));
         float mw = fbm(float2(uv.x * 3.0 + uv.y * 1.5, uv.y * 6.0 - uv.x * 2.0));
-        sky += float3(0.55, 0.60, 0.75) * mw * mwBand * night * (1.0 - cloudiness) * 0.055;
+        sky += float3(0.55, 0.60, 0.75) * mw * mwBand * night * (1.0 - cloudiness) * 0.055 * starAlt;
 
-        // Moon v2 (IMG_8724/8725/8727): a perfectly ROUND disc (aspect-true
-        // space) with maria mottling on the lit face, soft limb, faint
-        // earthshine on the dark side and a modest halo — and it HIDES
-        // behind an overcast deck instead of shining through it.
-        float2 moonPos = float2(1.0 - sunAz, 0.24);
+        // Moon v3: round disc (aspect-true space), phase-correct
+        // terminator, maria mottling, soft limb, faint earthshine — and it
+        // HIDES behind an overcast deck instead of shining through it.
+        // Rule of thirds: it rides the upper third, opposite the sun.
+        float2 moonPos = float2(1.0 - sunAzC, 0.24);
         float2 moonA = float2(moonPos.x, moonPos.y * aspect);
         float dmA = distance(auv, moonA);
         float mR = 0.042;
@@ -344,6 +395,20 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         sky += (float3(0.93, 0.93, 0.89) * lit * maria
               + float3(0.30, 0.33, 0.40) * disc * (1.0 - lit) * 0.22
               + float3(0.60, 0.65, 0.78) * glowM * 0.28) * moonVis;
+
+        // Scattering halo (brief): a broad ring of moonlight diffused by
+        // the atmosphere, its brightness breathing almost imperceptibly —
+        // the glow of air, never a sticker ring.
+        float pulse = 1.0 + 0.07 * sin(t * 0.23);
+        float halo = exp(-pow((dmA - 0.085) * 24.0, 2.0)) * 0.085
+                   + exp(-dmA * dmA * 60.0) * 0.10;
+        sky += float3(0.55, 0.62, 0.80) * halo * pulse * moonVis;
+
+        // Thin atmospheric mist (brief): a cool veil breathing over the
+        // night horizon on its own slow clock.
+        float mist = fbm(float2(uv.x * 3.0 + t * 0.006, uv.y * 9.0 - t * 0.002));
+        sky += float3(0.10, 0.13, 0.18) * mist
+             * smoothstep(0.60, 1.0, uv.y) * night * (1.0 - cloudiness * 0.6) * 0.16;
     }
 
     // ---- Clouds v2: domain-warped fBM — billowing shapes instead of
@@ -403,13 +468,13 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         // low behind them — sunset's signature made of scattering, not paint.
         sky += float3(1.0, 0.55, 0.35) * rim * dusk * 0.30;
         // Moonlit lining: at night the same edges catch the moon instead.
-        float2 moonP = float2(1.0 - sunAz, 0.24);
+        float2 moonP = float2(1.0 - sunAzC, 0.24);
         float dMoonC = distance(uv * float2(1.0, 1.5), moonP * float2(1.0, 1.5));
         sky += float3(0.78, 0.84, 0.95) * rim * exp(-dMoonC * dMoonC * 10.0)
              * (1.0 - day) * 0.14;
     }
     // Low-sun flare: a warm horizontal scattering streak at golden hour.
-    float flare = exp(-pow((uv.y - sunPos.y) * 22.0, 2.0)) * exp(-abs(uv.x - sunAz) * 2.6);
+    float flare = exp(-pow((uv.y - sunPos.y) * 22.0, 2.0)) * exp(-abs(uv.x - sunAzC) * 2.6);
     sky += float3(1.0, 0.62, 0.30) * flare * dusk * day * (1.0 - cloudiness * 0.6) * 0.22;
 
     // F4 — cloud shadows crossing the lower ground band: the deck's own
@@ -492,7 +557,7 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     // the faint reversed secondary and the brighter sky inside the
     // primary that real optics produce.
     if (rainbow > 0.005) {
-        float2 arcC = float2(1.0 - sunAz, 1.35);
+        float2 arcC = float2(1.0 - sunAzC, 1.35);
         float2 rel = (uv - arcC) * float2(1.0, 1.2);
         float dArc = length(rel);
         if (dArc > 0.52 && dArc < 1.02) {
@@ -500,7 +565,7 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
             float ang = atan2(rel.x, -rel.y);
             // Partial segment: one shoulder only (~a third of the hoop),
             // soft-edged; the side leans away from the sun's azimuth.
-            float lean = (sunAz - 0.5) * 0.9;
+            float lean = (sunAzC - 0.5) * 0.9;
             float span = smoothstep(1.05, 0.30, abs(ang - lean * 1.2 - 0.28));
             // Ends fade harder near the ground — bows sink into the haze.
             float footFade = smoothstep(1.35, 0.55, abs(ang));

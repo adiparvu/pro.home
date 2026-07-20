@@ -260,12 +260,25 @@ extension WeatherStageParams {
             (a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
         }
         let day = smoothstep(-0.12, 0.35, sunElevation)
-        let dusk = exp(-pow(sunElevation * 3.2, 2))
 
-        var zenith  = mix((0.010, 0.016, 0.042), (0.16, 0.38, 0.72), day)
-        var horizon = mix((0.045, 0.060, 0.110), (0.62, 0.78, 0.92), day)
-        horizon = mix(horizon, (0.98, 0.55, 0.26), dusk * 0.55)
-        zenith  = mix(zenith,  (0.42, 0.27, 0.45), dusk * 0.35)
+        // v6: the shader's base is now a Rayleigh single-scattering solve —
+        // mirror the SAME math at its two endpoints (zenith: airmass ~1.1,
+        // horizon: airmass ~9) so the frozen colors keep matching the live
+        // sky, sunset palette included, with no hand-tuned dusk stops.
+        let betaR = (r: 0.115, g: 0.266, b: 0.650)
+        let amSun = 1.0 / (max(sunElevation, 0.015) + 0.09)
+        func solve(amView: Double, incidentPath: Double) -> RGB {
+            func channel(_ beta: Double) -> Double {
+                let inScatter = 1 - exp(-beta * amView * 0.75)
+                let incident = exp(-beta * amSun * 0.60 * incidentPath)
+                return min(inScatter * incident * 1.18 * 0.64 * 2.0, 1.0)
+            }
+            return (channel(betaR.r), channel(betaR.g), channel(betaR.b))
+        }
+        let nightZenith: RGB = (0.012, 0.018, 0.035)
+        let nightHorizon: RGB = (0.040, 0.060, 0.105)
+        var zenith  = mix(nightZenith,  solve(amView: 1.15, incidentPath: 0.30), day)
+        var horizon = mix(nightHorizon, solve(amView: 9.00, incidentPath: 1.05), day)
 
         // Condition attenuation — the same visual weights the shader uses,
         // collapsed to the gradient endpoints.
