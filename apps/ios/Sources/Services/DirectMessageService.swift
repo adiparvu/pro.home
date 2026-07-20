@@ -709,7 +709,26 @@ final class DirectMessageService {
         guard !isSubscribing else { return }
         isSubscribing = true
         defer { isSubscribing = false }
-        if channel != nil { await unsubscribe() }
+        let topic = "direct_messages:\(propertyId.uuidString)"
+        if let old = channel, !old.topic.hasSuffix(topic) {
+            await unsubscribe()                 // genuine property switch
+        } else if let old = channel {
+            // SAME topic: never discard the object — a fresh object
+            // double-joins the topic, and the server's close of the previous
+            // join (stale join_ref, unchecked by SDK 2.52.0) kills the new,
+            // just-confirmed subscription (b1173 field log). Drop our handles,
+            // then drive THIS object down with a real leave.
+            postgresSubs.removeAll()
+            typingSub = nil
+            newMsgSub = nil
+            selftestSub = nil
+            selftestTask?.cancel(); selftestTask = nil
+            broadcastEcho = nil
+            activity.channel = nil
+            subscribedPropertyId = nil
+            channel = nil
+            await old.unsubscribe()
+        }
         // Channel auth rides the client's accessToken closure (see
         // SupabaseClient): the user's session JWT, so RLS-scoped
         // postgres_changes actually deliver member rows.
@@ -717,7 +736,9 @@ final class DirectMessageService {
         // ping. The real typing/dm_new handlers already ignore our own signals
         // (name != myName, from != my id), so echoing our own broadcasts back is
         // harmless to them and gives us a zero-second-device liveness probe.
-        let ch = realtimeAnon.channel("direct_messages:\(propertyId.uuidString)") {
+        // (On reuse the options closure is ignored by the SDK — the registered
+        // instance already carries receiveOwnBroadcasts = true.)
+        let ch = realtimeAnon.channel(topic) {
             $0.broadcast.receiveOwnBroadcasts = true
         }
         // Incremental reconciliation: append/patch/remove the single changed row
@@ -823,6 +844,12 @@ final class DirectMessageService {
             typingSub = nil
             newMsgSub = nil
             selftestSub = nil
+            // unsubscribe() FIRST: from .subscribing it cancels the join AND
+            // sends phx_leave; removeChannel alone sends no leave from a
+            // non-.subscribed state, and a join confirming after the 15s
+            // timebox would live on as the server orphan that closes the
+            // topic's next join (b1173).
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             // A cancellation is NOT a real failure: it means a newer subscribe
             // or a socket reset-for-reconnect superseded this attempt. Don't
@@ -1040,6 +1067,11 @@ final class DirectMessageService {
         headsTask = nil
         subscribedPropertyId = nil
         if let ch = channel {
+            // Real leave from EVERY state (removeChannel skips the leave when
+            // the channel isn't .subscribed) — otherwise the server keeps an
+            // orphan join whose stale phx_close kills the topic's next
+            // confirmed join (b1173).
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             channel = nil
         }

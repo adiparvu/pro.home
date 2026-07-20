@@ -99,8 +99,16 @@ final class MessageService {
     @ObservationIgnored private var lastSyncedCreatedAt: String?
 
     func load(propertyId: UUID, groupId: UUID? = nil) async {
-        // Unsubscribe from any previous property's channels before loading new data.
-        await unsubscribeAll()
+        // Teardown only on a genuine conversation switch: load() reruns on
+        // every appear/foreground for the SAME scope, and an unconditional
+        // unsubscribeAll() here raced the parallel subscribe .task into a
+        // leave-less teardown (removeChannel sends no phx_leave from a
+        // non-.subscribed channel in SDK 2.52.0) — the orphaned server join
+        // then closed the next confirmed join (the b1173 field log).
+        if subscribedPropertyId != nil,
+           subscribedPropertyId != propertyId || currentGroupId != groupId {
+            await unsubscribeAll()
+        }
         currentGroupId = groupId
         // Session gate (same law as PropertyRepo): a fetch riding the anon
         // key gets a SUCCESSFUL empty page under RLS — the "chat opens
@@ -274,7 +282,28 @@ final class MessageService {
         guard !isSubscribing else { return }
         isSubscribing = true
         defer { isSubscribing = false }
-        if realtimeChannel != nil { await unsubscribe() }
+        // Topic includes the group scope so a community thread's channel never
+        // collides with the main chat's channel for the same property.
+        let scope = groupId?.uuidString ?? "main"
+        let topic = "messages:\(propertyId.uuidString):\(scope)"
+        if let old = realtimeChannel, !old.topic.hasSuffix(topic) {
+            await unsubscribe()                 // genuine scope/property switch
+        } else if let old = realtimeChannel {
+            // SAME topic: never discard the object — a fresh object
+            // double-joins the topic, and the server's close of the previous
+            // join (stale join_ref, unchecked by SDK 2.52.0) kills the new,
+            // just-confirmed subscription (b1173 field log). Drop our
+            // callback handles, then drive THIS object down: unsubscribe()
+            // sends phx_leave even mid-join and awaits the server's
+            // phx_close, so no orphan join survives server-side.
+            postgresSubs.removeAll()
+            typingSub = nil
+            newMsgSub = nil
+            activity.channel = nil
+            subscribedPropertyId = nil
+            realtimeChannel = nil
+            await old.unsubscribe()
+        }
         // Channel auth rides the client's accessToken closure (see
         // SupabaseClient): the user's session JWT, so RLS-scoped
         // postgres_changes actually deliver member rows.
@@ -284,10 +313,10 @@ final class MessageService {
         // returns the already-subscribed channel for a duplicate topic and
         // silently drops callbacks registered after subscribe.
         currentGroupId = groupId
-        // Topic includes the group scope so a community thread's channel never
-        // collides with the main chat's channel for the same property.
-        let scope = groupId?.uuidString ?? "main"
-        let channel = realtimeAnon.channel("messages:\(propertyId.uuidString):\(scope)")
+        // channel(_:) returns the already-registered instance for a live
+        // topic — the reuse funnels the app and the SDK's rejoinChannels()
+        // into ONE join per topic.
+        let channel = realtimeAnon.channel(topic)
         // Callbacks must be registered before subscribing.
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
@@ -372,6 +401,12 @@ final class MessageService {
             postgresSubs.removeAll()
             typingSub = nil
             newMsgSub = nil
+            // unsubscribe() FIRST: from .subscribing it cancels the join AND
+            // sends phx_leave; removeChannel alone sends no leave from a
+            // non-.subscribed state, and a join that confirms after the 15s
+            // timebox would live on server-side as the orphan that closes
+            // the next join on this topic (b1173).
+            await channel.unsubscribe()
             await realtimeAnon.removeChannel(channel)
             // A cancellation means a newer subscribe / socket reset superseded
             // this attempt — NOT a real failure. Don't brand the session FAILED.
@@ -535,6 +570,11 @@ final class MessageService {
     func unsubscribe() async {
         subscribedPropertyId = nil
         if let ch = realtimeChannel {
+            // Real leave from EVERY state (removeChannel skips the leave when
+            // the channel isn't .subscribed) — otherwise the server keeps an
+            // orphan join whose stale phx_close kills the topic's next
+            // confirmed join (b1173).
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
         }
@@ -836,6 +876,7 @@ final class MessageService {
     func unsubscribeReads() async {
         readsSubs.removeAll()
         if let ch = readsChannel {
+            await ch.unsubscribe()   // real leave from every state (b1173)
             await realtimeAnon.removeChannel(ch)
             readsChannel = nil
         }
@@ -910,6 +951,7 @@ final class MessageService {
     func unsubscribeDeliveries() async {
         deliveriesSubs.removeAll()
         if let ch = deliveriesChannel {
+            await ch.unsubscribe()   // real leave from every state (b1173)
             await realtimeAnon.removeChannel(ch)
             deliveriesChannel = nil
         }
@@ -1014,6 +1056,7 @@ final class MessageService {
     func unsubscribeReactions() async {
         reactionsSubs.removeAll()
         if let ch = reactionsChannel {
+            await ch.unsubscribe()   // real leave from every state (b1173)
             await realtimeAnon.removeChannel(ch)
             reactionsChannel = nil
         }
@@ -1090,6 +1133,7 @@ final class MessageService {
     func unsubscribePollVotes() async {
         pollVotesSubs.removeAll()
         if let ch = pollVotesChannel {
+            await ch.unsubscribe()   // real leave from every state (b1173)
             await realtimeAnon.removeChannel(ch)
             pollVotesChannel = nil
         }
