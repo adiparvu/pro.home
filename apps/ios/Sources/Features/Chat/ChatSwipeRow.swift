@@ -36,25 +36,27 @@ struct SwipeableRow<Content: View>: View {
 
     var body: some View {
         ZStack {
-            // Action buttons only exist while actively swiping — avoids a colour
-            // "flash" behind rows during list/filter transitions.
+            // Action buttons TRACK the finger (offset-linked), so they are
+            // never parked under the still-covering row — which is what
+            // forced the old bright material backing behind the sliding
+            // content (the "white sticker" band, IMG_8732). With the
+            // buttons riding the reveal, the row keeps the naked page
+            // background at every phase of the gesture.
             if offset > 0 {
                 HStack(spacing: 0) {
                     ForEach(leading) { actionButton($0) }
                     Spacer(minLength: 0)
                 }
+                .offset(x: offset - leadingWidth)
             } else if offset < 0 {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
                     ForEach(trailing) { actionButton($0) }
                 }
+                .offset(x: trailingWidth + offset)
             }
 
             content()
-                // `.card`: native Liquid Glass rounded card. `.plain`: naked
-                // content on the page background (iOS-Messages look) — the
-                // bar material backs it ONLY mid-swipe, so the revealed
-                // action buttons never show through the sliding row.
                 .modifier(SwipeRowDress(style: style, isSwiping: offset != 0))
                 .offset(x: offset)
                 .overlay {
@@ -110,8 +112,9 @@ struct SwipeableRow<Content: View>: View {
     }
 }
 
-/// `.card` keeps the row's own Liquid Glass; `.plain` adds no chrome at
-/// rest and backs the content with the bar material only mid-swipe.
+/// `.card` keeps the row's own Liquid Glass; `.plain` stays NAKED on the
+/// page background through the whole gesture — the buttons ride the
+/// reveal, so nothing ever needs to be masked (IMG_8732).
 private struct SwipeRowDress: ViewModifier {
     let style: SwipeRowStyle
     let isSwiping: Bool
@@ -122,9 +125,7 @@ private struct SwipeRowDress: ViewModifier {
         case .card:
             content.liquidGlass(cornerRadius: AppRadius.lg)
         case .plain:
-            content.background {
-                if isSwiping { Rectangle().fill(.thinMaterial) }
-            }
+            content
         }
     }
 }

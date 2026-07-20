@@ -96981,7 +96981,11 @@
     "scan_landing_open_full": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Open full page"}}, "ro": {"stringUnit": {"state": "translated", "value": "Deschide fișa completă"}}}},
     "plant_qr_title": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "QR Label"}}, "ro": {"stringUnit": {"state": "translated", "value": "Etichetă QR"}}}},
     "plant_qr_caption": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Print it and stick it by the plant — anyone who scans sees its public card; in PRVIO it opens the full page."}}, "ro": {"stringUnit": {"state": "translated", "value": "Printeaz-o și lipește-o lângă plantă — oricine o scanează îi vede fișa publică; în PRVIO se deschide direct."}}}},
-    "scan_landing_since_fmt": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "In the garden since %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "În grădină din %@"}}}}
+    "scan_landing_since_fmt": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "In the garden since %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "În grădină din %@"}}}},
+    "plant_qa_water": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Watered"}}, "ro": {"stringUnit": {"state": "translated", "value": "Am udat-o"}}}},
+    "plant_qa_photo": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Photo"}}, "ro": {"stringUnit": {"state": "translated", "value": "Fotografie"}}}},
+    "plant_qa_qr": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "QR Label"}}, "ro": {"stringUnit": {"state": "translated", "value": "Etichetă QR"}}}},
+    "plant_care_last_fmt": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Last watered: %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Ultima udare: %@"}}}}
   },
   "version": "1.0"
 }

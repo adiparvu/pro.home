@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import UIKit
 
 // MARK: - Conversations list (WhatsApp-style main chat screen)
 
@@ -649,6 +650,14 @@ struct ConversationsView: View {
             .padding(.top, AppSpacing.sm)
             .padding(.bottom, AppSpacing.xxl)
         }
+        // The keyboard yields the stage the moment the user touches the
+        // list (IMG_8733): dragging dismisses interactively, and ANY tap on
+        // the background resigns it — simultaneous, so row taps still land.
+        .scrollDismissesKeyboard(.interactively)
+        .simultaneousGesture(TapGesture().onEnded {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                            to: nil, from: nil, for: nil)
+        })
     }
 
     /// The Messages-style separator: a hairline starting where the text

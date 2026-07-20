@@ -64,39 +64,78 @@ extension PlantDetailSheet {
         exportURL = ShareURL(url: url)
     }
 
-    // MARK: Header card
+    // MARK: Header card (v2 — IMG_8730/8731 "alt gen")
+    //
+    // Item-Detail-v2 family look: one immersive hero — deep health-tinted
+    // gradient, big breathing emoji, name INSIDE the hero, species as its
+    // subtitle, and honest chips (location, health) — instead of the old
+    // pale strip + separate 4-row table.
 
     var headerCard: some View {
         GlassCard(padding: 0) {
-            VStack(spacing: 0) {
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            plant.healthColor.opacity(0.2),
-                            plant.healthColor.opacity(0.06)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .frame(height: 100)
-
+            ZStack(alignment: .bottom) {
+                LinearGradient(
+                    colors: [plant.healthColor.opacity(0.42),
+                             plant.healthColor.opacity(0.10)],
+                    startPoint: .top, endPoint: .bottom)
+                VStack(spacing: 8) {
                     Text(isEditing ? editedPlant.emoji : plant.emoji)
-                        .font(AppFont.scaled(56))
-                }
-
-                VStack(spacing: 4) {
+                        .font(AppFont.scaled(64))
+                        .padding(.top, AppSpacing.lg)
                     Text(isEditing ? editedPlant.name : plant.name)
-                        .font(AppFont.scaled(20, weight: .bold))
+                        .font(AppFont.scaled(24, weight: .bold))
                         .foregroundStyle(.primary)
-
+                        .multilineTextAlignment(.center)
                     if let species = (isEditing ? editedPlant.species : plant.species), !species.isEmpty {
                         Text(species)
                             .font(AppFont.scaled(14))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .italic()
                     }
+                    HStack(spacing: 8) {
+                        heroChip(plant.localizedHealthLabel, icon: plant.healthIcon,
+                                 tint: plant.healthColor)
+                        if let location = plant.location, !location.isEmpty {
+                            heroChip(location, icon: "mappin.circle.fill", tint: .red)
+                        }
+                    }
+                    .padding(.bottom, AppSpacing.lg)
                 }
-                .padding(.vertical, AppSpacing.base)
+                .frame(maxWidth: .infinity)
             }
+        }
+    }
+
+    private func heroChip(_ text: String, icon: String, tint: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon).font(AppFont.scaled(11)).foregroundStyle(tint)
+            Text(text).font(AppFont.scaled(12, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 6)
+        .background(.thinMaterial, in: Capsule())
+    }
+
+    // MARK: Quick actions (v2) — the everyday verbs as one glass row.
+
+    var plantQuickActions: some View {
+        HStack(spacing: 10) {
+            Group {
+                GlassActionButton(icon: "drop.fill", label: "plant_qa_water") {
+                    HapticFeedback.success()
+                    Task { await plantService.markWatered(plant) }
+                }
+                GlassActionButton(icon: "camera.fill", label: "plant_qa_photo") {
+                    HapticFeedback.impact(.light)
+                    showAlbumCamera = true
+                }
+                GlassActionButton(icon: "qrcode", label: "plant_qa_qr") {
+                    HapticFeedback.impact(.light)
+                    sharePlantQR()
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -104,45 +143,49 @@ extension PlantDetailSheet {
 
     var viewFields: some View {
         VStack(spacing: 12) {
-            GlassCard(padding: 0) {
-                VStack(spacing: 0) {
-                    detailRow(
-                        icon: plant.healthIcon,
-                        iconColor: plant.healthColor,
-                        label: "Health",
-                        value: plant.localizedHealthLabel
-                    )
-                    rowDivider
-                    detailRow(
-                        icon: "drop.fill",
-                        iconColor: .blue,
-                        label: "Last watered",
-                        value: plant.lastWateredDisplay
-                    )
-                    rowDivider
-                    detailRow(
-                        icon: "clock.fill",
-                        iconColor: .purple,
-                        label: "Watering interval",
-                        value: Plant.wateringIntervalDisplay(plant.wateringIntervalDays)
-                    )
-                    rowDivider
-                    detailRow(
-                        icon: "drop.triangle.fill",
-                        iconColor: plant.needsWatering
-                            ? Color(red: 1.0, green: 0.62, blue: 0.1)
-                            : Color(red: 0.15, green: 0.80, blue: 0.4),
-                        label: "Watering status",
-                        value: plant.wateringLabel
-                    )
-                    if let location = plant.location, !location.isEmpty {
-                        rowDivider
-                        detailRow(
-                            icon: "mappin.circle.fill",
-                            iconColor: .red,
-                            label: "Location",
-                            value: location
-                        )
+            plantQuickActions
+
+            // Watering as ONE living gauge (v2): the bar fills as the plant
+            // drinks through its interval — thirst is visible at a glance,
+            // instead of four detached table rows saying the same thing.
+            GlassCard(padding: 16) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Watering status", systemImage: "drop.fill")
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(plant.wateringLabel)
+                            .font(AppFont.scaled(13, weight: .semibold))
+                            .foregroundStyle(plant.needsWatering
+                                ? Color.brandWarning : Color.brandSuccess)
+                    }
+                    GeometryReader { geo in
+                        let interval = max(plant.wateringIntervalDays, 1)
+                        let elapsed = plant.lastWateredAtDate.map {
+                            Date().timeIntervalSince($0) / 86_400
+                        } ?? Double(interval)
+                        let f = min(max(elapsed / Double(interval), 0), 1)
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Color.primary.opacity(0.08))
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [Color.brandSkyBlue,
+                                             f > 0.85 ? Color.brandWarning : Color.brandSkyBlue],
+                                    startPoint: .leading, endPoint: .trailing))
+                                .frame(width: max(geo.size.width * f, 8))
+                        }
+                    }
+                    .frame(height: 8)
+                    HStack {
+                        Text(String(format: String(localized: "plant_care_last_fmt"),
+                                    plant.lastWateredDisplay))
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        Spacer()
+                        Text(Plant.wateringIntervalDisplay(plant.wateringIntervalDays))
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
             }
@@ -223,11 +266,8 @@ extension PlantDetailSheet {
 
     var editFields: some View {
         VStack(spacing: 20) {
-            // The shared searchable picker (Components/EmojiPickerField):
-            // same favorites strip as the add form, plus RO/EN search and
-            // the full sectioned nature catalog.
-            EmojiPickerField(selection: $editedPlant.emoji, favorites: Plant.emojiOptions)
-
+            // IDENTITY first (IMG_8730 "regândește"): the name is the field
+            // people actually came to type; the emoji browse follows it.
             VStack(alignment: .leading, spacing: 8) {
                 fieldLabel("NAME *")
                 TextField("Plant name", text: $editedPlant.name)
@@ -237,6 +277,11 @@ extension PlantDetailSheet {
                     .padding(AppSpacing.base)
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
+
+            // The shared searchable picker (Components/EmojiPickerField):
+            // same favorites strip as the add form, plus RO/EN search and
+            // the full sectioned nature catalog.
+            EmojiPickerField(selection: $editedPlant.emoji, favorites: Plant.emojiOptions)
 
             VStack(alignment: .leading, spacing: 8) {
                 fieldLabel("SPECIES (OPTIONAL)")
