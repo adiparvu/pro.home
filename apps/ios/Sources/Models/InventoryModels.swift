@@ -31,6 +31,12 @@ struct LoanRecord: Identifiable, Codable {
     var loanedAt: Date = Date()
     var expectedReturnDate: Date?
     var returnedAt: Date?
+    // Who REGISTERED the loan (IMG_8747): items are shared property-wide,
+    // so any member can see a loan another member handed out — these name
+    // the lender. Optional + defaulted: pre-existing records decode as nil
+    // and simply omit the row.
+    var lentByName: String?
+    var lentById: UUID?
     var isReturned: Bool { returnedAt != nil }
     var daysOut: Int { Calendar.current.dateComponents([.day], from: loanedAt, to: returnedAt ?? Date()).day ?? 0 }
 }

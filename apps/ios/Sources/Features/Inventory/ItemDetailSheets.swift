@@ -96,19 +96,50 @@ struct PublicContactSheet: View {
                 }
             }
             .navigationTitle("Lost & Found Card").navigationBarTitleDisplayMode(.inline)
-            // Blank fields prefill from the active property — the default
-            // still follows "Proprietatea mea", but BOTH fields stay fully
-            // editable and a typed value is what the public page shows
-            // (IMG_8746). Runs once, only on emptiness: it never clobbers
-            // anything the owner wrote.
+            // Blank fields prefill from what the owner already told PRVIO —
+            // name/phone/email from the account profile (IMG_8747), property
+            // name/address from the active property (IMG_8746). Everything
+            // stays fully editable and a typed value is what the public page
+            // shows. Runs only on emptiness: it never clobbers anything the
+            // owner wrote.
             .task {
-                guard let p = propertyService.primary else { return }
-                if propertyName.trimmingCharacters(in: .whitespaces).isEmpty {
-                    propertyName = p.name
+                if let p = propertyService.primary {
+                    if propertyName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        propertyName = p.name
+                    }
+                    if ownerAddress.trimmingCharacters(in: .whitespaces).isEmpty {
+                        let parts = [p.addressLine1, p.city, p.postalCode ?? "", p.country]
+                        ownerAddress = parts.filter { !$0.isEmpty }.joined(separator: ", ")
+                    }
                 }
-                if ownerAddress.trimmingCharacters(in: .whitespaces).isEmpty {
-                    let parts = [p.addressLine1, p.city, p.postalCode ?? "", p.country]
-                    ownerAddress = parts.filter { !$0.isEmpty }.joined(separator: ", ")
+                let needsName  = ownerName.trimmingCharacters(in: .whitespaces).isEmpty
+                let needsPhone = ownerPhone.trimmingCharacters(in: .whitespaces).isEmpty
+                let needsEmail = ownerEmail.trimmingCharacters(in: .whitespaces).isEmpty
+                guard needsName || needsPhone || needsEmail,
+                      let uid = supabase.auth.currentSession?.user.id else { return }
+                struct Row: Decodable {
+                    let displayName: String?
+                    let fullName: String?
+                    let phone: String?
+                    let email: String?
+                    enum CodingKeys: String, CodingKey {
+                        case displayName = "display_name", fullName = "full_name"
+                        case phone, email
+                    }
+                }
+                let row: Row? = try? await supabase.from("profiles")
+                    .select("display_name, full_name, phone, email")
+                    .eq("id", value: uid.uuidString)
+                    .single().execute().value
+                if needsName, let name = row?.fullName ?? row?.displayName, !name.isEmpty {
+                    ownerName = name
+                }
+                if needsPhone, let phone = row?.phone, !phone.isEmpty {
+                    ownerPhone = phone
+                }
+                if needsEmail, let email = row?.email ?? supabase.auth.currentSession?.user.email,
+                   !email.isEmpty {
+                    ownerEmail = email
                 }
             }
             .toolbar {

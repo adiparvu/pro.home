@@ -1,6 +1,38 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Loaned by": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loaned by"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Împrumutat de"
+          }
+        }
+      }
+    },
+    "loan_hist_by_fmt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lent by %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "împrumutat de %@"
+          }
+        }
+      }
+    },
     "  AfiÈeazÄ mai mult": {
       "localizations": {
         "en": {

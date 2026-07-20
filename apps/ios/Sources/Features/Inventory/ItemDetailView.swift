@@ -234,6 +234,10 @@ struct ItemDetailView: View {
                                                 Self.dayCount(loan.daysOut),
                                                 loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-"))
                                         .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
+                                    if let by = loan.lentByName, !by.isEmpty {
+                                        Text(String(format: String(localized: "loan_hist_by_fmt"), by))
+                                            .font(AppFont.scaled(11)).foregroundStyle(Color.primary.opacity(0.4))
+                                    }
                                 }
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
@@ -301,6 +305,11 @@ struct ItemDetailView: View {
                     let overdue = loan.expectedReturnDate.map { $0 < Calendar.current.startOfDay(for: Date()) } ?? false
                     VStack(spacing: 6) {
                         loanRow("Borrower", loan.borrowerName)
+                        // Items are property-wide, so a loan another member
+                        // handed out names its lender here (IMG_8747).
+                        if let by = loan.lentByName, !by.isEmpty {
+                            loanRow("Loaned by", by)
+                        }
                         loanRow("Loaned", loan.loanedAt.formatted(date: .abbreviated, time: .omitted))
                         loanRow("Days out", Self.dayCount(loan.daysOut), highlight: loan.daysOut > 7)
                         if let ret = loan.expectedReturnDate {

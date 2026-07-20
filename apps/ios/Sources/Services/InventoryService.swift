@@ -93,7 +93,10 @@ final class InventoryService {
 
     func loanOut(_ item: InventoryItem, to borrower: String, expectedReturn: Date?) async {
         var updated = item
-        let record = LoanRecord(borrowerName: borrower, loanedAt: Date(), expectedReturnDate: expectedReturn)
+        let record = LoanRecord(borrowerName: borrower, loanedAt: Date(),
+                                expectedReturnDate: expectedReturn,
+                                lentByName: await currentMemberName(),
+                                lentById: supabase.auth.currentSession?.user.id)
         updated.currentLoan = record
         await update(updated)
         scheduleLoanReminders(for: updated, loan: record)
@@ -174,6 +177,25 @@ final class InventoryService {
     /// repaints them all by overwriting the object (IMG_8709).
     private func publicAppIconURL() async -> String? {
         await PublicAppIconMirror.uploadCurrentIcon()
+    }
+
+    /// The signed-in member's display name, for stamping who handed out a
+    /// loan (IMG_8747). The directory is the cheap path; a direct profile
+    /// fetch covers a not-yet-loaded directory (e.g. cold start).
+    private func currentMemberName() async -> String? {
+        guard let uid = supabase.auth.currentSession?.user.id else { return nil }
+        if let name = MemberDirectory.shared.byId[uid]?.name, !name.isEmpty { return name }
+        struct Row: Decodable {
+            let displayName: String?
+            let fullName: String?
+            enum CodingKeys: String, CodingKey {
+                case displayName = "display_name", fullName = "full_name"
+            }
+        }
+        guard let row: Row = try? await supabase.from("profiles")
+            .select("display_name, full_name").eq("id", value: uid.uuidString)
+            .single().execute().value else { return nil }
+        return row.displayName ?? row.fullName
     }
 
     /// The property ENTITY's name for the public page, cached per property.
