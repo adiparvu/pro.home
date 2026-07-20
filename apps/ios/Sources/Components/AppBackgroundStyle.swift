@@ -81,20 +81,25 @@ final class BackgroundStyle {
 
     private init() {
         let d = UserDefaults.standard
-        mode = AppBackgroundMode(rawValue: d.string(forKey: Keys.mode) ?? "") ?? .liveSky
+        mode = AppBackgroundMode(rawValue: d.string(forKey: Keys.mode) ?? "") ?? .gradient
         gradientId = d.string(forKey: Keys.gradient) ?? "aurora"
         photoDim = d.object(forKey: Keys.photoDim) as? Double ?? 0.18
         photoWantsDark = d.object(forKey: Keys.photoDark) as? Bool ?? true
         photo = UIImage(contentsOfFile: Self.photoURL.path)
+        // The live sky was RETIRED from the page (user-decreed, IMG_8767):
+        // a stored liveSky pref migrates to the gradient default. The
+        // weather stage's code stays dormant, not deleted.
+        if mode == .liveSky { mode = .gradient }
         // A photo mode without its file (fresh install, cleared storage)
         // falls back honestly instead of painting black.
-        if mode == .photo && photo == nil { mode = .liveSky }
+        if mode == .photo && photo == nil { mode = .gradient }
     }
 
     var gradient: BackgroundGradientPreset { .preset(id: gradientId) }
 
     /// The one signal on-backdrop text colors read (AppBackdrop.swift):
-    /// does the CURRENT ground want light text?
+    /// does the CURRENT ground want light text? (.liveSky is retired —
+    /// init migrates it — but the branch stays honest if it ever returns.)
     var wantsDarkGround: Bool {
         switch mode {
         case .liveSky:  WeatherStageEngine.shared.toParams.snapshotWantsDarkScheme
@@ -123,7 +128,7 @@ final class BackgroundStyle {
     func removePhoto() {
         try? FileManager.default.removeItem(at: Self.photoURL)
         photo = nil
-        if mode == .photo { mode = .liveSky }
+        if mode == .photo { mode = .gradient }
     }
 
     private static var photoURL: URL {
