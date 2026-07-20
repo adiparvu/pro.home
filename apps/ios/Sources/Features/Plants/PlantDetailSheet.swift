@@ -42,7 +42,9 @@ struct PlantDetailSheet: View {
     @State var automationService = PlantAutomationService()
 
     // Care-sheet PDF export (mirrors PropertyElementDetailView's export flow).
-    @State private var exportURL: ShareURL?
+    // Internal (not private): the QR-label card in PlantDetailSheetSections
+    // shares this slot for its PNG export.
+    @State var exportURL: ShareURL?
 
     init(plant: Plant) {
         self.plant = plant
