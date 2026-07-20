@@ -260,7 +260,13 @@ struct WeatherStageView: View {
             if reduceMotion {
                 sky(time: 0, params: engine.current(at: .now), tilt: (0, 0))
             } else {
-                TimelineView(.animation(minimumInterval: ProcessInfo.processInfo.isLowPowerModeEnabled ? 0.1 : nil)) { context in
+                // paused in background: the sky must FREEZE the instant the
+                // app leaves the foreground — a live render loop in a
+                // backgrounded process is termination resistance (the b1179
+                // 0x8BADF00D showed the main thread mid-ViewGraph-render at
+                // the exit deadline, 17% CPU in background).
+                TimelineView(.animation(minimumInterval: ProcessInfo.processInfo.isLowPowerModeEnabled ? 0.1 : nil,
+                                        paused: scenePhase != .active)) { context in
                     sky(time: context.date.timeIntervalSinceReferenceDate
                             .truncatingRemainder(dividingBy: 86_400),
                         params: engine.current(at: context.date),

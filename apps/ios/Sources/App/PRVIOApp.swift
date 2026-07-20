@@ -67,6 +67,10 @@ struct PRVIOApp: App {
                 case .active:
                     lock.didBecomeActive()
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+                    // Routes parked while backgrounded (drainPending refuses
+                    // to navigate in a background process — b1179 0x8BADF00D)
+                    // apply now, on the foreground stage they belong to.
+                    router.drainPending()
                     // Process quick action from cold launch (stored by AppDelegate
                     // before SwiftUI was ready). The router buffers routes until
                     // MainTabView has mounted, so no launch-time delay is needed.

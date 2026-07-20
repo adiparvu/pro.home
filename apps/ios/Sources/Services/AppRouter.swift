@@ -199,6 +199,12 @@ final class AppRouter {
     /// driven by the actual end of the dismissal, not a timer.
     func drainPending() {
         guard isReady else { return }
+        // Never navigate while backgrounded: a parked route draining after
+        // the user left (sheet dismissal completing mid-background-transition)
+        // ran a NavigationStack push in a background process — the b1179
+        // 0x8BADF00D shows the exit watchdog catching exactly that push.
+        // The route stays parked; scene-activation re-drains it.
+        guard !AppLifecycle.isBackgrounded else { return }
         if let scan = pendingScan {
             pendingScan = nil
             presentScanLanding(scan)
