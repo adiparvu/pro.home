@@ -108,6 +108,17 @@ final class BackgroundStyle {
         }
     }
 
+    /// Root color-scheme override (IMG_8763–8769): a CHOSEN static backdrop
+    /// dictates the scheme — a dark gradient or photo renders the whole app
+    /// dark (white text everywhere), a light one renders it light — exactly
+    /// how iOS treats a wallpaper. Without this, a light theme's black
+    /// `.primary` text vanished into the Grafit gradient on every screen at
+    /// once; no per-screen sweep can fix what the scheme itself gets wrong.
+    /// The retired liveSky defers to the theme (nil).
+    var preferredScheme: ColorScheme? {
+        mode == .liveSky ? nil : (wantsDarkGround ? .dark : .light)
+    }
+
     // MARK: Photo lifecycle
 
     func setPhoto(_ image: UIImage) {

@@ -33,12 +33,14 @@ struct PRVIOApp: App {
                         LoginView()
                     }
                 }
-                // The color scheme comes from the THEME (Settings → Aspect →
-                // Fundal, IMG_8678): follow the atmosphere's palette (the
-                // original behavior), the device, or a pinned light/dark —
-                // in every case the living background stays on. Reading the
-                // engine here is what re-renders the scheme when it changes.
-                .preferredColorScheme(AppMoodEngine.shared.preferredScheme)
+                // The color scheme: the CHOSEN backdrop rules (IMG_8763–8769
+                // — a dark gradient/photo renders the app dark so text stays
+                // readable everywhere, like an iOS wallpaper); the theme
+                // (Settings → Aspect → Temă) decides only when no static
+                // backdrop override applies. Reading both observables here
+                // is what re-renders the scheme when either changes.
+                .preferredColorScheme(BackgroundStyle.shared.preferredScheme
+                                      ?? AppMoodEngine.shared.preferredScheme)
                 // In-app text size (Settings → Aspect → Mărimea textului);
                 // nil override = pure re-application of the system size.
                 .appTextSize()
