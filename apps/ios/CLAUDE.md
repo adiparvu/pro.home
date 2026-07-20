@@ -219,6 +219,17 @@ Every interaction should feel delightful and every gesture natural. Loading
 states must be beautiful, empty states meaningful, error states helpful. The
 user should always feel the application is polished.
 
+## Deploys — owner's call only (permanent, user-decreed, 2026-07-20)
+
+TestFlight deploys happen ONLY when the user explicitly asks for one
+("dă deploy", "urcă pe TestFlight" or equivalent). Never push a commit
+carrying the `[deploy]` marker on your own initiative — not after a fix,
+not after a green run, not to "complete a train". The default workflow is:
+commit locally, keep the work ready (build-number bump prepared but not
+assumed), report status, and WAIT. Ordinary pushes without `[deploy]` are
+fine (they run only the unit tests); the moment of shipping to testers
+belongs to the owner.
+
 ## Continuous improvement
 
 Never assume the first implementation is the best. Continuously look for
