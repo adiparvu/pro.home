@@ -32,11 +32,12 @@ struct AppBackdrop: View {
 
 // MARK: - Shared background
 
-/// The app-wide background every screen layers under its content: the F1
-/// real-time weather stage (user-decreed return, 2026-07-20) — procedural
-/// GPU sky driven by the property's real weather and the real sun. Sheets
-/// keep the flat classic ground (one layer; the IMG_8573 transition lesson).
-var appBackground: some View { WeatherStageView() }
+/// The app-wide background every screen layers under its content — the
+/// owner's CHOICE (user-decreed, 2026-07-20): the F1 real-time weather
+/// stage by default, or a curated gradient, or their own photo
+/// (BackgroundStyle in AppBackgroundStyle.swift). Sheets keep the flat
+/// classic ground (one layer; the IMG_8573 transition lesson).
+var appBackground: some View { AppBackgroundView() }
 
 // MARK: - Sheet backdrop
 
@@ -68,9 +69,11 @@ var sheetBackground: some View { AppSheetBackdrop() }
 // compiles DesignSystem without the weather stage.
 extension Color {
     /// Full-strength text directly on the live backdrop (day titles).
+    /// The signal comes from the CHOSEN background's own luminance —
+    /// live sky, gradient preset or the measured photo alike.
     @MainActor
     static var backdropPrimaryText: Color {
-        WeatherStageEngine.shared.toParams.snapshotWantsDarkScheme
+        BackgroundStyle.shared.wantsDarkGround
             ? Color.white.opacity(0.96)
             : Color.black.opacity(0.82)
     }
@@ -79,7 +82,7 @@ extension Color {
     /// counts, eyebrow labels).
     @MainActor
     static var backdropSecondaryText: Color {
-        WeatherStageEngine.shared.toParams.snapshotWantsDarkScheme
+        BackgroundStyle.shared.wantsDarkGround
             ? Color.white.opacity(0.72)
             : Color.black.opacity(0.55)
     }

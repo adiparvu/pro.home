@@ -82,12 +82,12 @@ struct AppearanceView: View {
                            value: moodRowValue) {
                 BackgroundMoodView()
             }
-            // The weather stage's command page (returned 2026-07-20 with
-            // the F1–F4 engine): pin an atmosphere, choose your hours,
-            // gate the particle effects and the live-weather reaction.
-            NavSettingsRow(icon: "cloud.sun.fill", color: .brandPrimaryBlue,
-                           label: "mood_settings_title") {
-                WeatherStageSettingsView()
+            // The personalized backdrop page (user-decreed 2026-07-20):
+            // live weather sky, curated gradients or the owner's own
+            // photo — plus the stage's controls when the sky is chosen.
+            NavSettingsRow(icon: "photo.on.rectangle.angled", color: .brandPrimaryBlue,
+                           label: "bg_settings_title") {
+                BackgroundSettingsView()
             }
             NavSettingsRow(icon: "textformat.size", color: .brandSkyBlue,
                            label: "textsize_title",

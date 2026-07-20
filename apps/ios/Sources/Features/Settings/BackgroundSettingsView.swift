@@ -1,24 +1,25 @@
 import SwiftUI
+import PhotosUI
 
-// MARK: - Fundal (Settings → Aspect → Fundal) — the weather stage's controls
+// MARK: - Background (Settings → Aspect → Fundal) — the personalized backdrop
 //
-// The living background's command page, rebuilt for the F1–F4 weather
-// engine (the old mood page retired 2026-07-19; the user decreed the
-// backgrounds' return as real weather on 2026-07-20, and this page back
-// with them). One authority per control, all persisted where they always
-// were:
-// - Atmosferă: Automat (real sun + real weather) or a PINNED atmosphere —
-//   a time of day under a clear sky, or a weather state under the real
-//   sun (WeatherStagePrefs.preset).
-// - Ore personalizate: the mood engine's stored thresholds
-//   (morningStart/nightStart) now feed the stage's sun window.
-// - Efecte atmosferice: the particle layers (rain/snow streaks, bolts,
-//   lens droplets, sand grain, fireflies) — the sky's body stays.
-// - Reacționează la vreme: the mood engine's stored weatherReactive pref;
-//   off = the sky follows time alone, honestly clear.
+// The old "Fundaluri" page (weather-stage controls only) retired at the
+// owner's request (2026-07-20): this page owns the WHOLE backdrop now.
+// Three modes, one live preview, and the mode's own controls beneath:
+//  · Cer viu — the F1–F4 weather stage, with its atmosphere pinning,
+//    custom hours, particle effects and live-weather reaction;
+//  · Gradient — a curated static gallery (zero GPU cost);
+//  · Fotografia ta — the owner's photo, with a readability dim; text
+//    colors follow the photo's measured luminance automatically.
 
-struct WeatherStageSettingsView: View {
+struct BackgroundSettingsView: View {
     private var moodEngine: AppMoodEngine { .shared }
+    private var style: BackgroundStyle { .shared }
+
+    @State private var mode = BackgroundStyle.shared.mode
+    @State private var gradientId = BackgroundStyle.shared.gradientId
+    @State private var photoDim = BackgroundStyle.shared.photoDim
+    @State private var pickerItem: PhotosPickerItem?
 
     @State private var preset: WeatherStagePreset? = WeatherStagePrefs.preset
     @State private var effectsOn = WeatherStagePrefs.effectsEnabled
@@ -30,21 +31,24 @@ struct WeatherStageSettingsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 previewCard
 
-                SettingsGroup(title: "mood_choose_title") {
-                    autoRow
+                SettingsGroup(title: "bg_mode_title") {
+                    VStack(spacing: 0) {
+                        modeRow(.liveSky, icon: "sun.haze.fill",
+                                title: "bg_mode_live", caption: "bg_mode_live_caption")
+                        rowDivider
+                        modeRow(.gradient, icon: "rectangle.fill.badge.checkmark",
+                                title: "bg_mode_gradient", caption: "bg_mode_gradient_caption")
+                        rowDivider
+                        modeRow(.photo, icon: "photo.fill",
+                                title: "bg_mode_photo", caption: "bg_mode_photo_caption")
+                    }
                 }
-                presetCarousel
-                Text("ws_pin_caption")
-                    .font(AppFont.scaled(12))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, AppSpacing.sm)
 
-                if preset == nil {
-                    hoursSection
+                switch mode {
+                case .liveSky:  liveSkySections
+                case .gradient: gradientSection
+                case .photo:    photoSection
                 }
-
-                personalizeSection
 
                 Spacer(minLength: 100)
             }
@@ -52,16 +56,29 @@ struct WeatherStageSettingsView: View {
             .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle(Text("mood_settings_title"))
+        .navigationTitle(Text("bg_settings_title"))
         .navigationBarTitleDisplayMode(.large)
+        .animation(AppMotion.state, value: mode)
         .animation(AppMotion.state, value: preset == nil)
+        .onChange(of: pickerItem) { _, item in
+            guard let item else { return }
+            Task {
+                defer { pickerItem = nil }
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    style.setPhoto(image)
+                    mode = .photo
+                    HapticFeedback.success()
+                }
+            }
+        }
     }
 
-    // MARK: Live preview — the real stage with a sample card on it
+    // MARK: Live preview — the real chosen backdrop with a sample card
 
     private var previewCard: some View {
         ZStack {
-            WeatherStageView()
+            AppBackgroundView()
             GlassCard(padding: 16) {
                 Text("mood_preview_card_title")
                     .font(AppFont.scaled(15, weight: .semibold))
@@ -79,27 +96,35 @@ struct WeatherStageSettingsView: View {
         .accessibilityHidden(true)
     }
 
-    // MARK: Atmosferă — Automat row + pinned-atmosphere carousel
+    // MARK: Mode selection
 
-    private var autoRow: some View {
-        Button {
-            guard preset != nil else { return }
-            select(nil)
+    private func modeRow(_ target: AppBackgroundMode, icon: String,
+                         title: LocalizedStringKey, caption: LocalizedStringKey) -> some View {
+        let selected = mode == target
+        return Button {
+            guard mode != target else { return }
+            mode = target
+            HapticFeedback.impact(.light)
+            // Photo mode without a photo yet: the section below opens with
+            // its picker, but the REAL backdrop switches only once an
+            // image lands (setPhoto) — never a black interim ground.
+            if target == .photo && style.photo == nil { return }
+            style.mode = target
         } label: {
             HStack(spacing: 12) {
-                ColoredIconBadge(icon: "sparkles",
-                                 color: preset == nil ? .accentColor : Color.primary.opacity(0.4))
+                ColoredIconBadge(icon: icon,
+                                 color: selected ? .accentColor : Color.primary.opacity(0.4))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("theme_auto")
+                    Text(title)
                         .font(AppFont.scaled(15))
                         .foregroundStyle(.primary)
-                    Text("ws_auto_caption")
+                    Text(caption)
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                if preset == nil {
+                if selected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(AppFont.scaled(20))
                         .foregroundStyle(Color.accentColor)
@@ -115,7 +140,25 @@ struct WeatherStageSettingsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(preset == nil ? .isSelected : [])
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    // MARK: Cer viu — the weather stage's own controls (unchanged engine)
+
+    @ViewBuilder
+    private var liveSkySections: some View {
+        presetCarousel
+        Text("ws_pin_caption")
+            .font(AppFont.scaled(12))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, AppSpacing.sm)
+
+        if preset == nil {
+            hoursSection
+        }
+
+        personalizeSection
     }
 
     private var presetCarousel: some View {
@@ -182,7 +225,122 @@ struct WeatherStageSettingsView: View {
         WeatherStageEngine.shared.recompute(animated: true)
     }
 
-    // MARK: Ore personalizate (Automat only)
+    // MARK: Gradient gallery
+
+    private var gradientSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.md) {
+                ForEach(BackgroundGradientPreset.all) { g in
+                    gradientTile(g)
+                }
+            }
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func gradientTile(_ g: BackgroundGradientPreset) -> some View {
+        let selected = gradientId == g.id
+        return Button {
+            gradientId = g.id
+            style.gradientId = g.id
+            HapticFeedback.impact(.light)
+        } label: {
+            VStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .fill(LinearGradient(colors: [g.top, g.bottom],
+                                         startPoint: .top, endPoint: .bottom))
+                    .frame(width: 88, height: 62)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                            .strokeBorder(selected ? Color.accentColor : Color.hairline,
+                                          lineWidth: selected ? 2 : 1)
+                    )
+                Text(LocalizedStringKey(g.titleKey))
+                    .font(AppFont.scaled(12, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.accentColor
+                                              : Color.primary.opacity(AppOpacity.secondaryText))
+                    .lineLimit(1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    // MARK: Fotografia ta
+
+    private var photoSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            SettingsGroup(title: "bg_mode_photo") {
+                VStack(spacing: 0) {
+                    PhotosPicker(selection: $pickerItem, matching: .images) {
+                        HStack(spacing: 12) {
+                            ColoredIconBadge(icon: "photo.badge.plus", color: .accentColor)
+                            Text(style.photo == nil ? "bg_choose_photo" : "bg_change_photo")
+                                .font(AppFont.scaled(15))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if let photo = style.photo {
+                                Image(uiImage: photo)
+                                    .resizable().scaledToFill()
+                                    .frame(width: 44, height: 44)
+                                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm,
+                                                                style: .continuous))
+                            }
+                        }
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, 13)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    if style.photo != nil {
+                        rowDivider
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("bg_dim_label")
+                                .font(AppFont.scaled(15))
+                                .foregroundStyle(.primary)
+                            Slider(value: Binding(get: { photoDim },
+                                                  set: { photoDim = $0
+                                                         style.photoDim = $0 }),
+                                   in: 0...0.5)
+                                .tint(.accentColor)
+                        }
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, 13)
+
+                        rowDivider
+                        Button(role: .destructive) {
+                            style.removePhoto()
+                            mode = style.mode
+                            HapticFeedback.impact(.medium)
+                        } label: {
+                            HStack(spacing: 12) {
+                                ColoredIconBadge(icon: "trash.fill", color: .brandDanger)
+                                Text("bg_remove_photo")
+                                    .font(AppFont.scaled(15))
+                                    .foregroundStyle(Color.brandDanger)
+                                Spacer()
+                            }
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.vertical, 13)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            Text("bg_photo_caption")
+                .font(AppFont.scaled(12))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, AppSpacing.sm)
+        }
+    }
+
+    // MARK: Ore personalizate (Cer viu, Automat only)
 
     private var hoursSection: some View {
         SettingsGroup(title: "mood_hours_custom") {
@@ -267,7 +425,7 @@ struct WeatherStageSettingsView: View {
             })
     }
 
-    // MARK: Personalizare — effects + live weather
+    // MARK: Personalizare — effects + live weather (Cer viu)
 
     private var personalizeSection: some View {
         SettingsGroup(title: "mood_personalize_title") {
