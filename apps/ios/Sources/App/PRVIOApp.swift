@@ -196,6 +196,8 @@ struct PRVIOApp: App {
             // Handoff from the watch: whatever page the wrist was reading.
             .onContinueUserActivity("com.prvio.page")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("CSSearchableItemActionType") { router.handle(userActivity: $0) }
+            // Universal links (scanned QR labels): https://xparvu.com/i|p/…
+            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { router.handle(userActivity: $0) }
         }
     }
 }

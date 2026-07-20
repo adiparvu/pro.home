@@ -26,12 +26,28 @@ export default {
       return new Response(JSON.stringify({
         applinks: {
           apps: [],
-          details: [{ appIDs: ["SU92TVZT8W.com.prvio.app"], components: [{ "/": "/i/*" }] }],
+          details: [{
+            appIDs: ["SU92TVZT8W.com.prvio.app"],
+            // /i/* = inventory item labels, /p/* = plant labels — both open
+            // the app's scan-landing sheet when PRVIO is installed.
+            components: [{ "/": "/i/*" }, { "/": "/p/*" }],
+          }],
         },
       }), {
         headers: {
           "content-type": "application/json",
           "cache-control": "public, max-age=3600",
+        },
+      });
+    }
+    // Plant label fallback (no app installed): plants are PRIVATE — unlike
+    // the lost-item pages there is nothing to show a stranger, so this is
+    // a deliberately data-free "open it in PRVIO" card.
+    if (/^\/p\/[0-9a-f-]{36}\/?$/i.test(url.pathname)) {
+      return new Response(PLANT_PAGE, {
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-store",
         },
       });
     }
@@ -104,6 +120,28 @@ const FAVICON = `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <rect x="12" y="72" width="96" height="13" rx="6.5" fill="#F5A623"/>
   <path d="M22 74 A38 38 0 0 1 60 36 L60 74 Z" fill="rgba(255,255,255,.14)"/>
 </svg>`;
+
+// Data-free plant-label landing: PRVIO's dark look, one CTA to the App
+// Store. The plant's details live only inside the app.
+const PLANT_PAGE = `<!doctype html><html lang="ro"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plantă · PRVIO</title>
+<style>
+@keyframes prvFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@media (prefers-reduced-motion: reduce){.g{animation:none !important}}
+</style></head>
+<body style="margin:0;background:#05070C;color:#f0f6ff;font-family:-apple-system,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+<div style="max-width:360px;text-align:center">
+  <div class="g" style="font-size:64px;display:inline-block;animation:prvFloat 4.5s ease-in-out infinite">🌱</div>
+  <h1 style="font-size:22px;margin:14px 0 8px">Etichetă de plantă PRVIO</h1>
+  <p style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.5;margin:0 0 22px">
+    Detaliile plantei se deschid în aplicația PRVIO. Dacă e instalată,
+    scanarea te duce direct la fișa ei.</p>
+  <a href="https://apps.apple.com/app/id6780068431"
+     style="display:block;background:rgba(8,10,14,.72);border:1px solid rgba(255,255,255,.14);color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 18px;border-radius:14px">
+    Descarcă PRVIO</a>
+</div>
+</body></html>`;
 
 const PAGE = `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

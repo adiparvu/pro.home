@@ -260,7 +260,12 @@ struct InventoryView: View {
         .fullScreenCover(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
                 showScanner = false
-                if let found = resolveScanned(qrValue) {
+                // A plant label scanned with the in-app scanner opens the
+                // same scan-landing sheet the camera path uses.
+                if let pid = Self.plantId(fromScanned: qrValue) {
+                    HapticFeedback.success()
+                    router.presentScanLanding(.plant(pid))
+                } else if let found = resolveScanned(qrValue) {
                     HapticFeedback.success()
                     selectedItem = found
                 } else {
@@ -402,6 +407,20 @@ struct InventoryView: View {
         if let last = value.split(separator: "/").last,
            let id = UUID(uuidString: String(last)) {
             return service.items.first { $0.id == id }
+        }
+        return nil
+    }
+
+    /// A plant label: https://xparvu.com/p/<uuid> or prvio://plant/<uuid>.
+    static func plantId(fromScanned value: String) -> UUID? {
+        guard let url = URL(string: value) else { return nil }
+        if url.scheme == "https", url.host == "xparvu.com" {
+            let parts = url.pathComponents.filter { $0 != "/" }
+            guard parts.first == "p" else { return nil }
+            return parts.dropFirst().first.flatMap(UUID.init(uuidString:))
+        }
+        if url.scheme == "prvio", url.host == "plant" {
+            return url.pathComponents.filter { $0 != "/" }.first.flatMap(UUID.init(uuidString:))
         }
         return nil
     }

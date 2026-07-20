@@ -96973,7 +96973,14 @@
           }
         }
       }
-    }
+    },
+    "scan_landing_title": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Scanned"}}, "ro": {"stringUnit": {"state": "translated", "value": "Scanat"}}}},
+    "scan_landing_missing": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "This label doesn't match anything you have access to. It may have been deleted."}}, "ro": {"stringUnit": {"state": "translated", "value": "Eticheta nu corespunde cu nimic la care ai acces. Poate a fost șters."}}}},
+    "scan_landing_loaned_fmt": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Loaned to %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Împrumutat lui %@"}}}},
+    "scan_landing_home": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "At home, where it belongs"}}, "ro": {"stringUnit": {"state": "translated", "value": "Acasă, la locul lui"}}}},
+    "scan_landing_open_full": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Open full page"}}, "ro": {"stringUnit": {"state": "translated", "value": "Deschide fișa completă"}}}},
+    "plant_qr_title": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "QR Label"}}, "ro": {"stringUnit": {"state": "translated", "value": "Etichetă QR"}}}},
+    "plant_qr_caption": {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": "Print it and stick it by the plant — scanning opens its page in PRVIO."}}, "ro": {"stringUnit": {"state": "translated", "value": "Printeaz-o și lipește-o lângă plantă — scanarea îi deschide fișa în PRVIO."}}}}
   },
   "version": "1.0"
 }

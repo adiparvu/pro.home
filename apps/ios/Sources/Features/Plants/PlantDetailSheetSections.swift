@@ -5,6 +5,59 @@ import PhotosUI
 
 extension PlantDetailSheet {
 
+    // MARK: Plant QR label (IMG_8718 request)
+    //
+    // Same universal-link family as the inventory labels: scanning
+    // https://xparvu.com/p/<uuid> opens the app straight on the scan
+    // landing sheet (web shows a generic "open in PRVIO" fallback —
+    // plants are private, so the page carries no data).
+
+    var plantQRContent: String {
+        "https://xparvu.com/p/\(plant.id.uuidString.lowercased())"
+    }
+
+    var plantQRCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                Label("plant_qr_title", systemImage: "qrcode")
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                QRCodeImage(content: plantQRContent, size: 160)
+                    .frame(maxWidth: .infinity)
+                Text("plant_qr_caption")
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .multilineTextAlignment(.center)
+                Button {
+                    HapticFeedback.impact(.light)
+                    sharePlantQR()
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .font(AppFont.scaled(13, weight: .medium))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(.blue.opacity(0.1),
+                                    in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+            }
+        }
+    }
+
+    /// Renders the label at print resolution and hands it to the share
+    /// sheet as a PNG file (AirPrint, Save to Files, Messages…).
+    func sharePlantQR() {
+        let renderer = ImageRenderer(content: QRCodeImage(content: plantQRContent, size: 300))
+        renderer.scale = 3
+        guard let image = renderer.uiImage, let data = image.pngData() else { return }
+        let name = plant.name.isEmpty ? "plant" : plant.name
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("QR-\(name).png")
+        guard (try? data.write(to: url)) != nil else { return }
+        exportURL = ShareURL(url: url)
+    }
+
     // MARK: Header card
 
     var headerCard: some View {

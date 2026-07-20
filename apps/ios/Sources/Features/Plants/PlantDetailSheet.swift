@@ -76,6 +76,7 @@ struct PlantDetailSheet: View {
                                 photoService: photoService
                             )
                             automationsCard
+                            plantQRCard
                             waterButton
                         }
 

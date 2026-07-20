@@ -130,6 +130,12 @@ struct MainTabView: View {
                onDismiss: { router.drainPending() }) { destination in
             routedSheet(destination)
         }
+        // The scan-landing sheet: reachable ONLY through a scanned QR label
+        // (universal link / prvio:// scheme) — see AppRouter.ScanTarget.
+        .sheet(item: $router.scanLanding,
+               onDismiss: { router.drainPending() }) { target in
+            ScanLandingView(target: target)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
             router.activeDestination = .newTask
         }

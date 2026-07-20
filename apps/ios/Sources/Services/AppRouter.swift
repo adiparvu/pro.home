@@ -131,14 +131,57 @@ final class AppRouter {
     /// Control Center tap (OpenURLIntent + App Group hand-off).
     @ObservationIgnored private var lastDeepLink: (url: URL, at: Date)?
 
+    // MARK: - Scan landing (IMG_8718 request: "o pagină specială la scanare")
+    //
+    // A scanned QR — the printed item labels (https://xparvu.com/i/<uuid>),
+    // the new plant labels (/p/<uuid>) or their prvio:// equivalents — opens
+    // a dedicated landing sheet instead of dropping the user somewhere in
+    // the module. The sheet exists ONLY through this entry point.
+
+    /// What a scanned code resolved to.
+    enum ScanTarget: Identifiable, Equatable {
+        case item(UUID)
+        case plant(UUID)
+        var id: String {
+            switch self {
+            case .item(let u):  "item-\(u.uuidString)"
+            case .plant(let u): "plant-\(u.uuidString)"
+            }
+        }
+    }
+
+    /// The scan-landing sheet slot (MainTabView presents it).
+    var scanLanding: ScanTarget?
+    /// A scan waiting for the stage to clear (cold launch / open sheet).
+    private var pendingScan: ScanTarget?
+
+    /// Routes a scanned code to the landing sheet, respecting the same
+    /// stage rules as `navigate(to:)` — never fights a live presentation.
+    func presentScanLanding(_ target: ScanTarget) {
+        guard isReady else { pendingScan = target; return }
+        if scanLanding != nil {
+            // Already showing a landing: swap content in place.
+            scanLanding = target
+            return
+        }
+        guard anyPresentationActive else {
+            scanLanding = target
+            return
+        }
+        pendingScan = target
+        closeAllPresentations()
+    }
+
     private var anyPresentationActive: Bool {
         activeDestination != nil || activeCover != nil || hasLocalPresentation
+            || scanLanding != nil
     }
 
     /// Dismisses every routed presentation, so the next one has the stage.
     func closeAllPresentations() {
         activeDestination = nil
         activeCover = nil
+        scanLanding = nil
         dismissGeneration &+= 1
     }
 
@@ -155,7 +198,13 @@ final class AppRouter {
     /// Wired to the `onDismiss` of every routed/local sheet so handoffs are
     /// driven by the actual end of the dismissal, not a timer.
     func drainPending() {
-        guard isReady, let route = pendingRoute else { return }
+        guard isReady else { return }
+        if let scan = pendingScan {
+            pendingScan = nil
+            presentScanLanding(scan)
+            return
+        }
+        guard let route = pendingRoute else { return }
         pendingRoute = nil
         navigate(to: route)
     }
@@ -301,13 +350,15 @@ final class AppRouter {
     var pendingInventoryItemId: UUID?
 
     func handle(deepLink url: URL) {
-        // Universal link https://xparvu.com/i/<uuid> — the printed QR labels.
-        // Arrives via onOpenURL once the Associated Domains entitlement ships.
+        // Universal links https://xparvu.com/i/<uuid> (item labels) and
+        // /p/<uuid> (plant labels): the camera scan lands on the dedicated
+        // scan sheet, never somewhere generic in the module.
         if url.scheme == "https", url.host == "xparvu.com" {
             let parts = url.pathComponents.filter { $0 != "/" }
             if parts.first == "i", let iid = parts.dropFirst().first.flatMap(UUID.init(uuidString:)) {
-                pendingInventoryItemId = iid
-                navigate(to: .inventory)
+                presentScanLanding(.item(iid))
+            } else if parts.first == "p", let pid = parts.dropFirst().first.flatMap(UUID.init(uuidString:)) {
+                presentScanLanding(.plant(pid))
             }
             return
         }
@@ -362,8 +413,17 @@ final class AppRouter {
         case "finances":
             navigate(to: .finances)
         case "inventory":
-            if let pathId { pendingInventoryItemId = pathId }
-            navigate(to: .inventory)
+            // A specific item id means a SCAN context ("Deschide în PRVIO"
+            // from the public page, or the app's own label) — the landing
+            // sheet, not the bare module. No id keeps the module route.
+            if let pathId {
+                presentScanLanding(.item(pathId))
+            } else {
+                navigate(to: .inventory)
+            }
+        case "plant":
+            // prvio://plant/<uuid> — the plant label's scheme fallback.
+            if let pathId { presentScanLanding(.plant(pathId)) }
         case "family", "members":
             navigate(to: .family)
         case "profile":
@@ -444,6 +504,15 @@ final class AppRouter {
     }
 
     func handle(userActivity activity: NSUserActivity) {
+        // Universal links arrive as a browsing-web activity carrying the
+        // scanned URL — previously DROPPED here (only Spotlight and tab
+        // payloads were handled), which is why a camera scan opened the app
+        // on whatever screen was last up instead of the item (IMG_8718).
+        if activity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = activity.webpageURL {
+            handle(deepLink: url)
+            return
+        }
         if activity.activityType == "CSSearchableItemActionType" {
             guard let id = activity.userInfo?["kCSSearchableItemActivityIdentifier"] as? String else { return }
             if id.hasPrefix("task-"), let uuid = UUID(uuidString: String(id.dropFirst(5))) {
