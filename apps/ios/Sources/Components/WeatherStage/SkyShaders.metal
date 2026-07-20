@@ -77,6 +77,8 @@ static inline float rainField(float2 uv, float t, float intensity, float wind) {
         float thresh = i == 0 ? 0.994 - intensity * 0.006
                               : 0.985 - intensity * 0.012;
         float drop = step(thresh, hash12(cell));
+        // Per-drop brightness variety — a real shower never falls uniform.
+        drop *= 0.55 + 0.45 * hash12(cell + 7.7);
         float width = i == 0 ? 0.34 : 0.42;
         float core = smoothstep(width, 0.0, abs(fract(p.x) - 0.5));
         acc += drop * core * (i == 0 ? 0.30 : 0.20 - float(i) * 0.045);
@@ -234,14 +236,31 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
 
     float night = 1.0 - day;
     if (night > 0.01) {
-        // Stars: two hash densities, gentle per-star twinkle.
+        // Airglow: real night skies are never pure black — a faint cool
+        // lift near the horizon keeps depth (and text contrast) alive.
+        sky += float3(0.045, 0.07, 0.11) * night * smoothstep(0.55, 1.0, uv.y) * 0.55;
+
+        // Stars v2: ROUND dots with per-star size, brightness and twinkle
+        // cadence — no more square grid pixels.
         float2 sp = uv * float2(160.0, 260.0);
-        float s1 = step(0.9965, hash12(floor(sp)));
-        float tw = 0.6 + 0.4 * sin(t * 1.7 + hash12(floor(sp)) * 40.0);
+        float2 sc = floor(sp);
+        float sh = hash12(sc);
+        float s1 = step(0.9955, sh);
+        float srad = 0.10 + 0.22 * fract(sh * 57.0);
+        float sdot = smoothstep(srad, 0.0, length(fract(sp) - 0.5));
+        float tw = 0.55 + 0.45 * sin(t * (1.0 + fract(sh * 91.0) * 2.4) + sh * 40.0);
         float2 sp2 = uv * float2(70.0, 120.0) + 31.7;
-        float s2 = step(0.997, hash12(floor(sp2)));
-        sky += float3(0.9, 0.93, 1.0) * (s1 * 0.55 * tw + s2 * 0.8) * night
+        float2 sc2 = floor(sp2);
+        float sh2 = hash12(sc2);
+        float s2 = step(0.997, sh2);
+        float sdot2 = smoothstep(0.30, 0.0, length(fract(sp2) - 0.5));
+        sky += float3(0.9, 0.93, 1.0) * (s1 * sdot * 0.8 * tw + s2 * sdot2 * 1.0) * night
              * (1.0 - cloudiness);
+
+        // The Milky Way: a faint tilted dust band, fBM-mottled.
+        float mwBand = exp(-pow((uv.y - (0.55 - uv.x * 0.25)) * 6.0, 2.0));
+        float mw = fbm(float2(uv.x * 3.0 + uv.y * 1.5, uv.y * 6.0 - uv.x * 2.0));
+        sky += float3(0.55, 0.60, 0.75) * mw * mwBand * night * (1.0 - cloudiness) * 0.055;
 
         // Moon with a cosmetic phase terminator.
         float2 moonPos = float2(1.0 - sunAz, 0.24);
@@ -256,21 +275,40 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
               + float3(0.55, 0.6, 0.75) * glowM * 0.35) * night * (1.0 - cloudiness * 0.8);
     }
 
-    // ---- Clouds: two fBM layers with parallax drift, hurried by the wind ----
+    // ---- Clouds v2: domain-warped fBM — billowing shapes instead of
+    // static fuzz — with a vertical habitat band, horizon perspective and
+    // a one-tap self-shadow lit from the sun's side. Fully skipped on a
+    // clear sky (the expensive path costs nothing when there is nothing).
     float driftBoost = 1.0 + windAbs * 2.4;
-    float2 cuv = float2(uv.x * 1.6, uv.y * 3.2);
-    float c1 = fbm(cuv * 2.2 + float2(t * 0.016 * driftBoost * driftSign, 0.0));
-    float c2 = fbm(cuv * 4.6 + float2(t * 0.031 * driftBoost * driftSign, 7.0));
-    float deck = smoothstep(1.0 - cloudiness, 1.15 - cloudiness, c1 * 0.72 + c2 * 0.28);
-    float3 cloudLit  = mix(float3(0.10, 0.11, 0.14), float3(0.97, 0.95, 0.94), day);
-    cloudLit = mix(cloudLit, float3(1.0, 0.72, 0.5), dusk * 0.6);
-    float3 cloudDark = cloudLit * (day > 0.5 ? 0.62 : 0.5);
-    float shade = fbm(cuv * 3.1 + float2(t * 0.02, 3.0));
-    sky = mix(sky, mix(cloudDark, cloudLit, shade), deck * (0.55 + 0.45 * cloudiness));
-    // Silver lining: cloud EDGES facing the sun catch its light — the
-    // rim brightens where the deck thins toward the glow.
-    float rim = smoothstep(0.02, 0.22, deck) * (1.0 - smoothstep(0.22, 0.55, deck));
-    sky += float3(1.0, 0.95, 0.85) * rim * exp(-dSun * dSun * 14.0) * day * 0.30;
+    if (cloudiness > 0.02) {
+        // Perspective: features compress toward the horizon (distance).
+        float2 cuv = float2(uv.x * 1.6 * mix(1.0, 2.1, uv.y), uv.y * 3.2);
+        float2 flow = float2(t * 0.016 * driftBoost * driftSign, 0.0);
+        // Domain warp: bend the sampling space with a second fBM so the
+        // deck billows and curls instead of tiling.
+        float2 warpP = cuv * 1.9 + flow * 0.8;
+        float2 warp = float2(fbm(warpP), fbm(warpP + float2(5.2, 1.3))) - 0.5;
+        float2 q = cuv * 2.2 + warp * 0.9 + flow;
+        float base = fbm(q) * 0.72 + fbm(q * 2.1 + float2(7.0, 3.0)) * 0.28;
+        // Habitat band: densest mid-sky, thinner overhead and low.
+        float bandV = smoothstep(0.02, 0.25, uv.y) * (1.0 - 0.5 * smoothstep(0.75, 1.0, uv.y));
+        float deck = smoothstep(1.0 - cloudiness, 1.18 - cloudiness, base) * (0.55 + 0.45 * bandV);
+        // Self-shadow: resample toward the sun — where the deck thickens
+        // sunward, this pixel sits in its own cloud's shade.
+        float toward = fbm(q + normalize(sunPos - uv + float2(1e-3, 1e-3)) * 0.25);
+        float lit01 = clamp(0.5 + (base - toward) * 1.6, 0.0, 1.0);
+        float3 cloudLit  = mix(float3(0.10, 0.11, 0.14), float3(0.99, 0.97, 0.95), day);
+        cloudLit = mix(cloudLit, float3(1.0, 0.72, 0.5), dusk * 0.6);
+        float3 cloudDark = cloudLit * (day > 0.5 ? 0.55 : 0.45);
+        sky = mix(sky, mix(cloudDark, cloudLit, lit01), deck * (0.60 + 0.40 * cloudiness));
+        // Silver lining: cloud EDGES facing the sun catch its light — the
+        // rim brightens where the deck thins toward the glow.
+        float rim = smoothstep(0.02, 0.22, deck) * (1.0 - smoothstep(0.22, 0.55, deck));
+        sky += float3(1.0, 0.95, 0.85) * rim * exp(-dSun * dSun * 14.0) * day * 0.30;
+    }
+    // Low-sun flare: a warm horizontal scattering streak at golden hour.
+    float flare = exp(-pow((uv.y - sunPos.y) * 22.0, 2.0)) * exp(-abs(uv.x - sunAz) * 2.6);
+    sky += float3(1.0, 0.62, 0.30) * flare * dusk * day * (1.0 - cloudiness * 0.6) * 0.22;
 
     // F4 — cloud shadows crossing the lower ground band: the deck's own
     // shade projected as slow darker patches under a sunlit sky.
@@ -384,6 +422,10 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         float luma = dot(sky, float3(0.299, 0.587, 0.114));
         sky = mix(sky, sky * 0.4 + float3(0.52, 0.55, 0.62), smoothstep(0.32, 0.05, luma) * 0.85);
     }
+
+    // Dither: ±1/255 of hash noise breaks the banding OLED panels reveal
+    // in slow dark gradients — invisible as grain, decisive as smoothness.
+    sky += (hash12(position) - 0.5) * (2.0 / 255.0);
 
     return half4(half3(clamp(sky, 0.0, 1.0)), color.a);
 }
