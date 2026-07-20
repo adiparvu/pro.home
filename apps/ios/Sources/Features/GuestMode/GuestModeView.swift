@@ -535,10 +535,10 @@ struct GuestModeView: View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(AppFont.label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.backdropSecondaryText)
             Text(title)
                 .font(AppFont.label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.backdropSecondaryText)
                 .tracking(0.5)
         }
         .padding(.leading, AppSpacing.xs)

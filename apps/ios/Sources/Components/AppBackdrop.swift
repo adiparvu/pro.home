@@ -54,6 +54,37 @@ struct AppSheetBackdrop: View {
 
 var sheetBackground: some View { AppSheetBackdrop() }
 
+// MARK: - On-backdrop text (IMG_8734)
+//
+// Text sitting NAKED on the live weather stage cannot color itself by the
+// app's color scheme: at dusk (or under a storm deck) the sky is already
+// dark while the scheme — driven by the user's custom hours — is still
+// light, and a scheme-gray header disappears into it. These tiers read
+// the STAGE's own luminance instead (the same snapshot signal the widgets
+// wear), so naked headers follow the real sky, not the clock. Both are
+// `@MainActor` computed properties over the `@Observable` engine: any
+// body that touches them re-renders when the sky's target changes. They
+// live HERE (not in DesignSystem.swift) because the widget extension
+// compiles DesignSystem without the weather stage.
+extension Color {
+    /// Full-strength text directly on the live backdrop (day titles).
+    @MainActor
+    static var backdropPrimaryText: Color {
+        WeatherStageEngine.shared.toParams.snapshotWantsDarkScheme
+            ? Color.white.opacity(0.96)
+            : Color.black.opacity(0.82)
+    }
+
+    /// Secondary-tier text directly on the live backdrop (section headers,
+    /// counts, eyebrow labels).
+    @MainActor
+    static var backdropSecondaryText: Color {
+        WeatherStageEngine.shared.toParams.snapshotWantsDarkScheme
+            ? Color.white.opacity(0.72)
+            : Color.black.opacity(0.55)
+    }
+}
+
 extension View {
     /// The decreed presentation ground for content sheets: the flat classic
     /// gradient instead of bare `.thinMaterial`. A material presentation

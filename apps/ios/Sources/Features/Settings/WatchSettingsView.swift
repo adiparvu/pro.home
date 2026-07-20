@@ -433,7 +433,7 @@ struct WatchSettingsView: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.captionStrong)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.backdropSecondaryText)
             .padding(.leading, AppSpacing.sm)
     }
 

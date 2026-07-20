@@ -150,7 +150,7 @@ struct HelpFAQView: View {
                     .foregroundStyle(section.tint)
                 Text(section.title)
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .foregroundStyle(Color.backdropSecondaryText)
                     .tracking(0.5)
             }
             .padding(.leading, AppSpacing.xxs)

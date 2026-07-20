@@ -365,10 +365,10 @@ extension MembersHubView {
         HStack(spacing: 6) {
             Text(title)
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .foregroundStyle(Color.backdropSecondaryText)
             Text(verbatim: "\(count)")
                 .font(AppFont.label).monospacedDigit()
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .foregroundStyle(Color.backdropSecondaryText)
         }
         .padding(.leading, AppSpacing.xxs)
         .padding(.top, AppSpacing.xs)

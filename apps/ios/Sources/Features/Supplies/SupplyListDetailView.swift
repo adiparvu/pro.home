@@ -198,7 +198,7 @@ struct SupplyListDetailView: View {
         // Naked text — headers wear no chip, band or material, ever.
         Text(title)
             .font(AppFont.label)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.backdropSecondaryText)
             .tracking(0.5)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppSpacing.xl + AppSpacing.xxs)

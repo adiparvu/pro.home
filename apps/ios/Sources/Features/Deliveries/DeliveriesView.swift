@@ -166,7 +166,7 @@ struct DeliveriesView: View {
                     .foregroundStyle(Color.accentColor)
                 Text("IN PROGRESS · \(filteredActiveDeliveries.count)")
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.backdropSecondaryText)
                     .tracking(0.5)
             }
             .padding(.leading, AppSpacing.xxs)

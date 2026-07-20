@@ -328,7 +328,7 @@ struct CamerasView: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.backdropSecondaryText)
             .padding(.leading, AppSpacing.xxs)
     }
 }

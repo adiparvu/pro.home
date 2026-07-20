@@ -456,7 +456,7 @@ struct TasksView: View {
             HStack {
                 Text(kind.title)
                     .font(AppFont.title3)
-                    .foregroundStyle(kind == .doneToday ? Color.secondaryTextColor : Color.primary)
+                    .foregroundStyle(kind == .doneToday ? Color.backdropSecondaryText : Color.backdropPrimaryText)
                 Spacer()
                 HStack(spacing: 6) {
                     if let count {
@@ -464,18 +464,18 @@ struct TasksView: View {
                             .font(AppFont.captionStrong)
                             .monospacedDigit()
                             .contentTransition(.numericText())
-                            .foregroundStyle(Color.secondaryTextColor)
+                            .foregroundStyle(Color.backdropSecondaryText)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(Color.subtleFill, in: Capsule())
                     } else {
                         Text("task_see_all")
                             .font(AppFont.footnote)
-                            .foregroundStyle(Color.secondaryTextColor)
+                            .foregroundStyle(Color.backdropSecondaryText)
                     }
                     Image(systemName: "chevron.right")
                         .font(AppFont.scaled(12, weight: .semibold))
-                        .foregroundStyle(Color.secondaryTextColor)
+                        .foregroundStyle(Color.backdropSecondaryText)
                         .rotationEffect(.degrees(collapsed.contains(kind) ? 90 : 0))
                 }
             }

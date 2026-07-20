@@ -300,7 +300,7 @@ struct CalendarView: View {
         HStack {
             Text(agendaHeaderLabel(day))
                 .font(AppFont.scaled(13, weight: .bold))
-                .foregroundStyle(cal.isDateInToday(day) ? Color.accentColor : .primary)
+                .foregroundStyle(cal.isDateInToday(day) ? Color.accentColor : Color.backdropPrimaryText)
             Spacer(minLength: 0)
         }
         .padding(.vertical, AppSpacing.xxs)

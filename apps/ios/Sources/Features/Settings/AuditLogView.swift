@@ -92,7 +92,7 @@ struct AuditLogView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Account (all devices)")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .foregroundStyle(Color.backdropSecondaryText)
                 .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {

@@ -281,7 +281,7 @@ struct AppearanceView: View {
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .foregroundStyle(Color.backdropSecondaryText)
             .padding(.leading, AppSpacing.xxs)
     }
 }

@@ -413,7 +413,7 @@ struct LiveActivitiesHubView: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .foregroundStyle(Color.backdropSecondaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, AppSpacing.xxs)
     }

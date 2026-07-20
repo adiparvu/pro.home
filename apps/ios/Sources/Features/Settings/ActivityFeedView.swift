@@ -668,14 +668,14 @@ struct ActivityFeedView: View {
             HStack(spacing: AppSpacing.xs) {
                 dayTitle(day)
                     .font(AppFont.scaled(12, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.backdropPrimaryText)
                     .tracking(0.5)
                 Text(verbatim: "·")
                     .font(AppFont.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.backdropSecondaryText)
                 Text(eventCountLabel(eventCount))
                     .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.backdropSecondaryText)
                     .monospacedDigit()
             }
             Spacer(minLength: 0)

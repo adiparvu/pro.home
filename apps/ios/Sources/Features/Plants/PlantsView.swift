@@ -207,7 +207,7 @@ struct PlantsView: View {
                     .foregroundStyle(iconColor)
                 Text(title)
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.backdropSecondaryText)
                     .tracking(0.5)
             }
             .padding(.leading, AppSpacing.xxs)
