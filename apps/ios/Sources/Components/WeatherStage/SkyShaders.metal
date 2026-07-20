@@ -234,10 +234,13 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     float3 sky = mix(zenith, horizon, pow(uv.y, 1.35));
     // A low warm ember band deepens golden hour near the ground.
     sky += float3(0.90, 0.40, 0.20) * dusk * pow(uv.y, 3.0) * 0.15;
-    // Atmospheric haze: a soft bright band above the horizon by day —
-    // the depth cue real skies always carry.
-    float haze = smoothstep(0.55, 0.95, uv.y) * day * (1.0 - cloudiness * 0.5);
-    sky = mix(sky, float3(0.85, 0.88, 0.92), haze * 0.10);
+    // Aerial perspective (v4): toward the horizon the light crosses ~10×
+    // more air, so the blue washes toward pale white on an exponential
+    // airmass curve — the single strongest photographic cue a linear
+    // gradient can't fake.
+    float airMass = 1.0 / (max(1.0 - uv.y, 0.03) * 0.9 + 0.10);
+    float whiten = (1.0 - exp(-airMass * 0.16)) * day * (1.0 - cloudiness * 0.4);
+    sky = mix(sky, float3(0.88, 0.91, 0.95), whiten * 0.55);
 
     // Belt of Venus: with the sun just below the horizon, the sky OPPOSITE
     // it wears a rosy band over the rising blue-grey earth shadow — the
@@ -258,12 +261,19 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     float sunDisc = smoothstep(0.030, 0.022, dSun) * day;
     sky += (float3(1.0, 0.92, 0.78) * sunGlow * 0.55 + float3(1.0, 0.98, 0.92) * sunDisc)
          * (1.0 - cloudiness * 0.7);
+    // Mie aureole (v4): forward scattering wraps a warm veil ~10–20° around
+    // the sun — a real sky never cuts from disc straight to blue.
+    float mie = exp(-dSun * 5.5) * day * (1.0 - cloudiness * 0.6);
+    sky += float3(1.0, 0.86, 0.62) * mie * 0.18;
 
     float night = 1.0 - day;
     if (night > 0.01) {
         // Airglow: real night skies are never pure black — a faint cool
         // lift near the horizon keeps depth (and text contrast) alive.
         sky += float3(0.045, 0.07, 0.11) * night * smoothstep(0.55, 1.0, uv.y) * 0.55;
+        // Distant-glow warmth hugging the night horizon (v4) — inhabited
+        // skies are never cold all the way to the ground.
+        sky += float3(0.085, 0.065, 0.045) * night * pow(uv.y, 3.5) * 0.35;
 
         // Stars v2: ROUND dots with per-star size, brightness and twinkle
         // cadence — no more square grid pixels.
@@ -336,17 +346,30 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         // sunward, this pixel sits in its own cloud's shade.
         float toward = fbm(q + normalize(sunPos - uv + float2(1e-3, 1e-3)) * 0.25);
         float lit01 = clamp(0.5 + (base - toward) * 1.6, 0.0, 1.0);
+        // Vertical light (v4): tops catch the sky, bases sit in their own
+        // shade. Sampling the field BELOW this pixel — denser below means
+        // we're near the sunlit crown of the form.
+        float below = fbm(q + float2(0.0, 0.45));
+        float topLight = clamp(0.5 + (below - base) * 1.3, 0.0, 1.0);
+        lit01 = clamp(lit01 * 0.62 + topLight * 0.52, 0.0, 1.0);
         float3 cloudLit  = mix(float3(0.10, 0.11, 0.14), float3(0.99, 0.97, 0.95), day);
         cloudLit = mix(cloudLit, float3(1.0, 0.72, 0.5), dusk * 0.6);
         // Altitude grading: the high deck rides brighter, low scud dimmer —
         // the vertical depth cue flat decks lack.
         cloudLit *= 0.92 + 0.14 * (1.0 - uv.y);
         float3 cloudDark = cloudLit * (day > 0.5 ? 0.55 : 0.45);
-        sky = mix(sky, mix(cloudDark, cloudLit, lit01), deck * (0.60 + 0.40 * cloudiness));
+        // Beer–Lambert cover (v4): opacity saturates exponentially with
+        // optical depth — soft translucent fringes, dense solid cores,
+        // never a linear "sticker" edge.
+        float cover = 1.0 - exp(-deck * (1.7 + 1.3 * cloudiness));
+        sky = mix(sky, mix(cloudDark, cloudLit, lit01), cover * 0.92);
         // Silver lining: cloud EDGES facing the sun catch its light — the
         // rim brightens where the deck thins toward the glow.
         float rim = smoothstep(0.02, 0.22, deck) * (1.0 - smoothstep(0.22, 0.55, deck));
         sky += float3(1.0, 0.95, 0.85) * rim * exp(-dSun * dSun * 14.0) * day * 0.30;
+        // Dusk translucency: thin edges glow ember-warm when the sun sits
+        // low behind them — sunset's signature made of scattering, not paint.
+        sky += float3(1.0, 0.55, 0.35) * rim * dusk * 0.30;
         // Moonlit lining: at night the same edges catch the moon instead.
         float2 moonP = float2(1.0 - sunAz, 0.24);
         float dMoonC = distance(uv * float2(1.0, 1.5), moonP * float2(1.0, 1.5));
@@ -492,6 +515,13 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     // Lens vignette — quiet cinematic edge falloff, static.
     float vig = 1.0 - 0.22 * pow(distance(uv, float2(0.5, 0.55)) * 1.3, 2.0);
     sky *= max(vig, 0.0);
+
+    // Filmic rolloff (v4, cheap ACES fit): photographic highlight
+    // compression and shadow depth — sun bloom, snow and lightning stop
+    // clipping to flat white, mids gain the gentle contrast of a camera
+    // curve instead of raw linear paint.
+    float3 tx = sky * 1.04;
+    sky = clamp((tx * (2.51 * tx + 0.03)) / (tx * (2.43 * tx + 0.59) + 0.14), 0.0, 1.0);
 
     // Readability grade (Glass law: the backdrop never fights the text).
     // Dark theme tempers a bright day sky; light theme floors a black
