@@ -149,10 +149,14 @@ final class InventoryService {
             let loaned_at: String?
         }
         guard let uid = supabase.auth.currentSession?.user.id else { return }
-        // The page's "belongs to property X" line names the REAL property
-        // entity — the manually-typed contact field is only the fallback
-        // (IMG_8707: "să apară proprietatea, nu ownerul").
-        let propertyName = await activePropertyName() ?? profile.propertyName
+        // The card's typed field is AUTHORITATIVE (IMG_8746: "nu poți
+        // modifica... se modifică doar din proprietatea mea") — the property
+        // entity's name only fills a field the owner left blank. This
+        // inverts the IMG_8707 precedence deliberately: the sheet now
+        // prefills from the property, so the entity still appears by
+        // default, but an explicit edit on the card always wins.
+        let typedName = profile.propertyName.trimmingCharacters(in: .whitespaces)
+        let propertyName = typedName.isEmpty ? (await activePropertyName() ?? "") : typedName
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
                         owner_address: profile.ownerAddress, property_name: propertyName,

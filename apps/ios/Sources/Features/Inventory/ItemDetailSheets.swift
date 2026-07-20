@@ -8,6 +8,7 @@ struct PublicContactSheet: View {
     let item: InventoryItem
     let onSave: (InventoryItem) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var ownerName: String
     @State private var ownerPhone: String
@@ -95,6 +96,21 @@ struct PublicContactSheet: View {
                 }
             }
             .navigationTitle("Lost & Found Card").navigationBarTitleDisplayMode(.inline)
+            // Blank fields prefill from the active property — the default
+            // still follows "Proprietatea mea", but BOTH fields stay fully
+            // editable and a typed value is what the public page shows
+            // (IMG_8746). Runs once, only on emptiness: it never clobbers
+            // anything the owner wrote.
+            .task {
+                guard let p = propertyService.primary else { return }
+                if propertyName.trimmingCharacters(in: .whitespaces).isEmpty {
+                    propertyName = p.name
+                }
+                if ownerAddress.trimmingCharacters(in: .whitespaces).isEmpty {
+                    let parts = [p.addressLine1, p.city, p.postalCode ?? "", p.country]
+                    ownerAddress = parts.filter { !$0.isEmpty }.joined(separator: ", ")
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
