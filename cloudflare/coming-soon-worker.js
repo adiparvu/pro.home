@@ -40,11 +40,24 @@ export default {
         },
       });
     }
-    // Plant label fallback (no app installed): plants are PRIVATE — unlike
-    // the lost-item pages there is nothing to show a stranger, so this is
-    // a deliberately data-free "open it in PRVIO" card.
-    if (/^\/p\/[0-9a-f-]{36}\/?$/i.test(url.pathname)) {
-      return new Response(PLANT_PAGE, {
+    // Plant label page (migration 174): the owner opting into the QR card
+    // mirrors the plant's public details into `public_plants` — ANY phone
+    // that scans sees name, species, in-garden-since (with age), location
+    // and the watering rhythm. Unmirrored ids fall back to the generic
+    // "open in PRVIO" card.
+    const plantMatch = url.pathname.match(/^\/p\/([0-9a-f-]{36})\/?$/i);
+    if (plantMatch) {
+      let plant = null;
+      try {
+        const r = await fetch(
+          `${SUPABASE_URL}/rest/v1/public_plants` +
+            `?plant_uuid=eq.${plantMatch[1]}` +
+            `&select=name,species,emoji,location,property_name,planted_at,watering_interval_days`,
+          { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } },
+        );
+        if (r.ok) plant = (await r.json())[0] ?? null;
+      } catch (_) {}
+      return new Response(plantPage(plant), {
         headers: {
           "content-type": "text/html; charset=utf-8",
           "cache-control": "no-store",
@@ -121,8 +134,62 @@ const FAVICON = `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <path d="M22 74 A38 38 0 0 1 60 36 L60 74 Z" fill="rgba(255,255,255,.14)"/>
 </svg>`;
 
-// Data-free plant-label landing: PRVIO's dark look, one CTA to the App
-// Store. The plant's details live only inside the app.
+// Supabase read access for the plant pages — the publishable key is
+// public BY DESIGN (it ships inside the iOS app); RLS guards the data.
+const SUPABASE_URL = "https://kwcanenheihuylaymwsl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_2gO8iM7dBqlbQqCiSTFeLQ_CV-DBgnC";
+
+const escP = (s) =>
+  String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// The public plant card (IMG_8728): name, species, in-garden-since with
+// a computed age, location, watering rhythm — the same dark PRVIO look
+// as the lost-item pages. `plant` null → the generic data-free card.
+function plantPage(plant) {
+  if (!plant) return PLANT_PAGE;
+  const emoji = plant.emoji || "🌱";
+  const rows = [];
+  if (plant.species) rows.push(["Specie", plant.species]);
+  if (plant.planted_at) {
+    const d = new Date(plant.planted_at);
+    if (!isNaN(d)) {
+      const months = Math.max(0, Math.floor((Date.now() - d.getTime()) / 2629800000));
+      const age = months < 1 ? "sub o lună"
+        : months < 12 ? `${months} ${months === 1 ? "lună" : "luni"}`
+        : `${Math.floor(months / 12)} ${Math.floor(months / 12) === 1 ? "an" : "ani"}${months % 12 ? ` și ${months % 12} luni` : ""}`;
+      rows.push(["În grădină din",
+        `${d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" })} (${age})`]);
+    }
+  }
+  if (plant.location) rows.push(["Locație", plant.location]);
+  if (plant.watering_interval_days) rows.push(["Udare", `la fiecare ${plant.watering_interval_days} zile`]);
+  if (plant.property_name) rows.push(["Proprietate", plant.property_name]);
+  const rowsHTML = rows.map(([k, v]) =>
+    `<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="min-width:110px;font-size:12px;color:rgba(255,255,255,.4);flex-shrink:0;text-align:left">${escP(k)}</span>
+      <span style="font-size:14px;font-weight:500;color:#f0f6ff;text-align:left">${escP(v)}</span></div>`).join("");
+  return `<!doctype html><html lang="ro"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escP(plant.name)} · PRVIO</title>
+<style>
+@keyframes prvFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@media (prefers-reduced-motion: reduce){.g{animation:none !important}}
+</style></head>
+<body style="margin:0;background:#05070C;color:#f0f6ff;font-family:-apple-system,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+<div style="max-width:380px;width:100%;text-align:center">
+  <div class="g" style="font-size:64px;display:inline-block;animation:prvFloat 4.5s ease-in-out infinite">${escP(emoji)}</div>
+  <h1 style="font-size:24px;margin:12px 0 4px">${escP(plant.name)}</h1>
+  <p style="font-size:13px;color:rgba(255,255,255,.45);margin:0 0 20px">Plantă din grădina PRVIO</p>
+  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;margin-bottom:18px">${rowsHTML}</div>
+  <a href="https://apps.apple.com/app/id6780068431"
+     style="display:block;background:rgba(8,10,14,.72);border:1px solid rgba(255,255,255,.14);color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 18px;border-radius:14px">
+    Deschide în PRVIO</a>
+</div>
+</body></html>`;
+}
+
+// Data-free plant-label landing: shown when the plant was never mirrored.
 const PLANT_PAGE = `<!doctype html><html lang="ro"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Plantă · PRVIO</title>

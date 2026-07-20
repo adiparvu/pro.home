@@ -161,6 +161,16 @@ final class QuickActionSceneDelegate: NSObject, UIWindowSceneDelegate {
 
     /// NSUserActivity isn't UserDefaults-friendly; keep just what routing needs.
     private static func stash(_ activity: NSUserActivity) {
+        // Universal links (scanned QR labels) COLD-LAUNCH through here, not
+        // through scene(_:continue:) — dropping webpageURL made a camera
+        // scan "open just the app" on a cold start (IMG_8728). The
+        // pendingDeepLink stash rides the existing .active drain straight
+        // into handle(deepLink:) → the scan-landing sheet.
+        if activity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = activity.webpageURL {
+            UserDefaults.standard.set(url.absoluteString, forKey: "prvio.pendingDeepLink")
+            return
+        }
         var payload: [String: String] = ["type": activity.activityType]
         if let id = activity.userInfo?["kCSSearchableItemActivityIdentifier"] as? String {
             payload["spotlightId"] = id

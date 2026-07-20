@@ -144,6 +144,8 @@ final class PlantService {
 
     func delete(_ plant: Plant) async {
         plants.removeAll { $0.id == plant.id }
+        // A deleted plant's public QR card must die with it.
+        PublicPlantMirror.remove(plantId: plant.id)
         do {
             try await supabase
                 .from("plants").delete()

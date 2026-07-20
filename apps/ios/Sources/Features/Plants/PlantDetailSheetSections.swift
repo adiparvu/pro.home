@@ -20,6 +20,12 @@ extension PlantDetailSheet {
         GlassCard {
             VStack(spacing: 12) {
                 Label("plant_qr_title", systemImage: "qrcode")
+                    .onAppear {
+                        // Showing the label IS the opt-in: mirror the
+                        // plant's public card so ANY phone that scans it
+                        // sees the details (migration 174, IMG_8728).
+                        PublicPlantMirror.sync(plant)
+                    }
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)

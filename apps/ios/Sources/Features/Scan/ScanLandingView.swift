@@ -119,6 +119,11 @@ struct ScanLandingView: View {
                 }
                 statusRow(icon: plant.healthIcon, tint: plant.healthColor,
                           text: plant.wateringLabel)
+                if let since = ISODate.date(from: plant.createdAt) {
+                    statusRow(icon: "calendar", tint: Color.brandSkyBlue,
+                              text: String(format: String(localized: "scan_landing_since_fmt"),
+                                           AppDate.monthDayYear.string(from: since)))
+                }
                 openFullButton {
                     router.navigate(to: .plants(id: plant.id))
                 }
