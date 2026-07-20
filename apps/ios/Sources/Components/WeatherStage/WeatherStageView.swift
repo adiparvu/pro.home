@@ -277,7 +277,19 @@ struct WeatherStageView: View {
         }
         .onChange(of: wantsMotion) { _, _ in syncMotion() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { engine.recompute(animated: true) }
+            if phase == .active {
+                engine.recompute(animated: true)
+                syncMotion()
+            } else if holdsMotion {
+                // The gyroscope must never outlive the foreground:
+                // backgrounding does NOT call onDisappear, and a live
+                // CoreMotion thread in a background process is battery
+                // drain plus termination resistance — the 0x8BADF00D
+                // watchdog kill (build 1173, 14:07) showed exactly
+                // com.apple.CoreMotion.MotionThread alive at exit.
+                MotionTiltEngine.shared.release()
+                holdsMotion = false
+            }
         }
     }
 
