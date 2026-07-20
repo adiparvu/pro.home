@@ -19,7 +19,8 @@ using namespace metal;
 // absolute-time hash as the exposure flash — no two bolts can ever repeat),
 // BLIZZARD (wind-owned horizontal snow + white-out) and a volumetric-FEEL
 // fog: two parallax layers, ground-hugging density, sun diffusion.
-// F4 adds the after-rain RAINBOW (spectral band on the antisolar circle),
+// F4 adds the after-rain RAINBOW (a PARTIAL antisolar arc segment — never
+// a full hoop — additive, patchy, with a faint reversed secondary),
 // SANDSTORM (ochre flow + airborne grain), summer-night FIREFLIES and cloud
 // SHADOWS crossing the lower ground band.
 //
@@ -46,6 +47,18 @@ static inline float vnoise(float2 p) {
 static inline float fbm(float2 p) {
     float v = 0.0, a = 0.5;
     for (int i = 0; i < 4; i++) {
+        v += a * vnoise(p);
+        p = p * 2.03 + float2(17.1, 9.2);
+        a *= 0.5;
+    }
+    return v;
+}
+
+// Five-octave variant for the cloud deck only — the extra octave buys the
+// crisp curling edges the 4-octave field smears. Paid ONLY when cloudy.
+static inline float fbm5(float2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 5; i++) {
         v += a * vnoise(p);
         p = p * 2.03 + float2(17.1, 9.2);
         a *= 0.5;
@@ -226,6 +239,18 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     float haze = smoothstep(0.55, 0.95, uv.y) * day * (1.0 - cloudiness * 0.5);
     sky = mix(sky, float3(0.85, 0.88, 0.92), haze * 0.10);
 
+    // Belt of Venus: with the sun just below the horizon, the sky OPPOSITE
+    // it wears a rosy band over the rising blue-grey earth shadow — the
+    // twilight signature real skies never skip.
+    float below = smoothstep(0.02, -0.10, sunElev) * (1.0 - smoothstep(-0.10, -0.22, sunElev));
+    if (below > 0.01) {
+        float antiSide = smoothstep(0.2, 0.9, 1.0 - abs(uv.x - (1.0 - sunAz)));
+        float venusBand = exp(-pow((uv.y - 0.78) * 8.0, 2.0));
+        float shadowBand = smoothstep(0.82, 1.0, uv.y);
+        sky += float3(0.80, 0.42, 0.42) * venusBand * antiSide * below * (1.0 - cloudiness * 0.7) * 0.16;
+        sky = mix(sky, float3(0.16, 0.19, 0.28), shadowBand * antiSide * below * 0.22);
+    }
+
     // ---- Sun disc + bloom (day), moon + stars (night) ----
     float2 sunPos = float2(sunAz, 0.78 - clamp(sunElev, 0.0, 1.0) * 0.55);
     float dSun = distance(uv * float2(1.0, 1.4), sunPos * float2(1.0, 1.4));
@@ -254,7 +279,11 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         float sh2 = hash12(sc2);
         float s2 = step(0.997, sh2);
         float sdot2 = smoothstep(0.30, 0.0, length(fract(sp2) - 0.5));
-        sky += float3(0.9, 0.93, 1.0) * (s1 * sdot * 0.8 * tw + s2 * sdot2 * 1.0) * night
+        // Per-star colour temperature: real fields run blue-white → warm.
+        float3 starTint = mix(float3(0.72, 0.83, 1.0), float3(1.0, 0.90, 0.72),
+                              fract(sh * 23.0));
+        sky += (starTint * s1 * sdot * 0.8 * tw
+              + float3(0.9, 0.93, 1.0) * s2 * sdot2 * 1.0) * night
              * (1.0 - cloudiness);
 
         // The Milky Way: a faint tilted dust band, fBM-mottled.
@@ -289,22 +318,33 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         float2 warpP = cuv * 1.9 + flow * 0.8;
         float2 warp = float2(fbm(warpP), fbm(warpP + float2(5.2, 1.3))) - 0.5;
         float2 q = cuv * 2.2 + warp * 0.9 + flow;
-        float base = fbm(q) * 0.72 + fbm(q * 2.1 + float2(7.0, 3.0)) * 0.28;
+        // Billowed detail: folding the octave (1-|2x-1|) turns smooth noise
+        // into cauliflower lobes — the cumulus signature the plain sum lacks.
+        float billow = 1.0 - abs(2.0 * fbm(q * 2.1 + float2(7.0, 3.0)) - 1.0);
+        float base = fbm5(q) * 0.70 + billow * 0.30;
         // Habitat band: densest mid-sky, thinner overhead and low.
         float bandV = smoothstep(0.02, 0.25, uv.y) * (1.0 - 0.5 * smoothstep(0.75, 1.0, uv.y));
-        float deck = smoothstep(1.0 - cloudiness, 1.18 - cloudiness, base) * (0.55 + 0.45 * bandV);
+        float deck = smoothstep(1.02 - cloudiness, 1.20 - cloudiness, base) * (0.55 + 0.45 * bandV);
         // Self-shadow: resample toward the sun — where the deck thickens
         // sunward, this pixel sits in its own cloud's shade.
         float toward = fbm(q + normalize(sunPos - uv + float2(1e-3, 1e-3)) * 0.25);
         float lit01 = clamp(0.5 + (base - toward) * 1.6, 0.0, 1.0);
         float3 cloudLit  = mix(float3(0.10, 0.11, 0.14), float3(0.99, 0.97, 0.95), day);
         cloudLit = mix(cloudLit, float3(1.0, 0.72, 0.5), dusk * 0.6);
+        // Altitude grading: the high deck rides brighter, low scud dimmer —
+        // the vertical depth cue flat decks lack.
+        cloudLit *= 0.92 + 0.14 * (1.0 - uv.y);
         float3 cloudDark = cloudLit * (day > 0.5 ? 0.55 : 0.45);
         sky = mix(sky, mix(cloudDark, cloudLit, lit01), deck * (0.60 + 0.40 * cloudiness));
         // Silver lining: cloud EDGES facing the sun catch its light — the
         // rim brightens where the deck thins toward the glow.
         float rim = smoothstep(0.02, 0.22, deck) * (1.0 - smoothstep(0.22, 0.55, deck));
         sky += float3(1.0, 0.95, 0.85) * rim * exp(-dSun * dSun * 14.0) * day * 0.30;
+        // Moonlit lining: at night the same edges catch the moon instead.
+        float2 moonP = float2(1.0 - sunAz, 0.24);
+        float dMoonC = distance(uv * float2(1.0, 1.5), moonP * float2(1.0, 1.5));
+        sky += float3(0.78, 0.84, 0.95) * rim * exp(-dMoonC * dMoonC * 10.0)
+             * (1.0 - day) * 0.14;
     }
     // Low-sun flare: a warm horizontal scattering streak at golden hour.
     float flare = exp(-pow((uv.y - sunPos.y) * 22.0, 2.0)) * exp(-abs(uv.x - sunAz) * 2.6);
@@ -382,15 +422,48 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         }
     }
 
-    // ---- Rainbow (F4): spectral band on the antisolar circle, sun up only.
+    // ---- Rainbow v2 (F4, IMG feedback "nu peste tot"): a real bow is a
+    // SEGMENT of the antisolar circle, not a full hoop painted across the
+    // sky. This one is an off-crown partial arc whose ends dissolve into
+    // the rain haze, ADDED as light (bows are scattered sunlight, they
+    // never repaint the sky), patchy where the rain curtain thins, with
+    // the faint reversed secondary and the brighter sky inside the
+    // primary that real optics produce.
     if (rainbow > 0.005) {
         float2 arcC = float2(1.0 - sunAz, 1.35);
-        float dArc = distance(uv * float2(1.0, 1.2), arcC * float2(1.0, 1.2));
-        float band = (dArc - 0.72) / 0.07;
-        if (band > 0.0 && band < 1.0) {
-            float3 spectral = 0.5 + 0.5 * cos(6.28318 * (band * 0.9 + float3(0.00, 0.33, 0.67)));
-            float fade = sin(band * 3.14159);
-            sky = mix(sky, spectral, fade * rainbow * 0.25 * day * (1.0 - cloudiness * 0.5));
+        float2 rel = (uv - arcC) * float2(1.0, 1.2);
+        float dArc = length(rel);
+        if (dArc > 0.52 && dArc < 1.02) {
+            // 0 at the arc's crown, ±π/2 at the horizon feet.
+            float ang = atan2(rel.x, -rel.y);
+            // Partial segment: one shoulder only (~a third of the hoop),
+            // soft-edged; the side leans away from the sun's azimuth.
+            float lean = (sunAz - 0.5) * 0.9;
+            float span = smoothstep(1.05, 0.30, abs(ang - lean * 1.2 - 0.28));
+            // Ends fade harder near the ground — bows sink into the haze.
+            float footFade = smoothstep(1.35, 0.55, abs(ang));
+            // Patchiness: the bow lives only where the rain curtain does.
+            float curtain = 0.55 + 0.45 * fbm(float2(ang * 2.2 + 3.7, dArc * 5.0 + t * 0.01));
+            float gate = rainbow * day * (1.0 - cloudiness * 0.5)
+                       * span * footFade * curtain;
+            if (gate > 0.001) {
+                // Primary bow.
+                float band = (dArc - 0.72) / 0.055;
+                if (band > 0.0 && band < 1.0) {
+                    float3 spectral = 0.5 + 0.5 * cos(6.28318 * (band * 0.9 + float3(0.00, 0.33, 0.67)));
+                    sky += spectral * sin(band * 3.14159) * gate * 0.16;
+                }
+                // Secondary bow: larger radius, reversed order, much fainter.
+                float band2 = (dArc - 0.90) / 0.05;
+                if (band2 > 0.0 && band2 < 1.0) {
+                    float3 spectral2 = 0.5 + 0.5 * cos(6.28318 * ((1.0 - band2) * 0.9 + float3(0.00, 0.33, 0.67)));
+                    sky += spectral2 * sin(band2 * 3.14159) * gate * 0.05;
+                }
+                // Inside the primary the sky brightens; Alexander's band
+                // between the bows stays quietly darker.
+                sky += float3(0.9, 0.92, 0.95) * smoothstep(0.72, 0.60, dArc) * gate * 0.05;
+                sky *= 1.0 - smoothstep(0.755, 0.78, dArc) * smoothstep(0.92, 0.90, dArc) * gate * 0.10;
+            }
         }
     }
 
