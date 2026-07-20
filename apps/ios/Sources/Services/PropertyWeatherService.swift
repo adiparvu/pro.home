@@ -22,6 +22,11 @@ enum PropertyWeather {
         /// "frost" (≤2°C tonight/tomorrow) or "rain" (≥50% chance tomorrow).
         /// Raw token — each surface localizes it in its own language.
         var advisory: String?
+        /// Current wind for the weather stage (F2), km/h + meteorological
+        /// degrees. Optional so summaries cached by older builds still
+        /// decode; absent wind renders as honest calm, never invented.
+        var windKph: Double? = nil
+        var windDeg: Double? = nil
         var fetchedAt: Date
     }
 
@@ -60,6 +65,8 @@ enum PropertyWeather {
                 lo: today?.lowTemperature.converted(to: .celsius).value ?? currentTemp,
                 hi: today?.highTemperature.converted(to: .celsius).value ?? currentTemp,
                 advisory: advisory,
+                windKph: current.wind.speed.converted(to: .kilometersPerHour).value,
+                windDeg: current.wind.direction.converted(to: .degrees).value,
                 fetchedAt: Date())
             if let ud = UserDefaults(suiteName: SharedDataStore.suiteName),
                let data = try? JSONEncoder().encode(summary) {

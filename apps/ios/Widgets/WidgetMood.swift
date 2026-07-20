@@ -96,7 +96,19 @@ private struct MoodContainerBackground: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if renderingMode == .fullColor, let palette = WidgetMood.currentPalette() {
+        if renderingMode == .fullColor, let sky = SharedDataStore.freshWeatherSky() {
+            // F4 — the weather stage's real sky, frozen at publish time:
+            // the same gradient the app renders, at widget-archive cost.
+            // Freshness is enforced by the reader (≤45 min), so the tile
+            // never wears yesterday's weather; past the TTL the classic
+            // palette below takes over honestly.
+            content
+                .containerBackground(for: .widget) {
+                    LinearGradient(colors: [skyColor(sky.top), skyColor(sky.bottom)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+                .environment(\.colorScheme, sky.darkGround ? .dark : .light)
+        } else if renderingMode == .fullColor, let palette = WidgetMood.currentPalette() {
             content
                 .containerBackground(for: .widget) { WidgetMoodGround(palette: palette) }
                 .environment(\.colorScheme, palette.colorScheme)
@@ -106,5 +118,10 @@ private struct MoodContainerBackground: ViewModifier {
             content
                 .containerBackground(for: .widget) { Color.clear }
         }
+    }
+
+    /// A validated [r,g,b] triplet (freshWeatherSky guarantees count == 3).
+    private func skyColor(_ rgb: [Double]) -> Color {
+        Color(red: rgb[0], green: rgb[1], blue: rgb[2])
     }
 }

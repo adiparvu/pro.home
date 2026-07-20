@@ -135,6 +135,9 @@ struct WatchRootView: View {
                     // One atmosphere for every page ground (moodPageGround reads
                     // it); nil until the phone delivers a mood with the payload.
                     .environment(\.watchMood, store.mood)
+                    // The real sky (F4) rides the same payload and, when
+                    // present, wins over the mood wash on every page ground.
+                    .environment(\.watchSky, WatchSky(payload: payload))
                     .onOpenURL { url in
                         // Complication taps: prvio://tasks, prvio://plants, …
                         switch url.host {

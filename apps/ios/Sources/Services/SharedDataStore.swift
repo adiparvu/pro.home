@@ -126,6 +126,11 @@ struct WatchPayload: Codable {
     /// breathe the same atmosphere. nil (older phone build, signed-out
     /// push) keeps the watch's neutral page tints.
     var mood: String? = nil
+    /// The weather stage's sky at push time ([r,g,b] in 0…1, top/bottom of
+    /// the gradient — F4), so the wrist wears the same sky the phone
+    /// renders. nil = no fresh sky; the mood wash stays the honest fallback.
+    var skyTop: [Double]? = nil
+    var skyBottom: [Double]? = nil
 }
 
 // MARK: Tolerant decoding
@@ -145,7 +150,7 @@ extension WatchPayload {
         case weatherTemp, weatherSymbol, weatherLo, weatherHi, weatherAdvisory
         case streakDays, budgetSpent, budgetLimit, budgetCurrency, pageOrder
         case sensors, actuators, emergencyContacts, emergencySteps, dmConversations
-        case mood
+        case mood, skyTop, skyBottom
     }
 
     init(from decoder: Decoder) throws {
@@ -178,6 +183,8 @@ extension WatchPayload {
         emergencySteps    = try c.decodeIfPresent([EmergencyStepEntry].self,  forKey: .emergencySteps) ?? []
         dmConversations   = try c.decodeIfPresent([DMConversationEntry].self, forKey: .dmConversations) ?? []
         mood              = try c.decodeIfPresent(String.self,                forKey: .mood)
+        skyTop            = try c.decodeIfPresent([Double].self,              forKey: .skyTop)
+        skyBottom         = try c.decodeIfPresent([Double].self,              forKey: .skyBottom)
     }
 }
 
@@ -210,6 +217,48 @@ extension WatchPayload {
         p.emergencySteps    = deduped(emergencySteps)    { $0.id }
         p.dmConversations   = deduped(dmConversations)   { $0.id }
         return p
+    }
+}
+
+// MARK: - Weather sky snapshot (F4 — app → widgets, and onto the watch payload)
+//
+// The weather stage's CPU-mirrored gradient at publish time: two [r,g,b]
+// triplets (0…1) plus the scheme its luminance calls for. Written by
+// WeatherStageEngine whenever the target sky materially changes; read by
+// the widget ground at archive time and stamped onto every watch push.
+// Freshness is enforced at READ time — the sky moves with the clock, so a
+// stale snapshot is worse than the classic fallback.
+
+struct WeatherSkySnapshot: Codable {
+    var top: [Double]
+    var bottom: [Double]
+    /// True when the ground is dark → consumers render light content
+    /// (`.dark` color scheme) for AA contrast, matching the mood contract.
+    var darkGround: Bool
+    var capturedAt: Date
+}
+
+extension SharedDataStore {
+    private static let weatherSkyKey = "prvio.weather.sky"
+    /// 45 min: long enough to bridge widget timeline gaps, short enough
+    /// that a noon sky never lingers into the evening.
+    private static let weatherSkyTTL: TimeInterval = 2700
+
+    static func writeWeatherSky(_ snapshot: WeatherSkySnapshot) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(snapshot) else { return }
+        ud.set(data, forKey: weatherSkyKey)
+    }
+
+    /// The snapshot, only while it is still honest — nil past the TTL or
+    /// when the triplets are malformed.
+    static func freshWeatherSky(at date: Date = Date()) -> WeatherSkySnapshot? {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: weatherSkyKey),
+              let snapshot = try? JSONDecoder().decode(WeatherSkySnapshot.self, from: data),
+              date.timeIntervalSince(snapshot.capturedAt) <= weatherSkyTTL,
+              snapshot.top.count == 3, snapshot.bottom.count == 3 else { return nil }
+        return snapshot
     }
 }
 
@@ -919,7 +968,11 @@ enum SharedDataStore {
                             dmConversations: readDMCatalog(),
                             // The living backdrop's resolved mood, so the wrist
                             // breathes the same atmosphere as the phone.
-                            mood: UserDefaults(suiteName: suiteName)?.string(forKey: "app.mood.current"))
+                            mood: UserDefaults(suiteName: suiteName)?.string(forKey: "app.mood.current"),
+                            // The weather stage's fresh sky (F4) — nil past its
+                            // TTL, so the wrist never wears yesterday's weather.
+                            skyTop: freshWeatherSky()?.top,
+                            skyBottom: freshWeatherSky()?.bottom)
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

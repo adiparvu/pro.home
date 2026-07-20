@@ -87,6 +87,45 @@ extension WatchMood {
     }
 }
 
+// MARK: - The real sky on the wrist (F4 — weather stage snapshot)
+//
+// The phone's weather stage publishes its CPU-mirrored gradient with every
+// payload push (skyTop/skyBottom, [r,g,b] in 0…1). When present it wins
+// over the mood wash: the wrist wears the SAME sky the phone renders —
+// same freshness contract as every other number in the payload. Adaptive,
+// not copied: watchOS renders on OLED black, so the sky rides at reduced
+// opacity — its hue and light, not its full luminance.
+
+struct WatchSky: Equatable {
+    let top: Color
+    let bottom: Color
+
+    init?(payload: WatchPayload?) {
+        guard let t = payload?.skyTop, let b = payload?.skyBottom,
+              t.count == 3, b.count == 3 else { return nil }
+        top = Color(red: t[0], green: t[1], blue: t[2])
+        bottom = Color(red: b[0], green: b[1], blue: b[2])
+    }
+
+    var pageWash: LinearGradient {
+        LinearGradient(colors: [top.opacity(0.38), bottom.opacity(0.30)],
+                       startPoint: .top, endPoint: .bottom)
+    }
+}
+
+private struct WatchSkyKey: EnvironmentKey {
+    static let defaultValue: WatchSky? = nil
+}
+
+extension EnvironmentValues {
+    /// The sky delivered with the current payload — nil until the phone
+    /// sends one (older build, stale weather), which keeps the mood wash.
+    var watchSky: WatchSky? {
+        get { self[WatchSkyKey.self] }
+        set { self[WatchSkyKey.self] = newValue }
+    }
+}
+
 // MARK: - Environment plumbing
 
 private struct WatchMoodKey: EnvironmentKey {
@@ -118,10 +157,14 @@ private struct MoodPageGround: ViewModifier {
     let fallback: Color
     let fallbackOpacity: Double
     @Environment(\.watchMood) private var mood
+    @Environment(\.watchSky) private var sky
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if let mood {
+        if let sky {
+            // F4: the phone's real weather sky beats the mood wash.
+            content.containerBackground(sky.pageWash, for: .navigation)
+        } else if let mood {
             content.containerBackground(mood.pageWash, for: .navigation)
         } else {
             content.containerBackground(fallback.gradient.opacity(fallbackOpacity),

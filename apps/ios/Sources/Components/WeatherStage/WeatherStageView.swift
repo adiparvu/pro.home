@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import WidgetKit
 
 // MARK: - WeatherStageEngine — real weather + real sun → shader params
 //
@@ -9,6 +10,12 @@ import Observation
 // TIME alone, never invented weather. The sun position comes from the same
 // solar window model the mood engine proved (AppMood.defaultEdges), fed by
 // the property's coordinates when known, clock windows otherwise.
+//
+// F2: the WIND scalar rides the summary's real speed+direction (calm when
+// absent). F4: the engine owns the after-rain RAINBOW state machine, the
+// firefly gate (clear warm summer night, fresh temperature only), and the
+// widget/watch SKY SNAPSHOT — two CPU-mirrored gradient colors published
+// to the App Group whenever the target sky materially changes.
 //
 // State changes ease over 3 seconds (the 2–5s spec) via param-space lerp:
 // the shader only ever sees one smoothly-moving parameter set.
@@ -24,9 +31,17 @@ final class WeatherStageEngine {
     private(set) var transitionStart: Date = .distantPast
     static let transitionDuration: TimeInterval = 3
 
+    /// The rainbow's lifetime after a rain-end transition (seconds). Long
+    /// enough to be noticed, short enough to stay a moment — and it fades
+    /// across recompute ticks so the arc dissolves rather than blinking out.
+    static let rainbowLifetime: TimeInterval = 420
+
     @ObservationIgnored private var refreshTimer: Timer?
     @ObservationIgnored private var weatherObserver: NSObjectProtocol?
     @ObservationIgnored private var liveStages = 0
+    @ObservationIgnored private var rainbowUntil: Date?
+    @ObservationIgnored private var lastSnapshotTop: WeatherStageParams.RGB?
+    @ObservationIgnored private var lastSnapshotAt: Date = .distantPast
 
     private init() {
         recompute(animated: false)
@@ -38,6 +53,8 @@ final class WeatherStageEngine {
     }
 
     /// Params for `date`, fully derived — pure, so recompute can diff.
+    /// (The rainbow, an inherently stateful moment, is layered on by
+    /// `recompute` itself.)
     private func params(at date: Date) -> WeatherStageParams {
         let edges = AppMood.defaultEdges(on: date,
                                          latitude: AppMoodEngine.shared.latitude,
@@ -61,28 +78,87 @@ final class WeatherStageEngine {
             : hour > edges.night ? 0.8
             : 0.15 + 0.7 * (hour - edges.morning) / daySpan
 
-        let condition: WeatherCondition = {
-            guard let summary = PropertyWeather.cached(),
-                  date.timeIntervalSince(summary.fetchedAt) <= AppWeatherTone.maxAge
-            else { return .clear }
-            return WeatherCondition.from(symbol: summary.symbol)
-        }()
+        // Fresh summary or nothing — the honest gate every scalar shares.
+        let summary = PropertyWeather.cached()
+        let fresh = summary.map { date.timeIntervalSince($0.fetchedAt) <= AppWeatherTone.maxAge } ?? false
+        let condition: WeatherCondition = fresh
+            ? WeatherCondition.from(symbol: summary?.symbol) : .clear
 
-        return WeatherStageParams.target(condition: condition,
-                                         sunElevation: max(min(elev, 1), -1),
-                                         sunAzimuth: azimuth,
-                                         moonPhase: WeatherStageParams.moonPhase(on: date))
+        // F2 — wind: magnitude from the real speed (≈55 km/h saturates the
+        // visual scale), sign from the direction's screen east/west
+        // component. No wind in the cache → calm, never invented.
+        var wind: Double = 0
+        if fresh, let kph = summary?.windKph {
+            let magnitude = min(max(kph, 0) / 55.0, 1.0)
+            let sign: Double = (summary?.windDeg)
+                .map { sin($0 * .pi / 180) >= 0 ? 1.0 : -1.0 } ?? 1.0
+            wind = magnitude * sign
+        }
+
+        var p = WeatherStageParams.target(condition: condition,
+                                          sunElevation: max(min(elev, 1), -1),
+                                          sunAzimuth: azimuth,
+                                          moonPhase: WeatherStageParams.moonPhase(on: date),
+                                          wind: wind)
+        // F4 — fireflies: clear warm summer night, fresh temperature only.
+        p.fireflies = firefliesLevel(condition: condition,
+                                     sunElevation: p.sunElevation,
+                                     at: date,
+                                     summary: fresh ? summary : nil)
+        return p
+    }
+
+    /// 1 on a clear warm summer night — hemisphere-aware (the property's
+    /// latitude decides which months are summer) and honest about the
+    /// temperature: no fresh reading, no fireflies.
+    private func firefliesLevel(condition: WeatherCondition, sunElevation: Double,
+                                at date: Date, summary: PropertyWeather.Summary?) -> Double {
+        guard condition == .clear, sunElevation < -0.15,
+              let summary, summary.temp >= 13 else { return 0 }
+        let month = Calendar.current.component(.month, from: date)
+        let north = (AppMoodEngine.shared.latitude ?? 45) >= 0
+        let summer = north ? (5...8).contains(month) : (month >= 11 || month <= 2)
+        return summer ? 1 : 0
     }
 
     /// Re-derives the target; a changed target eases in over the standard
     /// window (animated) or snaps (first frame, scene restore).
     func recompute(animated: Bool) {
-        let target = params(at: .now)
-        guard target != toParams else { return }
+        var target = params(at: .now)
         let now = Date.now
+
+        // F4 — rainbow state machine: rain that JUST ended under a risen
+        // sun arms the arc; it then decays across recompute ticks.
+        if toParams.rain >= 0.5, target.rain <= 0.05,
+           target.sunElevation > 0.05, rainbowUntil == nil {
+            rainbowUntil = now.addingTimeInterval(Self.rainbowLifetime)
+            scheduleRainbowFadeTicks()
+        }
+        if let until = rainbowUntil {
+            if now < until {
+                let remaining = until.timeIntervalSince(now) / Self.rainbowLifetime
+                target.rainbow = min(1, remaining * 1.6)   // quick in, slow out
+            } else {
+                rainbowUntil = nil
+            }
+        }
+
+        guard target != toParams else { return }
         fromParams = animated ? current(at: now) : target
         toParams = target
         transitionStart = animated ? now : .distantPast
+        publishSkySnapshot(for: target, at: now)
+    }
+
+    /// The rainbow outlives the 5-minute timer's granularity mid-life, so
+    /// two one-shot ticks re-derive the decay and the final fade-out.
+    private func scheduleRainbowFadeTicks() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.rainbowLifetime * 0.5))
+            self.recompute(animated: true)
+            try? await Task.sleep(for: .seconds(Self.rainbowLifetime * 0.5 + 2))
+            self.recompute(animated: true)
+        }
     }
 
     /// The interpolated params the shader should render right now.
@@ -91,6 +167,29 @@ final class WeatherStageEngine {
         guard t < 1 else { return toParams }
         let eased = t * t * (3 - 2 * t)   // smoothstep
         return WeatherStageParams.lerp(fromParams, toParams, max(eased, 0))
+    }
+
+    // MARK: F4 — the widget/watch sky snapshot
+
+    /// Publishes the CPU-mirrored gradient into the App Group so widgets
+    /// (directly) and the watch (via the payload push) wear the same sky.
+    /// Throttled: a reload storm of home-screen timelines for a barely
+    /// different blue would be all cost and no truth.
+    private func publishSkySnapshot(for params: WeatherStageParams, at date: Date) {
+        let colors = params.snapshotColors
+        let materially = lastSnapshotTop.map {
+            abs($0.r - colors.top.r) + abs($0.g - colors.top.g) + abs($0.b - colors.top.b) > 0.06
+        } ?? true
+        let stale = date.timeIntervalSince(lastSnapshotAt) > 900
+        guard materially || stale else { return }
+        lastSnapshotTop = colors.top
+        lastSnapshotAt = date
+        SharedDataStore.writeWeatherSky(WeatherSkySnapshot(
+            top: [colors.top.r, colors.top.g, colors.top.b],
+            bottom: [colors.bottom.r, colors.bottom.g, colors.bottom.b],
+            darkGround: params.snapshotWantsDarkScheme,
+            capturedAt: date))
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // Ref-counted 5-minute re-derivation while any stage is on screen —
@@ -127,29 +226,52 @@ struct WeatherStageView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Whether THIS stage currently holds the motion engine (F2 droplets).
+    @State private var holdsMotion = false
+
     private var engine: WeatherStageEngine { .shared }
+
+    /// The gyroscope earns its battery only while droplets exist to move.
+    private var wantsMotion: Bool {
+        !reduceMotion && (engine.toParams.rain > 0.03 || engine.fromParams.rain > 0.03)
+    }
 
     var body: some View {
         Group {
             if reduceMotion {
-                sky(time: 0, params: engine.current(at: .now))
+                sky(time: 0, params: engine.current(at: .now), tilt: (0, 0))
             } else {
                 TimelineView(.animation(minimumInterval: ProcessInfo.processInfo.isLowPowerModeEnabled ? 0.1 : nil)) { context in
                     sky(time: context.date.timeIntervalSinceReferenceDate
                             .truncatingRemainder(dividingBy: 86_400),
-                        params: engine.current(at: context.date))
+                        params: engine.current(at: context.date),
+                        tilt: (MotionTiltEngine.shared.tiltX,
+                               MotionTiltEngine.shared.tiltY))
                 }
             }
         }
         .accessibilityHidden(true)
-        .onAppear { engine.stageAppeared() }
-        .onDisappear { engine.stageDisappeared() }
+        .onAppear { engine.stageAppeared(); syncMotion() }
+        .onDisappear {
+            engine.stageDisappeared()
+            if holdsMotion { MotionTiltEngine.shared.release(); holdsMotion = false }
+        }
+        .onChange(of: wantsMotion) { _, _ in syncMotion() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { engine.recompute(animated: true) }
         }
     }
 
-    private func sky(time: TimeInterval, params p: WeatherStageParams) -> some View {
+    private func syncMotion() {
+        if wantsMotion, !holdsMotion {
+            MotionTiltEngine.shared.acquire(); holdsMotion = true
+        } else if !wantsMotion, holdsMotion {
+            MotionTiltEngine.shared.release(); holdsMotion = false
+        }
+    }
+
+    private func sky(time: TimeInterval, params p: WeatherStageParams,
+                     tilt: (Double, Double)) -> some View {
         Rectangle()
             .fill(.black)
             .colorEffect(ShaderLibrary.weatherSky(
@@ -163,6 +285,12 @@ struct WeatherStageView: View {
                 .float(Float(p.fog)),
                 .float(Float(p.storm)),
                 .float(Float(p.moonPhase)),
-                .float(colorScheme == .dark ? 1 : 0)))
+                .float(colorScheme == .dark ? 1 : 0),
+                .float(Float(p.wind)),
+                .float(Float(p.sand)),
+                .float(Float(p.rainbow)),
+                .float(Float(p.fireflies)),
+                .float(Float(tilt.0)),
+                .float(Float(tilt.1))))
     }
 }
