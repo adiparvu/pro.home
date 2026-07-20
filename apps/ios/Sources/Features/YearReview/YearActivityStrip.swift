@@ -19,6 +19,9 @@ struct YearActivityStrip: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedKey: String?
+    /// Per-month grow-in progress (0→1): the bars rise one after another
+    /// with a springy stagger when the strip appears (IMG_8712 "movement").
+    @State private var barProgress: [Int: Double] = [:]
 
     private var selectedMonth: YearMonthActivity? {
         guard let selectedKey, let m = Int(selectedKey) else { return nil }
@@ -71,12 +74,13 @@ struct YearActivityStrip: View {
         Chart(months) { m in
             BarMark(
                 x: .value("Month", String(m.month)),
-                y: .value("Activity", m.total),
+                y: .value("Activity", Double(m.total) * (barProgress[m.month] ?? 0)),
                 width: .ratio(0.55)
             )
             .foregroundStyle(Self.tint(m.dominant).opacity(barOpacity(m)))
             .cornerRadius(3)
         }
+        .onAppear { growBarsIn() }
         .chartXScale(domain: domain)
         .chartXSelection(value: $selectedKey)
         .chartYAxis(.hidden)
@@ -99,6 +103,21 @@ struct YearActivityStrip: View {
     private func barOpacity(_ m: YearMonthActivity) -> Double {
         guard selectedKey != nil else { return 1 }
         return selectedKey == String(m.month) ? 1 : 0.35
+    }
+
+    /// January → December, each bar springing up 50ms after the previous —
+    /// the year "plays" left to right. Reduce Motion fills instantly.
+    private func growBarsIn() {
+        guard reduceMotion else {
+            for (index, m) in months.enumerated() {
+                withAnimation(.spring(duration: 0.55, bounce: 0.35)
+                    .delay(Double(index) * 0.05)) {
+                    barProgress[m.month] = 1
+                }
+            }
+            return
+        }
+        for m in months { barProgress[m.month] = 1 }
     }
 
     /// "March: 5, April: 2, …" for VoiceOver — only months with activity.

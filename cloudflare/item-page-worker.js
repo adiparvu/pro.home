@@ -16,6 +16,13 @@
 // icon to one stable URL per user (changing the icon repaints every
 // page) and sends the real property entity's name.
 //
+// v4 (IMG_8704-8706): the "Open in PRVIO" CTA becomes black liquid
+// glass — translucent black, backdrop blur, a slow specular sheen
+// sweeping across (reduced-motion aware); items WITH coordinates show
+// the REAL map (OpenStreetMap embed, keyless) with a pulsing ring on
+// the pin — address-only items honestly keep the stylized grid; and
+// "Powered by PRVIO" links the word PRVIO to the App Store listing.
+//
 // Reads ONLY the `public_items` projection (opt-in per item via the Lost &
 // Found card); unknown / unpublished ids fall back to a friendly generic
 // page instead of 404. The publishable key is public BY DESIGN (it ships
@@ -103,9 +110,16 @@ function page(item, uuid) {
 <style>
 @keyframes prvFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
 @keyframes prvIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes prvSheen{0%,55%{left:-60%}85%,100%{left:130%}}
+@keyframes prvPulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.6);opacity:0}}
 .prvGlyph{display:inline-block;animation:prvFloat 4.5s ease-in-out infinite}
 .prvCard{animation:prvIn .5s cubic-bezier(.2,.7,.3,1) both}
-@media (prefers-reduced-motion:reduce){.prvGlyph,.prvCard{animation:none}}
+.prvCta{position:relative;overflow:hidden;transition:transform .15s ease}
+.prvCta:active{transform:scale(.98)}
+.prvCta::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);transform:skewX(-20deg);animation:prvSheen 3.6s ease-in-out infinite}
+.prvPin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+.prvPin::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(255,77,77,.6);animation:prvPulse 1.8s ease-out infinite}
+@media (prefers-reduced-motion:reduce){.prvGlyph,.prvCard,.prvCta::after,.prvPin::before{animation:none}}
 </style></head>
 <body style="margin:0;min-height:100dvh;background:#0d1117;color:#f0f6ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
 <div class="prvCard" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px;max-width:420px;width:100%">
@@ -129,7 +143,7 @@ function page(item, uuid) {
     <p style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.55;margin:0"><span data-i="found_body"></span>${item?.owner_name ? ` <strong style="color:rgba(255,255,255,.85)">${esc(item.owner_name)}</strong>` : ""}</p>
   </div>` : `<p data-i="standard_body" style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin:6px 0 18px"></p>`}
 
-  ${uuid ? `<a href="prvio://inventory/${esc(uuid)}" style="display:block;text-align:center;padding:15px;border-radius:14px;background:linear-gradient(120deg,#1c3f8f,#3b6fd4);color:#f0f6ff;font-size:15px;font-weight:700;text-decoration:none;margin:0 0 14px;box-shadow:0 10px 30px rgba(28,63,143,.4)"><span data-i="open_app"></span></a>` : ""}
+  ${uuid ? `<a class="prvCta" href="prvio://inventory/${esc(uuid)}" style="display:block;text-align:center;padding:15px;border-radius:14px;background:rgba(8,10,14,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);color:#f0f6ff;font-size:15px;font-weight:700;text-decoration:none;margin:0 0 14px;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12)"><span data-i="open_app"></span></a>` : ""}
 
   ${item?.loaned_to ? `<div style="background:rgba(120,110,255,0.1);border:1px solid rgba(120,110,255,0.3);border-radius:14px;padding:14px 18px;margin:0 0 14px">
     <h2 data-i="loan_title" style="font-size:13px;font-weight:600;color:#a9a0ff;margin:0 0 4px"></h2>
@@ -145,18 +159,22 @@ function page(item, uuid) {
 
   ${(hasCoords || mapQuery) ? `
   <button id="mapBtn" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);margin-bottom:14px">
-    <div style="position:relative;height:110px;background:
+    ${hasCoords ? `<div style="position:relative;height:150px">
+      <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${item.longitude - 0.004}%2C${item.latitude - 0.002}%2C${item.longitude + 0.004}%2C${item.latitude + 0.002}&amp;layer=mapnik" style="width:100%;height:100%;border:0;pointer-events:none;filter:saturate(.85) contrast(1.05) brightness(.92)" loading="lazy" title="map"></iframe>
+      <div class="prvPin"></div>
+      <span data-i="map_open" style="position:absolute;bottom:10px;right:12px;font-size:11px;font-weight:600;color:#5ab4ff;background:rgba(13,17,23,.8);padding:5px 10px;border-radius:999px"></span>
+    </div>` : `<div style="position:relative;height:110px;background:
         linear-gradient(rgba(90,180,255,0.06) 1px, transparent 1px),
         linear-gradient(90deg, rgba(90,180,255,0.06) 1px, transparent 1px),
         linear-gradient(160deg, #10161f, #0b1a2a);
         background-size:22px 22px,22px 22px,cover;display:flex;align-items:center;justify-content:center">
       <div style="font-size:30px;filter:drop-shadow(0 6px 12px rgba(90,180,255,.4))">📍</div>
       <span data-i="map_open" style="position:absolute;bottom:10px;right:12px;font-size:11px;font-weight:600;color:#5ab4ff;background:rgba(13,17,23,.7);padding:5px 10px;border-radius:999px"></span>
-    </div>
+    </div>`}
     ${item?.owner_address ? `<div style="padding:10px 14px;background:rgba(255,255,255,0.04);font-size:12.5px;color:rgba(255,255,255,0.6);text-align:left">${esc(item.owner_address)}</div>` : ""}
   </button>` : ""}
 
-  <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin:22px 0 0">Powered by PRVIO</p>
+  <p style="font-size:11px;color:rgba(255,255,255,0.18);text-align:center;margin:22px 0 0">Powered by <a href="https://apps.apple.com/app/id6780068431" style="color:rgba(255,255,255,0.4);font-weight:600;text-decoration:none">PRVIO</a></p>
 </div>
 
 ${(wazeHref || gmapsHref || amapsHref) ? `
