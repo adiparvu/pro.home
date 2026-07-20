@@ -1,5 +1,11 @@
 # item-page (Cloudflare Worker — inventory QR pages)
 
+> Numele REAL al workerului pe cont este `prvio-item-page` — ruta
+> `xparvu.com/i/*` arată spre el (verificat 2026-07-20). Un dublu
+> istoric fără rută (`item-page`) mai există pe cont. Deploy prin API:
+> `PUT /accounts/{acc}/workers/scripts/prvio-item-page` cu multipart
+> `metadata` (main_module) + fișierul ca `application/javascript+module`.
+
 Serves the public "found item" page on `https://xparvu.com/i/<uuid>` — the URL
 printed inside every inventory QR label. Stopgap until the full web app
 (`apps/web`) is deployed behind xparvu.com; same data, same look as
