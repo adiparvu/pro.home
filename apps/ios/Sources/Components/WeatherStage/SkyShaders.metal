@@ -254,16 +254,40 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         sky = mix(sky, float3(0.16, 0.19, 0.28), shadowBand * antiSide * below * 0.22);
     }
 
-    // ---- Sun disc + bloom (day), moon + stars (night) ----
+    // ---- Sun & moon v2 (IMG_8724-8727 "nu desene"): both bodies render
+    // in ASPECT-TRUE screen space — the old normalized-uv metric stretched
+    // every disc into an oval sticker. The sun gains limb darkening,
+    // layered bloom, horizon flattening at low elevation and cloud
+    // occlusion; heavy overcast leaves only a diffuse bright smudge.
+    float aspect = bounds.w / max(bounds.z, 1.0);
     float2 sunPos = float2(sunAz, 0.78 - clamp(sunElev, 0.0, 1.0) * 0.55);
+    // Legacy anisotropic metric — kept for every directional TINT (cloud
+    // rim, fog diffusion, shadow taps) tuned against it.
     float dSun = distance(uv * float2(1.0, 1.4), sunPos * float2(1.0, 1.4));
-    float sunGlow = exp(-dSun * dSun * 55.0) * day;
-    float sunDisc = smoothstep(0.030, 0.022, dSun) * day;
-    sky += (float3(1.0, 0.92, 0.78) * sunGlow * 0.55 + float3(1.0, 0.98, 0.92) * sunDisc)
-         * (1.0 - cloudiness * 0.7);
+    float2 auv = float2(uv.x, uv.y * aspect);
+    float2 sunA = float2(sunPos.x, sunPos.y * aspect);
+    float dSunA = distance(auv, sunA);
+    // Low sun: the glow flattens into a wide band hugging the horizon —
+    // never a round blob sitting "on the ground".
+    float lowSun = smoothstep(0.45, 0.05, sunElev);
+    float2 gm = (auv - sunA) * float2(1.0 - lowSun * 0.45, 1.0 + lowSun * 1.3);
+    float dGlow = length(gm);
+    float3 sunCol = mix(float3(1.0, 0.97, 0.90), float3(1.0, 0.62, 0.30),
+                        clamp(dusk + lowSun * 0.4, 0.0, 1.0));
+    // The DISC exists only above the horizon under a mostly-clear sky.
+    float discVis = day * smoothstep(-0.04, 0.03, sunElev)
+                  * (1.0 - smoothstep(0.30, 0.70, cloudiness));
+    float sunCore = smoothstep(0.034, 0.023, dSunA);
+    float limb = 1.0 - 0.30 * smoothstep(0.012, 0.032, dSunA);
+    float bloom = exp(-dGlow * dGlow * 160.0) * 0.85 + exp(-dGlow * dGlow * 20.0) * 0.35;
+    sky += sunCol * (sunCore * limb * discVis
+                   + bloom * day * (1.0 - cloudiness * 0.55) * 0.60);
+    // Through an overcast deck the sun survives as a broad diffuse patch.
+    sky += sunCol * exp(-dGlow * dGlow * 9.0) * day
+         * smoothstep(0.30, 0.85, cloudiness) * 0.12;
     // Mie aureole (v4): forward scattering wraps a warm veil ~10–20° around
     // the sun — a real sky never cuts from disc straight to blue.
-    float mie = exp(-dSun * 5.5) * day * (1.0 - cloudiness * 0.6);
+    float mie = exp(-dSunA * 5.5) * day * (1.0 - cloudiness * 0.6);
     sky += float3(1.0, 0.86, 0.62) * mie * 0.18;
 
     float night = 1.0 - day;
@@ -301,17 +325,25 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
         float mw = fbm(float2(uv.x * 3.0 + uv.y * 1.5, uv.y * 6.0 - uv.x * 2.0));
         sky += float3(0.55, 0.60, 0.75) * mw * mwBand * night * (1.0 - cloudiness) * 0.055;
 
-        // Moon with a cosmetic phase terminator.
+        // Moon v2 (IMG_8724/8725/8727): a perfectly ROUND disc (aspect-true
+        // space) with maria mottling on the lit face, soft limb, faint
+        // earthshine on the dark side and a modest halo — and it HIDES
+        // behind an overcast deck instead of shining through it.
         float2 moonPos = float2(1.0 - sunAz, 0.24);
-        float dm = distance(uv * float2(1.0, 1.5), moonPos * float2(1.0, 1.5));
-        float disc = smoothstep(0.052, 0.046, dm);
-        float phaseOff = (moonPhase - 0.5) * 0.10;
-        float dTerm = distance(uv * float2(1.0, 1.5),
-                               (moonPos + float2(phaseOff, 0.0)) * float2(1.0, 1.5));
-        float lit = disc * smoothstep(0.044, 0.052, dTerm + (moonPhase < 0.5 ? 0.004 : -0.004));
-        float glowM = exp(-dm * dm * 160.0);
-        sky += (float3(0.92, 0.94, 0.98) * max(lit, disc * 0.12)
-              + float3(0.55, 0.6, 0.75) * glowM * 0.35) * night * (1.0 - cloudiness * 0.8);
+        float2 moonA = float2(moonPos.x, moonPos.y * aspect);
+        float dmA = distance(auv, moonA);
+        float mR = 0.042;
+        float disc = smoothstep(mR, mR * 0.90, dmA);
+        float phaseOff = (moonPhase - 0.5) * 0.085;
+        float dTerm = distance(auv, moonA + float2(phaseOff, 0.0));
+        float lit = disc * smoothstep(mR * 0.84, mR * 1.0,
+                                      dTerm + (moonPhase < 0.5 ? 0.003 : -0.003));
+        float maria = 0.80 + 0.20 * smoothstep(0.25, 0.75, fbm((auv - moonA) * 90.0 + 3.3));
+        float glowM = exp(-dmA * dmA * 220.0);
+        float moonVis = night * (1.0 - smoothstep(0.20, 0.65, cloudiness));
+        sky += (float3(0.93, 0.93, 0.89) * lit * maria
+              + float3(0.30, 0.33, 0.40) * disc * (1.0 - lit) * 0.22
+              + float3(0.60, 0.65, 0.78) * glowM * 0.28) * moonVis;
     }
 
     // ---- Clouds v2: domain-warped fBM — billowing shapes instead of
@@ -506,8 +538,7 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
 
     // ---- Lens droplets (F2): rain on the camera glass, tilt-parallax ----
     if (rain > 0.03) {
-        float aspect = bounds.w / max(bounds.z, 1.0);
-        float2 px = float2(uv.x, uv.y * aspect);
+        float2 px = auv;   // aspect-true space, shared with the sun/moon
         float2 drops = lensDrops(px, t, rain, float2(tiltX, tiltY));
         sky = sky * (1.0 - drops.x * 0.16) + float3(0.9, 0.94, 1.0) * drops.y * 0.35;
     }
