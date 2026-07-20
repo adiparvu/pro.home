@@ -61,27 +61,34 @@ final class WeatherStageEngine {
                                          longitude: AppMoodEngine.shared.longitude)
         let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
         let hour = Double(parts.hour ?? 12) + Double(parts.minute ?? 0) / 60
-        let daySpan = max(edges.night - edges.morning, 1)
+        // The Fundal page's custom hours override the sun window's edges —
+        // the same thresholds (and stored keys) the mood engine always had.
+        let morningEdge = AppMoodEngine.shared.morningStartMinutes.map { Double($0) / 60 } ?? edges.morning
+        let nightEdge = max(AppMoodEngine.shared.nightStartMinutes.map { Double($0) / 60 } ?? edges.night,
+                            morningEdge + 1)
+        let daySpan = max(nightEdge - morningEdge, 1)
         // Elevation proxy: -1 at deep night, 0 at the edges, peaking ~1 at
         // solar mid-day; azimuth sweeps left → right across the day.
-        let mid = (edges.morning + edges.night) / 2
+        let mid = (morningEdge + nightEdge) / 2
         let elev: Double
-        if hour < edges.morning || hour > edges.night {
+        if hour < morningEdge || hour > nightEdge {
             let nightSpan = 24 - daySpan
-            let sinceDusk = hour > edges.night ? hour - edges.night
-                                               : hour + 24 - edges.night
+            let sinceDusk = hour > nightEdge ? hour - nightEdge
+                                             : hour + 24 - nightEdge
             elev = -0.3 - 0.7 * sin(.pi * min(sinceDusk / max(nightSpan, 1), 1))
         } else {
-            elev = sin(.pi * (hour - edges.morning) / daySpan) * (0.35 + 0.65 * (1 - abs(hour - mid) / (daySpan / 2)))
+            elev = sin(.pi * (hour - morningEdge) / daySpan) * (0.35 + 0.65 * (1 - abs(hour - mid) / (daySpan / 2)))
         }
-        let azimuth = hour < edges.morning ? 0.2
-            : hour > edges.night ? 0.8
-            : 0.15 + 0.7 * (hour - edges.morning) / daySpan
+        let azimuth = hour < morningEdge ? 0.2
+            : hour > nightEdge ? 0.8
+            : 0.15 + 0.7 * (hour - morningEdge) / daySpan
 
         // Fresh summary or nothing — the honest gate every scalar shares.
+        // The Reacționează la vreme toggle (the mood engine's stored pref)
+        // can stand the live weather down: the sky then follows time alone.
         let summary = PropertyWeather.cached()
         let fresh = summary.map { date.timeIntervalSince($0.fetchedAt) <= AppWeatherTone.maxAge } ?? false
-        let condition: WeatherCondition = fresh
+        let condition: WeatherCondition = (fresh && AppMoodEngine.shared.weatherReactive)
             ? WeatherCondition.from(symbol: summary?.symbol) : .clear
 
         // F2 — wind: magnitude from the real speed (≈55 km/h saturates the
@@ -95,6 +102,17 @@ final class WeatherStageEngine {
             wind = magnitude * sign
         }
 
+        // The Fundal page's pin: a chosen atmosphere stays on screen no
+        // matter the weather; Automat (no pin) follows sun + weather.
+        if let preset = WeatherStagePrefs.preset {
+            var pinned = preset.params(sunElevation: max(min(elev, 1), -1),
+                                       sunAzimuth: azimuth,
+                                       moonPhase: WeatherStageParams.moonPhase(on: date),
+                                       wind: wind)
+            if !WeatherStagePrefs.effectsEnabled { pinned.stripEffects() }
+            return pinned
+        }
+
         var p = WeatherStageParams.target(condition: condition,
                                           sunElevation: max(min(elev, 1), -1),
                                           sunAzimuth: azimuth,
@@ -105,6 +123,7 @@ final class WeatherStageEngine {
                                      sunElevation: p.sunElevation,
                                      at: date,
                                      summary: fresh ? summary : nil)
+        if !WeatherStagePrefs.effectsEnabled { p.stripEffects() }
         return p
     }
 

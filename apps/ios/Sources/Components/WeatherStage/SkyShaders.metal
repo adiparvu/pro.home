@@ -217,6 +217,12 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     zenith  = mix(zenith,  float3(0.42, 0.27, 0.45), dusk * 0.35);
 
     float3 sky = mix(zenith, horizon, pow(uv.y, 1.35));
+    // A low warm ember band deepens golden hour near the ground.
+    sky += float3(0.90, 0.40, 0.20) * dusk * pow(uv.y, 3.0) * 0.15;
+    // Atmospheric haze: a soft bright band above the horizon by day —
+    // the depth cue real skies always carry.
+    float haze = smoothstep(0.55, 0.95, uv.y) * day * (1.0 - cloudiness * 0.5);
+    sky = mix(sky, float3(0.85, 0.88, 0.92), haze * 0.10);
 
     // ---- Sun disc + bloom (day), moon + stars (night) ----
     float2 sunPos = float2(sunAz, 0.78 - clamp(sunElev, 0.0, 1.0) * 0.55);
@@ -261,6 +267,10 @@ static inline float fireflyGlow(float2 uv, float t, float amount) {
     float3 cloudDark = cloudLit * (day > 0.5 ? 0.62 : 0.5);
     float shade = fbm(cuv * 3.1 + float2(t * 0.02, 3.0));
     sky = mix(sky, mix(cloudDark, cloudLit, shade), deck * (0.55 + 0.45 * cloudiness));
+    // Silver lining: cloud EDGES facing the sun catch its light — the
+    // rim brightens where the deck thins toward the glow.
+    float rim = smoothstep(0.02, 0.22, deck) * (1.0 - smoothstep(0.22, 0.55, deck));
+    sky += float3(1.0, 0.95, 0.85) * rim * exp(-dSun * dSun * 14.0) * day * 0.30;
 
     // F4 — cloud shadows crossing the lower ground band: the deck's own
     // shade projected as slow darker patches under a sunlit sky.

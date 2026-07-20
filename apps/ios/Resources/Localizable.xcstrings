@@ -96718,7 +96718,160 @@
   "loan_hist_line": { "extractionState": "manual", "localizations": {
     "en": { "stringUnit": { "state": "translated", "value": "%@ \u00b7 returned %@" } },
     "ro": { "stringUnit": { "state": "translated", "value": "%@ \u00b7 returnat %@" } }
-  } }
+  } },
+    "ws_auto_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sky follows the real sun and the real weather at your property."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerul urmează soarele real și vremea reală de la proprietate."
+          }
+        }
+      }
+    },
+    "ws_pin_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pinned atmosphere stays on screen no matter the weather. Automatic returns to the real sky."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O atmosferă fixată rămâne pe ecran indiferent de vreme. Automat revine la cerul real."
+          }
+        }
+      }
+    },
+    "ws_fx_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rain, snow, lightning, lens droplets and fireflies, drawn live on the sky. They pause automatically in Low Power Mode and with Reduce Motion."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ploaie, ninsoare, fulgere, picături pe lentilă și licurici, desenate live pe cer. Se opresc automat în modul Consum redus și cu Reducere mișcare."
+          }
+        }
+      }
+    },
+    "ws_preset_cloudy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloudy"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Înnorat"
+          }
+        }
+      }
+    },
+    "ws_preset_fog": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fog"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceață"
+          }
+        }
+      }
+    },
+    "ws_preset_storm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storm"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Furtună"
+          }
+        }
+      }
+    },
+    "ws_preset_snow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snow"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninsoare"
+          }
+        }
+      }
+    },
+    "ws_preset_blizzard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blizzard"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viscol"
+          }
+        }
+      }
+    },
+    "ws_preset_sand": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sandstorm"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Furtună de nisip"
+          }
+        }
+      }
+    }
   },
   "version": "1.0"
 }

@@ -147,6 +147,100 @@ struct WeatherStageParams: Equatable {
     }
 }
 
+// MARK: - The Fundal page's contract (pin + toggles)
+//
+// The weather stage is Automat by default — real sun, real weather. The
+// Fundal settings page can PIN one atmosphere (a time of day under a clear
+// sky, or a weather state under the real sun), switch the particle effects
+// off, or stop reacting to live weather (the engine then paints a clear
+// sky by time alone). Preferences read straight from UserDefaults so the
+// engine, the page and its preview tiles share one authority.
+
+enum WeatherStagePreset: String, CaseIterable, Identifiable {
+    // Time pins — a clear sky frozen at that hour's light.
+    case morning, day, sunset, night
+    // Weather pins — the REAL sun under the chosen weather.
+    case cloudy, fog, rain, storm, snow, blizzard, sandstorm
+
+    var id: String { rawValue }
+
+    /// Params for this pin given the live context (real sun for weather
+    /// pins, real moon always, real wind when known).
+    func params(sunElevation: Double, sunAzimuth: Double,
+                moonPhase: Double, wind: Double) -> WeatherStageParams {
+        switch self {
+        case .morning:
+            return .target(condition: .clear, sunElevation: 0.12, sunAzimuth: 0.25,
+                           moonPhase: moonPhase, wind: wind)
+        case .day:
+            return .target(condition: .clear, sunElevation: 0.85, sunAzimuth: 0.5,
+                           moonPhase: moonPhase, wind: wind)
+        case .sunset:
+            return .target(condition: .clear, sunElevation: 0.02, sunAzimuth: 0.8,
+                           moonPhase: moonPhase, wind: wind)
+        case .night:
+            return .target(condition: .clear, sunElevation: -0.75, sunAzimuth: 0.5,
+                           moonPhase: moonPhase, wind: wind)
+        case .cloudy:
+            return .target(condition: .cloudy, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .fog:
+            return .target(condition: .fog, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .rain:
+            return .target(condition: .rain, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .storm:
+            return .target(condition: .storm, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .snow:
+            return .target(condition: .snow, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .blizzard:
+            return .target(condition: .blizzard, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        case .sandstorm:
+            return .target(condition: .sandstorm, sunElevation: sunElevation, sunAzimuth: sunAzimuth,
+                           moonPhase: moonPhase, wind: wind)
+        }
+    }
+}
+
+enum WeatherStagePrefs {
+    private static let presetKey = "weather.stage.preset"
+    private static let effectsKey = "weather.stage.effects"
+
+    /// The pinned atmosphere; nil = Automat (real sun + real weather).
+    static var preset: WeatherStagePreset? {
+        get {
+            UserDefaults.standard.string(forKey: presetKey)
+                .flatMap(WeatherStagePreset.init(rawValue:))
+        }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue.rawValue, forKey: presetKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: presetKey)
+            }
+        }
+    }
+
+    /// The particle layers (rain/snow streaks, bolts, droplets, sand grain,
+    /// fireflies). Off leaves the sky's body — light, clouds, fog — intact.
+    static var effectsEnabled: Bool {
+        get { (UserDefaults.standard.object(forKey: effectsKey) as? Bool) ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: effectsKey) }
+    }
+}
+
+extension WeatherStageParams {
+    /// Zeroes every particle layer (the Efecte atmosferice toggle). The
+    /// sky's body — gradient, clouds, fog veil — stays truthful.
+    mutating func stripEffects() {
+        rain = 0; snow = 0; storm = 0; sand = 0; fireflies = 0
+    }
+}
+
 // MARK: - CPU mirror of the sky gradient (F4 — widget/watch snapshots)
 //
 // Widgets archive static views and the watch is another device: neither can
