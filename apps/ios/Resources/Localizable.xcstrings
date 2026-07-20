@@ -96956,6 +96956,23 @@
           }
         }
       }
+    },
+    "inv_last_scan_fmt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page scanned %@"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanat ultima dată %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

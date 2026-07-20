@@ -23,6 +23,11 @@
 // the pin — address-only items honestly keep the stylized grid; and
 // "Powered by PRVIO" links the word PRVIO to the App Store listing.
 //
+// v5 (migration 173): every page view pings the narrow anon RPC
+// note_item_scan(item_uuid) via ctx.waitUntil — fire-and-forget, so the
+// finder's page never waits on it. The owner's app shows the timestamp
+// as "Văzut ultima dată" on the item's detail page.
+//
 // Reads ONLY the `public_items` projection (opt-in per item via the Lost &
 // Found card); unknown / unpublished ids fall back to a friendly generic
 // page instead of 404. The publishable key is public BY DESIGN (it ships
@@ -36,12 +41,25 @@ const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_2gO8iM7dBqlbQqCiSTFeLQ_CV-DBgnC"
 const UUID_RE = /^\/i\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const match = new URL(request.url).pathname.match(UUID_RE);
     const base = env?.SUPABASE_URL || DEFAULT_SUPABASE_URL;
     const key = env?.SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY;
     let item = null;
     if (match) {
+      // "Văzut ultima dată" for the owner — RPC only bumps a timestamp,
+      // RLS-independent by design (SECURITY DEFINER, narrow UPDATE).
+      ctx?.waitUntil?.(
+        fetch(`${base}/rest/v1/rpc/note_item_scan`, {
+          method: "POST",
+          headers: {
+            apikey: key,
+            authorization: `Bearer ${key}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ p_item_uuid: match[1] }),
+        }).catch(() => {}),
+      );
       try {
         const r = await fetch(
           `${base}/rest/v1/public_items` +

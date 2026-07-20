@@ -16,6 +16,10 @@ struct ItemDetailView: View {
     /// same real-page preview the Lost & Found card gained in b1165.
     @State private var showQRPagePreview = false
     @State private var showLocationPicker = false
+    /// Last time SOMEONE opened the public QR page (migration 173) —
+    /// written server-side by the page itself, so it's honest evidence
+    /// the label was actually scanned, not an app-side guess.
+    @State private var lastScanAt: Date?
 
     private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
 
@@ -44,6 +48,7 @@ struct ItemDetailView: View {
                 }
             }
             .navigationTitle("Item Detail").navigationBarTitleDisplayMode(.inline)
+            .task(id: live.id) { await loadLastScan() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.foregroundStyle(.primary) }
             }
@@ -505,6 +510,11 @@ struct ItemDetailView: View {
                         if !p.ownerName.isEmpty    { publicRow("person.fill",  p.ownerName) }
                         if !p.ownerPhone.isEmpty   { publicRow("phone.fill",   p.ownerPhone) }
                         if !p.ownerAddress.isEmpty { publicRow("house.fill",   p.ownerAddress) }
+                        if let scan = lastScanAt {
+                            publicRow("qrcode.viewfinder",
+                                      String(format: String(localized: "inv_last_scan_fmt"),
+                                             scan.formatted(.relative(presentation: .named))))
+                        }
                     }
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
@@ -517,6 +527,19 @@ struct ItemDetailView: View {
                 }.buttonStyle(.plain)
             }
         }
+    }
+
+    /// Reads the page's server-written scan timestamp (migration 173).
+    /// Missing row / offline just means the line stays hidden — the page
+    /// only shows evidence it actually has.
+    private func loadLastScan() async {
+        guard live.publicProfile?.isEnabled == true else { lastScanAt = nil; return }
+        struct Row: Decodable { let last_scanned_at: String? }
+        let row: Row? = try? await supabase.from("public_items")
+            .select("last_scanned_at")
+            .eq("item_uuid", value: live.id.uuidString)
+            .single().execute().value
+        lastScanAt = row?.last_scanned_at.flatMap(ISODate.date(from:))
     }
 
     private func publicRow(_ icon: String, _ text: String) -> some View {
