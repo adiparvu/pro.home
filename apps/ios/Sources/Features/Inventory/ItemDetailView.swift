@@ -24,14 +24,19 @@ struct ItemDetailView: View {
             ZStack {
                 Color.clear
                 ScrollView(showsIndicators: false) {
+                    // Reorganized by usefulness (IMG_8710, approved): hero →
+                    // quick actions → live loan (only while one exists — the
+                    // idle card was dead weight) → photos → details →
+                    // Lost & Found → QR → location/tracker → notes.
                     VStack(spacing: 16) {
                         headerSection
-                        detailsCard
+                        quickActions
+                        if live.isLoaned { loanCard }
                         InventoryPhotosCard(itemId: live.id)
-                        loanCard
+                        detailsCard
+                        publicContactCard
                         qrCard
                         locationTrackerCard
-                        publicContactCard
                         if !live.notes.isEmpty { notesCard }
                         Spacer(minLength: 40)
                     }
@@ -74,35 +79,18 @@ struct ItemDetailView: View {
 
     private var headerSection: some View {
         let tint = live.categoryColor
+        let photo = InventoryImageStore.load(for: live.id)
         return VStack(spacing: 14) {
-            // Photo avatar when one is set — the category icon stays as a
-            // corner badge — otherwise the icon in a soft glass disc.
-            ZStack(alignment: .bottomTrailing) {
-                if let photo = InventoryImageStore.load(for: live.id) {
-                    Image(uiImage: photo)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 96, height: 96)
-                        .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1))
-                        .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
-                    ZStack {
-                        Circle()
-                            .fill(tint)
-                            .frame(width: 30, height: 30)
-                            .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-                        Image(systemName: live.categoryIcon)
-                            .font(AppFont.captionEmphasis)
-                            .foregroundStyle(.white)
-                    }
-                    .offset(x: 4, y: 4)
-                } else {
-                    Image(systemName: live.categoryIcon)
-                        .font(AppFont.scaled(38, weight: .semibold))
-                        .foregroundStyle(tint)
-                        .frame(width: 96, height: 96)
-                        .glassCircle()
-                }
+            if photo == nil {
+                Image(systemName: live.categoryIcon)
+                    .font(AppFont.scaled(38, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 96, height: 96)
+                    .glassCircle()
+            } else {
+                // The photo IS the hero (approved reorg): content sits at
+                // the bottom over a scrim; the category rides as a chip.
+                Spacer(minLength: 120)
             }
 
             Text(live.name)
@@ -113,6 +101,9 @@ struct ItemDetailView: View {
 
             HStack(spacing: 8) {
                 conditionBadge
+                if photo != nil {
+                    heroChip(InventoryLabels.category(live.category), icon: live.categoryIcon)
+                }
                 if live.purchasePrice > 0 {
                     heroChip(CurrencyService.money(live.purchasePrice, code: "EUR", whole: true), icon: "eurosign.circle.fill")
                 }
@@ -124,22 +115,59 @@ struct ItemDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 26)
         .padding(.horizontal, AppSpacing.lg)
-        .background(
+        .background { heroBackground(photo: photo, tint: tint) }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(colors: [tint.opacity(0.32), tint.opacity(0.10)],
-                                   startPoint: .top, endPoint: .bottom)
-                )
+                .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
+        )
+        .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
+    }
+
+    @ViewBuilder
+    private func heroBackground(photo: UIImage?, tint: Color) -> some View {
+        if let photo {
+            ZStack {
+                Image(uiImage: photo).resizable().scaledToFill()
+                LinearGradient(colors: [.black.opacity(0.05), .black.opacity(0.62)],
+                               startPoint: .center, endPoint: .bottom)
+            }
+        } else {
+            LinearGradient(colors: [tint.opacity(0.32), tint.opacity(0.10)],
+                           startPoint: .top, endPoint: .bottom)
                 .overlay(
                     RadialGradient(colors: [.white.opacity(0.16), .clear],
                                    center: .top, startRadius: 6, endRadius: 220)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
-                )
-        )
-        .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
+        }
+    }
+
+    // MARK: Quick actions (approved reorg — the contact-card circles)
+
+    private var quickActions: some View {
+        HStack(spacing: AppSpacing.md) {
+            Group {
+                if live.isLoaned {
+                    GlassActionButton(icon: "checkmark.circle", label: "inv_qa_return") {
+                        showReturnConfirm = true
+                    }
+                } else {
+                    GlassActionButton(icon: "arrow.uturn.right.circle", label: "inv_qa_loan") {
+                        showLoan = true
+                    }
+                }
+                GlassActionButton(icon: "square.and.arrow.up", label: "inv_qa_share") {
+                    if let img = renderQR() { SystemActions.share([img]) }
+                }
+                GlassActionButton(icon: "location", label: "inv_qa_location") {
+                    showLocationPicker = true
+                }
+                GlassActionButton(icon: "mappin.and.ellipse", label: "inv_qa_public") {
+                    showPublicContact = true
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 
     private func heroChip(_ text: String, icon: String) -> some View {
