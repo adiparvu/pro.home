@@ -273,13 +273,13 @@ enum PaintColorCard {
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(.black.opacity(0.1), lineWidth: 1))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(verbatim: color.colorName).font(.system(size: 20, weight: .bold))
+                    Text(verbatim: color.colorName).font(AppFont.scaled(20, weight: .bold))
                     if let code = color.code, !code.isEmpty {
-                        Text(verbatim: code).font(.system(size: 14, weight: .semibold))
+                        Text(verbatim: code).font(AppFont.scaled(14, weight: .semibold))
                             .foregroundStyle(.secondary)
                     }
                     if let brand = color.brand, !brand.isEmpty {
-                        Text(verbatim: brand).font(.system(size: 13)).foregroundStyle(.secondary)
+                        Text(verbatim: brand).font(AppFont.scaled(13)).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -296,7 +296,7 @@ enum PaintColorCard {
                     specLine("paint_leftover", leftover)
                 }
             }
-            Text(verbatim: "PRVIO").font(.system(size: 11, weight: .bold))
+            Text(verbatim: "PRVIO").font(AppFont.scaled(11, weight: .bold))
                 .foregroundStyle(.secondary)
         }
         .padding(24)
@@ -311,9 +311,9 @@ enum PaintColorCard {
 
     private static func specLine(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 13)).foregroundStyle(.secondary)
+            Text(label).font(AppFont.scaled(13)).foregroundStyle(.secondary)
             Spacer()
-            Text(verbatim: value).font(.system(size: 13, weight: .medium))
+            Text(verbatim: value).font(AppFont.scaled(13, weight: .medium))
         }
     }
 }

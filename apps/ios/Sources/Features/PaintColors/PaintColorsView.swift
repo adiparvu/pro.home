@@ -496,19 +496,19 @@ private struct PaintColorsSpecSheet: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 11) {
                 Image(systemName: "paintpalette.fill")
-                    .font(.system(size: 24))
+                    .font(AppFont.scaled(24))
                     .foregroundStyle(Color(red: 0.30, green: 0.20, blue: 0.62))
                 Text("paint_colors_title")
-                    .font(.system(size: 30, weight: .heavy))
+                    .font(AppFont.scaled(30, weight: .heavy))
                     .foregroundStyle(ink)
             }
             if !propertyName.isEmpty {
                 Text(verbatim: propertyName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.scaled(15, weight: .semibold))
                     .foregroundStyle(soft)
             }
             Text(verbatim: metaLine)
-                .font(.system(size: 12))
+                .font(AppFont.scaled(12))
                 .foregroundStyle(faint)
         }
     }
@@ -539,7 +539,7 @@ private struct PaintColorsSpecSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Text(verbatim: room)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(AppFont.scaled(17, weight: .bold))
                     .foregroundStyle(ink)
                     .fixedSize()
                 Rectangle().fill(rule).frame(height: 1)
@@ -560,11 +560,11 @@ private struct PaintColorsSpecSheet: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(verbatim: color.colorName)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFont.scaled(15, weight: .bold))
                         .foregroundStyle(ink)
                     if let hex = color.hexColor, !hex.isEmpty {
                         Text(verbatim: hex.hasPrefix("#") ? hex.uppercased() : "#\(hex.uppercased())")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.scaled(11, weight: .medium))
                             .monospaced()
                             .foregroundStyle(faint)
                     }
@@ -579,7 +579,7 @@ private struct PaintColorsSpecSheet: View {
                 factsLine(color)
                 if !color.notes.isNilOrEmpty {
                     Text(verbatim: color.notes ?? "")
-                        .font(.system(size: 11, weight: .regular).italic())
+                        .font(AppFont.scaled(11).italic())
                         .foregroundStyle(faint)
                         .lineLimit(2)
                 }
@@ -608,17 +608,17 @@ private struct PaintColorsSpecSheet: View {
     private func fact(_ key: String.LocalizationValue, _ value: String) -> some View {
         HStack(spacing: 4) {
             Text(verbatim: String(localized: key) + ":")
-                .font(.system(size: 11.5))
+                .font(AppFont.scaled(11.5))
                 .foregroundStyle(faint)
             Text(verbatim: value)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(AppFont.scaled(11.5, weight: .medium))
                 .foregroundStyle(soft)
         }
     }
 
     private func tag(_ text: String) -> some View {
         Text(verbatim: text)
-            .font(.system(size: 11))
+            .font(AppFont.scaled(11))
             .foregroundStyle(soft)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -629,7 +629,7 @@ private struct PaintColorsSpecSheet: View {
         HStack {
             Spacer()
             Text(verbatim: "PRVIO")
-                .font(.system(size: 11, weight: .bold))
+                .font(AppFont.scaled(11, weight: .bold))
                 .tracking(1.5)
                 .foregroundStyle(Color(white: 0.75))
             Spacer()
