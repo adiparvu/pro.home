@@ -1,6 +1,8 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "inv_dossier_annex_receipts": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Annex — receipts (purchase evidence)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Anexă — bonuri (dovezi de cumpărare)"}}}},
+    "inv_dossier_annex_docs": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Annex — documents (first page)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Anexă — documente (prima pagină)"}}}},
     "task_repeat_label": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Repeat"}}, "ro": {"stringUnit": {"state": "translated", "value": "Repetă"}}}},
     "task_repeat_never": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "No repeat"}}, "ro": {"stringUnit": {"state": "translated", "value": "Fără repetare"}}}},
     "task_repeat_weekly": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Weekly"}}, "ro": {"stringUnit": {"state": "translated", "value": "Săptămânal"}}}},

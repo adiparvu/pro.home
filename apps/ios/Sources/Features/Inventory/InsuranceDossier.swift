@@ -47,8 +47,50 @@ enum InsuranceDossier {
             .filter { relevantDocCategories.contains($0.category) || $0.isCritical }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
+        // Phase 2 annexes — the EVIDENCE, not just the list:
+        // (a) receipt photos stored on-device per item (purchase proof);
+        // (b) each relevant document's first page (signed fetch; PDFs are
+        //     rasterised, images pass through). Failures skip silently — an
+        //     annex page never fabricates.
+        let receipts: [(String, UIImage)] = items.compactMap { item in
+            InventoryImageStore.loadReceipt(for: item.id).map { (item.name, $0) }
+        }
+        var docPages: [(String, UIImage)] = []
+        for doc in docs {
+            guard let url = await DocumentFilesService.resolve(doc.fileUrl),
+                  let (data, _) = try? await URLSession.shared.data(from: url) else { continue }
+            let isPDF = doc.mimeType == "application/pdf"
+                || doc.fileName.lowercased().hasSuffix(".pdf")
+            if isPDF {
+                if let img = firstPDFPageImage(data) { docPages.append((doc.name, img)) }
+            } else if let img = UIImage(data: data) {
+                docPages.append((doc.name, img))
+            }
+        }
+
         return render(items: items, property: property,
-                      propertyPhoto: propertyPhoto, documents: docs)
+                      propertyPhoto: propertyPhoto, documents: docs,
+                      receipts: receipts, docPages: docPages)
+    }
+
+    /// First page of a PDF rendered to an image (annex-quality, ~2× A4 width).
+    private static func firstPDFPageImage(_ data: Data) -> UIImage? {
+        guard let provider = CGDataProvider(data: data as CFData),
+              let pdf = CGPDFDocument(provider),
+              let page = pdf.page(at: 1) else { return nil }
+        let box = page.getBoxRect(.mediaBox)
+        guard box.width > 0, box.height > 0 else { return nil }
+        let scale = 1100 / box.width
+        let size = CGSize(width: box.width * scale, height: box.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            ctx.cgContext.translateBy(x: 0, y: size.height)
+            ctx.cgContext.scaleBy(x: scale, y: -scale)
+            ctx.cgContext.translateBy(x: -box.minX, y: -box.minY)
+            ctx.cgContext.drawPDFPage(page)
+        }
     }
 
     // MARK: - Rendering
@@ -56,7 +98,9 @@ enum InsuranceDossier {
     private static func render(items: [InventoryItem],
                                property: PropertyModel?,
                                propertyPhoto: UIImage?,
-                               documents: [DocumentModel]) -> URL? {
+                               documents: [DocumentModel],
+                               receipts: [(String, UIImage)] = [],
+                               docPages: [(String, UIImage)] = []) -> URL? {
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageW, height: pageH))
         let title = String(localized: "inv_dossier_title")
         let safeName = title.components(separatedBy: CharacterSet(charactersIn: "/\\:?%*|\"<>")).joined()
@@ -307,6 +351,36 @@ enum InsuranceDossier {
                                              .foregroundColor: UIColor.gray])
                         y = rowTop + rowH
                     }
+                }
+
+                // ---- Annex: receipts (purchase evidence) ----
+                func drawAnnexImage(_ caption: String, _ image: UIImage) {
+                    let maxH: CGFloat = 300
+                    let ratio = image.size.height / max(image.size.width, 1)
+                    let w = min(contentW, maxH / max(ratio, 0.001))
+                    let h = w * ratio
+                    ensureRoom(h + 30)
+                    (caption as NSString).draw(
+                        in: CGRect(x: margin, y: y, width: contentW, height: 12),
+                        withAttributes: [.font: UIFont.boldSystemFont(ofSize: 9),
+                                         .foregroundColor: UIColor.darkGray])
+                    y += 16
+                    ctx.cgContext.saveGState()
+                    let rect = CGRect(x: margin, y: y, width: w, height: h)
+                    UIBezierPath(roundedRect: rect, cornerRadius: 6).addClip()
+                    image.draw(in: rect)
+                    ctx.cgContext.restoreGState()
+                    y += h + 14
+                }
+                if !receipts.isEmpty {
+                    sectionHeader(String(localized: "inv_dossier_annex_receipts"))
+                    for (name, image) in receipts { drawAnnexImage(name, image) }
+                }
+
+                // ---- Annex: document first pages ----
+                if !docPages.isEmpty {
+                    sectionHeader(String(localized: "inv_dossier_annex_docs"))
+                    for (name, image) in docPages { drawAnnexImage(name, image) }
                 }
 
                 // ---- Grand total ----
