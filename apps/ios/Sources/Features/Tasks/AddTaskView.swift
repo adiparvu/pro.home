@@ -66,7 +66,7 @@ struct AddTaskView: View {
                 Button("OK", role: .cancel) { errorMsg = nil }
             } message: { Text(errorMsg ?? "") }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showAssigneePicker) {
             AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)

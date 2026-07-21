@@ -16,7 +16,7 @@ struct PlantHealthScoreCard: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 Label("plant_score_title", systemImage: "heart.text.square")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
 
                 HStack(alignment: .center, spacing: AppSpacing.lg) {
                     HealthScoreRing(score: score)
@@ -49,7 +49,7 @@ struct PlantHealthScoreCard: View {
                 Text(String(format: String(localized: "plant_score_based_on_fmt"),
                             score.availableFactors.count, score.factors.count))
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 if let top = topRecommendation {
                     Label {
                         Text(top).font(AppFont.footnote).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
@@ -61,7 +61,7 @@ struct PlantHealthScoreCard: View {
             } else {
                 Text("plant_score_no_data")
                     .font(AppFont.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -92,7 +92,7 @@ struct PlantHealthScoreCard: View {
                     Text(factor.kind.title)
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Text(factor.headline)
-                        .font(AppFont.caption).foregroundStyle(.secondary)
+                        .font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
                 }
                 Spacer(minLength: AppSpacing.sm)
                 Text(String(format: String(localized: "plant_score_points_fmt"),
@@ -132,18 +132,18 @@ struct PlantHealthScoreCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Label("plant_score_missing_title", systemImage: "questionmark.circle")
                 .font(AppFont.label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
             ForEach(score.missingFactors) { factor in
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
                     Image(systemName: factor.kind.icon)
                         .font(AppFont.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(width: 18)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(factor.kind.title)
-                            .font(AppFont.footnote).foregroundStyle(.secondary)
+                            .font(AppFont.footnote).foregroundStyle(Color.secondaryTextColor)
                         Text(factor.recommendation)
-                            .font(AppFont.caption).foregroundStyle(.tertiary)
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -212,11 +212,11 @@ private struct HealthScoreRing: View {
                     .contentTransition(.numericText())
                 Text("plant_score_out_of")
                     .font(AppFont.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
             } else {
                 Text("—")
                     .font(AppFont.scaled(34, weight: .bold, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
             }
         }
     }

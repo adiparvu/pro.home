@@ -281,7 +281,7 @@ struct MortgageSetupSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .onAppear {
             loanStr  = loanAmount > 0 ? String(Int(loanAmount)) : ""
             rateStr  = interestRate > 0 ? String(interestRate) : ""

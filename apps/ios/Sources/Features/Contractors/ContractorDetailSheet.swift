@@ -109,7 +109,7 @@ struct ContractorDetailSheet: View {
                 CallPickerSheet(members: [member], isVideo: false)
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Hero Header
@@ -478,7 +478,7 @@ struct EditContractorSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {

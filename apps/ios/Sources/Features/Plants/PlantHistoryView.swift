@@ -49,7 +49,7 @@ struct PlantHistorySection: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Label("plant_hist_title", systemImage: "clock.arrow.circlepath")
-                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                     Spacer()
                     if isLogging { ProgressView().scaleEffect(0.7) }
                 }
@@ -106,9 +106,9 @@ struct PlantHistorySection: View {
             GlassCard(padding: 16) {
                 VStack(spacing: 8) {
                     Image(systemName: "clock.badge.questionmark")
-                        .font(AppFont.scaled(26)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(26)).foregroundStyle(Color.secondaryTextColor)
                     Text("plant_hist_empty")
-                        .font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(14)).foregroundStyle(Color.secondaryTextColor)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct PlantHistorySection: View {
                 GlassCard(padding: 16) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(group.title)
-                            .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                            .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                         ForEach(Array(group.items.enumerated()), id: \.element.id) { idx, item in
                             if idx > 0 { rowDivider }
                             row(item)
@@ -156,13 +156,13 @@ struct PlantHistorySection: View {
                     .font(AppFont.scaled(15, weight: .medium)).foregroundStyle(.primary)
                 if let note = event.noteText {
                     Text(note)
-                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                         .lineLimit(3)
                 }
             }
             Spacer(minLength: 8)
             Text(shortDate(event.date))
-                .font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                .font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
@@ -176,13 +176,13 @@ struct PlantHistorySection: View {
                     .font(AppFont.scaled(15, weight: .medium)).foregroundStyle(.primary)
                 if let note = photo.note, !note.isEmpty {
                     Text(note)
-                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                         .lineLimit(3)
                 }
             }
             Spacer(minLength: 8)
             Text(shortDate(AppDate.timestamp(from: photo.takenAt)))
-                .font(AppFont.scaled(12)).foregroundStyle(.secondary)
+                .font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor)
         }
         .padding(.vertical, 4)
     }
@@ -303,7 +303,7 @@ private struct PlantTimelineThumb: View {
                 img.resizable().scaledToFill()
             default:
                 Rectangle().fill(Color.primary.opacity(0.06))
-                    .overlay(Image(systemName: "photo").font(AppFont.scaled(12)).foregroundStyle(.secondary))
+                    .overlay(Image(systemName: "photo").font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor))
             }
         }
         .frame(width: 34, height: 34)

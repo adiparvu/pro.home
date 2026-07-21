@@ -68,7 +68,7 @@ struct AccountSwitcherSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func switchTo(_ account: SavedAccount) async {

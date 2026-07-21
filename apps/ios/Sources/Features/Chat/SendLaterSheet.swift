@@ -250,7 +250,7 @@ struct SendLaterSheet: View {
                 if repeatUntil < new { repeatUntil = new }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Compose

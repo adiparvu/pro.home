@@ -211,6 +211,6 @@ struct EmojiGridPicker: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .presentationDetents([.medium, .large])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

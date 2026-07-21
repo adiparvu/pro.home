@@ -294,7 +294,7 @@ struct PollVotesSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -554,7 +554,7 @@ struct PollComposerView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -682,7 +682,7 @@ struct EventComposerView: View {
                 TaskLocationPickerSheet(location: pickedLocation)
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func send() {

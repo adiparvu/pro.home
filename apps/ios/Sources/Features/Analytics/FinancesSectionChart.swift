@@ -226,7 +226,7 @@ extension FinancesSection {
                 }
             }
             .presentationDetents([.medium])
-            .presentationBackground(.ultraThinMaterial)
+            .sheetGround()
         }
     }
 

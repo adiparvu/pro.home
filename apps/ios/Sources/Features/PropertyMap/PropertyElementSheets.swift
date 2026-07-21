@@ -66,7 +66,7 @@ struct EditPropertyElementView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -166,7 +166,7 @@ struct AddElementRecordView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func save() {

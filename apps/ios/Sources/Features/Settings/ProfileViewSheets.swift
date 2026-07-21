@@ -44,7 +44,7 @@ struct ChangeEmailSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func emailField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType) -> some View {
@@ -107,7 +107,7 @@ struct ChangePasswordSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func passField(_ icon: String, _ ph: String, _ b: Binding<String>) -> some View {

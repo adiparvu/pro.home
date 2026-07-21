@@ -45,7 +45,7 @@ struct AutoImportView: View {
                 loading = false
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var hero: some View {

@@ -226,7 +226,7 @@ struct ApplianceFormSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Scan (OCR fills brand + model + serial from a label photo)

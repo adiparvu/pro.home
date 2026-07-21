@@ -117,7 +117,7 @@ private struct DetailsCard<Header: View>: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: Per-member receipts (group messages)

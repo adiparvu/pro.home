@@ -75,7 +75,7 @@ struct CallPickerSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 

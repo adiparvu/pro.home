@@ -256,7 +256,7 @@ struct ElementNoteEditorSheet: View {
                 photoURLs = existing.photoUrls
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var checklistCard: some View {
@@ -405,7 +405,7 @@ struct NotePINSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func submit() {

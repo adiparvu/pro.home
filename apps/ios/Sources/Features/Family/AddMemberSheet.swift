@@ -155,7 +155,7 @@ struct AddFamilyMemberSheet: View {
                 Text(errorMessage ?? "")
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
         .onAppear(perform: applyPreselectedRole)
     }

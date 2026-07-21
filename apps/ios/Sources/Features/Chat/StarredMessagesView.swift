@@ -39,7 +39,7 @@ struct StarredMessagesView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var emptyState: some View {

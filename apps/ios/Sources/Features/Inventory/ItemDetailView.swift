@@ -77,7 +77,7 @@ struct ItemDetailView: View {
                 Text("\"\(live.name)\" loaned to \(loan.borrowerName) will be marked as returned.")
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Sections

@@ -333,34 +333,3 @@ struct SmartScheduleCard: View {
         }
     }
 }
-
-// MARK: - Legacy shims (retired twin files only)
-//
-// The unreferenced Digital Twin files (Twin3DView, TwinInsightsSheet, …)
-// still compile against these two names. They now render the native
-// language too, so nothing bronze survives in code that builds; both shims
-// go away with the twin cleanup pass. Live surfaces use `appBackground`
-// and `GlassCard` directly — never these.
-
-/// LEGACY: the old warm photo backdrop. Now the living mood backdrop; the
-/// photo parameter is ignored (the mood ground is the app-wide backdrop).
-struct SmartHomeBackdrop: View {
-    let photoSource: String?
-
-    var body: some View {
-        AppBackdrop()
-            .ignoresSafeArea()
-    }
-}
-
-/// LEGACY: the old warm glass card. Now exactly `GlassCard`.
-struct SmartGlassCard<Content: View>: View {
-    var padding: CGFloat = AppSpacing.lg
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        GlassCard(padding: padding) {
-            content()
-        }
-    }
-}

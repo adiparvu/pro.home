@@ -376,6 +376,6 @@ struct ProductPriceHistorySheet: View {
                 }
         }
         .presentationDetents([.large, .medium])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

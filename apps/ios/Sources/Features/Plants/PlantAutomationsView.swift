@@ -27,7 +27,7 @@ struct PlantAutomationsCard: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack {
                     Label("plant_auto_title", systemImage: "bolt.badge.automatic")
-                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                     Spacer()
                     if !boundMetrics.isEmpty {
                         Button { showAdd = true; HapticFeedback.impact(.light) } label: {
@@ -39,7 +39,7 @@ struct PlantAutomationsCard: View {
                 }
 
                 Text("plant_auto_sub")
-                    .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                    .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -47,7 +47,7 @@ struct PlantAutomationsCard: View {
                     emptyNoSensors
                 } else if service.automations.isEmpty {
                     Text("plant_auto_empty")
-                        .font(AppFont.footnote).foregroundStyle(.tertiary)
+                        .font(AppFont.footnote).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     ForEach(service.automations) { a in
@@ -68,7 +68,7 @@ struct PlantAutomationsCard: View {
     private var emptyNoSensors: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             Image(systemName: "sensor.tag.radiowaves.forward")
-                .font(AppFont.caption).foregroundStyle(.secondary)
+                .font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
             Text("plant_auto_need_sensor")
                 .font(AppFont.footnote).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .fixedSize(horizontal: false, vertical: true)
@@ -92,15 +92,15 @@ struct PlantAutomationsCard: View {
                     .foregroundStyle(a.isActive ? .primary : .secondary)
                 HStack(spacing: AppSpacing.xs) {
                     if let m = a.metricEnum {
-                        Text(m.title).font(AppFont.caption).foregroundStyle(.secondary)
+                        Text(m.title).font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
                     }
-                    Text(a.summary(unit: unit)).font(AppFont.caption).foregroundStyle(.secondary)
-                    Image(systemName: "arrow.right").font(AppFont.scaled(9)).foregroundStyle(.tertiary)
-                    Text(action.title).font(AppFont.caption).foregroundStyle(.secondary)
+                    Text(a.summary(unit: unit)).font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
+                    Image(systemName: "arrow.right").font(AppFont.scaled(9)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    Text(action.title).font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
                 }
                 if !service.isEvaluatedHere(a) {
                     Label("plant_auto_other_device", systemImage: "iphone.and.arrow.forward")
-                        .font(AppFont.caption2).foregroundStyle(.tertiary)
+                        .font(AppFont.caption2).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .padding(.top, 1)
                 }
             }
@@ -115,7 +115,7 @@ struct PlantAutomationsCard: View {
                     Label("plant_auto_delete", systemImage: "trash")
                 }
             } label: {
-                Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 2)
+                Image(systemName: "ellipsis").foregroundStyle(Color.secondaryTextColor).padding(.leading, 2)
             }
             .accessibilityLabel("More")
         }
@@ -221,7 +221,7 @@ struct PlantAutomationBuilderSheet: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Label("plant_auto_when", systemImage: "sensor.tag.radiowaves.forward.fill")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                 if boundMetrics.count > 1 {
                     Picker("plant_auto_metric", selection: $metric) {
                         ForEach(boundMetrics) { m in Text(m.title).tag(m) }
@@ -234,10 +234,10 @@ struct PlantAutomationBuilderSheet: View {
                 if let v = liveReading {
                     Text(String(format: String(localized: "plant_auto_live_fmt"),
                                 v.formatted(.number.precision(.fractionLength(0...1))), unit))
-                        .font(AppFont.caption).foregroundStyle(.secondary)
+                        .font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
                 } else {
                     Text("plant_auto_sensor_here_missing")
-                        .font(AppFont.caption).foregroundStyle(.tertiary)
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -251,7 +251,7 @@ struct PlantAutomationBuilderSheet: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Label("plant_auto_threshold", systemImage: "slider.horizontal.3")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                 Picker("plant_auto_comparison", selection: $comparison) {
                     ForEach(PlantAutomationComparison.allCases) { c in
                         Text(c.title).tag(c)
@@ -263,7 +263,7 @@ struct PlantAutomationBuilderSheet: View {
                         .keyboardType(.decimalPad)
                         .font(AppFont.title3)
                         .tint(.accentColor)
-                    Text(unit).font(AppFont.subheadline).foregroundStyle(.secondary)
+                    Text(unit).font(AppFont.subheadline).foregroundStyle(Color.secondaryTextColor)
                 }
                 .padding(AppSpacing.md)
                 .background(Color.primary.opacity(AppOpacity.subtleFill),
@@ -279,7 +279,7 @@ struct PlantAutomationBuilderSheet: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Label("plant_auto_then", systemImage: "bolt.fill")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                 ForEach(PlantAutomationAction.allCases) { opt in
                     Button {
                         withAnimation(.snappy(duration: 0.2)) { action = opt }
@@ -291,7 +291,7 @@ struct PlantAutomationBuilderSheet: View {
                                 .frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(opt.title).font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                                Text(opt.honestyNote).font(AppFont.caption2).foregroundStyle(.secondary)
+                                Text(opt.honestyNote).font(AppFont.caption2).foregroundStyle(Color.secondaryTextColor)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             Spacer()
@@ -321,7 +321,7 @@ struct PlantAutomationBuilderSheet: View {
                 if action == .device {
                     if relayActuators.isEmpty {
                         Text("plant_auto_no_relay")
-                            .font(AppFont.caption).foregroundStyle(.tertiary)
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .fixedSize(horizontal: false, vertical: true)
                     } else {
                         Menu {
@@ -334,8 +334,8 @@ struct PlantAutomationBuilderSheet: View {
                                 Label("plant_auto_relay", systemImage: "power")
                                     .font(AppFont.footnote).foregroundStyle(.primary)
                                 Spacer()
-                                Text(selectedRelayName).font(AppFont.caption).foregroundStyle(.secondary)
-                                Image(systemName: "chevron.up.chevron.down").font(AppFont.caption2).foregroundStyle(.tertiary)
+                                Text(selectedRelayName).font(AppFont.caption).foregroundStyle(Color.secondaryTextColor)
+                                Image(systemName: "chevron.up.chevron.down").font(AppFont.caption2).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             }
                         }
                     }
@@ -355,7 +355,7 @@ struct PlantAutomationBuilderSheet: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Label("plant_auto_name", systemImage: "tag")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                 TextField(defaultName, text: $name)
                     .font(AppFont.footnote)
                     .tint(.accentColor)

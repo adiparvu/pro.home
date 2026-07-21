@@ -194,7 +194,7 @@ struct PlantEncyclopediaView: View {
             sectionCard("plant_enc_sec_sources", icon: "book.closed") {
                 Text(sources.joined(separator: " · "))
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -216,7 +216,7 @@ struct PlantEncyclopediaView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(row.0)
                                 .font(AppFont.label)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.secondaryTextColor)
                             Text(row.1)
                                 .font(AppFont.scaled(15))
                                 .foregroundStyle(.primary)
@@ -274,7 +274,7 @@ struct PlantEncyclopediaView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Label(title, systemImage: icon)
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -356,7 +356,7 @@ struct PlantSpeciesPickerView: View {
                         Text(latin)
                             .font(AppFont.caption)
                             .italic()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                             .lineLimit(1)
                             .minimumScaleFactor(0.85)
                     }

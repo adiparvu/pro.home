@@ -152,7 +152,7 @@ struct PublicContactSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .sheet(isPresented: $showPreview) {
             if let url = URL(string: item.qrContent) {
                 SafariView(url: url).ignoresSafeArea()
@@ -292,7 +292,7 @@ struct LoanItemSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -462,7 +462,7 @@ struct ItemLocationSheet: View {
                     span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)))
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func trackerLabel(_ t: String) -> String {

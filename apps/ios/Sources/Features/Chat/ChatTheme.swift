@@ -506,7 +506,7 @@ struct ChatThemePicker: View {
         }
         // Sheet-presented: a glass backdrop instead of the opaque app
         // background (the sub-pickers inherit the same NavigationStack).
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     @ViewBuilder private var backgroundSwatch: some View {

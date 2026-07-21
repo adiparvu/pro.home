@@ -141,7 +141,7 @@ struct ContactMultiPicker: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .task { await loadDeviceContacts() }
     }
 
@@ -361,7 +361,7 @@ struct SharedContactDetailSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDetents(payloads.count == 1 ? [.medium, .large] : [.large])
         .sheet(item: $saving) { p in
             SystemContactSaveSheet(payload: p)

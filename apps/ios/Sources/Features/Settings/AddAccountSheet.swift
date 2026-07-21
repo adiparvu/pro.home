@@ -67,7 +67,7 @@ struct AddAccountSheet: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func signIn() async {

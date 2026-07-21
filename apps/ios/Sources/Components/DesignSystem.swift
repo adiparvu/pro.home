@@ -158,6 +158,41 @@ extension Color {
     static var subtleFill: Color { Color.primary.opacity(AppOpacity.subtleFill) }
     /// `Color.primary` at the app's standard secondary-text opacity.
     static var secondaryTextColor: Color { Color.primary.opacity(AppOpacity.secondaryText) }
+
+    /// Legibility gate for user-chosen accents (IMG_8777/8778): a light accent
+    /// (gold, orange) painted as TEXT dies on a light surface, and a very dark
+    /// one dies on a dark surface. Apple's own system colors ship per-scheme
+    /// variants; this computes the same adjustment for arbitrary accents —
+    /// keep the chosen hue, clamp perceived luminance into the band that stays
+    /// readable against the scheme's surfaces. Pure color math (no app state),
+    /// so every target that compiles DesignSystem can use it.
+    func legible(on scheme: ColorScheme) -> Color {
+        let ui = UIColor(self)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
+        var r: CGFloat = 0, g: CGFloat = 0, bl: CGFloat = 0
+        guard ui.getHue(&h, saturation: &s, brightness: &b, alpha: &a),
+              ui.getRed(&r, green: &g, blue: &bl, alpha: &a) else { return self }
+        // Perceived luminance (Rec. 601 weights — matches how bright the hue
+        // *reads*, which is what legibility tracks; yellow ≫ blue at equal HSB b).
+        let luma = 0.299 * r + 0.587 * g + 0.114 * bl
+        if scheme == .light, luma > 0.60 {
+            // Too bright for white surfaces: darken along the same hue.
+            // Luma scales ~linearly with HSB brightness at fixed hue/sat, so a
+            // single proportional step lands inside the readable band. A touch
+            // more saturation keeps the deepened color vivid instead of muddy.
+            let factor = 0.60 / max(luma, 0.001)
+            return Color(hue: h, saturation: min(1, s + 0.12),
+                         brightness: max(0, b * factor), opacity: a)
+        }
+        if scheme == .dark, luma < 0.30 {
+            // Too dark for dark surfaces: lift brightness, ease saturation so
+            // the lifted color doesn't fluoresce.
+            let factor = 0.30 / max(luma, 0.02)
+            return Color(hue: h, saturation: max(0, s - 0.08),
+                         brightness: min(1, b * factor), opacity: a)
+        }
+        return self
+    }
 }
 
 // MARK: - Brand colors

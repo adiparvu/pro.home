@@ -370,6 +370,6 @@ struct ForwardPicker: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

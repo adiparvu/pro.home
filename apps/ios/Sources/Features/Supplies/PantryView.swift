@@ -340,7 +340,7 @@ private struct PantryItemSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .onAppear {
             guard let item else { return }
             name = item.name

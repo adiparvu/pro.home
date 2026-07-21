@@ -41,7 +41,7 @@ struct PlantCareCard: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 Label("plant_care_title", systemImage: "gauge.with.dots.needle.bottom.50percent")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
 
                 if !entry.hasCareData {
                     careEmptyState
@@ -66,7 +66,7 @@ struct PlantCareCard: View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: "leaf")
                 .font(AppFont.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
             Text("plant_care_empty")
                 .font(AppFont.footnote)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -255,7 +255,7 @@ struct PlantCareCard: View {
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
                         Image(systemName: season.1)
                             .font(AppFont.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                             .frame(width: 18)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(season.0)
@@ -377,7 +377,7 @@ struct PlantCareCard: View {
                     Text(updated, format: .relative(presentation: .named))
                 }
                 .font(AppFont.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
             }
         }
         .padding(.top, 1)
@@ -423,7 +423,7 @@ struct PlantCareCard: View {
                     if binding != nil {
                         Image(systemName: "ellipsis.circle")
                             .font(AppFont.scaled(15))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                     } else {
                         HStack(spacing: 3) {
                             Image(systemName: "sensor.tag.radiowaves.forward.fill")
@@ -521,7 +521,7 @@ struct PlantCareCard: View {
     private func captionLine(_ text: String) -> some View {
         Text(text)
             .font(AppFont.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.secondaryTextColor)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -530,7 +530,7 @@ struct PlantCareCard: View {
         HStack(alignment: .firstTextBaseline) {
             Text(key)
                 .font(AppFont.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
             Spacer(minLength: AppSpacing.sm)
             Text(value)
                 .font(AppFont.footnote)

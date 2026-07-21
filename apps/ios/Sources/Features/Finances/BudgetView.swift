@@ -248,7 +248,7 @@ private struct EditBudgetSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .onAppear {
             amount = current > 0 ? String(Int(current)) : ""
             focused = true

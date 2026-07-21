@@ -125,6 +125,6 @@ struct DMStarredView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

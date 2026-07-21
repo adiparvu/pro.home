@@ -190,7 +190,7 @@ struct PaintCatalogPicker: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
     }
 

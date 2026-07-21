@@ -124,7 +124,7 @@ struct DocumentLinkPicker: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -220,6 +220,6 @@ struct TaskLinkPicker: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

@@ -142,7 +142,7 @@ struct CameraFormSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .onAppear {
             guard let camera else { return }
             name = camera.name

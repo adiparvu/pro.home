@@ -554,6 +554,6 @@ struct NFCTagNameSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

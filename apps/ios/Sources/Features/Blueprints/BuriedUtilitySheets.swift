@@ -130,7 +130,7 @@ struct BuriedUtilityDetailSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func detailRow(_ label: LocalizedStringKey, _ value: String, color: Color = .white) -> some View {
@@ -207,7 +207,7 @@ struct AddBuriedUtilitySheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var typePicker: some View {

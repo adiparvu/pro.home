@@ -85,7 +85,7 @@ struct DeliveryFormSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: Fields

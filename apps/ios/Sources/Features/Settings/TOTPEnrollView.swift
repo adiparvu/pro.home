@@ -51,7 +51,7 @@ struct TOTPEnrollView: View {
             }
             .task { await startEnroll() }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Sections

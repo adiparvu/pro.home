@@ -153,7 +153,7 @@ extension PlantDetailSheet {
                     HStack {
                         Label("Watering status", systemImage: "drop.fill")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                         Spacer()
                         Text(plant.wateringLabel)
                             .font(AppFont.scaled(13, weight: .semibold))
@@ -195,7 +195,7 @@ extension PlantDetailSheet {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Notes", systemImage: "note.text")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                         Text(notes)
                             .font(AppFont.scaled(15))
                             .foregroundStyle(Color.primary.opacity(0.8))
@@ -315,7 +315,7 @@ extension PlantDetailSheet {
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(AppFont.label)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.secondaryTextColor)
     }
 
     private func plantHealthColor(_ id: String) -> Color {
@@ -364,10 +364,10 @@ extension PlantDetailSheet {
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("plant_gi_title", systemImage: "leaf.arrow.triangle.circlepath")
-                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                     ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
                         HStack {
-                            Text(r.0).font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                            Text(r.0).font(AppFont.scaled(14)).foregroundStyle(Color.secondaryTextColor)
                             Spacer()
                             Text(r.1).font(AppFont.scaled(14)).foregroundStyle(.primary)
                                 .multilineTextAlignment(.trailing)
@@ -375,7 +375,7 @@ extension PlantDetailSheet {
                     }
                     if let place = plant.placementLabel {
                         HStack {
-                            Text("plant_gi_placement").font(AppFont.scaled(14)).foregroundStyle(.secondary)
+                            Text("plant_gi_placement").font(AppFont.scaled(14)).foregroundStyle(Color.secondaryTextColor)
                             Spacer()
                             Text(place).font(AppFont.scaled(14)).foregroundStyle(.primary)
                         }
@@ -413,7 +413,7 @@ extension PlantDetailSheet {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("plant_bot_title", systemImage: "book.closed")
-                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                     Spacer()
                     if currentId != nil {
                         Menu {
@@ -427,7 +427,7 @@ extension PlantDetailSheet {
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
-                                .font(AppFont.scaled(18)).foregroundStyle(.secondary)
+                                .font(AppFont.scaled(18)).foregroundStyle(Color.secondaryTextColor)
                         }
                         .accessibilityLabel("More")
                     }
@@ -438,7 +438,7 @@ extension PlantDetailSheet {
                         Text(entry.displayName)
                             .font(AppFont.scaled(16, weight: .semibold)).foregroundStyle(.primary)
                         if let latin = entry.latinName, !latin.isEmpty, latin != entry.displayName {
-                            Text(latin).font(AppFont.caption).italic().foregroundStyle(.secondary)
+                            Text(latin).font(AppFont.caption).italic().foregroundStyle(Color.secondaryTextColor)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -460,12 +460,12 @@ extension PlantDetailSheet {
                 } else if currentId != nil {
                     HStack(spacing: 8) {
                         ProgressView().scaleEffect(0.8)
-                        Text("plant_bot_loading").font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        Text("plant_bot_loading").font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Text("plant_bot_none")
-                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button { showSpeciesPicker = true } label: {
                         HStack(spacing: 8) {
@@ -497,10 +497,10 @@ extension PlantDetailSheet {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Label("plant_health_title", systemImage: "cross.case")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
 
                 Text("plant_health_card_sub")
-                    .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                    .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -541,7 +541,7 @@ extension PlantDetailSheet {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("plant_album_title", systemImage: "photo.stack")
-                        .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                        .font(AppFont.captionStrong).foregroundStyle(Color.secondaryTextColor)
                     Spacer()
                     if isUploadingPhoto { ProgressView().scaleEffect(0.7) }
                     Menu {
@@ -556,7 +556,7 @@ extension PlantDetailSheet {
                 }
                 if photoService.photos.isEmpty {
                     Text("plant_album_empty")
-                        .font(AppFont.scaled(13)).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(13)).foregroundStyle(Color.secondaryTextColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -649,7 +649,7 @@ private struct PlantAlbumThumb: View {
                 .padding(4)
                 .accessibilityLabel("Delete photo")
             }
-            Text(photo.takenDisplay).font(AppFont.scaled(10)).foregroundStyle(.secondary)
+            Text(photo.takenDisplay).font(AppFont.scaled(10)).foregroundStyle(Color.secondaryTextColor)
         }
         .task(id: photo.url) { url = await PlantPhotoService.resolve(photo.url) }
     }

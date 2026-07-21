@@ -64,7 +64,7 @@ struct CalendarEventEditor: View {
             .onAppear(perform: hydrateOnce)
         }
         .presentationDetents([.medium, .large])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - State

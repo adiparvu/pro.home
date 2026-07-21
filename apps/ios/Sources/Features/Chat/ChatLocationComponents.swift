@@ -504,7 +504,7 @@ struct LocationShareSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .task {
             locMgr.onLocation = { [weak nearby] loc in nearby?.search(around: loc.coordinate) }
             locMgr.requestLocation()
@@ -868,7 +868,7 @@ struct MentionPickerSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 

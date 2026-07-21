@@ -283,7 +283,7 @@ struct WidgetPickerSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // Clear Liquid Glass badge — colour lives on the glyph, never on a tile.

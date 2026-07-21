@@ -93,7 +93,7 @@ struct PlantHealthView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("plant_health_known_risks_sub")
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .fixedSize(horizontal: false, vertical: true)
                     ForEach(risks, id: \.ailment.id) { risk in
                         NavigationLink {
@@ -112,7 +112,7 @@ struct PlantHealthView: View {
                                     if let note = risk.note, !note.isEmpty {
                                         Text(note)
                                             .font(AppFont.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.secondaryTextColor)
                                             .fixedSize(horizontal: false, vertical: true)
                                     }
                                 }
@@ -137,14 +137,14 @@ struct PlantHealthView: View {
             VStack(alignment: .leading, spacing: AppSpacing.base) {
                 Text("plant_health_symptoms_sub")
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
 
                 ForEach(PlantSymptomGroup.allCases) { group in
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Label(group.titleKey, systemImage: group.icon)
                             .font(AppFont.label)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                         SymptomFlow(spacing: AppSpacing.sm) {
                             ForEach(PlantSymptomCatalog.inGroup(group)) { symptom in
                                 SymptomChip(
@@ -198,13 +198,13 @@ struct PlantHealthView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Text("plant_health_diag_results")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 ForEach(matches) { match in
                     DiagnosisResultCard(match: match)
                 }
                 Text("plant_health_diag_disclaimer")
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, AppSpacing.xxs)
             }
@@ -218,7 +218,7 @@ struct PlantHealthView: View {
             HStack(alignment: .top, spacing: AppSpacing.md) {
                 Image(systemName: "camera.viewfinder")
                     .font(AppFont.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .frame(width: 32, height: 32)
                     .background(Color.subtleFill, in: Circle())
                 VStack(alignment: .leading, spacing: 3) {
@@ -227,7 +227,7 @@ struct PlantHealthView: View {
                         .foregroundStyle(.primary)
                     Text("plant_health_ai_deferred_body")
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -268,7 +268,7 @@ struct PlantHealthView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Label(title, systemImage: icon)
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -333,7 +333,7 @@ private struct DiagnosisResultCard: View {
                                 .foregroundStyle(ailment.severityColor)
                         }
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                     }
                     Spacer(minLength: AppSpacing.sm)
                     if match.susceptible {
@@ -352,7 +352,7 @@ private struct DiagnosisResultCard: View {
                     Text(String(format: String(localized: "plant_health_match_fmt"),
                                 match.matchedCount, match.selectedCount))
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                 }
 
                 // Matched symptoms
@@ -416,7 +416,7 @@ private struct AilmentRow: View {
                         .foregroundStyle(ailment.severityColor)
                 }
                 .font(AppFont.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
                 .lineLimit(1)
             }
             Spacer(minLength: AppSpacing.sm)
@@ -466,7 +466,7 @@ struct PlantAilmentDetailView: View {
                         Text(latin)
                             .font(AppFont.caption)
                             .italic()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondaryTextColor)
                     }
                     HStack(spacing: AppSpacing.xs) {
                         Text(ailment.kindLabelKey)
@@ -475,7 +475,7 @@ struct PlantAilmentDetailView: View {
                             .foregroundStyle(ailment.severityColor)
                     }
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .padding(.top, 1)
                 }
                 Spacer(minLength: 0)
@@ -511,7 +511,7 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label(title, systemImage: icon)
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 Text(text)
                     .font(AppFont.scaled(15))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
@@ -527,7 +527,7 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label(title, systemImage: icon)
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
@@ -553,10 +553,10 @@ struct AilmentSectionsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Label("plant_health_sec_sources", systemImage: "book.closed")
                     .font(AppFont.label)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                 Text(sources.joined(separator: " · "))
                     .font(AppFont.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondaryTextColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -573,7 +573,7 @@ private struct HealthSearchField: View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(AppFont.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondaryTextColor)
             TextField("plant_health_search", text: $text)
             .font(AppFont.body)
             .foregroundStyle(.primary)
@@ -586,7 +586,7 @@ private struct HealthSearchField: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(AppFont.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                 }
                 .buttonStyle(.plain)
             }

@@ -64,7 +64,7 @@ struct FormScaffold<Content: View>: View {
         // Every form is sheet-presented: a translucent backdrop instead of the
         // opaque app background makes the whole family read as Liquid Glass.
         // The field groups themselves are already GlassCards.
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
     }
 }

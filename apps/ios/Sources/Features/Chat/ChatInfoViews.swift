@@ -35,7 +35,7 @@ struct GroupDescriptionSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -350,7 +350,7 @@ struct AddContactView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func field(_ label: String, text: Binding<String>, icon: String,

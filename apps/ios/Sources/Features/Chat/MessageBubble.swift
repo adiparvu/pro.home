@@ -386,7 +386,7 @@ private struct SeenBySheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     @ViewBuilder

@@ -121,7 +121,7 @@ struct AddSocialLinkSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -241,7 +241,7 @@ struct RolePermissionsSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     @ViewBuilder

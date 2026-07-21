@@ -109,7 +109,7 @@ struct AddPlantSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: Species catalog
@@ -152,12 +152,12 @@ struct AddPlantSheet: View {
                     Text(picked.latin)
                         .font(AppFont.caption)
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                     Image(systemName: picked.light.symbol)
                         .font(AppFont.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .accessibilityLabel(Text(LocalizedStringKey(picked.light.titleKey)))
                 }
                 .padding(.horizontal, AppSpacing.xxs)
@@ -363,7 +363,7 @@ struct AddPlantSheet: View {
                         .foregroundStyle(.primary)
                     Text("You'll be notified when it's time to water")
                         .font(AppFont.scaled(11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                 }
                 Spacer()
                 Stepper("", value: $wateringIntervalDays, in: 1...30)
@@ -448,7 +448,7 @@ struct AddPlantSheet: View {
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(AppFont.label)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.secondaryTextColor)
     }
 
     private func save() {

@@ -38,7 +38,7 @@ struct BackupCodesView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .task { await loadState() }
         .confirmationDialog("Generează coduri noi?", isPresented: $showRegenerateConfirm, titleVisibility: .visible) {
             Button("Generează coduri noi", role: .destructive) { Task { await generateNewCodes() } }

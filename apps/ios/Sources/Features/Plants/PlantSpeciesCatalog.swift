@@ -221,7 +221,7 @@ struct PlantSpeciesPicker: View {
     private func sectionHeader(_ key: String) -> some View {
         Text(LocalizedStringKey(key))
             .font(AppFont.captionStrong)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.secondaryTextColor)
             .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.xxs)
     }
@@ -245,7 +245,7 @@ struct PlantSpeciesPicker: View {
                     Text(entry.latin)
                         .font(AppFont.caption)
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                 }
@@ -253,11 +253,11 @@ struct PlantSpeciesPicker: View {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: entry.light.symbol)
                         .font(AppFont.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                         .accessibilityLabel(Text(LocalizedStringKey(entry.light.titleKey)))
                     Text(verbatim: "💧 \(waterHint(entry.wateringDays))")
                         .font(AppFont.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondaryTextColor)
                 }
             }
             .padding(.vertical, AppSpacing.xs)

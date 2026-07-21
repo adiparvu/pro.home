@@ -95,7 +95,7 @@ struct ApplianceDetailSheet: View {
                 Text("This action cannot be undone.")
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Header (photo hero only when a real photo exists)
@@ -623,7 +623,7 @@ private struct ApplianceAttachDocumentSheet: View {
                 alreadyLinked = Set(ids)
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDragIndicator(.visible)
     }
 

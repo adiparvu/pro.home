@@ -112,6 +112,6 @@ struct ElementSmartControlSection: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPicker = false } } }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }

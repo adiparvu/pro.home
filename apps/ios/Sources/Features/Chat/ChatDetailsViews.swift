@@ -803,7 +803,7 @@ struct EditGroupDetailsSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private func save() async {

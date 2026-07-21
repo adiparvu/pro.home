@@ -57,7 +57,7 @@ struct MemberProfileSheet: View {
                 DirectMessageView(member: resolvedMember)
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var profileHeader: some View {

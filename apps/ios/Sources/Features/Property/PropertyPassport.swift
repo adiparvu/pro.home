@@ -340,7 +340,7 @@ struct PropertyPassportSheet: View {
             }
             .background(appBackground.ignoresSafeArea())
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .presentationDetents([.medium])
     }
 

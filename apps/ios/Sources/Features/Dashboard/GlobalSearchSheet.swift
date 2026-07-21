@@ -210,7 +210,7 @@ struct GlobalSearchSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
         .onAppear { focused = true }
         .task {
             // Search must cover EVERYTHING, not just the pages the user

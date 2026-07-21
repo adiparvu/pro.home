@@ -44,7 +44,8 @@ struct PRVIOApp: App {
                 // In-app text size (Settings → Aspect → Mărimea textului);
                 // nil override = pure re-application of the system size.
                 .appTextSize()
-                .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
+                .modifier(LegibleAccentTint(enabled: appSettings.accentEnabled,
+                                            accentName: appSettings.accentColor))
                 .environment(\.locale, appSettings.appLocale)
                 .environment(auth)
                 .environment(lock)
@@ -132,11 +133,12 @@ struct PRVIOApp: App {
             .onAppear { applyNavBarTint() }
             .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
             .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
-            // The "Automat" accent follows the mood — re-tint the UIKit nav
-            // chrome when the atmosphere flips, or back-buttons go stale.
-            .onChange(of: AppMoodEngine.shared.resolved) { _, _ in
-                if appSettings.accentColor == "auto" { applyNavBarTint() }
-            }
+            // Re-tint the UIKit nav chrome whenever what the tint DEPENDS on
+            // shifts: the mood (the "Automat" accent follows it, and a mood
+            // flip can change the resolved scheme) or the backdrop's scheme
+            // decree — the legibility gate resolves differently per scheme.
+            .onChange(of: AppMoodEngine.shared.resolved) { _, _ in applyNavBarTint() }
+            .onChange(of: BackgroundStyle.shared.preferredScheme) { _, _ in applyNavBarTint() }
             // The custom scene delegate owns URL/activity delivery (it must,
             // to receive Home Screen quick actions) and forwards through these
             // notifications; .onOpenURL stays as a safety net for any path
@@ -240,12 +242,36 @@ extension PRVIOApp {
     }
 }
 
-// MARK: - Accent tint for UIKit back button
+// MARK: - Accent tint, gated for legibility
+
+/// Applies the user's accent as the app tint, run through the legibility gate
+/// (`Color.legible(on:)`) against the RESOLVED scheme — read from the
+/// environment so it tracks the backdrop-driven `preferredColorScheme` the
+/// moment it changes. A pale gold accent stays gold, but deep enough to read
+/// on white cards (IMG_8777/8778).
+private struct LegibleAccentTint: ViewModifier {
+    @Environment(\.colorScheme) private var scheme
+    let enabled: Bool
+    let accentName: String
+
+    func body(content: Content) -> some View {
+        content.tint((enabled ? avatarRingColor(for: accentName) : .blue).legible(on: scheme))
+    }
+}
 
 extension PRVIOApp {
+    /// The scheme UIKit chrome should assume right now: the backdrop's decree
+    /// when one applies, else the mood theme, else the system trait.
+    private var resolvedScheme: ColorScheme {
+        if let s = BackgroundStyle.shared.preferredScheme ?? AppMoodEngine.shared.preferredScheme {
+            return s
+        }
+        return UITraitCollection.current.userInterfaceStyle == .dark ? .dark : .light
+    }
+
     func applyNavBarTint() {
         let c: UIColor = appSettings.accentEnabled
-            ? UIColor(avatarRingColor(for: appSettings.accentColor))
+            ? UIColor(avatarRingColor(for: appSettings.accentColor).legible(on: resolvedScheme))
             : .systemBlue
         // The appearance proxy only tints nav bars created AFTER this point, so
         // changing the accent left every on-screen back button its old color.
@@ -288,9 +314,15 @@ private func applyGlobalAppearance() {
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
     }
-    // Apply accent tint immediately from UserDefaults (appSettings not yet initialized in init)
+    // Apply accent tint immediately from UserDefaults (appSettings not yet
+    // initialized in init). The system trait is the best scheme guess this
+    // early; applyNavBarTint() re-runs on appear with the resolved scheme.
     let accentEnabled = UserDefaults.standard.bool(forKey: "prvio.accentOn")
     let accentName = UserDefaults.standard.string(forKey: "prvio.accentColor") ?? "blue"
-    let tint: UIColor = accentEnabled ? UIColor(avatarRingColor(for: accentName)) : .systemBlue
+    let launchScheme: ColorScheme =
+        UITraitCollection.current.userInterfaceStyle == .dark ? .dark : .light
+    let tint: UIColor = accentEnabled
+        ? UIColor(avatarRingColor(for: accentName).legible(on: launchScheme))
+        : .systemBlue
     UINavigationBar.appearance().tintColor = tint
 }

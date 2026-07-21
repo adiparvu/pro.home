@@ -49,7 +49,7 @@ struct EditTextSheet: View {
             .onAppear { focused = true }
         }
         .presentationDetents([.medium])
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 

@@ -67,7 +67,7 @@ struct BudgetManagementView: View {
                 if let saveError { Text(saveError) }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: - Header

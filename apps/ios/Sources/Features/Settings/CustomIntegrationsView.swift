@@ -309,7 +309,7 @@ private struct IntegrationEditorSheet: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 }
 
@@ -399,7 +399,7 @@ private struct IntegrationDetailSheet: View {
                 Text("This immediately cuts off the service using this key.")
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     private var connectionSection: some View {

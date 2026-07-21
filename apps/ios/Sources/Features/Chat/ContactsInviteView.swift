@@ -165,7 +165,7 @@ struct ContactsInviteView: View {
                 }
             }
         }
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     @ViewBuilder private var content: some View {

@@ -65,7 +65,7 @@ struct AssigneePickerSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .presentationBackground(.thinMaterial)
+        .sheetGround()
     }
 
     // MARK: People (accounts ∪ roster, deduped by auth user id)
