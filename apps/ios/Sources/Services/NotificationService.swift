@@ -165,7 +165,18 @@ final class NotificationService {
 
     /// Keeps the list and the dashboard badge live while the app is open.
     func subscribeRealtime(userId: UUID) async {
-        guard realtimeChannel == nil else { return }
+        // Liveness idempotency (audit 2026-07-21): the old nil-guard meant
+        // one dead channel silenced notifications until app relaunch —
+        // only a genuinely live (or joining) channel is a no-op now.
+        if let ch = realtimeChannel,
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        if let ch = realtimeChannel {
+            // Real leave from EVERY state (b1173) before discarding.
+            postgresSubs.removeAll()
+            await ch.unsubscribe()
+            await realtimeAnon.removeChannel(ch)
+            realtimeChannel = nil
+        }
         let channel = realtimeAnon.channel("notifications:\(userId.uuidString)")
         postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
@@ -175,13 +186,25 @@ final class NotificationService {
         ) { [weak self] _ in
             Task { @MainActor in self?.scheduleReload(userId: userId) }
         })
-        try? await channel.subscribeWithError()
-        realtimeChannel = channel
+        do {
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            realtimeChannel = channel
+        } catch {
+            debugLog("Notifications realtime subscribe failed:", error)
+            postgresSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     func unsubscribe() async {
         postgresSubs.removeAll()
         if let ch = realtimeChannel {
+            // Real leave from EVERY state (b1173) — removeChannel alone
+            // skips the phx_leave off .subscribed and breeds the orphan.
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
         }

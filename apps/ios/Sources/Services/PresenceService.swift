@@ -106,7 +106,18 @@ final class PresenceService {
     /// Idempotent — re-subscribing to the same property is a no-op; switching
     /// properties tears down the old channel first.
     func subscribe(propertyId: UUID) async {
-        guard subscribedPropertyId != propertyId else { return }
+        // Liveness-based idempotency (audit 2026-07-21): a channel whose
+        // subscribe FAILED must not satisfy the guard and silence the
+        // session — only a genuinely .subscribed same-scope channel is
+        // a no-op (the resilient pattern from the chat engines).
+        if let ch = channel, subscribedPropertyId == propertyId,
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        // Rejoin grace: right after a RE-connect the SDK's rejoinChannels()
+        // owns recovery, and our previous topic may live server-side as an
+        // orphan whose stale phx_close kills any join added in the window
+        // (the b1182 anatomy). The foreground pulse retries post-grace.
+        if RealtimeFlightRecorder.shared.inRejoinGrace(seconds: 10),
+           channel == nil || subscribedPropertyId == propertyId { return }
         await unsubscribe()
         let myId = supabase.auth.currentSession?.user.id
         // The presence key IS the auth user id, so join/leave maps arrive
@@ -140,7 +151,24 @@ final class PresenceService {
                 await self?.load(propertyId: propertyId)
             }
         })
-        try? await ch.subscribeWithError()
+        do {
+            // Timeboxed: a subscribe awaiting a never-recovering socket
+            // must not hang the caller's foreground pulse forever.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await ch.subscribeWithError()
+            }
+        } catch {
+            // A failed subscribe leaves NO trace — recording it as live is
+            // what made presence go permanently silent. unsubscribe() FIRST:
+            // it sends phx_leave from every state; removeChannel alone skips
+            // the leave and breeds the server orphan (b1173).
+            debugLog("Presence realtime subscribe failed:", error)
+            presenceSub = nil
+            postgresSubs.removeAll()
+            await ch.unsubscribe()
+            await realtimeAnon.removeChannel(ch)
+            return
+        }
         channel = ch
         subscribedPropertyId = propertyId
         // Advertise ourselves the moment the channel is live (heartbeat
@@ -152,7 +180,12 @@ final class PresenceService {
 
     func unsubscribe() async {
         if let ch = channel {
-            // Leaving the channel emits our "leave" to every peer.
+            // Real leave from EVERY state (b1173): removeChannel skips the
+            // phx_leave when the channel isn't .subscribed, and the orphan
+            // join it left behind is whose stale close killed the next
+            // foreground rejoin of this very topic. unsubscribe() also
+            // emits our presence "leave" to every peer.
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             channel = nil
         }

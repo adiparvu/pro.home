@@ -66,8 +66,16 @@ final class TaskService {
     // of changes costs one reload.
 
     private func subscribeRealtime(propertyId: UUID) async {
-        guard subscribedPropertyId != propertyId else { return }
+        // Liveness idempotency (audit 2026-07-21): only a channel that
+        // genuinely reached .subscribed (or is mid-join) satisfies the
+        // guard — a failed subscribe recorded as "done" was a permanently
+        // silent session until app relaunch.
+        if let ch = realtimeChannel, subscribedPropertyId == propertyId,
+           ch.status == .subscribed || ch.status == .subscribing { return }
         if let ch = realtimeChannel {
+            // Real leave from EVERY state (b1173) — removeChannel alone
+            // skips the phx_leave and breeds the server-side orphan.
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             realtimeChannel = nil
             postgresSubs.removeAll()
@@ -81,9 +89,20 @@ final class TaskService {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in self?.scheduleRealtimeReload() }
         })
-        try? await channel.subscribeWithError()
-        realtimeChannel = channel
-        subscribedPropertyId = propertyId
+        do {
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            realtimeChannel = channel
+            subscribedPropertyId = propertyId
+        } catch {
+            // No trace on failure: the next subscribe attempt must not be
+            // fooled by a dead channel, and the leave keeps the topic clean.
+            debugLog("Tasks realtime subscribe failed:", error)
+            postgresSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     private func scheduleRealtimeReload() {

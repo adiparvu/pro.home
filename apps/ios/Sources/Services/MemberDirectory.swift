@@ -91,7 +91,20 @@ final class MemberDirectory {
             Task { @MainActor in self?.refreshSoon() }
         }
         realtimeChannel = channel
-        Task { try? await channel.subscribeWithError() }
+        Task { @MainActor [weak self] in
+            do {
+                // Timeboxed, and a failure clears the slot so the next
+                // loadIfNeeded() can retry — the old nil-guard treated one
+                // dead channel as subscribed-forever (audit 2026-07-21).
+                try await withRealtimeTimeout(seconds: 15) {
+                    try await channel.subscribeWithError()
+                }
+            } catch {
+                await channel.unsubscribe()   // real leave, no orphan (b1173)
+                await realtimeAnon.removeChannel(channel)
+                self?.realtimeChannel = nil
+            }
+        }
     }
 
     func avatarURL(for userId: UUID?) -> URL? {

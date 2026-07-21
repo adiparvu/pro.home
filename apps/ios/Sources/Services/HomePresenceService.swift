@@ -72,6 +72,8 @@ final class HomePresenceService: NSObject, CLLocationManagerDelegate {
 
     @ObservationIgnored private let manager = CLLocationManager()
     @ObservationIgnored private var channel: RealtimeChannelV2?
+    /// The property the live channel was built for (liveness idempotency).
+    @ObservationIgnored private var subscribedPropertyId: UUID?
     @ObservationIgnored private var pgSubs: [RealtimeSubscription] = []
     /// Region-state seed: `didDetermineState` fires right after arming with
     /// the CURRENT state — that seeds the state row silently (no event; the
@@ -294,8 +296,19 @@ final class HomePresenceService: NSObject, CLLocationManagerDelegate {
     /// the publication) — background stays silent; foreground load catches up.
     private func subscribe(propertyId: UUID) async {
         guard !AppLifecycle.isBackgrounded else { return }
-        if let channel { await realtimeAnon.removeChannel(channel) }
+        // Liveness idempotency (audit 2026-07-21): a repeated configure()
+        // for the same property must not tear a live channel down just to
+        // rejoin its own topic — that manufactures the orphan-then-rejoin
+        // pair whose stale phx_close kills the fresh join (b1182 anatomy).
+        if let channel, subscribedPropertyId == propertyId,
+           channel.status == .subscribed || channel.status == .subscribing { return }
+        if let channel {
+            // Real leave from EVERY state (b1173) before discarding.
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
         pgSubs.removeAll()
+        subscribedPropertyId = propertyId
         let ch = realtimeAnon.channel("home_presence:\(propertyId.uuidString)")
         pgSubs.append(ch.onPostgresChange(
             AnyAction.self, schema: "public", table: "home_presence",

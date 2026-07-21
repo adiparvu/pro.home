@@ -893,7 +893,15 @@ final class MessageService {
     /// dropped and its receipts never updated.
     func subscribeReads(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = realtimeAnon.channel("message_reads:\(propertyId.uuidString):\(scope)")
+        let topic = "message_reads:\(propertyId.uuidString):\(scope)"
+        // Liveness idempotency (audit 2026-07-21): a repeat call for the
+        // SAME scope keeps the live channel — a second call used to append
+        // duplicate handlers and re-join the topic. A scope change tears
+        // down cleanly (real leave) first.
+        if let ch = readsChannel, ch.topic.hasSuffix(topic),
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        if readsChannel != nil { await unsubscribeReads() }
+        let channel = realtimeAnon.channel(topic)
         readsSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -910,8 +918,20 @@ final class MessageService {
                 }
             }
         })
-        try? await channel.subscribeWithError()
-        readsChannel = channel
+        do {
+            // Timeboxed: a hung handshake must not stall the thread's
+            // appear chain on a never-recovering socket.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            readsChannel = channel
+        } catch {
+            // No trace on failure (b1173: leave from every state).
+            debugLog("Reads realtime subscribe failed:", error)
+            readsSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     func unsubscribeReads() async {
@@ -968,7 +988,15 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribeDeliveries(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = realtimeAnon.channel("message_deliveries:\(propertyId.uuidString):\(scope)")
+        let topic = "message_deliveries:\(propertyId.uuidString):\(scope)"
+        // Liveness idempotency (audit 2026-07-21): a repeat call for the
+        // SAME scope keeps the live channel — a second call used to append
+        // duplicate handlers and re-join the topic. A scope change tears
+        // down cleanly (real leave) first.
+        if let ch = deliveriesChannel, ch.topic.hasSuffix(topic),
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        if deliveriesChannel != nil { await unsubscribeDeliveries() }
+        let channel = realtimeAnon.channel(topic)
         deliveriesSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -985,8 +1013,20 @@ final class MessageService {
                 }
             }
         })
-        try? await channel.subscribeWithError()
-        deliveriesChannel = channel
+        do {
+            // Timeboxed: a hung handshake must not stall the thread's
+            // appear chain on a never-recovering socket.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            deliveriesChannel = channel
+        } catch {
+            // No trace on failure (b1173: leave from every state).
+            debugLog("Deliveries realtime subscribe failed:", error)
+            deliveriesSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     func unsubscribeDeliveries() async {
@@ -1073,7 +1113,15 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribeReactions(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = realtimeAnon.channel("message_reactions:\(propertyId.uuidString):\(scope)")
+        let topic = "message_reactions:\(propertyId.uuidString):\(scope)"
+        // Liveness idempotency (audit 2026-07-21): a repeat call for the
+        // SAME scope keeps the live channel — a second call used to append
+        // duplicate handlers and re-join the topic. A scope change tears
+        // down cleanly (real leave) first.
+        if let ch = reactionsChannel, ch.topic.hasSuffix(topic),
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        if reactionsChannel != nil { await unsubscribeReactions() }
+        let channel = realtimeAnon.channel(topic)
         reactionsSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -1090,8 +1138,20 @@ final class MessageService {
                 }
             }
         })
-        try? await channel.subscribeWithError()
-        reactionsChannel = channel
+        do {
+            // Timeboxed: a hung handshake must not stall the thread's
+            // appear chain on a never-recovering socket.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            reactionsChannel = channel
+        } catch {
+            // No trace on failure (b1173: leave from every state).
+            debugLog("Reactions realtime subscribe failed:", error)
+            reactionsSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     func unsubscribeReactions() async {
@@ -1150,7 +1210,15 @@ final class MessageService {
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribePollVotes(propertyId: UUID, groupId: UUID?) async {
         let scope = groupId?.uuidString ?? "main"
-        let channel = realtimeAnon.channel("message_poll_votes:\(propertyId.uuidString):\(scope)")
+        let topic = "message_poll_votes:\(propertyId.uuidString):\(scope)"
+        // Liveness idempotency (audit 2026-07-21): a repeat call for the
+        // SAME scope keeps the live channel — a second call used to append
+        // duplicate handlers and re-join the topic. A scope change tears
+        // down cleanly (real leave) first.
+        if let ch = pollVotesChannel, ch.topic.hasSuffix(topic),
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        if pollVotesChannel != nil { await unsubscribePollVotes() }
+        let channel = realtimeAnon.channel(topic)
         pollVotesSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
@@ -1167,8 +1235,20 @@ final class MessageService {
                 }
             }
         })
-        try? await channel.subscribeWithError()
-        pollVotesChannel = channel
+        do {
+            // Timeboxed: a hung handshake must not stall the thread's
+            // appear chain on a never-recovering socket.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await channel.subscribeWithError()
+            }
+            pollVotesChannel = channel
+        } catch {
+            // No trace on failure (b1173: leave from every state).
+            debugLog("Poll-votes realtime subscribe failed:", error)
+            pollVotesSubs.removeAll()
+            await channel.unsubscribe()
+            await realtimeAnon.removeChannel(channel)
+        }
     }
 
     func unsubscribePollVotes() async {

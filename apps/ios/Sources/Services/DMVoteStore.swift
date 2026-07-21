@@ -88,7 +88,13 @@ final class DMVoteStore {
         // must not satisfy the guard and silence the session (the resilient
         // pattern from DirectMessageService.subscribeRealtime).
         if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed { return }
+           ch.status == .subscribed || ch.status == .subscribing { return }
+        // Rejoin grace (audit 2026-07-21): the thread's appear/foreground
+        // paths land here moments after a reconnect, while the SDK's
+        // rejoinChannels() still owns this topic — a second join in that
+        // window is the b1040 double-join/close storm. Retry post-grace.
+        if RealtimeFlightRecorder.shared.inRejoinGrace(seconds: 10),
+           channel == nil || subscribedPropertyId == propertyId { return }
         if channel != nil { await unsubscribe() }
 
         let ch = realtimeAnon.channel("dm_poll_votes:\(propertyId.uuidString)")
@@ -113,12 +119,18 @@ final class DMVoteStore {
             Task { @MainActor [weak self] in self?.scheduleReload(propertyId: propertyId) }
         })
         do {
-            try await ch.subscribeWithError()
+            // Timeboxed: a hung handshake must not freeze the caller.
+            try await withRealtimeTimeout(seconds: 15) {
+                try await ch.subscribeWithError()
+            }
         } catch {
             // A failed subscribe must leave NO trace: keeping the dead channel
             // would make the idempotent guard treat the session as live.
+            // unsubscribe() FIRST — a real phx_leave from every state, so no
+            // server orphan survives to close this topic's next join (b1173).
             debugLog("DM poll-vote realtime subscribe failed:", error)
             postgresSubs.removeAll()
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             return
         }
@@ -142,6 +154,9 @@ final class DMVoteStore {
         postgresSubs.removeAll()
         subscribedPropertyId = nil
         if let ch = channel {
+            // Real leave from EVERY state (b1173) — removeChannel alone
+            // skips the phx_leave off .subscribed and breeds the orphan.
+            await ch.unsubscribe()
             await realtimeAnon.removeChannel(ch)
             channel = nil
         }
