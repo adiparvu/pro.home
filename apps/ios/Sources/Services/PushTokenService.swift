@@ -62,17 +62,6 @@ enum PushTokenService {
         Task { await uploadPendingIfNeeded() }
     }
 
-    private static func statusName(_ s: UNAuthorizationStatus) -> String {
-        switch s {
-        case .notDetermined: return "notDetermined"
-        case .denied: return "denied"
-        case .authorized: return "authorized"
-        case .provisional: return "provisional"
-        case .ephemeral: return "ephemeral"
-        @unknown default: return "unknown"
-        }
-    }
-
     /// The device's current APNs token, kept so account switches can bind the
     /// incoming account and sign-out can unbind exactly the leaving one.
     private static let currentTokenKey = "push.token.current"
