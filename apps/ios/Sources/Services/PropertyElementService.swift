@@ -74,6 +74,8 @@ final class PropertyElementService {
                 isFavorite: element.isFavorite,
                 homekitAccessoryId: element.homekitAccessoryId,
                 tags: element.tags,
+                serviceIntervalMonths: element.serviceIntervalMonths,
+                lastServiceAt: element.lastServiceAt,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase

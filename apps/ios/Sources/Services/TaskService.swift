@@ -179,6 +179,27 @@ final class TaskService {
             // Keep the linked Apple Reminder in step (both directions:
             // completing here checks it off, reopening here unchecks it).
             TaskCalendarSync.setReminderCompleted(taskId: task.id, newStatus == "completed")
+            // Real recurrence (predictive phase 2): completing a repeating
+            // task spawns its next occurrence. The next due date counts from
+            // the LATER of the old due date and today, so finishing overdue
+            // work never births an already-overdue successor.
+            if newStatus == "completed", let every = task.recurrenceDays, every > 0 {
+                let cal = Calendar.current
+                let today = cal.startOfDay(for: Date())
+                let base = task.dueDate.flatMap(MaintenanceTask.parseDate) ?? today
+                let next = cal.date(byAdding: .day, value: every, to: max(base, today)) ?? today
+                let payload = NewTaskPayload(
+                    propertyId: task.propertyId,
+                    title: task.title,
+                    description: task.description,
+                    dueDate: AppDate.day.string(from: next),
+                    priority: task.priority,
+                    category: task.category,
+                    assigneeIds: task.assigneeIds,
+                    assigneeNames: task.assigneeNames,
+                    recurrenceDays: every)
+                _ = try? await addTask(payload)
+            }
         } catch {
             self.error = error.recordableDescription
         }
@@ -202,7 +223,8 @@ final class TaskService {
         photoUrls: [String]? = nil,
         locationName: String?? = .none,
         locationLat: Double?? = .none,
-        locationLon: Double?? = .none
+        locationLon: Double?? = .none,
+        recurrenceDays: Int?? = .none
     ) async throws {
         struct TaskFieldUpdate: Encodable {
             let title: String
@@ -217,6 +239,7 @@ final class TaskService {
             let locationName: String?
             let locationLat: Double?
             let locationLon: Double?
+            let recurrenceDays: Int?
             enum CodingKeys: String, CodingKey {
                 case title, description, priority, category
                 case dueDate       = "due_date"
@@ -227,10 +250,12 @@ final class TaskService {
                 case locationName  = "location_name"
                 case locationLat   = "location_lat"
                 case locationLon   = "location_lon"
+                case recurrenceDays = "recurrence_days"
             }
             // Explicit encode: location keys write SQL NULL when nil so
             // clearing a location persists (synthesized Codable would omit
-            // them and the old value would survive the save).
+            // them and the old value would survive the save). Recurrence
+            // clears the same way ("Fără repetare" must stick).
             func encode(to encoder: Encoder) throws {
                 var c = encoder.container(keyedBy: CodingKeys.self)
                 try c.encode(title, forKey: .title)
@@ -245,6 +270,7 @@ final class TaskService {
                 try c.encode(locationName, forKey: .locationName)
                 try c.encode(locationLat, forKey: .locationLat)
                 try c.encode(locationLon, forKey: .locationLon)
+                try c.encode(recurrenceDays, forKey: .recurrenceDays)
             }
         }
         let update = TaskFieldUpdate(
@@ -255,7 +281,8 @@ final class TaskService {
             photoUrls: photoUrls ?? task.photoUrls,
             locationName: locationName ?? task.locationName,
             locationLat: locationLat ?? task.locationLat,
-            locationLon: locationLon ?? task.locationLon
+            locationLon: locationLon ?? task.locationLon,
+            recurrenceDays: recurrenceDays ?? task.recurrenceDays
         )
         try await supabase
             .from("maintenance_tasks")
@@ -275,6 +302,7 @@ final class TaskService {
             tasks[idx].locationName = update.locationName
             tasks[idx].locationLat = update.locationLat
             tasks[idx].locationLon = update.locationLon
+            tasks[idx].recurrenceDays = update.recurrenceDays
         }
     }
 

@@ -3,6 +3,80 @@ import PhotosUI
 
 extension PropertyElementDetailView {
 
+    // MARK: - Service schedule (predictive phase 2)
+    //
+    // The household sets a cadence; the proactive engine turns
+    // (last service + interval) into a due prediction. Everything saves
+    // through the same localElement → elementService.update path the page
+    // already uses.
+
+    var serviceScheduleCard: some View {
+        GlassCard(padding: 14) {
+            VStack(spacing: 10) {
+                SectionHeader("Service schedule")
+                HStack {
+                    Text("Service interval")
+                        .font(AppFont.scaled(14))
+                        .foregroundStyle(Color.secondaryTextColor)
+                    Spacer()
+                    Menu {
+                        Picker("", selection: Binding(
+                            get: { localElement.serviceIntervalMonths },
+                            set: { newValue in
+                                localElement.serviceIntervalMonths = newValue
+                                if newValue == nil { localElement.lastServiceAt = nil }
+                                Task { await elementService.update(localElement) }
+                            })) {
+                            Text("No cadence").tag(Int?.none)
+                            Text("Every 3 months").tag(Int?.some(3))
+                            Text("Every 6 months").tag(Int?.some(6))
+                            Text("Yearly").tag(Int?.some(12))
+                            Text("Every 2 years").tag(Int?.some(24))
+                        }
+                    } label: {
+                        Text(serviceIntervalLabel)
+                            .font(AppFont.scaled(14, weight: .medium))
+                            .foregroundStyle(localElement.serviceIntervalMonths == nil
+                                ? Color.secondaryTextColor : Color.accentColor)
+                    }
+                }
+                if localElement.serviceIntervalMonths != nil {
+                    if let last = localElement.lastServiceAt {
+                        StatRow(label: "Last service", value: formatted(date: last))
+                    }
+                    if let due = localElement.nextServiceDue {
+                        StatRow(label: "Next service",
+                                value: due.formatted(date: .abbreviated, time: .omitted),
+                                valueColor: due < Date() ? Color.brandWarning : Color.brandSuccess)
+                    }
+                    Button {
+                        HapticFeedback.success()
+                        localElement.lastServiceAt = AppDate.day.string(from: Date())
+                        Task { await elementService.update(localElement) }
+                    } label: {
+                        Label("Serviced today", systemImage: "checkmark.seal")
+                            .font(AppFont.scaled(13, weight: .medium))
+                            .frame(maxWidth: .infinity).padding(.vertical, 8)
+                            .background(Color.accentColor.opacity(AppOpacity.tintedFill),
+                                        in: RoundedRectangle(cornerRadius: AppRadius.md))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                }
+            }
+        }
+    }
+
+    private var serviceIntervalLabel: LocalizedStringKey {
+        switch localElement.serviceIntervalMonths {
+        case 3:  return "Every 3 months"
+        case 6:  return "Every 6 months"
+        case 12: return "Yearly"
+        case 24: return "Every 2 years"
+        default: return "No cadence"
+        }
+    }
+
     // MARK: - Info Tab
 
     var infoTab: some View {
@@ -45,6 +119,8 @@ extension PropertyElementDetailView {
                     }
                 }
             }
+
+            serviceScheduleCard
 
             if localElement.isElectric || (localElement.automationSystem?.isEmpty == false) {
                 GlassCard(padding: 14) {

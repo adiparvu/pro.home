@@ -16,6 +16,8 @@ struct AddTaskView: View {
     @State private var category = "maintenance"
     @State private var hasDueDate = false
     @State private var dueDate = Date()
+    /// Repeat interval in days (predictive phase 2); nil = one-off.
+    @State private var recurrenceDays: Int?
     @State private var hasDueTime = false
     @State private var dueTime = Date()
     @State private var isSaving = false
@@ -309,8 +311,52 @@ struct AddTaskView: View {
                                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
+
+                    // Real recurrence: completing the task spawns the next
+                    // occurrence (TaskService). Native Menu per the menu law.
+                    HStack(spacing: 12) {
+                        Image(systemName: "repeat")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(Color.brandPurple)
+                            .frame(width: 22)
+                        Text("task_repeat_label")
+                            .font(AppFont.scaled(14))
+                        Spacer()
+                        Menu {
+                            Picker("", selection: $recurrenceDays) {
+                                Text("task_repeat_never").tag(Int?.none)
+                                Text("task_repeat_weekly").tag(Int?.some(7))
+                                Text("task_repeat_biweekly").tag(Int?.some(14))
+                                Text("task_repeat_monthly").tag(Int?.some(30))
+                                Text("task_repeat_quarterly").tag(Int?.some(90))
+                                Text("task_repeat_halfyear").tag(Int?.some(180))
+                                Text("task_repeat_yearly").tag(Int?.some(365))
+                            }
+                        } label: {
+                            Text(recurrenceLabel)
+                                .font(AppFont.scaled(14, weight: .medium))
+                                .foregroundStyle(recurrenceDays == nil
+                                    ? Color.primary.opacity(AppOpacity.secondaryText)
+                                    : Color.brandPurple)
+                        }
+                    }
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
             }
+        }
+    }
+
+    private var recurrenceLabel: LocalizedStringKey {
+        switch recurrenceDays {
+        case 7:    return "task_repeat_weekly"
+        case 14:   return "task_repeat_biweekly"
+        case 30:   return "task_repeat_monthly"
+        case 90:   return "task_repeat_quarterly"
+        case 180:  return "task_repeat_halfyear"
+        case 365:  return "task_repeat_yearly"
+        default:   return "task_repeat_never"
         }
     }
 
@@ -571,6 +617,7 @@ struct AddTaskView: View {
                 dueTime = d
             }
         }
+        recurrenceDays = t.recurrenceDays
         existingPhotoUrls = t.photoUrls
         if let name = t.locationName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
             location = TaskLocationValue(name: name, lat: t.locationLat, lon: t.locationLon)
@@ -622,7 +669,8 @@ struct AddTaskView: View {
                         photoUrls: allPhotoUrls,
                         locationName: location?.name,
                         locationLat: location?.lat ?? nil,
-                        locationLon: location?.lon ?? nil
+                        locationLon: location?.lon ?? nil,
+                        recurrenceDays: hasDueDate ? recurrenceDays : Int?.none
                     )
                     savedTaskId = existing.id
                 } else {
@@ -638,7 +686,8 @@ struct AddTaskView: View {
                         photoUrls: allPhotoUrls,
                         locationName: location?.name,
                         locationLat: location?.lat,
-                        locationLon: location?.lon
+                        locationLon: location?.lon,
+                        recurrenceDays: hasDueDate ? recurrenceDays : nil
                     )
                     let created = try await taskService.addTask(payload)
                     savedTaskId = created.id

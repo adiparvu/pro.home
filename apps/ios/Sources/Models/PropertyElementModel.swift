@@ -37,8 +37,23 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var tags: [String]
     let createdAt: String
     var updatedAt: String
+    /// Predictive phase 2: how often (months) this element should be
+    /// serviced, and when it last was. Both optional — untracked elements
+    /// stay exactly as before.
+    var serviceIntervalMonths: Int?
+    var lastServiceAt: String?
 
     var photos: [String] { photoUrls ?? [] }
+
+    /// The next predicted service date: last service (or, failing that, the
+    /// purchase date) plus the interval. Nil unless the household set a
+    /// cadence — the honesty law forbids inventing schedules.
+    var nextServiceDue: Date? {
+        guard let months = serviceIntervalMonths, months > 0 else { return nil }
+        let baseStr = lastServiceAt ?? purchaseDate
+        guard let baseStr, let base = AppDate.day(from: baseStr) else { return nil }
+        return Calendar.current.date(byAdding: .month, value: months, to: base)
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, brand, model, notes, layer, latitude, longitude, tags
@@ -63,6 +78,8 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         case zoneId            = "zone_id"
         case createdAt         = "created_at"
         case updatedAt         = "updated_at"
+        case serviceIntervalMonths = "service_interval_months"
+        case lastServiceAt     = "last_service_at"
     }
 
     init(from decoder: Decoder) throws {
@@ -98,6 +115,8 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
         updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt) ?? ""
+        serviceIntervalMonths = try? c.decodeIfPresent(Int.self, forKey: .serviceIntervalMonths)
+        lastServiceAt = try? c.decodeIfPresent(String.self, forKey: .lastServiceAt)
     }
 
     /// Map coordinate when the object has been geo-located.

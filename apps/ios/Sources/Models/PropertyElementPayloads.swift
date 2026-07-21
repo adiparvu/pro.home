@@ -30,6 +30,9 @@ struct NewPropertyElement: Encodable {
     var isFavorite: Bool = false
     var homekitAccessoryId: String? = nil
     var tags: [String] = []
+    /// Predictive phase 2 — service cadence + last service (nil = untracked).
+    var serviceIntervalMonths: Int? = nil
+    var lastServiceAt: String? = nil
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -52,6 +55,8 @@ struct NewPropertyElement: Encodable {
         case warrantyUntil     = "warranty_until"
         case serialNumber      = "serial_number"
         case zoneId            = "zone_id"
+        case serviceIntervalMonths = "service_interval_months"
+        case lastServiceAt     = "last_service_at"
         case updatedAt         = "updated_at"
     }
 }

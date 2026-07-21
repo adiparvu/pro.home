@@ -30,6 +30,9 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     var locationName: String?
     var locationLat: Double?
     var locationLon: Double?
+    /// Repeat interval in days (predictive phase 2); nil = one-off.
+    /// Completing a recurring task spawns its next occurrence client-side.
+    var recurrenceDays: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, category, priority, status, notes, tags
@@ -47,6 +50,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         case locationName  = "location_name"
         case locationLat   = "location_lat"
         case locationLon   = "location_lon"
+        case recurrenceDays = "recurrence_days"
     }
 
     init(from decoder: Decoder) throws {
@@ -73,6 +77,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         locationName   = try? c.decodeIfPresent(String.self, forKey: .locationName)
         locationLat    = try? c.decodeIfPresent(Double.self, forKey: .locationLat)
         locationLon    = try? c.decodeIfPresent(Double.self, forKey: .locationLon)
+        recurrenceDays = try? c.decodeIfPresent(Int.self, forKey: .recurrenceDays)
     }
 
     var isCompleted: Bool { status == "completed" }
@@ -128,6 +133,7 @@ struct NewTaskPayload: Encodable {
     var locationName: String? = nil
     var locationLat: Double? = nil
     var locationLon: Double? = nil
+    var recurrenceDays: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case propertyId    = "property_id"
@@ -140,6 +146,7 @@ struct NewTaskPayload: Encodable {
         case locationName  = "location_name"
         case locationLat   = "location_lat"
         case locationLon   = "location_lon"
+        case recurrenceDays = "recurrence_days"
     }
 }
 

@@ -320,6 +320,27 @@ final class ProactiveEngine {
                     isDismissed: false
                 ))
             }
+            // Service cadence (phase 2): the household set an interval — speak
+            // when the predicted date is within 30 days or already behind.
+            if let due = el.nextServiceDue {
+                let days = Calendar.current.dateComponents(
+                    [.day], from: Calendar.current.startOfDay(for: Date()),
+                    to: Calendar.current.startOfDay(for: due)).day ?? 0
+                if days <= 30 {
+                    out.append(ProactiveInsight(
+                        id: deterministicID("elem-service-\(el.id)"),
+                        title: String(format: String(localized: "Service due: %@"), el.name),
+                        body: days < 0
+                            ? String(format: String(localized: "Its service was predicted for %@ — it's behind schedule."),
+                                     due.formatted(date: .abbreviated, time: .omitted))
+                            : String(format: String(localized: "Based on the cadence you set, the next service lands around %@."),
+                                     due.formatted(date: .abbreviated, time: .omitted)),
+                        category: .maintenance,
+                        createdAt: Date(),
+                        isDismissed: false
+                    ))
+                }
+            }
         }
         return out
     }
