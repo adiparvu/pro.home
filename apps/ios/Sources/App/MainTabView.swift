@@ -552,7 +552,8 @@ struct MainTabView: View {
                 deliveries: deliveryService.deliveries, tasks: taskService.tasks)
         }
         proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
-                                records: financialService.records, tasks: taskService.tasks)
+                                records: financialService.records, tasks: taskService.tasks,
+                                sensors: IoTService.shared.sensors)
         ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
     }
 

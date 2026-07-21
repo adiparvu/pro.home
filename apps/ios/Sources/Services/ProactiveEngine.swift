@@ -49,13 +49,20 @@ final class ProactiveEngine {
     // MARK: - Analysis
 
     func analyze(appliances: [Appliance], elements: [PropertyElement],
-                 records: [FinancialRecord] = [], tasks: [MaintenanceTask] = []) {
+                 records: [FinancialRecord] = [], tasks: [MaintenanceTask] = [],
+                 sensors: [IoTSensor] = []) {
         var fresh: [ProactiveInsight] = []
 
         // The butler speaks from YOUR numbers, not generic tips: the biggest
         // month-over-month expense swing, and task momentum when work piles up.
         if let money = financialDeltaInsight(records) { fresh.append(money) }
         if let momentum = taskMomentumInsight(tasks) { fresh.append(momentum) }
+
+        // Predictive maintenance from the property's own records: element
+        // condition/warranty, appliance repair economics, sensor thresholds.
+        fresh.append(contentsOf: elementCareInsights(elements))
+        fresh.append(contentsOf: repairCostInsights(appliances, records: records))
+        fresh.append(contentsOf: sensorRangeInsights(sensors))
 
         // Warranties expiring within 30 days
         let expiringSoon = appliances.filter { $0.isWarrantyExpiringSoon }
@@ -74,34 +81,24 @@ final class ProactiveEngine {
             ))
         }
 
-        // Old appliances by type (age thresholds)
-        let ageRules: [(keyword: String, maxYears: Int)] = [
-            ("boiler",       10),
-            ("furnace",      15),
-            ("roof",         20),
-            ("hvac",         12),
-            ("water heater",  8),
-            ("fridge",       12),
-            ("washer",       10),
-            ("dishwasher",   10),
-        ]
+        // Appliance age against the curated NAHB lifespan table — the same
+        // per-category ranges the appliance pages already show, instead of
+        // the old ad-hoc name-keyword guesses. Spoken only once the age
+        // enters the typical range; the id keeps the legacy "age-" seed so
+        // earlier dismissals survive the upgrade.
         for appliance in appliances {
-            guard let purchase = parseDateStr(appliance.purchaseDate) else { continue }
-            let years = Calendar.current.dateComponents([.year], from: purchase, to: Date()).year ?? 0
-            let nameLower = appliance.name.lowercased()
-            for rule in ageRules where nameLower.contains(rule.keyword) {
-                if years >= rule.maxYears {
-                    fresh.append(ProactiveInsight(
-                        id: deterministicID("age-\(appliance.id)"),
-                        title: String(format: String(localized: "%@ may need replacement"), appliance.name),
-                        body: String(format: String(localized: "%d years old — may be less efficient and more prone to failure. Consider inspection."), years),
-                        category: .age,
-                        createdAt: Date(),
-                        isDismissed: false
-                    ))
-                }
-                break
-            }
+            guard let years = appliance.ageYears,
+                  let range = ApplianceLifespan.typicalYears(for: appliance.category),
+                  Int(years) >= range.lowerBound else { continue }
+            fresh.append(ProactiveInsight(
+                id: deterministicID("age-\(appliance.id)"),
+                title: String(format: String(localized: "%@ may need replacement"), appliance.name),
+                body: String(format: String(localized: "About %d years old — typical service life for its category is ~%d–%d years. Plan an inspection or budget for a replacement."),
+                             Int(years), range.lowerBound, range.upperBound),
+                category: .age,
+                createdAt: Date(),
+                isDismissed: false
+            ))
         }
 
         // Seasonal maintenance hints (by current month)
@@ -133,7 +130,11 @@ final class ProactiveEngine {
     // MARK: - Notifications
 
     func scheduleNotifications(for insights: [ProactiveInsight]) {
-        guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.warrantyAlerts) else { return }
+        // Per-category gates: warranty warnings ride the warranty toggle,
+        // predictive-maintenance ones the task-reminders toggle.
+        let warrantyOn = NotificationScheduler.prefEnabled(NotificationScheduler.Keys.warrantyAlerts)
+        let maintenanceOn = NotificationScheduler.prefEnabled(NotificationScheduler.Keys.taskReminders)
+        guard warrantyOn || maintenanceOn else { return }
         let center = UNUserNotificationCenter.current()
         // Insight ids are deterministic and analyze() reruns on every launch
         // and background refresh — without this ledger the same warranty
@@ -146,8 +147,11 @@ final class ProactiveEngine {
             let live = Set(insights.map { $0.id.uuidString })
             UserDefaults.standard.set(Array(notified.intersection(live)), forKey: ledgerKey)
         }
-        for insight in insights.filter({ !$0.isDismissed && $0.category == .warranty
-                                         && !notified.contains($0.id.uuidString) }) {
+        for insight in insights.filter({
+            !$0.isDismissed && !notified.contains($0.id.uuidString)
+                && (($0.category == .warranty && warrantyOn)
+                    || ($0.category == .maintenance && maintenanceOn))
+        }) {
             notified.insert(insight.id.uuidString)
             let content = UNMutableNotificationContent()
             content.title = insight.title
@@ -279,6 +283,93 @@ final class ProactiveEngine {
             createdAt: Date(),
             isDismissed: false
         )
+    }
+
+    // MARK: - Predictive maintenance rules
+
+    /// Element-level care: a warranty about to lapse, or a technical
+    /// condition the household itself recorded as poor/critical. Both are
+    /// facts already in the element rows — the engine only surfaces them.
+    private func elementCareInsights(_ elements: [PropertyElement]) -> [ProactiveInsight] {
+        var out: [ProactiveInsight] = []
+        for el in elements {
+            if let until = parseDateStr(el.warrantyUntil) {
+                let days = Calendar.current.dateComponents([.day], from: Date(), to: until).day ?? 0
+                if (0...30).contains(days) {
+                    out.append(ProactiveInsight(
+                        id: deterministicID("elem-warranty-\(el.id)"),
+                        title: String(format: String(localized: "Warranty expiring: %@"), el.name),
+                        body: String(format: days == 1
+                            ? String(localized: "Warranty expires in 1 day. Check if extension is available.")
+                            : String(localized: "Warranty expires in %d days. Check if extension is available."),
+                            days),
+                        category: .warranty,
+                        createdAt: Date(),
+                        isDismissed: false
+                    ))
+                }
+            }
+            if el.technicalCondition == .poor || el.technicalCondition == .critical {
+                out.append(ProactiveInsight(
+                    id: deterministicID("elem-care-\(el.id)"),
+                    title: String(format: String(localized: "%@ needs attention"), el.name),
+                    body: String(format: String(localized: "Its recorded condition is \"%@\". Schedule a service visit before it worsens."),
+                                 el.technicalCondition.displayName),
+                    category: .maintenance,
+                    createdAt: Date(),
+                    isDismissed: false
+                ))
+            }
+        }
+        return out
+    }
+
+    /// Replacement economics: when logged service work on an appliance has
+    /// cost at least half its purchase price — the same signal the service
+    /// book shows — say it here too, where the household actually looks.
+    private func repairCostInsights(_ appliances: [Appliance],
+                                    records: [FinancialRecord]) -> [ProactiveInsight] {
+        var out: [ProactiveInsight] = []
+        for appliance in appliances {
+            guard let price = appliance.purchasePrice, price > 0 else { continue }
+            let repairs = ApplianceServiceLog.totalRepairs(
+                ApplianceServiceLog.interventions(in: records, appliance: appliance))
+            guard repairs >= price * 0.5 else { continue }
+            out.append(ProactiveInsight(
+                id: deterministicID("repaircost-\(appliance.id)"),
+                title: String(format: String(localized: "Repairs on %@ are adding up"), appliance.name),
+                body: String(format: String(localized: "Logged service work has reached %@ — about half its purchase price. A replacement may now be the better economy."),
+                             CurrencyService.money(repairs, code: "EUR", whole: true)),
+                category: .age,
+                createdAt: Date(),
+                isDismissed: false
+            ))
+        }
+        return out
+    }
+
+    /// Sensor thresholds the household set themselves (alertMin/alertMax):
+    /// a live reading outside that band is a fact worth surfacing. No
+    /// speculation — sensors without a reading or without thresholds stay
+    /// silent.
+    private func sensorRangeInsights(_ sensors: [IoTSensor]) -> [ProactiveInsight] {
+        var out: [ProactiveInsight] = []
+        for sensor in sensors {
+            guard let value = sensor.value else { continue }
+            let low  = sensor.alertMin.map { value < $0 } ?? false
+            let high = sensor.alertMax.map { value > $0 } ?? false
+            guard low || high else { continue }
+            out.append(ProactiveInsight(
+                id: deterministicID("sensor-range-\(sensor.id)"),
+                title: String(format: String(localized: "%@ reading out of range"), sensor.name),
+                body: String(format: String(localized: "Latest value: %@ %@ — outside the alert range you set. Worth checking."),
+                             value.formatted(.number.precision(.fractionLength(0...1))), sensor.unit),
+                category: .maintenance,
+                createdAt: Date(),
+                isDismissed: false
+            ))
+        }
+        return out
     }
 
     // MARK: - Private

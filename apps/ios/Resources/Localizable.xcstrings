@@ -1,6 +1,13 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "About %d years old — typical service life for its category is ~%d–%d years. Plan an inspection or budget for a replacement.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "About %d years old — typical service life for its category is ~%d–%d years. Plan an inspection or budget for a replacement."}}, "ro": {"stringUnit": {"state": "translated", "value": "Are cam %d ani — durata de viață tipică pentru categoria sa este de ~%d–%d ani. Planifică o inspecție sau bugetează înlocuirea."}}}},
+    "%@ needs attention": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%@ needs attention"}}, "ro": {"stringUnit": {"state": "translated", "value": "%@ are nevoie de atenție"}}}},
+    "Its recorded condition is \"%@\". Schedule a service visit before it worsens.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Its recorded condition is \"%@\". Schedule a service visit before it worsens."}}, "ro": {"stringUnit": {"state": "translated", "value": "Starea sa înregistrată este „%@”. Programează o vizită de service înainte să se agraveze."}}}},
+    "Repairs on %@ are adding up": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Repairs on %@ are adding up"}}, "ro": {"stringUnit": {"state": "translated", "value": "Reparațiile la %@ se adună"}}}},
+    "Logged service work has reached %@ — about half its purchase price. A replacement may now be the better economy.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Logged service work has reached %@ — about half its purchase price. A replacement may now be the better economy."}}, "ro": {"stringUnit": {"state": "translated", "value": "Lucrările de service înregistrate au ajuns la %@ — cam jumătate din prețul de achiziție. O înlocuire poate fi acum economia mai bună."}}}},
+    "%@ reading out of range": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%@ reading out of range"}}, "ro": {"stringUnit": {"state": "translated", "value": "%@ are o citire în afara intervalului"}}}},
+    "Latest value: %@ %@ — outside the alert range you set. Worth checking.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Latest value: %@ %@ — outside the alert range you set. Worth checking."}}, "ro": {"stringUnit": {"state": "translated", "value": "Ultima valoare: %@ %@ — în afara intervalului de alertă setat de tine. Merită verificat."}}}},
     "inv_dossier_title": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Insurance dossier"}}, "ro": {"stringUnit": {"state": "translated", "value": "Dosar de asigurare"}}}},
     "inv_dossier_action": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Insurance dossier"}}, "ro": {"stringUnit": {"state": "translated", "value": "Dosar de asigurare"}}}},
     "inv_dossier_property": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Property"}}, "ro": {"stringUnit": {"state": "translated", "value": "Proprietatea"}}}},
@@ -1375,22 +1382,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d taskuri sunt restante"
-          }
-        }
-      }
-    },
-    "%d years old — may be less efficient and more prone to failure. Consider inspection.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d years old — may be less efficient and more prone to failure. Consider inspection."
-          }
-        },
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d ani vechime — poate fi mai puțin eficient și mai predispus la defecțiuni. Luați în considerare o inspecție."
           }
         }
       }
