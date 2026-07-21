@@ -65,6 +65,10 @@ struct PlantDetailSheet: View {
                             generalInfoEditFields
                         } else {
                             viewFields
+                            // The QR label rides right under the watering
+                            // card (IMG_8780) — it's the plant's identity
+                            // artifact, not an appendix.
+                            plantQRCard
                             generalInfoCard
                             botanicalProfileCard
                             careCard
@@ -78,7 +82,6 @@ struct PlantDetailSheet: View {
                                 photoService: photoService
                             )
                             automationsCard
-                            plantQRCard
                         }
 
                         Spacer(minLength: 40)

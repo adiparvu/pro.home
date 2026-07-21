@@ -1,6 +1,7 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "plant_qr_view_page": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "View page"}}, "ro": {"stringUnit": {"state": "translated", "value": "Vezi pagina"}}}},
     "Add as task": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Add as task"}}, "ro": {"stringUnit": {"state": "translated", "value": "Adaugă ca sarcină"}}}},
     "Ask the assistant": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Ask the assistant"}}, "ro": {"stringUnit": {"state": "translated", "value": "Întreabă asistentul"}}}},
     "aria_insight_prompt_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "What should I do about this: %@ (%@)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Ce ar trebui să fac cu asta: %@ (%@)"}}}},

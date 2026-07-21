@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 // MARK: - PlantDetailSheet sections
 
@@ -35,20 +36,49 @@ extension PlantDetailSheet {
                     .font(AppFont.scaled(12))
                     .foregroundStyle(Color.primary.opacity(0.45))
                     .multilineTextAlignment(.center)
-                Button {
-                    HapticFeedback.impact(.light)
-                    sharePlantQR()
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .font(AppFont.scaled(13, weight: .medium))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(.blue.opacity(0.1),
-                                    in: RoundedRectangle(cornerRadius: 10))
+                // Three equal icon actions (IMG_8779): share the label,
+                // print it directly, and preview the public page a scanner
+                // would land on.
+                HStack(spacing: 10) {
+                    qrActionButton("square.and.arrow.up", a11y: "Share") {
+                        sharePlantQR()
+                    }
+                    qrActionButton("printer", a11y: "Print") {
+                        printPlantQR()
+                    }
+                    qrActionButton("safari", a11y: "plant_qr_view_page") {
+                        if let url = URL(string: plantQRContent) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
             }
         }
+    }
+
+    private func qrActionButton(_ icon: String, a11y: LocalizedStringKey,
+                                action: @escaping () -> Void) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            Image(systemName: icon)
+                .font(AppFont.scaled(15, weight: .medium))
+                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                .background(.blue.opacity(0.1),
+                            in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
+        .accessibilityLabel(Text(a11y))
+    }
+
+    /// The same print-resolution label, straight to AirPrint.
+    func printPlantQR() {
+        let renderer = ImageRenderer(content: QRCodeImage(content: plantQRContent, size: 300))
+        renderer.scale = 3
+        guard let image = renderer.uiImage else { return }
+        SystemActions.print(image: image)
     }
 
     /// Renders the label at print resolution and hands it to the share
