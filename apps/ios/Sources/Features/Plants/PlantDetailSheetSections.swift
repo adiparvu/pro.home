@@ -206,61 +206,6 @@ extension PlantDetailSheet {
         }
     }
 
-    private func detailRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(AppFont.scaled(13, weight: .medium))
-                .foregroundStyle(iconColor)
-                .frame(width: 30, height: 30)
-                .glassRoundedRect(AppRadius.sm)
-            Text(label)
-                .font(AppFont.scaled(15))
-                .foregroundStyle(.primary)
-            Spacer()
-            Text(value)
-                .font(AppFont.scaled(14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, AppSpacing.md)
-    }
-
-    private var rowDivider: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.05))
-            .frame(height: 0.5)
-            .padding(.leading, 56)
-    }
-
-    // MARK: Water button
-
-    var waterButton: some View {
-        Button {
-            HapticFeedback.success()
-            Task { await plantService.markWatered(plant) }
-            dismiss()
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "drop.fill")
-                    .font(AppFont.headline)
-                Text("Mark as watered")
-                    .font(AppFont.headline)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                LinearGradient(
-                    colors: [Color.accentColor, Color(red: 0.1, green: 0.4, blue: 1.0)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-            )
-        }
-        .buttonStyle(.plain)
-    }
 
     // MARK: Edit fields
 

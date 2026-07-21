@@ -41,20 +41,16 @@ enum PushTokenService {
     static func ensureRegistered() {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
-            logDebug("ensure", detail: "status=\(statusName(settings.authorizationStatus))")
             switch settings.authorizationStatus {
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
-                    logDebug("request", detail: "granted=\(granted)")
                     guard granted else { return }
                     DispatchQueue.main.async {
-                        logDebug("register", detail: "from=request")
                         UIApplication.shared.registerForRemoteNotifications()
                     }
                 }
             case .authorized, .provisional:
                 DispatchQueue.main.async {
-                    logDebug("register", detail: "from=authorized")
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             default:
@@ -75,29 +71,6 @@ enum PushTokenService {
         case .ephemeral: return "ephemeral"
         @unknown default: return "unknown"
         }
-    }
-
-    /// Fire-and-forget diagnostics row so we can see, from the server, why APNs
-    /// registration succeeds or fails on TestFlight (the device-side error is
-    /// otherwise silent in Release). Temporary — remove once push is confirmed.
-    /// Debug builds only: Release compiles this to a no-op so shipping builds
-    /// never write diagnostics rows.
-    static func logDebug(_ event: String, detail: String? = nil) {
-        #if DEBUG
-        struct DebugRow: Encodable {
-            let user_id: String?
-            let event: String
-            let detail: String?
-            let app_version: String?
-        }
-        let row = DebugRow(
-            user_id: supabase.auth.currentSession?.user.id.uuidString,
-            event: event,
-            detail: detail,
-            app_version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
-        )
-        Task { try? await supabase.from("push_debug").insert(row).execute() }
-        #endif
     }
 
     /// The device's current APNs token, kept so account switches can bind the
@@ -169,9 +142,7 @@ enum PushTokenService {
                 .upsert(row, onConflict: "token,user_id")
                 .execute()
             UserDefaults.standard.removeObject(forKey: pendingKey)
-            logDebug("upload", detail: "ok env=\(environment)")
         } catch {
-            logDebug("upload", detail: "err=\(error.localizedDescription)")
 #if DEBUG
             debugLog("[Push] token upload failed: \(error)")
 #endif

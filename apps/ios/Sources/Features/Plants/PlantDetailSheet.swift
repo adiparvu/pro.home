@@ -79,8 +79,6 @@ struct PlantDetailSheet: View {
                             )
                             automationsCard
                             plantQRCard
-                            // waterButton retired: "Am udat-o" now lives in
-                            // the quick-actions row right under the hero.
                         }
 
                         Spacer(minLength: 40)

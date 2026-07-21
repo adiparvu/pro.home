@@ -20,11 +20,10 @@ import UIKit
 //  • destructive actions carry the real `ButtonRole.destructive`;
 //  • counts/badges are not menu anatomy — they stay on page content.
 //
-// `richContent` (the legacy popover presentation) has NO users anymore —
+// The legacy rich-popover presentation was DELETED (audit 2026-07-21) —
 // Activity's People section, its last justification, moved onto native menu
-// options by user decree (IMG_8593): a household roster is short, and search
-// fields/avatars are not menu anatomy. The machinery below stays dormant;
-// do not opt new pages into it.
+// options by user decree (IMG_8593). Only the action mailbox survives, for
+// the shared rows' dormant non-native branch; do not resurrect the popover.
 
 // MARK: - Rendering mode (native menu vs. rich popover)
 
@@ -40,27 +39,6 @@ extension EnvironmentValues {
         get { self[GlassMenuNativeKey.self] }
         set { self[GlassMenuNativeKey.self] = newValue }
     }
-}
-
-// MARK: - Arrowless popovers (rich-content path only)
-
-private final class PopoverArrowKillerView: UIView {
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        var responder: UIResponder? = self
-        while let current = responder {
-            if let vc = current as? UIViewController {
-                vc.popoverPresentationController?.permittedArrowDirections = []
-                break
-            }
-            responder = current.next
-        }
-    }
-}
-
-struct PopoverArrowKiller: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView { PopoverArrowKillerView() }
-    func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
 // MARK: - Menu chrome (rich-content path only)
@@ -168,36 +146,24 @@ struct GlassFilterButton<Content: View>: View {
     var accessibilityLabelKey: LocalizedStringKey = "filter_picker"
     /// Standalone trigger diameter (ignored in toolbars — system metrics).
     var standaloneSize: CGFloat = 38
-    /// Content a native menu cannot host (search fields, avatar rows)
-    /// keeps the popover presentation and the legacy glass rows.
-    var richContent: Bool = false
     @ViewBuilder var content: () -> Content
 
-    @State private var isPresented = false
-    @State private var mailbox = GlassPopoverActionMailbox()
-    /// Rich popover only: measured once, then FIXED — a popover that keeps
-    /// re-measuring a scrolling ScrollView re-anchors every frame (IMG_8561).
-    @State private var contentHeight: CGFloat?
-
-    private static var maxPopoverHeight: CGFloat { 440 }
 
     private var glyphSize: CGFloat {
         inToolbar ? 15 : (standaloneSize * 15 / 38).rounded()
     }
 
     var body: some View {
-        if richContent {
-            richButton
-        } else {
-            Menu {
-                content()
-            } label: {
-                trigger
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(accessibilityLabelKey))
-            .accessibilityAddTraits(isActive ? [.isSelected] : [])
+        // The native Menu is the ONLY presentation (user-decreed, IMG_8593);
+        // the legacy rich-popover path was deleted with zero call sites.
+        Menu {
+            content()
+        } label: {
+            trigger
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibilityLabelKey))
+        .accessibilityAddTraits(isActive ? [.isSelected] : [])
     }
 
     private var trigger: some View {
@@ -221,46 +187,6 @@ struct GlassFilterButton<Content: View>: View {
             .modifier(StandaloneGlassCircle(enabled: !inToolbar))
     }
 
-    /// The legacy popover, for content menus can't host (Activity's People
-    /// section with its search field and avatar rows).
-    private var richButton: some View {
-        Button {
-            HapticFeedback.impact(.light)
-            isPresented = true
-        } label: {
-            trigger
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(accessibilityLabelKey))
-        .accessibilityAddTraits(isActive ? [.isSelected] : [])
-        .popover(isPresented: $isPresented, arrowEdge: .top) {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    content()
-                }
-                .padding(.vertical, AppSpacing.xs)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-                    contentHeight = $0
-                }
-            }
-            .frame(minWidth: 250)
-            .frame(height: contentHeight.map { min($0, Self.maxPopoverHeight) })
-            .frame(maxHeight: contentHeight == nil ? Self.maxPopoverHeight : nil)
-            .scrollBounceBehavior(.basedOnSize)
-            .background(PopoverArrowKiller())
-            .environment(\.glassMenuNative, false)
-            .environment(\.glassPopoverMailbox, mailbox)
-            .onDisappear {
-                guard let action = mailbox.pending else { return }
-                mailbox.pending = nil
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    action()
-                }
-            }
-            .glassMenuChrome()
-        }
-    }
 }
 
 private struct StandaloneGlassCircle: ViewModifier {
