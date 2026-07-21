@@ -19,6 +19,10 @@ enum PropertyPassport {
         let appliances: [Appliance]
         let valuations: [PropertyValueEntry]
         let preferredCurrency: String
+        /// Transfer pillar: the house's technical elements ride along so a
+        /// new owner inherits the full component sheet. Defaulted — older
+        /// call sites keep building.
+        var elements: [PropertyElement] = []
     }
 
     /// A4 in points.
@@ -27,13 +31,22 @@ enum PropertyPassport {
     /// Renders the passport and returns the PDF's temporary file URL.
     @MainActor
     static func generate(_ input: Input) -> URL? {
-        let pages: [AnyView] = [
+        var pages: [AnyView] = [
             AnyView(CoverPage(input: input)),
+            AnyView(HistoryPage(input: input)),
             AnyView(DocumentsPage(input: input)),
             AnyView(MaintenancePage(input: input)),
             AnyView(FinancePage(input: input)),
             AnyView(AppliancesPage(input: input)),
         ]
+        // The component sheet can outgrow one page; chunk honestly instead of
+        // truncating the house's own anatomy.
+        let elementChunks = stride(from: 0, to: input.elements.count, by: 20).map {
+            Array(input.elements[$0..<min($0 + 20, input.elements.count)])
+        }
+        for chunk in elementChunks {
+            pages.append(AnyView(ElementsPage(elements: chunk)))
+        }
 
         let bounds = CGRect(origin: .zero, size: pageSize)
         let renderer = UIGraphicsPDFRenderer(bounds: bounds)
@@ -243,6 +256,82 @@ enum PropertyPassport {
         }
     }
 
+    /// The house's story for its next owner: built, owned, renovated.
+    private struct HistoryPage: View {
+        let input: Input
+
+        var body: some View {
+            PageChrome(title: "passport_sec_history") {
+                if let year = input.property.yearBuilt, year > 0 {
+                    PropertyPassport.row(String(localized: "passport_year_built"), "\(year)")
+                }
+                if let sqm = input.property.sizeSqm, sqm > 0 {
+                    PropertyPassport.row(String(localized: "passport_size"),
+                                         String(format: "%.0f m²", sqm))
+                }
+                if let rooms = input.property.numRooms, rooms > 0 {
+                    PropertyPassport.row(String(localized: "passport_rooms"), "\(rooms)")
+                }
+                if let owners = input.property.owners, !owners.isEmpty {
+                    Rectangle().fill(Color.black.opacity(0.08)).frame(height: 0.7)
+                    Text("passport_owners")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                    ForEach(owners) { o in
+                        PropertyPassport.row(
+                            o.yearTo.map { "\(o.yearFrom)–\($0)" } ?? "\(o.yearFrom)–",
+                            o.name)
+                    }
+                }
+                if let renovations = input.property.renovations, !renovations.isEmpty {
+                    Rectangle().fill(Color.black.opacity(0.08)).frame(height: 0.7)
+                    Text("passport_renovations")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                    ForEach(renovations) { r in
+                        PropertyPassport.row(
+                            r.yearTo.map { "\(r.yearFrom)–\($0)" } ?? "\(r.yearFrom)",
+                            r.title)
+                    }
+                }
+                if let story = input.property.story, !story.isEmpty {
+                    Rectangle().fill(Color.black.opacity(0.08)).frame(height: 0.7)
+                    Text(story).font(AppFont.scaled(10)).foregroundStyle(.gray)
+                        .lineLimit(12)
+                }
+            }
+        }
+    }
+
+    /// One chunk of the technical component sheet — brand/model/serial,
+    /// warranty and the service cadence the household maintains.
+    private struct ElementsPage: View {
+        let elements: [PropertyElement]
+
+        var body: some View {
+            PageChrome(title: "passport_sec_elements") {
+                if elements.isEmpty {
+                    Text("passport_none").font(AppFont.scaled(11)).foregroundStyle(.gray)
+                }
+                ForEach(elements) { el in
+                    PropertyPassport.row(
+                        el.name,
+                        [
+                            [el.brand, el.model].compactMap { $0 }.joined(separator: " "),
+                            el.serialNumber.map { "SN \($0)" } ?? "",
+                            el.technicalCondition.displayName,
+                            el.warrantyUntil.flatMap { AppDate.day(from: $0) }.map {
+                                String(format: String(localized: "passport_warranty"),
+                                       AppDate.dayString(from: $0))
+                            } ?? "",
+                            el.lastServiceAt.flatMap { AppDate.day(from: $0) }.map {
+                                String(format: String(localized: "passport_last_service"),
+                                       AppDate.dayString(from: $0))
+                            } ?? "",
+                        ].filter { !$0.isEmpty }.joined(separator: " · "))
+                }
+            }
+        }
+    }
+
     private struct AppliancesPage: View {
         let input: Input
 
@@ -273,6 +362,7 @@ struct PropertyPassportSheet: View {
     @Environment(FinancialService.self) private var financialService
     @Environment(ApplianceService.self) private var applianceService
     @Environment(PropertyValueService.self) private var propertyValueService
+    @Environment(PropertyElementService.self) private var elementService
     @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
@@ -358,7 +448,8 @@ struct PropertyPassportSheet: View {
                 records: financialService.records,
                 appliances: applianceService.appliances,
                 valuations: propertyValueService.entries,
-                preferredCurrency: appSettings.preferredCurrency))
+                preferredCurrency: appSettings.preferredCurrency,
+                elements: elementService.elements))
             isGenerating = false
             if pdfURL != nil { HapticFeedback.success() }
         }

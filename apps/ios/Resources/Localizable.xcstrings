@@ -1,6 +1,14 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "passport_sec_history": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "House history"}}, "ro": {"stringUnit": {"state": "translated", "value": "Istoria casei"}}}},
+    "passport_sec_elements": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Component sheet"}}, "ro": {"stringUnit": {"state": "translated", "value": "Fișa componentelor"}}}},
+    "passport_year_built": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Year built"}}, "ro": {"stringUnit": {"state": "translated", "value": "An construcție"}}}},
+    "passport_size": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Size"}}, "ro": {"stringUnit": {"state": "translated", "value": "Suprafață"}}}},
+    "passport_rooms": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Rooms"}}, "ro": {"stringUnit": {"state": "translated", "value": "Camere"}}}},
+    "passport_owners": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Owners"}}, "ro": {"stringUnit": {"state": "translated", "value": "Proprietari"}}}},
+    "passport_renovations": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Renovations"}}, "ro": {"stringUnit": {"state": "translated", "value": "Renovări"}}}},
+    "passport_last_service": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Last service %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Ultimul service %@"}}}},
     "inv_dossier_annex_receipts": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Annex — receipts (purchase evidence)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Anexă — bonuri (dovezi de cumpărare)"}}}},
     "inv_dossier_annex_docs": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Annex — documents (first page)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Anexă — documente (prima pagină)"}}}},
     "task_repeat_label": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Repeat"}}, "ro": {"stringUnit": {"state": "translated", "value": "Repetă"}}}},
