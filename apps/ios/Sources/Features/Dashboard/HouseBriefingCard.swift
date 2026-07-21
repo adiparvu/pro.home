@@ -20,6 +20,7 @@ struct HouseBriefingCard: View {
     @Environment(DeliveryService.self) private var deliveryService
     @Environment(FamilyService.self) private var familyService
     @Environment(PresenceService.self) private var presenceService
+    @Environment(PropertyService.self) private var propertyService
 
     var body: some View {
         // Minute clock: presence windows, "due today" and the rain hour all
@@ -27,6 +28,12 @@ struct HouseBriefingCard: View {
         // freezing at first render.
         TimelineView(.periodic(from: .now, by: 60)) { context in
             content(now: context.date)
+        }
+        // Yuna's server-side take arrives once per day (cached), added under
+        // the deterministic facts — never replacing them.
+        .task(id: propertyService.primary?.id) {
+            await AriaBriefingService.shared.refreshIfStale(
+                propertyId: propertyService.primary?.id)
         }
     }
 
@@ -56,6 +63,23 @@ struct HouseBriefingCard: View {
                     ForEach(facts) { fact in
                         factRow(icon: fact.icon, tint: fact.tint, text: fact.text)
                     }
+                }
+            }
+
+            // Yuna's daily take — grounded AI prose over the same data the
+            // owner allowed the assistant to see. Facts above stay authoritative;
+            // this is the butler's voice, once a day.
+            if !compact, let take = AriaBriefingService.shared.briefing {
+                Divider().overlay(Color.hairline)
+                HStack(alignment: .top, spacing: AppSpacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(AppFont.scaled(12, weight: .semibold))
+                        .foregroundStyle(Color.brandPurple)
+                        .frame(width: 20)
+                    Text(verbatim: take)
+                        .font(AppFont.scaled(13))
+                        .foregroundStyle(Color.secondaryTextColor)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
