@@ -139,7 +139,17 @@ struct ARIAView: View {
                     .accessibilityLabel("Settings")
                 }
             }
-            .task { await loadHistory() }
+            .task {
+                await loadHistory()
+                // A dashboard insight can arrive with the question already
+                // composed ("Ask the assistant"). Pre-fill only — the user
+                // reviews and taps send; nothing fires on its own.
+                if let pending = UserDefaults.standard.string(forKey: "prvio.aria.pendingPrompt"),
+                   !pending.isEmpty {
+                    UserDefaults.standard.removeObject(forKey: "prvio.aria.pendingPrompt")
+                    input = pending
+                }
+            }
     }
 
     // MARK: - Message list

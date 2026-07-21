@@ -1,6 +1,9 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Add as task": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Add as task"}}, "ro": {"stringUnit": {"state": "translated", "value": "Adaugă ca sarcină"}}}},
+    "Ask the assistant": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Ask the assistant"}}, "ro": {"stringUnit": {"state": "translated", "value": "Întreabă asistentul"}}}},
+    "aria_insight_prompt_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "What should I do about this: %@ (%@)"}}, "ro": {"stringUnit": {"state": "translated", "value": "Ce ar trebui să fac cu asta: %@ (%@)"}}}},
     "About %d years old — typical service life for its category is ~%d–%d years. Plan an inspection or budget for a replacement.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "About %d years old — typical service life for its category is ~%d–%d years. Plan an inspection or budget for a replacement."}}, "ro": {"stringUnit": {"state": "translated", "value": "Are cam %d ani — durata de viață tipică pentru categoria sa este de ~%d–%d ani. Planifică o inspecție sau bugetează înlocuirea."}}}},
     "%@ needs attention": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%@ needs attention"}}, "ro": {"stringUnit": {"state": "translated", "value": "%@ are nevoie de atenție"}}}},
     "Its recorded condition is \"%@\". Schedule a service visit before it worsens.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Its recorded condition is \"%@\". Schedule a service visit before it worsens."}}, "ro": {"stringUnit": {"state": "translated", "value": "Starea sa înregistrată este „%@”. Programează o vizită de service înainte să se agraveze."}}}},

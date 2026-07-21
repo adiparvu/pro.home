@@ -13,6 +13,9 @@ struct ProactiveInsightsCard: View {
     var compact: Bool = false
 
     @Environment(ProactiveEngine.self) private var engine
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(AppRouter.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Rotation cursor — kept valid by clamping against the live count.
@@ -80,6 +83,24 @@ struct ProactiveInsightsCard: View {
                 }
                 .id(insight.id)
                 .transition(.opacity)
+                // The proactive bridge: an insight is not just news — it can
+                // become work. Long-press turns it into a real task (the
+                // engine's fact as title, its reasoning as description) or
+                // opens the assistant with the question already composed.
+                .contextMenu {
+                    if insight.category != .financial {
+                        Button {
+                            addAsTask(insight)
+                        } label: {
+                            Label("Add as task", systemImage: "checklist")
+                        }
+                    }
+                    Button {
+                        askAssistant(insight)
+                    } label: {
+                        Label("Ask the assistant", systemImage: "sparkles")
+                    }
+                }
             }
         }
         .padding(AppSpacing.base)
@@ -100,6 +121,39 @@ struct ProactiveInsightsCard: View {
 
     private func currentIndex(_ count: Int) -> Int {
         count > 0 ? cursor % count : 0
+    }
+
+    /// The insight becomes a pending maintenance task and leaves the card —
+    /// it graduated from advice to plan.
+    private func addAsTask(_ insight: ProactiveInsight) {
+        guard let pid = propertyService.primary?.id else { return }
+        Task {
+            let payload = NewTaskPayload(
+                propertyId: pid,
+                title: insight.title,
+                description: insight.body,
+                dueDate: nil,
+                priority: insight.category == .warranty ? "high" : "medium",
+                category: "maintenance",
+                assigneeIds: [],
+                assigneeNames: [])
+            if (try? await taskService.addTask(payload)) != nil {
+                HapticFeedback.success()
+                engine.dismiss(insight)
+            } else {
+                HapticFeedback.error()
+            }
+        }
+    }
+
+    /// Opens the assistant with the question already composed from the
+    /// insight — the user reviews and sends, nothing fires on its own.
+    private func askAssistant(_ insight: ProactiveInsight) {
+        UserDefaults.standard.set(
+            String(format: String(localized: "aria_insight_prompt_fmt"),
+                   insight.title, insight.body),
+            forKey: "prvio.aria.pendingPrompt")
+        router.navigate(to: .aria)
     }
 }
 
