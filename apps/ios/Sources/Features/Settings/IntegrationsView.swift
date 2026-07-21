@@ -36,12 +36,12 @@ struct IntegrationsView: View {
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your upcoming tasks will appear in your Apple Calendar under the \"PRVIO\" calendar.")
+            Text("integ_calendar_note")
         }
         .alert("Contacts Synced", isPresented: $vm.showContactsSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Family members have been added to your Contacts under the \"PRVIO Family\" group.")
+            Text("integ_contacts_note")
         }
         .alert("Access Denied", isPresented: $vm.showPermissionDenied) {
             Button("Open Settings") {

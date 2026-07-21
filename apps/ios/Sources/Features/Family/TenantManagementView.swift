@@ -383,7 +383,7 @@ struct TenantManagementView: View {
             Text("No tenants yet")
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Add tenants to manage their contact info\nand lease details in one place.")
+            Text("tenants_empty_hint")
                 .font(AppFont.scaled(13))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)

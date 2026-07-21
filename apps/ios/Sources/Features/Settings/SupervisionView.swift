@@ -137,7 +137,7 @@ struct SupervisionView: View {
                     Text("Family Supervision")
                         .font(AppFont.scaled(18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Control what each family member\ncan see and access in the app.")
+                    Text("supervision_hint")
                         .font(AppFont.scaled(12))
                         .foregroundStyle(.white.opacity(0.82))
                         .lineSpacing(3)

@@ -1,6 +1,134 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "sec_device_remove_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the device from the registry. It does not sign the device out — use \"Sign out all other sessions\" for that."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceasta elimină dispozitivul din registru. Nu îl deconectează — folosește „Deconectează toate celelalte sesiuni\" pentru asta."
+          }
+        }
+      }
+    },
+    "sec_device_remove_note2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing a device only clears it from this list. \"Sign out all other sessions\" actually invalidates their access."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminarea unui dispozitiv doar îl șterge din această listă. „Deconectează toate celelalte sesiuni\" îi invalidează cu adevărat accesul."
+          }
+        }
+      }
+    },
+    "integ_calendar_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your upcoming tasks will appear in your Apple Calendar under the \"PRVIO\" calendar."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcinile tale viitoare vor apărea în Calendarul Apple, în calendarul „PRVIO\"."
+          }
+        }
+      }
+    },
+    "integ_contacts_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family members have been added to your Contacts under the \"PRVIO Family\" group."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membrii familiei au fost adăugați în Contacte, în grupul „PRVIO Family\"."
+          }
+        }
+      }
+    },
+    "tenants_empty_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add tenants to manage their contact info\nand lease details in one place."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă chiriași ca să le ții datele de contact\nși detaliile contractului într-un singur loc."
+          }
+        }
+      }
+    },
+    "supervision_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control what each family member\ncan see and access in the app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlează ce poate vedea și accesa\nfiecare membru al familiei în aplicație."
+          }
+        }
+      }
+    },
+    "profile_social_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add accounts with \"+\" (Instagram, WhatsApp, etc.)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă conturi cu „+\" (Instagram, WhatsApp etc.)"
+          }
+        }
+      }
+    },
+    "deliveries_empty_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add packages to track\nyour deliveries."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă colete ca să îți urmărești\nlivrările."
+          }
+        }
+      }
+    },
     "bg_settings_title": {
       "localizations": {
         "en": {

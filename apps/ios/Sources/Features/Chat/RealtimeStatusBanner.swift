@@ -29,13 +29,12 @@ struct RealtimeStatusBanner: View {
         return Color.brandWarning
     }
 
-    // NOTE: temporarily ALWAYS visible — green when live, grey while connecting,
-    // orange when degraded — so the exact realtime state is never blank while
-    // the typing/delivery fault is being diagnosed. A blank (hidden) banner
-    // during a stuck "…" retry is exactly what made it look absent. Reverts to
-    // warning-only once resolved.
+    // Warning-only again (audit 2026-07-21): the typing/delivery fault the
+    // always-visible diagnostic served is resolved (1177/1185 defenses), so
+    // the strip returns to its design — invisible while healthy or still
+    // resolving, surfacing only a genuinely degraded session.
     var body: some View {
-        Group {
+        if !isLive && !isConnecting {
             Button {
                 // Export the WHOLE flight recorder, not just the one-line
                 // status: transitions + SDK close codes + watchdog events —

@@ -49,7 +49,7 @@ struct ActiveSessionsSheet: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("This removes the device from the registry. It does not sign the device out — use \"Sign out all other sessions\" for that.")
+            Text("sec_device_remove_note")
         }
     }
 
@@ -86,7 +86,7 @@ struct ActiveSessionsSheet: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.lg)
 
-            Text("Removing a device only clears it from this list. \"Sign out all other sessions\" actually invalidates their access.")
+            Text("sec_device_remove_note2")
                 .font(AppFont.scaled(12)).foregroundStyle(Color.primary.opacity(0.38))
                 .multilineTextAlignment(.center).padding(.horizontal, 28).padding(.top, AppSpacing.lg)
 

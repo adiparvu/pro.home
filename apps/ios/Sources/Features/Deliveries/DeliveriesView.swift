@@ -240,7 +240,7 @@ struct DeliveriesView: View {
             Text("No deliveries tracked")
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Add packages to track\nyour deliveries.")
+            Text("deliveries_empty_hint")
                 .font(AppFont.scaled(14))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)

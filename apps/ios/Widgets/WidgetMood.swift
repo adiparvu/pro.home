@@ -96,12 +96,13 @@ private struct MoodContainerBackground: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if renderingMode == .fullColor, let sky = SharedDataStore.freshWeatherSky() {
-            // F4 — the weather stage's real sky, frozen at publish time:
-            // the same gradient the app renders, at widget-archive cost.
-            // Freshness is enforced by the reader (≤45 min), so the tile
-            // never wears yesterday's weather; past the TTL the classic
-            // palette below takes over honestly.
+        if renderingMode == .fullColor,
+           let sky = SharedDataStore.readBackdropSky() ?? SharedDataStore.freshWeatherSky() {
+            // The owner's CHOSEN backdrop (gradient endpoints or the
+            // photo's measured thirds) — the same ground the app renders,
+            // with its darkGround driving the tile's scheme. No TTL: a
+            // static choice stays honest until changed. The weather sky
+            // remains only as the legacy TTL-bound fallback.
             content
                 .containerBackground(for: .widget) {
                     LinearGradient(colors: [skyColor(sky.top), skyColor(sky.bottom)],

@@ -260,6 +260,27 @@ extension SharedDataStore {
               snapshot.top.count == 3, snapshot.bottom.count == 3 else { return nil }
         return snapshot
     }
+
+    // The owner's CHOSEN backdrop (audit 2026-07-21): gradient endpoints or
+    // the photo's measured thirds, published by BackgroundStyle. Unlike the
+    // weather sky it carries NO TTL — a static choice stays honest until it
+    // is changed, so widgets and the watch never fall back to a palette
+    // that disagrees with the phone.
+    private static let backdropSkyKey = "prvio.backdrop.sky"
+
+    static func writeBackdropSky(_ snapshot: WeatherSkySnapshot) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(snapshot) else { return }
+        ud.set(data, forKey: backdropSkyKey)
+    }
+
+    static func readBackdropSky() -> WeatherSkySnapshot? {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: backdropSkyKey),
+              let snapshot = try? JSONDecoder().decode(WeatherSkySnapshot.self, from: data),
+              snapshot.top.count == 3, snapshot.bottom.count == 3 else { return nil }
+        return snapshot
+    }
 }
 
 // MARK: - Intent catalogs (read by App Intents without Supabase)
@@ -969,10 +990,11 @@ enum SharedDataStore {
                             // The living backdrop's resolved mood, so the wrist
                             // breathes the same atmosphere as the phone.
                             mood: UserDefaults(suiteName: suiteName)?.string(forKey: "app.mood.current"),
-                            // The weather stage's fresh sky (F4) — nil past its
-                            // TTL, so the wrist never wears yesterday's weather.
-                            skyTop: freshWeatherSky()?.top,
-                            skyBottom: freshWeatherSky()?.bottom)
+                            // The owner's chosen backdrop first (no TTL — a
+                            // static choice stays honest until changed); the
+                            // weather sky remains only as the legacy fallback.
+                            skyTop: (readBackdropSky() ?? freshWeatherSky())?.top,
+                            skyBottom: (readBackdropSky() ?? freshWeatherSky())?.bottom)
     }
 
     // MARK: Watch page personalization (chosen on the iPhone)

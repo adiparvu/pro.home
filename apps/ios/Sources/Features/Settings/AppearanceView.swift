@@ -65,26 +65,15 @@ struct AppearanceView: View {
 
     // MARK: - Theme
 
-    /// The theme's current selection, stated the way iOS Settings states a
-    /// row's value ("Temă   Automat ›"). Backgrounds retired 2026-07-19.
-    private var moodRowValue: String {
-        AppMoodEngine.shared.appearance.localizedTitle
-    }
-
-    /// The app's color scheme follows the background mood engine (Auto /
-    /// Dimineața / Zi / Noaptea), so the old Dark/Light/System rows would
-    /// be dead controls — the mood row is the single scheme control now.
-    /// (`appSettings.theme` stays stored for profile compatibility.)
+    /// The Temă page RETIRED (audit 2026-07-21): the chosen backdrop now
+    /// dictates the app's color scheme (a dark gradient/photo renders the
+    /// app dark, like an iOS wallpaper), so a separate Light/Dark control
+    /// would be a dead switch. Fundal is the single appearance authority.
     private var themeSection: some View {
         SettingsGroup(title: "Theme") {
-            NavSettingsRow(icon: "circle.lefthalf.filled", color: .brandGold,
-                           label: "appearance_title",
-                           value: moodRowValue) {
-                BackgroundMoodView()
-            }
-            // The personalized backdrop page (user-decreed 2026-07-20):
-            // live weather sky, curated gradients or the owner's own
-            // photo — plus the stage's controls when the sky is chosen.
+            // The personalized backdrop page (user-decreed 2026-07-20/21):
+            // curated gradients or the owner's own photo; its luminance
+            // drives the whole app's scheme and the widget/watch ground.
             NavSettingsRow(icon: "photo.on.rectangle.angled", color: .brandPrimaryBlue,
                            label: "bg_settings_title") {
                 BackgroundSettingsView()

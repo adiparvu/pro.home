@@ -127,7 +127,7 @@ struct EditProfileView: View {
             }
 
             if socialLinks.isEmpty {
-                Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
+                Text("profile_social_hint")
                     .font(AppFont.scaled(13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .padding(.vertical, AppSpacing.xxs)
