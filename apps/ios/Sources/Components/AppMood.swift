@@ -356,9 +356,6 @@ final class AppMoodEngine {
         }
     }
 
-    /// True while at least one custom Auto threshold is set.
-    var hasCustomHours: Bool { morningStartMinutes != nil || nightStartMinutes != nil }
-
     /// Whether the backdrop may modulate with the property's real weather
     /// (Settings → Aspect → Fundal). Persisted; default ON. The toggle only
     /// ever matters when a fresh cached summary exists — see `weatherTone`.
@@ -388,9 +385,6 @@ final class AppMoodEngine {
         didSet { if longitude != oldValue { publishResolvedIfChanged() } }
     }
 
-    /// True while no manual pin is set.
-    var isAuto: Bool { override == nil }
-
     /// The published "mood" is now simply the classic ground matching the
     /// effective scheme (backgrounds retired) — widgets, the watch and the
     /// auto accent all collapse to the flat classic through this one door.
@@ -403,11 +397,6 @@ final class AppMoodEngine {
                 ? .classicDark : .classicLight
         }
     }
-
-    /// The pre-retirement Auto composition — kept only because `autoReason`
-    /// and the threshold plumbing still reference it; nothing user-facing
-    /// resolves through it anymore.
-    var legacyAutoResolved: AppMood { autoResolved }
 
     /// What Auto composes right now, independent of any pin — the settings
     /// page's Auto card previews exactly this.
@@ -447,8 +436,6 @@ final class AppMoodEngine {
     /// on-screen backdrops aren't invalidated by a no-op tick.
     private var clock: Date = .now
 
-    @ObservationIgnored private var liveBackdrops = 0
-    @ObservationIgnored private var timer: Timer?
     /// The last mood written to the App Group (dedupes publishes).
     @ObservationIgnored private var publishedMood: AppMood?
     /// Weather-cache observation token (the singleton never deallocates,
@@ -617,31 +604,6 @@ final class AppMoodEngine {
         UserDefaults.standard.object(forKey: key) as? Int
     }
 
-    // MARK: Backdrop lifecycle (ref-counted 15-minute tick)
-
-    /// Called by every live `AppBackdrop`'s `onAppear`. The first visible
-    /// backdrop starts the shared timer; there is never more than one.
-    func backdropAppeared() {
-        liveBackdrops += 1
-        guard timer == nil else { return }
-        refresh()
-        let t = Timer(timeInterval: 15 * 60, repeats: true) { _ in
-            Task { @MainActor in AppMoodEngine.shared.refresh() }
-        }
-        t.tolerance = 90   // let the system coalesce wakeups — battery first
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
-    }
-
-    /// Called by every live `AppBackdrop`'s `onDisappear`. The last one off
-    /// screen stops the timer — nothing ticks while the app shows no backdrop.
-    func backdropDisappeared() {
-        liveBackdrops = max(0, liveBackdrops - 1)
-        if liveBackdrops == 0 {
-            timer?.invalidate()
-            timer = nil
-        }
-    }
 }
 
 // MARK: - Auto reasons (why Auto shows what it shows)
