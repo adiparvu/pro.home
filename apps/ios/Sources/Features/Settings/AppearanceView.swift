@@ -142,50 +142,38 @@ struct AppearanceView: View {
 
                 Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
 
-                HStack(spacing: 10) {
+                // Named palette as a spacious 4-column grid of large swatches
+                // — the same visual language as the profile's avatar-ring
+                // picker (IMG_8820), replacing the old cramped single row.
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
+                          spacing: AppSpacing.lg) {
                     ForEach(accentOptions, id: \.name) { opt in
-                        Button {
-                            withAnimation(.spring(response: 0.28)) {
-                                appSettings.accentColor = opt.name
-                                HapticFeedback.selection()
-                            }
-                            if let uid = auth.session?.user.id {
-                                appSettings.syncToProfile(userId: uid)
-                            }
-                        } label: {
-                            ZStack {
-                                Circle().fill(opt.color).frame(width: 26, height: 26)
-                                if appSettings.accentColor == opt.name {
-                                    Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
-                                    Circle().strokeBorder(opt.color, lineWidth: 1.5).frame(width: 32, height: 32)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity)
+                        accentSwatch(name: opt.name, color: opt.color, label: opt.labelKey)
                     }
-
-                    // Custom color picker — visible ColorPicker overlaid with rainbow visual
-                    ZStack {
-                        Circle()
-                            .fill(AngularGradient(
-                                gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
-                                center: .center
-                            ))
-                            .frame(width: 26, height: 26)
-                        if appSettings.accentColor.hasPrefix("#") {
-                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
-                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32)
-                        }
-                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
-                            .labelsHidden()
-                            .opacity(0.015)
-                            .scaleEffect(2.2)
-                            .frame(width: 44, height: 44)
-                    }
-                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.base)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.top, AppSpacing.base)
+                .padding(.bottom, AppSpacing.md)
+
+                Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
+
+                // Custom color — a settings row with the system ColorPicker
+                // trailing (its own swatch shows the rainbow / chosen hue),
+                // mirroring the profile's "Custom color" card.
+                HStack(spacing: AppSpacing.sm) {
+                    Text("Custom color")
+                        .font(AppFont.scaled(15)).foregroundStyle(.primary)
+                    if appSettings.accentColor.hasPrefix("#") {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(currentColor)
+                    }
+                    Spacer()
+                    ColorPicker("", selection: customColorBinding, supportsOpacity: false)
+                        .labelsHidden()
+                        .accessibilityLabel(Text("Custom color"))
+                }
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 }
             }
         }
@@ -241,6 +229,38 @@ struct AppearanceView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// One large palette swatch — the exact look of the profile's avatar-ring
+    /// picker (40pt fill, white checkmark, a concentric ring when chosen).
+    private func accentSwatch(name: String, color: Color, label: LocalizedStringKey) -> some View {
+        let selected = appSettings.accentColor == name
+        return Button {
+            withAnimation(.snappy(duration: 0.25)) {
+                appSettings.accentColor = name
+                HapticFeedback.selection()
+            }
+            if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
+        } label: {
+            ZStack {
+                Circle().fill(color).frame(width: 40, height: 40)
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.white)
+                }
+            }
+            .overlay {
+                if selected {
+                    Circle().strokeBorder(color, lineWidth: 1.5).frame(width: 48, height: 48)
+                }
+            }
+            .frame(width: 48, height: 48)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Haptic
