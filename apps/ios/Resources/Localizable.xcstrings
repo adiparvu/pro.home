@@ -4736,28 +4736,10 @@
     },
     "Add photo": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto hinzufügen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter une photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto toevoegen"
           }
         },
         "ro": {
@@ -9476,28 +9458,10 @@
     },
     "Chatul tău acum": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Chat gerade jetzt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Your chat right now"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ta discussion en ce moment"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Je chat op dit moment"
           }
         },
         "ro": {
@@ -11818,28 +11782,10 @@
     },
     "Couldn't save changes.": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Änderungen konnten nicht gespeichert werden."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't save changes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible d'enregistrer les modifications."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wijzigingen konden niet worden opgeslagen."
           }
         },
         "ro": {
@@ -13181,28 +13127,10 @@
     },
     "Delete this note?": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Notiz löschen?"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Delete this note?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer cette note ?"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deze notitie verwijderen?"
           }
         },
         "ro": {
@@ -13696,28 +13624,10 @@
     },
     "Dining": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restaurants"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Dining"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restaurants"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restaurants"
           }
         },
         "ro": {
@@ -14531,28 +14441,10 @@
     },
     "Earlier": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Früher"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Earlier"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus tôt"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eerder"
           }
         },
         "ro": {
@@ -16327,28 +16219,10 @@
     },
     "Expense": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ausgabe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expense"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dépense"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitgave"
           }
         },
         "ro": {
@@ -18682,28 +18556,10 @@
     },
     "Groceries": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lebensmittel"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Groceries"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Courses"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Boodschappen"
           }
         },
         "ro": {
@@ -19292,28 +19148,10 @@
     },
     "Healthcare": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gesundheit"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Healthcare"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Santé"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gezondheid"
           }
         },
         "ro": {
@@ -20991,28 +20829,10 @@
     },
     "Insurance": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versicherung"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Insurance"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assurance"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verzekering"
           }
         },
         "ro": {
@@ -21233,28 +21053,10 @@
     },
     "Investment": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Investitionen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Investment"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Investissements"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Investeringen"
           }
         },
         "ro": {
@@ -25448,28 +25250,10 @@
     },
     "Necitite": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ungelesen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Unread"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non lus"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ongelezen"
           }
         },
         "ro": {
@@ -28366,28 +28150,10 @@
     },
     "Online acum": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jetzt online"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Online now"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En ligne"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nu online"
           }
         },
         "ro": {
@@ -33075,28 +32841,10 @@
     },
     "Remove photo": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto entfernen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remove photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer la photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto verwijderen"
           }
         },
         "ro": {
@@ -33221,28 +32969,10 @@
     },
     "Rent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miete"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Rent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loyer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Huur"
           }
         },
         "ro": {
@@ -34376,28 +34106,10 @@
     },
     "Salary": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gehalt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Salary"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salaire"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salaris"
           }
         },
         "ro": {
@@ -39088,28 +38800,10 @@
     },
     "Taxes": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Steuern"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Taxes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impôts"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Belastingen"
           }
         },
         "ro": {
@@ -39474,28 +39168,10 @@
     },
     "That session has expired, so the account was removed from the list. Sign in again to add it back.": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Sitzung ist abgelaufen, daher wurde das Konto aus der Liste entfernt. Melde dich erneut an, um es wieder hinzuzufügen."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "That session has expired, so the account was removed from the list. Sign in again to add it back."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cette session a expiré, le compte a donc été retiré de la liste. Reconnecte-toi pour le rajouter."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die sessie is verlopen, dus het account is uit de lijst verwijderd. Log opnieuw in om het weer toe te voegen."
           }
         },
         "ro": {
@@ -40180,28 +39856,10 @@
     },
     "This week": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Woche"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "This week"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cette semaine"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deze week"
           }
         },
         "ro": {
@@ -40902,28 +40560,10 @@
     },
     "Transport": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transport"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Transport"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transports"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vervoer"
           }
         },
         "ro": {
@@ -44686,28 +44326,10 @@
     },
     "activity_agg_appliances": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Geräte hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld appliances added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld appareils ajoutés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld apparaten toegevoegd"
           }
         },
         "ro": {
@@ -44720,28 +44342,10 @@
     },
     "activity_agg_documents": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Dokumente hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld documents added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld documents ajoutés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld documenten toegevoegd"
           }
         },
         "ro": {
@@ -44754,28 +44358,10 @@
     },
     "activity_agg_elements": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Elemente hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld elements added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld éléments ajoutés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld elementen toegevoegd"
           }
         },
         "ro": {
@@ -44788,28 +44374,10 @@
     },
     "activity_agg_expenses": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Ausgaben erfasst"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld expenses recorded"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld dépenses enregistrées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld uitgaven geregistreerd"
           }
         },
         "ro": {
@@ -44822,28 +44390,10 @@
     },
     "activity_agg_incomes": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Einnahmen hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld incomes added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld revenus ajoutés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld inkomsten toegevoegd"
           }
         },
         "ro": {
@@ -44856,28 +44406,10 @@
     },
     "activity_agg_plants_added": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Pflanzen hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld plants added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld plantes ajoutées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld planten toegevoegd"
           }
         },
         "ro": {
@@ -44890,28 +44422,10 @@
     },
     "activity_agg_plants_watered": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Pflanzen gegossen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld plants watered"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld plantes arrosées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld planten water gegeven"
           }
         },
         "ro": {
@@ -44924,28 +44438,10 @@
     },
     "activity_agg_tasks_added": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Aufgaben hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld tasks added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld tâches ajoutées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld taken toegevoegd"
           }
         },
         "ro": {
@@ -44958,28 +44454,10 @@
     },
     "activity_agg_tasks_completed": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Aufgaben erledigt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld tasks completed"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld tâches terminées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld taken voltooid"
           }
         },
         "ro": {
@@ -44992,28 +44470,10 @@
     },
     "activity_agg_tasks_overdue": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Aufgaben überfällig"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld tasks overdue"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld tâches en retard"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld achterstallige taken"
           }
         },
         "ro": {
@@ -45026,28 +44486,10 @@
     },
     "activity_event_count_many": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Ereignisse"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld events"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld événements"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld gebeurtenissen"
           }
         },
         "ro": {
@@ -45060,28 +44502,10 @@
     },
     "activity_event_count_one": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 Ereignis"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "1 event"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 événement"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 gebeurtenis"
           }
         },
         "ro": {
@@ -45094,28 +44518,10 @@
     },
     "activity_period_6m": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "6 Monate"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "6 months"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "6 mois"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "6 maanden"
           }
         },
         "ro": {
@@ -45128,25 +44534,7 @@
     },
     "activity_period_week": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Woche"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Week"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semaine"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Week"
@@ -45162,28 +44550,10 @@
     },
     "activity_period_year": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jahr"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Year"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Année"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaar"
           }
         },
         "ro": {
@@ -46540,28 +45910,10 @@
     },
     "budget_copy_last_month": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Budgets vom Vormonat übernehmen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Copy last month's budgets"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copier les budgets du mois dernier"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Budgetten van vorige maand kopiëren"
           }
         },
         "ro": {
@@ -46865,28 +46217,10 @@
     },
     "call_facetime_audio": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FaceTime-Anruf"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "FaceTime call"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appel FaceTime"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FaceTime-oproep"
           }
         },
         "ro": {
@@ -46899,28 +46233,10 @@
     },
     "call_facetime_video": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FaceTime-Video"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "FaceTime video"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FaceTime vidéo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FaceTime-video"
           }
         },
         "ro": {
@@ -47785,28 +47101,10 @@
     },
     "chat_show_subject_field": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Betreff-Feld einblenden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show Subject Field"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afficher le champ Objet"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Onderwerpveld tonen"
           }
         },
         "ro": {
@@ -48011,28 +47309,10 @@
     },
     "composer_subject_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Betreff"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Subject"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objet"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Onderwerp"
           }
         },
         "ro": {
@@ -49655,28 +48935,10 @@
     },
     "doc_exp_chip_days": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Läuft in %lld Tagen ab"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expires in %lld days"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expire dans %lld jours"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verloopt over %lld dagen"
           }
         },
         "ro": {
@@ -49689,28 +48951,10 @@
     },
     "doc_exp_chip_expired": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abgelaufen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expired"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expiré"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verlopen"
           }
         },
         "ro": {
@@ -49723,28 +48967,10 @@
     },
     "doc_exp_chip_today": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Läuft heute ab"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expires today"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expire aujourd'hui"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verloopt vandaag"
           }
         },
         "ro": {
@@ -49757,28 +48983,10 @@
     },
     "doc_exp_chip_tomorrow": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Läuft morgen ab"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expires tomorrow"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expire demain"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verloopt morgen"
           }
         },
         "ro": {
@@ -49808,28 +49016,10 @@
     },
     "doc_f_category": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kategorie"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Category"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Catégorie"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Categorie"
           }
         },
         "ro": {
@@ -50029,28 +49219,10 @@
     },
     "doc_f_name": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Name"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nom"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Naam"
           }
         },
         "ro": {
@@ -50301,28 +49473,10 @@
     },
     "doc_file_primary": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hauptdatei"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Primary"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Principal"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Primair"
           }
         },
         "ro": {
@@ -50352,28 +49506,10 @@
     },
     "doc_files_scan_cta": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weitere Seiten scannen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Scan more pages"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scanner d'autres pages"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meer pagina's scannen"
           }
         },
         "ro": {
@@ -50386,28 +49522,10 @@
     },
     "doc_filter_all": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tous"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
           }
         },
         "ro": {
@@ -50436,28 +49554,10 @@
     },
     "doc_filter_favorites": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favoriten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Favorites"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favoris"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favorieten"
           }
         },
         "ro": {
@@ -50859,28 +49959,10 @@
     },
     "doc_rel_cta_appliance": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit einem Gerät verknüpfen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Link to an appliance"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lier à un appareil"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koppelen aan een apparaat"
           }
         },
         "ro": {
@@ -50893,28 +49975,10 @@
     },
     "doc_rel_cta_element": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit einem Objekt verknüpfen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Link to an object"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lier à un objet"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koppelen aan een object"
           }
         },
         "ro": {
@@ -50927,28 +49991,10 @@
     },
     "doc_rel_cta_related": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zugehöriges Dokument hinzufügen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add a related document"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter un document associé"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gerelateerd document toevoegen"
           }
         },
         "ro": {
@@ -50961,28 +50007,10 @@
     },
     "doc_rel_cta_room": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit einem Raum verknüpfen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Link to a room"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lier à une pièce"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koppelen aan een kamer"
           }
         },
         "ro": {
@@ -51628,28 +50656,10 @@
     },
     "doc_type_certificate": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zertifikat"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Certificate"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Certificat"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Certificaat"
           }
         },
         "ro": {
@@ -51662,25 +50672,7 @@
     },
     "doc_type_contract": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vertrag"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contract"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contrat"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Contract"
@@ -51696,28 +50688,10 @@
     },
     "doc_type_insurance": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versicherung"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Insurance"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assurance"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verzekering"
           }
         },
         "ro": {
@@ -51730,28 +50704,10 @@
     },
     "doc_type_invoice": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rechnung"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Invoice"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Facture"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Factuur"
           }
         },
         "ro": {
@@ -51764,28 +50720,10 @@
     },
     "doc_type_legal": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rechtliches"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Legal"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juridique"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juridisch"
           }
         },
         "ro": {
@@ -51798,28 +50736,10 @@
     },
     "doc_type_manual": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Handbuch"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Manual"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manuel"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Handleiding"
           }
         },
         "ro": {
@@ -51832,28 +50752,10 @@
     },
     "doc_type_other": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sonstiges"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Other"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Overig"
           }
         },
         "ro": {
@@ -51866,28 +50768,10 @@
     },
     "doc_type_permit": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Genehmigung"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Permit"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permis"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vergunning"
           }
         },
         "ro": {
@@ -51900,28 +50784,10 @@
     },
     "doc_type_photo": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
           }
         },
         "ro": {
@@ -51934,28 +50800,10 @@
     },
     "doc_type_tax": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Steuern"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tax"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impôts"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Belasting"
           }
         },
         "ro": {
@@ -51968,28 +50816,10 @@
     },
     "doc_type_utility": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versorgung"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Utility"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Services publics"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nutsvoorziening"
           }
         },
         "ro": {
@@ -52002,28 +50832,10 @@
     },
     "doc_type_warranty": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Warranty"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie"
           }
         },
         "ro": {
@@ -52873,28 +51685,10 @@
     },
     "emg_address_a11y %@ %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresse der Immobilie: %1$@, %2$@. Zum Kopieren tippen."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Property address: %1$@, %2$@. Tap to copy."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresse du bien : %1$@, %2$@. Touchez pour copier."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adres van de woning: %1$@, %2$@. Tik om te kopiëren."
           }
         },
         "ro": {
@@ -52907,28 +51701,10 @@
     },
     "emg_address_copied": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kopiert"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Copied"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copié"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gekopieerd"
           }
         },
         "ro": {
@@ -52941,28 +51717,10 @@
     },
     "emg_address_copy_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippen, um die Adresse zu kopieren"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tap to copy the address"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touchez pour copier l'adresse"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tik om het adres te kopiëren"
           }
         },
         "ro": {
@@ -52975,28 +51733,10 @@
     },
     "emg_alert_again": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippen, um erneut zu senden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tap to send again"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touchez pour renvoyer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tik om opnieuw te verzenden"
           }
         },
         "ro": {
@@ -53009,28 +51749,10 @@
     },
     "emg_alert_confirm_msg %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird sofort in den Familienchat gesendet: „⚠️ Notfall bei %@ — ruft mich an!“"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sends instantly to the family chat: “⚠️ Emergency at %@ — call me!”"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyé instantanément dans la discussion familiale : « ⚠️ Urgence à %@ — appelez-moi ! »"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wordt direct naar de familiechat gestuurd: “⚠️ Noodgeval bij %@ — bel me!”"
           }
         },
         "ro": {
@@ -53043,28 +51765,10 @@
     },
     "emg_alert_confirm_send": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alarm senden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Send alert"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyer l'alerte"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waarschuwing verzenden"
           }
         },
         "ro": {
@@ -53077,28 +51781,10 @@
     },
     "emg_alert_confirm_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie alarmieren?"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Alert the family?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alerter la famille ?"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie waarschuwen?"
           }
         },
         "ro": {
@@ -53111,28 +51797,10 @@
     },
     "emg_alert_failed": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Senden fehlgeschlagen — bitte erneut versuchen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sending failed — try again"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Échec de l'envoi — réessayez"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verzenden mislukt — probeer opnieuw"
           }
         },
         "ro": {
@@ -53145,28 +51813,10 @@
     },
     "emg_alert_family": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie alarmieren"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Alert the family"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alerter la famille"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie waarschuwen"
           }
         },
         "ro": {
@@ -53179,28 +51829,10 @@
     },
     "emg_alert_family_subtitle": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Sofortnachricht in den Familienchat"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "One instant message to the family chat"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un message instantané dans la discussion familiale"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eén direct bericht in de familiechat"
           }
         },
         "ro": {
@@ -53213,28 +51845,10 @@
     },
     "emg_alert_message": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚠️ Notfall bei %@ — ruft mich an!"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "⚠️ Emergency at %@ — call me!"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚠️ Urgence à %@ — appelez-moi !"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚠️ Noodgeval bij %@ — bel me!"
           }
         },
         "ro": {
@@ -53247,28 +51861,10 @@
     },
     "emg_alert_sending": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird gesendet…"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sending…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoi en cours…"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wordt verzonden…"
           }
         },
         "ro": {
@@ -53281,28 +51877,10 @@
     },
     "emg_alert_sent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Familie wurde alarmiert ✓"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The family has been alerted ✓"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La famille a été alertée ✓"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "De familie is gewaarschuwd ✓"
           }
         },
         "ro": {
@@ -53315,28 +51893,10 @@
     },
     "emg_gas_edit_msg": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Nummer, die die Karte „Gas-Notfall“ für diese Immobilie wählt. Leer lassen setzt auf 0800-001122 (Rumänien) zurück."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The number the “Gas emergency” card dials for this property. Leave empty to reset to 0800-001122 (Romania)."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le numéro composé par la carte « Urgence gaz » pour ce bien. Vide = retour au 0800-001122 (Roumanie)."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Het nummer dat de kaart “Gasnoodgeval” voor deze woning belt. Leeg = terug naar 0800-001122 (Roemenië)."
           }
         },
         "ro": {
@@ -53349,28 +51909,10 @@
     },
     "emg_gas_edit_ph": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefonnummer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Phone number"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Numéro de téléphone"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefoonnummer"
           }
         },
         "ro": {
@@ -53383,28 +51925,10 @@
     },
     "emg_gas_edit_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gas-Notrufnummer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Gas emergency number"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Numéro d'urgence gaz"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noodnummer gas"
           }
         },
         "ro": {
@@ -53417,28 +51941,10 @@
     },
     "emg_guide_disclaimer": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine allgemeine Orientierung, kein Ersatz für den Notruf. Bei unmittelbarer Gefahr zuerst 112 anrufen."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "A general guide, not a substitute for emergency services. In immediate danger, call 112 first."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un guide indicatif, qui ne remplace pas les services d'urgence. En cas de danger immédiat, appelez d'abord le 112."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Een algemene leidraad, geen vervanging voor de hulpdiensten. Bel bij direct gevaar eerst 112."
           }
         },
         "ro": {
@@ -53451,28 +51957,10 @@
     },
     "emg_guide_fire_step1": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bringe sofort alle aus dem Haus. Halte dich nicht mit Sachen auf."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Get everyone out of the house immediately. Don't stop for belongings."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faites sortir tout le monde immédiatement. Ne vous arrêtez pas pour des objets."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Haal iedereen onmiddellijk het huis uit. Stop niet voor spullen."
           }
         },
         "ro": {
@@ -53485,28 +51973,10 @@
     },
     "emg_guide_fire_step2": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rufe 112 an, sobald du in Sicherheit bist."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Call 112 as soon as you are safe."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appelez le 112 dès que vous êtes en sécurité."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bel 112 zodra je veilig bent."
           }
         },
         "ro": {
@@ -53519,28 +51989,10 @@
     },
     "emg_guide_fire_step3": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Berühre Türen mit dem Handrücken, bevor du sie öffnest — ist eine Tür heiß, öffne sie nicht."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Touch doors with the back of your hand before opening — if a door is hot, don't open it."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touchez les portes du revers de la main avant de les ouvrir — si une porte est chaude, ne l'ouvrez pas."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voel met de rug van je hand aan deuren voordat je ze opent — is een deur heet, open hem dan niet."
           }
         },
         "ro": {
@@ -53553,28 +52005,10 @@
     },
     "emg_guide_fire_step4": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bei Rauch bleib tief, nah am Boden. Benutze keinen Aufzug."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "If there is smoke, stay low, close to the floor. Don't use the lift."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S'il y a de la fumée, restez baissé, près du sol. Ne prenez pas l'ascenseur."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blijf bij rook laag, dicht bij de vloer. Gebruik de lift niet."
           }
         },
         "ro": {
@@ -53587,28 +52021,10 @@
     },
     "emg_guide_fire_step5": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lösche nur ein kleines Feuer selbst, und nur mit freiem Fluchtweg im Rücken."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Only fight a small fire yourself, and only with a clear exit behind you."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "N'éteignez vous-même qu'un petit feu, et seulement avec une sortie dégagée derrière vous."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blus alleen zelf een klein brandje, en alleen met een vrije uitgang achter je."
           }
         },
         "ro": {
@@ -53621,28 +52037,10 @@
     },
     "emg_guide_fire_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brand"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Fire"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incendie"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brand"
           }
         },
         "ro": {
@@ -53655,28 +52053,10 @@
     },
     "emg_guide_flood_step1": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drehe den Haupthahn des Wassers zu."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Shut off the main water valve."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fermez la vanne d'arrivée d'eau principale."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Draai de hoofdkraan van het water dicht."
           }
         },
         "ro": {
@@ -53689,28 +52069,10 @@
     },
     "emg_guide_flood_step2": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schalte den Strom am Sicherungskasten ab, wenn Wasser in die Nähe von Steckdosen oder Kabeln kommt."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Cut the power at the breaker panel if water is getting near outlets or cables."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coupez le courant au tableau électrique si l'eau s'approche des prises ou des câbles."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schakel de stroom uit bij de meterkast als het water in de buurt van stopcontacten of kabels komt."
           }
         },
         "ro": {
@@ -53723,28 +52085,10 @@
     },
     "emg_guide_flood_step3": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bringe Wertsachen und Dokumente nach oben, weg vom Wasser."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Move valuables and documents up, away from the water."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mettez les objets de valeur et les documents en hauteur, à l'abri de l'eau."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zet waardevolle spullen en documenten hoger, weg van het water."
           }
         },
         "ro": {
@@ -53757,28 +52101,10 @@
     },
     "emg_guide_flood_step4": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fotografiere die Schäden für die Versicherung, bevor du aufräumst."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Photograph the damage for insurance before you clean up."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photographiez les dégâts pour l'assurance avant de nettoyer."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fotografeer de schade voor de verzekering voordat je gaat opruimen."
           }
         },
         "ro": {
@@ -53791,28 +52117,10 @@
     },
     "emg_guide_flood_step5": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kommt das Wasser von Nachbarn oder aus einer Gemeinschaftsleitung, informiere die Hausverwaltung und einen Installateur."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "If the water comes from neighbours or a shared pipe, notify the building manager and a plumber."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Si l'eau vient des voisins ou d'une canalisation commune, prévenez le syndic et un plombier."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Komt het water van de buren of uit een gedeelde leiding, waarschuw dan de VvE en een loodgieter."
           }
         },
         "ro": {
@@ -53825,28 +52133,10 @@
     },
     "emg_guide_flood_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wasserschaden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Flood"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inondation"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wateroverlast"
           }
         },
         "ro": {
@@ -53859,28 +52149,10 @@
     },
     "emg_guide_flood_valve_link": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Haupthahn — dein gespeicherter Ort"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Main water valve — your saved place"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vanne principale — votre emplacement enregistré"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hoofdkraan — jouw opgeslagen plek"
           }
         },
         "ro": {
@@ -53893,28 +52165,10 @@
     },
     "emg_guide_gas_step1": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schalte KEIN Licht ein und benutze keine Schalter, Steckdosen oder offenes Feuer."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Do NOT turn on lights, use switches, sockets, or any open flame."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "N'allumez PAS la lumière, n'utilisez ni interrupteurs, ni prises, ni flamme nue."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doe GEEN licht aan en gebruik geen schakelaars, stopcontacten of open vuur."
           }
         },
         "ro": {
@@ -53927,28 +52181,10 @@
     },
     "emg_guide_gas_step2": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffne Fenster und Türen weit."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open the windows and doors wide."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrez grand les fenêtres et les portes."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zet ramen en deuren wijd open."
           }
         },
         "ro": {
@@ -53961,28 +52197,10 @@
     },
     "emg_guide_gas_step3": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drehe den Gashahn zu."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Shut off the gas valve."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fermez le robinet de gaz."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Draai de gaskraan dicht."
           }
         },
         "ro": {
@@ -53995,28 +52213,10 @@
     },
     "emg_guide_gas_step4": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bringe alle aus dem Haus."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Get everyone out of the house."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faites sortir tout le monde de la maison."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Haal iedereen het huis uit."
           }
         },
         "ro": {
@@ -54029,28 +52229,10 @@
     },
     "emg_guide_gas_step5": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rufe den Gas-Notruf von draußen an, in sicherer Entfernung zum Haus."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Call the gas emergency line from outside, away from the house."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appelez l'urgence gaz depuis l'extérieur, à distance de la maison."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bel het noodnummer voor gas van buiten, op afstand van het huis."
           }
         },
         "ro": {
@@ -54063,28 +52245,10 @@
     },
     "emg_guide_gas_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gasleck"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Gas leak"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fuite de gaz"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gaslek"
           }
         },
         "ro": {
@@ -54097,28 +52261,10 @@
     },
     "emg_guide_power_step1": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prüfe den Sicherungskasten — ein ausgelöster Schalter lässt sich wieder hochklappen."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Check the breaker panel — a tripped breaker flips back up."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vérifiez le tableau électrique — un disjoncteur déclenché se réarme."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controleer de meterkast — een uitgeschakelde zekering zet je weer om."
           }
         },
         "ro": {
@@ -54131,28 +52277,10 @@
     },
     "emg_guide_power_step2": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schau nach draußen: Sind auch die Nachbarn dunkel, ist es eine Netzstörung — melde sie dem Versorger."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Look outside: if the neighbours are dark too, it's a grid outage — report it to your provider."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Regardez dehors : si les voisins sont aussi dans le noir, c'est une panne de réseau — signalez-la au fournisseur."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kijk naar buiten: zitten de buren ook in het donker, dan is het een netstoring — meld het bij je leverancier."
           }
         },
         "ro": {
@@ -54165,28 +52293,10 @@
     },
     "emg_guide_power_step3": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ziehe empfindliche Geräte aus der Steckdose, damit die Spannungsspitze beim Wiedereinschalten sie nicht beschädigt."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Unplug sensitive appliances so the surge when power returns doesn't damage them."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Débranchez les appareils sensibles pour que le retour du courant ne les endommage pas."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Haal gevoelige apparaten uit het stopcontact, zodat de stroompiek bij terugkeer ze niet beschadigt."
           }
         },
         "ro": {
@@ -54199,28 +52309,10 @@
     },
     "emg_guide_power_step4": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Halte Kühl- und Gefrierschrank geschlossen — sie halten die Kälte stundenlang."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Keep the fridge and freezer doors closed — they hold the cold for hours."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gardez les portes du réfrigérateur et du congélateur fermées — le froid tient plusieurs heures."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Houd de deuren van koelkast en vriezer dicht — ze houden de kou urenlang vast."
           }
         },
         "ro": {
@@ -54233,28 +52325,10 @@
     },
     "emg_guide_power_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stromausfall"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Power outage"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Panne de courant"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stroomuitval"
           }
         },
         "ro": {
@@ -54267,28 +52341,10 @@
     },
     "emg_guides_header": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Was tun bei…"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "What do I do if…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Que faire en cas de…"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wat doe ik bij…"
           }
         },
         "ro": {
@@ -54301,28 +52357,10 @@
     },
     "emg_place_photo_a11y %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ — tippen, um das Foto zu sehen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ — tap to view the photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ — touchez pour voir la photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ — tik om de foto te bekijken"
           }
         },
         "ro": {
@@ -54335,28 +52373,10 @@
     },
     "emg_place_photo_camera": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto aufnehmen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Take a photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prendre une photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maak een foto"
           }
         },
         "ro": {
@@ -54369,28 +52389,10 @@
     },
     "emg_place_photo_footer": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Foto der genauen Stelle — Hahn, Sicherungskasten — erspart die Suche in der Panik."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "A photo of the exact spot — the valve, the breaker panel — saves you searching in a panic."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Une photo de l'endroit exact — la vanne, le tableau électrique — vous évite de chercher dans la panique."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Een foto van de exacte plek — de kraan, de meterkast — bespaart zoeken in paniek."
           }
         },
         "ro": {
@@ -54403,28 +52405,10 @@
     },
     "emg_place_photo_header": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
           }
         },
         "ro": {
@@ -54437,28 +52421,10 @@
     },
     "emg_place_photo_library": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aus der Mediathek wählen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Choose from library"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisir dans la photothèque"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kies uit bibliotheek"
           }
         },
         "ro": {
@@ -54471,28 +52437,10 @@
     },
     "emg_place_photo_remove": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto entfernen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remove photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer la photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto verwijderen"
           }
         },
         "ro": {
@@ -55353,28 +53301,10 @@
     },
     "expense_month_empty": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Belege in diesem Monat."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No receipts this month."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun ticket ce mois-ci."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen kassabonnen deze maand."
           }
         },
         "ro": {
@@ -56859,28 +54789,10 @@
     },
     "fin_add_transaction": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transaktion hinzufügen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add transaction"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter une transaction"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transactie toevoegen"
           }
         },
         "ro": {
@@ -56909,28 +54821,10 @@
     },
     "fin_category_suggested": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorgeschlagene Kategorie"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Suggested category"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Catégorie suggérée"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voorgestelde categorie"
           }
         },
         "ro": {
@@ -56943,28 +54837,10 @@
     },
     "fin_choose_month": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Monat wählen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Choose month"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisir le mois"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kies maand"
           }
         },
         "ro": {
@@ -56977,28 +54853,10 @@
     },
     "fin_filter_transactions": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transaktionen filtern"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Filter transactions"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filtrer les transactions"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transacties filteren"
           }
         },
         "ro": {
@@ -57011,28 +54869,10 @@
     },
     "fin_insight_less_spent %lld %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% weniger ausgegeben als im %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld%% less spent than in %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% de dépenses en moins qu'en %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% minder uitgegeven dan in %@"
           }
         },
         "ro": {
@@ -57045,28 +54885,10 @@
     },
     "fin_insight_more_spent %lld %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% mehr ausgegeben als im %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld%% more spent than in %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld %% de dépenses en plus qu'en %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% meer uitgegeven dan in %@"
           }
         },
         "ro": {
@@ -57079,28 +54901,10 @@
     },
     "fin_insight_top_category %@ %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Größte Ausgabe: %1$@, %2$@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Biggest expense: %1$@, %2$@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus grosse dépense : %1$@, %2$@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grootste uitgave: %1$@, %2$@"
           }
         },
         "ro": {
@@ -57113,28 +54917,10 @@
     },
     "fin_kpi_filter_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeigt die Transaktionen dieses Typs für den Monat."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Shows the month's transactions of this type."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Affiche les transactions du mois de ce type."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toont de transacties van deze maand van dit type."
           }
         },
         "ro": {
@@ -57147,28 +54933,10 @@
     },
     "fin_search_prompt": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transaktionen durchsuchen…"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Search transactions…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rechercher des transactions…"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transacties zoeken…"
           }
         },
         "ro": {
@@ -57197,28 +54965,10 @@
     },
     "fin_trend_no_data": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kein Verlauf"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No history"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun historique"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen geschiedenis"
           }
         },
         "ro": {
@@ -57231,28 +54981,10 @@
     },
     "fin_upcoming_date %@ %lld": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · in %2$lld Tagen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ · in %2$lld days"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · dans %2$lld jours"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · over %2$lld dagen"
           }
         },
         "ro": {
@@ -57265,28 +54997,10 @@
     },
     "fin_upcoming_header": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anstehende Zahlungen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Upcoming payments"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paiements à venir"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aankomende betalingen"
           }
         },
         "ro": {
@@ -57299,28 +55013,10 @@
     },
     "fin_upcoming_rent %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miete — %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Rent — %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loyer — %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Huur — %@"
           }
         },
         "ro": {
@@ -57333,28 +55029,10 @@
     },
     "fin_upcoming_rent_generic": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miete"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Rent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loyer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Huur"
           }
         },
         "ro": {
@@ -57626,28 +55304,10 @@
     },
     "guest_call_host": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gastgeber anrufen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Call host"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appeler l'hôte"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gastheer bellen"
           }
         },
         "ro": {
@@ -57660,28 +55320,10 @@
     },
     "guest_checkin": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Check-in"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Check-in"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrivée"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inchecken"
           }
         },
         "ro": {
@@ -57694,28 +55336,10 @@
     },
     "guest_checkout": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Check-out"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Check-out"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Départ"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitchecken"
           }
         },
         "ro": {
@@ -57728,28 +55352,10 @@
     },
     "guest_clear_time": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeit löschen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Clear time"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Effacer l'heure"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tijd wissen"
           }
         },
         "ro": {
@@ -57762,28 +55368,10 @@
     },
     "guest_essentials_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wichtiges"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Essentials"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Essentiels"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Essentieel"
           }
         },
         "ro": {
@@ -57796,28 +55384,10 @@
     },
     "guest_host_phone": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefon des Gastgebers"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Host phone"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Téléphone de l'hôte"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefoon gastheer"
           }
         },
         "ro": {
@@ -57830,28 +55400,10 @@
     },
     "guest_notes_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "z. B. Müllabfuhr montags, Parkplatz Nr. 4, ruf mich bei Fragen an…"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "e.g. Trash pickup is Monday, parking spot #4, call me if anything…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "p. ex. Ramassage des ordures le lundi, place n° 4, appelez-moi si besoin…"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "bijv. Vuilnis wordt maandag opgehaald, parkeerplek nr. 4, bel me indien nodig…"
           }
         },
         "ro": {
@@ -57864,28 +55416,10 @@
     },
     "guest_open_maps": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In Apple Karten öffnen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open in Apple Maps"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir dans Apple Plans"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Openen in Apple Kaarten"
           }
         },
         "ro": {
@@ -57898,28 +55432,10 @@
     },
     "guest_phone_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefonnummer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Phone number"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Numéro de téléphone"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Telefoonnummer"
           }
         },
         "ro": {
@@ -57932,28 +55448,10 @@
     },
     "guest_preview_note": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Genau so sieht die Karte aus, die Ihre Gäste erhalten."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "This is exactly the card your guests will receive."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voici exactement la fiche que recevront vos invités."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zo ziet de kaart die je gasten ontvangen er precies uit."
           }
         },
         "ro": {
@@ -57966,28 +55464,10 @@
     },
     "guest_rule_no_parties": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Partys"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No parties"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pas de fêtes"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen feestjes"
           }
         },
         "ro": {
@@ -58000,28 +55480,10 @@
     },
     "guest_rule_no_pets": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Haustiere"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No pets"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pas d'animaux"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen huisdieren"
           }
         },
         "ro": {
@@ -58034,28 +55496,10 @@
     },
     "guest_rule_no_smoking": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rauchen verboten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No smoking"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Interdiction de fumer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niet roken"
           }
         },
         "ro": {
@@ -58068,28 +55512,10 @@
     },
     "guest_rule_quiet_hours": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ruhe ab 22 Uhr"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Quiet after 10 PM"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calme après 22 h"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stilte na 22:00"
           }
         },
         "ro": {
@@ -58102,28 +55528,10 @@
     },
     "guest_rule_recycle": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bitte recyceln"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Please recycle"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Merci de recycler"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Graag recyclen"
           }
         },
         "ro": {
@@ -58136,28 +55544,10 @@
     },
     "guest_rules_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "z. B. Rauchen verboten, Ruhezeiten ab 22 Uhr, bitte Müll trennen…"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "e.g. No smoking indoors, quiet hours after 10pm, please recycle…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "p. ex. Interdiction de fumer, calme après 22 h, merci de recycler…"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "bijv. Binnen niet roken, stilte na 22:00, graag recyclen…"
           }
         },
         "ro": {
@@ -58170,28 +55560,10 @@
     },
     "guest_set_time": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Festlegen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Set"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Définir"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instellen"
           }
         },
         "ro": {
@@ -58204,28 +55576,10 @@
     },
     "guest_wifi_copy_password": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passwort kopieren"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Copy password"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copier le mot de passe"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wachtwoord kopiëren"
           }
         },
         "ro": {
@@ -58238,28 +55592,10 @@
     },
     "guest_wifi_hide_password": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passwort verbergen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Hide password"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Masquer le mot de passe"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wachtwoord verbergen"
           }
         },
         "ro": {
@@ -58272,28 +55608,10 @@
     },
     "guest_wifi_qr_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit der Handykamera scannen, um dem WLAN beizutreten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Scan with your phone's camera to join the Wi-Fi"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scannez avec l'appareil photo du téléphone pour rejoindre le Wi-Fi"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scan met de camera van je telefoon om verbinding te maken met wifi"
           }
         },
         "ro": {
@@ -58306,28 +55624,10 @@
     },
     "guest_wifi_qr_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Netzwerkname und Passwort eingeben, um den QR-Code zu erstellen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Enter the network name and password to generate the join QR code"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saisissez le nom du réseau et le mot de passe pour générer le code QR"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voer de netwerknaam en het wachtwoord in om de QR-code te genereren"
           }
         },
         "ro": {
@@ -58340,28 +55640,10 @@
     },
     "guest_wifi_show_password": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passwort anzeigen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show password"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afficher le mot de passe"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wachtwoord tonen"
           }
         },
         "ro": {
@@ -59224,28 +56506,10 @@
     },
     "inv_lend_action": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verleihen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Lend"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prêter"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitlenen"
           }
         },
         "ro": {
@@ -59258,28 +56522,10 @@
     },
     "inv_loan_family": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Family"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Famille"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familie"
           }
         },
         "ro": {
@@ -59292,28 +56538,10 @@
     },
     "inv_loaned_short": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bei %1$@ · %2$@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "With %1$@ · %2$@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chez %1$@ · %2$@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bij %1$@ · %2$@"
           }
         },
         "ro": {
@@ -59326,28 +56554,10 @@
     },
     "inv_receipt": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beleg"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Receipt"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reçu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bon"
           }
         },
         "ro": {
@@ -59360,28 +56570,10 @@
     },
     "inv_receipt_attach": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beleg oder Rechnung anhängen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Attach receipt or invoice"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Joindre le reçu ou la facture"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bon of factuur toevoegen"
           }
         },
         "ro": {
@@ -59394,28 +56586,10 @@
     },
     "inv_receipt_remove": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beleg entfernen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remove receipt"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer le reçu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bon verwijderen"
           }
         },
         "ro": {
@@ -59428,28 +56602,10 @@
     },
     "inv_scan_serial": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seriennummer scannen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Scan serial number"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scanner le numéro de série"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Serienummer scannen"
           }
         },
         "ro": {
@@ -59462,28 +56618,10 @@
     },
     "inv_scan_serial_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippe auf die erkannte Seriennummer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tap the recognized serial number"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touchez le numéro de série reconnu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tik op het herkende serienummer"
           }
         },
         "ro": {
@@ -59496,28 +56634,10 @@
     },
     "inv_stat_warranties": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantien"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Warranties"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garanties"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garanties"
           }
         },
         "ro": {
@@ -59530,28 +56650,10 @@
     },
     "inv_warranty_expired": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie abgelaufen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Warranty expired"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie expirée"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie verlopen"
           }
         },
         "ro": {
@@ -59564,28 +56666,10 @@
     },
     "inv_warranty_until": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie bis %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Warranty until %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie jusqu'au %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garantie tot %@"
           }
         },
         "ro": {
@@ -62448,28 +59532,10 @@
     },
     "locpick_delete": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Löschen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Delete"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verwijder"
           }
         },
         "ro": {
@@ -62516,28 +59582,10 @@
     },
     "locpick_frequent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Häufig"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Frequent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fréquents"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaak gebruikt"
           }
         },
         "ro": {
@@ -62618,28 +59666,10 @@
     },
     "locpick_nearby": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In der Nähe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Nearby"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "À proximité"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In de buurt"
           }
         },
         "ro": {
@@ -62652,28 +59682,10 @@
     },
     "locpick_open_in": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffnen in"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open in"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir dans"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Openen in"
           }
         },
         "ro": {
@@ -62720,25 +59732,7 @@
     },
     "locpick_recent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zuletzt verwendet"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Récents"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Recent"
@@ -62947,28 +59941,10 @@
     },
     "mem_became_member": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ist jetzt Mitglied"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Became a member"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Est devenu membre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Is lid geworden"
           }
         },
         "ro": {
@@ -62981,28 +59957,10 @@
     },
     "mem_expires_today": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Läuft heute ab"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Expires today"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expire aujourd'hui"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verloopt vandaag"
           }
         },
         "ro": {
@@ -63015,28 +59973,10 @@
     },
     "mem_import_contacts": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aus Kontakten importieren"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Import from Contacts"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importer depuis Contacts"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importeren uit Contacten"
           }
         },
         "ro": {
@@ -63049,28 +59989,10 @@
     },
     "mem_invites_accepted": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Angenommen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Accepted"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Acceptées"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geaccepteerd"
           }
         },
         "ro": {
@@ -63083,28 +60005,10 @@
     },
     "mem_invites_pending": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ausstehend"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pending"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En attente"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In afwachting"
           }
         },
         "ro": {
@@ -63117,28 +60021,10 @@
     },
     "mem_member_since %@": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mitglied seit %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "member since %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "membre depuis %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lid sinds %@"
           }
         },
         "ro": {
@@ -63151,28 +60037,10 @@
     },
     "mem_role_teen_desc": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teenager — Alltagsbereiche und Chat, keine Finanzen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Teen — everyday areas and chat; no finances"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ado — le quotidien et le chat, sans finances"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tiener — dagelijkse zaken en chat, geen financiën"
           }
         },
         "ro": {
@@ -63185,28 +60053,10 @@
     },
     "mem_send_message": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nachricht senden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Send message"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyer un message"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bericht sturen"
           }
         },
         "ro": {
@@ -63219,28 +60069,10 @@
     },
     "mem_show_history": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verlauf anzeigen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show history"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afficher l'historique"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geschiedenis tonen"
           }
         },
         "ro": {
@@ -64703,28 +61535,10 @@
     },
     "paint_finish_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Glanzgrad"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Finish"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finition"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afwerking"
           }
         },
         "ro": {
@@ -64737,28 +61551,10 @@
     },
     "paint_hero_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Katalog, Pipette oder Hex-Code"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Catalog, eyedropper or hex code"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Catalogue, pipette ou code hex"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Catalogus, pipet of hexcode"
           }
         },
         "ro": {
@@ -64771,28 +61567,10 @@
     },
     "paint_hero_placeholder": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Farbe wählen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pick a color"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez une couleur"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kies een kleur"
           }
         },
         "ro": {
@@ -64805,28 +61583,10 @@
     },
     "paint_new_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Farbe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "New color"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nouvelle couleur"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nieuwe kleur"
           }
         },
         "ro": {
@@ -64839,28 +61599,10 @@
     },
     "paint_photo_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wand oder Dosenetikett"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The wall or the tin label"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le mur ou l'étiquette du pot"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "De muur of het bliketiket"
           }
         },
         "ro": {
@@ -64873,28 +61615,10 @@
     },
     "paint_photo_view": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto ansehen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "View photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voir la photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto bekijken"
           }
         },
         "ro": {
@@ -64955,28 +61679,10 @@
     },
     "paint_source_catalog": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RAL-Katalog"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "RAL catalog"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Catalogue RAL"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RAL-catalogus"
           }
         },
         "ro": {
@@ -64989,28 +61695,10 @@
     },
     "paint_source_eyedropper": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pipette"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Eyedropper"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pipette"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pipet"
           }
         },
         "ro": {
@@ -65023,25 +61711,7 @@
     },
     "paint_source_hex": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hex"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hex"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hex"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Hex"
@@ -65057,28 +61727,10 @@
     },
     "paint_surface_ceiling": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Decke"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Ceiling"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plafond"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plafond"
           }
         },
         "ro": {
@@ -65091,28 +61743,10 @@
     },
     "paint_surface_door": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tür"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Door"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Porte"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deur"
           }
         },
         "ro": {
@@ -65125,28 +61759,10 @@
     },
     "paint_surface_floor": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Boden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Floor"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sol"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vloer"
           }
         },
         "ro": {
@@ -65159,28 +61775,10 @@
     },
     "paint_surface_other": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sonstiges"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Other"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Overig"
           }
         },
         "ro": {
@@ -65193,28 +61791,10 @@
     },
     "paint_surface_trim": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leisten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Trim"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Boiseries"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lijstwerk"
           }
         },
         "ro": {
@@ -65227,28 +61807,10 @@
     },
     "paint_surface_walls": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wände"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Walls"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Murs"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muren"
           }
         },
         "ro": {
@@ -71121,28 +67683,10 @@
     },
     "preview_added": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hinzugefügt"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouté"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toegevoegd"
           }
         },
         "ro": {
@@ -71155,28 +67699,10 @@
     },
     "preview_size": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Größe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Size"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Taille"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grootte"
           }
         },
         "ro": {
@@ -71189,28 +67715,10 @@
     },
     "price_history_empty_body": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scanne Belege, um die Preisentwicklung zu verfolgen."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Scan receipts to track how prices change."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scannez des tickets pour suivre l'évolution des prix."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scan kassabonnen om prijsveranderingen te volgen."
           }
         },
         "ro": {
@@ -71223,28 +67731,10 @@
     },
     "price_history_empty_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kein Preisverlauf"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No price history"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun historique de prix"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen prijsverloop"
           }
         },
         "ro": {
@@ -71257,28 +67747,10 @@
     },
     "price_history_latest": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letzter Preis"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Latest price"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dernier prix"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Laatste prijs"
           }
         },
         "ro": {
@@ -71291,28 +67763,10 @@
     },
     "price_history_purchases %lld": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Käufe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld purchases"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld achats"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld aankopen"
           }
         },
         "ro": {
@@ -71325,28 +67779,10 @@
     },
     "price_history_subtitle": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preisentwicklung aus gescannten Belegen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Price trends from your scanned receipts"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Évolution des prix d'après les tickets scannés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prijsontwikkeling uit gescande kassabonnen"
           }
         },
         "ro": {
@@ -71359,28 +67795,10 @@
     },
     "price_history_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preisverlauf"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Price history"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Historique des prix"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prijsverloop"
           }
         },
         "ro": {
@@ -71393,28 +67811,10 @@
     },
     "price_history_vs_previous": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ggü. vorherigem Kauf"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "vs. previous purchase"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "vs achat précédent"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "t.o.v. vorige aankoop"
           }
         },
         "ro": {
@@ -73004,28 +69404,10 @@
     },
     "receipt_list_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle Belege"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All receipts"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tous les tickets"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle kassabonnen"
           }
         },
         "ro": {
@@ -79286,28 +75668,10 @@
     },
     "sup_frequent_label": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oft gekauft"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Frequently bought"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Achats fréquents"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaak gekocht"
           }
         },
         "ro": {
@@ -79320,28 +75684,10 @@
     },
     "sup_loc_attic": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dachboden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Attic"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grenier"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zolder"
           }
         },
         "ro": {
@@ -79354,28 +75700,10 @@
     },
     "sup_loc_balcony": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Balkon"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Balcony"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Balcon"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Balkon"
           }
         },
         "ro": {
@@ -79388,28 +75716,10 @@
     },
     "sup_loc_basement": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keller"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Basement"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sous-sol"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kelder"
           }
         },
         "ro": {
@@ -79422,28 +75732,10 @@
     },
     "sup_loc_bathroom": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Badezimmer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Bathroom"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salle de bain"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Badkamer"
           }
         },
         "ro": {
@@ -79456,28 +75748,10 @@
     },
     "sup_loc_bedroom": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schlafzimmer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Bedroom"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chambre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slaapkamer"
           }
         },
         "ro": {
@@ -79490,25 +75764,7 @@
     },
     "sup_loc_garage": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garage"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garage"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garage"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Garage"
@@ -79524,28 +75780,10 @@
     },
     "sup_loc_garden": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Garden"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jardin"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuin"
           }
         },
         "ro": {
@@ -79558,28 +75796,10 @@
     },
     "sup_loc_hallway": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Flur"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Hallway"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couloir"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gang"
           }
         },
         "ro": {
@@ -79592,28 +75812,10 @@
     },
     "sup_loc_kitchen": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Küche"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Kitchen"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuisine"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keuken"
           }
         },
         "ro": {
@@ -79626,28 +75828,10 @@
     },
     "sup_loc_laundry": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waschküche"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Laundry"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buanderie"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wasruimte"
           }
         },
         "ro": {
@@ -79660,28 +75844,10 @@
     },
     "sup_loc_living": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wohnzimmer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Living room"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salon"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Woonkamer"
           }
         },
         "ro": {
@@ -79694,28 +75860,10 @@
     },
     "sup_loc_office": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Büro"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Office"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bureau"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kantoor"
           }
         },
         "ro": {
@@ -79728,28 +75876,10 @@
     },
     "sup_loc_pantry": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorratskammer"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pantry"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garde-manger"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voorraadkast"
           }
         },
         "ro": {
@@ -79762,28 +75892,10 @@
     },
     "sup_loc_storage": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abstellraum"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Storage"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rangement"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Berging"
           }
         },
         "ro": {
@@ -80024,28 +76136,10 @@
     },
     "task_assign_me": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mir zuweisen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Assign to me"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Me l'attribuer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aan mij toewijzen"
           }
         },
         "ro": {
@@ -80058,28 +76152,10 @@
     },
     "task_assign_others": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ANDERE"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "OTHERS"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTRES"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ANDEREN"
           }
         },
         "ro": {
@@ -80092,25 +76168,7 @@
     },
     "task_assign_recent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ZULETZT"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RECENT"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RÉCENT"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "RECENT"
@@ -80318,28 +76376,10 @@
     },
     "task_empty_done": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine erledigten Aufgaben"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No completed tasks"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune tâche terminée"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen voltooide taken"
           }
         },
         "ro": {
@@ -80352,28 +76392,10 @@
     },
     "task_empty_open": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine offenen Aufgaben"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No open tasks"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune tâche en cours"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen openstaande taken"
           }
         },
         "ro": {
@@ -80386,28 +76408,10 @@
     },
     "task_empty_overdue": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine überfälligen Aufgaben"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No overdue tasks"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune tâche en retard"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen achterstallige taken"
           }
         },
         "ro": {
@@ -80420,28 +76424,10 @@
     },
     "task_empty_streak_many %lld": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Tage, an denen alles in Ordnung ist"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld days with everything in order"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld jours où tout est en ordre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld dagen waarop alles in orde is"
           }
         },
         "ro": {
@@ -80454,28 +76440,10 @@
     },
     "task_empty_streak_one": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 Tag, an dem alles in Ordnung ist"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "1 day with everything in order"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 jour où tout est en ordre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 dag waarop alles in orde is"
           }
         },
         "ro": {
@@ -80488,28 +76456,10 @@
     },
     "task_filter_all": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toutes"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
           }
         },
         "ro": {
@@ -80586,28 +76536,10 @@
     },
     "task_location_add": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ort hinzufügen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add a location"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter un lieu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locatie toevoegen"
           }
         },
         "ro": {
@@ -80620,28 +76552,10 @@
     },
     "task_location_clear": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ort entfernen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Clear location"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Effacer le lieu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locatie wissen"
           }
         },
         "ro": {
@@ -80654,28 +76568,10 @@
     },
     "task_location_hint": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresse oder Ort suchen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Search an address or a place"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cherchez une adresse ou un lieu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zoek een adres of plek"
           }
         },
         "ro": {
@@ -80688,28 +76584,10 @@
     },
     "task_location_search": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In Karten suchen oder frei tippen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Search Maps or type freely"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chercher dans Plans ou taper librement"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zoek in Kaarten of typ vrij"
           }
         },
         "ro": {
@@ -80722,28 +76600,10 @@
     },
     "task_location_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ort"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Location"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lieu"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locatie"
           }
         },
         "ro": {
@@ -80756,28 +76616,10 @@
     },
     "task_location_use_text": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„%@“ verwenden"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Use “%@”"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utiliser « %@ »"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“%@” gebruiken"
           }
         },
         "ro": {
@@ -80824,28 +76666,10 @@
     },
     "task_new": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Aufgabe"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "New task"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nouvelle tâche"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nieuwe taak"
           }
         },
         "ro": {
@@ -80858,28 +76682,10 @@
     },
     "task_photos_add": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hinzufügen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toevoegen"
           }
         },
         "ro": {
@@ -80892,28 +76698,10 @@
     },
     "task_photos_remove": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto entfernen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remove photo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer la photo"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto verwijderen"
           }
         },
         "ro": {
@@ -80926,28 +76714,10 @@
     },
     "task_photos_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fotos"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Photos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photos"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto's"
           }
         },
         "ro": {
@@ -85978,28 +81748,10 @@
     },
     "inv_filter_all": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tous"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
           }
         },
         "ro": {
@@ -86012,28 +81764,10 @@
     },
     "inv_filter_favorites": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favoriten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Favorites"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favoris"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Favorieten"
           }
         },
         "ro": {
@@ -86046,28 +81780,10 @@
     },
     "inv_filter_loaned": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verliehen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Loaned out"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prêtés"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitgeleend"
           }
         },
         "ro": {
@@ -86080,28 +81796,10 @@
     },
     "inv_filter_warranty": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit Garantie"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "With warranty"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avec garantie"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Met garantie"
           }
         },
         "ro": {
@@ -86114,28 +81812,10 @@
     },
     "inv_sort_by": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sortieren nach"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sort by"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trier par"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sorteren op"
           }
         },
         "ro": {
@@ -86148,25 +81828,7 @@
     },
     "inv_sort_recent": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neueste"
-          }
-        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Récents"
-          }
-        },
-        "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Recent"
@@ -86182,28 +81844,10 @@
     },
     "inv_sort_name": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Name"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nom"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Naam"
           }
         },
         "ro": {
@@ -86216,28 +81860,10 @@
     },
     "inv_sort_value": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wert"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Value"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Valeur"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waarde"
           }
         },
         "ro": {
@@ -86250,28 +81876,10 @@
     },
     "inv_sort_location": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ort"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Location"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Emplacement"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locatie"
           }
         },
         "ro": {
@@ -86284,28 +81892,10 @@
     },
     "inv_status_available": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verfügbar"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Available"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disponible"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beschikbaar"
           }
         },
         "ro": {
@@ -86318,28 +81908,10 @@
     },
     "inv_status_loaned": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verliehen"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Loaned out"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prêté"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitgeleend"
           }
         },
         "ro": {
@@ -86352,28 +81924,10 @@
     },
     "inv_loaned_due": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bei %1$@ · bis %2$@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "With %1$@ · due %2$@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chez %1$@ · avant le %2$@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bij %1$@ · vóór %2$@"
           }
         },
         "ro": {
@@ -86386,28 +81940,10 @@
     },
     "inv_loan_overdue": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Überfällig"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Overdue"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En retard"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te laat"
           }
         },
         "ro": {
@@ -86420,28 +81956,10 @@
     },
     "inv_recent_borrowers": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zuletzt verliehen an"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Recently loaned to"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prêté récemment à"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Onlangs uitgeleend aan"
           }
         },
         "ro": {
@@ -86454,28 +81972,10 @@
     },
     "inv_no_results": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Artikel entsprechen den Filtern"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No items match your filters"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun article ne correspond aux filtres"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geen artikelen komen overeen met de filters"
           }
         },
         "ro": {
@@ -86488,28 +81988,10 @@
     },
     "inv_report_action": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inventarbericht"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Inventory report"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rapport d'inventaire"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inventarisrapport"
           }
         },
         "ro": {
@@ -86522,28 +82004,10 @@
     },
     "inv_qr_labels_action": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "QR-Etiketten drucken"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Print QR labels"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imprimer les étiquettes QR"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "QR-labels afdrukken"
           }
         },
         "ro": {
@@ -86556,28 +82020,10 @@
     },
     "inv_qr_labels_job": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "QR-Etiketten"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "QR Labels"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Étiquettes QR"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "QR-labels"
           }
         },
         "ro": {
@@ -86590,28 +82036,10 @@
     },
     "inv_report_title": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inventarbericht"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Inventory Report"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rapport d'inventaire"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inventarisrapport"
           }
         },
         "ro": {
@@ -86624,28 +82052,10 @@
     },
     "inv_report_generated": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erstellt mit PRVIO · %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Generated with PRVIO · %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Généré avec PRVIO · %@"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gemaakt met PRVIO · %@"
           }
         },
         "ro": {
@@ -86658,28 +82068,10 @@
     },
     "inv_report_items": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Artikel: %lld"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Items: %lld"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Articles : %lld"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Artikelen: %lld"
           }
         },
         "ro": {
@@ -86692,28 +82084,10 @@
     },
     "inv_report_grand_total": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gesamtsumme"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Grand total"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total général"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Totaal"
           }
         },
         "ro": {
@@ -86726,28 +82100,10 @@
     },
     "inv_share_print": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teilen oder drucken"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Share or print"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Partager ou imprimer"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delen of afdrukken"
           }
         },
         "ro": {
@@ -86760,28 +82116,10 @@
     },
     "Furniture": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Möbel"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Furniture"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meubles"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meubels"
           }
         },
         "ro": {
@@ -86794,28 +82132,10 @@
     },
     "Sports": {
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sport"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sports"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sports"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sport"
           }
         },
         "ro": {
