@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "inv_dossier_title": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Insurance dossier"}}, "ro": {"stringUnit": {"state": "translated", "value": "Dosar de asigurare"}}}},
+    "inv_dossier_action": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Insurance dossier"}}, "ro": {"stringUnit": {"state": "translated", "value": "Dosar de asigurare"}}}},
+    "inv_dossier_property": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Property"}}, "ro": {"stringUnit": {"state": "translated", "value": "Proprietatea"}}}},
+    "inv_dossier_owners": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Owners"}}, "ro": {"stringUnit": {"state": "translated", "value": "Proprietari"}}}},
+    "inv_dossier_renovations": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Renovations"}}, "ro": {"stringUnit": {"state": "translated", "value": "Renovări"}}}},
+    "inv_dossier_summary": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Summary"}}, "ro": {"stringUnit": {"state": "translated", "value": "Sinteză"}}}},
+    "inv_dossier_items_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%d inventory items"}}, "ro": {"stringUnit": {"state": "translated", "value": "%d obiecte în inventar"}}}},
+    "inv_dossier_total_value": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Total value"}}, "ro": {"stringUnit": {"state": "translated", "value": "Valoare totală"}}}},
+    "inv_dossier_warranties_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%d active warranties"}}, "ro": {"stringUnit": {"state": "translated", "value": "%d garanții active"}}}},
+    "inv_dossier_docs_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%d supporting documents"}}, "ro": {"stringUnit": {"state": "translated", "value": "%d documente justificative"}}}},
+    "inv_dossier_section_inventory": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Home inventory"}}, "ro": {"stringUnit": {"state": "translated", "value": "Inventarul locuinței"}}}},
+    "inv_dossier_section_documents": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Supporting documents"}}, "ro": {"stringUnit": {"state": "translated", "value": "Documente justificative"}}}},
+    "inv_dossier_purchased_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Purchased %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Cumpărat la %@"}}}},
+    "inv_dossier_warranty_until_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Warranty until %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Garanție până la %@"}}}},
+    "inv_dossier_expires_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Expires %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Expiră la %@"}}}},
+    "inv_dossier_policy_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Policy %@"}}, "ro": {"stringUnit": {"state": "translated", "value": "Polița %@"}}}},
+    "inv_dossier_rooms_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "%d rooms"}}, "ro": {"stringUnit": {"state": "translated", "value": "%d camere"}}}},
+    "inv_dossier_year_built_fmt": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Built in %d"}}, "ro": {"stringUnit": {"state": "translated", "value": "Construită în %d"}}}},
     "sec_device_remove_note": {
       "localizations": {
         "en": {

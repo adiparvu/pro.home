@@ -10,6 +10,7 @@ struct InventoryView: View {
     @Environment(AppRouter.self) private var router
     @Environment(InventoryService.self) private var service
     @Environment(PropertyService.self) private var propertyService
+    @Environment(DocumentService.self) private var documentService
     @State private var status: StatusFilter?
     @State private var selectedCategory: String?
     @State private var selectedLocation: String?
@@ -359,6 +360,10 @@ struct InventoryView: View {
                                      title: String(localized: "inv_report_action")) {
                     shareReport()
                 }
+                GlassFilterActionRow(icon: "shield.lefthalf.filled",
+                                     title: String(localized: "inv_dossier_action")) {
+                    shareDossier()
+                }
                 GlassFilterActionRow(icon: "qrcode",
                                      title: String(localized: "inv_qr_labels_action")) {
                     showQRPicker = true
@@ -375,6 +380,22 @@ struct InventoryView: View {
             propertyName: propertyService.primary?.name
         ) else { return }
         SystemActions.share([url])
+    }
+
+    /// The complete insurance dossier: property identity + full inventory
+    /// with purchase/warranty evidence + supporting documents. Documents may
+    /// not be hydrated yet if that page was never opened this session — load
+    /// them first so the dossier never silently omits the paperwork.
+    private func shareDossier() {
+        Task {
+            if documentService.documents.isEmpty { await documentService.load() }
+            guard let url = await InsuranceDossier.makePDF(
+                items: service.items,
+                property: propertyService.primary,
+                documents: documentService.documents
+            ) else { return }
+            SystemActions.share([url])
+        }
     }
 
     /// Prints one A4 sheet of QR labels for an EXPLICIT selection — the
