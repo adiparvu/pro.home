@@ -22,10 +22,28 @@ final class PlantSpeciesService {
         guard species.isEmpty else { return }
         isLoading = true
         defer { isLoading = false }
-        species = (try? await supabase.from("plant_species")
+        let raw: [PlantSpeciesEntry] = (try? await supabase.from("plant_species")
             .select()
             .order("common_name", ascending: true)
             .execute().value) ?? []
+        // Apply the Romanian (or future-language) free-text overlay once, at
+        // load; English stays the canonical fallback. The app language is the
+        // authority — chosen locale wins, else the device-preferred language.
+        let lang = Self.effectiveLanguage
+        species = lang == "en" ? raw : raw.map { $0.localized(lang) }
+    }
+
+    /// The effective app language ("ro"/"en"): the explicit locale choice when
+    /// the user isn't following the system, else the device-preferred language.
+    /// Read from UserDefaults so the service stays free of view dependencies.
+    private static var effectiveLanguage: String {
+        let d = UserDefaults.standard
+        let followSystem = d.object(forKey: "prvio.followSystemLang") == nil
+            ? true : d.bool(forKey: "prvio.followSystemLang")
+        let lang = followSystem
+            ? Language.devicePreferred.rawValue
+            : (d.string(forKey: "prvio.locale") ?? "ro")
+        return lang == "en" ? "en" : "ro"
     }
 
     /// Resolves a plant's linked encyclopedia entry.

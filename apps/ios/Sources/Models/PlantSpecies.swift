@@ -108,8 +108,15 @@ struct PlantSpeciesEntry: Identifiable, Codable, Hashable {
     var createdAt: String?
     var updatedAt: String?
 
+    /// Localized free-text overlay keyed by language (from the `translations`
+    /// jsonb column). English columns stay canonical; `localized(_:)` applies
+    /// the matching language's non-nil fields over the base. Adding a language
+    /// is pure data — no schema or client change.
+    var translations: [String: SpeciesL10n]?
+
     enum CodingKeys: String, CodingKey {
         case id, slug, synonyms, family, genus, species, origin, altitude
+        case translations
         case habitatType      = "habitat_type"
         case commonName       = "common_name"
         case latinName        = "latin_name"
@@ -193,5 +200,124 @@ struct PlantSpeciesEntry: Identifiable, Codable, Hashable {
     var hasWaterData: Bool {
         waterSpring != nil || waterSummer != nil || waterAutumn != nil
             || waterWinter != nil || waterTopCm != nil
+    }
+
+    // MARK: Localization
+
+    /// Returns a copy with the given language's overlay applied over the
+    /// canonical (English) free-text fields. Only non-nil overlay values
+    /// replace the base — a missing translated field transparently falls back
+    /// to English, honouring the honesty law. `"en"` (or any language without
+    /// an overlay) returns self unchanged.
+    func localized(_ language: String) -> PlantSpeciesEntry {
+        guard language != "en", let t = translations?[language] else { return self }
+        var e = self
+        if let v = t.origin { e.origin = v }
+        if let v = t.altitude { e.altitude = v }
+        if let v = t.nativeTemp { e.nativeTemp = v }
+        if let v = t.nativeHumidity { e.nativeHumidity = v }
+        if let v = t.habitatType { e.habitatType = v }
+        if let v = t.maxHeight { e.maxHeight = v }
+        if let v = t.maxWidth { e.maxWidth = v }
+        if let v = t.growthRate { e.growthRate = v }
+        if let v = t.lifespan { e.lifespan = v }
+        if let v = t.floweringPeriod { e.floweringPeriod = v }
+        if let v = t.fruiting { e.fruiting = v }
+        if let v = t.fragrance { e.fragrance = v }
+        if let v = t.leafSize { e.leafSize = v }
+        if let v = t.leafShape { e.leafShape = v }
+        if let v = t.leafColour { e.leafColour = v }
+        if let v = t.leafTexture { e.leafTexture = v }
+        if let v = t.variegation { e.variegation = v }
+        if let v = t.gloss { e.gloss = v }
+        if let v = t.rootType { e.rootType = v }
+        if let v = t.propagation { e.propagation = v }
+        if let v = t.pruning { e.pruning = v }
+        if let v = t.seasonalChecklist { e.seasonalChecklist = v }
+        if let v = t.annualCalendar { e.annualCalendar = v }
+        if let v = t.faq { e.faq = v }
+        if let v = t.myths { e.myths = v }
+        if let v = t.curiosities { e.curiosities = v }
+        if let v = t.synonyms { e.synonyms = v }
+        if let v = t.waterSpring { e.waterSpring = v }
+        if let v = t.waterSummer { e.waterSummer = v }
+        if let v = t.waterAutumn { e.waterAutumn = v }
+        if let v = t.waterWinter { e.waterWinter = v }
+        if let v = t.fertilizerType { e.fertilizerType = v }
+        if let v = t.fertilizerFreq { e.fertilizerFreq = v }
+        if let v = t.repotInterval { e.repotInterval = v }
+        if let v = t.repotPeriod { e.repotPeriod = v }
+        return e
+    }
+}
+
+// MARK: - Localized free-text overlay
+//
+// The per-language payload stored under `plant_species.translations`. Every
+// field is optional so a partial translation degrades gracefully to English.
+// Keys mirror the base columns' snake_case exactly.
+
+struct SpeciesL10n: Codable, Hashable {
+    var origin: String?
+    var altitude: String?
+    var nativeTemp: String?
+    var nativeHumidity: String?
+    var habitatType: String?
+    var maxHeight: String?
+    var maxWidth: String?
+    var growthRate: String?
+    var lifespan: String?
+    var floweringPeriod: String?
+    var fruiting: String?
+    var fragrance: String?
+    var leafSize: String?
+    var leafShape: String?
+    var leafColour: String?
+    var leafTexture: String?
+    var variegation: String?
+    var gloss: String?
+    var rootType: String?
+    var propagation: String?
+    var pruning: String?
+    var seasonalChecklist: [String]?
+    var annualCalendar: [String: String]?
+    var faq: [PlantFAQ]?
+    var myths: [String]?
+    var curiosities: [String]?
+    var synonyms: [String]?
+    var waterSpring: String?
+    var waterSummer: String?
+    var waterAutumn: String?
+    var waterWinter: String?
+    var fertilizerType: String?
+    var fertilizerFreq: String?
+    var repotInterval: String?
+    var repotPeriod: String?
+
+    enum CodingKeys: String, CodingKey {
+        case origin, altitude, lifespan, fruiting, fragrance, variegation, gloss
+        case propagation, pruning, faq, myths, curiosities, synonyms
+        case nativeTemp       = "native_temp"
+        case nativeHumidity   = "native_humidity"
+        case habitatType      = "habitat_type"
+        case maxHeight        = "max_height"
+        case maxWidth         = "max_width"
+        case growthRate       = "growth_rate"
+        case floweringPeriod  = "flowering_period"
+        case leafSize         = "leaf_size"
+        case leafShape        = "leaf_shape"
+        case leafColour       = "leaf_colour"
+        case leafTexture      = "leaf_texture"
+        case rootType         = "root_type"
+        case seasonalChecklist = "seasonal_checklist"
+        case annualCalendar   = "annual_calendar"
+        case waterSpring      = "water_spring"
+        case waterSummer      = "water_summer"
+        case waterAutumn      = "water_autumn"
+        case waterWinter      = "water_winter"
+        case fertilizerType   = "fertilizer_type"
+        case fertilizerFreq   = "fertilizer_freq"
+        case repotInterval    = "repot_interval"
+        case repotPeriod      = "repot_period"
     }
 }
