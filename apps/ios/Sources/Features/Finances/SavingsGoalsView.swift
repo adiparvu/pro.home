@@ -276,10 +276,21 @@ struct AddSavingsGoalSheet: View {
     @State private var error: String?
     @State private var didHydrate = false
 
-    private let icons = ["target", "house.fill", "shield.fill", "airplane", "car.fill",
-                         "gift.fill", "graduationcap.fill", "heart.fill", "banknote.fill"]
-    private let colors = ["brandPurple", "brandSuccess", "brandPrimaryBlue", "brandSkyBlue",
-                          "brandWarning", "brandDanger"]
+    /// A goal can be almost anything a family saves for — home, travel, wheels,
+    /// study, celebration, tech, health, safety net. Six per row, six rows.
+    private static let icons = [
+        "target", "house.fill", "building.2.fill", "key.fill", "sofa.fill", "wrench.and.screwdriver.fill",
+        "car.fill", "bicycle", "airplane", "sailboat.fill", "tent.fill", "beach.umbrella.fill",
+        "gift.fill", "heart.fill", "star.fill", "crown.fill", "diamond.fill", "sparkles",
+        "graduationcap.fill", "book.fill", "laptopcomputer", "iphone", "gamecontroller.fill", "tv.fill",
+        "banknote.fill", "creditcard.fill", "chart.line.uptrend.xyaxis", "shield.fill", "bag.fill", "cart.fill",
+        "pawprint.fill", "stroller.fill", "cross.case.fill", "camera.fill", "music.note", "leaf.fill"
+    ]
+
+    /// Brand tokens first, then two explicit-hex extras — everything resolves
+    /// through `SavingsGoal.tint(forToken:)`, which understands both.
+    private static let palette = ["brandPurple", "brandPrimaryBlue", "brandSkyBlue", "brandSuccess",
+                                  "brandWarning", "brandDanger", "#FF2D55", "#FFD60A"]
 
     /// (stable id string, display name) for each family member — the auto-rule
     /// credits one of them. The id mirrors the manual-deposit stamp (user id
@@ -297,10 +308,12 @@ struct AddSavingsGoalSheet: View {
                      canSave: canSave, isSaving: isSaving,
                      error: $error, onSave: save) {
             FormGroup {
-                TextField("goal_title_placeholder", text: $title)
-                    .font(AppFont.body)
+                FormRow(icon: "textformat", tint: tint(colorToken)) {
+                    TextField("goal_title_placeholder", text: $title)
+                        .font(AppFont.body)
+                }
                 FormDivider()
-                HStack {
+                FormRow(icon: "target", tint: tint(colorToken)) {
                     Text("goal_target").font(AppFont.body).foregroundStyle(.primary)
                     Spacer()
                     TextField("0", text: $target).keyboardType(.decimalPad)
@@ -308,7 +321,7 @@ struct AddSavingsGoalSheet: View {
                     Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
                 }
                 FormDivider()
-                HStack {
+                FormRow(icon: "person.2.fill", tint: tint(colorToken)) {
                     Text("goal_monthly_per_member").font(AppFont.body).foregroundStyle(.primary)
                     Spacer()
                     TextField("0", text: $monthly).keyboardType(.decimalPad)
@@ -317,51 +330,19 @@ struct AddSavingsGoalSheet: View {
                 }
             }
 
-            FormGroup(title: "goal_icon") {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppSpacing.md) {
-                        ForEach(icons, id: \.self) { name in
-                            Button { icon = name; HapticFeedback.selection() } label: {
-                                Image(systemName: name)
-                                    .font(AppFont.scaled(18, weight: .semibold))
-                                    .frame(width: 44, height: 44)
-                                    .background(icon == name ? tint(colorToken).opacity(AppOpacity.tintedFill)
-                                                             : Color.primary.opacity(AppOpacity.subtleFill),
-                                                in: RoundedRectangle(cornerRadius: AppRadius.md))
-                                    .foregroundStyle(icon == name ? tint(colorToken) : .primary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            FormGroup(title: "goal_color") {
-                HStack(spacing: AppSpacing.md) {
-                    ForEach(colors, id: \.self) { token in
-                        Button { colorToken = token; HapticFeedback.selection() } label: {
-                            ZStack {
-                                Circle().fill(tint(token)).frame(width: 34, height: 34)
-                                if colorToken == token {
-                                    Image(systemName: "checkmark")
-                                        .font(AppFont.captionStrong).foregroundStyle(.white)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            iconSection
+            colorSection
 
             // Monthly auto-rule — a set amount lands automatically, so a family
             // that commits a standing contribution doesn't have to remember it.
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 FormGroup {
-                    Toggle("goal_auto_rule", isOn: $hasAutoRule.animation(.snappy)).font(AppFont.body)
+                    FormRow(icon: "arrow.triangle.2.circlepath", tint: tint(colorToken)) {
+                        Toggle("goal_auto_rule", isOn: $hasAutoRule.animation(.snappy)).font(AppFont.body)
+                    }
                     if hasAutoRule {
                         FormDivider()
-                        HStack {
+                        FormRow(icon: "banknote.fill", tint: tint(colorToken)) {
                             Text("goal_auto_amount").font(AppFont.body).foregroundStyle(.primary)
                             Spacer()
                             TextField("0", text: $autoAmount).keyboardType(.decimalPad)
@@ -369,20 +350,24 @@ struct AddSavingsGoalSheet: View {
                             Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
                         }
                         FormDivider()
-                        Picker("goal_auto_day", selection: $autoDay) {
-                            ForEach(1...28, id: \.self) { d in
-                                Text(String(format: String(localized: "goal_auto_day_fmt"), d)).tag(d)
-                            }
-                        }
-                        .font(AppFont.body)
-                        if !memberOptions.isEmpty {
-                            FormDivider()
-                            Picker("goal_auto_member", selection: $autoMemberId) {
-                                ForEach(memberOptions, id: \.id) { m in
-                                    Text(verbatim: m.name).tag(m.id)
+                        FormRow(icon: "calendar.badge.clock", tint: tint(colorToken)) {
+                            Picker("goal_auto_day", selection: $autoDay) {
+                                ForEach(1...28, id: \.self) { d in
+                                    Text(String(format: String(localized: "goal_auto_day_fmt"), d)).tag(d)
                                 }
                             }
                             .font(AppFont.body)
+                        }
+                        if !memberOptions.isEmpty {
+                            FormDivider()
+                            FormRow(icon: "person.crop.circle.fill", tint: tint(colorToken)) {
+                                Picker("goal_auto_member", selection: $autoMemberId) {
+                                    ForEach(memberOptions, id: \.id) { m in
+                                        Text(verbatim: m.name).tag(m.id)
+                                    }
+                                }
+                                .font(AppFont.body)
+                            }
                         }
                     }
                 }
@@ -395,15 +380,133 @@ struct AddSavingsGoalSheet: View {
             }
 
             FormGroup {
-                Toggle("goal_deadline", isOn: $hasDeadline.animation(.snappy)).font(AppFont.body)
+                FormRow(icon: "calendar", tint: tint(colorToken)) {
+                    Toggle("goal_deadline", isOn: $hasDeadline.animation(.snappy)).font(AppFont.body)
+                }
                 if hasDeadline {
                     FormDivider()
-                    DatePicker("goal_deadline_date", selection: $deadline, displayedComponents: .date)
-                        .font(AppFont.body)
+                    FormRow(icon: "flag.checkered", tint: tint(colorToken)) {
+                        DatePicker("goal_deadline_date", selection: $deadline, displayedComponents: .date)
+                            .font(AppFont.body)
+                    }
                 }
             }
         }
         .onAppear(perform: hydrate)
+    }
+
+    // MARK: Icon + color sections (avatar-ring language)
+
+    /// Naked section label — the same anatomy FormGroup titles use.
+    private func sectionLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(AppFont.label)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .padding(.leading, AppSpacing.xxs)
+    }
+
+    private var iconSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionLabel("goal_icon")
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.sm), count: 6),
+                      spacing: AppSpacing.sm) {
+                ForEach(Self.icons, id: \.self) { name in
+                    iconCell(name)
+                }
+            }
+        }
+    }
+
+    private func iconCell(_ name: String) -> some View {
+        let selected = icon == name
+        let accent = tint(colorToken)
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { icon = name }
+            HapticFeedback.selection()
+        } label: {
+            Image(systemName: name)
+                .font(AppFont.scaled(17, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(selected ? accent.opacity(AppOpacity.tintedFill)
+                                     : Color.primary.opacity(0.04),
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .overlay {
+                    if selected {
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                            .strokeBorder(accent, lineWidth: 1.5)
+                    }
+                }
+                .foregroundStyle(selected ? accent : .primary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var colorSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            sectionLabel("goal_color")
+            // Naked grid, deliberately NOT on glass — inside a glass container
+            // the vibrancy compositing ate flat semantic fills on device
+            // (IMG_8608, avatar ring); this mirrors that proven surface.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
+                      spacing: AppSpacing.lg) {
+                ForEach(Self.palette, id: \.self) { colorSwatch($0) }
+            }
+            .padding(.vertical, AppSpacing.xs)
+
+            FormGroup {
+                FormRow(icon: "paintpalette.fill", tint: tint(colorToken)) {
+                    Text("Custom color")
+                        .font(AppFont.scaled(14))
+                        .foregroundStyle(.primary)
+                    if colorToken.hasPrefix("#"), !Self.palette.contains(colorToken) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(Color.brandSuccess)
+                    }
+                    Spacer()
+                    ColorPicker("", selection: Binding(
+                        get: { Color(hex: colorToken) ?? tint(colorToken) },
+                        set: { newColor in
+                            withAnimation(.snappy(duration: 0.25)) {
+                                colorToken = newColor.hexString()
+                            }
+                        }
+                    ), supportsOpacity: false)
+                    .labelsHidden()
+                    .accessibilityLabel(Text("Custom color"))
+                }
+            }
+        }
+    }
+
+    private func colorSwatch(_ token: String) -> some View {
+        let color = tint(token)
+        let selected = colorToken == token
+        return Button {
+            withAnimation(.snappy(duration: 0.25)) { colorToken = token }
+            HapticFeedback.selection()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 40, height: 40)
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(.white)
+                }
+            }
+            .overlay {
+                if selected {
+                    Circle()
+                        .strokeBorder(color, lineWidth: 1.5)
+                        .frame(width: 48, height: 48)
+                }
+            }
+            .frame(width: 48, height: 48)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var currency: String { editing?.currency ?? appSettings.preferredCurrency }
@@ -503,7 +606,7 @@ struct AddContributionSheet: View {
         FormScaffold(title: "goal_add_deposit", saveLabel: "goal_deposit_save",
                      canSave: canSave, isSaving: isSaving, error: $error, onSave: save) {
             FormGroup {
-                HStack {
+                FormRow(icon: "banknote.fill", tint: goal.tint) {
                     Text("goal_amount").font(AppFont.body).foregroundStyle(.primary)
                     Spacer()
                     TextField("0", text: $amount).keyboardType(.decimalPad)
@@ -511,12 +614,16 @@ struct AddContributionSheet: View {
                     Text(verbatim: goal.currency).foregroundStyle(Color.secondaryTextColor)
                 }
                 FormDivider()
-                TextField("goal_note_placeholder", text: $note).font(AppFont.body)
+                FormRow(icon: "text.alignleft", tint: goal.tint) {
+                    TextField("goal_note_placeholder", text: $note).font(AppFont.body)
+                }
             }
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 FormGroup {
-                    Toggle("goal_link_flow", isOn: $linkToFlow.animation(.snappy)).font(AppFont.body)
+                    FormRow(icon: "arrow.left.arrow.right", tint: goal.tint) {
+                        Toggle("goal_link_flow", isOn: $linkToFlow.animation(.snappy)).font(AppFont.body)
+                    }
                 }
                 Text("goal_link_flow_footer")
                     .font(AppFont.scaled(12))
