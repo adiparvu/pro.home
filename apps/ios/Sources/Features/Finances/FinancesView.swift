@@ -244,6 +244,9 @@ struct FinancesView: View {
                                                 format: { fmt($0) })
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
+                        SavingsGoalsSection()
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
                         CategoryBreakdownSection(items: categoryItems(month: month),
                                                  format: { fmt($0) })
                             .padding(.top, AppSpacing.lg)

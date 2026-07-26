@@ -13,6 +13,7 @@ struct MainTabView: View {
     @State private var documentService = DocumentService()
     @State private var notificationScheduler = NotificationScheduler()
     @State private var budgetService = BudgetService()
+    @State private var savingsGoalService = SavingsGoalService()
     @State private var familyService = FamilyService()
     @State private var messageService = MessageService()
     @State private var currencyService = CurrencyService()
@@ -162,6 +163,7 @@ struct MainTabView: View {
         .environment(notificationScheduler)
         .environment(notificationService)
         .environment(budgetService)
+        .environment(savingsGoalService)
         .environment(familyService)
         .environment(messageService)
         .environment(currencyService)
@@ -488,11 +490,12 @@ struct MainTabView: View {
                 ?? profileService.profile?.fullName ?? "")
         async let tasksLoad: Void = taskService.load()
         async let financialLoad: Void = financialService.load()
+        async let savingsLoad: Void = savingsGoalService.load()
         async let documentsLoad: Void = documentService.load()
         async let familyLoad: Void = familyService.load()
         async let contractorLoad: Void = contractorService.load()
         async let chatNameLoad: Void = propertyService.loadGroupChatName()
-        await tasksLoad; await financialLoad; await documentsLoad
+        await tasksLoad; await financialLoad; await savingsLoad; await documentsLoad
         await familyLoad; await contractorLoad; await chatNameLoad
 
         if let propId {
