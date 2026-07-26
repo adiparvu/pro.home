@@ -41,6 +41,15 @@ enum HouseCalendarMirror {
     private static func mirrorCalendar() -> EKCalendar? {
         if let id = UserDefaults.standard.string(forKey: calIdKey),
            let cal = store.calendar(withIdentifier: id) { return cal }
+        // Identifier lost (reinstall, iCloud identifier churn): ADOPT any
+        // existing PRVIO calendar before ever creating a new one. A second
+        // calendar re-adds every mirrored event from scratch — and on a
+        // shared calendar that is one "Added by …" push per event on every
+        // family phone (IMG_9100, 48 notifications at once).
+        if let existing = store.calendars(for: .event).first(where: { $0.title == "PRVIO" }) {
+            UserDefaults.standard.set(existing.calendarIdentifier, forKey: calIdKey)
+            return existing
+        }
         let source = store.sources.first { $0.sourceType == .calDAV && $0.title == "iCloud" }
             ?? store.sources.first { $0.sourceType == .local }
             ?? store.defaultCalendarForNewEvents?.source
@@ -95,8 +104,18 @@ enum HouseCalendarMirror {
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: [cal])
         var byKey: [String: EKEvent] = [:]
+        // Secondary identity for events whose `url` did not survive the
+        // CalDAV round-trip (shared calendars can strip custom URLs): the
+        // same (title, day) pair. Without it those events look foreign, the
+        // reconcile re-creates them all, and every share participant gets an
+        // "Added by …" push per event (IMG_9100).
+        var byTitleDay: [String: EKEvent] = [:]
         for e in store.events(matching: predicate) {
-            if let k = key(from: e.url) { byKey[k] = e }
+            if let k = key(from: e.url) {
+                byKey[k] = e
+            } else if let sd = e.startDate {
+                byTitleDay["\(e.title ?? "")|\(AppDate.dayString(from: sd))"] = e
+            }
         }
 
         // Backstop against the wipe-and-recreate storm: an entirely empty
@@ -109,17 +128,43 @@ enum HouseCalendarMirror {
         // call sites is the real fix; this keeps any future caller honest.
         if items.isEmpty && !byKey.isEmpty { return }
 
+        let inWindow = items.filter { $0.date >= start && $0.date <= end }
+
+        // Circuit breaker against the "Added by …" storm: a healthy
+        // incremental sync creates a handful of events; wanting to create
+        // DOZENS while the calendar already mirrors keyed events means the
+        // identity matching broke in a way the adoptions above didn't catch.
+        // Creating anyway would push one notification per event to every
+        // participant of the shared calendar (IMG_9100) — so updates and
+        // prunes still run, but mass creations are refused. The first-ever
+        // sync (empty calendar) is exempt: there is nothing to duplicate.
+        let creations = inWindow.filter {
+            byKey[$0.occurrenceKey] == nil
+                && byTitleDay["\($0.title)|\(AppDate.dayString(from: $0.date))"] == nil
+        }.count
+        let allowCreations = byKey.isEmpty || creations <= 20
+
         var wanted = Set<String>()
-        for item in items where item.date >= start && item.date <= end {
+        for item in inWindow {
             wanted.insert(item.occurrenceKey)
-            let event = byKey[item.occurrenceKey] ?? EKEvent(eventStore: store)
+            let titleDay = "\(item.title)|\(AppDate.dayString(from: item.date))"
+            let existing = byKey[item.occurrenceKey] ?? byTitleDay.removeValue(forKey: titleDay)
+            guard existing != nil || allowCreations else { continue }
+            let event = existing ?? EKEvent(eventStore: store)
             apply(item, to: event, calendar: cal)
+            // Save only what actually changed: re-saving identical events on
+            // every launch re-syncs them through CalDAV, which shared-calendar
+            // participants can receive as "Updated by …" pushes.
+            guard event.hasChanges else { continue }
             try? store.save(event, span: .thisEvent, commit: false)
         }
         for (k, e) in byKey where !wanted.contains(k) {
             try? store.remove(e, span: .thisEvent, commit: false)
         }
         try? store.commit()
+        if !allowCreations {
+            debugLog("Calendar mirror: refused \(creations) mass creations (identity mismatch guard)")
+        }
     }
 
     private static func apply(_ item: AgendaItem, to event: EKEvent, calendar: EKCalendar) {
