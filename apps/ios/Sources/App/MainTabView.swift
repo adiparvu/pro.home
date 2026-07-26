@@ -745,6 +745,31 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
+        // Apple Pay expenses queued by LogExpenseIntent (the Shortcuts
+        // "Transaction" automation): each becomes a real ledger row now that
+        // the session and property context exist. Categorized by merchant;
+        // amounts are assumed in the household currency — the automation
+        // passes the card's charge amount.
+        let pendingExpenses = SharedDataStore.popPendingExpenses()
+        if !pendingExpenses.isEmpty, let propId = PropertyService.activePropertyId {
+            Task {
+                for e in pendingExpenses {
+                    let detail = [e.card.map { String(format: String(localized: "expense_via_card_fmt"), $0) },
+                                  e.note]
+                        .compactMap { $0 }.joined(separator: " · ")
+                    try? await financialService.add(FinancialService.NewFinancialRecord(
+                        propertyId: propId.uuidString,
+                        title: e.merchant,
+                        amount: e.amount,
+                        currency: appSettings.preferredCurrency,
+                        type: "expense",
+                        category: MerchantCategorizer.category(for: e.merchant),
+                        date: e.date,
+                        description: detail.isEmpty ? nil : detail,
+                        tags: ["apple_pay", "auto"]))
+                }
+            }
+        }
         let chatReplies = SharedDataStore.popPendingChatReplies()
         for reply in chatReplies {
             if let propId = propertyService.primary?.id {

@@ -128,6 +128,16 @@ extension IntegrationsView {
 
     var paymentsSection: some View {
         IntegrationGroup(title: "Wallet & Acces") {
+            // Apple Pay → automatic expense tracking, via the Shortcuts
+            // "Transaction" automation calling LogExpenseIntent.
+            NavigationLink { ApplePayAutomationView() } label: {
+                IntegrationRowContent(
+                    icon: "creditcard.and.123", color: Color.brandSuccess,
+                    title: "applepay_integration_title",
+                    description: "applepay_integration_desc")
+            }
+            .buttonStyle(.plain)
+
             // Signed Wallet passes are generated on the NFC Keys page
             // (AddToWalletButton → sign-pass edge function).
             Button { vm.activeSheet = .nfcWallet } label: {

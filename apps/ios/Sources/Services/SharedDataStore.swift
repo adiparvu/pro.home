@@ -1323,4 +1323,30 @@ enum SharedDataStore {
         coordinatedPop("completions", legacyKey: pendingCompletionsKey)
             .compactMap { UUID(uuidString: $0) }
     }
+
+    // MARK: - Pending expenses (Apple Pay → Shortcuts "Transaction" automation)
+
+    /// One queued expense from `LogExpenseIntent`. The embedded `id` keeps two
+    /// identical taps (same shop, same amount, same day) distinct in the
+    /// unique-append store.
+    struct PendingExpense: Codable {
+        let id: UUID
+        let merchant: String
+        let amount: Double
+        let card: String?
+        let note: String?
+        let date: String        // "yyyy-MM-dd"
+    }
+
+    static func appendPendingExpense(_ expense: PendingExpense) {
+        guard let data = try? JSONEncoder().encode(expense),
+              let json = String(data: data, encoding: .utf8) else { return }
+        coordinatedAppendUnique("expenses", legacyKey: nil, json)
+    }
+
+    static func popPendingExpenses() -> [PendingExpense] {
+        coordinatedPop("expenses", legacyKey: nil).compactMap {
+            $0.data(using: .utf8).flatMap { try? JSONDecoder().decode(PendingExpense.self, from: $0) }
+        }
+    }
 }
