@@ -278,6 +278,9 @@ extension DashboardView {
 
         case .whoHome:
             WhoIsHomeCard { router.navigate(to: .family) }
+
+        case .savingsGoals:
+            SavingsGoalsWidget()
         }
     }
 

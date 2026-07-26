@@ -107,6 +107,7 @@ struct SavingsGoalDetailView: View {
     let goal: SavingsGoal
 
     @State private var showContribute = false
+    @State private var showEdit = false
     @State private var showDeleteConfirm = false
 
     /// Re-resolve from the service so realtime updates repaint the detail.
@@ -128,6 +129,7 @@ struct SavingsGoalDetailView: View {
                 }
                 .buttonStyle(.plain)
 
+                if live.hasAutoRule { autoRuleRow }
                 if !progress.byMember.isEmpty { memberBreakdown }
                 contributionHistory
                 Spacer(minLength: 60)
@@ -141,6 +143,9 @@ struct SavingsGoalDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button { showEdit = true } label: {
+                        Label("goal_edit", systemImage: "pencil")
+                    }
                     Button(role: .destructive) { showDeleteConfirm = true } label: {
                         Label("goal_delete", systemImage: "trash")
                     }
@@ -151,12 +156,41 @@ struct SavingsGoalDetailView: View {
             }
         }
         .sheet(isPresented: $showContribute) { AddContributionSheet(goal: live) }
+        .sheet(isPresented: $showEdit) { AddSavingsGoalSheet(editing: live) }
         .confirmationDialog("goal_delete_confirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("goal_delete", role: .destructive) {
                 Task { await service.deleteGoal(live); dismiss() }
             }
             Button("Cancel", role: .cancel) {}
         }
+    }
+
+    /// Shown when a monthly auto-rule is active — states plainly what lands,
+    /// for whom, and on which day, so the automation is never a mystery.
+    private var autoRuleRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(AppFont.scaled(17, weight: .semibold))
+                .foregroundStyle(live.tint)
+                .frame(width: 26)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("goal_auto_active").font(AppFont.scaled(14, weight: .semibold)).foregroundStyle(.primary)
+                Text(verbatim: autoRuleSummary).font(AppFont.scaled(12)).foregroundStyle(Color.secondaryTextColor)
+            }
+            Spacer()
+        }
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .liquidGlass(cornerRadius: AppRadius.xl)
+    }
+
+    private var autoRuleSummary: String {
+        let amount = CurrencyService.money(live.autoAmount ?? 0, code: live.currency, whole: true)
+        let day = live.autoDay ?? 1
+        if let name = live.autoMemberName, !name.isEmpty {
+            return String(format: String(localized: "goal_auto_summary_member_fmt"), amount, day, name)
+        }
+        return String(format: String(localized: "goal_auto_summary_fmt"), amount, day)
     }
 
     private var memberBreakdown: some View {
@@ -218,8 +252,12 @@ struct SavingsGoalDetailView: View {
 struct AddSavingsGoalSheet: View {
     @Environment(SavingsGoalService.self) private var service
     @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
+
+    /// When set, the sheet edits this goal in place instead of creating one.
+    var editing: SavingsGoal? = nil
 
     @State private var title = ""
     @State private var target = ""
@@ -228,20 +266,35 @@ struct AddSavingsGoalSheet: View {
     @State private var colorToken = "brandPurple"
     @State private var hasDeadline = false
     @State private var deadline = Date()
+    // Optional monthly auto-rule (phase 2): a fixed amount credited to a chosen
+    // member automatically on a chosen day, applied server-side by pg_cron.
+    @State private var hasAutoRule = false
+    @State private var autoAmount = ""
+    @State private var autoDay = 1
+    @State private var autoMemberId: String = ""
     @State private var isSaving = false
     @State private var error: String?
+    @State private var didHydrate = false
 
     private let icons = ["target", "house.fill", "shield.fill", "airplane", "car.fill",
                          "gift.fill", "graduationcap.fill", "heart.fill", "banknote.fill"]
     private let colors = ["brandPurple", "brandSuccess", "brandPrimaryBlue", "brandSkyBlue",
                           "brandWarning", "brandDanger"]
 
+    /// (stable id string, display name) for each family member — the auto-rule
+    /// credits one of them. The id mirrors the manual-deposit stamp (user id
+    /// when linked, else the member row id) so the per-member rollup stays one.
+    private var memberOptions: [(id: String, name: String)] {
+        familyService.members.map { (id: ($0.userId ?? $0.id).uuidString, name: $0.name) }
+    }
+
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && (Double(target) ?? 0) > 0
     }
 
     var body: some View {
-        FormScaffold(title: "goal_new", canSave: canSave, isSaving: isSaving,
+        FormScaffold(title: editing == nil ? "goal_new" : "goal_edit",
+                     canSave: canSave, isSaving: isSaving,
                      error: $error, onSave: save) {
             FormGroup {
                 TextField("goal_title_placeholder", text: $title)
@@ -252,7 +305,7 @@ struct AddSavingsGoalSheet: View {
                     Spacer()
                     TextField("0", text: $target).keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing).font(AppFont.body)
-                    Text(verbatim: appSettings.preferredCurrency).foregroundStyle(Color.secondaryTextColor)
+                    Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
                 }
                 FormDivider()
                 HStack {
@@ -260,7 +313,7 @@ struct AddSavingsGoalSheet: View {
                     Spacer()
                     TextField("0", text: $monthly).keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing).font(AppFont.body)
-                    Text(verbatim: appSettings.preferredCurrency).foregroundStyle(Color.secondaryTextColor)
+                    Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
                 }
             }
 
@@ -301,6 +354,46 @@ struct AddSavingsGoalSheet: View {
                 }
             }
 
+            // Monthly auto-rule — a set amount lands automatically, so a family
+            // that commits a standing contribution doesn't have to remember it.
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                FormGroup {
+                    Toggle("goal_auto_rule", isOn: $hasAutoRule.animation(.snappy)).font(AppFont.body)
+                    if hasAutoRule {
+                        FormDivider()
+                        HStack {
+                            Text("goal_auto_amount").font(AppFont.body).foregroundStyle(.primary)
+                            Spacer()
+                            TextField("0", text: $autoAmount).keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing).font(AppFont.body)
+                            Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
+                        }
+                        FormDivider()
+                        Picker("goal_auto_day", selection: $autoDay) {
+                            ForEach(1...28, id: \.self) { d in
+                                Text(String(format: String(localized: "goal_auto_day_fmt"), d)).tag(d)
+                            }
+                        }
+                        .font(AppFont.body)
+                        if !memberOptions.isEmpty {
+                            FormDivider()
+                            Picker("goal_auto_member", selection: $autoMemberId) {
+                                ForEach(memberOptions, id: \.id) { m in
+                                    Text(verbatim: m.name).tag(m.id)
+                                }
+                            }
+                            .font(AppFont.body)
+                        }
+                    }
+                }
+                if hasAutoRule {
+                    Text("goal_auto_footer")
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.secondaryTextColor)
+                        .padding(.leading, AppSpacing.xxs)
+                }
+            }
+
             FormGroup {
                 Toggle("goal_deadline", isOn: $hasDeadline.animation(.snappy)).font(AppFont.body)
                 if hasDeadline {
@@ -310,26 +403,73 @@ struct AddSavingsGoalSheet: View {
                 }
             }
         }
+        .onAppear(perform: hydrate)
     }
+
+    private var currency: String { editing?.currency ?? appSettings.preferredCurrency }
 
     private func tint(_ token: String) -> Color { SavingsGoal.tint(forToken: token) }
 
-    private func save() {
-        guard let pid = propertyService.primary?.id else {
-            error = String(localized: "No property found. Please set up your property first."); return
+    /// Fill the fields from the goal under edit, once, then default the auto
+    /// member to the first family member if nothing was chosen.
+    private func hydrate() {
+        guard !didHydrate else { return }
+        didHydrate = true
+        if let g = editing {
+            title = g.title
+            target = trimZeros(g.targetAmount)
+            monthly = (g.monthlyPerMember ?? 0) > 0 ? trimZeros(g.monthlyPerMember!) : ""
+            icon = g.iconName
+            colorToken = g.color ?? "brandPurple"
+            if let d = g.deadlineDate { hasDeadline = true; deadline = d }
+            if g.hasAutoRule {
+                hasAutoRule = true
+                autoAmount = trimZeros(g.autoAmount ?? 0)
+                autoDay = g.autoDay ?? 1
+                if let mid = g.autoMemberId { autoMemberId = mid }
+            }
         }
+        if autoMemberId.isEmpty { autoMemberId = memberOptions.first?.id ?? "" }
+    }
+
+    private func trimZeros(_ v: Double) -> String {
+        v == v.rounded() ? String(Int(v)) : String(v)
+    }
+
+    private func save() {
         isSaving = true
+        let deadlineStr = hasDeadline ? AppDate.day.string(from: deadline) : nil
+        let monthlyVal = Double(monthly).flatMap { $0 > 0 ? $0 : nil }
+        let autoVal = hasAutoRule ? Double(autoAmount).flatMap { $0 > 0 ? $0 : nil } : nil
+        let autoName = autoVal != nil
+            ? memberOptions.first { $0.id == autoMemberId }?.name : nil
+        let autoId = autoVal != nil ? (autoMemberId.isEmpty ? nil : autoMemberId) : nil
+        let cleanTitle = title.trimmingCharacters(in: .whitespaces)
+
         Task {
             do {
-                try await service.addGoal(SavingsGoalService.NewGoal(
-                    propertyId: pid.uuidString,
-                    title: title.trimmingCharacters(in: .whitespaces),
-                    icon: icon,
-                    color: colorToken,
-                    targetAmount: Double(target) ?? 0,
-                    currency: appSettings.preferredCurrency,
-                    monthlyPerMember: Double(monthly).flatMap { $0 > 0 ? $0 : nil },
-                    deadline: hasDeadline ? AppDate.day.string(from: deadline) : nil))
+                if let g = editing {
+                    try await service.updateGoal(g.id, patch: SavingsGoalService.GoalPatch(
+                        title: cleanTitle, icon: icon, color: colorToken,
+                        targetAmount: Double(target) ?? 0,
+                        monthlyPerMember: monthlyVal, deadline: deadlineStr,
+                        autoAmount: autoVal, autoDay: autoVal != nil ? autoDay : nil,
+                        autoMemberId: autoId, autoMemberName: autoName,
+                        updatedAt: ISODate.string(from: Date())))
+                } else {
+                    guard let pid = propertyService.primary?.id else {
+                        error = String(localized: "No property found. Please set up your property first.")
+                        isSaving = false; return
+                    }
+                    try await service.addGoal(SavingsGoalService.NewGoal(
+                        propertyId: pid.uuidString,
+                        title: cleanTitle, icon: icon, color: colorToken,
+                        targetAmount: Double(target) ?? 0,
+                        currency: appSettings.preferredCurrency,
+                        monthlyPerMember: monthlyVal, deadline: deadlineStr,
+                        autoAmount: autoVal, autoDay: autoVal != nil ? autoDay : nil,
+                        autoMemberId: autoId, autoMemberName: autoName))
+                }
                 HapticFeedback.success()
                 dismiss()
             } catch {
@@ -344,11 +484,16 @@ struct AddSavingsGoalSheet: View {
 
 struct AddContributionSheet: View {
     @Environment(SavingsGoalService.self) private var service
+    @Environment(FinancialService.self) private var financialService
     @Environment(\.dismiss) private var dismiss
     let goal: SavingsGoal
 
     @State private var amount = ""
     @State private var note = ""
+    // Optional: mirror the deposit into the household's real financial flow as
+    // a savings transfer, so cash-flow reflects money actually set aside — not
+    // a number floating outside the ledger (phase 2).
+    @State private var linkToFlow = false
     @State private var isSaving = false
     @State private var error: String?
 
@@ -368,14 +513,39 @@ struct AddContributionSheet: View {
                 FormDivider()
                 TextField("goal_note_placeholder", text: $note).font(AppFont.body)
             }
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                FormGroup {
+                    Toggle("goal_link_flow", isOn: $linkToFlow.animation(.snappy)).font(AppFont.body)
+                }
+                Text("goal_link_flow_footer")
+                    .font(AppFont.scaled(12))
+                    .foregroundStyle(Color.secondaryTextColor)
+                    .padding(.leading, AppSpacing.xxs)
+            }
         }
     }
 
     private func save() {
         isSaving = true
+        let value = Double(amount) ?? 0
         Task {
             do {
-                try await service.addContribution(to: goal, amount: Double(amount) ?? 0, note: note)
+                try await service.addContribution(to: goal, amount: value, note: note)
+                // The link is a best-effort mirror: a failure to write the
+                // financial row must not lose the deposit that already landed.
+                if linkToFlow {
+                    try? await financialService.add(FinancialService.NewFinancialRecord(
+                        propertyId: goal.propertyId.uuidString,
+                        title: goal.title,
+                        amount: value,
+                        currency: goal.currency,
+                        type: "expense",
+                        category: String(localized: "goal_flow_category"),
+                        date: AppDate.day.string(from: Date()),
+                        description: note.isEmpty ? nil : note,
+                        tags: ["savings", "savings_goal:\(goal.id.uuidString)"]))
+                }
                 HapticFeedback.success()
                 dismiss()
             } catch {

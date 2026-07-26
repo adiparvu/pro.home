@@ -58,14 +58,14 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
          contractors, weather, plants, calendar, deliveries, shopping, journal,
          briefing, presence, budget,
          pantry, insights, propertyValue, seasonal, warranties, houseFeed,
-         whoHome
+         whoHome, savingsGoals
 
     var id: String { rawValue }
 
     /// The size a widget arrives in — every widget can be resized afterwards.
     var defaultSize: HomeWidgetSize {
         switch self {
-        case .weather, .calendar, .briefing, .insights, .houseFeed: return .full
+        case .weather, .calendar, .briefing, .insights, .houseFeed, .savingsGoals: return .full
         default: return .half
         }
     }
@@ -95,6 +95,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .warranties:  return String(localized: "Warranties")
         case .houseFeed:   return String(localized: "Today at home")
         case .whoHome:     return String(localized: "Who's home")
+        case .savingsGoals: return String(localized: "goal_section_title")
         }
     }
 
@@ -123,6 +124,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .warranties:  return "checkmark.seal.fill"
         case .houseFeed:   return "clock.arrow.circlepath"
         case .whoHome:     return "location.fill.viewfinder"
+        case .savingsGoals: return "target"
         }
     }
 
@@ -151,6 +153,7 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .warranties:  return Color.brandSkyBlue
         case .houseFeed:   return Color.brandPrimaryBlue
         case .whoHome:     return Color.brandSkyBlue
+        case .savingsGoals: return Color.brandPurple
         }
     }
 }

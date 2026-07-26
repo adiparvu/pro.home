@@ -65,16 +65,57 @@ final class SavingsGoalService {
         let currency: String
         let monthlyPerMember: Double?
         let deadline: String?
+        var autoAmount: Double?
+        var autoDay: Int?
+        var autoMemberId: String?
+        var autoMemberName: String?
         enum CodingKeys: String, CodingKey {
             case title, icon, color, currency, deadline
             case propertyId = "property_id"
             case targetAmount = "target_amount"
             case monthlyPerMember = "monthly_per_member"
+            case autoAmount = "auto_amount"
+            case autoDay = "auto_day"
+            case autoMemberId = "auto_member_id"
+            case autoMemberName = "auto_member_name"
         }
     }
 
     func addGoal(_ goal: NewGoal) async throws {
         try await supabase.from("savings_goals").insert(goal).execute()
+        await load()
+    }
+
+    /// Fields an editor can change on an existing goal. `updatedAt` is stamped
+    /// so realtime peers repaint; auto-rule fields are always sent (nil clears
+    /// the rule) so turning the monthly rule off actually persists.
+    struct GoalPatch: Encodable {
+        let title: String
+        let icon: String?
+        let color: String?
+        let targetAmount: Double
+        let monthlyPerMember: Double?
+        let deadline: String?
+        let autoAmount: Double?
+        let autoDay: Int?
+        let autoMemberId: String?
+        let autoMemberName: String?
+        let updatedAt: String
+        enum CodingKeys: String, CodingKey {
+            case title, icon, color, deadline
+            case targetAmount = "target_amount"
+            case monthlyPerMember = "monthly_per_member"
+            case autoAmount = "auto_amount"
+            case autoDay = "auto_day"
+            case autoMemberId = "auto_member_id"
+            case autoMemberName = "auto_member_name"
+            case updatedAt = "updated_at"
+        }
+    }
+
+    func updateGoal(_ id: UUID, patch: GoalPatch) async throws {
+        try await supabase.from("savings_goals")
+            .update(patch).eq("id", value: id.uuidString).execute()
         await load()
     }
 

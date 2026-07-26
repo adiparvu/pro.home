@@ -18,6 +18,13 @@ struct SavingsGoal: Identifiable, Codable, Hashable {
     var monthlyPerMember: Double?
     var deadline: String?            // "YYYY-MM-DD"
     var sharedMemberIds: [String]
+    // Optional monthly auto-rule (phase 2): a fixed amount credited to a chosen
+    // member once a month on `autoDay`, applied server-side by pg_cron. Nil
+    // fields = no rule; the ledger stays the single source of truth.
+    var autoAmount: Double?
+    var autoDay: Int?                // 1…28
+    var autoMemberId: String?
+    var autoMemberName: String?
     var createdBy: UUID?
     let createdAt: String?
     var updatedAt: String?
@@ -28,10 +35,17 @@ struct SavingsGoal: Identifiable, Codable, Hashable {
         case targetAmount      = "target_amount"
         case monthlyPerMember  = "monthly_per_member"
         case sharedMemberIds   = "shared_member_ids"
+        case autoAmount        = "auto_amount"
+        case autoDay           = "auto_day"
+        case autoMemberId      = "auto_member_id"
+        case autoMemberName    = "auto_member_name"
         case createdBy         = "created_by"
         case createdAt         = "created_at"
         case updatedAt         = "updated_at"
     }
+
+    /// True when a monthly auto-contribution rule is active.
+    var hasAutoRule: Bool { (autoAmount ?? 0) > 0 && autoDay != nil }
 
     /// Resolved accent — a brand token name maps to its color, else a hex,
     /// else the app accent. Keeps the DB free of raw color literals.
