@@ -312,7 +312,7 @@ struct AddNetWorthAccountSheet: View {
 
     private var currency: String { editing?.currency ?? appSettings.preferredCurrency }
 
-    private var kinds: [NetWorthKind] { isAsset ? .assetKinds : .liabilityKinds }
+    private var kinds: [NetWorthKind] { isAsset ? NetWorthKind.assetKinds : NetWorthKind.liabilityKinds }
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && (Double(balance) ?? 0) > 0
