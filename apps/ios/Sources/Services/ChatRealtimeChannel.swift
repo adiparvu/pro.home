@@ -8,7 +8,7 @@ import Supabase
 // and MessageService each carried a near-verbatim copy of the subscribe /
 // rebuild machinery — the rejoin grace, the storm breaker, the stale-close
 // kill watch, the diagnostics banner — so every hard-won realtime lesson
-// (b1036, b1040, b1157, b1173, b1182) had to be fixed twice. This type owns
+// (b1036, b1040, b1157, b1173, b1182, b1197) had to be fixed twice. This type owns
 // the channel and the whole lifecycle; an engine contributes only what
 // genuinely differs, through `Configuration`:
 //   - its fully scoped topic string (the scope identity for idempotency),
@@ -101,6 +101,20 @@ final class ChatRealtimeChannel {
     @ObservationIgnored private var lastRebuildAt: Date?
     /// The post-confirm stale-close kill watch (b1182) — one per subscribe.
     @ObservationIgnored private var killWatchTask: Task<Void, Never>?
+    /// The last configuration any caller subscribed with — the reconnect
+    /// re-arm's memory of what SHOULD be live (b1197). Stamped on every
+    /// subscribe intent, cleared only by an explicit `unsubscribe()`.
+    @ObservationIgnored private var lastConfig: Configuration?
+    /// Topics whose last join timed out or failed (b1197): that join may
+    /// survive server-side as an orphan — queued on a dead socket, flushed
+    /// by the reconnect AFTER our cleanup — so the NEXT subscribe for the
+    /// topic must send an explicit leave on a live socket and start from a
+    /// fresh channel object before rejoining.
+    @ObservationIgnored private var dirtyTopics: Set<String> = []
+    /// The socket-status observer behind the reconnect re-arm (b1197).
+    @ObservationIgnored private var reconnectTriggerTask: Task<Void, Never>?
+    /// The recovery run a reconnect spawns; a fresh reconnect supersedes it.
+    @ObservationIgnored private var reconnectRecoveryTask: Task<Void, Never>?
 
     // MARK: - Subscribe
 
@@ -121,6 +135,14 @@ final class ChatRealtimeChannel {
     }
 
     private func performSubscribe(_ config: Configuration) async {
+        // Reconnect re-arm memory (b1197): from the first subscribe intent
+        // on, this class SHOULD be live on this topic. The socket observer
+        // (armReconnectTrigger) uses it to re-kick the rebuild after a
+        // reconnect — before, NOTHING did: ensureLiveDelivery only ran on
+        // foreground/appear, so the 16:25 outage left the banner parked on
+        // "chan:none" for good. Cleared only by an explicit unsubscribe().
+        lastConfig = config
+        armReconnectTrigger()
         // Idempotent ONLY for the same conversation scope (the topic carries
         // the full scope) on a genuinely live channel. Two real-world failures
         // hid behind an older `!= nil` check: a community thread opened after
@@ -164,8 +186,25 @@ final class ChatRealtimeChannel {
         isSubscribing = true
         defer { isSubscribing = false }
         onDetachHook = config.onDetach
+        // NEVER burn the join timebox on a dead socket (b1197 field log:
+        // socket disc 16:25:18 → conn 16:25:37, a 19s outage against a 15s
+        // timebox): subscribeWithError() QUEUED its phx_join on the down
+        // socket while the clock ran out on pure dead air. The timeout
+        // cleanup then tore the client channel down — its phx_leave equally
+        // undeliverable — and the reconnect flushed the queued join anyway:
+        // "Received event phx_reply" landed right after "subscribing →
+        // unsubscribed", a server confirm for a channel no client owned.
+        // That orphan's stale phx_close then murdered the topic's next
+        // confirmed join (the b1173 signature — the presence channel's
+        // subscribed → phx_close loop in the same log). The timebox exists
+        // to bound a hung JOIN, not to race a reconnect: wait (bounded) for
+        // the socket first, and only then start the join clock. The
+        // teardown below waits too — a leave needs a live socket as much as
+        // a join does. If the socket never comes up, fail exactly as today.
+        await awaitSocketConnected(config)
         if let old = channel, !old.topic.hasSuffix(config.topic) {
             await unsubscribe()                 // genuine scope/property switch
+            lastConfig = config                 // the switch's intent survives it
         } else if let old = channel {
             // SAME topic: never discard the object — a fresh object
             // double-joins the topic, and the server's close of the previous
@@ -178,6 +217,25 @@ final class ChatRealtimeChannel {
             subscribedTopic = nil
             channel = nil
             await old.unsubscribe()
+        }
+        // DIRTY-TOPIC SCRUB (b1197): the topic's last join timed out or
+        // failed, so an orphaned server-side join may be waiting to kill
+        // the one below with its stale phx_close (b1173) — the failure
+        // cleanup's own leave was undeliverable on the dead socket. Now
+        // that the socket is up, push an explicit leave for the topic
+        // through a throwaway registration and deregister it, so the join
+        // below starts from a clean server slate on a FRESH channel object.
+        if dirtyTopics.contains(config.topic), realtimeAnon.status == .connected {
+            dirtyTopics.remove(config.topic)
+            RealtimeFlightRecorder.shared.note(
+                "\(config.tag): scrubbing orphaned join before rejoin")
+            let scrub = realtimeAnon.channel(config.topic) {
+                $0.broadcast.receiveOwnBroadcasts = true
+            }
+            // Real leave from every state (b1173) — timeboxed so a mute
+            // server cannot latch `isSubscribing` through the scrub.
+            try? await withRealtimeTimeout(seconds: 5) { await scrub.unsubscribe() }
+            await realtimeAnon.removeChannel(scrub)
         }
         // Channel auth rides the client's accessToken closure (see
         // SupabaseClient): the user's session JWT, so RLS-scoped
@@ -236,6 +294,13 @@ final class ChatRealtimeChannel {
                 debugLog("\(config.tag) realtime subscribe superseded (cancelled)")
                 return
             }
+            // Remember the wound (b1197): this join may have been QUEUED on
+            // a down socket and outlive its own cleanup — the 16:25 log
+            // shows its phx_reply landing right after "subscribing →
+            // unsubscribed", and the leave above is just as undeliverable
+            // then. The NEXT subscribe for this topic scrubs the orphan
+            // with an explicit leave on a live socket before rejoining.
+            dirtyTopics.insert(config.topic)
             debugLog("\(config.tag) realtime subscribe failed:", error)
             realtimeStatus = "b\(appBuildTag) FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
             return
@@ -245,6 +310,33 @@ final class ChatRealtimeChannel {
         runBroadcastSelfTest(on: ch)
         refreshStatus()
         armStaleCloseKillWatch(on: ch, config: config)
+    }
+
+    // MARK: - Socket wait (b1197)
+
+    /// Bounded wait for the realtime socket BEFORE the join timebox starts.
+    /// b1197 field log: the socket dropped at 16:25:18 and came back at
+    /// 16:25:37 — 19 seconds, longer than the 15s timebox — so a subscribe
+    /// entered during the outage always died on the clock, never on the
+    /// join. Waiting here means the 15s budget times a real join handshake
+    /// again; the wait itself never touches the socket (the SDK's
+    /// auto-reconnect and the watchdog own revival), and it stands down in
+    /// the background (Build 1036's 0x8BADF00D law). If the socket stays
+    /// down past the deadline, fall through and fail exactly as before.
+    /// The wait is its own banner state ("chan:join-wait") so a screenshot
+    /// pins WHERE a stuck subscribe sits instead of lying "unsubscribed".
+    private func awaitSocketConnected(_ config: Configuration) async {
+        guard realtimeAnon.status != .connected else { return }
+        RealtimeFlightRecorder.shared.note(
+            "\(config.tag): join-wait — socket \(socketStatusText), holding the join timebox")
+        let deadline = Date().addingTimeInterval(20)
+        while realtimeAnon.status != .connected, Date() < deadline,
+              !AppLifecycle.isBackgrounded {
+            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:join-wait · \(RealtimeFlightRecorder.shared.tail)"
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+        RealtimeFlightRecorder.shared.note(
+            "\(config.tag): join-wait over — socket \(socketStatusText)")
     }
 
     // MARK: - Teardown
@@ -261,6 +353,12 @@ final class ChatRealtimeChannel {
     }
 
     func unsubscribe() async {
+        // Explicit teardown = this class should NOT be live anymore: drop
+        // the reconnect re-arm's memory (b1197) so a later reconnect can't
+        // resurrect a conversation the user closed. subscribe() re-stamps.
+        lastConfig = nil
+        reconnectRecoveryTask?.cancel()
+        reconnectRecoveryTask = nil
         killWatchTask?.cancel()
         killWatchTask = nil
         detachHandles()
@@ -403,6 +501,56 @@ final class ChatRealtimeChannel {
         case .some(true):  realtimeStatus = "live"
         case .some(false): realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:DEAD"
         case .none:        realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:testing"
+        }
+    }
+
+    // MARK: - Reconnect re-arm (b1197)
+
+    /// Socket-status observer: on every reconnect (… → .connected) it
+    /// re-kicks the rebuild when this class believes it should be live
+    /// (`lastConfig` is stamped) but the channel isn't subscribed. b1197's
+    /// second lesion: after the outage killed the join, NOTHING re-tried —
+    /// ensureLiveDelivery only ran on foreground/appear — so "chan:none"
+    /// sat on a healthy socket indefinitely. This is a TRIGGER, not a new
+    /// lifecycle: the recovery run funnels into ensureLiveDelivery, so
+    /// every existing guard (background quiet, rejoin grace, 30s backoff,
+    /// storm breaker) still decides — a flapping network cannot storm
+    /// joins through it, it can only ask the usual gatekeepers again.
+    private func armReconnectTrigger() {
+        guard reconnectTriggerTask == nil else { return }
+        reconnectTriggerTask = Task { @MainActor [weak self] in
+            var previous = realtimeAnon.status
+            for await status in realtimeAnon.statusChange {
+                guard let self else { return }
+                let reconnected = previous != .connected && status == .connected
+                previous = status
+                guard reconnected else { continue }
+                self.reconnectRecoveryTask?.cancel()
+                self.reconnectRecoveryTask = Task { @MainActor [weak self] in
+                    await self?.reconnectRecovery()
+                }
+            }
+        }
+    }
+
+    /// One recovery run after a reconnect. Sleeps past the rejoin grace
+    /// first (the SDK's rejoinChannels() owns the first ~10s — rebuilding
+    /// inside it is the b1040 double-join), then lets ensureLiveDelivery
+    /// decide with the last stamped configuration. Two passes, one backoff
+    /// window apart: the first may legitimately stand down behind the 30s
+    /// rebuild backoff, and without the second the recovery would starve
+    /// against the very guard that keeps it polite.
+    private func reconnectRecovery() async {
+        try? await Task.sleep(nanoseconds: 11_000_000_000)
+        for _ in 0..<2 {
+            guard !Task.isCancelled, let config = lastConfig,
+                  realtimeAnon.status == .connected,
+                  !AppLifecycle.isBackgrounded else { return }
+            if subscribedTopic == config.topic, realtimeHealthy { return }
+            RealtimeFlightRecorder.shared.note(
+                "\(config.tag): reconnect re-arm chan=\(channelStatusText(channel?.status))")
+            await ensureLiveDelivery(config)
+            try? await Task.sleep(nanoseconds: 31_000_000_000)
         }
     }
 
