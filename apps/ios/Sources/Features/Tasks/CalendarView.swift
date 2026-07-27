@@ -515,6 +515,7 @@ struct CalendarView: View {
         case .financial: return String(localized: "agenda_cat_financial")
         case .plant:     return String(localized: "agenda_cat_plants")
         case .lease:     return String(localized: "agenda_cat_leases")
+        case .vehicle:   return String(localized: "agenda_cat_vehicles")
         }
     }
 
