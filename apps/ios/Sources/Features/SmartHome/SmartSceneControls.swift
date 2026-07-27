@@ -211,6 +211,8 @@ struct SmartSceneListSheet: View {
     private let homeKit = HomeKitService.shared
 
     @State private var runner = SceneRunner()
+    @State private var showEditor = false
+    @State private var editingScene: HomeKitScene?
 
     var body: some View {
         ZStack {
@@ -228,6 +230,8 @@ struct SmartSceneListSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sceneFailureAlert(runner)
+        .sheet(isPresented: $showEditor) { SceneEditorSheet() }
+        .sheet(item: $editingScene) { SceneEditorSheet(editing: $0) }
     }
 
     @ViewBuilder private var content: some View {
@@ -255,6 +259,22 @@ struct SmartSceneListSheet: View {
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
+            // Creation exists only when a home is actually connected — the
+            // editor would otherwise open onto an honest but useless void.
+            if !homeKit.homes.isEmpty {
+                Button {
+                    HapticFeedback.impact(.light)
+                    showEditor = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                .glassCircle()
+                .accessibilityLabel(Text("sh_scene_new"))
+            }
             Button {
                 HapticFeedback.impact(.light)
                 dismiss()
@@ -317,6 +337,15 @@ struct SmartSceneListSheet: View {
         .buttonStyle(SmartCardPressStyle())
         .liquidGlass(cornerRadius: AppRadius.lg)
         .disabled(isRunning)
+        .contextMenu {
+            Button {
+                editingScene = scene
+            } label: { Label("sh_scene_edit", systemImage: "pencil") }
+            Button(role: .destructive) {
+                HapticFeedback.warning()
+                Task { try? await homeKit.deleteScene(scene) }
+            } label: { Label("Remove", systemImage: "trash") }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityValue(isRunning ? Text("sh_scene_running") : Text(verbatim: ""))
         .accessibilityHint(Text("sh_scene_run_hint"))

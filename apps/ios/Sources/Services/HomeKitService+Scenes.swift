@@ -125,6 +125,78 @@ extension HomeKitService {
         }
     }
 
+    // MARK: Writes (scene creation / editing / deletion)
+
+    /// A device pick for a new/edited scene: the accessory + the power state
+    /// the scene should command. Power is the one capability every
+    /// controllable device shares — richer per-device actions can grow
+    /// later without changing the shape.
+    struct SceneDevicePick {
+        let accessory: HMAccessory
+        let on: Bool
+    }
+
+    /// Accessories a scene can genuinely command in this home (power
+    /// characteristic present) — the editor's honest device list.
+    func sceneCandidates(in home: HMHome) -> [HMAccessory] {
+        home.accessories.filter { accessory in
+            accessory.services.flatMap(\.characteristics)
+                .contains { $0.characteristicType == HMCharacteristicTypePowerState }
+        }
+    }
+
+    /// Creates a user scene — a real HMActionSet with one power write per
+    /// picked device. Rethrows HomeKit's error verbatim.
+    func addScene(named name: String, in home: HMHome,
+                  picks: [SceneDevicePick]) async throws {
+        let actionSet = try await home.addActionSet(withName: name)
+        try await apply(picks, to: actionSet)
+    }
+
+    /// Rewrites an existing scene: rename if needed, then replace its
+    /// actions with the new picks (remove-then-add — HMActionSet has no
+    /// in-place update).
+    func updateScene(_ scene: HomeKitScene, name: String,
+                     picks: [SceneDevicePick]) async throws {
+        if scene.actionSet.name != name {
+            try await scene.actionSet.updateName(name)
+        }
+        for action in scene.actionSet.actions {
+            try await scene.actionSet.removeAction(action)
+        }
+        try await apply(picks, to: scene.actionSet)
+    }
+
+    func deleteScene(_ scene: HomeKitScene) async throws {
+        try await scene.home.removeActionSet(scene.actionSet)
+    }
+
+    /// The power states a scene currently commands, by accessory id — the
+    /// editor's hydration source when editing.
+    func powerPicks(of scene: HomeKitScene) -> [UUID: Bool] {
+        var out: [UUID: Bool] = [:]
+        for action in scene.actionSet.actions {
+            guard let write = action as? HMCharacteristicWriteAction<NSCopying>,
+                  write.characteristic.characteristicType == HMCharacteristicTypePowerState,
+                  let accessory = write.characteristic.service?.accessory,
+                  let on = (write.targetValue as? NSNumber)?.boolValue
+            else { continue }
+            out[accessory.uniqueIdentifier] = on
+        }
+        return out
+    }
+
+    private func apply(_ picks: [SceneDevicePick], to actionSet: HMActionSet) async throws {
+        for pick in picks {
+            guard let c = pick.accessory.services.flatMap(\.characteristics)
+                .first(where: { $0.characteristicType == HMCharacteristicTypePowerState })
+            else { continue }
+            try await actionSet.addAction(
+                HMCharacteristicWriteAction(characteristic: c,
+                                            targetValue: NSNumber(value: pick.on)))
+        }
+    }
+
     // MARK: Execute
 
     /// Runs a scene — bridged from

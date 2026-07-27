@@ -1,6 +1,13 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "sh_scene_new" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New scene"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Scenă nouă"}}}},
+    "sh_scene_edit" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Edit scene"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Modifică scena"}}}},
+    "sh_scene_name_ph" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Scene name"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Numele scenei"}}}},
+    "sh_scene_home" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Casă"}}}},
+    "sh_scene_devices" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Devices"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Dispozitive"}}}},
+    "sh_scene_no_devices" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No controllable devices in this home yet."}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Niciun dispozitiv controlabil în această casă încă."}}}},
+    "sh_scene_included" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Included"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Inclus"}}}},
     "sh_saturation" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Saturation"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Saturație"}}}},
     "sh_lock" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Lock"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Încuietoare"}}}},
     "sh_locked" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Locked"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Încuiat"}}}},
