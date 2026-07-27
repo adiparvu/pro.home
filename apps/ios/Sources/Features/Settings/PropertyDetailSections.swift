@@ -169,8 +169,41 @@ struct PropertyDetailExtraSections: View {
             worksCard
             teamCard
             guidesCard
+            claimsCard
             passportRow
         }
+    }
+
+    // MARK: - Damage claims ("Asistent de daune")
+
+    private var claimsCard: some View {
+        NavigationLink {
+            InsuranceClaimsView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(Color.brandWarning)
+                    .frame(width: 36, height: 36)
+                    .glassRoundedRect(10)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("claims_title")
+                        .font(AppFont.body)
+                        .foregroundStyle(.primary)
+                    Text("claims_card_subtitle")
+                        .font(AppFont.scaled(11))
+                        .foregroundStyle(Color.secondaryTextColor)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(13, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
+            .padding(AppSpacing.lg)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: 18)
     }
 
     // MARK: - House manual ("Manualul casei")
