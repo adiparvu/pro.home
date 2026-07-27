@@ -243,6 +243,9 @@ struct GlobalSearchSheet: View {
                 .from("messages")
                 .select("id, sender_name, body, created_at")
                 .eq("property_id", value: pid.uuidString)
+                // Unified-store guard (P4c): DM rows (conversation_id set)
+                // surface through the DM search path, never this one.
+                .is("conversation_id", value: nil)
                 .ilike("body", pattern: "%\(query)%")
                 .order("created_at", ascending: false)
                 .limit(8)

@@ -131,6 +131,10 @@ final class MessageService {
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+                // Unified-store guard (P4c): DM rows now live in this table
+                // too (conversation_id set) — group/main queries must never
+                // pull them, on any flag state.
+                .is("conversation_id", value: nil)
             // Scope is symmetric: a group chat sees only its group, and the
             // main chat sees only NULL-group rows — otherwise every community
             // message would also land in the main conversation.
@@ -170,6 +174,7 @@ final class MessageService {
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+                .is("conversation_id", value: nil)
                 .lt("created_at", value: oldest)
             if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
             else { query = query.or("group_id.is.null") }
@@ -196,6 +201,7 @@ final class MessageService {
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+                .is("conversation_id", value: nil)
             if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
             else { query = query.or("group_id.is.null") }
             // Cursor on the last SERVER-acked row, not the last in-memory row
@@ -1053,6 +1059,7 @@ extension MessageService {
         let rows: [Row] = (try? await supabase.from("messages")
             .select("id")
             .eq("property_id", value: propertyId.uuidString)
+            .is("conversation_id", value: nil)
             .ilike("body", pattern: Self.likePattern(query))
             .limit(1)
             .execute().value) ?? []
