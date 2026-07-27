@@ -13,8 +13,11 @@ import Foundation
 
 struct LogExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Log expense"
+    // ITMS-90626: intent descriptions may not contain the word "Apple", so the
+    // wallet-payment wording stays generic ("card payments") here — the setup
+    // guide in the app is free to name the actual feature.
     static var description = IntentDescription(
-        "Adds an expense to PRVIO Finances. Wire it to the Shortcuts 'Transaction' automation to track Apple Pay payments automatically.")
+        "Adds an expense to PRVIO Finances. Wire it to the Shortcuts 'Transaction' automation to track card payments automatically.")
     static var openAppWhenRun: Bool = false
 
     @Parameter(title: "Merchant")
