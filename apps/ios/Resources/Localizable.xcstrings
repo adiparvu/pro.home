@@ -1,6 +1,7 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "fin_triage_badge": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Choose category"}}, "ro": {"stringUnit": {"state": "translated", "value": "Alege categoria"}}}},
     "applepay_integration_title": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Apple Pay expenses"}}, "ro": {"stringUnit": {"state": "translated", "value": "Cheltuieli Apple Pay"}}}},
     "applepay_integration_desc": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Every Apple Pay payment lands in Finances automatically, via the Shortcuts Transaction automation."}}, "ro": {"stringUnit": {"state": "translated", "value": "Fiecare plată cu Apple Pay intră automat în Finanțe, prin automatizarea Tranzacție din Comenzi rapide."}}}},
     "applepay_guide_intro": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Apple keeps Wallet history private, but iOS can run a PRVIO action on every Apple Pay tap. Set it up once — after that, every payment logs itself, categorized by merchant."}}, "ro": {"stringUnit": {"state": "translated", "value": "Apple ține istoricul Wallet privat, dar iOS poate rula o acțiune PRVIO la fiecare plată cu Apple Pay. Configurezi o singură dată — apoi fiecare plată se înregistrează singură, pe categorii, după comerciant."}}}},

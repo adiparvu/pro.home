@@ -15,6 +15,7 @@ struct MainTabView: View {
     @State private var budgetService = BudgetService()
     @State private var savingsGoalService = SavingsGoalService()
     @State private var netWorthService = NetWorthService()
+    @State private var merchantRuleService = MerchantRuleService()
     @State private var familyService = FamilyService()
     @State private var messageService = MessageService()
     @State private var currencyService = CurrencyService()
@@ -166,6 +167,7 @@ struct MainTabView: View {
         .environment(budgetService)
         .environment(savingsGoalService)
         .environment(netWorthService)
+        .environment(merchantRuleService)
         .environment(familyService)
         .environment(messageService)
         .environment(currencyService)
@@ -494,11 +496,12 @@ struct MainTabView: View {
         async let financialLoad: Void = financialService.load()
         async let savingsLoad: Void = savingsGoalService.load()
         async let netWorthLoad: Void = netWorthService.load()
+        async let merchantRulesLoad: Void = merchantRuleService.load()
         async let documentsLoad: Void = documentService.load()
         async let familyLoad: Void = familyService.load()
         async let contractorLoad: Void = contractorService.load()
         async let chatNameLoad: Void = propertyService.loadGroupChatName()
-        await tasksLoad; await financialLoad; await savingsLoad; await netWorthLoad; await documentsLoad
+        await tasksLoad; await financialLoad; await savingsLoad; await netWorthLoad; await merchantRulesLoad; await documentsLoad
         await familyLoad; await contractorLoad; await chatNameLoad
 
         if let propId {
@@ -753,6 +756,10 @@ struct MainTabView: View {
         let pendingExpenses = SharedDataStore.popPendingExpenses()
         if !pendingExpenses.isEmpty, let propId = PropertyService.activePropertyId {
             Task {
+                // Category chain: the household's learned rule -> the static
+                // chain table -> Yuna (one call per unknown merchant, cached
+                // as a shared AI rule) -> honest "other".
+                let aiVerdicts = await merchantRuleService.classifyUnknown(pendingExpenses.map(\.merchant))
                 for e in pendingExpenses {
                     let detail = [e.card.map { String(format: String(localized: "expense_via_card_fmt"), $0) },
                                   e.note]
@@ -763,7 +770,10 @@ struct MainTabView: View {
                         amount: e.amount,
                         currency: appSettings.preferredCurrency,
                         type: "expense",
-                        category: MerchantCategorizer.category(for: e.merchant),
+                        category: merchantRuleService.category(for: e.merchant)
+                            ?? MerchantCategorizer.staticCategory(for: e.merchant)
+                            ?? aiVerdicts[e.merchant]
+                            ?? "other",
                         date: e.date,
                         description: detail.isEmpty ? nil : detail,
                         tags: ["apple_pay", "auto"]))

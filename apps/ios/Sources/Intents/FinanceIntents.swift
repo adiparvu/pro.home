@@ -64,6 +64,25 @@ struct LogExpenseIntent: AppIntent {
 /// household's markets (RO + BE); anything unknown lands in "other", which
 /// the user can recategorize from the row's edit menu.
 enum MerchantCategorizer {
+    /// Card statements bury the real merchant under processor prefixes
+    /// ("SUMUP *CAFENEA X", "CRV*CARREFOUR", "ZETTLE_...") and legal suffixes
+    /// (SRL, BVBA). Every rule lookup — static, learned or AI-cached — keys
+    /// on this normalized form so the same shop always matches itself.
+    static func normalize(_ raw: String) -> String {
+        var s = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // "PREFIX*rest" → keep rest when the prefix is short (a processor tag,
+        // not a real name). Covers SUMUP*, SQ*, CRV*, PP*, ZTL* and friends.
+        if let star = s.firstIndex(of: "*"), s.distance(from: s.startIndex, to: star) <= 8 {
+            s = String(s[s.index(after: star)...])
+        }
+        s = s.replacingOccurrences(of: "_", with: " ")
+        var words = s.split(separator: " ").map(String.init)
+        let legal: Set<String> = ["srl", "s.r.l.", "sa", "s.a.", "bv", "bvba",
+                                  "nv", "sprl", "gmbh", "ltd", "sarl", "pfa"]
+        while let last = words.last, legal.contains(last) { words.removeLast() }
+        return words.joined(separator: " ").trimmingCharacters(in: .whitespaces)
+    }
+
     private static let rules: [(category: String, needles: [String])] = [
         ("groceries",  ["lidl", "kaufland", "carrefour", "mega image", "profi", "auchan",
                         "penny", "selgros", "metro", "delhaize", "colruyt", "aldi", "spar",
@@ -86,11 +105,18 @@ enum MerchantCategorizer {
         ("supplies",   ["dm ", "rossmann", "kruidvat"]),
     ]
 
-    static func category(for merchant: String) -> String {
-        let m = merchant.lowercased()
+    /// Static keyword pass over the NORMALIZED name. Returns nil when no
+    /// chain matches, so callers can fall through to the learned/AI layers
+    /// without conflating "no match" with a real "other" verdict.
+    static func staticCategory(for merchant: String) -> String? {
+        let m = normalize(merchant)
         for rule in rules where rule.needles.contains(where: { m.contains($0) }) {
             return rule.category
         }
-        return "other"
+        return nil
+    }
+
+    static func category(for merchant: String) -> String {
+        staticCategory(for: merchant) ?? "other"
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct AddFinancialView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(PropertyService.self) private var propertyService
+    @Environment(MerchantRuleService.self) private var merchantRules
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(FamilyService.self) private var familyService
@@ -389,6 +390,12 @@ struct AddFinancialView: View {
                     ))
                     .eq("id", value: editing.id.uuidString)
                     .execute()
+                // A correction on an auto-imported payment teaches the
+                // household's merchant memory: the same shop lands in the
+                // chosen category on every phone from now on.
+                if editing.tags.contains("apple_pay"), category != editing.category {
+                    await merchantRules.learn(merchant: editing.title, category: category)
+                }
             } else {
                 try await supabase
                     .from("financial_records")

@@ -382,9 +382,22 @@ struct FinancialRecordRow: View {
                 Text(record.title)
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
-                Text(LocalizedStringKey(record.category.capitalized))
-                    .font(AppFont.scaled(12))
-                    .foregroundStyle(Color.primary.opacity(0.4))
+                HStack(spacing: AppSpacing.xs) {
+                    Text(LocalizedStringKey(record.category.capitalized))
+                        .font(AppFont.scaled(12))
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                    // Triage nudge: an auto-imported payment nobody categorized
+                    // yet. Long-press → Edit assigns it — and teaches the
+                    // household's merchant memory for every future payment.
+                    if record.category == "other", record.tags.contains("apple_pay") {
+                        Text("fin_triage_badge")
+                            .font(AppFont.scaled(10, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, AppSpacing.xs)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(AppOpacity.tintedFill), in: Capsule())
+                    }
+                }
             }
 
             Spacer()
