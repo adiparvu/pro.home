@@ -11,7 +11,7 @@ import SwiftUI
 enum AgendaCategory: String, CaseIterable, Identifiable {
     // `event` first: it's the user's own events (Calendar C2) and reads as the
     // primary category, ahead of the derived deadlines.
-    case event, task, document, warranty, birthday, financial, plant, lease
+    case event, task, document, warranty, birthday, financial, plant, lease, vehicle
     var id: String { rawValue }
 
     var titleKey: LocalizedStringKey {
@@ -24,6 +24,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .financial: return "agenda_cat_financial"
         case .plant:     return "agenda_cat_plants"
         case .lease:     return "agenda_cat_leases"
+        case .vehicle:   return "agenda_cat_vehicles"
         }
     }
 
@@ -37,6 +38,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .financial: return "creditcard.fill"
         case .plant:     return "leaf.fill"
         case .lease:     return "key.fill"
+        case .vehicle:   return "car.fill"
         }
     }
 
@@ -51,6 +53,7 @@ enum AgendaCategory: String, CaseIterable, Identifiable {
         case .financial: return .brandPurple
         case .plant:     return .green
         case .lease:     return .brandSkyBlue
+        case .vehicle:   return .indigo
         }
     }
 }
@@ -92,7 +95,8 @@ enum HouseAgenda {
         financial: [FinancialRecord],
         plants: [Plant],
         leases: [TenantLease] = [],
-        events: [CalendarEvent] = []
+        events: [CalendarEvent] = [],
+        vehicles: [Vehicle] = []
     ) -> [AgendaItem] {
         let cal = Calendar.current
         let lo = cal.startOfDay(for: range.lowerBound)
@@ -115,6 +119,27 @@ enum HouseAgenda {
                 title: e.title, subtitle: subtitle,
                 sourceId: e.id.uuidString, isCompleted: false,
                 deepLink: nil))
+        }
+
+        // Vehicles — the three dated obligations (ITP, insurance, vignette),
+        // one agenda item per set date so nothing expires silently.
+        for v in vehicles {
+            for kind in VehicleDeadline.allCases {
+                guard let d = kind.date(of: v), inRange(d) else { continue }
+                let kindName: String
+                switch kind {
+                case .itp:       kindName = String(localized: "vehicle_itp")
+                case .insurance: kindName = String(localized: "vehicle_insurance")
+                case .vignette:  kindName = String(localized: "vehicle_vignette")
+                }
+                out.append(AgendaItem(
+                    category: .vehicle, date: d, hasTime: false,
+                    title: "\(kindName) · \(v.name)",
+                    subtitle: v.subtitle,
+                    sourceId: "\(v.id.uuidString):\(kind.rawValue)",
+                    isCompleted: false,
+                    deepLink: nil))
+            }
         }
 
         // Tasks — one-shot due dates (may carry a time).
@@ -282,7 +307,8 @@ enum HouseAgenda {
         financial: [FinancialRecord],
         plants: [Plant],
         leases: [TenantLease],
-        events: [CalendarEvent] = []
+        events: [CalendarEvent] = [],
+        vehicles: [Vehicle] = []
     ) -> [AgendaItem] {
         let cal = Calendar.current
         let now = Date()
@@ -292,6 +318,6 @@ enum HouseAgenda {
             in: start...end,
             tasks: tasks, documents: documents, appliances: appliances,
             members: members, financial: financial, plants: plants,
-            leases: leases, events: events)
+            leases: leases, events: events, vehicles: vehicles)
     }
 }

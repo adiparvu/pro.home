@@ -299,7 +299,8 @@ extension DashboardView {
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
             leases: Array(familyService.leases.values),
-            events: calendarEventService.events)
+            events: calendarEventService.events,
+            vehicles: vehicleService.vehicles)
             .filter { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
             .prefix(3))
     }

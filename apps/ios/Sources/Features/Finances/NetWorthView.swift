@@ -19,6 +19,7 @@ extension View {
                        goals: [SavingsGoal],
                        collected: (SavingsGoal) -> Double,
                        mortgageRemaining: Double,
+                       vehicles: [Vehicle] = [],
                        preferred: String,
                        convert: (Double, String) -> Double) -> NetWorthSnapshot {
         var derived: [NetWorthLine] = []
@@ -35,6 +36,13 @@ extension View {
             derived.append(NetWorthLine(
                 id: "derived-savings", name: String(localized: "nw_line_savings"),
                 icon: "target", amount: savings,
+                isAsset: true, isDerived: true, account: nil))
+        }
+
+        for v in vehicles where (v.value ?? 0) > 0 {
+            derived.append(NetWorthLine(
+                id: "derived-vehicle-\(v.id.uuidString)", name: v.name,
+                icon: "car.fill", amount: convert(v.value ?? 0, v.currency),
                 isAsset: true, isDerived: true, account: nil))
         }
 
@@ -62,6 +70,7 @@ struct NetWorthSection: View {
     @Environment(SavingsGoalService.self) private var savingsService
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AppSettings.self) private var appSettings
+    @Environment(VehicleService.self) private var vehicleService
 
     private var preferred: String { appSettings.preferredCurrency }
 
@@ -71,6 +80,7 @@ struct NetWorthSection: View {
                       goals: savingsService.goals,
                       collected: { savingsService.progress(for: $0).collected },
                       mortgageRemaining: MortgageSnapshot.remainingBalance,
+                      vehicles: vehicleService.vehicles,
                       preferred: preferred,
                       convert: { currencyService.convert($0, from: $1, to: preferred) })
     }
@@ -180,6 +190,7 @@ struct NetWorthView: View {
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AppSettings.self) private var appSettings
     @Environment(PropertyService.self) private var propertyService
+    @Environment(VehicleService.self) private var vehicleService
 
     @State private var showAdd = false
     @State private var editing: NetWorthAccount?
@@ -192,6 +203,7 @@ struct NetWorthView: View {
                       goals: savingsService.goals,
                       collected: { savingsService.progress(for: $0).collected },
                       mortgageRemaining: MortgageSnapshot.remainingBalance,
+                      vehicles: vehicleService.vehicles,
                       preferred: preferred,
                       convert: { currencyService.convert($0, from: $1, to: preferred) })
     }

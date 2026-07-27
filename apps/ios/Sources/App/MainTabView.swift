@@ -17,6 +17,7 @@ struct MainTabView: View {
     @State private var netWorthService = NetWorthService()
     @State private var merchantRuleService = MerchantRuleService()
     @State private var meterService = MeterService()
+    @State private var vehicleService = VehicleService()
     @State private var familyService = FamilyService()
     @State private var messageService = MessageService()
     @State private var currencyService = CurrencyService()
@@ -170,6 +171,7 @@ struct MainTabView: View {
         .environment(netWorthService)
         .environment(merchantRuleService)
         .environment(meterService)
+        .environment(vehicleService)
         .environment(familyService)
         .environment(messageService)
         .environment(currencyService)
@@ -499,11 +501,12 @@ struct MainTabView: View {
         async let savingsLoad: Void = savingsGoalService.load()
         async let netWorthLoad: Void = netWorthService.load()
         async let merchantRulesLoad: Void = merchantRuleService.load()
+        async let vehiclesLoad: Void = vehicleService.load()
         async let documentsLoad: Void = documentService.load()
         async let familyLoad: Void = familyService.load()
         async let contractorLoad: Void = contractorService.load()
         async let chatNameLoad: Void = propertyService.loadGroupChatName()
-        await tasksLoad; await financialLoad; await savingsLoad; await netWorthLoad; await merchantRulesLoad; await documentsLoad
+        await tasksLoad; await financialLoad; await savingsLoad; await netWorthLoad; await merchantRulesLoad; await vehiclesLoad; await documentsLoad
         await familyLoad; await contractorLoad; await chatNameLoad
 
         if let propId {
@@ -599,7 +602,8 @@ struct MainTabView: View {
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
             leases: Array(familyService.leases.values),
-            events: calendarEventService.events)
+            events: calendarEventService.events,
+            vehicles: vehicleService.vehicles)
     }
 
     private func loadProfileAndSettings() async {

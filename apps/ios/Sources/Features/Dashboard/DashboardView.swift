@@ -38,6 +38,7 @@ struct DashboardView: View {
     // Calendar events belong to the same agenda — without this the "Next up"
     // card silently skipped everything the user put in the house calendar.
     @Environment(CalendarEventService.self) var calendarEventService
+    @Environment(VehicleService.self) var vehicleService
     // The wave-2 widget services (not private — DashboardWidgets.swift, the
     // extension in a separate file, renders their cards).
     @Environment(PantryService.self) var pantryService
@@ -396,7 +397,8 @@ struct DashboardView: View {
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
             leases: Array(familyService.leases.values),
-            events: calendarEventService.events)
+            events: calendarEventService.events,
+            vehicles: vehicleService.vehicles)
             .first { !$0.isCompleted && $0.date >= ($0.hasTime ? now : startOfToday) }
     }
 }

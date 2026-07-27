@@ -14,6 +14,7 @@ struct CalendarView: View {
     @Environment(FinancialService.self) private var financialService
     @Environment(PlantService.self) private var plantService
     @Environment(CalendarEventService.self) private var calendarEventService
+    @Environment(VehicleService.self) private var vehicleService
     @Environment(PropertyService.self) private var propertyService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -465,7 +466,8 @@ struct CalendarView: View {
             appliances: applianceService.appliances, members: familyService.members,
             financial: financialService.records, plants: plantService.plants,
             leases: Array(familyService.leases.values),
-            events: calendarEventService.events
+            events: calendarEventService.events,
+            vehicles: vehicleService.vehicles
         ).filter { active.contains($0.category) }
     }
 
