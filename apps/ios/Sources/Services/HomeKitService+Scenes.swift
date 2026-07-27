@@ -147,9 +147,18 @@ extension HomeKitService {
 
     /// Creates a user scene — a real HMActionSet with one power write per
     /// picked device. Rethrows HomeKit's error verbatim.
+    /// (`addActionSet(withName:)` ships no async overlay — bridged manually.)
     func addScene(named name: String, in home: HMHome,
                   picks: [SceneDevicePick]) async throws {
-        let actionSet = try await home.addActionSet(withName: name)
+        let actionSet: HMActionSet = try await withCheckedThrowingContinuation { continuation in
+            home.addActionSet(withName: name) { actionSet, error in
+                if let actionSet {
+                    continuation.resume(returning: actionSet)
+                } else {
+                    continuation.resume(throwing: error ?? HMError(.genericError))
+                }
+            }
+        }
         try await apply(picks, to: actionSet)
     }
 
