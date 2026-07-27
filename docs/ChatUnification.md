@@ -192,6 +192,19 @@ standard shape; `direct_messages` is the historical outlier.
   `dm_unified_read` flag is safe to flip even on a MIXED fleet — new
   builds read unified/write legacy, stragglers read legacy which the
   reverse mirror keeps complete.
-- **P4d-2 (next)** — writes flip to the unified store and the two engines
-  merge into one on ChatRealtimeChannel; then `direct_messages` retires
-  (read-only → drop) after a full release cycle of parity.
+- **P4d-2 ✓** — the DM writes that can safely flip now go to the unified
+  store behind the same `dm_unified_read` flag (flag down: byte-identical
+  legacy paths): `send()` resolves the conversation (read-cache first,
+  `dm_open_conversation` RPC for a fresh thread) and inserts into
+  `messages`; read/delivered receipts become `message_reads`/
+  `message_deliveries` array upserts (idempotent on (message_id, user_id),
+  legacy UPDATE fallback for rows without the NOT-NULL property_id);
+  reactions write `message_reactions` (delete-own + insert); edit and
+  delete-for-all update the sender's own `messages` row. Pin/mark stay on
+  `direct_messages` deliberately — the unified UPDATE RLS is sender-only
+  and pin/mark are PEER capabilities; the legacy policy allows both parties
+  and the forward mirror syncs. Fail-closed throughout: a unified write
+  error is handled exactly like the legacy path's (outbox hand-off on send,
+  best-effort elsewhere), never retried on the other store. Next: the two
+  engines merge into one on ChatRealtimeChannel; then `direct_messages`
+  retires (read-only → drop) after a full release cycle of parity.
