@@ -239,3 +239,16 @@ standard shape; `direct_messages` is the historical outlier.
   receipt/reaction/poll-vote channels are near-verbatim copies of each
   other (~260 lines within ONE engine) — realtime-lifecycle-sensitive, so
   not touched in a no-behavior-change hygiene pass.
+- **HOTFIX (migration `chat_unification_fix_dm_notification_leak`)** — the
+  `messages` notification triggers (`notify_chat_message`,
+  `notify_on_group_message`) predate conversation rows and treated every
+  mirrored DM as a family-chat message: the DM body went out as a
+  notification to ALL active property members, sender included (field
+  report: "I received my own message" on 1197). Both triggers now carry
+  `WHEN (new.conversation_id IS NULL)`; DM notifications remain solely
+  `notify_on_direct_message`'s job (which the symmetric mirror keeps firing
+  for both write paths). Spurious in-app notifications from mirrored rows
+  were purged; already-delivered pushes cannot be recalled. Review lesson
+  recorded: guarding reads (RLS + client queries) is not enough — EVERY
+  server-side consumer of `messages` INSERTs (triggers, webhooks) must be
+  swept when a new row class enters a shared table.
