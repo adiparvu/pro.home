@@ -82,55 +82,42 @@ extension DirectMessageView {
         .transition(.opacity)
     }
 
+    /// The menu's anatomy (order, labels, icons) lives in ChatActionMenu —
+    /// one shape for group and DM; only the bindings differ here.
     private func dmMessageActions(_ m: DirectMessage, own: Bool) -> [ChatActionItem] {
-        // Deleted messages keep only "Delete" (remove the tombstone for me).
-        if m.deletedForAll == true {
-            return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
-        }
         // Structured bodies (media, contact card, or a marker-encoded
         // location/sticker/event/file) must not be editable as raw text.
         let isStructured = ChatMedia.dmBodyKind(m.body) != .text
             || m.isContactShare || DMRich.decode(m.body) != nil
-        var items: [ChatActionItem] = [
-            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.snappy(duration: 0.28)) { replyingTo = m } },
-            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
-        ]
-        // Isolate the reply thread (iMessage) — offered only when this message
-        // is actually part of one (a parent or a reply is loaded).
-        if ChatThread.hasThread(anchoredAt: m.id, in: conversationMessages) {
-            items.append(ChatActionItem("View thread", "bubble.left.and.bubble.right") {
+        return ChatActionMenu.items(ChatActionMenuConfig(
+            isDeleted: m.deletedForAll == true,
+            isOwn: own,
+            canEdit: own && !isStructured,
+            hasThread: ChatThread.hasThread(anchoredAt: m.id, in: conversationMessages),
+            isMarked: m.isMarked == true,
+            isPinned: m.pinned == true,
+            onReply: { withAnimation(.snappy(duration: 0.28)) { replyingTo = m } },
+            onForward: { forwarding = m },
+            onViewThread: {
                 HapticFeedback.impact(.light)
                 withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = m.id }
-            })
-        }
-        items.append(contentsOf: [
-            ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = MessageSubject.strip(m.body) },
-            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } },
-            // Message details now live in the long-press menu (moved off the
-            // left-swipe, which peeks the send time iMessage-style).
-            ChatActionItem("Details", "info.circle") { detailsMessage = m },
-            // Enter iMessage-style multi-select, this message pre-checked.
-            ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
-        ])
-        if own, m.deletedForAll != true, !isStructured {
-            // Edit the TEXT only — a subject stays untouched (re-encoded on
-            // save), and the marker never enters the field.
-            items.append(ChatActionItem("Edit", "pencil") {
+            },
+            onCopy: { UIPasteboard.general.string = MessageSubject.strip(m.body) },
+            onToggleMark: { Task { await directMessageService.toggleMark(m) } },
+            onTogglePin: { Task { await directMessageService.togglePin(m) } },
+            onDetails: { detailsMessage = m },
+            onSelect: { enterSelection(m) },
+            onEdit: {
+                // Edit the TEXT only — a subject stays untouched (re-encoded
+                // on save), and the marker never enters the field.
                 editingMessage = m; editText = MessageSubject.parse(m.body).text
-            })
-        }
-        if !own {
-            // UGC compliance (Guideline 1.2): someone else's message can be
-            // reported; the reason dialog + insert live in ReportMessageDialogs.
-            items.append(ChatActionItem("Report", "exclamationmark.bubble") {
+            },
+            onReport: {
                 reportCandidate = ReportTarget(
                     messageId: m.id, propertyId: propertyService.primary?.id,
                     kind: "dm", snapshot: MessageSubject.strip(m.body))
-            })
-        }
-        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
-        return items
+            },
+            onDelete: { deleteCandidate = m }))
     }
 
     // MARK: - Message List

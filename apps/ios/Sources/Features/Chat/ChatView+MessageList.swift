@@ -89,55 +89,41 @@ extension ChatView {
         .transition(.opacity)
     }
 
+    /// The menu's anatomy (order, labels, icons) lives in ChatActionMenu —
+    /// one shape for group and DM; only the bindings differ here.
     private func messageActions(_ m: Message) -> [ChatActionItem] {
-        // A deleted message is just a tombstone: the only thing left to do
-        // with it is remove it from your own view.
-        if m.deletedForAll == true {
-            return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
-        }
         let own = m.senderId == supabase.auth.currentSession?.user.id
-        var items: [ChatActionItem] = [
-            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
-            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
-        ]
-        // Isolate the reply thread (iMessage) — offered only when this message
-        // is actually part of one (a parent or a reply is loaded).
-        if ChatThread.hasThread(anchoredAt: m.id, in: messageService.messages) {
-            items.append(ChatActionItem("View thread", "bubble.left.and.bubble.right") {
+        return ChatActionMenu.items(ChatActionMenuConfig(
+            isDeleted: m.deletedForAll == true,
+            isOwn: own,
+            canEdit: own && m.body?.isEmpty == false && m.attachmentType == nil,
+            hasThread: ChatThread.hasThread(anchoredAt: m.id, in: messageService.messages),
+            isMarked: m.isMarked == true,
+            isPinned: m.pinned == true,
+            onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
+            onForward: { forwardingMessage = m },
+            onViewThread: {
                 HapticFeedback.impact(.light)
                 withAnimation(.snappy(duration: 0.28)) { threadFocusAnchor = m.id }
-            })
-        }
-        items.append(contentsOf: [
-            ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = MessageSubject.strip(b) } },
-            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
-            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } },
-            // Message details now live in the long-press menu (moved off the
-            // left-swipe, which peeks the send time iMessage-style).
-            ChatActionItem("Details", "info.circle") { detailsMessage = m },
-            // Enter iMessage-style multi-select, this message pre-checked.
-            ChatActionItem("Select", "checkmark.circle") { enterSelection(m) }
-        ])
-        if own, m.body?.isEmpty == false, m.attachmentType == nil {
-            items.append(ChatActionItem("Edit", "pencil") {
+            },
+            onCopy: { if let b = m.body { UIPasteboard.general.string = MessageSubject.strip(b) } },
+            onToggleMark: { Task { await messageService.toggleMark(m) } },
+            onTogglePin: { Task { await messageService.togglePin(m) } },
+            onDetails: { detailsMessage = m },
+            onSelect: { enterSelection(m) },
+            onEdit: {
                 // Edit the TEXT only — a subject stays untouched (re-encoded
                 // on confirm), and the marker never enters the field.
                 editingMessage = m; editText = MessageSubject.parse(m.body ?? "").text
                 replyingTo = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
-            })
-        }
-        if !own {
-            // UGC compliance (Guideline 1.2): someone else's message can be
-            // reported; the reason dialog + insert live in ReportMessageDialogs.
-            items.append(ChatActionItem("Report", "exclamationmark.bubble") {
+            },
+            onReport: {
                 reportCandidate = ReportTarget(
                     messageId: m.id, propertyId: propertyId, kind: "group",
                     snapshot: m.body.map { MessageSubject.strip($0) })
-            })
-        }
-        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
-        return items
+            },
+            onDelete: { deleteCandidate = m }))
     }
 
     func pinnedSnippet(_ m: Message) -> String {
