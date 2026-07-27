@@ -139,3 +139,38 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
   P3 seams are verified live. The engine-protocol swap is the deepest, most
   behaviour-sensitive step on the core chat path, so it stays incremental and
   CI-verifiable rather than a big-bang rewrite.
+
+## P4 — one message store (the industry model)
+
+Decision (owner-approved): Slack/Matrix/Signal-style — ONE `messages` store;
+a DM is a conversation with two members, not a parallel schema. The group
+side (`messages` + read/delivery/reaction side tables) is already the
+standard shape; `direct_messages` is the historical outlier.
+
+- **P4a ✓ (migration `chat_unification_p4_conversations`)** —
+  `conversations` (kind `dm`, canonical `dm_key` = least|greatest of the two
+  participant keys: auth id when known, normalized name for accountless
+  contacts) + `conversation_members` (user_id / member_id / display_name).
+  RLS: members-only select via `is_conversation_member()` (definer).
+- **P4b ✓ (same migration)** — `messages.conversation_id` (+ index);
+  `messages` RLS rewritten ATOMICALLY with the backfill: every legacy branch
+  (own-sender, family main chat, community group) gained a
+  `conversation_id is null` guard, so deployed clients see exactly the same
+  rows as before; unified DM rows are readable only by the two members AND
+  only once `chat_rollout.dm_unified_read` flips (service-role-only
+  kill-switch, default false). Backfill: 326/326 DM rows id-preserved into
+  `messages`, 5 conversations, parity-checked (zero body mismatches).
+  Mirror triggers (definer; trigger-returning, so not Data-API callable) on
+  `direct_messages` INSERT/UPDATE/DELETE keep the unified store live while
+  the deployed fleet still writes the legacy table — the backfill is
+  continuous, not a snapshot.
+- **P4c (next)** — client dual-read: DM read path moves to `messages` by
+  `conversation_id` (behind the same flag), group/main queries add the
+  `conversation_id is null` filter BEFORE the flag flips; receipts/reactions
+  backfill into the side tables together with conversation-scoped RLS
+  tightening there (deferred from P4b on purpose — DM read receipts must
+  not ride the property-scoped side-table policies).
+- **P4d (last)** — writes flip to `messages` (+ a thread-creation RPC),
+  the engines merge into one on the `ChatRealtimeChannel` foundation, and
+  `direct_messages` retires to read-only, then drops after a full release
+  cycle of parity.
