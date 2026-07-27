@@ -232,6 +232,7 @@ struct SuppliesView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
                     if searchText.isEmpty { pantryCard }
+                    if searchText.isEmpty { mealPlannerCard }
                     if !filteredLists.isEmpty {
                         listsGrid
                     } else if !searchText.isEmpty {
@@ -280,6 +281,40 @@ struct SuppliesView: View {
                         .font(AppFont.scaled(12))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The week's table, one door down from the pantry — ingredients flow
+    /// into the lists, cooked meals consume the stock.
+    private var mealPlannerCard: some View {
+        NavigationLink(destination: MealPlannerView()) {
+            GlassCard(padding: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "fork.knife")
+                        .font(AppFont.scaled(17, weight: .medium))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .frame(width: 40, height: 40)
+                        .mediaGlass(in: Circle())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("meal_planner_title")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        Text("meal_planner_card_subtitle")
+                            .font(AppFont.scaled(12))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .lineLimit(1)
                     }
 
                     Spacer()
