@@ -43,6 +43,10 @@ struct FamilyView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 10) {
+                            // The family's reward chart lives with the family,
+                            // not buried in Finances.
+                            ChoresEntryCard()
+                                .padding(.bottom, AppSpacing.xs)
                             ForEach(filteredMembers) { member in
                                 FamilyMemberRow(member: member)
                                     .onTapGesture { selectedMember = member }

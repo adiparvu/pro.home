@@ -44,6 +44,19 @@ enum PropertyRole: String, CaseIterable {
         }
     }
 
+    /// Approving chores and paying allowances is a parent's power — mirrors
+    /// the server-side has_property_write_access() gate (owner, partner,
+    /// family_adult) so the UI never shows buttons RLS would reject.
+    var canApproveChores: Bool {
+        switch self {
+        case .owner, .partner, .familyAdult:
+            return true
+        case .familyTeen, .familyChild, .familyElderly,
+             .tenant, .guest, .serviceProvider:
+            return false
+        }
+    }
+
     /// The family core shares the house's life; outsiders (tenant, guest,
     /// service provider) keep strictly to their own things — DMs, groups they
     /// were added to, tasks they're tagged in. Mirrors the server-side
@@ -66,4 +79,8 @@ extension PropertyService {
     /// loading) fails OPEN — consistent with the documented pattern above, so
     /// the owner's screen never flashes trimmed UI at startup.
     var isFamilyMember: Bool { role?.isFamilyMember ?? true }
+
+    /// Whether the current user can approve chores and pay allowances.
+    /// nil role (still loading) fails OPEN, same as the pattern above.
+    var canApproveChores: Bool { role?.canApproveChores ?? true }
 }
