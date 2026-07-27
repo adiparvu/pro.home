@@ -168,8 +168,43 @@ struct PropertyDetailExtraSections: View {
             documentsCard
             worksCard
             teamCard
+            guidesCard
             passportRow
         }
+    }
+
+    // MARK: - House manual ("Manualul casei")
+
+    /// The written knowledge of the home — one door into the manual, next
+    /// to the passport it complements.
+    private var guidesCard: some View {
+        NavigationLink {
+            HouseGuidesView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "book.closed.fill")
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(Color.brandPrimaryBlue)
+                    .frame(width: 36, height: 36)
+                    .glassRoundedRect(10)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("guides_title")
+                        .font(AppFont.body)
+                        .foregroundStyle(.primary)
+                    Text("guides_card_subtitle")
+                        .font(AppFont.scaled(11))
+                        .foregroundStyle(Color.secondaryTextColor)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(AppFont.scaled(13, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.28))
+            }
+            .padding(AppSpacing.lg)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: 18)
     }
 
     // MARK: Loading
