@@ -116,32 +116,24 @@ extension DirectMessageView {
         await performDMSend(body: body, kind: .text, replyTo: replyUUID)
     }
 
+    /// Re-sends queued rows through the ENGINE's send — the same optimistic
+    /// swap, heads refresh and dm_new broadcast a live message gets. The old
+    /// hand-rolled insert here skipped both, so a flushed message never
+    /// pinged the peer and the conversation list stayed stale.
     func flushOutbox() async {
         guard let pid = propertyService.primary?.id else { return }
         await outbox.flush { pm in
             guard pm.propertyId == pid, let recipient = pm.recipientName else { return false }
-            struct P: Encodable {
-                let sender_name, recipient_name, body, property_id: String
-                let reply_to: String?
-                let sender_id, recipient_id, recipient_member_id, expires_at: String?
-            }
-            let obTtl = ChatDisappearStore.ttl(recipient)
-            let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
-            let payload = P(sender_name: pm.senderName, recipient_name: recipient,
-                            body: pm.body ?? "", property_id: pid.uuidString,
-                            reply_to: pm.replyTo?.uuidString,
-                            sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                            recipient_id: pm.recipientUserId?.uuidString,
-                            recipient_member_id: pm.recipientMemberId?.uuidString,
-                            expires_at: obExpires)
+            let thread = DMThread(peerUserId: pm.recipientUserId,
+                                  memberId: pm.recipientMemberId,
+                                  name: recipient)
+            let ttl = ChatDisappearStore.ttl(recipient)
+            let expires = ttl > 0
+                ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl)) : nil
             do {
-                let sent: DirectMessage = try await withChatTimeout {
-                    try await supabase
-                        .from("direct_messages")
-                        .insert(payload)
-                        .select().single().execute().value
-                }
-                directMessageService.dms.append(sent)
+                _ = try await directMessageService.send(
+                    propertyId: pid, senderName: pm.senderName, to: thread,
+                    body: pm.body ?? "", replyTo: pm.replyTo, expiresAt: expires)
                 return true
             } catch {
                 return false

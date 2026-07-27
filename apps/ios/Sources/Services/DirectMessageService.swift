@@ -100,6 +100,20 @@ struct DMThread: Hashable {
         storeKey = member?.id ?? peer.id
     }
 
+    /// Rebuilds a thread from a queued outbox row, so the flush path routes
+    /// through the SAME engine send as a live message (optimistic swap,
+    /// heads refresh, dm_new ping) instead of hand-rolling an insert.
+    init(peerUserId: UUID?, memberId: UUID?, name: String) {
+        self.peerUserId = peerUserId
+        self.memberId = memberId
+        memberName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        displayName = memberName
+        // send() never touches storeKey; the zero UUID keeps the fallback
+        // deterministic for the id-less legacy-contact case.
+        storeKey = memberId ?? peerUserId
+            ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+    }
+
     /// The name to stamp into the legacy recipient_name column.
     var legacyName: String {
         memberName.isEmpty ? displayName : memberName
