@@ -117,6 +117,18 @@ ConversationView       // ONE shell; DM/group/community differ only in header,
 - **P3c** ✓ — one `ChatMessageStore` for the delete/tombstone/hide row
   mechanics; engines keep their differing local-state patches (DM revision
   bumps vs group row removal) and their own table/key.
+- **P3d** ✓ — one realtime channel lifecycle (`ChatRealtimeChannel`): both
+  engines carried a near-verbatim copy of subscribe/rebuild, the rejoin
+  grace, the storm breaker, the stale-close kill watch and the diagnostics
+  banner text — every field lesson (b1036/b1040/b1157/b1173/b1182) fixed
+  twice. The shared type owns the channel; each engine passes a
+  `Configuration` seam: its scoped topic, its handler registrations
+  (returning the retained `RealtimeSubscription` handles) and its
+  post-rebuild refetch — DM's incremental merge-load vs the group's cursor
+  refetch stay per-engine, exactly as the P3 deferral demands. The group
+  chat inherits the DM-only broadcast round-trip self-test, fixing a false
+  "live" on a channel whose broadcast relay was dead (typing and the
+  msg_new delivery ping both ride on broadcast).
 - Deferred within P3 (needs on-device, two-account verification): the
   realtime INSERT reconciliation paths (DM's incremental apply vs group's
   cursor reload — the engines' genuinely different hearts), send's

@@ -179,29 +179,35 @@ final class DirectMessageService {
     var dms: [DirectMessage] = [] { didSet { revision &+= 1 } }
     var isLoading = false
 
-    /// Live realtime diagnostic, surfaced by the chat view's warning banner.
-    /// Exactly `"live"` when the WebSocket is connected AND the channel is
-    /// subscribed (banner hidden); a `"socket:… chan:…"` string when either is
-    /// degraded; and `"FAIL: <error> · socket:…"` carrying the FULL, verbatim
-    /// subscribe error when `subscribeWithError()` throws — the whole point
-    /// being that the real error is finally visible instead of swallowed.
-    private(set) var realtimeStatus: String = "…"
+    /// The shared realtime channel lifecycle (chat unification P3d): owns the
+    /// channel, subscribe/rebuild, the stale-close kill watch, the storm
+    /// breaker/rejoin grace and the broadcast round-trip self-test. This
+    /// engine contributes only its topic, handlers and refetch — see
+    /// `realtimeConfiguration`.
+    @ObservationIgnored private let realtime = ChatRealtimeChannel()
+
+    /// Live realtime diagnostic, surfaced by the chat view's warning banner —
+    /// see `ChatRealtimeChannel.realtimeStatus` ("live" only once the
+    /// broadcast round-trip is proven).
+    var realtimeStatus: String { realtime.realtimeStatus }
+
+    /// The live channel — `send()` broadcasts its "dm_new" delivery ping on
+    /// it, and the activity indicator is synced from it before each use.
+    private var channel: RealtimeChannelV2? { realtime.channel }
+
+    /// Property the live channel is currently bound to, parsed back out of
+    /// the subscribed topic so it can never drift from the shared lifecycle.
+    private var subscribedPropertyId: UUID? {
+        guard let topic = realtime.subscribedTopic,
+              topic.hasPrefix(Self.topicPrefix) else { return nil }
+        return UUID(uuidString: String(topic.dropFirst(Self.topicPrefix.count)))
+    }
 
     /// Bumped whenever UserDefaults-backed local state (last-seen timestamps,
     /// hidden message ids) changes. Those aren't observable stored properties,
     /// so the derived reads (`messages`, `unreadCount`) touch this value to
     /// register an observation dependency and refresh when it changes.
     private var localRevision = 0
-
-    @ObservationIgnored private var channel: RealtimeChannelV2?
-    /// Property the live channel is currently bound to, so repeated
-    /// subscribe calls (re-entering the chat tab, opening a thread) are no-ops
-    /// instead of stacking duplicate channels or tearing down a live one.
-    @ObservationIgnored private var subscribedPropertyId: UUID?
-    /// Retained postgres-change subscription handles (see MessageService).
-    /// onPostgresChange's handle removes its callback on deinit, so it must be
-    /// held for the callback to keep firing; cleared on unsubscribe.
-    @ObservationIgnored private var postgresSubs: [RealtimeSubscription] = []
 
     // MARK: - Typing indicator (shared subsystem — chat unification P3a)
     /// The shared typing/recording indicator; the engine syncs channel/name
@@ -213,34 +219,6 @@ final class DirectMessageService {
     /// The signed-in user's auth id — the stable half of "is this mine".
     /// Set on load; nil only before the first load (name fallback covers it).
     var myUserId: UUID?
-    @ObservationIgnored private var typingSub: RealtimeSubscription?
-    /// RLS-free "a new DM landed" broadcast — the reliable delivery path when
-    /// postgres_changes is withheld by the SELECT policy (see send()).
-    @ObservationIgnored private var newMsgSub: RealtimeSubscription?
-    /// Broadcast round-trip self-test. Typing/recording AND live DM delivery
-    /// (dm_new) all ride on channel broadcast — postgres_changes is withheld
-    /// from the recipient by the direct_messages SELECT policy by design. So if
-    /// broadcast doesn't relay, EVERYTHING live breaks together. The channel is
-    /// created with receiveOwnBroadcasts=on and, once subscribed, we broadcast a
-    /// one-shot nonce to ourselves: if it echoes back the whole broadcast path is
-    /// proven live; if it never returns, broadcast relay is the culprit.
-    @ObservationIgnored private var selftestSub: RealtimeSubscription?
-    @ObservationIgnored private var selftestNonce = ""
-    @ObservationIgnored private var selftestTask: Task<Void, Never>?
-    /// nil = not yet tested, true = our ping echoed back, false = timed out.
-    private(set) var broadcastEcho: Bool?
-    /// True while a `subscribeRealtime` is mid-flight (across the
-    /// `subscribeWithError()` await). The open-thread `.task` AND the 3s
-    /// delivery heartbeat both drive subscription; without this, one path's
-    /// `unsubscribe()`/`removeChannel` cancels the other's in-flight subscribe
-    /// with `CancellationError`, so the channel never reaches `.subscribed`
-    /// and typing/live delivery die while the socket is up. The guard makes
-    /// concurrent callers step aside instead of tearing the subscribe down.
-    @ObservationIgnored private var isSubscribing = false
-    /// Last heartbeat-driven channel rebuild — the 30s backoff's clock.
-    @ObservationIgnored private var lastRebuildAt: Date?
-    /// The post-confirm stale-close kill watch (b1182) — one per subscribe.
-    @ObservationIgnored private var killWatchTask: Task<Void, Never>?
     /// Coalesces bursts of realtime events (a lively thread, a flurry of read
     /// receipts) into a single reload per quiet window, instead of refetching
     /// the whole conversation once per event.
@@ -682,92 +660,63 @@ final class DirectMessageService {
         } catch { return }
     }
 
+    // MARK: - Realtime (shared lifecycle — chat unification P3d)
+
+    /// The DM channel's topic prefix; the property id completes the scope.
+    private static let topicPrefix = "direct_messages:"
+
     func subscribeRealtime(propertyId: UUID, myName: String) async {
-        // UNSTRUCTURED on purpose — the same cancellation hole as the group
-        // channel (see MessageService.subscribeRealtime): a view `.task`
-        // dying between the teardown and the join left the DM channel torn
-        // down and never rejoined. The unstructured unit completes
-        // teardown + join atomically regardless of the caller's fate.
-        let work = Task { @MainActor [weak self] in
-            await self?.performSubscribeRealtime(propertyId: propertyId, myName: myName)
-        }
-        await work.value
+        await realtime.subscribe(
+            realtimeConfiguration(propertyId: propertyId, myName: myName))
     }
 
-    private func performSubscribeRealtime(propertyId: UUID, myName: String) async {
-        // Idempotent: already GENUINELY live for this property → keep it
-        // (don't let a navigation push/pop tear down the channel while a
-        // thread is open). The status check matters: a channel whose initial
-        // subscribe failed at launch used to satisfy `!= nil` and silence the
-        // whole session — no live messages, no typing indicator.
-        // Live for this property → keep it. Trust the channel's own status
-        // (supabase-swift auto-reconnects the socket under it). `.subscribing`
-        // counts as alive too: after a reconnect the SDK's rejoinChannels()
-        // resets and re-joins this very channel, and tearing it down mid-join
-        // raced that rejoin into a leave/join churn loop (the Build 1036 lag).
-        if let ch = channel, subscribedPropertyId == propertyId,
-           ch.status == .subscribed || ch.status == .subscribing { return }
-        // REJOIN GRACE at the single choke point (see MessageService — the
-        // group channel's field log): moments after a socket reconnect the
-        // SDK's rejoinChannels() owns this channel while its state flickers
-        // through .unsubscribed; a view-path entrant in that flicker tears it
-        // down mid-rejoin and double-joins the topic, which the server
-        // answers with close after close until the socket dies (1006).
-        // Holding a channel for this property right after a reconnect means
-        // the rejoin owns it: stand down; the heartbeat retries post-grace.
-        // The grace holds even with NO channel object (b1182 field log): our
-        // previous join may live on server-side as an orphan whose stale
-        // phx_close — topic-matched, join_ref unchecked by SDK 2.52 — kills
-        // any join added in the window. Cold launches have no disconnect on
-        // record, so the first-ever subscribe stays instant; a property
-        // SWITCH proceeds too (a fresh topic no orphan close can touch).
-        if RealtimeFlightRecorder.shared.inRejoinGrace(seconds: 10),
-           channel == nil || subscribedPropertyId == propertyId { return }
-        // Only ONE subscribe in flight. Both the open-thread `.task` and the 3s
-        // heartbeat call this; a second entrant must step aside rather than run
-        // `unsubscribe()` (which cancels the first's `subscribeWithError()` with
-        // CancellationError — the exact FAIL the diagnostic surfaced).
-        guard !isSubscribing else { return }
-        isSubscribing = true
-        defer { isSubscribing = false }
-        let topic = "direct_messages:\(propertyId.uuidString)"
-        if let old = channel, !old.topic.hasSuffix(topic) {
-            await unsubscribe()                 // genuine property switch
-        } else if let old = channel {
-            // SAME topic: never discard the object — a fresh object
-            // double-joins the topic, and the server's close of the previous
-            // join (stale join_ref, unchecked by SDK 2.52.0) kills the new,
-            // just-confirmed subscription (b1173 field log). Drop our handles,
-            // then drive THIS object down with a real leave.
-            postgresSubs.removeAll()
-            typingSub = nil
-            newMsgSub = nil
-            selftestSub = nil
-            selftestTask?.cancel(); selftestTask = nil
-            broadcastEcho = nil
-            activity.channel = nil
-            subscribedPropertyId = nil
-            channel = nil
-            await old.unsubscribe()
-        }
-        // Channel auth rides the client's accessToken closure (see
-        // SupabaseClient): the user's session JWT, so RLS-scoped
-        // postgres_changes actually deliver member rows.
-        // receiveOwnBroadcasts lets the post-subscribe self-test hear its own
-        // ping. The real typing/dm_new handlers already ignore our own signals
-        // (name != myName, from != my id), so echoing our own broadcasts back is
-        // harmless to them and gives us a zero-second-device liveness probe.
-        // (On reuse the options closure is ignored by the SDK — the registered
-        // instance already carries receiveOwnBroadcasts = true.)
-        let ch = realtimeAnon.channel(topic) {
-            $0.broadcast.receiveOwnBroadcasts = true
-        }
+    /// Delivery safety net for an OPEN thread — see
+    /// `ChatRealtimeChannel.ensureLiveDelivery`. On rebuild the refetch is a
+    /// full merge-load, so nothing that arrived during the outage is missed.
+    func ensureLiveDelivery(propertyId: UUID, myName: String) async {
+        await realtime.ensureLiveDelivery(
+            realtimeConfiguration(propertyId: propertyId, myName: myName))
+    }
+
+    /// This engine's seam into the shared lifecycle: the scoped topic, the
+    /// handler registrations and the post-rebuild refetch. Built fresh per
+    /// call — the closures capture the scope exactly like the pre-extraction
+    /// code captured its parameters.
+    private func realtimeConfiguration(propertyId: UUID,
+                                       myName: String) -> ChatRealtimeChannel.Configuration {
+        ChatRealtimeChannel.Configuration(
+            topic: Self.topicPrefix + propertyId.uuidString,
+            tag: "dm",
+            register: { [weak self] ch in
+                self?.registerRealtimeHandlers(on: ch, propertyId: propertyId,
+                                               myName: myName) ?? []
+            },
+            refetch: { [weak self] in
+                await self?.load(propertyId: propertyId, myName: myName)
+            },
+            onDetach: { [weak self] in
+                guard let self else { return }
+                // Engine state bound to the departing channel: the activity
+                // indicator re-syncs before each use, and a pending debounced
+                // refetch must not fire against a scope we just left.
+                self.activity.channel = nil
+                self.reloadTask?.cancel()
+                self.headsTask?.cancel()
+            })
+    }
+
+    /// Registers this engine's handlers on a fresh channel — callbacks must
+    /// be registered before subscribing — and returns the retained handles
+    /// (the shared lifecycle stores and clears them).
+    private func registerRealtimeHandlers(on ch: RealtimeChannelV2, propertyId: UUID,
+                                          myName: String) -> [RealtimeSubscription] {
+        var subs: [RealtimeSubscription] = []
         // Incremental reconciliation: append/patch/remove the single changed row
         // per event instead of refetching up to 1000 rows on every insert,
         // reaction, tick or edit (which also chained load → markDelivered → a
         // fresh event → another reload). A full reload survives only as the
-        // decode-failure fallback. Callbacks must be registered before subscribing.
-        postgresSubs.append(ch.onPostgresChange(
+        // decode-failure fallback.
+        subs.append(ch.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "direct_messages",
@@ -782,7 +731,7 @@ final class DirectMessageService {
                 }
             }
         })
-        postgresSubs.append(ch.onPostgresChange(
+        subs.append(ch.onPostgresChange(
             UpdateAction.self,
             schema: "public",
             table: "direct_messages",
@@ -801,7 +750,7 @@ final class DirectMessageService {
         // only the primary key under the default replica identity, so filtering
         // on property_id would discard every delete. Removing by id is naturally
         // scoped to what's already loaded.
-        postgresSubs.append(ch.onPostgresChange(
+        subs.append(ch.onPostgresChange(
             DeleteAction.self,
             schema: "public",
             table: "direct_messages"
@@ -814,7 +763,7 @@ final class DirectMessageService {
                 self.scheduleHeadsRefresh()
             }
         })
-        typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
+        subs.append(ch.onBroadcast(event: "typing") { [weak self] json in
             // The broadcast fields live inside the envelope's payload (see
             // RealtimeBroadcast) — reading them off the top level is what left
             // typing/recording dead while the channel was "subscribed".
@@ -827,255 +776,19 @@ final class DirectMessageService {
                     self.activity.handleTyping(name, kind: kind)
                 }
             }
-        }
+        })
         // Reliable delivery: a peer's send broadcasts "dm_new"; fetch the newer
         // rows so the message appears live even when postgres_changes was
         // withheld by RLS. Skip my own echo — I already have the row.
-        newMsgSub = ch.onBroadcast(event: "dm_new") { [weak self] json in
+        subs.append(ch.onBroadcast(event: "dm_new") { [weak self] json in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let from = broadcastString(json, "from"),
                    from == supabase.auth.currentSession?.user.id.uuidString { return }
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
-        }
-        // The broadcast liveness probe's receiver: our own ping coming back.
-        selftestSub = ch.onBroadcast(event: "selftest") { [weak self] json in
-            guard let nonce = broadcastString(json, "nonce") else { return }
-            Task { @MainActor [weak self] in
-                guard let self, nonce == self.selftestNonce else { return }
-                self.selftestTask?.cancel()
-                self.broadcastEcho = true
-                self.refreshRealtimeStatus()
-            }
-        }
-        do {
-            // Timeboxed: a subscribe awaiting a never-recovering socket would
-            // otherwise latch `isSubscribing` forever, freezing both the 3s
-            // heartbeat's recovery and the banner. (connectOnSubscribe still
-            // auto-connects the socket; the watchdog owns long-term revival.)
-            try await withRealtimeTimeout(seconds: 15) {
-                try await ch.subscribeWithError()
-            }
-        } catch {
-            // A failed subscribe must leave NO trace: keeping the dead channel
-            // made the idempotent guard treat the whole session as live. Surface
-            // the FULL error to the diagnostic banner before cleaning up.
-            postgresSubs.removeAll()
-            typingSub = nil
-            newMsgSub = nil
-            selftestSub = nil
-            // unsubscribe() FIRST: from .subscribing it cancels the join AND
-            // sends phx_leave; removeChannel alone sends no leave from a
-            // non-.subscribed state, and a join confirming after the 15s
-            // timebox would live on as the server orphan that closes the
-            // topic's next join (b1173).
-            await ch.unsubscribe()
-            await realtimeAnon.removeChannel(ch)
-            // A cancellation is NOT a real failure: it means a newer subscribe
-            // or a socket reset-for-reconnect superseded this attempt. Don't
-            // brand the session FAILED — leave the status for the heartbeat to
-            // re-establish. Only genuine errors surface as FAIL.
-            if error is CancellationError {
-                debugLog("DM realtime subscribe superseded (cancelled)")
-                return
-            }
-            debugLog("DM realtime subscribe failed:", error)
-            realtimeStatus = "b\(appBuildTag) FAIL: \(error) · socket:\(socketStatusText) · tok:\(tokenHint)"
-            return
-        }
-        channel = ch
-        subscribedPropertyId = propertyId
-        runBroadcastSelfTest(on: ch)
-        refreshRealtimeStatus()
-        armStaleCloseKillWatch(on: ch, propertyId: propertyId, myName: myName)
-    }
-
-    /// Stale-close kill detector (b1182 field log): a join the server just
-    /// CONFIRMED that flips to `.unsubscribed` within seconds — without any
-    /// local teardown — was murdered by the phx_close of an EARLIER join on
-    /// this topic (join_ref unchecked in SDK 2.52). Rejoining the same topic
-    /// only arms the next close, so the chain never converges on its own.
-    /// Each detected kill counts as a storm strike; on the breaker's
-    /// threshold the socket bounces (shedding every server-side orphan) and
-    /// ONE clean resubscribe follows — convergence in two cycles instead of
-    /// minutes of heartbeat whack-a-mole.
-    private func armStaleCloseKillWatch(on ch: RealtimeChannelV2,
-                                        propertyId: UUID, myName: String) {
-        killWatchTask?.cancel()
-        killWatchTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            guard let self, !Task.isCancelled else { return }
-            // Still OUR current channel, same scope, not torn down locally —
-            // yet unsubscribed on a connected socket: the kill signature.
-            guard self.channel === ch,
-                  self.subscribedPropertyId == propertyId,
-                  ch.status == .unsubscribed,
-                  realtimeAnon.status == .connected,
-                  !AppLifecycle.isBackgrounded else { return }
-            RealtimeFlightRecorder.shared.note("dm: confirmed join killed by stale close")
-            guard RealtimeStormBreaker.shouldBounceSocket() else { return }
-            // Recovery in its OWN task: unsubscribe() cancels this very watch
-            // task, and a self-cancelled task must not carry the bounce. The
-            // immediate resubscribe may stand down behind the fresh rejoin
-            // grace — the heartbeat completes it right after.
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                await self.unsubscribe()
-                await RealtimeStormBreaker.bounceSocket(reason: "dm stale-close kill")
-                await self.subscribeRealtime(propertyId: propertyId, myName: myName)
-            }
-        }
-    }
-
-    /// Sends a nonce to ourselves over the just-subscribed channel and waits for
-    /// the echo. Success proves socket + channel + broadcast relay are all live;
-    /// timing out fingers broadcast as the reason typing/recording and instant
-    /// delivery are dead. Result is surfaced in `realtimeStatus`.
-    private func runBroadcastSelfTest(on ch: RealtimeChannelV2) {
-        selftestTask?.cancel()
-        broadcastEcho = nil
-        let nonce = UUID().uuidString
-        selftestNonce = nonce
-        selftestTask = Task { [weak self] in
-            await ch.broadcast(event: "selftest", message: ["nonce": .string(nonce)])
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
-            await MainActor.run { [weak self] in
-                guard let self, self.broadcastEcho == nil else { return }
-                self.broadcastEcho = false          // no echo in 4s → relay dead
-                self.refreshRealtimeStatus()
-            }
-        }
-    }
-
-    // MARK: - Realtime diagnostics
-
-    /// Compact, non-secret description of the realtime auth token: whether a
-    /// session JWT is present and how long until it expires (negative = already
-    /// expired). Lets the diagnostic banner reveal a token/refresh fault without
-    /// leaking the token itself.
-    private var tokenHint: String {
-        guard let s = supabase.auth.currentSession else { return "none" }
-        let secs = Int(s.expiresAt - Date().timeIntervalSince1970)
-        return "jwt(exp \(secs)s)"
-    }
-
-    /// Short lowercase description of the realtime WebSocket connection.
-    private var socketStatusText: String {
-        switch realtimeAnon.status {
-        case .connected: "connected"
-        case .connecting: "connecting"
-        case .disconnected: "disconnected"
-        @unknown default: "unknown"
-        }
-    }
-
-    /// Short description of a channel's subscription state (`nil` = no channel).
-    private func channelStatusText(_ status: RealtimeChannelStatus?) -> String {
-        switch status {
-        case .subscribed: "subscribed"
-        case .subscribing: "subscribing"
-        case .unsubscribing: "unsubscribing"
-        case .unsubscribed: "unsubscribed"
-        case nil: "none"
-        @unknown default: "unknown"
-        }
-    }
-
-    /// Healthy = the channel is subscribed. The channel's own status is the
-    /// reliable signal: supabase-swift keeps it `.subscribed` across transient
-    /// socket blips and auto-reconnects underneath, flipping it off `.subscribed`
-    /// only when the subscription is genuinely gone. An earlier build ALSO
-    /// required `realtimeV2.status == .connected`, but that socket-status read
-    /// can lag `.connecting` right after a subscribe — turning the 3s heartbeat
-    /// into a teardown/rebuild loop that silences the very channel it guards.
-    /// Broadcast liveness is proven separately by the round-trip self-test.
-    private var realtimeHealthy: Bool {
-        channel?.status == .subscribed
-    }
-
-    /// Recomputes `realtimeStatus` from current socket + channel health, folding
-    /// in the broadcast round-trip probe. "live" only once broadcast is proven —
-    /// a subscribed channel whose broadcast never echoes is the exact broken
-    /// state (typing/delivery ride on broadcast), so it must NOT read as live.
-    private func refreshRealtimeStatus() {
-        guard realtimeHealthy else {
-            // Carry the socket's recent transition history so a single
-            // screenshot shows how it died, not just where it sits now.
-            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:\(channelStatusText(channel?.status)) · \(RealtimeFlightRecorder.shared.tail)"
-            return
-        }
-        switch broadcastEcho {
-        case .some(true):  realtimeStatus = "live"
-        case .some(false): realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:DEAD"
-        case .none:        realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:subscribed bcast:testing"
-        }
-    }
-
-    /// Delivery safety net for an OPEN thread: verifies the channel is
-    /// genuinely subscribed and, when it isn't (failed initial subscribe,
-    /// dropped socket), rebuilds it and refetches — so a conversation the
-    /// user is looking at can never sit silent. Free when healthy.
-    func ensureLiveDelivery(propertyId: UUID, myName: String) async {
-        // Quiet in the background — no rebuilds, no status churn: backgrounded
-        // scene updates are what the 0x8BADF00D watchdog kills (Build 1036).
-        guard !AppLifecycle.isBackgrounded else { return }
-        // A subscribe is already in flight (the open-thread `.task`): DO NOT
-        // interfere. Tearing it down here is precisely what cancelled it with
-        // CancellationError and kept the channel from ever going live.
-        guard !isSubscribing else { return }
-        // Healthy = the channel is subscribed. Refresh the diagnostic on the
-        // healthy path so the banner reflects the current socket text.
-        if subscribedPropertyId == propertyId, realtimeHealthy {
-            // A channel that outlived a full backoff window since its last
-            // rebuild proves the join/close storm (if any) has passed.
-            if lastRebuildAt.map({ Date().timeIntervalSince($0) > 45 }) ?? true {
-                RealtimeStormBreaker.noteStable()
-            }
-            refreshRealtimeStatus()
-            return
-        }
-        // Surface the CURRENT state first (the banner must never sit on a
-        // stale snapshot).
-        refreshRealtimeStatus()
-        // Never fight the SDK for this channel:
-        //  - while the socket is down/reconnecting, the watchdog + the SDK's
-        //    auto-reconnect own recovery, and rejoinChannels() re-subscribes
-        //    this very channel — tearing it down here raced that rejoin into
-        //    a leave/join churn loop (the Build 1036 group-chat lag);
-        //  - while the same-scope channel is mid-join/mid-leave, let it finish
-        //    (the 15s subscribe timebox bounds a hung join).
-        guard realtimeAnon.status == .connected else { return }
-        if let st = channel?.status, st == .subscribing || st == .unsubscribing,
-           subscribedPropertyId == propertyId { return }
-        // Rejoin grace + backoff (b1040) — see MessageService.ensureLiveDelivery:
-        // rebuilding while the SDK's rejoinChannels() is still re-joining puts
-        // two joins for one topic on the socket; the server closes the older
-        // join and the loop feeds itself at heartbeat cadence.
-        if let connectedAt = RealtimeFlightRecorder.shared.lastConnectedAt,
-           Date().timeIntervalSince(connectedAt) < 10 { return }
-        if let last = lastRebuildAt, Date().timeIntervalSince(last) < 30 { return }
-        lastRebuildAt = Date()
-        // Server closed a confirmed join on a connected socket, repeatedly?
-        // That's the stale-phx_close storm (see RealtimeStormBreaker): another
-        // plain rejoin only manufactures the next close. Bounce the socket to
-        // shed the orphaned server-side joins, then rebuild cleanly. The gate
-        // covers chan=none too (b1157 log, same as MessageService): a bounce's
-        // own unsubscribe nils the channel, and the narrow gate then looped
-        // "rebuild chan=none" forever without re-engaging the breaker.
-        if channel == nil || channel?.status == .unsubscribed,
-           RealtimeStormBreaker.shouldBounceSocket() {
-            await unsubscribe()
-            await RealtimeStormBreaker.bounceSocket(reason: "dm join/close loop")
-        }
-        // Genuinely dead on a healthy socket: rebuild. subscribeRealtime owns
-        // its own teardown (behind the isSubscribing guard), so don't
-        // pre-unsubscribe here — that reopened the very cancellation race.
-        RealtimeFlightRecorder.shared.note(
-            "dm: rebuild chan=\(channelStatusText(channel?.status)) sock=\(socketStatusText)")
-        await subscribeRealtime(propertyId: propertyId, myName: myName)
-        await load(propertyId: propertyId, myName: myName)
+        })
+        return subs
     }
 
     /// Applies a realtime INSERT incrementally. Our own echo (or the optimistic
@@ -1111,31 +824,14 @@ final class DirectMessageService {
     }
 
     func unsubscribe() async {
-        killWatchTask?.cancel()
-        killWatchTask = nil
-        postgresSubs.removeAll()
-        typingSub = nil
-        newMsgSub = nil
-        selftestSub = nil
-        selftestTask?.cancel()
-        selftestTask = nil
-        broadcastEcho = nil
+        // Engine-side teardown; the channel handles, the self-test and the
+        // real leave-from-every-state (b1173) live in the shared lifecycle.
         activity.reset()
-        activity.channel = nil
         reloadTask?.cancel()
         reloadTask = nil
         headsTask?.cancel()
         headsTask = nil
-        subscribedPropertyId = nil
-        if let ch = channel {
-            // Real leave from EVERY state (removeChannel skips the leave when
-            // the channel isn't .subscribed) — otherwise the server keeps an
-            // orphan join whose stale phx_close kills the topic's next
-            // confirmed join (b1173).
-            await ch.unsubscribe()
-            await realtimeAnon.removeChannel(ch)
-            channel = nil
-        }
+        await realtime.unsubscribe()
     }
 
     func deleteMessage(id: UUID) async {
