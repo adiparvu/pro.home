@@ -312,35 +312,18 @@ final class MessageService {
                 self.applyRealtimeUpdate(updated)
             }
         })
-        // DELETE: drop the row by id. Registered WITHOUT a property filter: a
-        // delete's replicated old-record only carries the primary key under the
-        // default replica identity, so a `property_id` filter would discard every
-        // delete event. Removing by id is naturally scoped — only ids already in
-        // this (property-scoped) list can match.
-        subs.append(channel.onPostgresChange(
-            DeleteAction.self,
-            schema: "public",
-            table: "messages"
-        ) { [weak self] action in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
-                else { return }
-                self.messages.removeAll { $0.id == row.id }
-            }
+        // DELETE handler (shared shape — P5): drop the row by id.
+        subs.append(ChatEngineCore.registerDeleteHandler(
+            on: channel, table: "messages"
+        ) { [weak self] id in
+            self?.messages.removeAll { $0.id == id }
         })
-        subs.append(channel.onBroadcast(event: "typing") { [weak self] json in
-            // Fields live in the envelope's payload, not at the top level
-            // (see RealtimeBroadcast) — the bug that kept typing/recording dead.
-            if let name = broadcastString(json, "name") {
-                // Older clients broadcast no kind — treat them as typing.
-                let kind = broadcastString(json, "kind") ?? "typing"
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    self.syncActivity()
-                    self.activity.handleTyping(name, kind: kind)
-                }
-            }
+        // Typing handler (shared shape — P5): the hook re-syncs channel/name
+        // into the indicator right before each event, exactly as before.
+        subs.append(ChatEngineCore.registerTypingHandler(on: channel) { [weak self] in
+            guard let self else { return nil }
+            self.syncActivity()
+            return self.activity
         })
         // Reliable delivery: a sender broadcasts "msg_new"; fetch newer rows so
         // the message appears live even when postgres_changes was withheld by
@@ -348,9 +331,7 @@ final class MessageService {
         // postgres_changes path, so a message that arrives via BOTH is added once.
         subs.append(channel.onBroadcast(event: "msg_new") { [weak self] json in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let from = broadcastString(json, "from"),
-                   from == supabase.auth.currentSession?.user.id.uuidString { return }
+                guard let self, !ChatEngineCore.isOwnDeliveryPing(json) else { return }
                 await self.onNewMessagesSignal(propertyId: propertyId)
             }
         })
@@ -424,19 +405,12 @@ final class MessageService {
     }
 
     func editMessage(id: UUID, newBody: String) async {
-        struct E: Encodable { let body: String; let edited_at: String }
         let nowISO = ISODate.string(from: Date())
-        do {
-            try await supabase.from("messages").update(E(body: newBody, edited_at: nowISO))
-                .eq("id", value: id.uuidString).execute()
-            if let i = messages.firstIndex(where: { $0.id == id }) {
-                messages[i].body = newBody
-                messages[i].editedAt = nowISO
-            }
-        } catch {
-#if DEBUG
-            debugLog("[Chat] editMessage error: \(error)")
-#endif
+        if await ChatMessageStore.editRow(table: "messages", id: id, newBody: newBody,
+                                          editedAtISO: nowISO, tag: "Chat"),
+           let i = messages.firstIndex(where: { $0.id == id }) {
+            messages[i].body = newBody
+            messages[i].editedAt = nowISO
         }
     }
 
@@ -475,11 +449,12 @@ final class MessageService {
             expires_at: expiresAt
         )
 
-        // Optimistic append: the bubble appears the moment you hit send instead
-        // of after the network round-trip. The id is client-generated, so the
-        // realtime echo and loadNewer dedup against it; on ack we swap in the
-        // server row (authoritative timestamp), on failure we roll back and
-        // rethrow so the caller's error path (outbox) takes over.
+        // Optimistic pipeline (shared skeleton — P5, ChatEngineCore): the
+        // bubble appears the moment you hit send instead of after the network
+        // round-trip. The id is client-generated, so the realtime echo and
+        // loadNewer dedup against it; on ack the server row (authoritative
+        // timestamp) is swapped in, on failure the optimistic row rolls back
+        // and the error rethrows so the caller's error path (outbox) takes over.
         let optimistic = Message(
             id: payload.id!,
             propertyId: propertyId,
@@ -497,40 +472,36 @@ final class MessageService {
             expiresAt: expiresAt,
             createdAt: ISODate.string(from: Date())
         )
-        messages.append(optimistic)
-
-        do {
-            // Bounded insert: a hung network call resolves to a timeout the
-            // caller routes to the outbox, instead of leaving a permanent
-            // fake-"sent" optimistic bubble that was never persisted.
-            let sent: Message = try await withChatTimeout {
-                try await supabase
-                    .from("messages")
-                    .insert(payload)
-                    .select()
-                    .single()
-                    .execute()
-                    .value
-            }
-            if let idx = messages.firstIndex(where: { $0.id == sent.id }) {
-                messages[idx] = sent
-            } else {
-                messages.append(sent)
-            }
-            // Advance the sync cursor to the server-stamped time of what we just
-            // inserted, so loadNewer never rides an optimistic client stamp.
-            lastSyncedCreatedAt = sent.createdAt
-            // Reliable delivery ping (see subscribeRealtime): RLS-free broadcast
-            // so every member's client fetches the new message even if
-            // postgres_changes was withheld.
-            if let ch = realtimeChannel {
-                let from = supabase.auth.currentSession?.user.id.uuidString ?? ""
-                Task { await ch.broadcast(event: "msg_new", message: ["from": .string(from)]) }
-            }
-        } catch {
-            messages.removeAll { $0.id == optimistic.id }
-            throw error
-        }
+        try await ChatEngineCore.runOptimisticSend(
+            on: self, rows: \MessageService.messages, optimistic: optimistic,
+            insert: {
+                // Bounded insert: a hung network call resolves to a timeout
+                // the caller routes to the outbox, instead of leaving a
+                // permanent fake-"sent" optimistic bubble that was never
+                // persisted.
+                try await withChatTimeout {
+                    try await supabase
+                        .from("messages")
+                        .insert(payload)
+                        .select()
+                        .single()
+                        .execute()
+                        .value
+                }
+            },
+            onSent: { sent in
+                // Advance the sync cursor to the server-stamped time of what
+                // we just inserted, so loadNewer never rides an optimistic
+                // client stamp.
+                self.lastSyncedCreatedAt = sent.createdAt
+                // Reliable delivery ping (see subscribeRealtime and
+                // ChatEngineCore.broadcastDeliveryPing): RLS-free broadcast so
+                // every member's client fetches the new message even if
+                // postgres_changes was withheld.
+                ChatEngineCore.broadcastDeliveryPing(
+                    on: self.realtimeChannel, event: "msg_new",
+                    from: supabase.auth.currentSession?.user.id.uuidString ?? "")
+            })
     }
 
     func resetUnread() { unreadCount = 0 }
@@ -836,36 +807,13 @@ final class MessageService {
         }
         if reactions[messageId]?.isEmpty == true { reactions.removeValue(forKey: messageId) }
 
-        // --- Persist ---
+        // --- Persist (shared sequence — P5, ChatEngineCore) ---
         do {
-            if existing != nil {
-                try await supabase
-                    .from("message_reactions")
-                    .delete()
-                    .eq("message_id", value: messageId.uuidString)
-                    .eq("user_id", value: uid.uuidString)
-                    .execute()
-            }
-            if !removing {
-                struct ReactPayload: Encodable {
-                    let message_id: String
-                    let property_id: String
-                    let user_id: String
-                    let reactor_name: String
-                    let emoji: String
-                }
-                let payload = ReactPayload(
-                    message_id: messageId.uuidString,
-                    property_id: propertyId.uuidString,
-                    user_id: uid.uuidString,
-                    reactor_name: reactorName,
-                    emoji: emoji
-                )
-                try await supabase
-                    .from("message_reactions")
-                    .insert(payload)
-                    .execute()
-            }
+            try await ChatEngineCore.persistReactionToggle(
+                messageId: messageId, propertyId: propertyId, userId: uid,
+                reactorName: reactorName, emoji: emoji,
+                removeExisting: existing != nil,
+                insertNew: !removing)
         } catch {
             // Roll back the optimistic change on failure.
             if let snapshot { reactions[messageId] = snapshot }

@@ -46,6 +46,28 @@ enum ChatMessageStore {
         }
     }
 
+    /// Edits a row's body and stamps edited_at (P5 — the UPDATE both engines
+    /// duplicated; wire payload is byte-identical to both former copies).
+    /// The timestamp is the CALLER's, so each engine keeps its own formatter
+    /// and patches its local row with exactly the value it persisted.
+    static func editRow(table: String, id: UUID, newBody: String,
+                        editedAtISO: String, tag: String) async -> Bool {
+        struct E: Encodable { let body: String; let edited_at: String }
+        do {
+            try await supabase
+                .from(table)
+                .update(E(body: newBody, edited_at: editedAtISO))
+                .eq("id", value: id.uuidString)
+                .execute()
+            return true
+        } catch {
+#if DEBUG
+            debugLog("[\(tag)] editMessage error: \(error)")
+#endif
+            return false
+        }
+    }
+
     /// The device-local "delete for me" hidden-id set stored under `key`
     /// (`dm.hidden.ids` / `chat.hidden.ids` — unchanged).
     static func hiddenIds(key: String) -> Set<UUID> {

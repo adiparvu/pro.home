@@ -279,7 +279,6 @@ final class DirectMessageService {
             expiresAt: expiresAt,
             recipientId: thread.peerUserId,
             propertyId: propertyId)
-        dms.append(optimistic)
 
         struct Payload: Encodable {
             let id: String
@@ -299,44 +298,49 @@ final class DirectMessageService {
             reply_to: replyTo?.uuidString, sender_id: senderId?.uuidString,
             recipient_id: thread.peerUserId?.uuidString,
             recipient_member_id: thread.memberId?.uuidString, expires_at: expiresAt)
-        do {
-            // Unified write (P4d-2): with the server flag up the row goes to
-            // the unified store — resolve the thread's conversation (read
-            // cache first, `dm_open_conversation` RPC for a fresh thread),
-            // insert into `messages` (RLS: sender + conversation member) and
-            // fold the returned row back into DirectMessage. The reverse
-            // mirror projects it into `direct_messages`, so legacy clients
-            // and the existing realtime topic keep seeing it. Everything
-            // around the insert — optimistic append, timeout, rollback-and-
-            // rethrow (the caller's outbox hand-off), heads refresh, the
-            // dm_new broadcast — is identical on both paths, and an attempt
-            // never retries on the other store (double-send risk).
-            let sent: DirectMessage
-            if unifiedReadEnabled {
-                let conv = try await resolveUnifiedConversation(
-                    for: thread, myName: trimmedSender, propertyId: propertyId)
-                let unifiedPayload = UnifiedInsert(
-                    id: clientId.uuidString,
-                    conversation_id: conv.id.uuidString,
-                    property_id: propertyId?.uuidString,
-                    sender_id: senderId?.uuidString,
-                    sender_name: trimmedSender,
-                    body: body,
-                    reply_to: replyTo?.uuidString,
-                    expires_at: expiresAt)
-                let row: UnifiedRow = try await withChatTimeout {
-                    try await supabase
-                        .from("messages")
-                        .insert(unifiedPayload)
-                        .select(Self.unifiedColumns)
-                        .single()
-                        .execute()
-                        .value
+        // The append → bounded-insert → swap → rollback-and-rethrow skeleton
+        // is the shared engine core (P5); only the insert and the
+        // post-success bookkeeping below are this engine's.
+        return try await ChatEngineCore.runOptimisticSend(
+            on: self, rows: \DirectMessageService.dms, optimistic: optimistic,
+            insert: {
+                // Unified write (P4d-2): with the server flag up the row goes
+                // to the unified store — resolve the thread's conversation
+                // (read cache first, `dm_open_conversation` RPC for a fresh
+                // thread), insert into `messages` (RLS: sender + conversation
+                // member) and fold the returned row back into DirectMessage.
+                // The reverse mirror projects it into `direct_messages`, so
+                // legacy clients and the existing realtime topic keep seeing
+                // it. Everything around the insert — optimistic append,
+                // timeout, rollback-and-rethrow (the caller's outbox
+                // hand-off), heads refresh, the dm_new broadcast — is
+                // identical on both paths, and an attempt never retries on
+                // the other store (double-send risk).
+                if self.unifiedReadEnabled {
+                    let conv = try await self.resolveUnifiedConversation(
+                        for: thread, myName: trimmedSender, propertyId: propertyId)
+                    let unifiedPayload = UnifiedInsert(
+                        id: clientId.uuidString,
+                        conversation_id: conv.id.uuidString,
+                        property_id: propertyId?.uuidString,
+                        sender_id: senderId?.uuidString,
+                        sender_name: trimmedSender,
+                        body: body,
+                        reply_to: replyTo?.uuidString,
+                        expires_at: expiresAt)
+                    let row: UnifiedRow = try await withChatTimeout {
+                        try await supabase
+                            .from("messages")
+                            .insert(unifiedPayload)
+                            .select(Self.unifiedColumns)
+                            .single()
+                            .execute()
+                            .value
+                    }
+                    return Self.mapUnified(row, members: conv.members,
+                                           reads: [], deliveries: [], reactions: [])
                 }
-                sent = Self.mapUnified(row, members: conv.members,
-                                       reads: [], deliveries: [], reactions: [])
-            } else {
-                sent = try await withChatTimeout {
+                return try await withChatTimeout {
                     try await supabase
                         .from("direct_messages")
                         .insert(payload)
@@ -345,26 +349,17 @@ final class DirectMessageService {
                         .execute()
                         .value
                 }
-            }
-            if let i = dms.firstIndex(where: { $0.id == sent.id }) { dms[i] = sent }
-            else { dms.append(sent) }
-            scheduleHeadsRefresh()
-            // Reliable delivery ping. postgres_changes INSERTs can be withheld
-            // from the recipient by Realtime's per-subscriber RLS evaluation of
-            // the direct_messages SELECT policy (its is_my_family_member()
-            // clause), so the peer's client never sees the new row until it
-            // reloads. A broadcast is RLS-free — the same path the typing
-            // signal already uses — so it guarantees the peer learns of the new
-            // message and fetches it immediately (WhatsApp-grade live delivery).
-            if let ch = channel {
-                let from = senderId?.uuidString ?? ""
-                Task { await ch.broadcast(event: "dm_new", message: ["from": .string(from)]) }
-            }
-            return sent
-        } catch {
-            dms.removeAll { $0.id == clientId }
-            throw error
-        }
+            },
+            onSent: { _ in
+                self.scheduleHeadsRefresh()
+                // Reliable delivery ping: postgres_changes can be withheld
+                // from the recipient by the direct_messages SELECT policy's
+                // per-subscriber RLS (its is_my_family_member() clause) — see
+                // ChatEngineCore.broadcastDeliveryPing.
+                ChatEngineCore.broadcastDeliveryPing(
+                    on: self.channel, event: "dm_new",
+                    from: senderId?.uuidString ?? "")
+            })
     }
 
     // MARK: - Queries
@@ -1277,45 +1272,28 @@ final class DirectMessageService {
                 }
             }
         })
-        // DELETE: drop by id. No property filter — a delete's old-record carries
-        // only the primary key under the default replica identity, so filtering
-        // on property_id would discard every delete. Removing by id is naturally
-        // scoped to what's already loaded.
-        subs.append(ch.onPostgresChange(
-            DeleteAction.self,
-            schema: "public",
-            table: "direct_messages"
-        ) { [weak self] action in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let row = try? action.decodeOldRecord(decoder: JSONDecoder()) as RealtimeRowID
-                else { return }
-                self.dms.removeAll { $0.id == row.id }
-                self.scheduleHeadsRefresh()
-            }
+        // DELETE handler (shared shape — P5): drop by id, then refresh the
+        // heads so the conversation list's preview follows the removal.
+        subs.append(ChatEngineCore.registerDeleteHandler(
+            on: ch, table: "direct_messages"
+        ) { [weak self] id in
+            guard let self else { return }
+            self.dms.removeAll { $0.id == id }
+            self.scheduleHeadsRefresh()
         })
-        subs.append(ch.onBroadcast(event: "typing") { [weak self] json in
-            // The broadcast fields live inside the envelope's payload (see
-            // RealtimeBroadcast) — reading them off the top level is what left
-            // typing/recording dead while the channel was "subscribed".
-            if let name = broadcastString(json, "name") {
-                // Older clients broadcast no kind — treat them as typing.
-                let kind = broadcastString(json, "kind") ?? "typing"
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    self.syncActivity()
-                    self.activity.handleTyping(name, kind: kind)
-                }
-            }
+        // Typing handler (shared shape — P5): the hook re-syncs channel/name
+        // into the indicator right before each event, exactly as before.
+        subs.append(ChatEngineCore.registerTypingHandler(on: ch) { [weak self] in
+            guard let self else { return nil }
+            self.syncActivity()
+            return self.activity
         })
         // Reliable delivery: a peer's send broadcasts "dm_new"; fetch the newer
         // rows so the message appears live even when postgres_changes was
         // withheld by RLS. Skip my own echo — I already have the row.
         subs.append(ch.onBroadcast(event: "dm_new") { [weak self] json in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let from = broadcastString(json, "from"),
-                   from == supabase.auth.currentSession?.user.id.uuidString { return }
+                guard let self, !ChatEngineCore.isOwnDeliveryPing(json) else { return }
                 self.scheduleReload(propertyId: propertyId, myName: myName)
             }
         })
@@ -1440,37 +1418,16 @@ final class DirectMessageService {
         if current == emoji { map.removeValue(forKey: key) } else { map[key] = emoji }
         do {
             if unifiedReadEnabled, let uid = myUserId, let pid = msg.propertyId {
-                // P4d-2: side-table write — drop my existing row (DELETE RLS:
-                // own rows) and insert the new emoji (INSERT RLS: conversation
-                // member). The mirror folds the rows back into the legacy
-                // jsonb map, so old clients keep seeing the reaction. The
-                // local map update below is identical to the legacy path's.
-                if current != nil {
-                    try await supabase
-                        .from("message_reactions")
-                        .delete()
-                        .eq("message_id", value: msg.id.uuidString)
-                        .eq("user_id", value: uid.uuidString)
-                        .execute()
-                }
-                if current != emoji {
-                    struct ReactInsert: Encodable {
-                        let message_id: String
-                        let property_id: String
-                        let user_id: String
-                        let reactor_name: String
-                        let emoji: String
-                    }
-                    try await supabase
-                        .from("message_reactions")
-                        .insert(ReactInsert(
-                            message_id: msg.id.uuidString,
-                            property_id: pid.uuidString,
-                            user_id: uid.uuidString,
-                            reactor_name: myName.trimmingCharacters(in: .whitespacesAndNewlines),
-                            emoji: emoji))
-                        .execute()
-                }
+                // P4d-2: side-table write (shared sequence — P5). The mirror
+                // folds the rows back into the legacy jsonb map, so old
+                // clients keep seeing the reaction. The local map update
+                // below is identical to the legacy path's.
+                try await ChatEngineCore.persistReactionToggle(
+                    messageId: msg.id, propertyId: pid, userId: uid,
+                    reactorName: myName.trimmingCharacters(in: .whitespacesAndNewlines),
+                    emoji: emoji,
+                    removeExisting: current != nil,
+                    insertNew: current != emoji)
             } else {
                 try await supabase
                     .from("direct_messages")
@@ -1488,24 +1445,15 @@ final class DirectMessageService {
 
     func editMessage(id: UUID, newBody: String) async {
         let nowISO = ISO8601DateFormatter().string(from: Date())
-        do {
-            // P4d-2: an edit is sender-own, so with the flag up it lands on
-            // the unified row (`messages` UPDATE RLS: sender only) and the
-            // mirror projects it back into `direct_messages`.
-            let table = unifiedReadEnabled ? "messages" : "direct_messages"
-            try await supabase
-                .from(table)
-                .update(["body": newBody, "edited_at": nowISO])
-                .eq("id", value: id.uuidString)
-                .execute()
-            if let i = dms.firstIndex(where: { $0.id == id }) {
-                dms[i].body = newBody
-                dms[i].editedAt = nowISO
-            }
-        } catch {
-#if DEBUG
-            debugLog("[DM] editMessage error: \(error)")
-#endif
+        // P4d-2: an edit is sender-own, so with the flag up it lands on
+        // the unified row (`messages` UPDATE RLS: sender only) and the
+        // mirror projects it back into `direct_messages`.
+        let table = unifiedReadEnabled ? "messages" : "direct_messages"
+        if await ChatMessageStore.editRow(table: table, id: id, newBody: newBody,
+                                          editedAtISO: nowISO, tag: "DM"),
+           let i = dms.firstIndex(where: { $0.id == id }) {
+            dms[i].body = newBody
+            dms[i].editedAt = nowISO
         }
     }
 

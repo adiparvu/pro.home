@@ -208,3 +208,34 @@ standard shape; `direct_messages` is the historical outlier.
   best-effort elsewhere), never retried on the other store. Next: the two
   engines merge into one on ChatRealtimeChannel; then `direct_messages`
   retires (read-only → drop) after a full release cycle of parity.
+- **P5 ✓ — shared engine core (`ChatEngineCore.swift`), zero behavior
+  change.** An honest re-audit of what STILL duplicated after P0–P4d-2
+  found ~140 lines of provably identical mechanics; only those merged:
+  - the optimistic-send skeleton (append → bounded insert → swap the
+    server ack in by id → rollback-and-rethrow to the outbox hand-off) —
+    `runOptimisticSend`, generic over the engine's row type via key path,
+    so `revision` observation still fires through the property setter;
+  - the reliable-delivery broadcast ping, both directions
+    (`broadcastDeliveryPing` / `isOwnDeliveryPing` — dm_new/msg_new);
+  - the typing-broadcast handler and the realtime DELETE handler
+    (`registerTypingHandler` / `registerDeleteHandler`, byte-identical in
+    both engines; the DM's extra heads refresh rides its onDelete closure);
+  - the `message_reactions` delete-own + insert sequence
+    (`persistReactionToggle` — identical wire payloads in both engines);
+  - the edit UPDATE (`ChatMessageStore.editRow`, joining the P3c
+    delete/tombstone family; each engine keeps its own timestamp formatter
+    and local patch).
+  Deliberately NOT merged (verified divergent, not forced): the models,
+  tables and queries (until `direct_messages` retires per P4d); send's
+  post-success bookkeeping (DM heads refresh vs group sync cursor — passed
+  as the `onSent` closure, not abstracted); pin/mark (peer-capable legacy
+  UPDATE vs definer RPC with optimistic rollback — different semantics);
+  receipt persistence (DM's timestamped side-table upserts + legacy column
+  fallback vs the group's server-defaulted upserts — different columns);
+  INSERT/UPDATE realtime reconciliation (DM incremental apply vs group
+  cursor reload — the P3 deferral holds); search queries (`likePattern`
+  was already single-sourced in `MessageService`); heads (DM-only).
+  Flagged for a later, separately verified pass: `MessageService`'s four
+  receipt/reaction/poll-vote channels are near-verbatim copies of each
+  other (~260 lines within ONE engine) — realtime-lifecycle-sensitive, so
+  not touched in a no-behavior-change hygiene pass.
