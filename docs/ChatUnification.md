@@ -182,3 +182,16 @@ standard shape; `direct_messages` is the historical outlier.
   the engines merge into one on the `ChatRealtimeChannel` foundation, and
   `direct_messages` retires to read-only, then drops after a full release
   cycle of parity.
+- **P4d-1 ✓ (migration `chat_unification_p4d_reverse_mirror`)** — the mirror
+  is now SYMMETRIC: unified writes (`messages` + side tables) project back
+  into `direct_messages` (message rows, receipt columns, the reactions
+  jsonb map) exactly as legacy writes project forward. Loops die on
+  IS DISTINCT guards — the second hop finds nothing to change, so no
+  trigger re-fires. `dm_open_conversation()` RPC (definer, caller-inclusive
+  only) lets the unified client open a thread. Consequence: the
+  `dm_unified_read` flag is safe to flip even on a MIXED fleet — new
+  builds read unified/write legacy, stragglers read legacy which the
+  reverse mirror keeps complete.
+- **P4d-2 (next)** — writes flip to the unified store and the two engines
+  merge into one on ChatRealtimeChannel; then `direct_messages` retires
+  (read-only → drop) after a full release cycle of parity.
