@@ -559,6 +559,239 @@ final class DirectMessageService {
             .value
     }
 
+    // MARK: - Unified read (P4c)
+    //
+    // Dual-read behind the SERVER flag (`chat_rollout.dm_unified_read`, a
+    // service-role-only kill-switch): when it flips, load() reads the unified
+    // store — `conversations` / `conversation_members` / `messages` plus the
+    // receipt and reaction side tables — and folds every row back into the
+    // legacy `DirectMessage` shape, so threads, bubbles, heads and search
+    // downstream never notice the store change. Writes, realtime and older-
+    // page fetches stay on `direct_messages` until P4d — the server mirror
+    // keeps both stores identical meanwhile, and ids are preserved, so the
+    // legacy mutations keep landing on exactly the rows this path displays.
+
+    /// Server rollout flag. FAIL CLOSED: false until the server proves
+    /// otherwise — any fetch error (offline cold start, an RLS surprise, the
+    /// table missing on a stale environment) keeps the shipped legacy path,
+    /// never a half-configured new one.
+    private(set) var unifiedReadEnabled = false
+    /// The property the flag was last resolved for — one flag round-trip per
+    /// property switch, not one per reload (load() reruns on every dm_new
+    /// broadcast and every foreground).
+    @ObservationIgnored private var unifiedFlagProperty: UUID?
+
+    /// Snapshot entity for the unified path — deliberately DIFFERENT from the
+    /// legacy "dms" entity, so a flag flip can never poison the other path's
+    /// offline cache with rows shaped by the wrong store.
+    private static let unifiedCacheEntity = "dms.unified"
+
+    /// Resolves `chat_rollout.dm_unified_read` once per property switch.
+    /// The error branch is the design, not an afterthought: the legacy path
+    /// is the shipped truth, so anything short of a decoded `true` reads as
+    /// "stay legacy" — and the property still counts as checked, matching
+    /// the once-per-switch contract instead of retrying on every reload.
+    private func refreshUnifiedReadFlag(propertyId: UUID) async {
+        guard unifiedFlagProperty != propertyId else { return }
+        struct Row: Decodable {
+            let dmUnifiedRead: Bool
+            enum CodingKeys: String, CodingKey { case dmUnifiedRead = "dm_unified_read" }
+        }
+        do {
+            let row: Row = try await supabase
+                .from("chat_rollout")
+                .select("dm_unified_read")
+                .single()
+                .execute()
+                .value
+            unifiedReadEnabled = row.dmUnifiedRead
+        } catch {
+            unifiedReadEnabled = false
+        }
+        unifiedFlagProperty = propertyId
+    }
+
+    /// One `conversation_members` row — a participant's identity triple
+    /// (auth user id when known, roster member id, display-name snapshot).
+    private struct UnifiedMember: Decodable {
+        let conversationId: UUID
+        let userId: UUID?
+        let memberId: UUID?
+        let displayName: String
+        enum CodingKeys: String, CodingKey {
+            case conversationId = "conversation_id"
+            case userId         = "user_id"
+            case memberId       = "member_id"
+            case displayName    = "display_name"
+        }
+    }
+
+    /// The unified `messages` columns a DM needs. `Message` (the group model)
+    /// is deliberately not reused: it lacks `conversation_id`, and this row
+    /// exists only to be folded into `DirectMessage` right here.
+    private struct UnifiedRow: Decodable {
+        let id: UUID
+        let conversationId: UUID
+        let senderId: UUID?
+        let senderName: String
+        let body: String?
+        let replyTo: UUID?
+        let pinned: Bool?
+        let isMarked: Bool?
+        let editedAt: String?
+        let deletedForAll: Bool?
+        let expiresAt: String?
+        let createdAt: String
+        enum CodingKeys: String, CodingKey {
+            case id, body, pinned
+            case conversationId = "conversation_id"
+            case senderId       = "sender_id"
+            case senderName     = "sender_name"
+            case replyTo        = "reply_to"
+            case isMarked       = "is_marked"
+            case editedAt       = "edited_at"
+            case deletedForAll  = "deleted_for_all"
+            case expiresAt      = "expires_at"
+            case createdAt      = "created_at"
+        }
+    }
+
+    /// A PostgREST `in()` filter rides the URL — hundreds of uuids would blow
+    /// past sane request lengths, so the id filters go out in bounded chunks.
+    nonisolated private static func chunks(_ values: [String],
+                                           of size: Int = 200) -> [[String]] {
+        stride(from: 0, to: values.count, by: size).map {
+            Array(values[$0 ..< min($0 + size, values.count)])
+        }
+    }
+
+    /// Network + decode off the main actor, mirroring `fetchRecent`: my DM
+    /// conversations for this property (RLS: members-only), their members,
+    /// the newest window of unified rows, then the receipt/reaction side
+    /// tables — all folded back into `DirectMessage`. The explicit `.in` on
+    /// MY conversation ids (rather than a bare `conversation_id not is null`)
+    /// keeps the query index-friendly and self-documenting; RLS enforces
+    /// membership either way. Same limit discipline as the legacy fetch:
+    /// newest 1000, shown oldest→newest by the caller's sort.
+    nonisolated private static func fetchUnifiedRecent(propertyId: UUID) async throws -> [DirectMessage] {
+        struct ConvRow: Decodable { let id: UUID }
+        let convs: [ConvRow] = try await supabase
+            .from("conversations")
+            .select("id")
+            .eq("kind", value: "dm")
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        guard !convs.isEmpty else { return [] }
+        let convIds = convs.map(\.id.uuidString)
+        let members: [UnifiedMember] = try await supabase
+            .from("conversation_members")
+            .select("conversation_id, user_id, member_id, display_name")
+            .in("conversation_id", values: convIds)
+            .execute()
+            .value
+        let rows: [UnifiedRow] = try await supabase
+            .from("messages")
+            .select("id, conversation_id, sender_id, sender_name, body, reply_to, pinned, is_marked, edited_at, deleted_for_all, expires_at, created_at")
+            .in("conversation_id", values: convIds)
+            .order("created_at", ascending: false)
+            .limit(1000)
+            .execute()
+            .value
+        guard !rows.isEmpty else { return [] }
+        let ids = rows.map(\.id.uuidString)
+        var reads: [MessageRead] = []
+        var deliveries: [MessageDelivery] = []
+        var reactions: [MessageReaction] = []
+        for chunk in chunks(ids) {
+            let r: [MessageRead] = try await supabase.from("message_reads")
+                .select().in("message_id", values: chunk).execute().value
+            reads += r
+            let d: [MessageDelivery] = try await supabase.from("message_deliveries")
+                .select().in("message_id", values: chunk).execute().value
+            deliveries += d
+            let x: [MessageReaction] = try await supabase.from("message_reactions")
+                .select().in("message_id", values: chunk).execute().value
+            reactions += x
+        }
+        let membersByConv = Dictionary(grouping: members, by: \.conversationId)
+        let readsByMessage = Dictionary(grouping: reads, by: \.messageId)
+        let deliveriesByMessage = Dictionary(grouping: deliveries, by: \.messageId)
+        let reactionsByMessage = Dictionary(grouping: reactions, by: \.messageId)
+        return rows.map { row in
+            mapUnified(row,
+                       members: membersByConv[row.conversationId] ?? [],
+                       reads: readsByMessage[row.id] ?? [],
+                       deliveries: deliveriesByMessage[row.id] ?? [],
+                       reactions: reactionsByMessage[row.id] ?? [])
+        }
+    }
+
+    /// Folds one unified row (+ its side-table rows) into the legacy
+    /// `DirectMessage` shape.
+    ///
+    /// Recipient derivation: a DM conversation has exactly two members, so
+    /// the recipient is the member that is NOT the sender — matched id-first
+    /// (`sender_id` vs `user_id`), trimmed-name fallback for accountless
+    /// legacy contacts (same law as `inThread`). A self-conversation carries
+    /// ONE member, who is both sides. If the sender matches neither member
+    /// (a row the mirror should never produce), the message keeps its
+    /// sender-only identity rather than misattribute the thread.
+    ///
+    /// Receipts: the legacy `read_at`/`delivered_at` columns modeled exactly
+    /// one reader — the other party — so they come back as the RECIPIENT's
+    /// `message_reads`/`message_deliveries` rows for this message. Reactions
+    /// collapse to the legacy `[reactor-user-uuid: emoji]` map.
+    nonisolated private static func mapUnified(
+        _ row: UnifiedRow, members: [UnifiedMember],
+        reads: [MessageRead], deliveries: [MessageDelivery],
+        reactions: [MessageReaction]) -> DirectMessage {
+        func isSender(_ m: UnifiedMember) -> Bool {
+            if let sid = row.senderId, let uid = m.userId { return uid == sid }
+            return DirectMessage.nameMatches(m.displayName, row.senderName)
+        }
+        let senderIndex = members.firstIndex(where: isSender)
+        let sender = senderIndex.map { members[$0] }
+        let recipient: UnifiedMember?
+        if members.count == 1 {
+            recipient = members.first
+        } else if let si = senderIndex {
+            recipient = members.indices.first { $0 != si }.map { members[$0] }
+        } else {
+            recipient = nil
+        }
+        let recipientUserId = recipient?.userId
+        let readAt = recipientUserId.flatMap { rid in
+            reads.first { $0.userId == rid }?.readAt
+        }
+        let deliveredAt = recipientUserId.flatMap { rid in
+            deliveries.first { $0.userId == rid }?.deliveredAt
+        }
+        // nil (not [:]) when empty, matching the legacy column's null.
+        let reactionMap: [String: String]? = reactions.isEmpty ? nil
+            : Dictionary(reactions.map { ($0.userId.uuidString, $0.emoji) },
+                         uniquingKeysWith: { _, new in new })
+        return DirectMessage(
+            id: row.id,
+            senderName: row.senderName,
+            recipientName: recipient?.displayName ?? "",
+            body: row.body ?? "",
+            createdAt: row.createdAt,
+            replyTo: row.replyTo,
+            deletedForAll: row.deletedForAll,
+            editedAt: row.editedAt,
+            pinned: row.pinned,
+            isMarked: row.isMarked,
+            reactions: reactionMap,
+            readAt: readAt,
+            deliveredAt: deliveredAt,
+            senderId: row.senderId,
+            senderMemberId: sender?.memberId,
+            recipientMemberId: recipient?.memberId,
+            expiresAt: row.expiresAt,
+            recipientId: recipient?.userId)
+    }
+
     func markRead(thread: DMThread) {
         lastSeenCursor(for: thread).markSeen()
         localRevision &+= 1
@@ -580,12 +813,19 @@ final class DirectMessageService {
         // (IMG_8539: "messages jump, disappear"). A stale id for a few
         // seconds is harmless; a nil one blanks the UI.
         if let uid = supabase.auth.currentSession?.user.id { myUserId = uid }
+        // Unified-read rollout (P4c): resolve the server flag BEFORE touching
+        // the cache — the two read paths hydrate from different entities, so
+        // the flag must be known first. One round-trip per property switch.
+        await refreshUnifiedReadFlag(propertyId: propertyId)
+        // Each read path owns its own snapshot entity: a server flag flip must
+        // never hydrate one store's rows from the other store's cache.
+        let cacheEntity = unifiedReadEnabled ? Self.unifiedCacheEntity : "dms"
         // Offline hydration (audit): paint the last cached window instantly
         // on a cold open. Guarded on empty — load() reruns on every dm_new
         // and foreground, and its MERGE below builds on richer in-memory
         // state that a stale snapshot must never overwrite.
         if dms.isEmpty,
-           let cached = ServiceCache.load([DirectMessage].self, entity: "dms",
+           let cached = ServiceCache.load([DirectMessage].self, entity: cacheEntity,
                                           propertyId: propertyId) {
             dms = cached
         }
@@ -595,8 +835,16 @@ final class DirectMessageService {
             // and could hide recent messages once a property had many DMs.
             // The fetch + decode run off the main actor (nonisolated helper) —
             // this was the last big main-thread JSON decode in the app.
-            let rows = try await Self.fetchRecent(propertyId: propertyId, myName: myName,
+            // Dual-read (P4c): with the server flag up, the same window comes
+            // from the unified store instead — mapped back into DirectMessage,
+            // so everything below this line is store-agnostic.
+            let rows: [DirectMessage]
+            if unifiedReadEnabled {
+                rows = try await Self.fetchUnifiedRecent(propertyId: propertyId)
+            } else {
+                rows = try await Self.fetchRecent(propertyId: propertyId, myName: myName,
                                                   myUserId: myUserId)
+            }
             // MERGE, never replace: a wholesale `dms = rows` threw away the
             // older pages "Load older" had prepended, so history vanished and
             // the scroll anchor died (the viewport jumped to the bottom) every
@@ -613,8 +861,9 @@ final class DirectMessageService {
                     : $0.createdAt < $1.createdAt
             }
             // Snapshot the recent window for the next cold/offline open
-            // (bounded: cache only the newest fetch-window's worth).
-            ServiceCache.save(Array(dms.suffix(1000)), entity: "dms",
+            // (bounded: cache only the newest fetch-window's worth). Saved
+            // under the ACTIVE path's entity — see cacheEntity above.
+            ServiceCache.save(Array(dms.suffix(1000)), entity: cacheEntity,
                               propertyId: propertyId)
             // exhaustedOlder stays: reaching the beginning of a thread is a
             // fact about the SERVER's history — a refresh of the recent

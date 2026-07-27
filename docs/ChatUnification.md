@@ -170,6 +170,14 @@ standard shape; `direct_messages` is the historical outlier.
   backfill into the side tables together with conversation-scoped RLS
   tightening there (deferred from P4b on purpose — DM read receipts must
   not ride the property-scoped side-table policies).
+- **P4c-2 ✓** — client dual-read landed: `DirectMessageService.load()`
+  reads `conversations`/`conversation_members`/`messages` + the receipt and
+  reaction side tables when `chat_rollout.dm_unified_read` is up (fetched
+  once per property switch, fail-closed to legacy on any error), maps rows
+  back into `DirectMessage`, and snapshots under a separate cache entity
+  (`dms.unified`). Flag still OFF — legacy read stays byte-identical.
+  Server side: receipts/reactions side-table conversation-scoped RLS +
+  backfill done in migration `chat_unification_p4c_receipts`.
 - **P4d (last)** — writes flip to `messages` (+ a thread-creation RPC),
   the engines merge into one on the `ChatRealtimeChannel` foundation, and
   `direct_messages` retires to read-only, then drops after a full release
