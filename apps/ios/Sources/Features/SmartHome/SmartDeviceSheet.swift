@@ -65,6 +65,12 @@ struct SmartDeviceSheet: View {
     /// User-set hue, same draft contract as brightness.
     @State private var hueDraft: Double? = nil
 
+    /// User-set saturation (0–100), same draft contract as brightness.
+    @State private var saturationDraft: Double? = nil
+
+    /// Optimistic lock state while the accessory round-trip is in flight.
+    @State private var pendingLocked: Bool? = nil
+
     /// User-set target temperature + the debounce task coalescing steps.
     @State private var targetDraft: Double? = nil
     @State private var targetWriteTask: Task<Void, Never>? = nil
@@ -102,6 +108,7 @@ struct SmartDeviceSheet: View {
                     if current.hasPower { SmartScheduleCard(device: current) }
                     if current.capabilities.contains(.brightness) { brightnessCard(current) }
                     if current.capabilities.contains(.color) { softLightCard(current) }
+                    if current.capabilities.contains(.lock) { lockCard(current) }
                     if current.capabilities.contains(.targetTemperature) { climateCard(current) }
                     if current.capabilities.contains(.reading) { readingCard(current) }
                     // History (R4): the sensor's iot_events line — rendered
@@ -130,6 +137,8 @@ struct SmartDeviceSheet: View {
             pendingOn = nil
             brightnessDraft = nil
             hueDraft = nil
+            saturationDraft = nil
+            pendingLocked = nil
             targetDraft = nil
             targetWriteTask?.cancel()
             assignedRoomName = nil
@@ -292,6 +301,7 @@ struct SmartDeviceSheet: View {
 
     private func softLightCard(_ device: SmartDevice) -> some View {
         let degrees = hueDraft ?? smartHome.hue(of: device) ?? 0
+        let saturation = saturationDraft ?? smartHome.saturation(of: device) ?? 100
         return GlassCard(padding: AppSpacing.base) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack {
@@ -299,9 +309,9 @@ struct SmartDeviceSheet: View {
                         .font(AppFont.scaled(16, weight: .semibold))
                         .foregroundStyle(.primary)
                     Spacer(minLength: AppSpacing.sm)
-                    // Live swatch of the selected hue.
+                    // Live swatch of the selected color (hue AND saturation).
                     Circle()
-                        .fill(Color(hue: degrees / 360, saturation: 1, brightness: 1))
+                        .fill(Color(hue: degrees / 360, saturation: saturation / 100, brightness: 1))
                         .frame(width: 22, height: 22)
                         .overlay(Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 0.5))
                         .accessibilityHidden(true)
@@ -312,11 +322,68 @@ struct SmartDeviceSheet: View {
                 ) { value in
                     HapticFeedback.impact(.light)
                     Task { @MainActor in
-                        await smartHome.setHue(device, degrees: value)
+                        // Preserve the chosen white-blend — picking a hue must
+                        // never silently snap the bulb to full saturation.
+                        await smartHome.setColor(device, hueDegrees: value, saturation: saturation)
+                    }
+                }
+                // Saturation: 0 = white, 100 = the pure hue.
+                HStack {
+                    Text("sh_saturation")
+                        .font(AppFont.scaled(13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: AppSpacing.sm)
+                    Text(verbatim: "\(Int(saturation.rounded()))%")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .accessibilityHidden(true)
+                }
+                SmartLevelSlider(percent: Binding(get: { saturation },
+                                                  set: { saturationDraft = $0 }),
+                                 isEnabled: device.isReachable) { value in
+                    HapticFeedback.impact(.light)
+                    Task { @MainActor in
+                        await smartHome.setColor(device, hueDegrees: degrees, saturation: value)
                     }
                 }
             }
         }
+    }
+
+    // MARK: .lock — commanded state with optimistic hold
+
+    private func lockCard(_ device: SmartDevice) -> some View {
+        let secured = pendingLocked ?? (smartHome.isLocked(of: device) ?? false)
+        return GlassCard(padding: AppSpacing.base) {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: secured ? "lock.fill" : "lock.open.fill")
+                    .font(AppFont.headline)
+                    .foregroundStyle(secured ? Color.brandSuccess : Color.brandWarning)
+                    .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
+                Text(secured ? "sh_locked" : "sh_unlocked")
+                    .font(AppFont.scaled(16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
+                SmartPillToggle(isOn: lockBinding(device, secured: secured),
+                                accessibilityLabel: Text("sh_lock"))
+                    .disabled(!device.isReachable)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func lockBinding(_ device: SmartDevice, secured: Bool) -> Binding<Bool> {
+        Binding(
+            get: { pendingLocked ?? secured },
+            set: { locked in
+                pendingLocked = locked
+                HapticFeedback.impact(.medium)
+                Task { @MainActor in
+                    await smartHome.setLock(device, secured: locked)
+                    pendingLocked = nil
+                }
+            })
     }
 
     // MARK: .targetTemperature — climate control (debounced steps)

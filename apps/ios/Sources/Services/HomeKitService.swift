@@ -12,6 +12,13 @@ final class HomeKitService: NSObject {
     var isAuthorized = false
     var authorizationStatus: HMHomeManagerAuthorizationStatus = .determined
 
+    /// Bumped on every characteristic update pushed by an accessory
+    /// (HMAccessoryDelegate). `HMAccessory` is a reference type, so a value
+    /// change never mutates `homes` — surfaces that must repaint on live
+    /// state (tiles, the open hero sheet) read this counter instead of
+    /// waiting for the next homeManagerDidUpdateHomes.
+    private(set) var stateVersion = 0
+
     private var _manager: HMHomeManager?
 
     // Lazily resolved only after requestAccess() — avoids triggering the HomeKit
@@ -109,14 +116,20 @@ final class HomeKitService: NSObject {
         characteristic(HMCharacteristicTypeHue, of: accessory)?.value as? Double
     }
 
-    /// Writes hue (0–360) and full saturation — the hero page's spectrum
-    /// slider picks a color, not a pastel ramp; brightness stays separate.
-    func setHue(_ accessory: HMAccessory, degrees: Double) async throws {
+    /// Saturation in percent (0–100), nil when the bulb has none.
+    func saturation(_ accessory: HMAccessory) -> Double? {
+        characteristic(HMCharacteristicTypeSaturation, of: accessory)?.value as? Double
+    }
+
+    /// Writes hue (0–360) and saturation (0–100) together — one color
+    /// command, no hardcoded pastel/full-saturation surprises; brightness
+    /// stays separate.
+    func setColor(_ accessory: HMAccessory, hueDegrees: Double, saturation: Double) async throws {
         if let h = characteristic(HMCharacteristicTypeHue, of: accessory) {
-            try await h.writeValue(max(0, min(360, degrees)))
+            try await h.writeValue(max(0, min(360, hueDegrees)))
         }
         if let s = characteristic(HMCharacteristicTypeSaturation, of: accessory) {
-            try await s.writeValue(100.0)
+            try await s.writeValue(max(0, min(100, saturation)))
         }
     }
 
@@ -129,6 +142,51 @@ final class HomeKitService: NSObject {
     func setTargetTemperature(_ accessory: HMAccessory, celsius: Double) async throws {
         guard let c = characteristic(HMCharacteristicTypeTargetTemperature, of: accessory) else { return }
         try await c.writeValue(celsius)
+    }
+
+    /// Whether the lock reports itself secured; nil when it has no state.
+    func isLocked(_ accessory: HMAccessory) -> Bool? {
+        guard let raw = characteristic(HMCharacteristicTypeCurrentLockMechanismState,
+                                       of: accessory)?.value as? Int else { return nil }
+        return raw == HMCharacteristicValueLockMechanismState.secured.rawValue
+    }
+
+    /// Commands the lock — a real target-state write, confirmed back through
+    /// the accessory's own notification.
+    func setLock(_ accessory: HMAccessory, secured: Bool) async throws {
+        guard let c = characteristic(HMCharacteristicTypeTargetLockMechanismState,
+                                     of: accessory) else { return }
+        try await c.writeValue(
+            secured ? HMCharacteristicValueLockMechanismState.secured.rawValue
+                    : HMCharacteristicValueLockMechanismState.unsecured.rawValue)
+    }
+
+    // MARK: - Live state (HMAccessoryDelegate)
+
+    /// The characteristic types whose pushed updates matter to the UI.
+    private static let liveTypes: Set<String> = [
+        HMCharacteristicTypePowerState,
+        HMCharacteristicTypeBrightness,
+        HMCharacteristicTypeHue,
+        HMCharacteristicTypeSaturation,
+        HMCharacteristicTypeCurrentTemperature,
+        HMCharacteristicTypeTargetTemperature,
+        HMCharacteristicTypeCurrentLockMechanismState,
+    ]
+
+    /// Subscribes every accessory to push its state changes. Without this,
+    /// tiles and sliders only refresh on homeManagerDidUpdateHomes — a
+    /// switch flipped from the Home app or the wall stays stale here.
+    private func subscribeLiveUpdates() {
+        for accessory in homes.flatMap(\.accessories) {
+            accessory.delegate = self
+            for c in accessory.services.flatMap(\.characteristics)
+            where Self.liveTypes.contains(c.characteristicType)
+                && c.properties.contains(HMCharacteristicPropertySupportsEventNotification)
+                && !c.isNotificationEnabled {
+                Task { try? await c.enableNotification(true) }
+            }
+        }
     }
 
     // MARK: - Cameras & scenes (Cameras page)
@@ -162,12 +220,27 @@ extension HomeKitService: HMHomeManagerDelegate {
             self.accessories = manager.homes.flatMap(\.accessories)
             self.isAuthorized = manager.authorizationStatus == .authorized
             self.authorizationStatus = manager.authorizationStatus
+            self.subscribeLiveUpdates()
         }
     }
 
     nonisolated func homeManagerDidUpdatePrimaryHome(_ manager: HMHomeManager) {
         Task { @MainActor in
             self.homes = manager.homes
+            self.subscribeLiveUpdates()
         }
+    }
+}
+
+extension HomeKitService: HMAccessoryDelegate {
+    /// An accessory pushed a state change (wall switch, the Home app,
+    /// another phone) — bump the counter so bound surfaces repaint.
+    nonisolated func accessory(_ accessory: HMAccessory, service: HMService,
+                               didUpdateValueFor characteristic: HMCharacteristic) {
+        Task { @MainActor in self.stateVersion += 1 }
+    }
+
+    nonisolated func accessoryDidUpdateReachability(_ accessory: HMAccessory) {
+        Task { @MainActor in self.stateVersion += 1 }
     }
 }

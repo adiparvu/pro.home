@@ -1,6 +1,10 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "sh_saturation" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Saturation"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Saturație"}}}},
+    "sh_lock" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Lock"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Încuietoare"}}}},
+    "sh_locked" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Locked"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Încuiat"}}}},
+    "sh_unlocked" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Unlocked"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Descuiat"}}}},
     "claims_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Damage claims"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Asistent de daune"}}}},
     "claims_card_subtitle" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "From incident to payout"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "De la incident la despăgubire"}}}},
     "claims_empty_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No claims"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Nicio daună"}}}},

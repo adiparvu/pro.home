@@ -23,6 +23,10 @@ final class SmartHomeService {
 
     /// Every device from both providers, HomeKit first (richer capabilities).
     var devices: [SmartDevice] {
+        // Read (and thereby observe) the live-state counter: accessories are
+        // reference types, so a pushed characteristic update never mutates
+        // `homes` — this is what re-renders tiles and the open hero sheet.
+        _ = homeKit.stateVersion
         var out: [SmartDevice] = []
         for home in homeKit.homes {
             for accessory in home.accessories {
@@ -106,9 +110,32 @@ final class SmartHomeService {
         return homeKit.hue(accessory)
     }
 
-    func setHue(_ device: SmartDevice, degrees: Double) async {
+    /// Saturation percent (0–100) for color bulbs.
+    func saturation(of device: SmartDevice) -> Double? {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.color) else { return nil }
+        return homeKit.saturation(accessory)
+    }
+
+    /// One color command: hue + saturation together. The hue slider passes
+    /// the bulb's current saturation so picking a color never silently
+    /// resets the white-blend the user chose.
+    func setColor(_ device: SmartDevice, hueDegrees: Double, saturation: Double) async {
         guard case .homeKit(let accessory) = device.backing else { return }
-        try? await homeKit.setHue(accessory, degrees: degrees)
+        try? await homeKit.setColor(accessory, hueDegrees: hueDegrees, saturation: saturation)
+    }
+
+    /// Whether the lock reports itself secured (nil = no state yet).
+    func isLocked(of device: SmartDevice) -> Bool? {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.lock) else { return nil }
+        return homeKit.isLocked(accessory)
+    }
+
+    func setLock(_ device: SmartDevice, secured: Bool) async {
+        guard case .homeKit(let accessory) = device.backing,
+              device.capabilities.contains(.lock) else { return }
+        try? await homeKit.setLock(accessory, secured: secured)
     }
 
     /// The thermostat's own measured temperature, when it reports one.

@@ -7,12 +7,11 @@
   at build time. This checked-in copy mirrors those properties exactly so the
   repo and the built binary agree.
 
-  Only capabilities the app actually uses are declared. Earlier this file also
-  listed iCloud, Siri, Sign in with Apple, Family Controls, Data Protection and
-  Apple Pay, but the code uses none of them, so they were dead entitlements and
-  were removed (the Apple Pay code was deleted too). Add a key in BOTH places
-  (here and project.yml properties) only when the App ID has the matching
-  capability enabled, or codesign will fail.
+  Only capabilities the app actually uses are declared. NFC stays out on
+  purpose: restoring it as-is fails App Store upload validation on SDK 26.5
+  (ITMS-90778 "NDEF is disallowed"). Add a key in BOTH places (here and
+  project.yml properties) only when the App ID has the matching capability
+  enabled, or codesign will fail.
 -->
 <plist version="1.0">
 <dict>
@@ -26,10 +25,26 @@
 		<string>group.com.prvio.app</string>
 	</array>
 
-	<!-- NFC / HomeKit / WeatherKit are intentionally not declared yet: NFC as-is
-	     fails App Store upload validation on SDK 26.5 (ITMS-90778), and all three
-	     were already stripped/non-functional. Restore in a follow-up once each is
-	     verified to pass upload validation. Keep this file in sync with the
-	     project.yml `properties` block. -->
+	<!-- Communication Notifications — sender avatars on chat pushes. -->
+	<key>com.apple.developer.usernotifications.communication</key>
+	<true/>
+
+	<!-- WeatherKit — the dashboard weather card (WeatherService). -->
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
+
+	<!-- HomeKit — the smart-home dashboard (SmartHomeService/HomeKitService). -->
+	<key>com.apple.developer.homekit</key>
+	<true/>
+
+	<!-- Universal links — printed QR labels (https://xparvu.com/i/<uuid>). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:xparvu.com</string>
+	</array>
+
+	<!-- Access WiFi Information — the smart-home network card's real SSID. -->
+	<key>com.apple.developer.networking.wifi-info</key>
+	<true/>
 </dict>
 </plist>
