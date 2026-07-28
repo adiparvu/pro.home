@@ -202,6 +202,11 @@ final class ChatRealtimeChannel {
         // teardown below waits too — a leave needs a live socket as much as
         // a join does. If the socket never comes up, fail exactly as today.
         await awaitSocketConnected(config)
+        // A wait cut short by cancellation means a newer subscribe or an
+        // explicit teardown superseded this one — proceeding would run the
+        // teardown/scrub/join sequence on a cancelled task, where every
+        // await returns instantly and the SDK calls misfire.
+        if Task.isCancelled { return }
         if let old = channel, !old.topic.hasSuffix(config.topic) {
             await unsubscribe()                 // genuine scope/property switch
             lastConfig = config                 // the switch's intent survives it
@@ -329,11 +334,25 @@ final class ChatRealtimeChannel {
         guard realtimeAnon.status != .connected else { return }
         RealtimeFlightRecorder.shared.note(
             "\(config.tag): join-wait — socket \(socketStatusText), holding the join timebox")
+        // Self-sufficient: on a chat-first cold entry NOTHING else may ever
+        // connect the socket — connectOnSubscribe fires from the very join
+        // this wait is deliberately holding back. Kick the connect once;
+        // the SDK ignores it when already connecting.
+        if realtimeAnon.status == .disconnected {
+            Task { await realtimeAnon.connect() }
+        }
+        // Banner set ONCE, not per tick — the b1198 family-wide freeze was
+        // this loop cancelled mid-wait: `try?` swallowed Task.sleep's
+        // CancellationError, every 500ms tick collapsed to ~0ms, and the
+        // per-tick observable status write became a 20-second invalidation
+        // storm on the main actor. A cancelled wait must EXIT: a newer
+        // subscribe or an explicit teardown owns the topic now.
+        realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:join-wait · \(RealtimeFlightRecorder.shared.tail)"
         let deadline = Date().addingTimeInterval(20)
         while realtimeAnon.status != .connected, Date() < deadline,
               !AppLifecycle.isBackgrounded {
-            realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:join-wait · \(RealtimeFlightRecorder.shared.tail)"
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            do { try await Task.sleep(nanoseconds: 500_000_000) }
+            catch { return }
         }
         RealtimeFlightRecorder.shared.note(
             "\(config.tag): join-wait over — socket \(socketStatusText)")
