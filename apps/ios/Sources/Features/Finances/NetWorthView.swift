@@ -326,6 +326,11 @@ struct AddNetWorthAccountSheet: View {
 
     private var kinds: [NetWorthKind] { isAsset ? NetWorthKind.assetKinds : NetWorthKind.liabilityKinds }
 
+    /// The side's accent: green for what you own, red for what you owe —
+    /// it tints every row icon and the kind picker, so the form itself
+    /// says which half of the balance sheet you're on.
+    private var sideTint: Color { isAsset ? .brandSuccess : .brandDanger }
+
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && (Double(balance) ?? 0) > 0
     }
@@ -345,44 +350,51 @@ struct AddNetWorthAccountSheet: View {
             }
 
             FormGroup {
-                TextField("nw_name_placeholder", text: $name).font(AppFont.body)
+                FormRow(icon: kind.icon, tint: sideTint) {
+                    TextField("nw_name_placeholder", text: $name).font(AppFont.body)
+                }
                 FormDivider()
-                HStack {
+                FormRow(icon: "banknote.fill", tint: sideTint) {
                     Text("nw_balance").font(AppFont.body).foregroundStyle(.primary)
                     Spacer()
                     TextField("0", text: $balance).keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing).font(AppFont.body)
+                        .multilineTextAlignment(.trailing)
+                        .font(AppFont.scaled(18, weight: .semibold))
                     Text(verbatim: currency).foregroundStyle(Color.secondaryTextColor)
                 }
                 FormDivider()
-                TextField("nw_notes_placeholder", text: $notes).font(AppFont.body)
+                FormRow(icon: "text.alignleft", tint: sideTint) {
+                    TextField("nw_notes_placeholder", text: $notes).font(AppFont.body)
+                }
             }
 
+            // The avatar-ring picker family (goal form, chores): a filled
+            // circle when selected, quiet tinted disc otherwise — the state
+            // reads at a glance, unlike the old washed-out squares.
             FormGroup(title: "nw_kind") {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.md), count: 4),
                           spacing: AppSpacing.md) {
                     ForEach(kinds) { k in
                         Button { kind = k; HapticFeedback.selection() } label: {
-                            VStack(spacing: 4) {
+                            VStack(spacing: AppSpacing.xs) {
                                 Image(systemName: k.icon)
-                                    .font(AppFont.scaled(18, weight: .semibold))
+                                    .font(AppFont.scaled(17, weight: .semibold))
+                                    .foregroundStyle(kind == k ? Color.white : sideTint)
                                     .frame(width: 44, height: 44)
-                                    .background(kind == k
-                                        ? (isAsset ? Color.brandSuccess : Color.brandDanger).opacity(AppOpacity.tintedFill)
-                                        : Color.primary.opacity(AppOpacity.subtleFill),
-                                        in: RoundedRectangle(cornerRadius: AppRadius.md))
-                                    .foregroundStyle(kind == k
-                                        ? (isAsset ? Color.brandSuccess : Color.brandDanger) : .primary)
+                                    .background(
+                                        Circle().fill(kind == k
+                                            ? sideTint
+                                            : sideTint.opacity(AppOpacity.tintedFill)))
                                 Text(k.label)
-                                    .font(AppFont.scaled(10))
-                                    .foregroundStyle(Color.secondaryTextColor)
+                                    .font(AppFont.scaled(11, weight: kind == k ? .semibold : .regular))
+                                    .foregroundStyle(kind == k ? .primary : Color.secondaryTextColor)
                                     .lineLimit(1).minimumScaleFactor(0.7)
                             }
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.vertical, AppSpacing.xs)
+                .padding(AppSpacing.md)
             }
         }
         .onAppear(perform: hydrate)
