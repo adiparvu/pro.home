@@ -28,9 +28,10 @@ struct DirectMessage: Identifiable, Codable {
     /// of the thread's identity. Nil only on legacy rows and for recipients
     /// without an account.
     var recipientId: UUID?
-    /// The row's property scope (P4d-2): the unified receipt/reaction side
-    /// tables demand a NOT NULL property_id, so every row carries its own —
-    /// a row without one falls back to the legacy write path.
+    /// The row's property scope: the receipt/reaction side tables demand a
+    /// NOT NULL property_id, so every row carries its own. Optional only
+    /// because rows predating property scoping exist; they simply carry no
+    /// receipts.
     var propertyId: UUID?
 
     enum CodingKeys: String, CodingKey {

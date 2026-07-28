@@ -293,3 +293,13 @@ standard shape; `direct_messages` is the historical outlier.
     migration, to be run only after the family confirms the retirement
     build — with `cleanup_expired_chat_ephemera` and `delete_my_account`
     swept in the same change.
+  - **⚠ Kill-switch semantics changed.** `messages_select` still gates the
+    DM branch on `dm_unified_read_enabled()`, and that stays until the drop
+    — today it is a real rollback lever, because 1199 falls back to
+    `direct_messages` when the flag goes false. Once the retirement build is
+    on the family's phones that is no longer true: flipping the flag back
+    would leave those clients with NO readable DMs at all, since they have
+    no legacy path left. From that moment the only supported rollback is
+    shipping a previous build. The drop migration removes the flag from the
+    policy and the `chat_rollout` row in the same change, so the lever
+    disappears rather than lingering as a trap.
