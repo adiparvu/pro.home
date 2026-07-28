@@ -299,7 +299,12 @@ struct VehicleFormSheet: View {
                 FormRow(icon: "fuelpump.fill", tint: .accentColor) {
                     Picker("vehicle_fuel", selection: $fuel) {
                         ForEach(Self.fuels, id: \.self) { f in
-                            Text(LocalizedStringKey("fuel_\(f)")).tag(f)
+                            // Dynamic key: LocalizedStringKey built from an
+                            // interpolated string renders RAW on device
+                            // (IMG_9177) — the String.LocalizationValue path
+                            // is the proven lookup for runtime-composed keys.
+                            Text(String(localized: String.LocalizationValue("fuel_\(f)")))
+                                .tag(f)
                         }
                     }
                     .font(AppFont.body)
