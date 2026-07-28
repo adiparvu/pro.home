@@ -7,7 +7,7 @@ import Supabase
 // The direct-message counterpart of MessageService's poll-vote section:
 // event bubbles in a 1-on-1 thread store their Going / Can't go answers in
 // `dm_poll_votes` (migration 152), a mirror of the group `message_poll_votes`
-// table keyed on direct_messages ids. It lives outside DirectMessageService
+// table keyed on DM message ids. It lives outside DirectMessageService
 // (frozen) as a small, self-contained property-scoped store.
 //
 // Lifecycle: like the DM message channel itself, the realtime channel is

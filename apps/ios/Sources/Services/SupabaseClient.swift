@@ -32,7 +32,7 @@ let supabase = SupabaseClient(
 //    every join and pushes `access_token` refreshes over the socket, so token
 //    rotation is handled.
 //  - The user JWT is REQUIRED for delivery, not just accepted: RLS-protected
-//    postgres_changes (messages/direct_messages are member-only) deliver rows
+//    postgres_changes (messages rows are member-only) deliver rows
 //    per the subscriber's claims — an anon subscription is accepted but every
 //    row is withheld. Migration 156's realtime authorization policies are
 //    also granted TO authenticated.

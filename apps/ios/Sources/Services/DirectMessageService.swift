@@ -280,81 +280,47 @@ final class DirectMessageService {
             recipientId: thread.peerUserId,
             propertyId: propertyId)
 
-        struct Payload: Encodable {
-            let id: String
-            let sender_name: String
-            let recipient_name: String
-            let body: String
-            let property_id: String?
-            let reply_to: String?
-            let sender_id: String?
-            let recipient_id: String?
-            let recipient_member_id: String?
-            let expires_at: String?
-        }
-        let payload = Payload(
-            id: clientId.uuidString, sender_name: trimmedSender, recipient_name: recipientName,
-            body: body, property_id: propertyId?.uuidString,
-            reply_to: replyTo?.uuidString, sender_id: senderId?.uuidString,
-            recipient_id: thread.peerUserId?.uuidString,
-            recipient_member_id: thread.memberId?.uuidString, expires_at: expiresAt)
         // The append → bounded-insert → swap → rollback-and-rethrow skeleton
         // is the shared engine core (P5); only the insert and the
         // post-success bookkeeping below are this engine's.
         return try await ChatEngineCore.runOptimisticSend(
             on: self, rows: \DirectMessageService.dms, optimistic: optimistic,
             insert: {
-                // Unified write (P4d-2): with the server flag up the row goes
-                // to the unified store — resolve the thread's conversation
-                // (read cache first, `dm_open_conversation` RPC for a fresh
-                // thread), insert into `messages` (RLS: sender + conversation
-                // member) and fold the returned row back into DirectMessage.
-                // The reverse mirror projects it into `direct_messages`, so
-                // legacy clients and the existing realtime topic keep seeing
-                // it. Everything around the insert — optimistic append,
-                // timeout, rollback-and-rethrow (the caller's outbox
+                // P6 — ONE store. Resolve the thread's conversation (read
+                // cache first, `dm_open_conversation` RPC for a fresh
+                // thread), insert into `messages` (RLS: sender AND
+                // conversation member) and fold the returned row back into
+                // DirectMessage. Everything around the insert — optimistic
+                // append, timeout, rollback-and-rethrow (the caller's outbox
                 // hand-off), heads refresh, the dm_new broadcast — is
-                // identical on both paths, and an attempt never retries on
-                // the other store (double-send risk).
-                if self.unifiedReadEnabled {
-                    let conv = try await self.resolveUnifiedConversation(
-                        for: thread, myName: trimmedSender, propertyId: propertyId)
-                    let unifiedPayload = UnifiedInsert(
-                        id: clientId.uuidString,
-                        conversation_id: conv.id.uuidString,
-                        property_id: propertyId?.uuidString,
-                        sender_id: senderId?.uuidString,
-                        sender_name: trimmedSender,
-                        body: body,
-                        reply_to: replyTo?.uuidString,
-                        expires_at: expiresAt)
-                    let row: UnifiedRow = try await withChatTimeout {
-                        try await supabase
-                            .from("messages")
-                            .insert(unifiedPayload)
-                            .select(Self.unifiedColumns)
-                            .single()
-                            .execute()
-                            .value
-                    }
-                    return Self.mapUnified(row, members: conv.members,
-                                           reads: [], deliveries: [], reactions: [])
-                }
-                return try await withChatTimeout {
+                // untouched by the store change.
+                let conv = try await self.resolveUnifiedConversation(
+                    for: thread, myName: trimmedSender, propertyId: propertyId)
+                let payload = UnifiedInsert(
+                    id: clientId.uuidString,
+                    conversation_id: conv.id.uuidString,
+                    property_id: propertyId?.uuidString,
+                    sender_id: senderId?.uuidString,
+                    sender_name: trimmedSender,
+                    body: body,
+                    reply_to: replyTo?.uuidString,
+                    expires_at: expiresAt)
+                let row: UnifiedRow = try await withChatTimeout {
                     try await supabase
-                        .from("direct_messages")
+                        .from("messages")
                         .insert(payload)
-                        .select()
+                        .select(Self.unifiedColumns)
                         .single()
                         .execute()
                         .value
                 }
+                return Self.mapUnified(row, members: conv.members,
+                                       reads: [], deliveries: [], reactions: [])
             },
             onSent: { _ in
                 self.scheduleHeadsRefresh()
                 // Reliable delivery ping: postgres_changes can be withheld
-                // from the recipient by the direct_messages SELECT policy's
-                // per-subscriber RLS (its is_my_family_member() clause) — see
+                // from the recipient by per-subscriber RLS — see
                 // ChatEngineCore.broadcastDeliveryPing.
                 ChatEngineCore.broadcastDeliveryPing(
                     on: self.channel, event: "dm_new",
@@ -505,11 +471,19 @@ final class DirectMessageService {
         guard !isLoadingOlder else { return 0 }
         let loaded = messages(in: thread, myName: myName)
         guard let oldest = loaded.min(by: { $0.createdAt < $1.createdAt }) else { return 0 }
+        // P6: history pages per CONVERSATION — the thread's identity, resolved
+        // once by the read path, replaces the five-clause identity/legacy `or`
+        // the two-store world needed. A thread whose conversation this device
+        // has never seen has no server history to page: exhausted by
+        // definition (the next `load()` brings it in if one appears).
+        guard let conv = cachedUnifiedConversation(for: thread, myName: myName) else {
+            exhaustedOlder.insert(thread.storeKey)
+            return 0
+        }
         isLoadingOlder = true
         defer { isLoadingOlder = false }
         do {
-            let rows = try await Self.fetchOlder(propertyId: propertyId, myName: myName,
-                                                 myUserId: myUserId, thread: thread,
+            let rows = try await Self.fetchOlder(propertyId: propertyId, conversation: conv,
                                                  before: oldest.createdAt)
             let known = Set(dms.map(\.id))
             let fresh = rows.filter { !known.contains($0.id) }
@@ -527,134 +501,62 @@ final class DirectMessageService {
         }
     }
 
-    /// Builds a PostgREST `or()` equality clause, quoting the value only when it
-    /// contains reserved characters (`, . : ( )` or a double quote) or has edge
-    /// whitespace. Quoting only when needed keeps the common path byte-identical
-    /// to the previously shipped query (zero regression risk for plain names)
-    /// while a name with punctuation — which used to corrupt the filter string —
-    /// is now passed safely.
-    nonisolated private static func orEq(_ column: String, _ value: String) -> String {
-        let reserved = CharacterSet(charactersIn: ",.:()\"")
-        let needsQuote = value.rangeOfCharacter(from: reserved) != nil
-            || value != value.trimmingCharacters(in: .whitespaces)
-        guard needsQuote else { return "\(column).eq.\(value)" }
-        let escaped = value.replacingOccurrences(of: "\"", with: "\\\"")
-        return "\(column).eq.\"\(escaped)\""
-    }
-
-    /// Network + JSON decode off the main actor. The id clauses make BOTH
-    /// directions of my mail rename- and roster-proof (sender_id = me for
-    /// outbound, recipient_id = me for inbound — migration 141); the name
-    /// clauses survive only for legacy rows whose id columns are null.
-    nonisolated private static func fetchRecent(propertyId: UUID, myName: String,
-                                                myUserId: UUID?) async throws -> [DirectMessage] {
-        var clauses = [orEq("sender_name", myName), orEq("recipient_name", myName)]
-        if let uid = myUserId {
-            clauses.insert(contentsOf: ["sender_id.eq.\(uid.uuidString)",
-                                        "recipient_id.eq.\(uid.uuidString)"], at: 0)
-        }
-        return try await supabase
-            .from("direct_messages")
-            .select()
+    /// One older page for a single conversation, network + decode off the
+    /// main actor. The property filter is redundant with the conversation
+    /// scope and deliberately kept: it is index-friendly and it makes a
+    /// cross-property cache entry impossible to page through. Side tables
+    /// are not fetched for history — receipts and reactions on rows this old
+    /// arrive with the next full `load()`, exactly as the legacy page did
+    /// for rows outside its window.
+    nonisolated private static func fetchOlder(propertyId: UUID,
+                                               conversation: UnifiedConversation,
+                                               before: String) async throws -> [DirectMessage] {
+        let rows: [UnifiedRow] = try await supabase
+            .from("messages")
+            .select(unifiedColumns)
+            .eq("conversation_id", value: conversation.id.uuidString)
             .eq("property_id", value: propertyId.uuidString)
-            .or(clauses.joined(separator: ","))
-            .order("created_at", ascending: false)
-            .limit(1000)
-            .execute()
-            .value
-    }
-
-    nonisolated private static func fetchOlder(propertyId: UUID, myName: String, myUserId: UUID?,
-                                               thread: DMThread, before: String) async throws -> [DirectMessage] {
-        var clauses: [String] = []
-        // Identity clauses — exact and rename-proof.
-        if let uid = myUserId, let peer = thread.peerUserId {
-            clauses.append("and(sender_id.eq.\(uid.uuidString),recipient_id.eq.\(peer.uuidString))")
-            clauses.append("and(sender_id.eq.\(peer.uuidString),recipient_id.eq.\(uid.uuidString))")
-        }
-        // Legacy clauses so rows predating the id columns still page in.
-        let legacyName = thread.legacyName
-        if !legacyName.isEmpty {
-            clauses.append("and(\(orEq("sender_name", myName)),\(orEq("recipient_name", legacyName)))")
-            clauses.append("and(\(orEq("sender_name", legacyName)),\(orEq("recipient_name", myName)))")
-        }
-        if let mid = thread.memberId?.uuidString {
-            clauses.append("and(sender_member_id.eq.\(mid),\(orEq("recipient_name", myName)))")
-            if let uid = myUserId {
-                clauses.append("and(sender_id.eq.\(uid.uuidString),recipient_member_id.eq.\(mid))")
-            }
-        }
-        guard !clauses.isEmpty else { return [] }
-        return try await supabase
-            .from("direct_messages")
-            .select()
-            .eq("property_id", value: propertyId.uuidString)
-            .or(clauses.joined(separator: ","))
             .lt("created_at", value: before)
             .order("created_at", ascending: false)
             .limit(100)
             .execute()
             .value
+        return rows.map {
+            mapUnified($0, members: conversation.members,
+                       reads: [], deliveries: [], reactions: [])
+        }
     }
 
-    // MARK: - Unified read (P4c)
+    // MARK: - The unified store (P4c → P6)
     //
-    // Dual-read behind the SERVER flag (`chat_rollout.dm_unified_read`, a
-    // service-role-only kill-switch): when it flips, load() reads the unified
-    // store — `conversations` / `conversation_members` / `messages` plus the
-    // receipt and reaction side tables — and folds every row back into the
-    // legacy `DirectMessage` shape, so threads, bubbles, heads and search
-    // downstream never notice the store change. P4d-2 flips the WRITES the
-    // caller may make on the unified store behind the SAME flag — send,
-    // read/delivered receipts, reactions, edit and delete-for-all (see
-    // "Unified writes (P4d-2)"); pin/mark, realtime and older-page fetches
-    // stay on `direct_messages`. The symmetric server mirror keeps both
-    // stores identical either way, and ids are preserved, so every mutation
-    // keeps landing on exactly the rows the other path displays.
+    // DMs live in ONE place: `conversations` / `conversation_members` /
+    // `messages` plus the receipt and reaction side tables — the same store
+    // and the same engine the group chat uses, which is how every real chat
+    // product models a 1:1 thread. Every row is folded back into the legacy
+    // `DirectMessage` shape right here, so threads, bubbles, heads, search
+    // and the whole UI layer stayed untouched across the migration.
+    //
+    // P4c/P4d shipped this behind `chat_rollout.dm_unified_read` and mirrored
+    // both ways while the fleet caught up; P6 removed the flag and the second
+    // store. What remains is the invariant that made the switch safe: ids are
+    // preserved, so a row's identity never depended on which table it sat in.
 
-    /// Server rollout flag. FAIL CLOSED: false until the server proves
-    /// otherwise — any fetch error (offline cold start, an RLS surprise, the
-    /// table missing on a stale environment) keeps the shipped legacy path,
-    /// never a half-configured new one.
-    private(set) var unifiedReadEnabled = false
-    /// The property the flag was last resolved for — one flag round-trip per
-    /// property switch, not one per reload (load() reruns on every dm_new
-    /// broadcast and every foreground).
-    @ObservationIgnored private var unifiedFlagProperty: UUID?
-
-    /// Snapshot entity for the unified path — deliberately DIFFERENT from the
-    /// legacy "dms" entity, so a flag flip can never poison the other path's
-    /// offline cache with rows shaped by the wrong store.
+    /// Offline snapshot entity. Deliberately NOT the pre-migration "dms"
+    /// entity: a device that once cached legacy-shaped rows must hydrate from
+    /// nothing rather than from rows the retired store shaped.
     private static let unifiedCacheEntity = "dms.unified"
 
-    /// Resolves `chat_rollout.dm_unified_read` once per property switch.
-    /// The error branch is the design, not an afterthought: the legacy path
-    /// is the shipped truth, so anything short of a decoded `true` reads as
-    /// "stay legacy" — and the property still counts as checked, matching
-    /// the once-per-switch contract instead of retrying on every reload.
-    private func refreshUnifiedReadFlag(propertyId: UUID) async {
-        guard unifiedFlagProperty != propertyId else { return }
-        // Property switch: the send-path conversation cache (P4d-2) is scoped
-        // to the outgoing property — the same peer usually exists in both, so
-        // a stale entry could route a send into the wrong property's
-        // conversation. Empty cache just means the RPC resolves the thread.
+    /// The property the in-memory conversation roster belongs to.
+    @ObservationIgnored private var loadedProperty: UUID?
+
+    /// Property switch: the send path's conversation cache is scoped to the
+    /// outgoing property — the same peer usually exists in both, so a stale
+    /// entry could route a send into the wrong property's conversation. An
+    /// empty cache simply means the next send resolves through the RPC.
+    private func resetScopeIfNeeded(propertyId: UUID) {
+        guard loadedProperty != propertyId else { return }
         unifiedConversations = []
-        struct Row: Decodable {
-            let dmUnifiedRead: Bool
-            enum CodingKeys: String, CodingKey { case dmUnifiedRead = "dm_unified_read" }
-        }
-        do {
-            let row: Row = try await supabase
-                .from("chat_rollout")
-                .select("dm_unified_read")
-                .single()
-                .execute()
-                .value
-            unifiedReadEnabled = row.dmUnifiedRead
-        } catch {
-            unifiedReadEnabled = false
-        }
-        unifiedFlagProperty = propertyId
+        loadedProperty = propertyId
     }
 
     /// One `conversation_members` row — a participant's identity triple
@@ -715,6 +617,18 @@ final class DirectMessageService {
     private struct UnifiedConversation {
         let id: UUID
         let members: [UnifiedMember]
+
+        /// The OTHER party — id-first, trimmed-name fallback for members
+        /// without an account (the same matching law as `inThread`). A
+        /// single-member conversation is a self-thread whose lone member is
+        /// both sides.
+        func peer(myUserId: UUID?, myName: String) -> UnifiedMember? {
+            guard members.count > 1 else { return members.first }
+            return members.first { m in
+                if let uid = myUserId, let mu = m.userId { return mu != uid }
+                return !DirectMessage.nameMatches(m.displayName, myName)
+            }
+        }
     }
 
     /// What one unified read round-trip yields: the conversation roster
@@ -733,7 +647,7 @@ final class DirectMessageService {
         }
     }
 
-    /// Network + decode off the main actor, mirroring `fetchRecent`: my DM
+    /// Network + decode off the main actor: my DM
     /// conversations for this property (RLS: members-only), their members,
     /// the newest window of unified rows, then the receipt/reaction side
     /// tables — all folded back into `DirectMessage`. The explicit `.in` on
@@ -741,7 +655,11 @@ final class DirectMessageService {
     /// keeps the query index-friendly and self-documenting; RLS enforces
     /// membership either way. Same limit discipline as the legacy fetch:
     /// newest 1000, shown oldest→newest by the caller's sort.
-    nonisolated private static func fetchUnifiedRecent(propertyId: UUID) async throws -> UnifiedFetch {
+    /// My DM conversations for one property with their member triples (RLS:
+    /// members-only). Shared by the message window and server-side search, so
+    /// the two can never disagree about who a thread belongs to.
+    nonisolated private static func fetchUnifiedConversations(
+        propertyId: UUID) async throws -> [UnifiedConversation] {
         struct ConvRow: Decodable { let id: UUID }
         let convs: [ConvRow] = try await supabase
             .from("conversations")
@@ -750,18 +668,25 @@ final class DirectMessageService {
             .eq("property_id", value: propertyId.uuidString)
             .execute()
             .value
-        guard !convs.isEmpty else { return UnifiedFetch(conversations: [], messages: []) }
-        let convIds = convs.map(\.id.uuidString)
+        guard !convs.isEmpty else { return [] }
         let members: [UnifiedMember] = try await supabase
             .from("conversation_members")
             .select("conversation_id, user_id, member_id, display_name")
-            .in("conversation_id", values: convIds)
+            .in("conversation_id", values: convs.map(\.id.uuidString))
             .execute()
             .value
         let membersByConv = Dictionary(grouping: members, by: \.conversationId)
-        let conversations = convs.map {
+        return convs.map {
             UnifiedConversation(id: $0.id, members: membersByConv[$0.id] ?? [])
         }
+    }
+
+    nonisolated private static func fetchUnifiedRecent(propertyId: UUID) async throws -> UnifiedFetch {
+        let conversations = try await fetchUnifiedConversations(propertyId: propertyId)
+        guard !conversations.isEmpty else { return UnifiedFetch(conversations: [], messages: []) }
+        let convIds = conversations.map(\.id.uuidString)
+        let membersByConv = Dictionary(uniqueKeysWithValues:
+            conversations.map { ($0.id, $0.members) })
         let rows: [UnifiedRow] = try await supabase
             .from("messages")
             .select(unifiedColumns)
@@ -865,16 +790,13 @@ final class DirectMessageService {
             propertyId: row.propertyId)
     }
 
-    // MARK: - Unified writes (P4d-2)
+    // MARK: - Unified writes (P4d-2 → P6)
     //
-    // Behind the SAME `dm_unified_read` flag as the read path — flag down,
-    // every write below is byte-identical to the shipped legacy path. The
-    // symmetric server mirror (P4d-1) projects unified writes back into
-    // `direct_messages`, so old clients and the existing realtime topic stay
-    // complete no matter which store a fleet member writes. Fail-closed: a
-    // unified write that throws is handled exactly like the legacy path's
-    // failure (outbox hand-off for send, best-effort elsewhere) and is NEVER
-    // retried on the other store within the same attempt.
+    // Every DM mutation lands on the unified store: the message row itself in
+    // `messages`, receipts in `message_reads`/`message_deliveries`, reactions
+    // in `message_reactions`, pin/mark through the membership-gated RPCs. A
+    // write that throws is handled exactly as before — outbox hand-off for
+    // send, best-effort elsewhere — and there is no second store to retry on.
 
     /// Conversation roster from the last unified read; `send()` resolves its
     /// target here before spending a round-trip on the RPC.
@@ -887,16 +809,7 @@ final class DirectMessageService {
     private func cachedUnifiedConversation(for thread: DMThread,
                                            myName: String) -> UnifiedConversation? {
         unifiedConversations.first { conv in
-            let peer: UnifiedMember?
-            if conv.members.count == 1 {
-                peer = conv.members.first
-            } else {
-                peer = conv.members.first { m in
-                    if let uid = myUserId, let mu = m.userId { return mu != uid }
-                    return !DirectMessage.nameMatches(m.displayName, myName)
-                }
-            }
-            guard let p = peer else { return false }
+            guard let p = conv.peer(myUserId: myUserId, myName: myName) else { return false }
             if let want = thread.peerUserId, let have = p.userId { return want == have }
             if let want = thread.memberId, let have = p.memberId { return want == have }
             return DirectMessage.nameMatches(p.displayName, thread.legacyName)
@@ -958,7 +871,8 @@ final class DirectMessageService {
     }
 
     /// Batched side-table receipt payloads. The side tables demand a
-    /// NOT NULL property_id — rows without one stay on the legacy UPDATE.
+    /// NOT NULL property_id, so a row without one carries no receipt — such
+    /// a row predates property scoping and no live thread produces one.
     private struct UnifiedReadInsert: Encodable {
         let message_id: String
         let property_id: String
@@ -975,97 +889,64 @@ final class DirectMessageService {
         let delivered_at: String
     }
 
-    /// Persists delivered receipts for inbound `rows`. Flag up: one array
-    /// upsert into `message_deliveries` (INSERT RLS: user_id = auth.uid();
-    /// (message_id, user_id) conflict ignored so a re-stamp stays idempotent
-    /// exactly like the legacy no-op UPDATE — the group engine's proven
-    /// shape); the reverse mirror projects the rows into the legacy
-    /// delivered_at column. Nil-property rows and the flag-off world take
-    /// the legacy batched UPDATE. Errors rethrow to the caller's existing
-    /// handling — one store per attempt, never a cross-store retry.
+    /// Persists delivered receipts for inbound `rows`: ONE array upsert into
+    /// `message_deliveries` (INSERT RLS: user_id = auth.uid(); the
+    /// (message_id, user_id) conflict is ignored so a re-stamp is a no-op —
+    /// the group engine's proven shape). Errors rethrow to the caller's
+    /// existing handling.
     private func persistDeliveredReceipts(_ rows: [DirectMessage], nowISO: String,
                                           myName: String) async throws {
-        var legacyRows = rows
-        if unifiedReadEnabled, let uid = myUserId {
-            legacyRows = rows.filter { $0.propertyId == nil }
-            let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let payload: [UnifiedDeliveryInsert] = rows.compactMap { m in
-                guard let pid = m.propertyId else { return nil }
-                return UnifiedDeliveryInsert(
-                    message_id: m.id.uuidString, property_id: pid.uuidString,
-                    user_id: uid.uuidString, deliverer_name: name,
-                    delivered_at: nowISO)
-            }
-            if !payload.isEmpty {
-                try await supabase
-                    .from("message_deliveries")
-                    .upsert(payload, onConflict: "message_id,user_id",
-                            ignoreDuplicates: true)
-                    .execute()
-            }
+        guard let uid = myUserId else { return }
+        let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let payload: [UnifiedDeliveryInsert] = rows.compactMap { m in
+            guard let pid = m.propertyId else { return nil }
+            return UnifiedDeliveryInsert(
+                message_id: m.id.uuidString, property_id: pid.uuidString,
+                user_id: uid.uuidString, deliverer_name: name,
+                delivered_at: nowISO)
         }
-        guard !legacyRows.isEmpty else { return }
+        guard !payload.isEmpty else { return }
         try await supabase
-            .from("direct_messages")
-            .update(["delivered_at": nowISO])
-            .in("id", values: legacyRows.map { $0.id.uuidString })
+            .from("message_deliveries")
+            .upsert(payload, onConflict: "message_id,user_id",
+                    ignoreDuplicates: true)
             .execute()
     }
 
-    /// Persists read receipts for inbound `unread`. Flag up: one array
-    /// upsert into `message_reads`, plus `message_deliveries` rows for
-    /// messages never stamped delivered — read implies delivered, exactly
-    /// the legacy two-column UPDATE's semantics. Nil-property rows and the
-    /// flag-off world take the legacy batched UPDATEs, byte-identically.
+    /// Persists read receipts for inbound `unread`: one array upsert into
+    /// `message_reads`, plus `message_deliveries` rows for messages never
+    /// stamped delivered — read implies delivered, exactly what the retired
+    /// two-column UPDATE meant.
     private func persistReadReceipts(_ unread: [DirectMessage], nowISO: String,
                                      myName: String) async throws {
-        var legacyRows = unread
-        if unifiedReadEnabled, let uid = myUserId {
-            legacyRows = unread.filter { $0.propertyId == nil }
-            let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let reads: [UnifiedReadInsert] = unread.compactMap { m in
-                guard let pid = m.propertyId else { return nil }
-                return UnifiedReadInsert(
-                    message_id: m.id.uuidString, property_id: pid.uuidString,
-                    user_id: uid.uuidString, reader_name: name, read_at: nowISO)
-            }
-            if !reads.isEmpty {
-                try await supabase
-                    .from("message_reads")
-                    .upsert(reads, onConflict: "message_id,user_id",
-                            ignoreDuplicates: true)
-                    .execute()
-            }
-            let deliveries: [UnifiedDeliveryInsert] = unread.compactMap { m in
-                guard m.deliveredAt == nil, let pid = m.propertyId else { return nil }
-                return UnifiedDeliveryInsert(
-                    message_id: m.id.uuidString, property_id: pid.uuidString,
-                    user_id: uid.uuidString, deliverer_name: name,
-                    delivered_at: nowISO)
-            }
-            if !deliveries.isEmpty {
-                try await supabase
-                    .from("message_deliveries")
-                    .upsert(deliveries, onConflict: "message_id,user_id",
-                            ignoreDuplicates: true)
-                    .execute()
-            }
+        guard let uid = myUserId else { return }
+        let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reads: [UnifiedReadInsert] = unread.compactMap { m in
+            guard let pid = m.propertyId else { return nil }
+            return UnifiedReadInsert(
+                message_id: m.id.uuidString, property_id: pid.uuidString,
+                user_id: uid.uuidString, reader_name: name, read_at: nowISO)
         }
-        guard !legacyRows.isEmpty else { return }
-        // Read implies delivered, so rows with no delivered_at get both
-        // stamped. Batch by which columns they need — at most two UPDATEs
-        // total instead of one per message.
-        let needBoth = legacyRows.filter { $0.deliveredAt == nil }.map { $0.id.uuidString }
-        let readOnly = legacyRows.filter { $0.deliveredAt != nil }.map { $0.id.uuidString }
-        if !needBoth.isEmpty {
-            try await supabase.from("direct_messages")
-                .update(["read_at": nowISO, "delivered_at": nowISO])
-                .in("id", values: needBoth).execute()
+        if !reads.isEmpty {
+            try await supabase
+                .from("message_reads")
+                .upsert(reads, onConflict: "message_id,user_id",
+                        ignoreDuplicates: true)
+                .execute()
         }
-        if !readOnly.isEmpty {
-            try await supabase.from("direct_messages")
-                .update(["read_at": nowISO])
-                .in("id", values: readOnly).execute()
+        let deliveries: [UnifiedDeliveryInsert] = unread.compactMap { m in
+            guard m.deliveredAt == nil, let pid = m.propertyId else { return nil }
+            return UnifiedDeliveryInsert(
+                message_id: m.id.uuidString, property_id: pid.uuidString,
+                user_id: uid.uuidString, deliverer_name: name,
+                delivered_at: nowISO)
+        }
+        if !deliveries.isEmpty {
+            try await supabase
+                .from("message_deliveries")
+                .upsert(deliveries, onConflict: "message_id,user_id",
+                        ignoreDuplicates: true)
+                .execute()
         }
     }
 
@@ -1090,19 +971,16 @@ final class DirectMessageService {
         // (IMG_8539: "messages jump, disappear"). A stale id for a few
         // seconds is harmless; a nil one blanks the UI.
         if let uid = supabase.auth.currentSession?.user.id { myUserId = uid }
-        // Unified-read rollout (P4c): resolve the server flag BEFORE touching
-        // the cache — the two read paths hydrate from different entities, so
-        // the flag must be known first. One round-trip per property switch.
-        await refreshUnifiedReadFlag(propertyId: propertyId)
-        // Each read path owns its own snapshot entity: a server flag flip must
-        // never hydrate one store's rows from the other store's cache.
-        let cacheEntity = unifiedReadEnabled ? Self.unifiedCacheEntity : "dms"
+        // A property switch drops the conversation roster before anything
+        // reads it (send resolves its target from that cache).
+        resetScopeIfNeeded(propertyId: propertyId)
         // Offline hydration (audit): paint the last cached window instantly
         // on a cold open. Guarded on empty — load() reruns on every dm_new
         // and foreground, and its MERGE below builds on richer in-memory
         // state that a stale snapshot must never overwrite.
         if dms.isEmpty,
-           let cached = ServiceCache.load([DirectMessage].self, entity: cacheEntity,
+           let cached = ServiceCache.load([DirectMessage].self,
+                                          entity: Self.unifiedCacheEntity,
                                           propertyId: propertyId) {
             dms = cached
         }
@@ -1112,19 +990,12 @@ final class DirectMessageService {
             // and could hide recent messages once a property had many DMs.
             // The fetch + decode run off the main actor (nonisolated helper) —
             // this was the last big main-thread JSON decode in the app.
-            // Dual-read (P4c): with the server flag up, the same window comes
-            // from the unified store instead — mapped back into DirectMessage,
-            // so everything below this line is store-agnostic.
-            let rows: [DirectMessage]
-            if unifiedReadEnabled {
-                let fetched = try await Self.fetchUnifiedRecent(propertyId: propertyId)
-                // Roster for send's conversation resolution (P4d-2).
-                unifiedConversations = fetched.conversations
-                rows = fetched.messages
-            } else {
-                rows = try await Self.fetchRecent(propertyId: propertyId, myName: myName,
-                                                  myUserId: myUserId)
-            }
+            // The window comes from the unified store and is mapped back into
+            // DirectMessage, so everything below this line is store-agnostic.
+            let fetched = try await Self.fetchUnifiedRecent(propertyId: propertyId)
+            // Roster for send's conversation resolution and older-page paging.
+            unifiedConversations = fetched.conversations
+            let rows = fetched.messages
             // MERGE, never replace: a wholesale `dms = rows` threw away the
             // older pages "Load older" had prepended, so history vanished and
             // the scroll anchor died (the viewport jumped to the bottom) every
@@ -1141,9 +1012,8 @@ final class DirectMessageService {
                     : $0.createdAt < $1.createdAt
             }
             // Snapshot the recent window for the next cold/offline open
-            // (bounded: cache only the newest fetch-window's worth). Saved
-            // under the ACTIVE path's entity — see cacheEntity above.
-            ServiceCache.save(Array(dms.suffix(1000)), entity: cacheEntity,
+            // (bounded: cache only the newest fetch-window's worth).
+            ServiceCache.save(Array(dms.suffix(1000)), entity: Self.unifiedCacheEntity,
                               propertyId: propertyId)
             // exhaustedOlder stays: reaching the beginning of a thread is a
             // fact about the SERVER's history — a refresh of the recent
@@ -1189,7 +1059,9 @@ final class DirectMessageService {
     // MARK: - Realtime (shared lifecycle — chat unification P3d)
 
     /// The DM channel's topic prefix; the property id completes the scope.
-    private static let topicPrefix = "direct_messages:"
+    /// (P6 renamed it off the retired table — a topic string is client-side
+    /// scoping only, so the rename costs nothing and lies about nothing.)
+    private static let topicPrefix = "dm:"
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
         await realtime.subscribe(
@@ -1237,49 +1109,128 @@ final class DirectMessageService {
     private func registerRealtimeHandlers(on ch: RealtimeChannelV2, propertyId: UUID,
                                           myName: String) -> [RealtimeSubscription] {
         var subs: [RealtimeSubscription] = []
+        let scope = "property_id=eq.\(propertyId.uuidString)"
         // Incremental reconciliation: append/patch/remove the single changed row
         // per event instead of refetching up to 1000 rows on every insert,
         // reaction, tick or edit (which also chained load → markDelivered → a
-        // fresh event → another reload). A full reload survives only as the
-        // decode-failure fallback.
+        // fresh event → another reload).
+        //
+        // `messages` now carries BOTH kinds, so every DM row is told apart by
+        // its conversation_id — a group row simply fails to decode into
+        // UnifiedRow (whose conversation_id is non-optional) and is dropped
+        // here, exactly as the group engine's queries drop DM rows with
+        // `.is("conversation_id", nil)`. A DM row that somehow fails to
+        // decode is not lost either: the sender's dm_new broadcast triggers
+        // a full merge-load a moment later.
         subs.append(ch.onPostgresChange(
             InsertAction.self,
             schema: "public",
-            table: "direct_messages",
-            filter: "property_id=eq.\(propertyId.uuidString)"
+            table: "messages",
+            filter: scope
         ) { [weak self] action in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
-                    self.applyRealtimeInsert(row, myName: myName)
-                } else {
+                guard let self,
+                      let row = try? action.decodeRecord(decoder: JSONDecoder()) as UnifiedRow
+                else { return }
+                // A conversation this device has never read is a thread the
+                // peer just opened — only a full load can bring its roster in.
+                guard let conv = self.unifiedConversations
+                    .first(where: { $0.id == row.conversationId }) else {
                     self.scheduleReload(propertyId: propertyId, myName: myName)
+                    return
                 }
+                self.applyRealtimeInsert(
+                    Self.mapUnified(row, members: conv.members,
+                                    reads: [], deliveries: [], reactions: []),
+                    myName: myName)
             }
         })
         subs.append(ch.onPostgresChange(
             UpdateAction.self,
             schema: "public",
-            table: "direct_messages",
-            filter: "property_id=eq.\(propertyId.uuidString)"
+            table: "messages",
+            filter: scope
         ) { [weak self] action in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
-                    self.applyRealtimeUpdate(row)
-                } else {
-                    self.scheduleReload(propertyId: propertyId, myName: myName)
-                }
+                guard let self,
+                      let row = try? action.decodeRecord(decoder: JSONDecoder()) as UnifiedRow
+                else { return }
+                self.applyRealtimeUpdate(row)
             }
         })
         // DELETE handler (shared shape — P5): drop by id, then refresh the
         // heads so the conversation list's preview follows the removal.
         subs.append(ChatEngineCore.registerDeleteHandler(
-            on: ch, table: "direct_messages"
+            on: ch, table: "messages"
         ) { [weak self] id in
             guard let self else { return }
             self.dms.removeAll { $0.id == id }
             self.scheduleHeadsRefresh()
+        })
+        // Receipts are ROWS now, not columns on the message: a peer's tick no
+        // longer arrives as an UPDATE of the message itself, so the engine
+        // listens where they actually land. Each patch is one field on one
+        // loaded row; receipts for group messages (same property scope) find
+        // no match and cost nothing.
+        subs.append(ch.onPostgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "message_reads",
+            filter: scope
+        ) { [weak self] action in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let r = try? action.decodeRecord(decoder: JSONDecoder()) as MessageRead,
+                      r.userId != self.myUserId,
+                      let i = self.dms.firstIndex(where: { $0.id == r.messageId })
+                else { return }
+                // Read implies delivered — the same law the retired
+                // two-column stamp encoded.
+                self.dms[i].readAt = r.readAt
+                if self.dms[i].deliveredAt == nil { self.dms[i].deliveredAt = r.readAt }
+                self.scheduleHeadsRefresh()
+            }
+        })
+        subs.append(ch.onPostgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "message_deliveries",
+            filter: scope
+        ) { [weak self] action in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let d = try? action.decodeRecord(decoder: JSONDecoder()) as MessageDelivery,
+                      d.userId != self.myUserId,
+                      let i = self.dms.firstIndex(where: { $0.id == d.messageId }),
+                      self.dms[i].deliveredAt == nil
+                else { return }
+                self.dms[i].deliveredAt = d.deliveredAt
+            }
+        })
+        subs.append(ch.onPostgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "message_reactions",
+            filter: scope
+        ) { [weak self] action in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let x = try? action.decodeRecord(decoder: JSONDecoder()) as MessageReaction,
+                      let i = self.dms.firstIndex(where: { $0.id == x.messageId })
+                else { return }
+                var map = self.dms[i].reactions ?? [:]
+                map[x.userId.uuidString] = x.emoji
+                self.dms[i].reactions = map
+            }
+        })
+        // Un-reacting DELETEs the row, and a delete event carries only the
+        // primary key (default replica identity) — not the message it hung
+        // on. The debounced reload is the honest way to reflect it; these are
+        // rare, so the cost lands on the rare path.
+        subs.append(ChatEngineCore.registerDeleteHandler(
+            on: ch, table: "message_reactions"
+        ) { [weak self] _ in
+            self?.scheduleReload(propertyId: propertyId, myName: myName)
         })
         // Typing handler (shared shape — P5): the hook re-syncs channel/name
         // into the indicator right before each event, exactly as before.
@@ -1323,12 +1274,20 @@ final class DirectMessageService {
         }
     }
 
-    /// Applies a realtime UPDATE incrementally: reactions, read/delivered ticks,
-    /// pin/mark, edits and delete-for-all tombstones all just swap the changed
-    /// row in place. Rows outside the loaded set are ignored.
-    private func applyRealtimeUpdate(_ row: DirectMessage) {
+    /// Applies a realtime UPDATE to a loaded row: edits, pin/mark, the
+    /// "delete for everyone" tombstone and the disappearing sweep's blanking.
+    /// PATCHES the changed fields instead of swapping the whole row — the
+    /// unified row carries no receipts or reactions (they live in the side
+    /// tables), so a wholesale swap would erase the ticks and reactions this
+    /// device already knows about. Rows outside the loaded set are ignored.
+    private func applyRealtimeUpdate(_ row: UnifiedRow) {
         guard let i = dms.firstIndex(where: { $0.id == row.id }) else { return }
-        dms[i] = row
+        dms[i].body = row.body ?? ""
+        dms[i].editedAt = row.editedAt
+        dms[i].pinned = row.pinned
+        dms[i].isMarked = row.isMarked
+        dms[i].deletedForAll = row.deletedForAll
+        dms[i].expiresAt = row.expiresAt
         scheduleHeadsRefresh()
     }
 
@@ -1344,18 +1303,15 @@ final class DirectMessageService {
     }
 
     func deleteMessage(id: UUID) async {
-        if await ChatMessageStore.deleteRow(table: "direct_messages", id: id, tag: "DM") {
+        if await ChatMessageStore.deleteRow(table: "messages", id: id, tag: "DM") {
             dms.removeAll { $0.id == id }
         }
     }
 
     /// Delete for everyone — keeps the row but replaces it with a tombstone.
-    /// P4d-2: a sender-own update, so with the flag up it flips on the
-    /// unified row (`messages` UPDATE RLS: sender only) and the mirror
-    /// projects it back into `direct_messages`.
+    /// A sender-own update (`messages` UPDATE RLS: sender only).
     func deleteForEveryone(id: UUID) async {
-        let table = unifiedReadEnabled ? "messages" : "direct_messages"
-        if await ChatMessageStore.tombstoneRow(table: table, id: id, tag: "DM"),
+        if await ChatMessageStore.tombstoneRow(table: "messages", id: id, tag: "DM"),
            let i = dms.firstIndex(where: { $0.id == id }) {
             dms[i].deletedForAll = true
         }
@@ -1368,40 +1324,38 @@ final class DirectMessageService {
         revision &+= 1
     }
 
-    // P4d-2: pin/mark deliberately STAY on `direct_messages` even with the
-    // unified flag up — the unified `messages` UPDATE RLS is sender-only
-    // (with_check: sender_id = auth.uid()), so the PEER could never toggle a
-    // message they received; the legacy policy allows both parties and the
-    // forward mirror syncs the unified row.
+    // Pin and mark belong to EITHER party — I may pin a message you sent me.
+    // The `messages` UPDATE policy is sender-only (with_check: sender_id =
+    // auth.uid()), which is exactly right for an edit and exactly wrong for
+    // a pin, and RLS cannot scope a policy to two columns. So both go
+    // through definer RPCs that gate on conversation membership and touch
+    // only that one column — the narrow door instead of a wider policy.
     func togglePin(_ msg: DirectMessage) async {
-        let newVal = !(msg.pinned ?? false)
-        do {
-            try await supabase
-                .from("direct_messages")
-                .update(["pinned": newVal])
-                .eq("id", value: msg.id.uuidString)
-                .execute()
-            if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].pinned = newVal }
-        } catch {
-#if DEBUG
-            debugLog("[DM] togglePin error: \(error)")
-#endif
-        }
+        await toggleFlag("dm_set_pin", on: msg, at: \.pinned)
     }
 
-    // P4d-2: stays legacy for the same peer-RLS reason as togglePin.
     func toggleMark(_ msg: DirectMessage) async {
-        let newVal = !(msg.isMarked ?? false)
+        await toggleFlag("dm_set_mark", on: msg, at: \.isMarked)
+    }
+
+    /// The shared pin/mark toggle: flip the flag through its RPC, then patch
+    /// the loaded row — only after the server accepted, so a rejected toggle
+    /// never leaves a lie on screen. The key path keeps one implementation
+    /// honest about which column it just changed.
+    private func toggleFlag(_ rpc: String, on msg: DirectMessage,
+                            at flag: WritableKeyPath<DirectMessage, Bool?>) async {
+        let newVal = !(msg[keyPath: flag] ?? false)
         do {
             try await supabase
-                .from("direct_messages")
-                .update(["is_marked": newVal])
-                .eq("id", value: msg.id.uuidString)
+                .rpc(rpc, params: ["p_message": AnyJSON.string(msg.id.uuidString),
+                                   "p_value": AnyJSON.bool(newVal)])
                 .execute()
-            if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].isMarked = newVal }
+            if let i = dms.firstIndex(where: { $0.id == msg.id }) {
+                dms[i][keyPath: flag] = newVal
+            }
         } catch {
 #if DEBUG
-            debugLog("[DM] toggleMark error: \(error)")
+            debugLog("[DM] \(rpc) error: \(error)")
 #endif
         }
     }
@@ -1416,25 +1370,17 @@ final class DirectMessageService {
         let current = map[key] ?? map[myName]
         if myUserId != nil { map.removeValue(forKey: myName) }
         if current == emoji { map.removeValue(forKey: key) } else { map[key] = emoji }
+        // A reaction is a ROW now (shared sequence — P5): drop my existing
+        // one, insert the new emoji. The local map is the legacy jsonb shape
+        // the bubbles still read, rebuilt from those rows on every load.
+        guard let uid = myUserId, let pid = msg.propertyId else { return }
         do {
-            if unifiedReadEnabled, let uid = myUserId, let pid = msg.propertyId {
-                // P4d-2: side-table write (shared sequence — P5). The mirror
-                // folds the rows back into the legacy jsonb map, so old
-                // clients keep seeing the reaction. The local map update
-                // below is identical to the legacy path's.
-                try await ChatEngineCore.persistReactionToggle(
-                    messageId: msg.id, propertyId: pid, userId: uid,
-                    reactorName: myName.trimmingCharacters(in: .whitespacesAndNewlines),
-                    emoji: emoji,
-                    removeExisting: current != nil,
-                    insertNew: current != emoji)
-            } else {
-                try await supabase
-                    .from("direct_messages")
-                    .update(["reactions": map])
-                    .eq("id", value: msg.id.uuidString)
-                    .execute()
-            }
+            try await ChatEngineCore.persistReactionToggle(
+                messageId: msg.id, propertyId: pid, userId: uid,
+                reactorName: myName.trimmingCharacters(in: .whitespacesAndNewlines),
+                emoji: emoji,
+                removeExisting: current != nil,
+                insertNew: current != emoji)
             if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].reactions = map }
         } catch {
 #if DEBUG
@@ -1445,11 +1391,9 @@ final class DirectMessageService {
 
     func editMessage(id: UUID, newBody: String) async {
         let nowISO = ISO8601DateFormatter().string(from: Date())
-        // P4d-2: an edit is sender-own, so with the flag up it lands on
-        // the unified row (`messages` UPDATE RLS: sender only) and the
-        // mirror projects it back into `direct_messages`.
-        let table = unifiedReadEnabled ? "messages" : "direct_messages"
-        if await ChatMessageStore.editRow(table: table, id: id, newBody: newBody,
+        // An edit is sender-own — exactly what the `messages` UPDATE policy
+        // (with_check: sender_id = auth.uid()) allows.
+        if await ChatMessageStore.editRow(table: "messages", id: id, newBody: newBody,
                                           editedAtISO: nowISO, tag: "DM"),
            let i = dms.firstIndex(where: { $0.id == id }) {
             dms[i].body = newBody
@@ -1545,21 +1489,38 @@ extension DirectMessageService {
     /// Forwards a group-chat message into a 1:1 thread. A plain insert, not
     /// `send`: forwarding happens from the group chat, where the DM window
     /// isn't loaded, so there is no optimistic bubble to place and no outbox
-    /// hand-off — the caller surfaces the error directly. Columns are the
-    /// ones direct_messages RLS requires: sender_id must equal the caller
-    /// and recipient_member_id lets the recipient read it.
+    /// hand-off — the caller surfaces the error directly. The conversation is
+    /// opened through the same RPC the send path uses, so forwarding into a
+    /// thread that doesn't exist yet creates exactly the thread a first
+    /// message would have.
     static func forward(body: String, senderName: String,
                         to member: FamilyMember, propertyId: UUID) async throws {
+        let sender = senderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let peerName = member.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let params: [String: AnyJSON] = [
+            "p_my_name": .string(sender),
+            "p_my_member": .null,
+            "p_peer_user": member.userId.map { .string($0.uuidString) } ?? .null,
+            "p_peer_member": .string(member.id.uuidString),
+            "p_peer_name": .string(peerName),
+            "p_property": .string(propertyId.uuidString),
+        ]
+        let convId: UUID = try await supabase
+            .rpc("dm_open_conversation", params: params)
+            .execute()
+            .value
         struct DMForward: Encodable {
-            let sender_name: String; let recipient_name: String
-            let body: String; let property_id: String?
-            let sender_id: String?; let recipient_member_id: String
+            let conversation_id: String
+            let property_id: String
+            let sender_id: String?
+            let sender_name: String
+            let body: String
         }
-        try await supabase.from("direct_messages").insert(
-            DMForward(sender_name: senderName, recipient_name: member.name,
-                      body: body, property_id: propertyId.uuidString,
+        try await supabase.from("messages").insert(
+            DMForward(conversation_id: convId.uuidString,
+                      property_id: propertyId.uuidString,
                       sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                      recipient_member_id: member.id.uuidString)
+                      sender_name: sender, body: body)
         ).execute()
     }
 }
@@ -1576,38 +1537,31 @@ extension DirectMessageService {
     }
 
     func partnersMatching(propertyId: UUID, myName: String, query: String) async -> SearchHits {
+        // The peer is a property of the CONVERSATION now, not of each row, so
+        // the query only has to name the matching threads — a much smaller
+        // result than the four identity columns the two-store world scanned.
+        // RLS scopes `conversations` to my own, so a match can never surface
+        // a thread I'm not in.
+        let conversations = unifiedConversations.isEmpty
+            ? ((try? await Self.fetchUnifiedConversations(propertyId: propertyId)) ?? [])
+            : unifiedConversations
+        guard !conversations.isEmpty else { return SearchHits() }
         struct Row: Decodable {
-            let senderId: UUID?
-            let recipientId: UUID?
-            let senderName: String
-            let recipientName: String
-            enum CodingKeys: String, CodingKey {
-                case senderId      = "sender_id"
-                case recipientId   = "recipient_id"
-                case senderName    = "sender_name"
-                case recipientName = "recipient_name"
-            }
+            let conversationId: UUID
+            enum CodingKeys: String, CodingKey { case conversationId = "conversation_id" }
         }
-        var clauses = [Self.orEq("sender_name", myName), Self.orEq("recipient_name", myName)]
-        if let uid = myUserId {
-            clauses.insert(contentsOf: ["sender_id.eq.\(uid.uuidString)",
-                                        "recipient_id.eq.\(uid.uuidString)"], at: 0)
-        }
-        let rows: [Row] = (try? await supabase.from("direct_messages")
-            .select("sender_id, recipient_id, sender_name, recipient_name")
-            .eq("property_id", value: propertyId.uuidString)
-            .or(clauses.joined(separator: ","))
+        let rows: [Row] = (try? await supabase.from("messages")
+            .select("conversation_id")
+            .in("conversation_id", values: conversations.map(\.id.uuidString))
             .ilike("body", pattern: MessageService.likePattern(query))
             .limit(200)
             .execute().value) ?? []
+        let matched = Set(rows.map(\.conversationId))
         var hits = SearchHits()
-        for r in rows {
-            let mine = (r.senderId != nil && r.senderId == myUserId)
-                || DirectMessage.nameMatches(r.senderName, myName)
-            if let peer = mine ? r.recipientId : r.senderId, peer != myUserId {
-                hits.userIds.insert(peer)
-            }
-            hits.names.insert(mine ? r.recipientName : r.senderName)
+        for conv in conversations where matched.contains(conv.id) {
+            guard let peer = conv.peer(myUserId: myUserId, myName: myName) else { continue }
+            if let uid = peer.userId, uid != myUserId { hits.userIds.insert(uid) }
+            hits.names.insert(peer.displayName)
         }
         return hits
     }

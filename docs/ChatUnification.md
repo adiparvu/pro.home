@@ -252,3 +252,44 @@ standard shape; `direct_messages` is the historical outlier.
   recorded: guarding reads (RLS + client queries) is not enough — EVERY
   server-side consumer of `messages` INSERTs (triggers, webhooks) must be
   swept when a new row class enters a shared table.
+- **P6 ✓ (client + server) — one store, no flag, no mirror dependency.**
+  With `chat_rollout.dm_unified_read` flipped ON and parity verified
+  (349/349 messages, 0 missing), the retirement work removed the last
+  reasons `direct_messages` had to exist:
+  - **Server** (`chat_unification_p6_retirement_server`):
+    `dm_conversation_heads` now computes from `conversations` /
+    `conversation_members` / `messages` / `message_reads` (same signature
+    and row shape — clients can't tell); DM notifications moved to
+    `notify_on_dm_message` on `messages` `WHEN (conversation_id IS NOT
+    NULL)` and the legacy `trg_notify_on_direct_message` was dropped in the
+    same transaction, so a mirrored row can never notify twice;
+    `process_scheduled_messages` sends DMs into the unified store; and
+    pin/mark got definer RPCs (`dm_set_pin` / `dm_set_mark`) gated on
+    conversation membership, because the `messages` UPDATE policy is
+    sender-only (right for an edit, wrong for a pin) and RLS cannot scope a
+    policy per column. Verified as real users: peer-pin works, an outsider
+    gets `not a member of this conversation`, one notification lands on the
+    peer only, both mirror directions stay consistent.
+  - **Follow-up** (`chat_unification_p6_scheduled_dm_identity`): a
+    scheduled DM stores only the recipient's NAME, which would have keyed a
+    'n:<name>' participant and forked a second thread. It now resolves the
+    peer against the property roster (family_members, then active
+    property_members + profiles) before opening the conversation — the
+    scheduled message lands in the thread the app already shows.
+  - **Client** (`DirectMessageService`): the flag, the dual-read and every
+    legacy query are gone. Reads, older pages, search, realtime, send,
+    receipts, reactions, edit, delete and pin/mark all address the unified
+    store. Realtime is one channel over `messages` + `message_reads` +
+    `message_deliveries` + `message_reactions` (receipts are ROWS now, so a
+    peer's tick no longer arrives as an UPDATE of the message); DM rows are
+    told apart from group rows because a group row cannot decode into
+    `UnifiedRow` (non-optional `conversation_id`), the mirror image of the
+    group engine's `.is("conversation_id", nil)`. The realtime UPDATE path
+    PATCHES fields instead of swapping the row — a unified row carries no
+    receipts, so a swap would erase the ticks and reactions already known.
+  - **Still standing on purpose**: the table, its mirrors and the
+    `chat_rollout` kill-switch. The fleet is mixed until everyone updates,
+    and 1199 reads `direct_messages` for realtime. The DROP is P6's final
+    migration, to be run only after the family confirms the retirement
+    build — with `cleanup_expired_chat_ephemera` and `delete_my_account`
+    swept in the same change.

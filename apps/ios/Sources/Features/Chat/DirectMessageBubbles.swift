@@ -11,7 +11,7 @@ import Supabase
 // MARK: - DM rich attachments (encoded in the body — DMs have no attachment columns)
 //
 // Like contact shares (see ChatContactSharing), a 1:1 thread carries structured
-// attachments as a marker-prefixed body so the direct_messages table needs no
+// attachments as a marker-prefixed body so the message table needs no
 // new columns. Each marker is a sentinel no ordinary message begins with,
 // followed by the payload; the bubble decodes and renders the rich variant, and
 // the offline outbox re-sends the body verbatim so a queued rich message is

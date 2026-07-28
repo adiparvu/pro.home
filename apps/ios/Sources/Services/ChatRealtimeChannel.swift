@@ -30,7 +30,7 @@ final class ChatRealtimeChannel {
     /// (property/thread/group) exactly like the pre-extraction code captured
     /// its parameters.
     struct Configuration {
-        /// Fully scoped topic ("direct_messages:<property>" /
+        /// Fully scoped topic ("dm:<property>" /
         /// "messages:<property>:<scope>"). Also the scope identity: two calls
         /// with the same topic address the same conversation channel.
         let topic: String
