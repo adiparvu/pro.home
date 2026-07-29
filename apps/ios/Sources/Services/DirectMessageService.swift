@@ -897,7 +897,10 @@ final class DirectMessageService {
     /// existing handling.
     private func persistDeliveredReceipts(_ rows: [DirectMessage], nowISO: String,
                                           myName: String) async throws {
-        guard let uid = myUserId else { return }
+        // The session is the authority, `myUserId` only its cache: the retired
+        // legacy path stamped by row id and needed no identity at all, so a
+        // transiently-nil cache must not silently swallow every tick.
+        guard let uid = supabase.auth.currentSession?.user.id ?? myUserId else { return }
         let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
         let payload: [UnifiedDeliveryInsert] = rows.compactMap { m in
             guard let pid = m.propertyId else { return nil }
@@ -920,7 +923,7 @@ final class DirectMessageService {
     /// two-column UPDATE meant.
     private func persistReadReceipts(_ unread: [DirectMessage], nowISO: String,
                                      myName: String) async throws {
-        guard let uid = myUserId else { return }
+        guard let uid = supabase.auth.currentSession?.user.id ?? myUserId else { return }
         let name = myName.trimmingCharacters(in: .whitespacesAndNewlines)
         let reads: [UnifiedReadInsert] = unread.compactMap { m in
             guard let pid = m.propertyId else { return nil }
@@ -1060,8 +1063,8 @@ final class DirectMessageService {
     // MARK: - Realtime (shared lifecycle — chat unification P3d)
 
     /// The DM channel's topic prefix; the property id completes the scope.
-    /// (P6 renamed it off the retired table — a topic string is client-side
-    /// scoping only, so the rename costs nothing and lies about nothing.)
+    /// A topic string is client-side scoping only — it names the CONVERSATION
+    /// surface, not the table the handlers watch.
     private static let topicPrefix = "dm:"
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
@@ -1111,127 +1114,68 @@ final class DirectMessageService {
                                           myName: String) -> [RealtimeSubscription] {
         var subs: [RealtimeSubscription] = []
         let scope = "property_id=eq.\(propertyId.uuidString)"
-        // Incremental reconciliation: append/patch/remove the single changed row
-        // per event instead of refetching up to 1000 rows on every insert,
-        // reaction, tick or edit (which also chained load → markDelivered → a
-        // fresh event → another reload).
+        // WHERE WE READ AND WHAT WAKES US UP ARE TWO DIFFERENT DECISIONS.
         //
-        // `messages` now carries BOTH kinds, so every DM row is told apart by
-        // its conversation_id — a group row simply fails to decode into
-        // UnifiedRow (whose conversation_id is non-optional) and is dropped
-        // here, exactly as the group engine's queries drop DM rows with
-        // `.is("conversation_id", nil)`. A DM row that somehow fails to
-        // decode is not lost either: the sender's dm_new broadcast triggers
-        // a full merge-load a moment later.
+        // Reads, writes and history are unified (P6). The WAKE-UP stays on the
+        // mirrored `direct_messages` stream — the path that delivered reliably
+        // through b1177–b1199 — because b1200 shipped the unified listener and
+        // the field evidence turned against it: a recipient's device stopped
+        // stamping delivered/read for inbound rows (server-side chain verified
+        // intact: notification row written, webhook 200, APNs accepted). Rather
+        // than defend an unproven listener on the family's only chat, the
+        // engine listens where delivery is PROVEN and keeps reading the unified
+        // store. The forward+reverse mirrors make the two views of a row
+        // identical, and ids are preserved, so a legacy-shaped event addresses
+        // exactly the unified row the UI shows.
+        //
+        // This is also why `direct_messages` cannot be dropped yet: the drop is
+        // gated on the unified listener being proven on-device, not on the
+        // reads (which are already unified fleet-wide).
+        //
+        // Incremental reconciliation: append/patch/remove the single changed
+        // row per event instead of refetching up to 1000 rows on every insert,
+        // reaction, tick or edit. The legacy row carries receipts and reactions
+        // in its own columns (kept current by the receipt/reaction mirrors), so
+        // one swap brings ticks and reactions with it — no side-table channels
+        // to get right. A full reload survives as the decode-failure fallback.
         subs.append(ch.onPostgresChange(
             InsertAction.self,
             schema: "public",
-            table: "messages",
+            table: "direct_messages",
             filter: scope
         ) { [weak self] action in
             Task { @MainActor [weak self] in
-                guard let self,
-                      let row = try? action.decodeRecord(decoder: JSONDecoder()) as UnifiedRow
-                else { return }
-                // A conversation this device has never read is a thread the
-                // peer just opened — only a full load can bring its roster in.
-                guard let conv = self.unifiedConversations
-                    .first(where: { $0.id == row.conversationId }) else {
+                guard let self else { return }
+                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
+                    self.applyRealtimeInsert(row, myName: myName)
+                } else {
                     self.scheduleReload(propertyId: propertyId, myName: myName)
-                    return
                 }
-                self.applyRealtimeInsert(
-                    Self.mapUnified(row, members: conv.members,
-                                    reads: [], deliveries: [], reactions: []),
-                    myName: myName)
             }
         })
         subs.append(ch.onPostgresChange(
             UpdateAction.self,
             schema: "public",
-            table: "messages",
+            table: "direct_messages",
             filter: scope
         ) { [weak self] action in
             Task { @MainActor [weak self] in
-                guard let self,
-                      let row = try? action.decodeRecord(decoder: JSONDecoder()) as UnifiedRow
-                else { return }
-                self.applyRealtimeUpdate(row)
+                guard let self else { return }
+                if let row = try? action.decodeRecord(decoder: JSONDecoder()) as DirectMessage {
+                    self.applyRealtimeUpdate(row)
+                } else {
+                    self.scheduleReload(propertyId: propertyId, myName: myName)
+                }
             }
         })
         // DELETE handler (shared shape — P5): drop by id, then refresh the
         // heads so the conversation list's preview follows the removal.
         subs.append(ChatEngineCore.registerDeleteHandler(
-            on: ch, table: "messages"
+            on: ch, table: "direct_messages"
         ) { [weak self] id in
             guard let self else { return }
             self.dms.removeAll { $0.id == id }
             self.scheduleHeadsRefresh()
-        })
-        // Receipts are ROWS now, not columns on the message: a peer's tick no
-        // longer arrives as an UPDATE of the message itself, so the engine
-        // listens where they actually land. Each patch is one field on one
-        // loaded row; receipts for group messages (same property scope) find
-        // no match and cost nothing.
-        subs.append(ch.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_reads",
-            filter: scope
-        ) { [weak self] action in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let r = try? action.decodeRecord(decoder: JSONDecoder()) as MessageRead,
-                      r.userId != self.myUserId,
-                      let i = self.dms.firstIndex(where: { $0.id == r.messageId })
-                else { return }
-                // Read implies delivered — the same law the retired
-                // two-column stamp encoded.
-                self.dms[i].readAt = r.readAt
-                if self.dms[i].deliveredAt == nil { self.dms[i].deliveredAt = r.readAt }
-                self.scheduleHeadsRefresh()
-            }
-        })
-        subs.append(ch.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_deliveries",
-            filter: scope
-        ) { [weak self] action in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let d = try? action.decodeRecord(decoder: JSONDecoder()) as MessageDelivery,
-                      d.userId != self.myUserId,
-                      let i = self.dms.firstIndex(where: { $0.id == d.messageId }),
-                      self.dms[i].deliveredAt == nil
-                else { return }
-                self.dms[i].deliveredAt = d.deliveredAt
-            }
-        })
-        subs.append(ch.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_reactions",
-            filter: scope
-        ) { [weak self] action in
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let x = try? action.decodeRecord(decoder: JSONDecoder()) as MessageReaction,
-                      let i = self.dms.firstIndex(where: { $0.id == x.messageId })
-                else { return }
-                var map = self.dms[i].reactions ?? [:]
-                map[x.userId.uuidString] = x.emoji
-                self.dms[i].reactions = map
-            }
-        })
-        // Un-reacting DELETEs the row, and a delete event carries only the
-        // primary key (default replica identity) — not the message it hung
-        // on. The debounced reload is the honest way to reflect it; these are
-        // rare, so the cost lands on the rare path.
-        subs.append(ChatEngineCore.registerDeleteHandler(
-            on: ch, table: "message_reactions"
-        ) { [weak self] _ in
-            self?.scheduleReload(propertyId: propertyId, myName: myName)
         })
         // Typing handler (shared shape — P5): the hook re-syncs channel/name
         // into the indicator right before each event, exactly as before.
@@ -1275,20 +1219,14 @@ final class DirectMessageService {
         }
     }
 
-    /// Applies a realtime UPDATE to a loaded row: edits, pin/mark, the
-    /// "delete for everyone" tombstone and the disappearing sweep's blanking.
-    /// PATCHES the changed fields instead of swapping the whole row — the
-    /// unified row carries no receipts or reactions (they live in the side
-    /// tables), so a wholesale swap would erase the ticks and reactions this
-    /// device already knows about. Rows outside the loaded set are ignored.
-    private func applyRealtimeUpdate(_ row: UnifiedRow) {
+    /// Applies a realtime UPDATE incrementally: reactions, read/delivered ticks,
+    /// pin/mark, edits and delete-for-all tombstones all just swap the changed
+    /// row in place. The mirrored row is COMPLETE — the receipt and reaction
+    /// mirrors keep its legacy columns current — so the swap brings ticks and
+    /// reactions with it. Rows outside the loaded set are ignored.
+    private func applyRealtimeUpdate(_ row: DirectMessage) {
         guard let i = dms.firstIndex(where: { $0.id == row.id }) else { return }
-        dms[i].body = row.body ?? ""
-        dms[i].editedAt = row.editedAt
-        dms[i].pinned = row.pinned
-        dms[i].isMarked = row.isMarked
-        dms[i].deletedForAll = row.deletedForAll
-        dms[i].expiresAt = row.expiresAt
+        dms[i] = row
         scheduleHeadsRefresh()
     }
 

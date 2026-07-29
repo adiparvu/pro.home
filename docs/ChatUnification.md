@@ -303,3 +303,26 @@ standard shape; `direct_messages` is the historical outlier.
     shipping a previous build. The drop migration removes the flag from the
     policy and the `chat_rollout` row in the same change, so the lever
     disappears rather than lingering as a trap.
+- **P6 field correction (b1200 → b1201): the WAKE-UP goes back on the
+  mirrored stream.** b1200 moved the DM realtime listener onto `messages`
+  along with the reads. The field evidence turned against it within hours:
+  a recipient's device stopped stamping delivered/read for inbound rows
+  while the server-side chain was verified INTACT end to end — notification
+  row written (one, to the peer only), webhook HTTP 200, APNs `sent:1`, and
+  the recipient's RLS visibility confirmed by querying as that user. The
+  asymmetry (one device consuming, the other not) pointed at the only piece
+  of the receive path b1200 changed, so the listener returns to
+  `direct_messages` — the stream that delivered reliably through
+  b1177–b1199 — while reads, writes, history, search and pin/mark stay
+  unified. WHERE WE READ and WHAT WAKES US UP are separate decisions; the
+  mirrors make the two views of a row identical and ids are preserved, so a
+  legacy-shaped event addresses exactly the unified row the UI shows. Bonus:
+  the mirrored row carries receipts and reactions in its own columns, so one
+  swap brings ticks and reactions — no side-table channels to get right.
+  Also fixed here: the receipt writers resolved the user id from the
+  `myUserId` cache only, so a transiently-nil cache silently swallowed every
+  tick (the retired legacy path stamped by row id and needed no identity) —
+  they now take the session as the authority.
+  **Consequence for the drop:** retiring `direct_messages` is now gated on
+  the unified listener being proven on-device, NOT on the reads (already
+  unified fleet-wide). Until then the table, its mirrors and the flag stay.
