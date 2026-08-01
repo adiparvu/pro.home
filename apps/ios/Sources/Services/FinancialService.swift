@@ -140,6 +140,10 @@ final class FinancialService {
 
     /// Insert payload for a new financial record.
     struct NewFinancialRecord: Encodable {
+        /// Client-chosen row id, used only by queued writes (see `addQueued`).
+        /// Nil for every interactive add — the database generates one, and a
+        /// nil optional is simply not encoded.
+        var id: String? = nil
         let propertyId: String
         let title: String
         let amount: Double
@@ -152,7 +156,7 @@ final class FinancialService {
 
         enum CodingKeys: String, CodingKey {
             case propertyId = "property_id"
-            case title, amount, currency, type, category, date, description, tags
+            case id, title, amount, currency, type, category, date, description, tags
         }
     }
 
@@ -163,6 +167,19 @@ final class FinancialService {
         try await supabase
             .from("financial_records")
             .insert(record)
+            .execute()
+        await load()
+    }
+
+    /// Insert for a write that was QUEUED offline (a card tap parked by the
+    /// Shortcuts automation). The row carries the queue entry's own id, so a
+    /// retry after an ambiguous failure — the insert landed but the client
+    /// never saw the answer — is a no-op instead of a second charge in the
+    /// ledger. Exactly-once, which a plain insert cannot be.
+    func addQueued(_ record: NewFinancialRecord) async throws {
+        try await supabase
+            .from("financial_records")
+            .upsert(record, onConflict: "id", ignoreDuplicates: true)
             .execute()
         await load()
     }

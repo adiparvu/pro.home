@@ -61,6 +61,10 @@ struct MainTabView: View {
     /// participant of a shared PRVIO calendar with "Deleted by …").
     @State private var worldLoaded = false
 
+    /// Guards the two `drainPendingExpenses` call sites (foreground beat and
+    /// end of world load) from posting the same card payment twice.
+    @State private var expenseDrainInFlight = false
+
     var body: some View {
         @Bindable var router = router
         let visibleTabs = AppTab.visible(for: propertyService.myRole)
@@ -553,6 +557,9 @@ struct MainTabView: View {
         }
         notificationScheduler.registerCategories()
         worldLoaded = true
+        // The property and the merchant rules exist now — the moment a cold
+        // launch can finally post the card taps queued while the app was gone.
+        drainPendingExpenses()
         await notificationScheduler.reschedule(agenda: houseAgendaSnapshot())
         // Mirror from FULL data, exactly once per world load — the foreground
         // tick above is gated on worldLoaded, so this is the first sync.
@@ -762,38 +769,10 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
-        // Apple Pay expenses queued by LogExpenseIntent (the Shortcuts
-        // "Transaction" automation): each becomes a real ledger row now that
-        // the session and property context exist. Categorized by merchant;
-        // amounts are assumed in the household currency — the automation
-        // passes the card's charge amount.
-        let pendingExpenses = SharedDataStore.popPendingExpenses()
-        if !pendingExpenses.isEmpty, let propId = PropertyService.activePropertyId {
-            Task {
-                // Category chain: the household's learned rule -> the static
-                // chain table -> Yuna (one call per unknown merchant, cached
-                // as a shared AI rule) -> honest "other".
-                let aiVerdicts = await merchantRuleService.classifyUnknown(pendingExpenses.map(\.merchant))
-                for e in pendingExpenses {
-                    let detail = [e.card.map { String(format: String(localized: "expense_via_card_fmt"), $0) },
-                                  e.note]
-                        .compactMap { $0 }.joined(separator: " · ")
-                    try? await financialService.add(FinancialService.NewFinancialRecord(
-                        propertyId: propId.uuidString,
-                        title: e.merchant,
-                        amount: e.amount,
-                        currency: appSettings.preferredCurrency,
-                        type: "expense",
-                        category: merchantRuleService.category(for: e.merchant)
-                            ?? MerchantCategorizer.staticCategory(for: e.merchant)
-                            ?? aiVerdicts[e.merchant]
-                            ?? "other",
-                        date: e.date,
-                        description: detail.isEmpty ? nil : detail,
-                        tags: ["apple_pay", "auto"]))
-                }
-            }
-        }
+        // Card expenses queued by LogExpenseIntent (the Shortcuts
+        // "Transaction" automation). Runs here AND at the end of the world
+        // load — see drainPendingExpenses for why one call site is not enough.
+        drainPendingExpenses()
         let chatReplies = SharedDataStore.popPendingChatReplies()
         for reply in chatReplies {
             if let propId = propertyService.primary?.id {
@@ -939,6 +918,65 @@ struct MainTabView: View {
             || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty
             || !deliveredIds.isEmpty {
             writeWidgetSnapshot()
+        }
+    }
+
+    /// Turns the card taps queued by `LogExpenseIntent` (the Shortcuts
+    /// "Transaction" automation) into real ledger rows.
+    ///
+    /// PEEK, then confirm: an expense leaves the shared queue only after its
+    /// INSERT succeeded. The previous drain popped the queue unconditionally
+    /// and then required a property — but a cold launch reaches `.active`
+    /// before `PropertyService` has resolved one, so the payments were read
+    /// out of the queue and dropped on the floor, every time. That is why
+    /// card payments never showed up in the app unless the automation
+    /// happened to fire while the app was already open. An offline insert had
+    /// the same fate through `try?`; now it simply stays queued.
+    ///
+    /// Two call sites for the same reason: the foreground beat catches a warm
+    /// launch, and the end of the world load catches the cold one, the moment
+    /// the property (and the merchant rules that categorize the row) exist.
+    /// `expenseDrainInFlight` keeps those two from double-posting a payment.
+    private func drainPendingExpenses() {
+        let pending = SharedDataStore.peekPendingExpenses()
+        guard !pending.isEmpty, !expenseDrainInFlight,
+              let propId = PropertyService.activePropertyId else { return }
+        expenseDrainInFlight = true
+        Task {
+            defer { expenseDrainInFlight = false }
+            // Category chain: the household's learned rule -> the static
+            // chain table -> Yuna (one call per unknown merchant, cached
+            // as a shared AI rule) -> honest "other".
+            let aiVerdicts = await merchantRuleService.classifyUnknown(pending.map(\.merchant))
+            var landed: Set<UUID> = []
+            for e in pending {
+                let detail = [e.card.map { String(format: String(localized: "expense_via_card_fmt"), $0) },
+                              e.note]
+                    .compactMap { $0 }.joined(separator: " · ")
+                do {
+                    // The queue entry's own id rides along: a retry after an
+                    // ambiguous failure updates nothing instead of charging
+                    // the household twice.
+                    try await financialService.addQueued(FinancialService.NewFinancialRecord(
+                        id: e.id.uuidString,
+                        propertyId: propId.uuidString,
+                        title: e.merchant,
+                        amount: e.amount,
+                        currency: appSettings.preferredCurrency,
+                        type: "expense",
+                        category: merchantRuleService.category(for: e.merchant)
+                            ?? MerchantCategorizer.staticCategory(for: e.merchant)
+                            ?? aiVerdicts[e.merchant]
+                            ?? "other",
+                        date: e.date,
+                        description: detail.isEmpty ? nil : detail,
+                        tags: ["apple_pay", "auto"]))
+                    landed.insert(e.id)
+                } catch {
+                    // Stays queued — the next foreground beat retries it.
+                }
+            }
+            SharedDataStore.removePendingExpenses(ids: landed)
         }
     }
 

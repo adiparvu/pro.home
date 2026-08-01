@@ -1344,9 +1344,32 @@ enum SharedDataStore {
         coordinatedAppendUnique("expenses", legacyKey: nil, json)
     }
 
-    static func popPendingExpenses() -> [PendingExpense] {
-        coordinatedPop("expenses", legacyKey: nil).compactMap {
-            $0.data(using: .utf8).flatMap { try? JSONDecoder().decode(PendingExpense.self, from: $0) }
+    /// NON-DESTRUCTIVE read: the queue keeps every expense until it actually
+    /// reaches the ledger (`removePendingExpenses`). The destructive pop this
+    /// replaces is why card payments silently never appeared — a cold launch
+    /// reaches `.active` before the property is resolved, the drain popped the
+    /// queue anyway, found no property to write to, and the payments were gone
+    /// for good. The same trap swallowed any insert that failed offline.
+    static func peekPendingExpenses() -> [PendingExpense] {
+        (coordinateQueue("expenses", legacyKey: nil) { $0 } ?? [])
+            .compactMap(decodePendingExpense)
+    }
+
+    /// Drops the expenses that landed — plus any entry that no longer decodes,
+    /// which would otherwise be retried on every foreground forever.
+    static func removePendingExpenses(ids: Set<UUID>) {
+        guard !ids.isEmpty else { return }
+        coordinateQueue("expenses", legacyKey: nil) { queue in
+            queue.removeAll { json in
+                guard let expense = decodePendingExpense(json) else { return true }
+                return ids.contains(expense.id)
+            }
+        }
+    }
+
+    private static func decodePendingExpense(_ json: String) -> PendingExpense? {
+        json.data(using: .utf8).flatMap {
+            try? JSONDecoder().decode(PendingExpense.self, from: $0)
         }
     }
 }
