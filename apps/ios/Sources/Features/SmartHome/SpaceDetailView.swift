@@ -117,11 +117,24 @@ struct SpaceDetailView: View {
     }
 
     var body: some View {
+        // System chrome in BOTH presentations (IMG_9276): pushed, the
+        // system bar's own glass back circle; as a sheet, a fresh
+        // NavigationStack so the SAME toolbar hosts the close circle and
+        // the page's one menu. The hand-drawn in-body circles were the
+        // last of the IMG_8555 exceptions — this page and every future
+        // one ride the system toolbar, like the rest of the app.
+        if presentation == .sheet {
+            NavigationStack { core }
+        } else {
+            core
+        }
+    }
+
+    private var core: some View {
         ZStack {
             backdrop
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    topBar
                     // The hero's breathing room: nothing but the mood ground.
                     Spacer().frame(height: SpaceHero.breath)
                     hero
@@ -172,10 +185,28 @@ struct SpaceDetailView: View {
             photoItem = nil
             Task { await savePhoto(newItem) }
         }
-        // Push chrome: the page owns its top bar (the glass back circle),
-        // so the system navigation bar stays hidden on the stack.
-        .navigationBarBackButtonHidden(true)
-        .toolbar(presentation == .push ? .hidden : .automatic, for: .navigationBar)
+        // System toolbar chrome: no title (the hero carries the name);
+        // pushed pages keep the system back button, sheets get a close
+        // circle in the same slot.
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if presentation == .sheet {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(AppFont.scaled(17, weight: .semibold))
+                            .foregroundStyle(Color.glassInk)
+                    }
+                    .accessibilityLabel(Text("sh_close"))
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                spaceMenu
+            }
+        }
         // Plan rooms hydrate lazily on first arrival — the scan menu
         // entries need the zone's bridged room to state the truth.
         .task(id: live.propertyId) {
@@ -267,34 +298,16 @@ struct SpaceDetailView: View {
         .ignoresSafeArea()
     }
 
-    // MARK: Top bar — back + the page's one circle
+    // MARK: The page's one menu (one-circle law, in the system toolbar)
 
-    private var topBar: some View {
-        HStack {
-            Button {
-                HapticFeedback.impact(.light)
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.backward")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .accessibilityLabel(Text("sh_close"))
-
-            Spacer(minLength: AppSpacing.sm)
-
-            // The page's ONE circle (one-circle law), presenting through
-            // the sanctioned GlassMenuChrome: the kind picker as a
-            // single-select section, the navigation/scan entries as
-            // one-shot action rows. Apple's More glyph — the menu hosts
-            // actions, not list filters, and setting a kind narrows
-            // nothing, so no accent dot ever.
-            GlassFilterButton(icon: "ellipsis",
-                              accessibilityLabelKey: "est_kind_menu",
-                              standaloneSize: 36) {
+    /// The kind picker as a single-select section, the navigation/scan
+    /// entries as one-shot action rows. Apple's More glyph — the menu
+    /// hosts actions, not list filters, and setting a kind narrows
+    /// nothing, so no accent dot ever.
+    private var spaceMenu: some View {
+        GlassFilterButton(inToolbar: true,
+                          icon: "ellipsis",
+                          accessibilityLabelKey: "est_kind_menu") {
                 GlassFilterSection(
                     title: "est_kind_menu",
                     options: SpaceKind.allCases.map {
@@ -366,7 +379,6 @@ struct SpaceDetailView: View {
                         Task { await zoneService.update(updated) }
                     }
                 }
-            }
         }
     }
 

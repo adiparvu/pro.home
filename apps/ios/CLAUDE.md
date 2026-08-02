@@ -104,6 +104,14 @@ older iOS convention disagree, always choose the newest.
   search fields and avatars are not menu anatomy), or it moves onto the
   page — it never resurrects the custom popover.
 
+### Chrome — the SYSTEM toolbar only (permanent, user-decreed, IMG_9276)
+
+Every page — pushed or presented as a sheet — hosts its back/close
+control and its one menu in the SYSTEM toolbar (sheets wrap in a fresh
+`NavigationStack` to get one). Never hand-drawn in-body glass circles:
+the IMG_8555 retirement of custom headers applies to page chrome too,
+on this page and every future one.
+
 ### Headers — no borders, ever (permanent, user-decreed)
 
 Day headers and section headers are NAKED text: no glass chip, no capsule,
