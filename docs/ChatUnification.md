@@ -470,3 +470,25 @@ standard shape; `direct_messages` is the historical outlier.
   stamping trigger → main-only, notifier → conversation-only, drop index +
   column. HARD gate: fleet on the G4 build — applying earlier breaks 1202's
   community sends, receipt joins and previews, i.e. today's newest build.
+- **G5 FINAL ✓ APPLIED (2026-08-02, owner-ordered) — `messages.group_id`
+  is GONE. The unification is COMPLETE: one store (conversations +
+  members + messages + side tables), one scope column, for DMs, the main
+  chat and sub-groups alike.** Migration `chat_g5_final_drop_group_id`,
+  one transaction: the stamping trigger lost its group resolution path
+  (context-free writers — Siri intents — target the main chat; sub-group
+  writes carry conversation_id since G4), the group notifier derives the
+  sub-group from the conversation ALONE, then the index and the column
+  dropped. Pre-drop sweep beyond the prepared plan: dm_bootstrap and the
+  client's unifiedColumns never reference the column (DMs untouched);
+  Message decodes groupId via decodeIfPresent (missing key is fine on
+  every shipped build). Verified after, as a real user: a Siri-shaped
+  write (property only) stamps to main and notifies the two others; a
+  G4-shaped sub-group write passes RLS and notifies zero non-members
+  (conversation-only derivation proven); zero function/policy/view
+  references left. Accepted fleet consequence (owner, at order time):
+  1202 loses receipt/reaction/poll DISPLAY in group chat (their loads
+  join the dropped column, fail soft to empty) and community sub-group
+  sends (unused — zero group messages ever written) until the G4 train
+  ships and installs. CREATE OR REPLACE preserved the EXECUTE
+  revocations on both trigger functions. The G1→G5 ladder that P4
+  proved on DMs is now closed for groups too.
