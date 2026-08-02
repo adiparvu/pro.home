@@ -1,6 +1,10 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "doc_renew_task_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Renew: %@"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Reînnoiește: %@"}}}},
+    "doc_renew_task_notes" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Renewal task for the document \"%@\"."}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Sarcină de reînnoire pentru documentul \"%@\"."}}}},
+    "doc_renew_create_task" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Create renewal task"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Creează sarcină de reînnoire"}}}},
+    "doc_renew_task_exists" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Renewal task planned"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Sarcină de reînnoire planificată"}}}},
     "sh_scene_new" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New scene"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Scenă nouă"}}}},
     "sh_scene_edit" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Edit scene"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Modifică scena"}}}},
     "sh_scene_name_ph" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Scene name"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Numele scenei"}}}},

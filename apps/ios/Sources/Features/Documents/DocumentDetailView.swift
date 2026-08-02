@@ -44,6 +44,7 @@ func documentCategoryColor(_ category: String) -> Color {
 struct DocumentDetailView: View {
     let doc: DocumentModel
     @Environment(DocumentService.self) private var documentService
+    @Environment(TaskService.self) private var taskService
     @Environment(\.dismiss) private var dismiss
 
     @State private var previewURL: URL?
@@ -63,6 +64,9 @@ struct DocumentDetailView: View {
     // honestly — success only when EventKit actually saved the event.
     @State private var calendarOutcome: CalendarOutcome?
     @State private var isAddingToCalendar = false
+    // Renewal: an expiring document offers an ACTION (file a task), not just
+    // the warning chip. In-flight flag keeps the row single-fire.
+    @State private var isCreatingRenewalTask = false
 
     /// Always read the freshest copy so edits reflect immediately.
     private var live: DocumentModel { documentService.documents.first { $0.id == doc.id } ?? doc }
@@ -521,6 +525,88 @@ struct DocumentDetailView: View {
         }
     }
 
+    // MARK: Renewal action — expiry becomes a task, not just a warning
+    //
+    // Within 60 days of expiry (or past it) the details card gains a row,
+    // directly under the "Expires" line, that files a real maintenance task.
+    // Dedup mirrors ApplianceDetailSheet's revision button: the loaded task
+    // list is the truth — an open task carrying the generated title means the
+    // renewal is already planned, so a tap confirms instead of duplicating.
+
+    private var needsRenewalAction: Bool {
+        guard let days = live.daysUntilExpiry else { return false }
+        return days <= 60
+    }
+
+    private var renewalTaskTitle: String {
+        String(format: String(localized: "doc_renew_task_title"), live.name)
+    }
+
+    private var existingRenewalTask: MaintenanceTask? {
+        taskService.tasks.first {
+            ($0.status == "pending" || $0.status == "in_progress") && $0.title == renewalTaskTitle
+        }
+    }
+
+    /// Two weeks of lead time before the expiry day — or tomorrow when the
+    /// document is already past due (or expires closer than the lead allows).
+    private var renewalDueDate: Date {
+        let cal = Calendar.current
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: Date())) ?? Date()
+        guard let ds = live.expiresAt, let expiry = AppDate.day(from: ds),
+              let lead = cal.date(byAdding: .day, value: -14, to: expiry) else { return tomorrow }
+        return max(lead, tomorrow)
+    }
+
+    private var renewActionRow: some View {
+        Button { createRenewalTask() } label: {
+            HStack(spacing: 12) {
+                Image(systemName: existingRenewalTask == nil
+                        ? "arrow.triangle.2.circlepath" : "checkmark.circle.fill")
+                    .font(AppFont.scaled(13)).frame(width: 28)
+                Text(existingRenewalTask == nil ? "doc_renew_create_task" : "doc_renew_task_exists")
+                    .font(AppFont.scaled(14))
+                Spacer()
+                if isCreatingRenewalTask { ProgressView().scaleEffect(0.8) }
+            }
+            .foregroundStyle(existingRenewalTask == nil ? Color.accentColor : Color.brandSuccess)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+        }
+        .buttonStyle(.plain)
+        .disabled(isCreatingRenewalTask)
+        .accessibilityLabel(existingRenewalTask == nil
+                            ? Text("doc_renew_create_task") : Text("doc_renew_task_exists"))
+    }
+
+    private func createRenewalTask() {
+        HapticFeedback.selection()
+        // Idempotent: an open task already covers this renewal — confirm the
+        // intent (success haptic) without minting a duplicate.
+        guard existingRenewalTask == nil else { HapticFeedback.success(); return }
+        isCreatingRenewalTask = true
+        let target = live
+        let title = renewalTaskTitle
+        let notes = String(format: String(localized: "doc_renew_task_notes"), target.name)
+        let due = AppDate.dayString(from: renewalDueDate)
+        Task { @MainActor in
+            defer { isCreatingRenewalTask = false }
+            do {
+                _ = try await taskService.addTask(NewTaskPayload(
+                    propertyId: target.propertyId,
+                    title: title,
+                    description: notes,
+                    dueDate: due,
+                    priority: target.isCritical ? "high" : "medium",
+                    category: "administrative",
+                    assigneeIds: [],
+                    assigneeNames: []))
+                HapticFeedback.success()
+            } catch {
+                HapticFeedback.error()
+            }
+        }
+    }
+
     private func infoGroup(_ title: LocalizedStringKey, _ icon: String, _ color: Color,
                            _ rows: [(String, LocalizedStringKey, String)]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -550,6 +636,7 @@ struct DocumentDetailView: View {
             VStack(spacing: 0) {
                 if let expiry = live.expiresDisplay {
                     row("calendar", "doc_expires", expiry, color: live.isExpiringSoon ? .orange : Color.primary.opacity(0.55)); div
+                    if needsRenewalAction { renewActionRow; div }
                 }
                 if !live.sharedMemberIds.isEmpty {
                     row("person.2.fill", "doc_shared_with", "\(live.sharedMemberIds.count)"); div
