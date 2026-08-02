@@ -326,3 +326,26 @@ standard shape; `direct_messages` is the historical outlier.
   **Consequence for the drop:** retiring `direct_messages` is now gated on
   the unified listener being proven on-device, NOT on the reads (already
   unified fleet-wide). Until then the table, its mirrors and the flag stay.
+- **P6b ✓ — ChatSideChannel.** The four receipt/reaction/poll side channels
+  in MessageService (~260 near-verbatim lines) share one lifecycle type:
+  scope-topic, liveness idempotency, 15s timebox, clean teardown — and, for
+  the first time on these channels, the b1197 socket-wait with the b1198
+  cancellation lesson baked in.
+- **P6c ✓ — dm_bootstrap.** The DM window is ONE round-trip (SECURITY
+  INVOKER jsonb RPC: conversations + members + message window + all three
+  side tables); the client tries it first and falls back to the shipped
+  multi-query path on any failure. Verified as a real user: 5/9/366 with
+  full receipts.
+- **G1 ✓ (scaffolding only) — group conversations may now EXIST.**
+  `conversations.kind` accepts 'group', `group_key` ('main:<property>' /
+  'grp:<chat_group_id>', unique) names them. NOTHING creates or reads such
+  rows yet: every shipped client filters group reads on `conversation_id IS
+  NULL`, so stamping group messages is a phased rollout of its own (G2:
+  dual-write behind a chat_rollout-style flag; G3: reads; G4: retire
+  group_id) — the same playbook P4 proved on DMs.
+- **P6 FINAL (prepared, NOT applied)** —
+  `docs/pending-migrations/p6_final_drop_direct_messages.sql`: mirrors
+  first (msg_mirror_insert would otherwise error inside every send), then
+  cleanup/delete_my_account sweeps, then the kill-switch (policy stops
+  consulting `dm_unified_read_enabled()`, function + chat_rollout drop),
+  then the table. Gate: EVERY device on 1201+, owner-confirmed.
