@@ -67,7 +67,10 @@ struct ChatGroup: Identifiable, Codable, Hashable {
 /// count (rows from others without my read receipt).
 struct GroupMessagePreview: Decodable {
     let id: UUID
-    let groupId: UUID
+    let conversationId: UUID?
+    /// Resolved after fetch from the conversation → group map (G4: new rows
+    /// carry the scope on the conversation, not a group_id column).
+    var groupId: UUID? = nil
     let senderId: UUID?
     let senderName: String?
     let body: String?
@@ -75,7 +78,7 @@ struct GroupMessagePreview: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case id, body
-        case groupId    = "group_id"
+        case conversationId = "conversation_id"
         case senderId   = "sender_id"
         case senderName = "sender_name"
         case createdAt  = "created_at"
@@ -130,23 +133,44 @@ final class ChatGroupService {
         }
     }
 
-    /// Latest message per group in ONE query: the newest ~80 group-scoped
-    /// rows for the property, reduced client-side to the first per group.
+    /// Latest message per group in ONE query pair (G4): the groups'
+    /// conversations first — RLS keeps that membership-true, conversations
+    /// of groups the viewer isn't in simply don't come back, exactly as
+    /// their messages never did — then the newest ~80 rows across them,
+    /// reduced client-side to the first per group.
     func loadPreviews(propertyId: UUID) async {
         let ids = groups.map { $0.id.uuidString }
         guard !ids.isEmpty else { latestByGroup = [:]; unreadByGroup = [:]; return }
         do {
-            let rows: [GroupMessagePreview] = try await supabase
+            struct ConvRow: Decodable {
+                let id: UUID
+                let chatGroupId: UUID
+                enum CodingKeys: String, CodingKey {
+                    case id
+                    case chatGroupId = "chat_group_id"
+                }
+            }
+            let convs: [ConvRow] = try await supabase
+                .from("conversations")
+                .select("id, chat_group_id")
+                .in("chat_group_id", values: ids)
+                .execute()
+                .value
+            guard !convs.isEmpty else { latestByGroup = [:]; unreadByGroup = [:]; return }
+            let groupByConv = Dictionary(uniqueKeysWithValues: convs.map { ($0.id, $0.chatGroupId) })
+            var rows: [GroupMessagePreview] = try await supabase
                 .from("messages")
-                .select("id, group_id, sender_id, sender_name, body, created_at")
-                .eq("property_id", value: propertyId.uuidString)
-                .in("group_id", values: ids)
+                .select("id, conversation_id, sender_id, sender_name, body, created_at")
+                .in("conversation_id", values: convs.map { $0.id.uuidString })
                 .order("created_at", ascending: false)
                 .limit(80)
                 .execute()
                 .value
+            for i in rows.indices {
+                rows[i].groupId = rows[i].conversationId.flatMap { groupByConv[$0] }
+            }
             var latest: [UUID: GroupMessagePreview] = [:]
-            for row in rows where latest[row.groupId] == nil { latest[row.groupId] = row }
+            for row in rows { if let g = row.groupId, latest[g] == nil { latest[g] = row } }
             latestByGroup = latest
             await computeUnread(rows: rows)
         } catch {
@@ -173,8 +197,11 @@ final class ChatGroupService {
                 .execute()
                 .value
             let seen = Set(reads.map(\.messageId))
-            unreadByGroup = Dictionary(grouping: foreign.filter { !seen.contains($0.id) },
-                                       by: { $0.groupId }).mapValues(\.count)
+            unreadByGroup = foreign.filter { !seen.contains($0.id) }
+                .reduce(into: [UUID: Int]()) { acc, row in
+                    guard let g = row.groupId else { return }
+                    acc[g, default: 0] += 1
+                }
         } catch {
             // Non-fatal: keep the previous counts rather than flashing zeros.
         }
@@ -347,9 +374,9 @@ final class ChatGroupService {
     /// sends through a group-scoped `MessageService`, so this invokes exactly
     /// that same path: `load(propertyId:groupId:)` scopes the service to the
     /// group (it is the only public way to set its group id) and `send` then
-    /// stamps `group_id`, honors the group's disappearing-message TTL and
-    /// rides the same RLS as an in-app send. Throws on failure so the caller
-    /// can requeue the reply instead of dropping it.
+    /// resolves the group's conversation, honors the disappearing-message
+    /// TTL and rides the same RLS as an in-app send. Throws on failure so
+    /// the caller can requeue the reply instead of dropping it.
     static func sendMessage(propertyId: UUID, groupId: UUID,
                             senderName: String, body: String) async throws {
         let svc = MessageService()

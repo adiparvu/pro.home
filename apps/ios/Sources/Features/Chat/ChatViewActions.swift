@@ -69,8 +69,8 @@ extension ChatView {
     /// Retries every queued message for this conversation, attachments
     /// included. Scope-guarded twice: the queued row must belong to this
     /// property AND group, and the service must already be scoped to the same
-    /// group (send stamps group_id from currentGroupId) — a flush racing
-    /// load() can otherwise re-send a group message into the main chat.
+    /// group (send resolves the conversation from currentGroupId) — a flush
+    /// racing load() can otherwise re-send a group message into the main chat.
     func flushOutbox() async {
         guard let pid = propertyId, messageService.currentGroupId == groupId else { return }
         await outbox.flush { pm in

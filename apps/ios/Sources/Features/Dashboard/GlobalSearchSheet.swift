@@ -244,11 +244,12 @@ struct GlobalSearchSheet: View {
             guard !Task.isCancelled else { return }
             let raw: [ChatSearchHit] = (try? await supabase
                 .from("messages")
-                .select("id, sender_name, body, created_at")
+                .select("id, sender_name, body, created_at, conversations!inner(kind)")
                 .eq("property_id", value: pid.uuidString)
-                // Unified-store guard (P4c): DM rows (conversation_id set)
-                // surface through the DM search path, never this one.
-                .is("conversation_id", value: nil)
+                // Unified-store guard (G4): every row carries a conversation
+                // now, so the split rides its kind — DM rows surface through
+                // the DM search path, never this one.
+                .eq("conversations.kind", value: "group")
                 .ilike("body", pattern: "%\(query)%")
                 .order("created_at", ascending: false)
                 .limit(8)

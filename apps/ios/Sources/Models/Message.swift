@@ -16,7 +16,9 @@ struct Message: Identifiable, Codable {
     var isMarked: Bool?
     var editedAt: String?
     var deletedForAll: Bool?
-    /// Communities: the chat group this message belongs to. nil = property-wide main group.
+    /// Communities: the chat group this message belongs to. nil = property-wide
+    /// main group. Decode-only since G4 — rows written by older builds carry
+    /// it; new writes put the scope on the conversation instead.
     var groupId: UUID?
     /// Disappearing messages: when set, the server sweep deletes this row after it.
     var expiresAt: String?
@@ -74,7 +76,9 @@ struct NewMessage: Encodable {
     let longitude: Double?
     let mentioned_ids: [String]
     var reply_to: UUID? = nil
-    var group_id: UUID? = nil
+    /// G4: the conversation IS the scope. Context-free writers (Siri intents)
+    /// may omit it — the server stamps it BEFORE INSERT.
+    var conversation_id: UUID? = nil
     var expires_at: String? = nil
 }
 

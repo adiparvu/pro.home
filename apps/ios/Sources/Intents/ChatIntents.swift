@@ -38,6 +38,9 @@ struct SendChatMessageIntent: AppIntent {
         }
         let sender = SharedDataStore.contextMyName() ?? String(localized: "Me")
 
+        // No conversation_id on purpose: the server stamps the main chat's
+        // conversation BEFORE INSERT (G3), so a context-free writer stays a
+        // single round-trip.
         let payload = NewMessage(
             property_id: propertyId,
             sender_id: senderId,

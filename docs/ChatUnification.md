@@ -415,3 +415,33 @@ standard shape; `direct_messages` is the historical outlier.
   moment the device updates. Rollback if needed: flag off AND null
   `conversation_id` on group-kind rows, in that order. Next: G4 retires
   `group_id`/legacy filters once the fleet proves G3.
+- **G4 ✓ (2026-08-02, owner-ordered) — the client retires group_id and every
+  legacy filter.** Server prep first (`chat_g4_group_notify_from_conversation`):
+  the group notifier derives the effective sub-group from the row's
+  conversation (`coalesce(new.group_id, c.chat_group_id)`) — routing,
+  deep-link and push metadata all ride the derived value, so old-shape and
+  new-shape writes behave identically. Client: the G2 flag machinery is
+  GONE (no chat_rollout read, no dual-read); `conversation(propertyId:groupId:)`
+  is a cached resolver over `group_open_conversation`; every group read —
+  page/older/newer AND all four receipt/reaction/poll loads (the receipt
+  join moved from `messages!inner(group_id)` to
+  `messages!inner(conversation_id)`) — is conversation-scoped; `send` writes
+  `conversation_id` and no `group_id`, and THROWS `ChatSendError` when the
+  resolver is unreachable so the outbox requeues instead of mistargeting;
+  `groupHasMatch` is RPC-only (the legacy scan matched nothing since G3);
+  the global search's dead `conversation_id IS NULL` guard became a
+  `conversations!inner(kind) = 'group'` filter; ChatGroupService previews
+  map conversations → groups (RLS keeps that membership-true). Siri intents
+  stay conversation-free on purpose — the G3 stamping trigger is the
+  designed catch-all for context-free writers. `Message.groupId` remains
+  decode-only for rows written by older builds. Verified as a real user in
+  a rolled-back transaction: a G4-shaped sub-group write (conversation_id
+  only) passes RLS, keeps its conversation, leaves group_id null, and
+  notifies ZERO non-members — the proof the notifier derives the group
+  (a failed derivation would have blasted the whole family as 'chat').
+  One test artifact worth remembering: a conversation created and written
+  in the SAME statement fails the STABLE policy check (snapshot) — the app
+  never does this (the RPC is its own request). Remaining, deliberately
+  server-side and LAST (G5, once the fleet is on the G4 build): drop
+  `messages.group_id`, prune the dead legacy policy branches, and retire
+  the stamping trigger's group_id resolution path.
