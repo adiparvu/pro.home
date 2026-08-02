@@ -445,3 +445,28 @@ standard shape; `direct_messages` is the historical outlier.
   server-side and LAST (G5, once the fleet is on the G4 build): drop
   `messages.group_id`, prune the dead legacy policy branches, and retire
   the stamping trigger's group_id resolution path.
+- **G5 part 1 ✓ (2026-08-02) — every chat policy authorizes through the
+  conversation; and a LIVE G3 regression caught and fixed.** The pre-drop
+  dependency sweep found what the G3 verification hadn't covered: the side
+  tables' policies split on `dm_conversation_of(message_id) IS NULL` as
+  their "not a dm" test — and G3's backfill made that function non-null for
+  EVERY row, so group read/delivery receipts went invisible and group
+  reaction INSERTs were rejected (is_conversation_member is false for
+  group-kind conversations) from the flip until this fix, ~2h of silent
+  breakage. Migration `chat_g5_conversation_scoped_policies`: the three
+  side-table SELECTs + reactions INSERT now use ONE uniform predicate —
+  `is_conversation_reader(dm_conversation_of(message_id), auth.uid())` —
+  and the messages select/insert/update policies lost their dead legacy
+  branches (every row stamped since G3; the stamp runs BEFORE the WITH
+  CHECK). Zero live policy references to messages.group_id remain. Policy
+  roles preserved exactly (messages_* TO public — realtime's RLS
+  evaluation rides them; side tables TO authenticated). Verified as a real
+  user in a rolled-back transaction: group reaction insert lands and is
+  visible, 494/494 receipts visible again, 486 messages intact, dm
+  untouched. Lesson, recorded: a flip's verification must sweep the SIDE
+  TABLES' policies too — any predicate keyed on "conversation_id IS NULL"
+  anywhere dies with a backfill, not just the ones on the flipped table.
+  G5 FINAL (prepared, `docs/pending-migrations/chat_g5_final_drop_group_id.sql`):
+  stamping trigger → main-only, notifier → conversation-only, drop index +
+  column. HARD gate: fleet on the G4 build — applying earlier breaks 1202's
+  community sends, receipt joins and previews, i.e. today's newest build.
