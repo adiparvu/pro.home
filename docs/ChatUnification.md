@@ -384,3 +384,34 @@ standard shape; `direct_messages` is the historical outlier.
   server-side stamping of new inserts + the two group-notification
   triggers rebuilt kind-aware + the flip — apply ONLY with the whole
   fleet on a G2 build.
+- **G3 ✓ APPLIED (2026-08-02, owner-ordered)** — groups READ through
+  conversations (migration `chat_g3_group_unified_flip`, regenerated from
+  the live definitions per P6's standing lesson — the live reality had a
+  THIRD group trigger the plan file didn't name, `trg_notify_chat_message`,
+  the cross-app bot notifier, also keyed on `conversation_id IS NULL`).
+  Order inside one transaction: conversations for every scope that spoke
+  (live data: just `main:<property>`, 120 rows, zero community-group
+  history) → BEFORE-INSERT stamping trigger (`messages_stamp_conversation`,
+  definer, no auth gate — the INSERT policy authorizes AFTER stamping via
+  the `is_conversation_reader` branch, identical predicates) → backfill
+  (trigger-first, so nothing slips between) → BOTH group notifiers rebuilt
+  to fire on every insert and skip dm-kind rows inside (their old WHEN
+  clause would never fire again) → `group_search_has_match` (invoker,
+  LIKE-escaped server-side) → the flip, last. Two lessons the verification
+  taught: (1) group conversations were INVISIBLE to invoker paths — the
+  only conversations SELECT policy authorized via dm member rows, which
+  groups don't have; `conversations_select_reader` (the same
+  `is_conversation_reader` the messages policies trust) fixed the search
+  RPC's empty result. (2) EXECUTE revoked from API roles on the three
+  touched trigger functions (advisor hygiene; trigger firing never checks
+  the DML user's EXECUTE). Verified as real users in rolled-back
+  transactions: 120/120 readable conversation-scoped, search hit+miss
+  correct, a legacy-shaped insert comes back stamped, group message →
+  notifications to the two other members only, dm message → exactly one
+  dm-kind notification, no group duplicates. Devices ≤1201 lose group
+  chat READS until they update to 1202 (they filter on `conversation_id
+  IS NULL`, now never true) — same accepted-consequence pattern as the P6
+  drop; writes still land (stamped server-side) and are readable the
+  moment the device updates. Rollback if needed: flag off AND null
+  `conversation_id` on group-kind rows, in that order. Next: G4 retires
+  `group_id`/legacy filters once the fleet proves G3.
