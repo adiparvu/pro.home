@@ -1324,6 +1324,18 @@ enum SharedDataStore {
             .compactMap { UUID(uuidString: $0) }
     }
 
+    // MARK: Chat mutation journal (failed pin/mark/reaction/edit/delete)
+
+    /// Encoded `ChatMutationJournal` entries — recorded by the catch blocks
+    /// that used to lose the intent, replayed on the next foreground beat.
+    static func appendPendingChatMutation(_ json: String) {
+        coordinatedAppendUnique("chatMutations", legacyKey: nil, json)
+    }
+
+    static func popPendingChatMutations() -> [String] {
+        coordinatedPop("chatMutations", legacyKey: nil)
+    }
+
     // MARK: - Pending expenses (Apple Pay → Shortcuts "Transaction" automation)
 
     /// One queued expense from `LogExpenseIntent`. The embedded `id` keeps two

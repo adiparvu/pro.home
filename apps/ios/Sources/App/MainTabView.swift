@@ -61,9 +61,6 @@ struct MainTabView: View {
     /// participant of a shared PRVIO calendar with "Deleted by …").
     @State private var worldLoaded = false
 
-    /// Guards the two `drainPendingExpenses` call sites (foreground beat and
-    /// end of world load) from posting the same card payment twice.
-    @State private var expenseDrainInFlight = false
 
     var body: some View {
         @Bindable var router = router
@@ -557,9 +554,10 @@ struct MainTabView: View {
         }
         notificationScheduler.registerCategories()
         worldLoaded = true
-        // The property and the merchant rules exist now — the moment a cold
-        // launch can finally post the card taps queued while the app was gone.
-        drainPendingExpenses()
+        // The property and the loaded services exist now — the moment a cold
+        // launch can finally land the actions queued while the app was gone
+        // (the foreground beat ran before the world and rightly refused).
+        processPendingIntentActions()
         await notificationScheduler.reschedule(agenda: houseAgendaSnapshot())
         // Mirror from FULL data, exactly once per world load — the foreground
         // tick above is gated on worldLoaded, so this is the first sync.
@@ -748,236 +746,29 @@ struct MainTabView: View {
         )
     }
 
+    /// The queue orchestration itself lives in PendingActionDrain — the
+    /// view only hands over its services. Called on every foreground beat
+    /// AND at the end of reloadWorld: the drain refuses to touch
+    /// property-scoped queues before the world exists, so the second call is
+    /// the one that actually lands cold-launch actions.
     private func processPendingIntentActions() {
-        // Smart-home commands the watch queued (toggle relay / open garage) —
-        // executed against the real device by IoTService.perform.
-        IoTService.shared.drainPendingWatchCommands()
-        // "Start emergency mode" pinned from the wrist — raise the real
-        // Emergency Live Activity now that the app is foreground.
-        if SharedDataStore.consumePendingEmergencyStart() {
-            LiveActivityService.shared.startEmergency()
-        }
-        let waterIds = SharedDataStore.popPendingWaterings()
-        for id in waterIds {
-            if let plant = plantService.plants.first(where: { $0.id == id }) {
-                Task { await plantService.markWatered(plant) }
-            }
-        }
-        let completeIds = SharedDataStore.popPendingCompletions()
-        for id in completeIds {
-            if let task = taskService.tasks.first(where: { $0.id == id }), !task.isCompleted {
-                Task { await taskService.toggleComplete(task) }
-            }
-        }
-        // Card expenses queued by LogExpenseIntent (the Shortcuts
-        // "Transaction" automation). Runs here AND at the end of the world
-        // load — see drainPendingExpenses for why one call site is not enough.
-        drainPendingExpenses()
-        let chatReplies = SharedDataStore.popPendingChatReplies()
-        for reply in chatReplies {
-            if let propId = propertyService.primary?.id {
-                let name = profileService.profile?.preferredName
-                    ?? profileService.profile?.fullName ?? ""
-                Task {
-                    do {
-                        // The reply goes to the conversation the push came
-                        // from: "dm:<peer>" → that direct thread;
-                        // "grp:<group>" → that community sub-group; anything
-                        // else → the household chat.
-                        if reply.target.hasPrefix("dm:"),
-                           let peerId = UUID(uuidString: String(reply.target.dropFirst(3))) {
-                            _ = try await directMessageService.send(
-                                propertyId: propId, senderName: name,
-                                to: DMThread(peer: ChatPeer(userId: peerId)),
-                                body: reply.text)
-                        } else if reply.target.hasPrefix("grp:"),
-                                  let groupId = UUID(uuidString: String(reply.target.dropFirst(4))) {
-                            try await ChatGroupService.sendMessage(
-                                propertyId: propId, groupId: groupId,
-                                senderName: name, body: reply.text)
-                        } else {
-                            try await messageService.send(propertyId: propId,
-                                                          senderName: name, body: reply.text)
-                        }
-                    } catch {
-                        // Never lose a notification quick-reply to a silent drop:
-                        // requeue it so the next foreground beat retries, instead
-                        // of the `try?` swallow the send pipeline removed elsewhere.
-                        SharedDataStore.appendPendingChatReply(reply.text, target: reply.target)
-                    }
-                }
-            }
-        }
-        let watchTaskTitles = SharedDataStore.popPendingWatchTasks()
-        for title in watchTaskTitles {
-            if let propId = propertyService.primary?.id {
-                Task {
-                    try? await taskService.addTask(NewTaskPayload(
-                        propertyId: propId, title: title, description: nil,
-                        dueDate: nil, priority: "medium", category: "maintenance",
-                        assigneeIds: [], assigneeNames: []))
-                }
-            }
-        }
-        let supplyIds = SharedDataStore.popPendingSupplyChecks()
-        for id in supplyIds {
-            if let item = supplyService.items.first(where: { $0.id == id }), !item.isCompleted {
-                Task { await supplyService.toggleComplete(item) }
-            }
-        }
-        // Loans marked returned from the reminder notification (IMG_8612).
-        let loanReturnIds = SharedDataStore.popPendingLoanReturns()
-        for id in loanReturnIds {
-            if let item = inventoryService.items.first(where: { $0.id == id }), item.isLoaned {
-                Task { await inventoryService.markReturned(item) }
-            }
-        }
-        // Deliveries marked received from the Live Activity island.
-        let deliveredIds = SharedDataStore.popPendingDeliveryReceived()
-        for id in deliveredIds {
-            if let delivery = deliveryService.deliveries.first(where: { $0.id == id }),
-               delivery.status != "delivered" {
-                Task { await deliveryService.markDelivered(delivery) }
-            }
-        }
-        // Wrist pantry consumption: every queued tap is one unit off the
-        // stock. Taps on the same item collapse into ONE adjustment — two
-        // separate adjust(-1) calls would both start from the same stale
-        // quantity and lose a unit.
-        let pantryConsumeIds = SharedDataStore.popPendingPantryConsumes()
-        let consumeCounts = Dictionary(pantryConsumeIds.map { ($0, 1) }, uniquingKeysWith: +)
-        for (id, count) in consumeCounts {
-            if let item = pantryService.items.first(where: { $0.id == id }) {
-                Task { await pantryService.adjust(item, by: -Double(count)) }
-            }
-        }
-        // Pantry items the wrist asked to re-buy — one real SupplyService
-        // insert each, into the first shopping list (created if the household
-        // has none yet). Sequential on purpose: parallel inserts with no list
-        // would each create their own. An item already pending on a list is
-        // skipped, so a repeated wrist tap never duplicates a row.
-        let pantryToListIds = SharedDataStore.popPendingPantryToList()
-        if !pantryToListIds.isEmpty, let propId = propertyService.primary?.id {
-            let ownerId = auth.session?.user.id
-            Task {
-                for id in pantryToListIds {
-                    guard let name = pantryService.items.first(where: { $0.id == id })?.name
-                    else { continue }
-                    guard !supplyService.items.contains(where: {
-                        !$0.isCompleted && $0.name.caseInsensitiveCompare(name) == .orderedSame
-                    }) else { continue }
-                    let now = ISO8601DateFormatter().string(from: Date())
-                    do {
-                        let listId: UUID
-                        if let list = supplyService.lists.first {
-                            listId = list.id
-                        } else if let ownerId {
-                            listId = try await supplyService.addList(NewSupplyListPayload(
-                                propertyId: propId, ownerId: ownerId,
-                                name: String(localized: "Shopping list"),
-                                icon: "cart.fill", color: "#3B82F6", note: nil,
-                                createdAt: now, updatedAt: now)).id
-                        } else { continue }
-                        _ = try await supplyService.addItem(NewSupplyItemPayload(
-                            listId: listId, propertyId: propId, name: name,
-                            quantity: nil, category: "food", priority: "medium",
-                            notes: nil, isCompleted: false, location: nil,
-                            createdAt: now, updatedAt: now))
-                    } catch {
-                        // Never lose a wrist request to a network blip —
-                        // requeue for the next foreground beat (same policy
-                        // as the chat-reply drain above).
-                        SharedDataStore.appendPendingPantryToList(id)
-                    }
-                }
-                // The wrist's shopping page repaints from the fresh catalog.
-                writeWidgetSnapshot()
-            }
-        }
-        // The watch's work session, mirrored into the Dynamic Island. This
-        // runs on the foreground beat — exactly when the system allows a
-        // Live Activity to start; the original start date keeps the elapsed
-        // time truthful however late the mirror appears.
-        if let event = SharedDataStore.consumePendingSessionEvent() {
-            if let start = event.start {
-                // Adopt the wrist-started session into the one authority so the
-                // phone's banner/row timer light up with the true elapsed time;
-                // start() also raises the Dynamic Island mirror.
-                WorkSessionStore.shared.start(
-                    taskId: start.taskId, title: start.title, startedAt: start.startedAt)
-            } else if event.isEnd {
-                // Finish from the wrist banks the time and completes the task.
-                if let done = WorkSessionStore.shared.finish(),
-                   let task = taskService.tasks.first(where: { $0.id == done.taskId }),
-                   !task.isCompleted {
-                    Task { await taskService.toggleComplete(task) }
-                }
-            }
-        }
-        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty
-            || !watchTaskTitles.isEmpty || !chatReplies.isEmpty || !pantryConsumeIds.isEmpty
-            || !deliveredIds.isEmpty {
-            writeWidgetSnapshot()
-        }
-    }
-
-    /// Turns the card taps queued by `LogExpenseIntent` (the Shortcuts
-    /// "Transaction" automation) into real ledger rows.
-    ///
-    /// PEEK, then confirm: an expense leaves the shared queue only after its
-    /// INSERT succeeded. The previous drain popped the queue unconditionally
-    /// and then required a property — but a cold launch reaches `.active`
-    /// before `PropertyService` has resolved one, so the payments were read
-    /// out of the queue and dropped on the floor, every time. That is why
-    /// card payments never showed up in the app unless the automation
-    /// happened to fire while the app was already open. An offline insert had
-    /// the same fate through `try?`; now it simply stays queued.
-    ///
-    /// Two call sites for the same reason: the foreground beat catches a warm
-    /// launch, and the end of the world load catches the cold one, the moment
-    /// the property (and the merchant rules that categorize the row) exist.
-    /// `expenseDrainInFlight` keeps those two from double-posting a payment.
-    private func drainPendingExpenses() {
-        let pending = SharedDataStore.peekPendingExpenses()
-        guard !pending.isEmpty, !expenseDrainInFlight,
-              let propId = PropertyService.activePropertyId else { return }
-        expenseDrainInFlight = true
-        Task {
-            defer { expenseDrainInFlight = false }
-            // Category chain: the household's learned rule -> the static
-            // chain table -> Yuna (one call per unknown merchant, cached
-            // as a shared AI rule) -> honest "other".
-            let aiVerdicts = await merchantRuleService.classifyUnknown(pending.map(\.merchant))
-            var landed: Set<UUID> = []
-            for e in pending {
-                let detail = [e.card.map { String(format: String(localized: "expense_via_card_fmt"), $0) },
-                              e.note]
-                    .compactMap { $0 }.joined(separator: " · ")
-                do {
-                    // The queue entry's own id rides along: a retry after an
-                    // ambiguous failure updates nothing instead of charging
-                    // the household twice.
-                    try await financialService.addQueued(FinancialService.NewFinancialRecord(
-                        id: e.id.uuidString,
-                        propertyId: propId.uuidString,
-                        title: e.merchant,
-                        amount: e.amount,
-                        currency: appSettings.preferredCurrency,
-                        type: "expense",
-                        category: merchantRuleService.category(for: e.merchant)
-                            ?? MerchantCategorizer.staticCategory(for: e.merchant)
-                            ?? aiVerdicts[e.merchant]
-                            ?? "other",
-                        date: e.date,
-                        description: detail.isEmpty ? nil : detail,
-                        tags: ["apple_pay", "auto"]))
-                    landed.insert(e.id)
-                } catch {
-                    // Stays queued — the next foreground beat retries it.
-                }
-            }
-            SharedDataStore.removePendingExpenses(ids: landed)
-        }
+        PendingActionDrain.run(PendingActionDrain.Context(
+            worldLoaded: worldLoaded,
+            propertyService: propertyService,
+            profileService: profileService,
+            auth: auth,
+            appSettings: appSettings,
+            taskService: taskService,
+            plantService: plantService,
+            supplyService: supplyService,
+            pantryService: pantryService,
+            inventoryService: inventoryService,
+            deliveryService: deliveryService,
+            directMessageService: directMessageService,
+            messageService: messageService,
+            financialService: financialService,
+            merchantRuleService: merchantRuleService,
+            writeSnapshot: { writeWidgetSnapshot() }))
     }
 
     private func updateDynamicShortcuts() {

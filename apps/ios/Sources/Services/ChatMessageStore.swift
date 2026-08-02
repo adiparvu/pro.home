@@ -12,7 +12,8 @@ enum ChatMessageStore {
     /// Hard-deletes a message row. Returns false on failure (logged in
     /// DEBUG); the engine patches its local array only on success — exactly
     /// the do/catch shape both engines had.
-    static func deleteRow(table: String, id: UUID, tag: String) async -> Bool {
+    static func deleteRow(table: String, id: UUID, tag: String,
+                          journal: Bool = true) async -> Bool {
         do {
             try await supabase
                 .from(table)
@@ -24,12 +25,17 @@ enum ChatMessageStore {
 #if DEBUG
             debugLog("[\(tag)] delete error: \(error)")
 #endif
+            // P0b: a failed delete is an intent, not a log line — journal it
+            // for the next foreground beat (replay passes journal: false so
+            // a failing replay can't re-record itself).
+            if journal { ChatMutationJournal.recordHardDelete(table: table, messageId: id) }
             return false
         }
     }
 
     /// Tombstones a row for everyone — keeps it but flips deleted_for_all.
-    static func tombstoneRow(table: String, id: UUID, tag: String) async -> Bool {
+    static func tombstoneRow(table: String, id: UUID, tag: String,
+                             journal: Bool = true) async -> Bool {
         struct D: Encodable { let deleted_for_all: Bool }
         do {
             try await supabase
@@ -42,6 +48,7 @@ enum ChatMessageStore {
 #if DEBUG
             debugLog("[\(tag)] deleteForEveryone error: \(error)")
 #endif
+            if journal { ChatMutationJournal.recordTombstone(table: table, messageId: id) }
             return false
         }
     }
@@ -51,7 +58,8 @@ enum ChatMessageStore {
     /// The timestamp is the CALLER's, so each engine keeps its own formatter
     /// and patches its local row with exactly the value it persisted.
     static func editRow(table: String, id: UUID, newBody: String,
-                        editedAtISO: String, tag: String) async -> Bool {
+                        editedAtISO: String, tag: String,
+                        journal: Bool = true) async -> Bool {
         struct E: Encodable { let body: String; let edited_at: String }
         do {
             try await supabase
@@ -64,6 +72,10 @@ enum ChatMessageStore {
 #if DEBUG
             debugLog("[\(tag)] editMessage error: \(error)")
 #endif
+            if journal {
+                ChatMutationJournal.recordEdit(table: table, messageId: id,
+                                              body: newBody, editedAtISO: editedAtISO)
+            }
             return false
         }
     }

@@ -1296,6 +1296,9 @@ final class DirectMessageService {
 #if DEBUG
             debugLog("[DM] \(rpc) error: \(error)")
 #endif
+            // P0b: the intent survives the failure — journaled with its
+            // ABSOLUTE value and replayed on the next foreground beat.
+            ChatMutationJournal.recordFlag(rpc: rpc, messageId: msg.id, value: newVal)
         }
     }
 
@@ -1325,6 +1328,12 @@ final class DirectMessageService {
 #if DEBUG
             debugLog("[DM] toggleReaction error: \(error)")
 #endif
+            // P0b: journal the FINAL intent (react with `emoji` / un-react),
+            // replayed idempotently on the next foreground beat.
+            ChatMutationJournal.recordReaction(
+                messageId: msg.id, propertyId: pid, userId: uid,
+                reactorName: myName.trimmingCharacters(in: .whitespacesAndNewlines),
+                emoji: emoji, insertNew: current != emoji)
         }
     }
 
