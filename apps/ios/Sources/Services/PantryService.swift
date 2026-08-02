@@ -85,6 +85,66 @@ final class PantryService {
         } catch { self.error = error.recordableDescription }
     }
 
+    // MARK: Inferred consumption (display-layer only)
+
+    /// Purchase events per lowercased normalized product name, read off the
+    /// loaded receipts. Never persisted and never written back — the
+    /// server's stored quantities stay authoritative; this only informs
+    /// what pantry rows DISPLAY.
+    private var purchaseHistory: [String: [PantryConsumptionModel.PurchaseEvent]] = [:]
+
+    /// Rebuilds the purchase-event index from the loaded receipt history.
+    /// Receipt items persist under their lexicon-normalized name — the same
+    /// string the merge engine keys on when a scan stocks the pantry — so a
+    /// lowercased-name join reproduces `PantryMerge`'s matching exactly.
+    /// O(receipts + items); call when the receipt history (re)loads, not
+    /// per row.
+    func indexConsumption(receipts: [Receipt], receiptItems: [ReceiptItem]) {
+        var dates: [UUID: Date] = [:]
+        dates.reserveCapacity(receipts.count)
+        for receipt in receipts {
+            dates[receipt.id] = AppDate.day(from: receipt.date)
+        }
+        var history: [String: [PantryConsumptionModel.PurchaseEvent]] = [:]
+        for item in receiptItems {
+            guard item.quantity > 0, let date = dates[item.receiptId] else { continue }
+            let key = item.name.lowercased()
+            guard !key.isEmpty else { continue }
+            history[key, default: []].append(.init(date: date, quantity: item.quantity))
+        }
+        purchaseHistory = history
+    }
+
+    /// The full inference for one row — compute once per row render. The
+    /// item's `updatedAt` outranks the last purchase as the depletion
+    /// anchor: a manual −/+ or sheet edit restarts the clock, because the
+    /// household's own numbers beat the model.
+    func consumption(for item: PantryItem,
+                     asOf now: Date = Date()) -> PantryConsumptionModel.Estimate {
+        let events = (purchaseHistory[item.normalizedName.lowercased()] ?? [])
+            .map { PantryConsumptionModel.PurchaseEvent(
+                date: $0.date,
+                quantity: PantryConsumptionModel.baseQuantity($0.quantity,
+                                                              pantryUnit: item.unit)) }
+        return PantryConsumptionModel.estimate(
+            storedQuantity: item.quantity,
+            purchases: events,
+            asOf: now,
+            restockedAt: ISODate.date(from: item.updatedAt))
+    }
+
+    /// Stored quantity minus inferred consumption since the last restock —
+    /// what the pantry row shows, never what the server stores.
+    func effectiveQuantity(for item: PantryItem) -> Double {
+        consumption(for: item).effectiveQuantity
+    }
+
+    /// Whole days until the effective quantity hits zero; nil when the
+    /// purchase history is too thin to infer a pace.
+    func daysUntilEmpty(for item: PantryItem) -> Int? {
+        consumption(for: item).daysUntilEmpty
+    }
+
     // MARK: Receipt intake
 
     /// Lands a scanned batch in the pantry: merged by normalized name,

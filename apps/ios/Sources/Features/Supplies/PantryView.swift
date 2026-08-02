@@ -71,7 +71,20 @@ struct PantryView: View {
             if let id = propertyService.primary?.id {
                 await pantryService.load(propertyId: id)
             }
+            reindexConsumption()
         }
+        // The receipt history loads elsewhere (and can land after this
+        // page appears); a count change is the cheap signal to re-derive.
+        .onChange(of: receiptService.receiptItems.count) {
+            reindexConsumption()
+        }
+    }
+
+    /// Re-derives the consumption index from the receipts already in
+    /// memory — a pure client-side pass, no fetch.
+    private func reindexConsumption() {
+        pantryService.indexConsumption(receipts: receiptService.receipts,
+                                       receiptItems: receiptService.receiptItems)
     }
 
     @ViewBuilder
@@ -136,7 +149,13 @@ struct PantryView: View {
     }
 
     private func row(_ item: PantryItem) -> some View {
-        HStack(spacing: 12) {
+        // Display-layer inference only: the badge shows the model's best
+        // estimate of what's really on the shelf, while the stored number —
+        // the one −/+ and the sheet edit — stays authoritative on the server.
+        let estimate = pantryService.consumption(for: item)
+        let shownQuantity = quantityText(for: item, estimate: estimate)
+        let runsOut = runsOutText(estimate)
+        return HStack(spacing: 12) {
             Group {
                 if let emoji = item.emoji, !emoji.isEmpty {
                     Text(emoji).font(AppFont.scaled(18))
@@ -157,7 +176,12 @@ struct PantryView: View {
                     .lineLimit(1)
                 // The module's one quantity treatment; the accent only
                 // marks the pantry's real low-stock state.
-                QuantityBadge(text: item.quantityDisplay, isLow: item.isLow)
+                QuantityBadge(text: shownQuantity, isLow: item.isLow)
+                if let runsOut {
+                    Text(verbatim: runsOut)
+                        .font(AppFont.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer(minLength: 8)
@@ -187,7 +211,27 @@ struct PantryView: View {
             } label: { Label("Delete", systemImage: "trash") }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(verbatim: "\(item.name), \(item.quantityDisplay)"))
+        .accessibilityLabel(Text(verbatim: ["\(item.name), \(shownQuantity)", runsOut]
+            .compactMap { $0 }.joined(separator: ", ")))
+    }
+
+    /// The badge's number: the inferred effective stock when the model has
+    /// a pace, the stored quantity otherwise — formatted identically either
+    /// way through the item's own display logic.
+    private func quantityText(for item: PantryItem,
+                              estimate: PantryConsumptionModel.Estimate) -> String {
+        guard estimate.dailyPace != nil else { return item.quantityDisplay }
+        var proxy = item
+        proxy.quantity = estimate.effectiveQuantity
+        return proxy.quantityDisplay
+    }
+
+    /// "se termină în ~N zile" — only when the model knows a pace and the
+    /// end is near enough (≤ 14 days but not already at zero) to be worth
+    /// a line.
+    private func runsOutText(_ estimate: PantryConsumptionModel.Estimate) -> String? {
+        guard let days = estimate.daysUntilEmpty, days > 0, days <= 14 else { return nil }
+        return String(format: String(localized: "pantry_runs_out_fmt"), days)
     }
 
     private func stepButton(icon: String, enabled: Bool, action: @escaping () -> Void) -> some View {

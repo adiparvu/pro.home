@@ -1,6 +1,7 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "pantry_runs_out_fmt" : {"localizations" : {"en" : {"variations" : {"plural" : {"one" : {"stringUnit" : {"state" : "translated", "value" : "runs out in ~%d day"}}, "other" : {"stringUnit" : {"state" : "translated", "value" : "runs out in ~%d days"}}}}}, "ro" : {"variations" : {"plural" : {"one" : {"stringUnit" : {"state" : "translated", "value" : "se termină în ~%d zi"}}, "few" : {"stringUnit" : {"state" : "translated", "value" : "se termină în ~%d zile"}}, "other" : {"stringUnit" : {"state" : "translated", "value" : "se termină în ~%d de zile"}}}}}}},
     "fin_detail_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Transaction"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Tranzacție"}}}},
     "fin_detail_category" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Category"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Categorie"}}}},
     "fin_detail_notes" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Notes"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Notițe"}}}},
