@@ -366,3 +366,21 @@ standard shape; `direct_messages` is the historical outlier.
   clean, exactly one notification to the peer only, zero mirror triggers
   left. Devices ≤1199: DM realtime/pin/mark broken until they update —
   consequence accepted by the owner at order time.
+- **G2 ✓ (server applied + client shipped, flag OFF)** — groups get the P4
+  playbook. Server (`chat_g2_group_conversations_server`): conversations
+  carry groups (dm_key nullable + shape check, chat_group_id,
+  `group_open_conversation` definer RPC, membership-gated, idempotent on
+  group_key); `is_conversation_reader` authorizes by KIND — dm → explicit
+  member rows, group → the same DYNAMIC predicates the legacy filters use
+  (group rosters churn; mirroring them into conversation_members would be
+  a sync liability); all three messages policies use it (byte-equivalent
+  for dm); `notify_on_dm_message` became kind-aware NOW, not at G3 — the
+  b1197 leak's lesson applied proactively. Client: one scoped query for
+  all four group reads (conversation when `chat_rollout.group_unified_read`
+  is up, the legacy triple otherwise), flag read once per property,
+  fail-closed; WRITES stay legacy. `groupHasMatch` already calls the G3
+  search RPC with a legacy fallback. G3 (prepared,
+  `docs/pending-migrations/chat_g3_group_unified_flip.sql`): backfill +
+  server-side stamping of new inserts + the two group-notification
+  triggers rebuilt kind-aware + the flip — apply ONLY with the whole
+  fleet on a G2 build.
