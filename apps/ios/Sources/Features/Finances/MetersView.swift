@@ -190,14 +190,13 @@ struct MeterCard: View {
 
     private func header(latest: (reading: MeterReading, delta: Double?)?) -> some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(kind.tint.opacity(AppOpacity.tintedFill))
-                Image(systemName: kind.icon)
-                    .font(AppFont.scaled(17, weight: .semibold))
-                    .foregroundStyle(kind.tint)
-            }
-            .frame(width: 40, height: 40)
+            // Liquid Glass tile, only the glyph carries the meter's color
+            // (IMG_9274 — the tinted plates read as stickers on the card).
+            Image(systemName: kind.icon)
+                .font(AppFont.scaled(17, weight: .semibold))
+                .foregroundStyle(kind.tint)
+                .frame(width: 40, height: 40)
+                .glassRoundedRect(AppRadius.md)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(kind.label)

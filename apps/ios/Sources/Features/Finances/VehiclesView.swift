@@ -269,6 +269,21 @@ struct VehicleFormSheet: View {
 
     private static let fuels = ["petrol", "diesel", "hybrid", "electric", "lpg", "other"]
 
+    /// Literal keys ONLY (IMG_9273): a runtime-composed
+    /// `String.LocalizationValue("fuel_\(f)")` interpolates into the KEY
+    /// itself — the lookup becomes "fuel_%@", misses the catalog and renders
+    /// the raw key on device. The compiler-checked switch cannot miss.
+    private static func fuelLabel(_ f: String) -> String {
+        switch f {
+        case "petrol":   String(localized: "fuel_petrol")
+        case "diesel":   String(localized: "fuel_diesel")
+        case "hybrid":   String(localized: "fuel_hybrid")
+        case "electric": String(localized: "fuel_electric")
+        case "lpg":      String(localized: "fuel_lpg")
+        default:         String(localized: "fuel_other")
+        }
+    }
+
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
 
     var body: some View {
@@ -299,11 +314,7 @@ struct VehicleFormSheet: View {
                 FormRow(icon: "fuelpump.fill", tint: .accentColor) {
                     Picker("vehicle_fuel", selection: $fuel) {
                         ForEach(Self.fuels, id: \.self) { f in
-                            // Dynamic key: LocalizedStringKey built from an
-                            // interpolated string renders RAW on device
-                            // (IMG_9177) — the String.LocalizationValue path
-                            // is the proven lookup for runtime-composed keys.
-                            Text(String(localized: String.LocalizationValue("fuel_\(f)")))
+                            Text(Self.fuelLabel(f))
                                 .tag(f)
                         }
                     }
