@@ -94,18 +94,8 @@ final class ChatSideChannel {
     }
 
     /// Bounded wait for a live socket before starting the join clock —
-    /// with the b1198 lesson baked in: a cancelled sleep EXITS the wait
-    /// (`catch { return }`), it never busy-spins.
+    /// the shared, unit-tested law (see RealtimeSocketWait).
     private func awaitSocketConnected() async {
-        guard realtimeAnon.status != .connected else { return }
-        if realtimeAnon.status == .disconnected {
-            Task { await realtimeAnon.connect() }
-        }
-        let deadline = Date().addingTimeInterval(10)
-        while realtimeAnon.status != .connected, Date() < deadline,
-              !AppLifecycle.isBackgrounded {
-            do { try await Task.sleep(nanoseconds: 500_000_000) }
-            catch { return }
-        }
+        await RealtimeSocketWait.wait(on: LiveRealtimeSocket(), seconds: 10)
     }
 }
