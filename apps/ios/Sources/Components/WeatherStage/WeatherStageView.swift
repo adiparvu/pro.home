@@ -258,7 +258,19 @@ struct WeatherStageView: View {
     var body: some View {
         Group {
             if reduceMotion {
-                sky(time: 0, params: engine.current(at: .now), tilt: (0, 0))
+                // Reduce Motion (accessibility law): a designed STILL of the
+                // real sky. It renders the TARGET params, not the transition
+                // lerp — with no frame clock running, sampling
+                // `current(at: .now)` froze at eased t≈0 (the OLD sky) and
+                // re-froze there on every 5-minute recompute, so an RM user
+                // stayed one transition behind forever and could miss a
+                // weather change entirely. Cost removed: none at render time
+                // (same one still frame) — this is the stale-frame fix; a
+                // state change now lands as an immediate cut, which is
+                // exactly what Reduce Motion prescribes instead of the 3 s
+                // cross-anim. (time: 0 is safe — the storm flash gate
+                // hash12(0, 17.3) = 0.63 < 0.93, so no frozen bolt.)
+                sky(time: 0, params: engine.toParams, tilt: (0, 0))
             } else {
                 // paused in background: the sky must FREEZE the instant the
                 // app leaves the foreground — a live render loop in a
@@ -300,9 +312,17 @@ struct WeatherStageView: View {
     }
 
     private func syncMotion() {
-        if wantsMotion, !holdsMotion {
+        // Foreground-only acquisition: outside `.active` the TimelineView is
+        // paused, so no frame ever reads the tilt — yet rain arriving via a
+        // weather-cache notification while in the app switcher used to flip
+        // `wantsMotion` and start CoreMotion for nobody. Cost removed: a live
+        // 30 Hz motion tap (its own CoreMotion thread) while the scene is
+        // inactive — the same background-motion class as the b1173
+        // 0x8BADF00D. Return to `.active` re-syncs via the phase onChange,
+        // so the active-state behavior is unchanged.
+        if wantsMotion, scenePhase == .active, !holdsMotion {
             MotionTiltEngine.shared.acquire(); holdsMotion = true
-        } else if !wantsMotion, holdsMotion {
+        } else if holdsMotion, !wantsMotion || scenePhase != .active {
             MotionTiltEngine.shared.release(); holdsMotion = false
         }
     }

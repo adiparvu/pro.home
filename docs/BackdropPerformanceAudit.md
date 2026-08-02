@@ -262,3 +262,181 @@ Post-edit structural check over the whole file (comments/strings stripped):
 toolchain exists in this environment, so the compile gate runs with the next
 device/CI build; both edits are local, additive, and type-simple (one
 let-binding split, one static-let extraction of an existing loop).
+
+---
+
+# WeatherStage (the live layer) — `Sources/Components/WeatherStage/`
+
+Date: 2026-08-02 (same day, follow-up to §0.2)
+Scope: `WeatherStageView.swift` (333 → 356 lines), `WeatherState.swift` (316),
+`MotionTilt.swift` (71), `SkyShaders.metal` (637)
+Mount path read (not modified): `AppBackdrop.swift`, `AppBackgroundStyle.swift`
+
+## 7. Status — the living implementation, currently unmounted
+
+This directory IS the implementation of the effect set the briefs describe —
+gyroscope lens droplets, wind shear, branching lightning, blizzard,
+volumetric-feel fog, the partial after-rain rainbow, sandstorm, fireflies,
+cloud shadows. Architecturally it is **one full-screen Metal fragment pass**
+(`weatherSky`, a SwiftUI `colorEffect`): there are no per-effect views, no
+CPU particles, no textures — every effect is hash-derived per pixel and
+branch-gated on its own intensity uniform.
+
+Mount status verified end to end: the only construction site is
+`AppBackgroundView` (`AppBackgroundStyle.swift:241`), reachable only in
+`.liveSky` mode; `BackgroundStyle.init` migrates a stored `liveSky` to
+`.gradient` (user-decreed, IMG_8767) and no UI sets `.liveSky` back
+(`BackgroundSettingsView` renders `.liveSky` with the gradient section). Both
+singletons (`WeatherStageEngine`, `MotionTiltEngine`) are lazy and are touched
+only by those unreachable `.liveSky` branches, so **today the whole directory
+costs zero at runtime** — no timer, no observer, no shader pass. Everything
+below is the audit it "deserves before it is ever re-enabled" (§4.6), plus two
+safe fixes so re-enabling inherits no landmines.
+
+## 8. Inventory — drivers, cadences, allocations, compositor
+
+| Driver | Where | Cadence | Work per tick | Gating |
+|---|---|---|---|---|
+| `TimelineView(.animation)` | `WeatherStageView.swift:280` (was :268 pre-edit) | **Display rate — 120 Hz on ProMotion**; 10 Hz under Low Power (`minimumInterval: 0.1`) | 1 full-screen fragment pass + 16-arg `Shader` packing | `paused: scenePhase != .active` (the b1179 freeze-in-background fix); whole branch absent under Reduce Motion |
+| `weatherSky` fragment pass | `SkyShaders.metal:204` | per frame · per pixel | ALU only — zero texture samples, zero buffers | every effect behind its own intensity uniform (coherent branches) |
+| Engine refresh `Timer` | `stageAppeared()` | 300 s, tolerance 30 s, ref-counted per mounted stage | one `recompute` (pure param math) | invalidated when the last stage unmounts; NOT scenePhase-gated (see §10.3) |
+| Weather-cache observer | engine `init` | event-driven | one `recompute` | lives for process lifetime (singleton) |
+| Rainbow fade `Task` | `scheduleRainbowFadeTicks()` | two one-shot sleeps (~210 s, ~212 s) | one `recompute` each | armed only when rain ends under a risen sun |
+| `MotionTiltEngine` (CoreMotion) | `MotionTilt.swift` | 30 Hz on the main queue | ~10 flops of low-pass math | acquired only while rain > 0.03 **and now only while `.active`** (§9.2); refuses to start in Low Power; deliberately not `@Observable` — zero invalidation churn |
+| Widget sky publish | `publishSkySnapshot()` | on material color change or >15 min staleness | App Group write + `reloadAllTimelines()` | throttled by design |
+
+**Particle counts / per-tick allocations:** none on the CPU. Rain sheets (4),
+snow layers (3), blizzard streaks, droplets (2 layers), fireflies (2 layers),
+stars, motes are all per-pixel hash fields — no arrays, no `Path`, no
+`Gradient`, nothing rebuilt per frame. The only per-frame Swift allocation is
+the `Shader` argument packing inherent to the `colorEffect` API.
+
+**Compositor:** one opaque full-screen layer (`Rectangle().fill(.black)` +
+`colorEffect`). No blur, no shadows, no opacity stacks, no offscreen pass, no
+`drawingGroup`. Overdraw contribution: exactly one backdrop layer.
+
+**Shader cost classes (audit only — the .metal file was not touched):** the
+dominant always-on cost is the cloud block — it runs whenever
+`cloudiness > 0.02`, and the CLEAR-sky default is 0.18, so even a clear day
+pays ~6 fBM evaluations (~120 hashes) per pixel; night adds stars/Milky
+Way/moon (cheap); rain adds the 4-sheet field + lens droplets; every other
+effect idles at one uniform compare. This is look-bound and belongs to the
+device measurements (§11), not to source edits.
+
+**Reduce Motion:** respected by construction — the RM branch mounts no
+TimelineView and no gyro, and renders one still frame. Verified that
+`time: 0` cannot freeze a lightning strike into the still: the storm flash
+gate `hash12(float2(0, 17.3))` evaluates to 0.6302 in float32 (< the 0.93
+threshold), so the bolt path is provably closed at t = 0.
+
+## 9. Changes (2 — both `WeatherStageView.swift`)
+
+### 9.1 Reduce Motion still frame renders `engine.toParams` (stale-frame fix)
+
+Before: the RM branch rendered `engine.current(at: .now)`. With no frame
+clock, that expression is evaluated only when the `@Observable` engine
+mutates — i.e. at the START of each transition, where eased t ≈ 0 returns
+≈ `fromParams`, the OLD sky. Every 5-minute recompute re-froze it there, so a
+Reduce Motion user sat permanently one transition behind and could miss a
+weather change (clear → storm) entirely.
+
+After: the still renders `toParams`, the settled target. Cost removed: none
+at render time (same single frame) — this is the accessibility fix the task
+class sanctions: a state change lands as an immediate CUT, which is exactly
+what Reduce Motion prescribes instead of the 3 s cross-anim, and the still now
+always shows the TRUE sky. Why nothing else can change: the non-RM branch is
+untouched, and `toParams` is observable, so invalidation still fires on every
+recompute.
+
+### 9.2 Gyroscope acquisition gated on `scenePhase == .active`
+
+Before: `syncMotion()` acquired whenever `wantsMotion` flipped true. Rain
+arriving via a weather-cache notification while the scene was inactive (app
+switcher) started the 30 Hz CoreMotion tap while the TimelineView was paused —
+no frame ever read the tilt. That is the same background-motion class as the
+b1173 0x8BADF00D watchdog kill the file's own comments document.
+
+After: acquisition requires `.active`; release triggers when either the rain
+or the phase goes. Cost removed: a live CoreMotion thread (30 Hz) spinning for
+an unrendered, frozen backdrop. Why the look cannot change: while `.active`
+the logic is bit-identical, and outside `.active` zero frames render — a
+running gyro changed zero pixels. Return to foreground re-syncs through the
+existing `onChange(of: scenePhase)` path.
+
+## 10. Considered and deliberately NOT changed (with reasoning)
+
+1. **`.animation` → `.periodic`: NO.** The rule allows it only when the look
+   cannot differ. Here the shader visibly animates at display cadence in
+   essentially every state — rain/snow streak motion, cloud domain-warp
+   morphing, star twinkle, dust motes, fog drift — so a coarser clock is a
+   visible frame-rate reduction, precisely the excluded case. The honest
+   open question is `minimumInterval: 1/60` on ProMotion (half the fragment
+   passes for motion most eyes may not distinguish at this speed); that is a
+   look-affecting trade only device numbers can justify — left for §11.
+2. **Making the Low Power `minimumInterval` reactive.** It is captured at
+   body evaluation, but flipping LPM forces a Control-Center/Settings
+   round-trip → `scenePhase` leaves and re-enters `.active` → body
+   re-evaluates and picks it up. Observing `NSProcessInfoPowerStateDidChange`
+   would add a permanent driver to fix a window that closes itself.
+3. **scenePhase-gating the 5-minute engine timer.** It fires at most once per
+   300 s while merely inactive; process suspension already silences it in
+   background, and a recompute while inactive is pure param math with a
+   throttled publish. Gating would add resume choreography to save
+   microseconds.
+4. **De-duplicating `snapshotColors` inside `publishSkySnapshot`**
+   (`snapshotWantsDarkScheme` recomputes it). ≤ 1 evaluation per 15 minutes
+   of ~100 flops; inlining the luma threshold would duplicate policy across
+   files — divergence risk exceeds the gain.
+5. **Caching `wantsDarkGround` for `.liveSky`** (recomputes the CPU gradient
+   mirror on every `backdropPrimaryText` read). Only reachable if liveSky
+   returns, and the property lives in `AppBackgroundStyle.swift` — out of
+   this task's file scope. Flagged for the re-enable train.
+6. **Any edit to `SkyShaders.metal`.** Every candidate (octave counts, branch
+   floors, the 0.18 clear-sky cloudiness) changes pixels. Audit-only.
+
+## 11. On-device checklist — WeatherStage extension of §5
+
+Precondition: locally allow `.liveSky` again (comment the migration line in
+`BackgroundStyle.init` and set the mode) on a ProMotion device, Release build.
+
+**+2 min — per-state GPU ladder.** Pin each preset in turn (clear day,
+cloudy, fog, rain, storm, snow, blizzard, sandstorm, night) and write down
+GPU % for 30 s each. Expect the cloud block to dominate; rain adds the
+4-sheet field + droplets. Anything above the §5 budget line (~10% over the
+gradient baseline) is a conversation before re-enable.
+**+2 min — the 120 Hz question.** With rain pinned, compare GPU/energy
+between stock `.animation` and a local `minimumInterval: 1/60` build, eyes on
+the streaks. This is the only place §10.1 can be settled.
+**+1 min — pause matrix.** Rain pinned: app switcher, then home. Time
+Profiler must show the fragment pass AND `com.apple.CoreMotion.MotionThread`
+both silent within a frame (the b1173/b1179 regression pair). Foreground:
+rain resumes, droplets react to tilt again.
+**+1 min — gyro lifecycle.** Pin rain → unpin to clear while foregrounded:
+MotionThread must exit within a frame of the 3 s transition dropping rain
+below 0.03. Then pin rain while in the app switcher (via a paired device or
+scheduled change): MotionThread must NOT appear until re-activation (§9.2).
+**+1 min — Reduce Motion.** RM on, storm pinned: a single still, no frozen
+bolt (§8), then change the pin to clear — the still must CUT to the new sky
+on the next engine mutation (§9.1), not stay on the storm.
+**+1 min — Low Power.** Flip LPM with the stage mounted; after returning to
+the app confirm the cadence sits at 10 Hz (Core Animation FPS instrument)
+and the gyro refuses to start under rain.
+**+1 min — widget publish throttle.** Cross one material sky change (pin
+night from day) and confirm exactly one `reloadAllTimelines`, then repeated
+small transitions cause none for 15 min.
+
+## 12. Balance results (WeatherStage)
+
+Post-edit structural check, comments/strings stripped:
+
+| File | `{ }` | `( )` | `[ ]` |
+|---|---|---|---|
+| `WeatherStageView.swift` (edited) | 55/55 | 152/152 | 3/3 |
+| `WeatherState.swift` (untouched) | 43/43 | 116/116 | 5/5 |
+| `MotionTilt.swift` (untouched) | 10/10 | 15/15 | 1/1 |
+| `SkyShaders.metal` (untouched) | 46/46 | 534/534 | 2/2 |
+
+All balanced. No Swift/Metal toolchain exists in this environment; both edits
+are local and type-simple (one expression swap inside an existing branch, two
+boolean conditions in an existing if/else), so the compile gate runs with the
+next device/CI build.
