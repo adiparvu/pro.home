@@ -1,4 +1,5 @@
 import Foundation
+import Supabase
 
 // MARK: - Chat mutation journal (P0b — no silent losses)
 //
