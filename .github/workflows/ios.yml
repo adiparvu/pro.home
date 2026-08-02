@@ -18,7 +18,10 @@ jobs:
     # Uploads are on-demand only (owner's call) — pushes run just the tests.
     # Trigger from the Actions tab (Run Workflow), or push a commit whose
     # message carries the [deploy] marker (the API dispatch needs a
-    # permission this integration doesn't have).
+    # permission this integration doesn't have — confirmed 403, 2026-08-02).
+    # Retrigger law: an EMPTY commit does NOT start a run — the `paths`
+    # filter above requires touching apps/ios/** or this file. A retry must
+    # carry a real change to one of those paths.
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy]')
     runs-on: macos-26
     timeout-minutes: 45
