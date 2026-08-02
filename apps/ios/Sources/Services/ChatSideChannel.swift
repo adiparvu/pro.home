@@ -96,6 +96,7 @@ final class ChatSideChannel {
     /// Bounded wait for a live socket before starting the join clock —
     /// the shared, unit-tested law (see RealtimeSocketWait).
     private func awaitSocketConnected() async {
-        await RealtimeSocketWait.wait(on: LiveRealtimeSocket(), seconds: 10)
+        await RealtimeSocketWait.wait(on: LiveRealtimeSocket(), seconds: 10,
+                                      isBackgrounded: { AppLifecycle.isBackgrounded })
     }
 }

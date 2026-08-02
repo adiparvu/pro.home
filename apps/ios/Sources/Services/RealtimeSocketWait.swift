@@ -45,10 +45,14 @@ enum RealtimeSocketWait {
     ///    CancellationError collapsed every tick to ~0ms and the loop spun
     ///    hot until the deadline;
     ///  - the background stands the wait down (the 0x8BADF00D law).
+    /// `isBackgrounded` is @MainActor and has NO default on purpose: a
+    /// default-argument closure is evaluated in a nonisolated context, so
+    /// `{ AppLifecycle.isBackgrounded }` there is a compile error — the
+    /// call sites pass it explicitly.
     static func wait(on socket: RealtimeSocketing,
                      seconds: TimeInterval,
                      tickNanoseconds: UInt64 = 500_000_000,
-                     isBackgrounded: () -> Bool = { AppLifecycle.isBackgrounded }) async {
+                     isBackgrounded: @MainActor () -> Bool) async {
         guard !socket.isConnected else { return }
         if socket.isDisconnected { socket.kickConnect() }
         let deadline = Date().addingTimeInterval(seconds)

@@ -340,7 +340,8 @@ final class ChatRealtimeChannel {
         // background stand-down) is the shared, unit-tested law now:
         // RealtimeSocketWait pins every field regression this wait shipped.
         realtimeStatus = "b\(appBuildTag) socket:\(socketStatusText) chan:join-wait · \(RealtimeFlightRecorder.shared.tail)"
-        await RealtimeSocketWait.wait(on: LiveRealtimeSocket(), seconds: 20)
+        await RealtimeSocketWait.wait(on: LiveRealtimeSocket(), seconds: 20,
+                                      isBackgrounded: { AppLifecycle.isBackgrounded })
         RealtimeFlightRecorder.shared.note(
             "\(config.tag): join-wait over — socket \(socketStatusText)")
     }
