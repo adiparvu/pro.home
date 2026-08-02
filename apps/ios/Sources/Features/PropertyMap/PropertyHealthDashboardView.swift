@@ -25,8 +25,6 @@ struct PropertyHealthDashboardView: View {
                         }
                         // All elements ranked
                         allElementsSection
-                        // Layer breakdown
-                        layerBreakdownSection
                         // Total value
                         if elementService.totalEstimatedValue() > 0 {
                             totalValueCard
@@ -119,49 +117,6 @@ struct PropertyHealthDashboardView: View {
                 .foregroundStyle(.primary)
             ForEach(elementService.elements.sorted { $0.healthScore < $1.healthScore }) { el in
                 HealthElementRow(element: el)
-            }
-        }
-    }
-
-    // MARK: - Layer breakdown
-
-    private var layerBreakdownSection: some View {
-        GlassCard(padding: AppSpacing.base) {
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Breakdown per layer")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-                ForEach(PropertyLayer.allCases, id: \.self) { layer in
-                    let els = elementService.elements(for: layer)
-                    if !els.isEmpty {
-                        let avg = els.reduce(0) { $0 + $1.healthScore } / els.count
-                        VStack(spacing: 4) {
-                            HStack {
-                                Label(layer.displayName, systemImage: layer.icon)
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("\(avg)/100")
-                                    .font(AppFont.captionStrong)
-                                    .foregroundStyle(scoreColor(avg))
-                                Text("(\(els.count))")
-                                    .font(AppFont.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Color.subtleFill).frame(height: 5)
-                                    Capsule()
-                                        .fill(scoreColor(avg))
-                                        .frame(width: geo.size.width * CGFloat(avg) / 100, height: 5)
-                                }
-                            }.frame(height: 5)
-                        }
-                    }
-                }
             }
         }
     }

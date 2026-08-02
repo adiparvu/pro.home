@@ -106,6 +106,9 @@ struct ARIASettingsView: View {
     @State private var showShareSheet = false
     @State private var exportURL: URL? = nil
     @State private var isDeletingHistory = false
+    /// Post-deletion feedback (IMG_9284): nil = nothing to report, true =
+    /// wiped, false = the delete FAILED (and the count didn't lie to zero).
+    @State private var clearSucceeded: Bool? = nil
     /// Real stored-message count from aria_messages; nil while loading.
     @State private var storedMessageCount: Int? = nil
 
@@ -168,6 +171,17 @@ struct ARIASettingsView: View {
             if let url = exportURL {
                 ShareSheet(url: url)
             }
+        }
+        // The moment of truth after the destructive tap (IMG_9284): the row
+        // used to delete silently — done or failed, the page looked the same.
+        .alert(Text(clearSucceeded == true ? "aria_memory_cleared_title"
+                                           : "aria_memory_clear_failed_title"),
+               isPresented: Binding(get: { clearSucceeded != nil },
+                                    set: { if !$0 { clearSucceeded = nil } })) {
+            Button(role: .cancel) {} label: { Text("OK") }
+        } message: {
+            Text(clearSucceeded == true ? "aria_memory_cleared_body"
+                                        : "aria_memory_clear_failed_body")
         }
         .task { await loadStoredMessageCount() }
         .task { await refreshDomainCounts() }
@@ -825,9 +839,15 @@ struct ARIASettingsView: View {
                 .neq("id", value: UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID())
                 .execute()
         } catch {
-            // ignore — table may already be empty
+            // Honest failure (IMG_9284): the old path swallowed the error AND
+            // zeroed the count — a failed delete looked identical to success.
+            HapticFeedback.error()
+            clearSucceeded = false
+            return
         }
         storedMessageCount = 0
+        HapticFeedback.success()
+        clearSucceeded = true
         // The open conversation resets to the welcome message right away.
         NotificationCenter.default.post(name: .ariaHistoryCleared, object: nil)
     }
