@@ -204,7 +204,10 @@ struct TasksView: View {
                         selection: $historyPeriod)
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            // Top-LEADING by request (IMG_9275): the calendar is a place you
+            // GO, not an action on this page — it anchors the opposite corner
+            // from the + / filter cluster.
+            ToolbarItem(placement: .topBarLeading) {
                 Button {
                     HapticFeedback.impact(.light)
                     showCalendar = true
