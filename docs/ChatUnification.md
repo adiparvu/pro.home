@@ -349,3 +349,20 @@ standard shape; `direct_messages` is the historical outlier.
   cleanup/delete_my_account sweeps, then the kill-switch (policy stops
   consulting `dm_unified_read_enabled()`, function + chat_rollout drop),
   then the table. Gate: EVERY device on 1201+, owner-confirmed.
+- **P6 FINAL ✓ APPLIED (2026-08-02, owner-ordered)** — `direct_messages`
+  is GONE (migration `chat_p6_final_drop_direct_messages`). Verified
+  before: parity 366/366, 0 missing, 0 orphaned poll votes, no
+  policies/views referencing it. The first apply attempt taught the
+  audit's last lesson: the REVERSE receipt/reaction mirrors lived as
+  triggers on the three side tables — all EIGHT mirror triggers dropped
+  by name, in the same transaction, mirrors-before-table (msg_mirror_insert
+  fired inside every send). `dm_poll_votes.message_id` FK repointed to
+  `messages(id)` (ids identical by construction). `cleanup_expired_chat_
+  ephemera` + `delete_my_account` swept. The kill-switch left with the
+  table: `messages_select` no longer consults `dm_unified_read_enabled()`
+  (function dropped, column dropped); `chat_rollout` survives as the
+  carrier of the NEXT flag — `group_unified_read`, default false (G2).
+  Verified after, as a real user in a rolled-back transaction: DM insert
+  clean, exactly one notification to the peer only, zero mirror triggers
+  left. Devices ≤1199: DM realtime/pin/mark broken until they update —
+  consequence accepted by the owner at order time.
