@@ -51,6 +51,15 @@ enum ActiveChat {
     }
 }
 
+/// @MainActor is load-bearing (the 18:56 SIGABRT on b1202, iOS 27.0 beta):
+/// these async delegate methods used to run nonisolated — on the Swift
+/// Concurrency cooperative pool — and the compiler-generated ObjC thunk
+/// invokes the system completionHandler on whatever thread the async method
+/// FINISHES on. For an action processed while backgrounded (a reply dictated
+/// on the paired Watch), UIKit's completion synchronously updates the
+/// state-restoration/snapshot archive and ASSERTS the main thread — abort.
+/// Isolating the class puts the method's completion back on the main actor.
+@MainActor
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationDelegate()
     private override init() {}
@@ -230,7 +239,7 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         let info = notification.request.content.userInfo
         if let chat = info["chat"] as? [String: Any] {
             let key = ActiveChat.key(forPayload: chat)
-            if await ActiveChat.current == key { return [] }
+            if ActiveChat.current == key { return [] }
         }
         return [.banner, .badge, .sound]
     }
