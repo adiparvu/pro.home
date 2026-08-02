@@ -156,6 +156,14 @@ struct PropertyDetailExtraSections: View {
     @Environment(DocumentService.self) private var documentService
     @Environment(FinancialService.self) private var financialService
     @Environment(ContractorService.self) private var contractorService
+    @Environment(InventoryService.self) private var inventoryService
+    @Environment(AppSettings.self) private var appSettings
+
+    /// The inventory's total purchase value — what a claim would have to
+    /// cover. Same reduction the insurance dossier prints.
+    private var insurableValue: Double {
+        inventoryService.items.reduce(0) { $0 + $1.purchasePrice }
+    }
     @State private var journal = PhotoJournalService()
     @State private var showPassport = false
 
@@ -195,6 +203,16 @@ struct PropertyDetailExtraSections: View {
                         .foregroundStyle(Color.secondaryTextColor)
                 }
                 Spacer()
+                // The LIVE insurable value — the inventory's priced items,
+                // the same sum the insurance dossier prints, but breathing
+                // on the page instead of frozen in a PDF. Hidden at zero
+                // (an unpriced inventory has nothing honest to say).
+                if insurableValue > 0 {
+                    Text(verbatim: CurrencyService.money(
+                        insurableValue, code: appSettings.preferredCurrency, whole: true))
+                        .font(AppFont.scaled(13, weight: .semibold))
+                        .foregroundStyle(Color.secondaryTextColor)
+                }
                 Image(systemName: "chevron.right")
                     .font(AppFont.scaled(13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
