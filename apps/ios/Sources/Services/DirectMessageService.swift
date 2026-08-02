@@ -683,6 +683,14 @@ final class DirectMessageService {
     }
 
     nonisolated private static func fetchUnifiedRecent(propertyId: UUID) async throws -> UnifiedFetch {
+        // P6c: ONE round-trip when the server offers it — dm_bootstrap
+        // returns conversations, members, the message window and all three
+        // side tables together (SECURITY INVOKER, so the caller's RLS still
+        // decides every row). load() reruns on every dm_new broadcast and
+        // every foreground; six trips per rerun was the app's most-repeated
+        // network cost. The multi-query path below stays as the fallback,
+        // so an RPC gap can never blank the inbox.
+        if let fast = await fetchUnifiedRecentViaRPC(propertyId: propertyId) { return fast }
         let conversations = try await fetchUnifiedConversations(propertyId: propertyId)
         guard !conversations.isEmpty else { return UnifiedFetch(conversations: [], messages: []) }
         let convIds = conversations.map(\.id.uuidString)
@@ -716,6 +724,43 @@ final class DirectMessageService {
         let deliveriesByMessage = Dictionary(grouping: deliveries, by: \.messageId)
         let reactionsByMessage = Dictionary(grouping: reactions, by: \.messageId)
         let messages = rows.map { row in
+            mapUnified(row,
+                       members: membersByConv[row.conversationId] ?? [],
+                       reads: readsByMessage[row.id] ?? [],
+                       deliveries: deliveriesByMessage[row.id] ?? [],
+                       reactions: reactionsByMessage[row.id] ?? [])
+        }
+        return UnifiedFetch(conversations: conversations, messages: messages)
+    }
+
+    /// The dm_bootstrap round-trip, decoded and folded. Returns nil on ANY
+    /// failure — offline, a decode surprise, a stale environment without the
+    /// RPC — so the caller falls through to the multi-query path, which owns
+    /// real error semantics.
+    nonisolated private static func fetchUnifiedRecentViaRPC(propertyId: UUID) async -> UnifiedFetch? {
+        struct ConvRow: Decodable { let id: UUID }
+        struct Payload: Decodable {
+            let conversations: [ConvRow]
+            let members: [UnifiedMember]
+            let messages: [UnifiedRow]
+            let reads: [MessageRead]
+            let deliveries: [MessageDelivery]
+            let reactions: [MessageReaction]
+        }
+        guard let payload: Payload = try? await supabase
+            .rpc("dm_bootstrap",
+                 params: ["p_property": AnyJSON.string(propertyId.uuidString)])
+            .execute()
+            .value
+        else { return nil }
+        let membersByConv = Dictionary(grouping: payload.members, by: \.conversationId)
+        let conversations = payload.conversations.map {
+            UnifiedConversation(id: $0.id, members: membersByConv[$0.id] ?? [])
+        }
+        let readsByMessage = Dictionary(grouping: payload.reads, by: \.messageId)
+        let deliveriesByMessage = Dictionary(grouping: payload.deliveries, by: \.messageId)
+        let reactionsByMessage = Dictionary(grouping: payload.reactions, by: \.messageId)
+        let messages = payload.messages.map { row in
             mapUnified(row,
                        members: membersByConv[row.conversationId] ?? [],
                        reads: readsByMessage[row.id] ?? [],
