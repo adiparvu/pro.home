@@ -208,7 +208,7 @@ struct PropertyRulesView: View {
         switch rule.condition {
         case .weather:   "rule_weather_unavailable_short"
         case .docExpiry: "rule_docs_unavailable_short"
-        case .geofence:  "rule_presence_unavailable_short"
+        case .geofence, .household: "rule_presence_unavailable_short"
         default:         "rule_sensor_unavailable_short"
         }
     }

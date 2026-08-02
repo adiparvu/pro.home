@@ -46,6 +46,8 @@ struct PropertyRuleBuilderSheet: View {
     @State private var scheduleTime: Date
     @State private var docDays: Int
     @State private var presenceEvent: RulePresenceEvent
+    @State private var householdEvent: RuleHouseholdEvent
+    @State private var presenceHousehold: Bool
     @State private var notifyOn: Bool
     @State private var taskOn: Bool
     @State private var taskTitle: String
@@ -75,6 +77,8 @@ struct PropertyRuleBuilderSheet: View {
                                                  second: 0, of: Date()) ?? Date()
         var docDays = 14
         var presenceEvent: RulePresenceEvent = .arrive
+        var householdEvent: RuleHouseholdEvent = .empty
+        var presenceHousehold = false
         var notifyOn = existing == nil // new rules start with the free action
         var taskOn = false
         var taskTitle = ""
@@ -109,6 +113,10 @@ struct PropertyRuleBuilderSheet: View {
             case .geofence(let event):
                 kind = .presence
                 presenceEvent = event
+            case .household(let event):
+                kind = .presence
+                presenceHousehold = true
+                householdEvent = event
             case .unknown:
                 break // unreachable: unknown rows are not editable
             }
@@ -139,6 +147,8 @@ struct PropertyRuleBuilderSheet: View {
         _scheduleTime = State(initialValue: scheduleTime)
         _docDays = State(initialValue: docDays)
         _presenceEvent = State(initialValue: presenceEvent)
+        _householdEvent = State(initialValue: householdEvent)
+        _presenceHousehold = State(initialValue: presenceHousehold)
         _notifyOn = State(initialValue: notifyOn)
         _taskOn = State(initialValue: taskOn)
         _taskTitle = State(initialValue: taskTitle)
@@ -455,17 +465,39 @@ struct PropertyRuleBuilderSheet: View {
     }
 
     @ViewBuilder private var presenceRows: some View {
-        FormRow(icon: "location.fill", tint: presence.isArmed ? .accentColor : .secondary) {
-            Picker("rule_kind_presence", selection: $presenceEvent) {
-                ForEach(RulePresenceEvent.allCases) { event in
-                    Text(LocalizedStringKey(event.titleKey)).tag(event)
-                }
+        // Scope first: my own comings and goings, or the WHOLE household's
+        // ("everyone left" is the rule people actually want for scenes).
+        FormRow(icon: "person.2.fill", tint: presence.isArmed ? .accentColor : .secondary) {
+            Picker("rule_kind_presence", selection: $presenceHousehold) {
+                Text("rule_presence_scope_me").tag(false)
+                Text("rule_presence_scope_household").tag(true)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            // Greyed until home presence monitoring is armed in Settings —
-            // the note under the group says so, and Save stays held.
             .disabled(!presence.isArmed)
+        }
+        FormRow(icon: "location.fill", tint: presence.isArmed ? .accentColor : .secondary) {
+            if presenceHousehold {
+                Picker("rule_kind_presence", selection: $householdEvent) {
+                    ForEach(RuleHouseholdEvent.allCases) { event in
+                        Text(LocalizedStringKey(event.titleKey)).tag(event)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .disabled(!presence.isArmed)
+            } else {
+                Picker("rule_kind_presence", selection: $presenceEvent) {
+                    ForEach(RulePresenceEvent.allCases) { event in
+                        Text(LocalizedStringKey(event.titleKey)).tag(event)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                // Greyed until home presence monitoring is armed in Settings —
+                // the note under the group says so, and Save stays held.
+                .disabled(!presence.isArmed)
+            }
         }
     }
 
@@ -590,7 +622,9 @@ struct PropertyRuleBuilderSheet: View {
             condition = .docExpiry(days: docDays)
         case .presence:
             guard presence.isArmed else { return } // canSave already holds this
-            condition = .geofence(presenceEvent)
+            condition = presenceHousehold
+                ? .household(householdEvent)
+                : .geofence(presenceEvent)
         }
 
         var actions: [RuleAction] = []

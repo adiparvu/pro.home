@@ -217,6 +217,24 @@ extension PlantDetailSheet {
                             .font(AppFont.scaled(12))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
+                    // Weather-aware line (PlantWeatherCare): one honest
+                    // sentence, shown only while the property's real weather
+                    // is actually moving the due date — rain postponing, heat
+                    // advancing. Same anatomy as the toxicity line on the
+                    // general-info card: small tinted glyph + quiet text.
+                    if let reason = plantService.careAdjustment(for: plant)?.reason {
+                        HStack(spacing: 6) {
+                            Image(systemName: reason.symbol)
+                                .font(AppFont.scaled(11))
+                                .foregroundStyle(reason == .rainPostponed
+                                    ? Color.brandSkyBlue : Color.brandWarning)
+                            Text(reason.localizedText)
+                                .font(AppFont.scaled(13))
+                                .foregroundStyle(Color.primary.opacity(0.75))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.top, 2)
+                    }
                 }
             }
 

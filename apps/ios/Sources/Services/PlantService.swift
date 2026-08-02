@@ -11,13 +11,51 @@ final class PlantService {
 
     // MARK: Computed
 
-    var plantsNeedingWater: [Plant] { plants.filter { $0.needsWatering } }
-    var healthyPlants: [Plant] { plants.filter { !$0.needsWatering } }
+    var plantsNeedingWater: [Plant] { plants.filter { needsWater($0) } }
+    var healthyPlants: [Plant] { plants.filter { !needsWater($0) } }
     var criticalPlants: [Plant] { plants.filter { $0.healthStatus == "critical" } }
+
+    // MARK: Weather-aware care (PlantWeatherCare)
+
+    /// Distilled property weather for the watering rules; nil when the
+    /// cached summary is missing or too stale to stand behind. Captured
+    /// once per `load()` from `PropertyWeather`'s App-Group cache — a
+    /// synchronous UserDefaults read — never inside the computed filters,
+    /// which run on every render. The fetch itself stays where it already
+    /// lives (MainTabView / Dashboard call `refreshIfStale`); plants only
+    /// read the result.
+    private(set) var weatherConditions: PlantWeatherCare.Conditions?
+
+    /// The plant's active weather adjustment, nil when the sky left the
+    /// schedule alone — the detail card shows its reason line only then.
+    /// A never-watered plant has no due date to move: it is thirsty
+    /// regardless of the weather, so no adjustment applies.
+    func careAdjustment(for plant: Plant) -> PlantWeatherCare.Adjustment? {
+        guard let last = plant.lastWateredAtDate,
+              let due = Calendar.current.date(byAdding: .day,
+                                              value: plant.wateringIntervalDays, to: last)
+        else { return nil }
+        let adjusted = PlantWeatherCare.adjustedDue(
+            baseline: due, placement: plant.placement, conditions: weatherConditions)
+        return adjusted.reason == nil ? nil : adjusted
+    }
+
+    /// `Plant.needsWatering`, bent by the weather adjustment when one is
+    /// active. The model keeps owning the pure schedule (widgets and the
+    /// watch read it without weather); this is the only place the sky
+    /// gets a vote.
+    func needsWater(_ plant: Plant) -> Bool {
+        guard let adjusted = careAdjustment(for: plant) else { return plant.needsWatering }
+        return adjusted.dueDate <= Date()
+    }
 
     // MARK: Load
 
     func load(propertyId: UUID) async {
+        // Refresh the weather snapshot for the care rules before painting,
+        // so even the instant cached render already shows adjusted state.
+        weatherConditions = PropertyWeather.cached()
+            .flatMap { PlantWeatherCare.Conditions(summary: $0) }
         // Paint the last known state instantly; the network refresh follows.
         if plants.isEmpty, let cached = ServiceCache.load([Plant].self, entity: "plants", propertyId: propertyId) {
             plants = cached
@@ -81,7 +119,9 @@ final class PlantService {
     }
 
     func markWatered(_ plant: Plant) async {
-        let neededWater = plant.needsWatering
+        // Weather-adjusted, so the Live Activity session counts the same
+        // plants `plantsNeedingWater` does.
+        let neededWater = needsWater(plant)
         let now = ISODate.string(from: Date())
         let upd = PlantWateringUpdate(lastWateredAt: now, updatedAt: now)
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {

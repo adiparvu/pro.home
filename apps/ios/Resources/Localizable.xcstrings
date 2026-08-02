@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "plant_care_weather_rain" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Rain expected — watering postponed a day"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Se anunță ploaie — udarea e amânată cu o zi"}}}},
+    "plant_care_weather_heat" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Heat wave — watering moved a day earlier"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Caniculă — udarea e devansată cu o zi"}}}},
+    "rule_household_empty" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Everyone left"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "A plecat toată lumea"}}}},
+    "rule_household_first" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "First one home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Primul ajuns acasă"}}}},
+    "rule_presence_scope_me" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Just me"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Doar eu"}}}},
+    "rule_presence_scope_household" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Whole household"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Toată casa"}}}},
+    "rule_summary_household_empty" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "When the last person leaves home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Când pleacă ultima persoană de acasă"}}}},
+    "rule_summary_household_first" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "When the first person arrives to an empty home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Când ajunge prima persoană în casa goală"}}}},
+    "rule_notif_household_empty" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Everyone has left home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Toată lumea a plecat de acasă"}}}},
+    "rule_notif_household_first" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "First one home"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Prima persoană a ajuns acasă"}}}},
     "doc_renew_task_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Renew: %@"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Reînnoiește: %@"}}}},
     "doc_renew_task_notes" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Renewal task for the document \"%@\"."}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Sarcină de reînnoire pentru documentul \"%@\"."}}}},
     "doc_renew_create_task" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Create renewal task"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Creează sarcină de reînnoire"}}}},

@@ -579,6 +579,28 @@ final class PropertyRulesStore {
             let key: String.LocalizationValue = event == .arrive
                 ? "rule_notif_arrive" : "rule_notif_leave"
             return String(localized: key)
+        case .household(let event):
+            // Household level: MY fresh transition is the trigger, everyone
+            // else's SHARED presence rows decide. Fail closed on missing
+            // data — an empty roster means "not loaded", never "nobody
+            // home" (the same honesty rule the weather conditions follow).
+            let presence = HomePresenceService.shared
+            guard presence.isArmed,
+                  let transition = presence.lastTransition,
+                  now.timeIntervalSince(transition.at) < Self.presenceFreshWindow,
+                  !presence.household.isEmpty else { return nil }
+            let myId = supabase.auth.currentSession?.user.id
+            let othersHome = presence.household.contains {
+                $0.userId != myId && $0.isHome
+            }
+            switch event {
+            case .empty:
+                guard transition.kind == .leave, !othersHome else { return nil }
+                return String(localized: "rule_notif_household_empty")
+            case .firstHome:
+                guard transition.kind == .arrive, !othersHome else { return nil }
+                return String(localized: "rule_notif_household_first")
+            }
         case .unknown:
             return nil // decodes honestly, never evaluated
         }
@@ -815,6 +837,10 @@ final class PropertyRulesStore {
             let key: String.LocalizationValue = event == .arrive
                 ? "rule_summary_geofence_arrive" : "rule_summary_geofence_leave"
             return String(localized: key)
+        case .household(let event):
+            let key: String.LocalizationValue = event == .empty
+                ? "rule_summary_household_empty" : "rule_summary_household_first"
+            return String(localized: key)
         case .unknown:
             return String(localized: "rule_condition_unknown")
         }
@@ -831,6 +857,7 @@ final class PropertyRulesStore {
         case .schedule:           true // the clock is always live
         case .docExpiry:          documentsKnown
         case .geofence:           HomePresenceService.shared.isArmed
+        case .household:          HomePresenceService.shared.isArmed
         case .unknown:            false
         }
     }

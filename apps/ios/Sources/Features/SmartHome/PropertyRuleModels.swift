@@ -15,6 +15,7 @@ import Foundation
 //    "hour":0-23,"minute":0-59}
 //   {"v":1,"kind":"docExpiry","days":N}
 //   {"v":1,"kind":"geofence","event":"arrive"|"leave"}
+//   {"v":1,"kind":"household","event":"empty"|"first_home"}
 //
 //   `schedule` carries `weekday` ONLY when freq=="weekly", in
 //   `Calendar.current` weekday numbering (1 = Sunday … 7 = Saturday in the
@@ -25,7 +26,10 @@ import Foundation
 //   `docExpiry` matches while ANY document's days-until-expiry sits in
 //   0...N (today counts). `geofence` rides the on-device HomePresenceService
 //   transition signal and only fires on a FRESH transition — a stale one
-//   must never fire on a later app-open.
+//   must never fire on a later app-open. `household` raises geofence to the
+//   HOUSEHOLD level: my fresh transition is the trigger, everyone's shared
+//   presence rows decide — "empty" fires when the last member leaves,
+//   "first_home" when the first arrives to an empty house.
 //
 //   `sensorId` spans both sensor worlds with the identities R4 already made
 //   durable:
@@ -232,6 +236,22 @@ enum RulePresenceEvent: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// The HOUSEHOLD-level presence moments a rule can watch — computed from
+/// everyone's shared states, not just this device's transition.
+enum RuleHouseholdEvent: String, Codable, CaseIterable, Identifiable, Sendable {
+    case empty = "empty"
+    case firstHome = "first_home"
+    var id: String { rawValue }
+
+    /// "A plecat toată lumea" / "Primul ajuns acasă" — the builder's labels.
+    var titleKey: String {
+        switch self {
+        case .empty:     "rule_household_empty"
+        case .firstHome: "rule_household_first"
+        }
+    }
+}
+
 /// Weekday display helpers shared by the store's summaries and the builder's
 /// picker — always `Calendar.current`, so names and ordering follow the
 /// user's locale while the STORED number stays calendar-canonical.
@@ -259,6 +279,7 @@ enum RuleCondition: Codable, Equatable, Sendable {
     case schedule(RuleScheduleCondition)
     case docExpiry(days: Int)
     case geofence(RulePresenceEvent)
+    case household(RuleHouseholdEvent)
     /// A shape this app version doesn't know — preserved raw, rendered as
     /// "necunoscut", never evaluated.
     case unknown(RuleJSONValue)
@@ -337,6 +358,13 @@ enum RuleCondition: Codable, Equatable, Sendable {
                 return
             }
             self = .unknown(raw)
+        case "household":
+            if let eventRaw = raw["event"]?.stringValue,
+               let event = RuleHouseholdEvent(rawValue: eventRaw) {
+                self = .household(event)
+                return
+            }
+            self = .unknown(raw)
         default:
             self = .unknown(raw)
         }
@@ -351,6 +379,7 @@ enum RuleCondition: Codable, Equatable, Sendable {
     }
     private enum DocExpiryKeys: String, CodingKey { case v, kind, days }
     private enum GeofenceKeys: String, CodingKey { case v, kind, event }
+    private enum HouseholdKeys: String, CodingKey { case v, kind, event }
 
     func encode(to encoder: Encoder) throws {
         switch self {
@@ -387,6 +416,11 @@ enum RuleCondition: Codable, Equatable, Sendable {
             var container = encoder.container(keyedBy: GeofenceKeys.self)
             try container.encode(Self.version, forKey: .v)
             try container.encode("geofence", forKey: .kind)
+            try container.encode(event.rawValue, forKey: .event)
+        case .household(let event):
+            var container = encoder.container(keyedBy: HouseholdKeys.self)
+            try container.encode(Self.version, forKey: .v)
+            try container.encode("household", forKey: .kind)
             try container.encode(event.rawValue, forKey: .event)
         case .unknown(let raw):
             // Replay the preserved tree verbatim — never invent a shape.
