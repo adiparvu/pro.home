@@ -74,6 +74,9 @@ struct SpaceDetailView: View {
     @State private var photoItem: PhotosPickerItem? = nil
     @State private var photoTarget: SpacePhotoTarget = .backdrop
     @State private var isSavingPhoto = false
+    /// The truthful failure of the last photo save — surfaced as an alert
+    /// (IMG_9281: the silent error-haptic read as "it does nothing").
+    @State private var photoError: String? = nil
 
     private let smartHome = SmartHomeService.shared
     /// Cached HomeKit indoor readings (Smart Control R3) — feeds the
@@ -185,6 +188,15 @@ struct SpaceDetailView: View {
             photoItem = nil
             Task { await savePhoto(newItem) }
         }
+        // Honest failure (IMG_9281): an upload that dies must SAY so —
+        // the error haptic alone read as "the button does nothing".
+        .alert(Text("est_photo_failed"),
+               isPresented: Binding(get: { photoError != nil },
+                                    set: { if !$0 { photoError = nil } })) {
+            Button(role: .cancel) {} label: { Text("OK") }
+        } message: {
+            Text(verbatim: photoError ?? "")
+        }
         // System toolbar chrome: no title (the hero carries the name);
         // pushed pages keep the system back button, sheets get a close
         // circle in the same slot.
@@ -254,13 +266,26 @@ struct SpaceDetailView: View {
 
     private func openScan() {
         // No haptic here — the invoking GlassFilterActionRow already fired
-        // the tap haptic before dismissing the popover.
+        // the tap haptic.
         guard !isFetchingScan, let room = bridgedRoom else { return }
         isFetchingScan = true
         Task {
             let url = await floorPlanService.localScanURL(for: room)
             isFetchingScan = false
             if let url { scanPreviewURL = url }
+        }
+    }
+
+    /// Presents AFTER the menu's dismissal transition has truly ended
+    /// (IMG_9281): the system runs menu actions post-dismissal, but iOS 27's
+    /// picker/cover presentation still lands inside the closing window and
+    /// is silently dropped — the photo rows and the scanner "did nothing"
+    /// on device. One deliberate beat later, presentation succeeds every
+    /// time; the hop is imperceptible and harmless where it wasn't needed.
+    private func presentAfterMenuDismissal(_ present: @escaping @MainActor () -> Void) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            present()
         }
     }
 
@@ -338,7 +363,7 @@ struct SpaceDetailView: View {
                                          title: bridgedRoom?.hasScan == true
                                              ? String(localized: "room_rescan")
                                              : String(localized: "est_scan_space")) {
-                        showScanner = true
+                        presentAfterMenuDismissal { showScanner = true }
                     }
                 }
                 if bridgedRoom?.hasScan == true {
@@ -355,7 +380,7 @@ struct SpaceDetailView: View {
                                      title: String(localized: hasPhoto
                                          ? "est_change_backdrop" : "est_set_backdrop")) {
                     photoTarget = .backdrop
-                    showPhotoPicker = true
+                    presentAfterMenuDismissal { showPhotoPicker = true }
                 }
                 if hasPhoto {
                     GlassFilterActionRow(icon: "photo.badge.arrow.down",
@@ -369,7 +394,7 @@ struct SpaceDetailView: View {
                                      title: String(localized: hasAvatar
                                          ? "est_change_avatar" : "est_set_avatar")) {
                     photoTarget = .avatar
-                    showPhotoPicker = true
+                    presentAfterMenuDismissal { showPhotoPicker = true }
                 }
                 if hasAvatar {
                     GlassFilterActionRow(icon: "person.crop.circle.badge.xmark",
@@ -396,7 +421,10 @@ struct SpaceDetailView: View {
         guard !isSavingPhoto else { return }
         isSavingPhoto = true
         defer { isSavingPhoto = false }
-        guard let data = try? await pickerItem.loadTransferable(type: Data.self) else { return }
+        guard let data = try? await pickerItem.loadTransferable(type: Data.self) else {
+            photoError = String(localized: "est_photo_load_failed")
+            return
+        }
         let target = photoTarget
         let compressed = await Task.detached(priority: .userInitiated) {
             // The avatar renders at 56pt — cap it small so the disc loads
@@ -416,6 +444,7 @@ struct SpaceDetailView: View {
             HapticFeedback.success()
         } catch {
             HapticFeedback.error()
+            photoError = error.recordableDescription
         }
     }
 
