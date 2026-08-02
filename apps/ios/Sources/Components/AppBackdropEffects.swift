@@ -198,8 +198,16 @@ struct AppBackdropEffectsLayer: View {
         // Three cheap observable reads decide the branch; when it is empty,
         // that is the layer's ENTIRE cost.
         if AtmosphericEffectsPolicy.shared.allowsMounting(reduceMotion: reduceMotion) {
-            let effect = AtmosphericEffectsPolicy.effect(
-                for: mood, weatherTone: AppMoodEngine.shared.weatherTone)
+            // Only the night effect ever reads the live weather tone (rain
+            // after dark swaps the stars for real rain). Reading the
+            // @Observable tone unconditionally subscribed EVERY mounted
+            // backdrop body to weather-cache updates — a body re-evaluation
+            // for a value `effect(for:)` ignores on all other moods.
+            // Restricting the read removes those invalidations outright; the
+            // resolved effect is identical by construction (the switch uses
+            // the tone only in its `.night` case).
+            let tone = mood == .night ? AppMoodEngine.shared.weatherTone : nil
+            let effect = AtmosphericEffectsPolicy.effect(for: mood, weatherTone: tone)
             EffectsSceneHost(effect: effect, isRunning: scenePhase == .active)
                 .id(effect)   // mood/scheme change = a fresh scene, old one released
                 .allowsHitTesting(false)
@@ -2100,24 +2108,49 @@ struct NightSkyStaticLayer: View {
         return NightSkyArt.moonImage(phase: phase, diameter: 54)
     }()
 
+    /// One star of the static field, in unit space (y SpriteKit-up — the
+    /// draw flips it once, exactly as before).
+    private struct StaticStar {
+        let x: CGFloat
+        let y: CGFloat
+        let radius: CGFloat
+        let alpha: CGFloat
+        let tint: Color
+    }
+
+    /// The live scene's exact 80-star field, derived ONCE per process from
+    /// the shared fixed seed. The Canvas closure used to re-run the seeded
+    /// RNG (4 draws × 80 stars) and rebuild every spec on EVERY redraw —
+    /// each size change and trait pass repeated work whose result is a
+    /// constant. Baking the specs removes that per-redraw cost with zero
+    /// possibility of visual drift: same seed, same draw order, same value
+    /// sequence, same index-based tint rule as the loop it replaces.
+    private static let stars: [StaticStar] = {
+        var rng = SplitMix64(seed: 0x5EED_57A2_F1E1D)
+        let warm = Color(red: 1.0, green: 0.94, blue: 0.85)
+        let cool = Color(red: 0.86, green: 0.91, blue: 1.0)
+        return (0..<80).map { i in
+            let x = CGFloat.random(in: 0.01...0.99, using: &rng)
+            let y = CGFloat.random(in: 0.01...0.99, using: &rng)
+            let radius = CGFloat.random(in: 0.5...1.3, using: &rng)
+            let alpha = CGFloat.random(in: 0.12...0.55, using: &rng)
+            return StaticStar(x: x, y: y, radius: radius, alpha: alpha,
+                              tint: i % 7 == 0 ? warm : (i % 5 == 0 ? cool : .white))
+        }
+    }()
+
     var body: some View {
         Canvas { context, size in
-            // The live scene's exact star field: same seed, same spec order,
+            // The live scene's exact star field (specs baked once above),
             // y flipped once (SpriteKit is bottom-up, Canvas top-down).
-            var rng = SplitMix64(seed: 0x5EED_57A2_F1E1D)
-            let warm = Color(red: 1.0, green: 0.94, blue: 0.85)
-            let cool = Color(red: 0.86, green: 0.91, blue: 1.0)
-            for i in 0..<80 {
-                let ux = CGFloat.random(in: 0.01...0.99, using: &rng)
-                let uy = CGFloat.random(in: 0.01...0.99, using: &rng)
-                let r = CGFloat.random(in: 0.5...1.3, using: &rng)
-                let alpha = CGFloat.random(in: 0.12...0.55, using: &rng)
-                let tint: Color = i % 7 == 0 ? warm : (i % 5 == 0 ? cool : .white)
-                let c = CGPoint(x: ux * size.width, y: (1 - uy) * size.height)
+            for star in Self.stars {
+                let r = star.radius
+                let c = CGPoint(x: star.x * size.width,
+                                y: (1 - star.y) * size.height)
                 context.fill(
                     Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r,
                                            width: r * 2, height: r * 2)),
-                    with: .color(tint.opacity(alpha)))
+                    with: .color(star.tint.opacity(star.alpha)))
                 if r > 1.1 {
                     // The brightest few keep their thin diffraction spikes.
                     var spikes = Path()
@@ -2127,7 +2160,8 @@ struct NightSkyStaticLayer: View {
                         spikes.addLine(to: CGPoint(x: c.x + cos(a) * reach,
                                                    y: c.y + sin(a) * reach))
                     }
-                    context.stroke(spikes, with: .color(tint.opacity(alpha * 0.6)),
+                    context.stroke(spikes,
+                                   with: .color(star.tint.opacity(star.alpha * 0.6)),
                                    lineWidth: 0.5)
                 }
             }

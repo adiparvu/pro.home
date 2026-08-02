@@ -78,6 +78,78 @@ final class MessageService {
     /// real rows. Server timestamps are authoritative and monotonic.
     @ObservationIgnored private var lastSyncedCreatedAt: String?
 
+    // MARK: - G2: groups on conversations (dual-read behind the flag)
+    //
+    // The P4 playbook, replayed for groups: reads switch to the
+    // conversation scope when `chat_rollout.group_unified_read` is up;
+    // WRITES stay legacy until G3 flips the flag, backfills
+    // conversation_id and stamps new inserts server-side. Fail closed:
+    // any doubt reads legacy, exactly like the DM rollout did.
+
+    /// Server rollout flag, resolved once per property switch.
+    @ObservationIgnored private var groupUnifiedRead = false
+    @ObservationIgnored private var groupFlagProperty: UUID?
+    /// Resolved conversation ids per scope ("main:<property>" /
+    /// "grp:<group>") — one RPC per scope, then cached.
+    @ObservationIgnored private var groupConversations: [String: UUID] = [:]
+
+    private func refreshGroupFlag(propertyId: UUID) async {
+        guard groupFlagProperty != propertyId else { return }
+        groupConversations = [:]   // scope cache is per-property
+        struct Row: Decodable {
+            let groupUnifiedRead: Bool
+            enum CodingKeys: String, CodingKey { case groupUnifiedRead = "group_unified_read" }
+        }
+        do {
+            let row: Row = try await supabase
+                .from("chat_rollout")
+                .select("group_unified_read")
+                .single()
+                .execute()
+                .value
+            groupUnifiedRead = row.groupUnifiedRead
+        } catch {
+            groupUnifiedRead = false
+        }
+        groupFlagProperty = propertyId
+    }
+
+    /// The conversation for one scope, when the flag is up — nil means
+    /// "read legacy". Membership is checked by the RPC; the id is cached.
+    private func activeGroupConversation(propertyId: UUID, groupId: UUID?) async -> UUID? {
+        guard groupUnifiedRead else { return nil }
+        let key = groupId.map { "grp:\($0.uuidString)" } ?? "main:\(propertyId.uuidString)"
+        if let id = groupConversations[key] { return id }
+        struct P: Encodable { let p_property: String; let p_group: String? }
+        guard let id: UUID = try? await supabase
+            .rpc("group_open_conversation",
+                 params: P(p_property: propertyId.uuidString, p_group: groupId?.uuidString))
+            .execute()
+            .value else { return nil }
+        groupConversations[key] = id
+        return id
+    }
+
+    /// One scoped base query for every group read: the conversation scope
+    /// when unified reads are live, the legacy (property, group,
+    /// conversation NULL) triple otherwise — so the four read paths can
+    /// never disagree about what "this conversation" means.
+    private func scopedMessagesQuery(propertyId: UUID, groupId: UUID?,
+                                     conversation: UUID?) -> PostgrestFilterBuilder {
+        if let conversation {
+            return supabase.from("messages").select()
+                .eq("conversation_id", value: conversation.uuidString)
+        }
+        var query = supabase.from("messages").select()
+            .eq("property_id", value: propertyId.uuidString)
+            // Unified-store guard (P4c): DM rows live in this table too —
+            // legacy group/main reads must never pull them.
+            .is("conversation_id", value: nil)
+        if let gid = groupId { query = query.eq("group_id", value: gid.uuidString) }
+        else { query = query.or("group_id.is.null") }
+        return query
+    }
+
     func load(propertyId: UUID, groupId: UUID? = nil) async {
         // Teardown only on a genuine conversation switch: load() reruns on
         // every appear/foreground for the SAME scope, and an unconditional
@@ -114,20 +186,13 @@ final class MessageService {
         isLoading = true
         defer { isLoading = false }
         do {
+            // G2: resolve the flag + conversation once per load; the scoped
+            // query below reads whichever store is live.
+            await refreshGroupFlag(propertyId: propertyId)
+            let conv = await activeGroupConversation(propertyId: propertyId, groupId: groupId)
             // Load the most recent page (newest first from the DB, shown oldest→newest).
-            var query = supabase
-                .from("messages")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                // Unified-store guard (P4c): DM rows now live in this table
-                // too (conversation_id set) — group/main queries must never
-                // pull them, on any flag state.
-                .is("conversation_id", value: nil)
-            // Scope is symmetric: a group chat sees only its group, and the
-            // main chat sees only NULL-group rows — otherwise every community
-            // message would also land in the main conversation.
-            if let gid = groupId { query = query.eq("group_id", value: gid.uuidString) }
-            else { query = query.or("group_id.is.null") }
+            let query = scopedMessagesQuery(propertyId: propertyId, groupId: groupId,
+                                            conversation: conv)
             let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
@@ -158,14 +223,10 @@ final class MessageService {
         isLoadingOlder = true
         defer { isLoadingOlder = false }
         do {
-            var query = supabase
-                .from("messages")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .is("conversation_id", value: nil)
+            let conv = await activeGroupConversation(propertyId: propertyId, groupId: currentGroupId)
+            let query = scopedMessagesQuery(propertyId: propertyId, groupId: currentGroupId,
+                                            conversation: conv)
                 .lt("created_at", value: oldest)
-            if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
-            else { query = query.or("group_id.is.null") }
             let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
@@ -185,13 +246,9 @@ final class MessageService {
     /// expanded older history isn't collapsed by a full reload).
     func loadNewer(propertyId: UUID) async -> Int {
         do {
-            var query = supabase
-                .from("messages")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .is("conversation_id", value: nil)
-            if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
-            else { query = query.or("group_id.is.null") }
+            let conv = await activeGroupConversation(propertyId: propertyId, groupId: currentGroupId)
+            var query = scopedMessagesQuery(propertyId: propertyId, groupId: currentGroupId,
+                                            conversation: conv)
             // Cursor on the last SERVER-acked row, not the last in-memory row
             // (which may be an optimistic message stamped with a skewed client
             // clock). Falls back to the newest loaded row before the first sync.
@@ -816,6 +873,18 @@ extension MessageService {
 
     /// True when any group message in this property matches the query.
     func groupHasMatch(propertyId: UUID, query: String) async -> Bool {
+        // G2: the unified search RPC ships with G3 (rows gain
+        // conversation_id then, and this query's `.is(nil)` would go
+        // blind); until it exists the try? falls through to the legacy
+        // scan, which is complete today.
+        struct P: Encodable { let p_property: String; let p_query: String }
+        if let hit: Bool = try? await supabase
+            .rpc("group_search_has_match",
+                 params: P(p_property: propertyId.uuidString, p_query: query))
+            .execute()
+            .value {
+            return hit
+        }
         struct Row: Decodable { let id: UUID }
         let rows: [Row] = (try? await supabase.from("messages")
             .select("id")
