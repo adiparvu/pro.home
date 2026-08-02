@@ -37,20 +37,13 @@ final class MessageService {
     /// delivery ping on it, and the activity indicator is synced from it
     /// before each use.
     private var realtimeChannel: RealtimeChannelV2? { realtime.channel }
-    private var readsChannel: RealtimeChannelV2?
-    private var deliveriesChannel: RealtimeChannelV2?
-    private var reactionsChannel: RealtimeChannelV2?
-    /// Retained postgres-change subscription handles for the RECEIPT
-    /// channels. `onPostgresChange` (which replaced the removed async-stream
-    /// `postgresChange`) returns a handle whose deinit removes the callback,
-    /// so it must be held for the callback to keep firing. Each channel owns
-    /// its handles — when the main channel (whose handles now live in
-    /// `ChatRealtimeChannel`) shared an array with the receipt channels, its
-    /// failed-subscribe cleanup left them subscribed but deaf.
-    private var readsSubs: [RealtimeSubscription] = []
-    private var deliveriesSubs: [RealtimeSubscription] = []
-    private var reactionsSubs: [RealtimeSubscription] = []
-    private var pollVotesSubs: [RealtimeSubscription] = []
+    // The four receipt/reaction/poll side channels, one shared lifecycle
+    // each (ChatSideChannel — P6b): the ~260 duplicated lines these used to
+    // be meant every realtime lesson had to be patched four times.
+    private let readsSideChannel = ChatSideChannel(table: "message_reads", tag: "Reads")
+    private let deliveriesSideChannel = ChatSideChannel(table: "message_deliveries", tag: "Deliveries")
+    private let reactionsSideChannel = ChatSideChannel(table: "message_reactions", tag: "Reactions")
+    private let pollVotesSideChannel = ChatSideChannel(table: "message_poll_votes", tag: "PollVotes")
 
     // MARK: - Typing indicator (shared subsystem — chat unification P3a)
     /// The shared typing/recording indicator; the engine syncs channel/name
@@ -59,11 +52,6 @@ final class MessageService {
     var typingNames: Set<String> { activity.typingNames }
     var recordingNames: Set<String> { activity.recordingNames }
     var myName: String = ""
-    /// Coalesces bursts of realtime events so a flurry of changes triggers a
-    /// single reload per quiet window instead of one reload per event (C2). Same
-    /// reload code runs — just debounced — so the displayed data stays correct.
-    private var reloadTasks: [String: Task<Void, Never>] = [:]
-
     func sendTyping() { syncActivity(); activity.sendTyping() }
 
     /// Periodic signal while the voice recorder is live — see
@@ -620,61 +608,16 @@ final class MessageService {
     }
 
     /// Subscribes to read receipt changes so the sender sees "seen" updates
-    /// live. The topic carries the group scope: the main chat and a community
-    /// group used to claim the SAME "message_reads:{propertyId}" topic, and
-    /// the realtime client returns the already-subscribed channel for a
-    /// duplicate topic — the second conversation's callbacks were silently
-    /// dropped and its receipts never updated.
+    /// live. Lifecycle (scope topic, idempotency, timebox, socket-wait,
+    /// clean teardown) lives in ChatSideChannel.
     func subscribeReads(propertyId: UUID, groupId: UUID?) async {
-        let scope = groupId?.uuidString ?? "main"
-        let topic = "message_reads:\(propertyId.uuidString):\(scope)"
-        // Liveness idempotency (audit 2026-07-21): a repeat call for the
-        // SAME scope keeps the live channel — a second call used to append
-        // duplicate handlers and re-join the topic. A scope change tears
-        // down cleanly (real leave) first.
-        if let ch = readsChannel, ch.topic.hasSuffix(topic),
-           ch.status == .subscribed || ch.status == .subscribing { return }
-        if readsChannel != nil { await unsubscribeReads() }
-        let channel = realtimeAnon.channel(topic)
-        readsSubs.append(channel.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_reads",
-            filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.reloadTasks["reads"]?.cancel()
-                self.reloadTasks["reads"] = Task { @MainActor [weak self] in
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
-                    await self?.loadReads(propertyId: propertyId, groupId: groupId)
-                }
-            }
-        })
-        do {
-            // Timeboxed: a hung handshake must not stall the thread's
-            // appear chain on a never-recovering socket.
-            try await withRealtimeTimeout(seconds: 15) {
-                try await channel.subscribeWithError()
-            }
-            readsChannel = channel
-        } catch {
-            // No trace on failure (b1173: leave from every state).
-            debugLog("Reads realtime subscribe failed:", error)
-            readsSubs.removeAll()
-            await channel.unsubscribe()
-            await realtimeAnon.removeChannel(channel)
+        await readsSideChannel.subscribe(propertyId: propertyId, groupId: groupId) { [weak self] in
+            await self?.loadReads(propertyId: propertyId, groupId: groupId)
         }
     }
 
     func unsubscribeReads() async {
-        readsSubs.removeAll()
-        if let ch = readsChannel {
-            await ch.unsubscribe()   // real leave from every state (b1173)
-            await realtimeAnon.removeChannel(ch)
-            readsChannel = nil
-        }
+        await readsSideChannel.unsubscribe()
     }
 
     // MARK: - Delivery receipts
@@ -719,57 +662,14 @@ final class MessageService {
     }
 
     /// Subscribes to delivery changes so the sender's ticks advance live.
-    /// Topic is group-scoped — see subscribeReads for why.
     func subscribeDeliveries(propertyId: UUID, groupId: UUID?) async {
-        let scope = groupId?.uuidString ?? "main"
-        let topic = "message_deliveries:\(propertyId.uuidString):\(scope)"
-        // Liveness idempotency (audit 2026-07-21): a repeat call for the
-        // SAME scope keeps the live channel — a second call used to append
-        // duplicate handlers and re-join the topic. A scope change tears
-        // down cleanly (real leave) first.
-        if let ch = deliveriesChannel, ch.topic.hasSuffix(topic),
-           ch.status == .subscribed || ch.status == .subscribing { return }
-        if deliveriesChannel != nil { await unsubscribeDeliveries() }
-        let channel = realtimeAnon.channel(topic)
-        deliveriesSubs.append(channel.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_deliveries",
-            filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.reloadTasks["deliveries"]?.cancel()
-                self.reloadTasks["deliveries"] = Task { @MainActor [weak self] in
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
-                    await self?.loadDeliveries(propertyId: propertyId, groupId: groupId)
-                }
-            }
-        })
-        do {
-            // Timeboxed: a hung handshake must not stall the thread's
-            // appear chain on a never-recovering socket.
-            try await withRealtimeTimeout(seconds: 15) {
-                try await channel.subscribeWithError()
-            }
-            deliveriesChannel = channel
-        } catch {
-            // No trace on failure (b1173: leave from every state).
-            debugLog("Deliveries realtime subscribe failed:", error)
-            deliveriesSubs.removeAll()
-            await channel.unsubscribe()
-            await realtimeAnon.removeChannel(channel)
+        await deliveriesSideChannel.subscribe(propertyId: propertyId, groupId: groupId) { [weak self] in
+            await self?.loadDeliveries(propertyId: propertyId, groupId: groupId)
         }
     }
 
     func unsubscribeDeliveries() async {
-        deliveriesSubs.removeAll()
-        if let ch = deliveriesChannel {
-            await ch.unsubscribe()   // real leave from every state (b1173)
-            await realtimeAnon.removeChannel(ch)
-            deliveriesChannel = nil
-        }
+        await deliveriesSideChannel.unsubscribe()
     }
 
     // MARK: - Reactions
@@ -823,61 +723,18 @@ final class MessageService {
 
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribeReactions(propertyId: UUID, groupId: UUID?) async {
-        let scope = groupId?.uuidString ?? "main"
-        let topic = "message_reactions:\(propertyId.uuidString):\(scope)"
-        // Liveness idempotency (audit 2026-07-21): a repeat call for the
-        // SAME scope keeps the live channel — a second call used to append
-        // duplicate handlers and re-join the topic. A scope change tears
-        // down cleanly (real leave) first.
-        if let ch = reactionsChannel, ch.topic.hasSuffix(topic),
-           ch.status == .subscribed || ch.status == .subscribing { return }
-        if reactionsChannel != nil { await unsubscribeReactions() }
-        let channel = realtimeAnon.channel(topic)
-        reactionsSubs.append(channel.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_reactions",
-            filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.reloadTasks["reactions"]?.cancel()
-                self.reloadTasks["reactions"] = Task { @MainActor [weak self] in
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
-                    await self?.loadReactions(propertyId: propertyId, groupId: groupId)
-                }
-            }
-        })
-        do {
-            // Timeboxed: a hung handshake must not stall the thread's
-            // appear chain on a never-recovering socket.
-            try await withRealtimeTimeout(seconds: 15) {
-                try await channel.subscribeWithError()
-            }
-            reactionsChannel = channel
-        } catch {
-            // No trace on failure (b1173: leave from every state).
-            debugLog("Reactions realtime subscribe failed:", error)
-            reactionsSubs.removeAll()
-            await channel.unsubscribe()
-            await realtimeAnon.removeChannel(channel)
+        await reactionsSideChannel.subscribe(propertyId: propertyId, groupId: groupId) { [weak self] in
+            await self?.loadReactions(propertyId: propertyId, groupId: groupId)
         }
     }
 
     func unsubscribeReactions() async {
-        reactionsSubs.removeAll()
-        if let ch = reactionsChannel {
-            await ch.unsubscribe()   // real leave from every state (b1173)
-            await realtimeAnon.removeChannel(ch)
-            reactionsChannel = nil
-        }
+        await reactionsSideChannel.unsubscribe()
     }
 
     // MARK: - Poll votes
 
     var pollVotes: [UUID: [PollVote]] = [:]
-    private var pollVotesChannel: RealtimeChannelV2?
 
     func loadPollVotes(propertyId: UUID, groupId: UUID?) async {
         guard let rows: [PollVote] = try? await Self.scopedReceiptQuery(
@@ -920,60 +777,16 @@ final class MessageService {
 
     /// Topic is group-scoped — see subscribeReads for why.
     func subscribePollVotes(propertyId: UUID, groupId: UUID?) async {
-        let scope = groupId?.uuidString ?? "main"
-        let topic = "message_poll_votes:\(propertyId.uuidString):\(scope)"
-        // Liveness idempotency (audit 2026-07-21): a repeat call for the
-        // SAME scope keeps the live channel — a second call used to append
-        // duplicate handlers and re-join the topic. A scope change tears
-        // down cleanly (real leave) first.
-        if let ch = pollVotesChannel, ch.topic.hasSuffix(topic),
-           ch.status == .subscribed || ch.status == .subscribing { return }
-        if pollVotesChannel != nil { await unsubscribePollVotes() }
-        let channel = realtimeAnon.channel(topic)
-        pollVotesSubs.append(channel.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "message_poll_votes",
-            filter: "property_id=eq.\(propertyId.uuidString)"
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.reloadTasks["pollVotes"]?.cancel()
-                self.reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                    guard !Task.isCancelled, !AppLifecycle.isBackgrounded else { return }
-                    await self?.loadPollVotes(propertyId: propertyId, groupId: groupId)
-                }
-            }
-        })
-        do {
-            // Timeboxed: a hung handshake must not stall the thread's
-            // appear chain on a never-recovering socket.
-            try await withRealtimeTimeout(seconds: 15) {
-                try await channel.subscribeWithError()
-            }
-            pollVotesChannel = channel
-        } catch {
-            // No trace on failure (b1173: leave from every state).
-            debugLog("Poll-votes realtime subscribe failed:", error)
-            pollVotesSubs.removeAll()
-            await channel.unsubscribe()
-            await realtimeAnon.removeChannel(channel)
+        await pollVotesSideChannel.subscribe(propertyId: propertyId, groupId: groupId) { [weak self] in
+            await self?.loadPollVotes(propertyId: propertyId, groupId: groupId)
         }
     }
 
     func unsubscribePollVotes() async {
-        pollVotesSubs.removeAll()
-        if let ch = pollVotesChannel {
-            await ch.unsubscribe()   // real leave from every state (b1173)
-            await realtimeAnon.removeChannel(ch)
-            pollVotesChannel = nil
-        }
+        await pollVotesSideChannel.unsubscribe()
     }
 
     func unsubscribeAll() async {
-        reloadTasks.values.forEach { $0.cancel() }
-        reloadTasks.removeAll()
         activity.reset()
         activity.channel = nil
         await unsubscribe()
