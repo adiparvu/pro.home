@@ -533,6 +533,17 @@ enum PropertyLayer: String, Codable, CaseIterable {
     case financial  = "financial"
     case smartHome  = "smart_home"
 
+    /// Tolerant decode (IMG_9279): ONE zone written by an old build carried
+    /// layer="indoor" — a label outside this vocabulary — and that single
+    /// row's decode failure blinded the ENTIRE spaces list for six weeks:
+    /// the page showed empty, the family kept re-creating spaces, and every
+    /// "save" looked lost. An unknown label degrades to .property; it must
+    /// never again take the whole fetch down with it.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = PropertyLayer(rawValue: raw) ?? .property
+    }
+
     var displayName: String {
         switch self {
         case .property:    return String(localized: "Property")
