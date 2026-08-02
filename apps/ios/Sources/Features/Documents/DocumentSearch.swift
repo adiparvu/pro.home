@@ -120,6 +120,29 @@ enum DocumentSearch {
         return out
     }
 
+    // MARK: Spotlight keywords
+
+    /// Unique, meaningful words from captured OCR text, for the on-device
+    /// Spotlight index. Each word contributes its diacritic-folded form (the
+    /// same normalization the in-app search uses) plus the original lowercase
+    /// form when it differs, so "mașină" and "masina" both hit. Capped so an
+    /// attribute set never carries a whole manual's vocabulary.
+    static func spotlightKeywords(from text: String?, limit: Int = 40) -> [String] {
+        guard let text, !text.isEmpty else { return [] }
+        var seen = Set<String>()
+        var out: [String] = []
+        for raw in text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }) {
+            guard out.count < limit else { break }
+            let word = String(raw).lowercased()
+            let folded = fold(word)
+            guard folded.count >= 3, !stopwords.contains(folded) else { continue }
+            guard seen.insert(folded).inserted else { continue }
+            out.append(folded)
+            if word != folded, out.count < limit { out.append(word) }
+        }
+        return out
+    }
+
     // MARK: Stemming helpers
 
     /// True when the query word matches any whole word in the haystack by a

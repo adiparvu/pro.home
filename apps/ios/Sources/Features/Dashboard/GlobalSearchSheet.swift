@@ -61,7 +61,10 @@ struct GlobalSearchSheet: View {
     }
     private var docResults: [DocumentModel] {
         guard active else { return [] }
-        return documentService.documents.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        // The full document matcher (name, number, tags AND the scanned
+        // OCR text, diacritic-folded) — global search used to reach only
+        // the name, so the text INSIDE a scanned invoice was invisible.
+        return documentService.documents.filter { DocumentSearch.matches($0, query: query) }
     }
     private var plantResults: [Plant] {
         guard active else { return [] }

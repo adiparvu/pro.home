@@ -75,7 +75,17 @@ final class SpotlightService {
                 }
             }
             attrs.contentDescription = descParts.joined(separator: " · ")
-            attrs.keywords = ([doc.name, doc.category] + doc.tags)
+            // Search reaches inside scanned documents: the OCR text captured at
+            // add time feeds the index — capped keyword terms (folded + original
+            // forms, via the same normalization in-app search uses) plus the
+            // full body as textContent for Spotlight's own full-text matching.
+            // contentDescription stays the curated category/expiry summary so
+            // results never surface raw OCR noise as the visible subtitle.
+            attrs.keywords = ([doc.name, doc.category] + doc.tags
+                              + DocumentSearch.spotlightKeywords(from: doc.ocrText))
+            if let ocr = doc.ocrText, !ocr.isEmpty {
+                attrs.textContent = ocr
+            }
             let item = CSSearchableItem(
                 uniqueIdentifier: "doc-\(doc.id.uuidString)",
                 domainIdentifier: "com.prvio.documents",
