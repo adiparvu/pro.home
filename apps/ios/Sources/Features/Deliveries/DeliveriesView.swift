@@ -52,7 +52,7 @@ struct DeliveriesView: View {
                 } label: {
                     Image(systemName: "envelope.badge")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Auto-import from email")
             }
@@ -63,7 +63,7 @@ struct DeliveriesView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Add delivery")
             }

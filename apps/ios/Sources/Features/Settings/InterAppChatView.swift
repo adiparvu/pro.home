@@ -33,7 +33,7 @@ struct InterAppChatView: View {
                     ).animation(AppMotion.state)) {
                         Text("Enable")
                             .font(AppFont.scaled(17, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.glassInk)
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                     .liquidGlass(cornerRadius: AppRadius.lg)

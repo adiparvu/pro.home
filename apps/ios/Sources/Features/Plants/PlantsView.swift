@@ -56,7 +56,7 @@ struct PlantsView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Add plant")
             }

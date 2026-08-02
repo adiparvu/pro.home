@@ -91,7 +91,7 @@ struct GuideSheet: View {
                     .frame(width: 24)
                 Text(section.title)
                     .font(AppFont.scaled(17, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.glassInk)
             }
 
             if let body = section.body {

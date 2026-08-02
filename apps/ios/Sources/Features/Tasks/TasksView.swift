@@ -179,7 +179,7 @@ struct TasksView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("task_new")
             }
@@ -211,7 +211,7 @@ struct TasksView: View {
                 } label: {
                     Image(systemName: "calendar")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Calendar")
             }

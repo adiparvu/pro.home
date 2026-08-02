@@ -152,6 +152,15 @@ enum AppOpacity {
 }
 
 extension Color {
+    /// Toolbar/glass glyph ink. A CONCRETE dynamic color, not the
+    /// hierarchical `.primary`: over Liquid Glass, hierarchical styles get
+    /// the material's vibrancy blend, which on saturated photographic
+    /// backdrops (the olive field, field report 2026-08-02) muddied the
+    /// toolbar glyphs into the wallpaper. A concrete color opts out of
+    /// vibrancy and keeps full contrast on every mood, and renders
+    /// identically to `.primary` everywhere vibrancy is not in play.
+    static var glassInk: Color { Color(uiColor: .label) }
+
     /// `Color.primary` at the app's standard hairline-divider opacity.
     static var hairline: Color { Color.primary.opacity(AppOpacity.hairline) }
     /// `Color.primary` at the app's standard subtle-fill opacity.

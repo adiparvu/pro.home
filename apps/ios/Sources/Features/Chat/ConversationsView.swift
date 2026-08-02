@@ -501,7 +501,7 @@ struct ConversationsView: View {
                 Button { router.navigate(to: .notificationsChat) } label: {
                     Image(systemName: "bell")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                         .frame(width: 44, height: 44)
                         .glassCircle()
                 }

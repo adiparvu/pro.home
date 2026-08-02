@@ -55,7 +55,7 @@ struct PropertySettingsView: View {
                     Button { showPassport = true } label: {
                         Image(systemName: "doc.richtext")
                             .font(AppFont.scaled(17, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.glassInk)
                     }
                     .accessibilityLabel(Text("passport_title"))
                 }
@@ -64,7 +64,7 @@ struct PropertySettingsView: View {
                 Button { showAdd = true } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Add property")
             }

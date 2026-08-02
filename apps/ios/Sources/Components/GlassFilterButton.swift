@@ -169,7 +169,9 @@ struct GlassFilterButton<Content: View>: View {
     private var trigger: some View {
         Image(systemName: icon)
             .font(AppFont.scaled(glyphSize, weight: .semibold))
-            .foregroundStyle(.primary)
+            // Concrete ink, not hierarchical: vibrancy over the photographic
+            // moods washed the glyph out (see Color.glassInk).
+            .foregroundStyle(Color.glassInk)
             .frame(width: inToolbar ? 28 : standaloneSize,
                    height: inToolbar ? 28 : standaloneSize)
             .overlay(alignment: .topTrailing) {

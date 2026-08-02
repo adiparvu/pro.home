@@ -70,7 +70,7 @@ struct IoTHubView: View {
                     Button { Task { await service.pollAllDevices() } } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(AppFont.scaled(17, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.glassInk)
                     }
                     .accessibilityLabel("Refresh devices")
                 }
@@ -79,7 +79,7 @@ struct IoTHubView: View {
                 Button { addAction() } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel("Add item")
             }

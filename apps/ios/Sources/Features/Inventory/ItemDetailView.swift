@@ -408,7 +408,7 @@ struct ItemDetailView: View {
         } label: {
             Image(systemName: icon)
                 .font(AppFont.scaled(17, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.glassInk)
                 .frame(maxWidth: .infinity).frame(height: 44)
                 .glassCapsule()
         }

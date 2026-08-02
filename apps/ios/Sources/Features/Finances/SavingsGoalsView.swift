@@ -89,7 +89,7 @@ struct SavingsGoalsView: View {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus")
                         .font(AppFont.scaled(17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.glassInk)
                 }
                 .accessibilityLabel(Text("goal_add"))
             }

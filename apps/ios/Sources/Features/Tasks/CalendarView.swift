@@ -147,7 +147,7 @@ struct CalendarView: View {
             Spacer(minLength: 0)
             Text(periodTitle)
                 .font(AppFont.scaled(17, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.glassInk)
                 .contentTransition(.opacity)
             Spacer(minLength: 0)
             if !cal.isDateInToday(anchor) || mode == .agenda {
@@ -326,7 +326,7 @@ struct CalendarView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(AppFont.scaled(17, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.glassInk)
             }
             .accessibilityLabel(Text("cal_new_event"))
             .disabled(propertyService.primary == nil)

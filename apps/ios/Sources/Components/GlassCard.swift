@@ -163,7 +163,7 @@ struct GlassActionButton: View {
             VStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(AppFont.scaled(17, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.glassInk)
                     .frame(width: 52, height: 52)
                     .glassCircle(interactive: true)
                 Text(label)

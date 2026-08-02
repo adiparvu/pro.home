@@ -458,7 +458,7 @@ struct GroupDetailsView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(AppFont.scaled(17, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.glassInk)
                     }
                 }
             }
