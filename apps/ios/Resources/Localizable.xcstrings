@@ -1,6 +1,15 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "fin_detail_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Transaction"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Tranzacție"}}}},
+    "fin_detail_category" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Category"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Categorie"}}}},
+    "fin_detail_notes" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Notes"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Notițe"}}}},
+    "fin_detail_recurring" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Repeats"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Se repetă"}}}},
+    "fin_detail_tags" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Tags"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Etichete"}}}},
+    "fin_detail_source" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Source"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Sursă"}}}},
+    "fin_detail_source_auto" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Card payment (automatic)"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Plată cu cardul (automat)"}}}},
+    "fin_detail_source_manual" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Added manually"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Adăugată manual"}}}},
+    "fin_detail_learn_hint" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Changing the category teaches it for this merchant, for everyone."}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Schimbarea categoriei o învață pentru acest comerciant, pentru toată familia."}}}},
     "plant_care_weather_rain" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Rain expected — watering postponed a day"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Se anunță ploaie — udarea e amânată cu o zi"}}}},
     "plant_care_weather_heat" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Heat wave — watering moved a day earlier"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Caniculă — udarea e devansată cu o zi"}}}},
     "rule_household_empty" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Everyone left"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "A plecat toată lumea"}}}},

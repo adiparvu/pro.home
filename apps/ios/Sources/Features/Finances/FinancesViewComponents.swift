@@ -294,7 +294,16 @@ extension FinancesView {
                         VStack(spacing: 0) {
                             ForEach(Array(group.records.enumerated()), id: \.element.id) { idx, record in
                                 let displayAmt = currencyService.formatted(record.amount, from: record.currency, preferred: preferred)
-                                FinancialRecordRow(record: record, displayAmount: displayAmt)
+                                // Tap PUSHES the detail page (field report
+                                // 2026-08-02: "să poți intra pe pagina lor") —
+                                // the long-press menu below stays as the
+                                // power-user shortcut it always was.
+                                NavigationLink {
+                                    FinancialRecordDetailView(record: record)
+                                } label: {
+                                    FinancialRecordRow(record: record, displayAmount: displayAmt)
+                                }
+                                .buttonStyle(.plain)
                                     // Long-press menu: rows live in a VStack, where
                                     // swipeActions is a List-only no-op — this is
                                     // the interaction that actually fires. Edit

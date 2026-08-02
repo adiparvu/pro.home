@@ -11,6 +11,7 @@ import SwiftUI
 
 struct SavingsGoalsSection: View {
     @Environment(SavingsGoalService.self) private var service
+    @State private var showAdd = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -48,8 +49,29 @@ struct SavingsGoalsSection: View {
                     }
                     .buttonStyle(.plain)
                 }
+                // Adding the SECOND goal used to require: header → full page
+                // → the small toolbar plus, and nobody found it (field
+                // report 2026-08-02: "să poți adăuga mai multe"). The
+                // affordance now lives where the goals do.
+                Button { showAdd = true; HapticFeedback.impact(.light) } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(AppFont.scaled(15))
+                            .foregroundStyle(Color.secondaryTextColor)
+                        Text("goal_add")
+                            .font(AppFont.scaled(14, weight: .medium))
+                            .foregroundStyle(Color.secondaryTextColor)
+                        Spacer()
+                    }
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .liquidGlass(cornerRadius: AppRadius.lg)
             }
         }
+        .sheet(isPresented: $showAdd) { AddSavingsGoalSheet() }
     }
 }
 
