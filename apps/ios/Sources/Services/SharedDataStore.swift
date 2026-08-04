@@ -1348,6 +1348,10 @@ enum SharedDataStore {
         let card: String?
         let note: String?
         let date: String        // "yyyy-MM-dd"
+        /// ISO code the card was actually charged in (IMG_9288 — lei taps
+        /// were landing as euros). Optional: entries queued by older builds
+        /// decode as nil and fall back to the preferred currency.
+        var currency: String? = nil
     }
 
     static func appendPendingExpense(_ expense: PendingExpense) {

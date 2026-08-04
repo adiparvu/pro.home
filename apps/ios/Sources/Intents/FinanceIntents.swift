@@ -32,8 +32,17 @@ struct LogExpenseIntent: AppIntent {
     @Parameter(title: "Note")
     var note: String?
 
+    /// ISO code of the currency the card was ACTUALLY charged in ("RON",
+    /// "EUR"…) — the Shortcuts Transaction automation provides it as the
+    /// transaction's Currency Code. Optional so existing automations keep
+    /// working; absent, the drain falls back to the preferred currency
+    /// (the pre-IMG_9288 behavior, which recorded lei taps as euros).
+    @Parameter(title: "Currency")
+    var currency: String?
+
     static var parameterSummary: some ParameterSummary {
         Summary("Log \(\.$amount) at \(\.$merchant)") {
+            \.$currency
             \.$card
             \.$note
         }
@@ -45,13 +54,17 @@ struct LogExpenseIntent: AppIntent {
             return .result(dialog: IntentDialog(stringLiteral:
                 String(localized: "intent_expense_invalid")))
         }
+        let code = currency?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
         SharedDataStore.appendPendingExpense(SharedDataStore.PendingExpense(
             id: UUID(),
             merchant: name,
             amount: amount,
             card: card?.isEmpty == true ? nil : card,
             note: note?.isEmpty == true ? nil : note,
-            date: AppDate.dayString(from: Date())))
+            date: AppDate.dayString(from: Date()),
+            currency: (code?.isEmpty == false && code?.count == 3) ? code : nil))
         return .result(dialog: IntentDialog(stringLiteral:
             String(format: String(localized: "intent_expense_logged_fmt"), name)))
     }

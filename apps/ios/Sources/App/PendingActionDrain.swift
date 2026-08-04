@@ -267,7 +267,11 @@ enum PendingActionDrain {
                         propertyId: propId.uuidString,
                         title: e.merchant,
                         amount: e.amount,
-                        currency: ctx.appSettings.preferredCurrency,
+                        // The currency the card was CHARGED in (IMG_9288) —
+                        // the automation passes it since the Currency
+                        // parameter exists; older queue entries fall back to
+                        // the household's preferred currency, as before.
+                        currency: e.currency ?? ctx.appSettings.preferredCurrency,
                         type: "expense",
                         category: ctx.merchantRuleService.category(for: e.merchant)
                             ?? MerchantCategorizer.staticCategory(for: e.merchant)
