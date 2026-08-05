@@ -63,16 +63,22 @@ final class MetricKitService: NSObject, MXMetricManagerSubscriber {
         else { return }
 
         let os = ProcessInfo.processInfo.operatingSystemVersion
-        let row = Row(
-            property_id: PropertyService.activePropertyId?.uuidString,
-            user_id: userId.uuidString,
-            kind: kind,
-            app_version: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
-            os_version: "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
-            device_model: Self.deviceModel,
-            payload: object)
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        let osVersion = "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+        let model = Self.deviceModel
 
         Task.detached(priority: .utility) {
+            // The active property lives on the main actor — one cheap hop to
+            // read it, then the insert stays off the main thread.
+            let propertyId = await MainActor.run { PropertyService.activePropertyId?.uuidString }
+            let row = Row(
+                property_id: propertyId,
+                user_id: userId.uuidString,
+                kind: kind,
+                app_version: appVersion,
+                os_version: osVersion,
+                device_model: model,
+                payload: object)
             // Fire-and-forget: a failed insert is a lost data point, never
             // a user-visible problem.
             _ = try? await supabase.from("app_metrics").insert(row).execute()
