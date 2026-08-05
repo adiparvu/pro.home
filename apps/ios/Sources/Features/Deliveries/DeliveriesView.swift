@@ -313,14 +313,12 @@ struct DeliveryRow: View {
         GlassCard(padding: 14) {
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(delivery.statusColor.opacity(0.15))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: delivery.statusIcon)
-                            .font(AppFont.title3)
-                            .foregroundStyle(delivery.statusColor)
-                    }
+                    BrandLogoCircle(
+                        domain: delivery.brandDomain,
+                        monogram: delivery.brandName,
+                        fallbackIcon: delivery.statusIcon,
+                        tint: delivery.statusColor,
+                        size: 44)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(delivery.description)

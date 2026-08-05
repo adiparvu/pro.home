@@ -83,6 +83,31 @@ struct Delivery: Identifiable, Codable, Hashable {
     /// True once the aggregator is tracking this parcel.
     var isLiveTracked: Bool { trackerId != nil }
 
+    // MARK: Brand identity (logo resolution)
+
+    /// The web domain whose mark identifies this parcel, best source first:
+    /// the shipping emails' sender domain (exact — "news.jysk.ro" → jysk.ro),
+    /// then the curated directory by merchant name, then the courier. Imported
+    /// parcels get the shop's real logo with zero configuration; manual ones
+    /// fall back to the directory.
+    var brandDomain: String? {
+        for email in sourceEmails ?? [] {
+            if let d = BrandDirectory.senderDomain(email.from) { return d }
+        }
+        if let m = merchant, !m.isEmpty, let d = BrandDirectory.domain(forBrand: m) { return d }
+        if let code = courierCode, let d = BrandDirectory.domain(forBrand: code) { return d }
+        if let c = carrier, !c.isEmpty, let d = BrandDirectory.domain(forBrand: c) { return d }
+        return nil
+    }
+
+    /// The brand name behind the circle's monogram fallback — the merchant
+    /// when known, otherwise the courier.
+    var brandName: String? {
+        if let m = merchant, !m.isEmpty { return m }
+        if let c = carrier, !c.isEmpty { return c }
+        return nil
+    }
+
     // MARK: Computed
 
     var statusIcon: String {

@@ -95,11 +95,12 @@ struct DeliveryDetailView: View {
 
     private var hero: some View {
         VStack(spacing: AppSpacing.md) {
-            Image(systemName: delivery.statusIcon)
-                .font(AppFont.scaled(32, weight: .semibold))
-                .foregroundStyle(delivery.statusColor)
-                .frame(width: 76, height: 76)
-                .glassCircle()
+            BrandLogoCircle(
+                domain: delivery.brandDomain,
+                monogram: delivery.brandName,
+                fallbackIcon: delivery.statusIcon,
+                tint: delivery.statusColor,
+                size: 76)
             VStack(spacing: 4) {
                 Text(delivery.description)
                     .font(AppFont.title2)
