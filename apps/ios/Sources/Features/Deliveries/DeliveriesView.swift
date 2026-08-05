@@ -383,15 +383,11 @@ struct DeliveryRow: View {
 
                     Spacer()
 
+                    // Naked colored text — the status needs no capsule chrome
+                    // (user-decreed, same law as the borderless headers).
                     Text(verbatim: delivery.statusLabel)
                         .font(AppFont.label)
                         .foregroundStyle(delivery.statusColor)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(
-                            delivery.statusColor.opacity(0.13),
-                            in: Capsule()
-                        )
                 }
 
                 // The journey, at a glance — only while the parcel is on its way.

@@ -132,11 +132,11 @@ struct DeliveryDetailView: View {
     }
 
     private var statusPill: some View {
+        // Naked colored text — no capsule chrome (user-decreed, the same law
+        // as the list row's status label).
         Text(verbatim: liveStatusLabel)
             .font(AppFont.captionEmphasis)
             .foregroundStyle(delivery.statusColor)
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 5)
-            .background(delivery.statusColor.opacity(0.14), in: Capsule())
     }
 
     // MARK: - Journey card (progress + milestone labels)
