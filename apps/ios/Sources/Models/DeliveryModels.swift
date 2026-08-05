@@ -159,18 +159,22 @@ struct Delivery: Identifiable, Codable, Hashable {
     }
 
     /// The live status phrase to show while tracked ("In transit", "Out for
-    /// delivery"…), or nil to fall back to the manual status pill.
+    /// delivery"…), or nil to fall back to the manual status pill. The single
+    /// source of truth for live-status wording — every screen renders these
+    /// labels from here, one localized entry per aggregator status.
     var liveStatusLabel: String? {
         guard let live = liveStatus else { return nil }
         switch live {
-        case "pending", "info_received":   return String(localized: "deliv_live_info")
-        case "in_transit":                 return String(localized: "deliv_live_transit")
-        case "out_for_delivery":           return String(localized: "Out for delivery")
-        case "available_for_pickup":       return String(localized: "deliv_live_pickup")
-        case "delivered":                  return String(localized: "Delivered")
-        case "exception", "failed_attempt": return String(localized: "deliv_live_exception")
-        case "expired":                    return String(localized: "deliv_live_expired")
-        default:                           return nil
+        case "pending":              return String(localized: "deliv_live_pending")
+        case "info_received":        return String(localized: "deliv_live_info")
+        case "in_transit":           return String(localized: "deliv_live_transit")
+        case "out_for_delivery":     return String(localized: "Out for delivery")
+        case "available_for_pickup": return String(localized: "deliv_live_pickup")
+        case "delivered":            return String(localized: "Delivered")
+        case "failed_attempt":       return String(localized: "deliv_live_failed")
+        case "exception":            return String(localized: "deliv_live_exception")
+        case "expired":              return String(localized: "deliv_live_expired")
+        default:                     return nil
         }
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -42,6 +43,67 @@ final class BudgetService {
         let b = budget(for: category)
         guard b > 0 else { return 0 }
         return min(spent / b, 1.0)
+    }
+
+    // MARK: - Threshold notifications
+    //
+    // Fires a local notification when a category with a budget crosses 80%
+    // and again at 100% of its monthly limit — each threshold at most ONCE
+    // per category per calendar month. Fired markers persist in UserDefaults
+    // (keyed category + month + threshold) and are pruned to the current
+    // month so the list can never grow unbounded.
+    private static let firedThresholdsKey = "prvio.budget.firedThresholds"
+
+    /// Called after budgets and the month's records are both freshly loaded.
+    /// `spentByCategory` carries the current calendar month's expense totals
+    /// keyed by lowercase category — the same numbers BudgetView draws.
+    func checkThresholds(spentByCategory: [String: Double]) {
+        guard !budgets.isEmpty else { return }
+        let monthKey = AppDate.monthKey.string(from: Date())
+        let defaults = UserDefaults.standard
+        var fired = (defaults.stringArray(forKey: Self.firedThresholdsKey)) ?? []
+        var dirty = false
+
+        // Forget previous months' markers — a new month starts clean.
+        let pruned = fired.filter { $0.contains("|\(monthKey)|") }
+        if pruned.count != fired.count { fired = pruned; dirty = true }
+
+        for (category, budget) in budgets where budget > 0 {
+            let ratio = (spentByCategory[category] ?? 0) / budget
+            for threshold in [100, 80] where ratio >= Double(threshold) / 100 {
+                let marker = "\(category)|\(monthKey)|\(threshold)"
+                guard !fired.contains(marker) else { continue }
+                fired.append(marker)
+                dirty = true
+                // A spend that jumps straight past 100% records the 80%
+                // marker silently — one honest alert, never two at once.
+                if threshold == 80 && ratio >= 1.0 { continue }
+                scheduleThresholdNotification(category: category, threshold: threshold, monthKey: monthKey)
+            }
+        }
+        if dirty { defaults.set(fired, forKey: Self.firedThresholdsKey) }
+    }
+
+    private func scheduleThresholdNotification(category: String, threshold: Int, monthKey: String) {
+        // The categories are a fixed list whose capitalized names already
+        // exist as localized keys (BudgetView renders them the same way).
+        let name = String(localized: String.LocalizationValue(category.capitalized))
+        let content = UNMutableNotificationContent()
+        if threshold >= 100 {
+            content.title = String(localized: "budget_notif_over_title")
+            content.body = String(format: String(localized: "budget_notif_over_body"), name)
+        } else {
+            content.title = String(localized: "budget_notif_near_title")
+            content.body = String(format: String(localized: "budget_notif_near_body"), name)
+        }
+        content.sound = .default
+        content.categoryIdentifier = "PROACTIVE"
+        content.userInfo = ["deepLink": "prvio://finances"]
+        let request = UNNotificationRequest(
+            identifier: "budget.\(category).\(monthKey).\(threshold)",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false))
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Private

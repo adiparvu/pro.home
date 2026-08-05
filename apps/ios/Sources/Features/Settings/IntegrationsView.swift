@@ -4,7 +4,7 @@ struct IntegrationsView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
-    @StateObject var vm = IntegrationsViewModel()
+    @State var vm = IntegrationsViewModel()
 
     var body: some View {
         ScrollView(showsIndicators: false) {

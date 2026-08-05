@@ -20,6 +20,8 @@ struct DeliveryFormSheet: View {
     /// overriding it. Editing an existing delivery that already has a carrier
     /// starts "touched" so its choice is never silently replaced.
     @State private var carrierTouched: Bool
+    /// Presents the VisionKit barcode scanner for the tracking field.
+    @State private var showTrackingScanner = false
 
     private var isEditing: Bool { editingDelivery != nil }
 
@@ -108,24 +110,41 @@ struct DeliveryFormSheet: View {
     private var trackingField: some View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("TRACKING CODE")
-            TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
-                .font(AppFont.scaled(15, design: .monospaced))
-                .foregroundStyle(.primary)
-                .tint(.accentColor)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.characters)
-                .padding(AppSpacing.base)
-                .background(
-                    Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                )
-                // Recognize the courier from the code's format and pre-select it,
-                // until the user picks one themselves.
-                .onChange(of: trackingNumber) { _, new in
-                    guard !carrierTouched, let detected = Delivery.detectCarrier(from: new),
-                          detected != carrier else { return }
-                    withAnimation(.snappy) { carrier = detected }
+            HStack(spacing: AppSpacing.sm) {
+                TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
+                    .font(AppFont.scaled(15, design: .monospaced))
+                    .foregroundStyle(.primary)
+                    .tint(.accentColor)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.characters)
+                    // Recognize the courier from the code's format and pre-select it,
+                    // until the user picks one themselves.
+                    .onChange(of: trackingNumber) { _, new in
+                        guard !carrierTouched, let detected = Delivery.detectCarrier(from: new),
+                              detected != carrier else { return }
+                        withAnimation(.snappy) { carrier = detected }
+                    }
+                // Camera capture for the AWB — reuses the documents' VisionKit
+                // barcode wrapper. The button exists only where the device can
+                // actually scan (no dead control on unsupported hardware).
+                if DocumentBarcodeScanner.isSupported {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showTrackingScanner = true
+                    } label: {
+                        Image(systemName: "barcode.viewfinder")
+                            .font(AppFont.scaled(17))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("deliv_scan_tracking"))
                 }
+            }
+            .padding(AppSpacing.base)
+            .background(
+                Color.primary.opacity(AppOpacity.subtleFill),
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            )
             if !carrierTouched, let detected = Delivery.detectCarrier(from: trackingNumber) {
                 Label(String(format: String(localized: "deliv_carrier_detected"), detected),
                       systemImage: "wand.and.stars")
@@ -133,6 +152,13 @@ struct DeliveryFormSheet: View {
                     .foregroundStyle(Color.accentColor)
                     .padding(.leading, AppSpacing.xxs)
             }
+        }
+        .sheet(isPresented: $showTrackingScanner) {
+            // First recognized payload fills the field (success haptic and
+            // dismissal live inside the scanner); carrier auto-detection then
+            // runs off the field's own onChange.
+            DocumentBarcodeScanner { payload in trackingNumber = payload }
+                .ignoresSafeArea()
         }
     }
 

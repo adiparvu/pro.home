@@ -60,6 +60,9 @@ struct MainTabView: View {
     /// recreate them later (a delete+recreate storm that spams every
     /// participant of a shared PRVIO calendar with "Deleted by …").
     @State private var worldLoaded = false
+    /// The once-per-build what's-new tour (WhatsNewSheet) — armed on the
+    /// first foreground beat after an update, never on a fresh install.
+    @State private var showWhatsNew = false
 
 
     var body: some View {
@@ -146,6 +149,10 @@ struct MainTabView: View {
                onDismiss: { router.drainPending() }) { target in
             ScanLandingView(target: target)
         }
+        // The once-per-build release tour — see WhatsNewSheet.swift.
+        .sheet(isPresented: $showWhatsNew) {
+            WhatsNewSheet()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
             router.activeDestination = .newTask
         }
@@ -210,6 +217,9 @@ struct MainTabView: View {
             // auto-reconnect is one-shot, so a single failed retry otherwise parks
             // the socket in .disconnected forever.
             RealtimeFlightRecorder.shared.startWatchdog()
+            // Telemetry upload: ship MetricKit payloads to app_metrics
+            // (MetricsMonitor keeps the on-device copy). Idempotent.
+            MetricKitService.shared.start()
             // Now that the user is signed in, make sure the device is registered
             // for push (requests permission the first time) — without a device
             // token the backend has nowhere to deliver chat notifications.
@@ -251,6 +261,9 @@ struct MainTabView: View {
                     let snapshot = houseAgendaSnapshot()
                     Task { await HouseCalendarMirror.sync(snapshot) }
                 }
+                // Once per build: the what's-new tour on the first
+                // foreground after an update (skips fresh installs).
+                if !showWhatsNew, WhatsNew.shouldPresent() { showWhatsNew = true }
             }
             else if phase == .background {
                 // Parked cleanly — a termination from the background is the

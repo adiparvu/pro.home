@@ -407,20 +407,10 @@ struct DeliveryDetailView: View {
         await deliveryService.reload()
     }
 
+    /// One source of truth: the model's localized live-status phrase, falling
+    /// back to the manual status label when the parcel isn't live-tracked.
     private var liveStatusLabel: String {
-        guard let s = delivery.liveStatus else { return delivery.statusLabel }
-        switch s {
-        case "pending":              return String(localized: "Pending")
-        case "info_received":        return String(localized: "Info received")
-        case "in_transit":           return String(localized: "In transit")
-        case "out_for_delivery":     return String(localized: "Out for delivery")
-        case "available_for_pickup": return String(localized: "Ready for pickup")
-        case "delivered":            return String(localized: "Delivered")
-        case "failed_attempt":       return String(localized: "Failed attempt")
-        case "exception":            return String(localized: "Exception")
-        case "expired":              return String(localized: "Expired")
-        default:                     return delivery.statusLabel
-        }
+        delivery.liveStatusLabel ?? delivery.statusLabel
     }
 
     private var etaText: String? {

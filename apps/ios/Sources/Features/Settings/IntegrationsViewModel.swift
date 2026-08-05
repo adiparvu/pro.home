@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import EventKit
 import Contacts
 
@@ -33,22 +34,23 @@ enum IntegrationSheet: Identifiable {
 // MARK: - ViewModel
 
 @MainActor
-final class IntegrationsViewModel: ObservableObject {
-    @Published var calendarStatus: IntegrationStatus = .notConnected
-    @Published var remindersStatus: IntegrationStatus = .notConnected
-    @Published var contactsStatus: IntegrationStatus = .notConnected
-    @Published var homeKitStatus: IntegrationStatus = .deepLink(String(localized: "Conectează"))
-    @Published var showCalendarSuccess = false
-    @Published var showContactsSuccess = false
-    @Published var showPermissionDenied = false
-    @Published var iCloudAvailable = false
-    @Published var nfcAvailable = false
-    @Published var activeSheet: IntegrationSheet? = nil
+@Observable
+final class IntegrationsViewModel {
+    var calendarStatus: IntegrationStatus = .notConnected
+    var remindersStatus: IntegrationStatus = .notConnected
+    var contactsStatus: IntegrationStatus = .notConnected
+    var homeKitStatus: IntegrationStatus = .deepLink(String(localized: "Conectează"))
+    var showCalendarSuccess = false
+    var showContactsSuccess = false
+    var showPermissionDenied = false
+    var iCloudAvailable = false
+    var nfcAvailable = false
+    var activeSheet: IntegrationSheet? = nil
     var tasks: [MaintenanceTask] = []
     var property: PropertyModel? = nil
     var familyMembers: [FamilyMember] = []
 
-    private lazy var store = EKEventStore()
+    @ObservationIgnored private lazy var store = EKEventStore()
     private let calendarSyncedKey = "prvio.calendar.synced_ids"
     private let reminderSyncedKey = "prvio.reminders.synced_ids"
 

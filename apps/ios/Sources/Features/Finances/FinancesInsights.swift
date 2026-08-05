@@ -75,6 +75,110 @@ struct CategoryBreakdownSection: View {
     }
 }
 
+// MARK: - Subscriptions detected (recurring monthly charges)
+//
+// A pure scan over the full record history: expense records that share a
+// normalized title and repeat every 25–35 days read as a subscription.
+// Hidden entirely when nothing qualifies — guessing at subscriptions from
+// thin data would be dishonest.
+
+struct SubscriptionsSection: View {
+    struct Item: Identifiable {
+        /// Display title, as the user last typed it (detection normalizes).
+        let merchant: String
+        let averageAmount: Double
+        let nextExpected: Date
+        var id: String { merchant.lowercased() }
+    }
+
+    /// Pure detection over `records`: group expenses by normalized title
+    /// (trimmed, lowercased); a group of ≥2 charges whose consecutive gaps
+    /// all fall in 25–35 days is a candidate. Average amount over the group;
+    /// next expected charge = last date + median gap. Biggest first, capped.
+    static func detect(in records: [FinancialRecord], limit: Int = 6) -> [Item] {
+        struct Charge { let date: Date; let amount: Double; let title: String }
+        let cal = Calendar.current
+        var groups: [String: [Charge]] = [:]
+        for r in records where r.type == "expense" {
+            let title = r.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty, let d = AppDate.day(from: r.date) else { continue }
+            groups[title.lowercased(), default: []].append(Charge(date: d, amount: r.amount, title: title))
+        }
+
+        var items: [Item] = []
+        for charges in groups.values where charges.count >= 2 {
+            let sorted = charges.sorted { $0.date < $1.date }
+            let gaps = zip(sorted.dropFirst(), sorted).map {
+                cal.dateComponents([.day], from: $1.date, to: $0.date).day ?? 0
+            }
+            guard gaps.allSatisfy({ (25...35).contains($0) }), let last = sorted.last else { continue }
+            let g = gaps.sorted()
+            let median = g.count % 2 == 1 ? g[g.count / 2] : (g[g.count / 2 - 1] + g[g.count / 2]) / 2
+            guard let next = cal.date(byAdding: .day, value: median, to: last.date) else { continue }
+            let average = sorted.reduce(0) { $0 + $1.amount } / Double(sorted.count)
+            items.append(Item(merchant: last.title, averageAmount: average, nextExpected: next))
+        }
+        return Array(items.sorted { $0.averageAmount > $1.averageAmount }.prefix(limit))
+    }
+
+    let items: [Item]
+    let format: (Double) -> String
+
+    var body: some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                Text("fin_subscriptions_header")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(0.4))
+
+                VStack(spacing: AppSpacing.base) {
+                    ForEach(items) { item in
+                        row(item)
+                    }
+                }
+            }
+            .padding(AppSpacing.lg)
+            .background(Color.primary.opacity(0.05),
+                        in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        }
+    }
+
+    private func row(_ item: Item) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: "repeat")
+                .font(AppFont.caption)
+                .foregroundStyle(Color.brandPurple)
+                .frame(width: 32, height: 32)
+                .glassRoundedRect(AppRadius.sm)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.merchant)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(String(format: String(localized: "fin_sub_next_expected"),
+                            "~ " + AppDate.monthDay.string(from: item.nextExpected)))
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(0.5))
+            }
+
+            Spacer(minLength: AppSpacing.md)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(format(item.averageAmount))
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                Text("fin_sub_per_month")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(0.5))
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(verbatim: format(item.averageAmount)))
+    }
+}
+
 // MARK: - Six-month trend (income vs. expenses)
 
 struct SixMonthTrendSection: View {

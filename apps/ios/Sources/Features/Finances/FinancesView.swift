@@ -263,6 +263,10 @@ struct FinancesView: View {
                         ExpenseForecastSection(records: financialService.records)
                             .padding(.top, AppSpacing.lg)
                             .padding(.horizontal, AppSpacing.xl)
+                        SubscriptionsSection(items: SubscriptionsSection.detect(in: financialService.records),
+                                             format: { financialService.moneyDisplay($0) })
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
                         RecurringDocumentCostsSection(items: recurringDocCosts(),
                                                       format: { fmt($0) })
                             .padding(.top, AppSpacing.lg)
@@ -279,7 +283,10 @@ struct FinancesView: View {
                         Spacer(minLength: 110)
                     }
                 }
-                .refreshable { await financialService.load() }
+                .refreshable {
+            await financialService.load()
+            checkBudgetThresholds()
+        }
         }
         }
         .background(appBackground.ignoresSafeArea())
@@ -331,8 +338,23 @@ struct FinancesView: View {
             if let pid = PropertyService.activePropertyId {
                 if familyService.members.isEmpty { await familyService.load() }
                 await familyService.loadLeases(propertyId: pid)
+                // Budgets usually arrive with the app-start batch; make sure
+                // they're here before the threshold check below.
+                if budgetService.budgets.isEmpty { await budgetService.load(propertyId: pid) }
             }
+            checkBudgetThresholds()
         }
+    }
+
+    /// Budgets and the fresh month's records are both in memory here — let
+    /// the budget service fire its 80%/100% alerts (deduped per category per
+    /// calendar month). Same raw-amount totals BudgetView draws.
+    private func checkBudgetThresholds() {
+        var spent: [String: Double] = [:]
+        for r in financialService.currentMonthRecords where r.type == "expense" {
+            spent[r.category.lowercased(), default: 0] += r.amount
+        }
+        budgetService.checkThresholds(spentByCategory: spent)
     }
 
     /// ONE circle for the page (one-circle law): the type filter that used
