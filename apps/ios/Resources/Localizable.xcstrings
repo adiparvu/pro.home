@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "deliv_ref_awb" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "AWB / Tracking"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "AWB / Urmărire"}}}},
+    "deliv_ref_order" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Order number"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Număr comandă"}}}},
+    "deliv_ref_other" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Reference"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Referință"}}}},
+    "deliv_arrives_fmt" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Arrives: %@"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Sosește: %@"}}}},
+    "deliv_journey_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Journey"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Traseu"}}}},
+    "deliv_refs_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "References"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Referințe"}}}},
+    "deliv_ref_copy" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Copy reference"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Copiază referința"}}}},
+    "deliv_created_label" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Added"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Adăugat"}}}},
+    "deliv_received_label" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Received"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Primit"}}}},
+    "deliv_emails_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "From your emails"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Din emailurile tale"}}}},
     "aria_memory_cleared_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Memory cleared"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Memorie ștearsă"}}}},
     "aria_memory_cleared_body" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "The conversation history was permanently deleted."}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Istoricul conversațiilor a fost șters definitiv."}}}},
     "aria_memory_clear_failed_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not clear memory"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Memoria nu a putut fi ștearsă"}}}},

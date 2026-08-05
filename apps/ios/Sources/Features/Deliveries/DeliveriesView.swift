@@ -20,14 +20,17 @@ struct DeliveriesView: View {
     }
 
     private func matchesSearch(_ delivery: Delivery) -> Bool {
-        let haystack: [String] = [
+        var haystack: [String] = [
             delivery.description,
             delivery.carrier ?? "",
-            delivery.trackingNumber ?? "",
+            delivery.merchant ?? "",
             delivery.statusLabel,          // already-localized status pill
             delivery.liveStatusLabel ?? "",
             delivery.etaDisplay ?? ""
         ]
+        // Tracking number plus every imported alias — any reference from any
+        // shipping email finds the parcel.
+        haystack.append(contentsOf: delivery.allReferences)
         return haystack.contains { $0.matchesSearch(searchText) }
     }
 
@@ -325,14 +328,28 @@ struct DeliveryRow: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
+                        // The merchant names the parcel better than the
+                        // courier — it leads when the importer captured one.
+                        // With both known the line reads "merchant · carrier";
+                        // otherwise the tracking number fills the second slot.
+                        let merchant = delivery.merchant.flatMap { $0.isEmpty ? nil : $0 }
+                        let carrier = delivery.carrier.flatMap { $0.isEmpty ? nil : $0 }
                         HStack(spacing: 4) {
-                            if let carrier = delivery.carrier, !carrier.isEmpty {
+                            if let lead = merchant ?? carrier {
+                                Text(lead)
+                                    .font(AppFont.scaled(12))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+
+                            if merchant != nil, let carrier {
+                                Text("·")
+                                    .foregroundStyle(Color.primary.opacity(0.3))
                                 Text(carrier)
                                     .font(AppFont.scaled(12))
                                     .foregroundStyle(.secondary)
-                            }
-
-                            if let tn = delivery.trackingNumber, !tn.isEmpty {
+                                    .lineLimit(1)
+                            } else if let tn = delivery.trackingNumber, !tn.isEmpty {
                                 Text("·")
                                     .foregroundStyle(Color.primary.opacity(0.3))
                                 Text(tn)
@@ -368,7 +385,7 @@ struct DeliveryRow: View {
 
                     Spacer()
 
-                    Text(LocalizedStringKey(delivery.statusLabel))
+                    Text(verbatim: delivery.statusLabel)
                         .font(AppFont.label)
                         .foregroundStyle(delivery.statusColor)
                         .padding(.horizontal, 9)
@@ -385,33 +402,9 @@ struct DeliveryRow: View {
                 }
             }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if delivery.isActive {
-                Button {
-                    HapticFeedback.success()
-                    Task { await deliveryService.markDelivered(delivery) }
-                } label: {
-                    Label("Delivered", systemImage: "checkmark.seal.fill")
-                }
-                .tint(Color(red: 0.2, green: 0.78, blue: 0.4))
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                HapticFeedback.warning()
-                Task { await deliveryService.delete(delivery) }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-
-            Button {
-                HapticFeedback.impact(.light)
-                onEdit()
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-            .tint(.accentColor)
-        }
+        // No swipeActions here on purpose: the rows live in a ScrollView +
+        // LazyVStack, where the List-only modifier is a silent no-op — the
+        // contextMenu below is the real home of these actions.
         .contextMenu {
             if delivery.isActive {
                 Button {

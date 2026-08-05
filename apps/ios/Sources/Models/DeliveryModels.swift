@@ -9,6 +9,15 @@ struct Delivery: Identifiable, Codable, Hashable {
     var expectedDate: String?
     var notes: String?
     var createdAt: String?
+    var receivedAt: String?
+
+    // Email-import enrichment. Every reference the importer has seen for this
+    // parcel (order numbers, AWBs from later emails) lands in `aliases`, the
+    // shop name in `merchant`, and the emails themselves in `sourceEmails`.
+    // Optional so pre-migration caches decode.
+    var aliases: [String]?
+    var merchant: String?
+    var sourceEmails: [DeliverySourceEmail]?
 
     // Live courier tracking (aggregator-driven). All normalized + provider-
     // agnostic: the app never sees Ship24/AfterShip payloads, only these fields
@@ -28,6 +37,9 @@ struct Delivery: Identifiable, Codable, Hashable {
         case trackingNumber    = "tracking_number"
         case expectedDate      = "expected_date"
         case createdAt         = "created_at"
+        case receivedAt        = "received_at"
+        case aliases, merchant
+        case sourceEmails      = "source_emails"
         case trackerId         = "tracker_id"
         case courierCode       = "courier_code"
         case liveStatus        = "live_status"
@@ -39,6 +51,34 @@ struct Delivery: Identifiable, Codable, Hashable {
 
     /// Event timeline, newest first (empty until the webhook fills it).
     var liveCheckpoints: [TrackingCheckpoint] { checkpoints ?? [] }
+
+    /// Every code that identifies this parcel — the tracking number first,
+    /// then the imported aliases. Order-preserving, deduped.
+    var allReferences: [String] {
+        var seen = Set<String>()
+        var refs: [String] = []
+        if let tn = trackingNumber, !tn.isEmpty, seen.insert(tn).inserted { refs.append(tn) }
+        for alias in aliases ?? [] where !alias.isEmpty && seen.insert(alias).inserted {
+            refs.append(alias)
+        }
+        return refs
+    }
+
+    /// Best-effort shape of a reference — distinctive carrier formats and
+    /// short digit runs read as AWBs, very long digit runs as merchant order
+    /// numbers, anything else stays a plain reference. Labeling only; never
+    /// used to reject a code.
+    static func referenceKind(_ ref: String) -> DeliveryReferenceKind {
+        let t = ref.uppercased().filter { !$0.isWhitespace }
+        // UPS "1Z…" and UPU S10 formats are unmistakably tracking codes.
+        if t.range(of: "^1Z[0-9A-Z]{16}$", options: .regularExpression) != nil { return .awb }
+        if t.range(of: "^[A-Z]{2}\\d{9}[A-Z]{2}$", options: .regularExpression) != nil { return .awb }
+        // Plain digit runs: courier AWBs stay under ~14 digits; merchant
+        // order numbers (eMAG & co.) run longer.
+        if t.range(of: "^\\d{8,14}$", options: .regularExpression) != nil { return .awb }
+        if t.range(of: "^\\d{15,}$", options: .regularExpression) != nil { return .order }
+        return .other
+    }
 
     /// True once the aggregator is tracking this parcel.
     var isLiveTracked: Bool { trackerId != nil }
@@ -167,6 +207,30 @@ struct Delivery: Identifiable, Codable, Hashable {
         if t.range(of: "^[A-Z]{2}[0-9]{9}RO$", options: .regularExpression) != nil { return "Poșta Română" }
         return nil
     }
+}
+
+/// What kind of code a parcel reference looks like — drives the label shown
+/// next to it, nothing more.
+enum DeliveryReferenceKind {
+    case awb, order, other
+
+    var label: String {
+        switch self {
+        case .awb:   return String(localized: "deliv_ref_awb")
+        case .order: return String(localized: "deliv_ref_order")
+        case .other: return String(localized: "deliv_ref_other")
+        }
+    }
+}
+
+/// One shipping email that mentioned this parcel. Shape matches the JSON the
+/// email importer appends to `packages.source_emails`.
+struct DeliverySourceEmail: Codable, Hashable, Identifiable {
+    var at: String?
+    var from: String?
+    var subject: String?
+
+    var id: String { "\(at ?? "")-\(subject ?? "")" }
 }
 
 /// One normalized event in a parcel's tracking history. Shape matches the JSON
