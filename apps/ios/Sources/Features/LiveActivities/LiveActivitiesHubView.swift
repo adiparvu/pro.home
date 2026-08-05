@@ -18,8 +18,7 @@ struct LiveActivitiesHubView: View {
     // Master preferences — the same keys and rows as the legacy settings
     // screen, preserved verbatim so nothing the user configured changes.
     @AppStorage(LiveActivityPrefs.enabledKey, store: LiveActivityPrefs.store)     private var enabled       = true
-    @AppStorage(LiveActivityPrefs.startOnOpenKey, store: LiveActivityPrefs.store) private var startOnOpen   = false
-    @AppStorage(LiveActivityPrefs.scheduleKey, store: LiveActivityPrefs.store)    private var startSchedule = false
+    @AppStorage(LiveActivityPrefs.startOnOpenKey, store: LiveActivityPrefs.store) private var startOnOpen   = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -388,12 +387,9 @@ struct LiveActivitiesHubView: View {
                             isOn: $enabled)
             }
             if enabled {
+                // "Start on a Schedule" is retired: a task merely scheduled
+                // for today is a plan, not a live event.
                 settingsGroup {
-                    LAToggleRow(icon: "calendar.badge.clock", color: .indigo,
-                                title: "Start on a Schedule",
-                                subtitle: "Begin activities automatically at their scheduled time",
-                                isOn: $startSchedule)
-                    rowDivider
                     LAToggleRow(icon: "app.badge.checkmark.fill", color: .teal,
                                 title: "Start When App Opens",
                                 subtitle: "Resume any in-progress activity when you open PRVIO",

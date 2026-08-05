@@ -1,6 +1,7 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "la_delivery_others" : {"extractionState" : "manual", "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "+%lld more on the way"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "+%lld pe drum"}}}},
     "deliv_live_pending" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Pending"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "În așteptare"}}}},
     "deliv_live_failed" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Failed attempt"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Tentativă eșuată"}}}},
     "budget_notif_near_title" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Budget alert"}}, "ro" : {"stringUnit" : {"state" : "translated", "value" : "Alertă buget"}}}},

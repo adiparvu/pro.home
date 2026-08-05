@@ -73,8 +73,7 @@ extension DynamicIslandStyle {
 
 struct LiveActivitySettingsView: View {
     @AppStorage(LiveActivityPrefs.enabledKey, store: LiveActivityPrefs.store)     private var enabled       = true
-    @AppStorage(LiveActivityPrefs.startOnOpenKey, store: LiveActivityPrefs.store) private var startOnOpen   = false
-    @AppStorage(LiveActivityPrefs.scheduleKey, store: LiveActivityPrefs.store)    private var startSchedule = false
+    @AppStorage(LiveActivityPrefs.startOnOpenKey, store: LiveActivityPrefs.store) private var startOnOpen   = true
 
     @State private var systemEnabled = true
     @State private var previewKind: LiveActivityKind = .delivery
@@ -98,13 +97,10 @@ struct LiveActivitySettingsView: View {
                 }
 
                 if enabled {
-                    // Start behaviour
+                    // Start behaviour. ("Start on a Schedule" is retired: a
+                    // task merely scheduled for today is a plan, not a live
+                    // event — plans belong to widgets and notifications.)
                     settingsGroup {
-                        LAToggleRow(icon: "calendar.badge.clock", color: .indigo,
-                                    title: "Start on a Schedule",
-                                    subtitle: "Begin activities automatically at their scheduled time",
-                                    isOn: $startSchedule)
-                        rowDivider
                         LAToggleRow(icon: "app.badge.checkmark.fill", color: .teal,
                                     title: "Start When App Opens",
                                     subtitle: "Resume any in-progress activity when you open PRVIO",

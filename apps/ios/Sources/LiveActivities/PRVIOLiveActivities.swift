@@ -15,7 +15,6 @@ enum LiveActivityPrefs {
 
     static let enabledKey       = "prvio.la.enabled"
     static let startOnOpenKey   = "prvio.la.startOnOpen"
-    static let scheduleKey      = "prvio.la.schedule"
     static let lockScreenKey    = "prvio.la.lockScreen"
     static let dynamicIslandKey = "prvio.la.dynamicIsland"
     static let showProgressKey  = "prvio.la.showProgress"
@@ -39,8 +38,11 @@ enum LiveActivityPrefs {
     }
 
     static var isEnabled:        Bool { bool(enabledKey,       default: true) }
-    static var startOnOpen:      Bool { bool(startOnOpenKey,   default: false) }
-    static var startOnSchedule:  Bool { bool(scheduleKey,      default: false) }
+    // Default ON: with the earn-the-island rule, opening the app only raises
+    // parcels genuinely in motion — never a shelf of "expected" boxes. (The
+    // retired "Start on a Schedule" is gone for good: a task scheduled today
+    // is a plan, not a live event.)
+    static var startOnOpen:      Bool { bool(startOnOpenKey,   default: true) }
     static var showOnLockScreen: Bool { bool(lockScreenKey,    default: true) }
     static var showDynamicIsland: Bool { bool(dynamicIslandKey, default: true) }
     static var showProgress:     Bool { bool(showProgressKey,  default: true) }
@@ -165,6 +167,12 @@ struct DeliveryActivityAttributes: ActivityAttributes {
         var milestoneIndex: Int?   // 0 ordered · 1 in transit · 2 out for delivery · 3 delivered
         var checkpoint: String?    // latest human-readable event ("Sorted · Cluj")
         var isProblem: Bool?       // exception / failed attempt / expired
+        // How many OTHER parcels also qualify for the island right now — the
+        // single delivery activity narrates the most relevant parcel and
+        // discloses the rest ("+2 on the way"). Optional: server pushes don't
+        // know it, and their state replaces ours, so the line simply hides
+        // until the app's next reconcile.
+        var othersActive: Int?
     }
     let trackingNumber: String
     let carrier: String
@@ -359,7 +367,7 @@ struct CompleteWorkSessionIntent: LiveActivityIntent {
         for activity in Activity<WorkSessionActivityAttributes>.activities {
             await activity.end(
                 ActivityContent(state: .init(isComplete: true), staleDate: nil),
-                dismissalPolicy: .after(.now + 2))
+                dismissalPolicy: .after(.now + 10 * 60))
         }
         // Same channel the widget buttons use; the app drains the pending
         // completion on its next foreground (or instantly when running).

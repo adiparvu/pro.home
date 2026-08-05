@@ -53,7 +53,7 @@ struct LiveActivitySimulatorView: View {
                     listName: "Test — Cumpărături", bought: 2, total: 8)
             },
             SimScenario(kind: .delivery, sample: "Test — Colet PRVIO") {
-                LiveActivityService.shared.syncDelivery(Self.testDelivery())
+                LiveActivityService.shared.syncDeliveries([Self.testDelivery()])
             },
             SimScenario(kind: .plantCare, sample: "Test — Monstera · 1/3") {
                 LiveActivityService.shared.plantWatered(

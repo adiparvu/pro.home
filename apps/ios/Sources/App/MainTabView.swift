@@ -264,6 +264,14 @@ struct MainTabView: View {
                 // Once per build: the what's-new tour on the first
                 // foreground after an update (skips fresh installs).
                 if !showWhatsNew, WhatsNew.shouldPresent() { showWhatsNew = true }
+                // Anti-zombie pass: staleDate only dims a Live Activity, it
+                // never ends one — every return to the app ends what stopped
+                // being live (idle sessions, delivered parcels, dead gauges).
+                // NEVER before the world loaded: an empty parcel list would
+                // read as "nothing in motion" and wrongly end a real island.
+                if worldLoaded {
+                    LiveActivityService.shared.reconcile(deliveries: deliveryService.deliveries)
+                }
             }
             else if phase == .background {
                 // Parked cleanly — a termination from the background is the
@@ -586,11 +594,9 @@ struct MainTabView: View {
             birthDate: profileService.profile?.birthDate)
         await notificationScheduler.scheduleMonthlyRecap()
         LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
-        if case .coldStart = reason {
-            // "Start When App Opens" belongs to launch, not to context switches.
-            LiveActivityService.shared.evaluateAutoStart(
-                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
-        }
+        // Reconcile with FULL data: ends expired/orphaned activities and
+        // re-decides which parcel (if any) deserves the delivery island.
+        LiveActivityService.shared.reconcile(deliveries: deliveryService.deliveries)
         proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
                                 records: financialService.records, tasks: taskService.tasks,
                                 sensors: IoTService.shared.sensors)

@@ -17,11 +17,40 @@ final class LiveActivityService {
     // Active activity tokens
     private var shoppingActivity: Activity<ShoppingActivityAttributes>?
     private var maintenanceActivity: Activity<MaintenanceActivityAttributes>?
-    private var deliveryActivities: [UUID: Activity<DeliveryActivityAttributes>] = [:]
-    private var deliveryStartedAt: [UUID: Date] = [:]
+    private var deliveryActivity: Activity<DeliveryActivityAttributes>?
+    private var deliveryParcelId: UUID?
+    private var deliveryScore: Double = 0
     private var plantCareActivity: Activity<PlantCareActivityAttributes>?
     private var plantSessionTotal = 0
     private var workSessionActivity: Activity<WorkSessionActivityAttributes>?
+
+    // Session heartbeats — the last moment each session showed real life
+    // (a check-off, a watering, a sensor poll). `reconcile()` ends sessions
+    // whose heartbeat went silent: a Live Activity tracks a live event, and
+    // an event nobody is living is over.
+    private var shoppingBeat: Date?
+    private var plantBeat: Date?
+    private var energyBeat: Date?
+    private var maintenanceStartedAt: Date?
+
+    // MARK: - Relevance (one scale for the whole app)
+    //
+    // ActivityKit shows the highest-relevance activity in the Dynamic Island
+    // and orders the Lock Screen by the same number, so every kind scores on
+    // one scale: safety first, then things in motion, then sessions the user
+    // is running, then ambient monitors. Delivery is situational — see
+    // `deliveryRelevance(_:)` (40–90 on this same scale).
+    enum Relevance {
+        static let emergency   = 100.0
+        static let iotCritical =  95.0
+        static let cover       =  80.0
+        static let iotWarning  =  70.0
+        static let workSession =  50.0
+        static let shopping    =  35.0
+        static let plantCare   =  30.0
+        static let maintenance =  25.0
+        static let energy      =  15.0
+    }
 
     private var systemEnabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
@@ -42,6 +71,7 @@ final class LiveActivityService {
     func syncShopping(listName: String, bought: Int, total: Int,
                       nextItemId: UUID? = nil, nextItemName: String? = nil) {
         guard total > 0 else { return }
+        shoppingBeat = Date()
 
         // Adopt an activity that survived an app relaunch.
         if shoppingActivity == nil {
@@ -54,8 +84,10 @@ final class LiveActivityService {
 
         if let activity = shoppingActivity {
             if bought >= total {
+                // Completed: the "done" summary stays readable for a few
+                // minutes (HIG: dismissal proportional to the activity).
                 Task { await activity.end(.init(state: state, staleDate: nil),
-                                          dismissalPolicy: .after(Date().addingTimeInterval(5))) }
+                                          dismissalPolicy: .after(.now + 5 * 60)) }
                 LiveActivityHubStore.record(kind: .shopping, phase: "completed", title: listName)
                 shoppingActivity = nil
             } else if activity.attributes.listName != listName {
@@ -65,7 +97,8 @@ final class LiveActivityService {
                 shoppingActivity = nil
                 startShopping(listName: listName, state: state)
             } else {
-                Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
+                Task { await activity.update(.init(state: state, staleDate: stale(hours: 0.75),
+                                                   relevanceScore: Relevance.shopping)) }
             }
         } else if bought > 0, bought < total {
             startShopping(listName: listName, state: state)
@@ -76,7 +109,10 @@ final class LiveActivityService {
         guard allowed(.shopping) else { return }
         let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
         shoppingActivity = try? Activity.request(
-            attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
+            attributes: attrs,
+            content: .init(state: state, staleDate: stale(hours: 0.75),
+                           relevanceScore: Relevance.shopping),
+            pushType: nil)
         if shoppingActivity != nil { LiveActivityHubStore.record(kind: .shopping, phase: "started", title: listName) }
     }
 
@@ -95,7 +131,8 @@ final class LiveActivityService {
                                                   propertyName: propertyName)
         workSessionActivity = try? Activity.request(
             attributes: attrs,
-            content: .init(state: .init(isComplete: false), staleDate: stale(hours: 12)),
+            content: .init(state: .init(isComplete: false), staleDate: stale(hours: 8),
+                           relevanceScore: Relevance.workSession),
             pushType: nil)
         if workSessionActivity != nil { LiveActivityHubStore.record(kind: .workSession, phase: "started", title: title) }
     }
@@ -107,7 +144,7 @@ final class LiveActivityService {
             for activity in Activity<WorkSessionActivityAttributes>.activities {
                 await activity.end(
                     ActivityContent(state: .init(isComplete: completed), staleDate: nil),
-                    dismissalPolicy: completed ? .after(.now + 2) : .immediate)
+                    dismissalPolicy: completed ? .after(.now + 10 * 60) : .immediate)
             }
         }
     }
@@ -126,14 +163,21 @@ final class LiveActivityService {
         let state = MaintenanceActivityAttributes.ContentState(
             progress: 0, stepDescription: step ?? String(localized: "In progress"), isComplete: false)
         maintenanceActivity = try? Activity.request(
-            attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
-        if maintenanceActivity != nil { LiveActivityHubStore.record(kind: .maintenance, phase: "started", title: taskTitle) }
+            attributes: attrs,
+            content: .init(state: state, staleDate: stale(hours: 2),
+                           relevanceScore: Relevance.maintenance),
+            pushType: nil)
+        if maintenanceActivity != nil {
+            maintenanceStartedAt = Date()
+            LiveActivityHubStore.record(kind: .maintenance, phase: "started", title: taskTitle)
+        }
     }
 
     func updateMaintenance(progress: Double, step: String) {
         guard let activity = maintenanceActivity else { return }
         let state = MaintenanceActivityAttributes.ContentState(progress: progress, stepDescription: step, isComplete: false)
-        Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
+        Task { await activity.update(.init(state: state, staleDate: stale(hours: 2),
+                                           relevanceScore: Relevance.maintenance)) }
     }
 
     /// Ends the activity if the completed task is the one being tracked.
@@ -146,110 +190,177 @@ final class LiveActivityService {
         let state = MaintenanceActivityAttributes.ContentState(
             progress: 1.0, stepDescription: String(localized: "Done!"), isComplete: true)
         Task { await activity.end(.init(state: state, staleDate: nil),
-                                  dismissalPolicy: .after(Date().addingTimeInterval(4))) }
+                                  dismissalPolicy: .after(.now + 5 * 60)) }
         maintenanceActivity = nil
+        maintenanceStartedAt = nil
     }
 
-    // MARK: - Delivery (driven by DeliveryService add/update + server pushes)
+    // MARK: - Delivery (one island: the most relevant parcel actually in motion)
+    //
+    // HIG, verbatim: "prefer a single Live Activity that uses a dynamic
+    // layout" over separate activities the person must jump between — so the
+    // app keeps exactly ONE delivery island, owned by the parcel that has
+    // EARNED it. A Live Activity is a live event, not standing state: a
+    // parcel that is merely "expected" for days holds no island. A parcel
+    // earns the island when:
+    //   · a problem needs the user (failed attempt / exception)   → 90
+    //   · it is out for delivery / ready for pickup               → 85
+    //   · it is due today                                         → 60
+    //   · the courier scanned it in the last three hours          → 40
+    // Everything else belongs to the app, the widget and notifications.
+    // The score doubles as the ActivityKit relevanceScore, so a problem
+    // parcel outranks a routine one in the Dynamic Island.
 
-    /// The island shows at most two activities anyway; keeping our own fleet
-    /// small means every parcel still reads at a glance.
-    private static let maxDeliveryActivities = 3
+    /// The island-worthiness of a parcel right now — nil means "no island".
+    static func deliveryRelevance(_ d: Delivery) -> Double? {
+        guard d.isActive else { return nil }
+        let milestone = d.activityMilestone
+        if milestone.problem { return 90 }
+        if milestone.index == 2 { return 85 }
+        if let eta = d.expectedArrivalDate, Calendar.current.isDateInToday(eta) { return 60 }
+        if let day = d.expectedDate, let date = AppDate.day(from: day),
+           Calendar.current.isDateInToday(date) { return 60 }
+        if let last = d.lastEventAt, let at = ISODate.date(from: last),
+           Date().timeIntervalSince(at) < 3 * 3600 { return 40 }
+        return nil
+    }
 
-    /// Reflects a delivery's current state: starts when active, updates status
-    /// (alerting on the transitions that matter), ends when delivered /
-    /// returned / missed. Live-tracked parcels also register for ActivityKit
-    /// pushes so the tracking webhook can update the island while the phone
-    /// is locked.
-    func syncDelivery(_ delivery: Delivery) {
-        // Adopt activities that survived an app relaunch (matched by tracking id).
-        if deliveryActivities[delivery.id] == nil {
-            deliveryActivities[delivery.id] = Activity<DeliveryActivityAttributes>.activities.first {
-                $0.attributes.trackingNumber == (delivery.trackingNumber ?? "")
-                    && $0.attributes.description == delivery.description
+    /// Single entry point: hand it the whole parcel list after any change.
+    /// It updates the island in place, hands it to a more relevant parcel,
+    /// ends it when nothing is in motion anymore — and, when the tracked
+    /// parcel just arrived, ends with the delivered summary kept readable on
+    /// the Lock Screen for half an hour (HIG: "15 to 30 minutes is adequate").
+    func syncDeliveries(_ all: [Delivery], mayStart: Bool = true) {
+        adoptAndPruneDeliveryOrphans()
+
+        let ranked = all
+            .compactMap { d in Self.deliveryRelevance(d).map { (parcel: d, score: $0) } }
+            .sorted { $0.score > $1.score }
+        let others = max(0, ranked.count - 1)
+
+        if let activity = deliveryActivity {
+            let ownerId = deliveryParcelId ?? activity.attributes.deliveryId
+            if let top = ranked.first, top.parcel.id == ownerId {
+                updateDelivery(activity, parcel: top.parcel, score: top.score, others: others)
+                return
             }
-            if deliveryActivities[delivery.id] != nil, deliveryStartedAt[delivery.id] == nil {
-                deliveryStartedAt[delivery.id] = Date()
-            }
+            // The owner no longer holds the island (arrived, went quiet, or
+            // was outranked).
+            releaseDelivery(activity, owner: all.first { $0.id == ownerId })
         }
-
-        let milestone = delivery.activityMilestone
-        let state = DeliveryActivityAttributes.ContentState(
-            status: delivery.liveStatus ?? delivery.status,
-            statusLabel: delivery.statusLabel,
-            eta: delivery.expectedDisplay,
-            etaDate: delivery.expectedArrivalDate,
-            milestoneIndex: milestone.index,
-            checkpoint: delivery.latestCheckpointLine,
-            isProblem: milestone.problem)
-
-        if let activity = deliveryActivities[delivery.id] {
-            if delivery.isActive {
-                // Light up the Lock Screen only when something actionable
-                // happened — arriving today or a problem, not every hop.
-                let becameUrgent = activity.content.state.status != state.status
-                    && (state.status == "out_for_delivery" || milestone.problem)
-                let alert: AlertConfiguration? = becameUrgent
-                    ? AlertConfiguration(title: "\(delivery.description)",
-                                         body: "\(delivery.statusLabel)",
-                                         sound: .default)
-                    : nil
-                Task { await activity.update(.init(state: state, staleDate: stale(hours: 6)),
-                                             alertConfiguration: alert) }
-            } else {
-                Task { await activity.end(.init(state: state, staleDate: nil),
-                                          dismissalPolicy: .after(Date().addingTimeInterval(6))) }
-                LiveActivityHubStore.record(kind: .delivery, phase: milestone.index == 3 ? "completed" : "ended", title: delivery.description)
-                cleanupDelivery(id: delivery.id, activityId: activity.id)
-            }
-        } else if delivery.isActive, allowed(.delivery) {
-            makeRoomForDelivery()
-            guard deliveryActivities.count < Self.maxDeliveryActivities else { return }
-            let attrs = DeliveryActivityAttributes(
-                trackingNumber: delivery.trackingNumber ?? "",
-                carrier: delivery.carrier ?? String(localized: "Courier"),
-                description: delivery.description,
-                propertyName: propertyName,
-                deliveryId: delivery.id)
-            // Live-tracked parcels update from the server while the phone is
-            // locked; manually tracked ones only ever update from the app.
-            let activity = try? Activity.request(
-                attributes: attrs,
-                content: .init(state: state, staleDate: stale(hours: 6)),
-                pushType: delivery.isLiveTracked ? .token : nil)
-            deliveryActivities[delivery.id] = activity
-            deliveryStartedAt[delivery.id] = Date()
-            if activity != nil { LiveActivityHubStore.record(kind: .delivery, phase: "started", title: delivery.description) }
-            if let activity, let trackerId = delivery.trackerId {
-                observeActivityPushToken(activity, trackerId: trackerId)
-            }
+        if let top = ranked.first, mayStart, allowed(.delivery) {
+            startDelivery(top.parcel, score: top.score, others: others)
         }
     }
 
+    /// Whether the island currently narrates this parcel — DeliveryService
+    /// skips its duplicate local notification then (HIG: "don't use push
+    /// notifications alongside Live Activities for the same updates").
+    func hasDeliveryActivity(for id: UUID) -> Bool {
+        deliveryActivity != nil && deliveryParcelId == id
+    }
+
+    /// The user deleted the parcel: its island goes with it, instantly.
     func endDelivery(id: UUID) {
-        guard let activity = deliveryActivities[id] else { return }
+        guard let activity = deliveryActivity,
+              (deliveryParcelId ?? activity.attributes.deliveryId) == id else { return }
         Task { await activity.end(nil, dismissalPolicy: .immediate) }
         LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: activity.attributes.description)
-        cleanupDelivery(id: id, activityId: activity.id)
+        cleanupDelivery(activityId: activity.id)
     }
 
-    /// When the fleet is full, the oldest island makes room for the newest
-    /// parcel — most-recent activity wins.
-    private func makeRoomForDelivery() {
-        while deliveryActivities.count >= Self.maxDeliveryActivities {
-            guard let oldest = deliveryStartedAt
-                .filter({ deliveryActivities[$0.key] != nil })
-                .min(by: { $0.value < $1.value })?.key,
-                let activity = deliveryActivities[oldest] else { return }
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
-            LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: activity.attributes.description)
-            cleanupDelivery(id: oldest, activityId: activity.id)
+    private func deliveryState(_ d: Delivery, others: Int) -> DeliveryActivityAttributes.ContentState {
+        let milestone = d.activityMilestone
+        return .init(status: d.liveStatus ?? d.status,
+                     statusLabel: d.statusLabel,
+                     eta: d.expectedDisplay,
+                     etaDate: d.expectedArrivalDate,
+                     milestoneIndex: milestone.index,
+                     checkpoint: d.latestCheckpointLine,
+                     isProblem: milestone.problem,
+                     othersActive: others > 0 ? others : nil)
+    }
+
+    private func updateDelivery(_ activity: Activity<DeliveryActivityAttributes>,
+                                parcel: Delivery, score: Double, others: Int) {
+        let state = deliveryState(parcel, others: others)
+        // Light up the Lock Screen only when something actionable happened —
+        // out for delivery or a problem, never a routine hop.
+        let milestone = parcel.activityMilestone
+        let becameUrgent = activity.content.state.status != state.status
+            && (state.status == "out_for_delivery" || milestone.problem)
+        let alert: AlertConfiguration? = becameUrgent
+            ? AlertConfiguration(title: "\(parcel.description)",
+                                 body: "\(parcel.statusLabel)",
+                                 sound: .default)
+            : nil
+        deliveryScore = score
+        Task { await activity.update(.init(state: state, staleDate: stale(hours: 6),
+                                           relevanceScore: score),
+                                     alertConfiguration: alert) }
+    }
+
+    private func startDelivery(_ parcel: Delivery, score: Double, others: Int) {
+        let attrs = DeliveryActivityAttributes(
+            trackingNumber: parcel.trackingNumber ?? "",
+            carrier: parcel.carrier ?? String(localized: "Courier"),
+            description: parcel.description,
+            propertyName: propertyName,
+            deliveryId: parcel.id)
+        // Live-tracked parcels update from the server while the phone is
+        // locked; manually tracked ones only ever update from the app.
+        let activity = try? Activity.request(
+            attributes: attrs,
+            content: .init(state: deliveryState(parcel, others: others),
+                           staleDate: stale(hours: 6), relevanceScore: score),
+            pushType: parcel.isLiveTracked ? .token : nil)
+        deliveryActivity = activity
+        deliveryParcelId = parcel.id
+        deliveryScore = score
+        if activity != nil { LiveActivityHubStore.record(kind: .delivery, phase: "started", title: parcel.description) }
+        if let activity, let trackerId = parcel.trackerId {
+            observeActivityPushToken(activity, trackerId: trackerId)
         }
     }
 
-    private func cleanupDelivery(id: UUID, activityId: String) {
-        deliveryActivities.removeValue(forKey: id)
-        deliveryStartedAt.removeValue(forKey: id)
+    /// Ends the island for a parcel that no longer holds it: a delivered
+    /// parcel leaves its summary on the Lock Screen for 30 minutes; one that
+    /// merely went quiet disappears without ceremony.
+    private func releaseDelivery(_ activity: Activity<DeliveryActivityAttributes>,
+                                 owner: Delivery?) {
+        if let owner, (owner.liveStatus ?? owner.status) == "delivered" {
+            let state = deliveryState(owner, others: 0)
+            Task { await activity.end(.init(state: state, staleDate: nil),
+                                      dismissalPolicy: .after(.now + 30 * 60)) }
+            LiveActivityHubStore.record(kind: .delivery, phase: "completed", title: activity.attributes.description)
+        } else {
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+            LiveActivityHubStore.record(kind: .delivery, phase: "ended", title: activity.attributes.description)
+        }
+        cleanupDelivery(activityId: activity.id)
+    }
+
+    /// Adopts a survivor from a relaunch and ends any extras left behind by
+    /// the old fleet-of-three model — the single-island rule holds even
+    /// across app updates.
+    private func adoptAndPruneDeliveryOrphans() {
+        guard deliveryActivity == nil else { return }
+        let orphans = Activity<DeliveryActivityAttributes>.activities
+        deliveryActivity = orphans.first
+        deliveryParcelId = orphans.first?.attributes.deliveryId
+        for extra in orphans.dropFirst() {
+            let activityId = extra.id
+            Task {
+                await extra.end(nil, dismissalPolicy: .immediate)
+                await self.removeActivityToken(activityId: activityId)
+            }
+        }
+    }
+
+    private func cleanupDelivery(activityId: String) {
+        deliveryActivity = nil
+        deliveryParcelId = nil
+        deliveryScore = 0
         Task { await removeActivityToken(activityId: activityId) }
     }
 
@@ -310,6 +421,7 @@ final class LiveActivityService {
     /// One watering session: starts on the first watered plant, tracks progress
     /// against how many needed water when the session began, ends at zero left.
     func plantWatered(name: String, remainingAfter: Int) {
+        plantBeat = Date()
         if plantCareActivity == nil, remainingAfter >= 0, allowed(.plantCare) {
             plantSessionTotal = remainingAfter + 1
             let attrs = PlantCareActivityAttributes(propertyName: propertyName)
@@ -317,7 +429,10 @@ final class LiveActivityService {
                 wateredCount: 1, totalCount: plantSessionTotal, lastWateredName: name)
             if plantSessionTotal > 1 {
                 plantCareActivity = try? Activity.request(
-                    attributes: attrs, content: .init(state: state, staleDate: stale(hours: 2)), pushType: nil)
+                    attributes: attrs,
+                    content: .init(state: state, staleDate: stale(hours: 0.5),
+                                   relevanceScore: Relevance.plantCare),
+                    pushType: nil)
                 if plantCareActivity != nil { LiveActivityHubStore.record(kind: .plantCare, phase: "started", title: String(localized: "Plant watering")) }
             }
             return
@@ -328,12 +443,13 @@ final class LiveActivityService {
             wateredCount: watered, totalCount: plantSessionTotal, lastWateredName: name)
         if remainingAfter <= 0 {
             Task { await activity.end(.init(state: state, staleDate: nil),
-                                      dismissalPolicy: .after(Date().addingTimeInterval(4))) }
+                                      dismissalPolicy: .after(.now + 5 * 60)) }
             LiveActivityHubStore.record(kind: .plantCare, phase: "completed", title: String(localized: "Plant watering"))
             plantCareActivity = nil
             plantSessionTotal = 0
         } else {
-            Task { await activity.update(.init(state: state, staleDate: stale(hours: 2))) }
+            Task { await activity.update(.init(state: state, staleDate: stale(hours: 0.5),
+                                               relevanceScore: Relevance.plantCare)) }
         }
     }
 
@@ -351,7 +467,8 @@ final class LiveActivityService {
         let attrs = EmergencyActivityAttributes(startedAt: Date(), propertyName: propertyName)
         emergencyActivity = try? Activity.request(
             attributes: attrs,
-            content: .init(state: .init(isActive: true), staleDate: nil),
+            content: .init(state: .init(isActive: true), staleDate: nil,
+                           relevanceScore: Relevance.emergency),
             pushType: nil)
         if emergencyActivity != nil { LiveActivityHubStore.record(kind: .emergency, phase: "started", title: String(localized: "la_emergency_active")) }
     }
@@ -406,7 +523,7 @@ final class LiveActivityService {
             Task {
                 await activity.end(
                     .init(state: .init(valueDisplay: display, isActive: false), staleDate: nil),
-                    dismissalPolicy: .after(.now + 4))
+                    dismissalPolicy: .after(.now + 5 * 60))
                 await removeActivityToken(activityId: activityId)
             }
             iotAlertActivities.removeValue(forKey: id)
@@ -418,10 +535,11 @@ final class LiveActivityService {
             .sorted { ($0.isCriticalAlert ? 0 : 1) < ($1.isCriticalAlert ? 0 : 1) }
 
         for sensor in ranked {
+            let score = sensor.isCriticalAlert ? Relevance.iotCritical : Relevance.iotWarning
             if let activity = iotAlertActivities[sensor.id] {
                 Task { await activity.update(
                     .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
-                          staleDate: stale(hours: 1))) }
+                          staleDate: stale(hours: 1), relevanceScore: score)) }
             } else if iotAlertActivities.count < Self.maxIoTAlerts {
                 let attrs = IoTAlertActivityAttributes(
                     sensorId: sensor.id, sensorName: sensor.name,
@@ -433,7 +551,7 @@ final class LiveActivityService {
                 let activity = try? Activity.request(
                     attributes: attrs,
                     content: .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
-                                   staleDate: stale(hours: 1)),
+                                   staleDate: stale(hours: 1), relevanceScore: score),
                     pushType: .token)
                 iotAlertActivities[sensor.id] = activity
                 if activity != nil { LiveActivityHubStore.record(kind: .iotAlert, phase: "started", title: sensor.name) }
@@ -450,7 +568,7 @@ final class LiveActivityService {
                         Task {
                             await activity.update(
                                 .init(state: .init(valueDisplay: sensor.displayValue, isActive: true),
-                                      staleDate: stale(hours: 1)),
+                                      staleDate: stale(hours: 1), relevanceScore: score),
                                 alertConfiguration: AlertConfiguration(
                                     title: "la_iot_alert_title",
                                     body: "\(sensor.name) · \(sensor.displayValue)",
@@ -466,14 +584,19 @@ final class LiveActivityService {
 
     private var energyActivity: Activity<EnergyActivityAttributes>?
 
+    /// An ambient gauge has no natural end, which the HIG explicitly frowns
+    /// on ("tasks and events that have a defined beginning and end") — so the
+    /// session defines one: it runs while the data is genuinely live and
+    /// `reconcile()` ends it after two hours, or sooner when polling stops.
     func startEnergySession(consumptionW: Double?, productionW: Double?) {
         guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
         guard Activity<EnergyActivityAttributes>.activities.isEmpty else { return }
         let attrs = EnergyActivityAttributes(startedAt: Date(), propertyName: propertyName)
+        energyBeat = Date()
         energyActivity = try? Activity.request(
             attributes: attrs,
             content: .init(state: .init(consumptionW: consumptionW, productionW: productionW),
-                           staleDate: stale(hours: 0.25)),
+                           staleDate: stale(hours: 0.25), relevanceScore: Relevance.energy),
             pushType: nil)
         if energyActivity != nil { LiveActivityHubStore.record(kind: .energy, phase: "started", title: String(localized: "Energy")) }
     }
@@ -484,9 +607,10 @@ final class LiveActivityService {
             energyActivity = Activity<EnergyActivityAttributes>.activities.first
         }
         guard let activity = energyActivity else { return }
+        energyBeat = Date()
         Task { await activity.update(
             .init(state: .init(consumptionW: consumptionW, productionW: productionW),
-                  staleDate: stale(hours: 0.25))) }
+                  staleDate: stale(hours: 0.25), relevanceScore: Relevance.energy)) }
     }
 
     func endEnergySession() {
@@ -516,7 +640,8 @@ final class LiveActivityService {
                                             actuatorId: actuatorId)
         coverActivity = try? Activity.request(
             attributes: attrs,
-            content: .init(state: .init(stage: "sent"), staleDate: stale(hours: 0.25)),
+            content: .init(state: .init(stage: "sent"), staleDate: stale(hours: 0.25),
+                           relevanceScore: Relevance.cover),
             pushType: nil)
         if coverActivity != nil { LiveActivityHubStore.record(kind: .cover, phase: "started", title: deviceName) }
     }
@@ -524,7 +649,8 @@ final class LiveActivityService {
     func updateCover(stage: String) {
         guard let activity = coverActivity else { return }
         Task { await activity.update(.init(state: .init(stage: stage),
-                                           staleDate: stale(hours: 0.25))) }
+                                           staleDate: stale(hours: 0.25),
+                                           relevanceScore: Relevance.cover)) }
     }
 
     func endCoverOperation(stage: String) {
@@ -532,31 +658,105 @@ final class LiveActivityService {
         LiveActivityHubStore.record(kind: .cover, phase: ["timeout", "failed"].contains(stage) ? "ended" : "completed", title: activity.attributes.deviceName)
         coverActivity = nil
         Task { await activity.end(.init(state: .init(stage: stage), staleDate: nil),
-                                  dismissalPolicy: .after(.now + 4)) }
+                                  dismissalPolicy: .after(.now + 2 * 60)) }
     }
 
-    // MARK: - Auto-start (Start When App Opens / Start on a Schedule)
+    // MARK: - Reconcile (every foreground) — the anti-zombie pass
+    //
+    // HIG: "make sure you don't keep any activities running for longer than
+    // needed" — and staleDate only DIMS an activity, it never ends one, so
+    // somebody has to actually end what stopped being live. This runs on
+    // every foreground with fresh data: it ends expired sessions, retires
+    // orphans with no living driver, and re-decides which parcel (if any)
+    // deserves the delivery island.
+    //
+    // Gone deliberately: "Start on a Schedule" — a task merely scheduled for
+    // today is a plan, not a live event; plans belong to widgets and
+    // notifications. A maintenance island now exists only while someone is
+    // actually working (the work session they explicitly start).
+    func reconcile(deliveries: [Delivery]) {
+        guard systemEnabled else { return }
+        guard LiveActivityPrefs.isEnabled else {
+            // Master switch off: nothing may stay on the island.
+            for kind in LiveActivityKind.allCases { end(kind) }
+            return
+        }
+        sweepExpired()
+        syncDeliveries(deliveries, mayStart: LiveActivityPrefs.startOnOpen)
+    }
 
-    /// Called when the app becomes active with fresh data. Honors the
-    /// "Start When App Opens" and "Start on a Schedule" preferences.
-    func evaluateAutoStart(deliveries: [Delivery], tasks: [MaintenanceTask]) {
-        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+    /// Session lifetimes: past these, the real-world event is over even if
+    /// nobody told the app — a shopping run doesn't pause for an hour, and
+    /// the system would kill everything at 8h anyway (we end it cleanly
+    /// first, with its final honest state).
+    private enum Lifetime {
+        static let shoppingIdle: TimeInterval    = 45 * 60
+        static let plantIdle: TimeInterval       = 30 * 60
+        static let energyIdle: TimeInterval      = 30 * 60
+        static let energySession: TimeInterval   = 2 * 3600
+        static let maintenance: TimeInterval     = 4 * 3600
+        static let coverOrphan: TimeInterval     = 15 * 60
+        static let systemCap: TimeInterval       = 8 * 3600
+    }
 
-        // Resume in-progress deliveries.
-        if LiveActivityPrefs.startOnOpen {
-            for delivery in deliveries where delivery.isActive {
-                syncDelivery(delivery)
+    private func sweepExpired() {
+        let now = Date()
+
+        // Shopping / plant sessions: no heartbeat (or a relaunch severed the
+        // driver) → the session is over; end quietly, no summary theater.
+        if !Activity<ShoppingActivityAttributes>.activities.isEmpty,
+           shoppingBeat.map({ now.timeIntervalSince($0) > Lifetime.shoppingIdle }) ?? true {
+            end(.shopping)
+            shoppingBeat = nil
+        }
+        if !Activity<PlantCareActivityAttributes>.activities.isEmpty,
+           plantBeat.map({ now.timeIntervalSince($0) > Lifetime.plantIdle }) ?? true {
+            end(.plantCare)
+            plantBeat = nil
+            plantSessionTotal = 0
+        }
+
+        // Maintenance: with schedule auto-start retired, an orphan has no
+        // driver at all; a driven one still caps at four hours.
+        if !Activity<MaintenanceActivityAttributes>.activities.isEmpty,
+           maintenanceStartedAt.map({ now.timeIntervalSince($0) > Lifetime.maintenance }) ?? true {
+            end(.maintenance)
+            maintenanceStartedAt = nil
+        }
+
+        // Work session: the 8-hour system limit, honored cleanly by us
+        // instead of abruptly by the system.
+        if let session = workSessionActivity ?? Activity<WorkSessionActivityAttributes>.activities.first,
+           now.timeIntervalSince(session.attributes.startedAt) > Lifetime.systemCap {
+            endWorkSession(completed: false)
+        }
+
+        // Energy: session cap, or polling went silent — a gauge showing
+        // dead numbers as "live" is a lie.
+        if let energy = energyActivity ?? Activity<EnergyActivityAttributes>.activities.first {
+            let capped = now.timeIntervalSince(energy.attributes.startedAt) > Lifetime.energySession
+            let silent = energyBeat.map { now.timeIntervalSince($0) > Lifetime.energyIdle } ?? true
+            if capped || silent {
+                endEnergySession()
+                energyBeat = nil
             }
         }
 
-        // Start activities for tasks scheduled today.
-        if LiveActivityPrefs.startOnSchedule {
-            let today = AppDate.dayString(from: Date())
-            if let due = tasks.first(where: { !$0.isCompleted && ($0.dueDate?.hasPrefix(today) ?? false) }) {
-                startMaintenance(taskTitle: due.title, category: due.category,
-                                 step: String(localized: "Scheduled for today"), taskId: due.id)
-            }
+        // Cover: the IoT flow ends it in seconds; this is pure orphan safety.
+        for activity in Activity<CoverActivityAttributes>.activities
+        where now.timeIntervalSince(activity.attributes.startedAt) > Lifetime.coverOrphan {
+            end(.cover)
         }
+
+        // IoT alerts: sensor state governs them, but nothing alerts for 8
+        // hours straight — past the system cap they end cleanly.
+        for activity in Activity<IoTAlertActivityAttributes>.activities
+        where now.timeIntervalSince(activity.attributes.startedAt) > Lifetime.systemCap {
+            end(.iotAlert)
+            break
+        }
+
+        // Emergency: never swept — it ends when the person says it's over.
     }
 
     // MARK: - Per-kind status & control
@@ -592,8 +792,9 @@ final class LiveActivityService {
                     await a.end(nil, dismissalPolicy: .immediate)
                     await removeActivityToken(activityId: a.id)
                 }
-                deliveryActivities.removeAll()
-                deliveryStartedAt.removeAll()
+                deliveryActivity = nil
+                deliveryParcelId = nil
+                deliveryScore = 0
             case .maintenance:
                 for a in Activity<MaintenanceActivityAttributes>.activities {
                     LiveActivityHubStore.record(kind: .maintenance, phase: "ended", title: a.attributes.taskTitle)
@@ -651,33 +852,44 @@ final class LiveActivityService {
     /// natural update. Iterating `Activity.activities` covers activities that
     /// survived a relaunch and aren't tracked in memory yet.
     func refreshAppearance() {
+        let deliveryScore = self.deliveryScore
         Task {
             for a in Activity<ShoppingActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: nil))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.75),
+                                     relevanceScore: Relevance.shopping))
             }
             for a in Activity<MaintenanceActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: nil))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 2),
+                                     relevanceScore: Relevance.maintenance))
             }
             for a in Activity<DeliveryActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: nil))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 6),
+                                     relevanceScore: deliveryScore))
             }
             for a in Activity<PlantCareActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: stale(hours: 2)))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.5),
+                                     relevanceScore: Relevance.plantCare))
             }
             for a in Activity<WorkSessionActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: stale(hours: 12)))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 8),
+                                     relevanceScore: Relevance.workSession))
             }
             for a in Activity<EmergencyActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: nil))
+                await a.update(.init(state: a.content.state, staleDate: nil,
+                                     relevanceScore: Relevance.emergency))
             }
             for a in Activity<IoTAlertActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: stale(hours: 1)))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 1),
+                                     relevanceScore: a.attributes.isCritical
+                                        ? Relevance.iotCritical : Relevance.iotWarning))
             }
             for a in Activity<EnergyActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25)))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25),
+                                     relevanceScore: Relevance.energy))
             }
             for a in Activity<CoverActivityAttributes>.activities {
-                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25)))
+                await a.update(.init(state: a.content.state, staleDate: stale(hours: 0.25),
+                                     relevanceScore: Relevance.cover))
             }
         }
     }

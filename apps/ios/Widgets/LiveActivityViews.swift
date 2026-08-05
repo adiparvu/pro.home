@@ -639,6 +639,14 @@ struct DeliveryLiveActivity: Widget {
                                     DeliveryETALine(state: state)
                                 }
                             }
+                            // One island, honestly disclosed: the other
+                            // parcels also in motion, without a second island.
+                            if let more = state.othersActive, more > 0 {
+                                Text(String(format: String(localized: "la_delivery_others"), more))
+                                    .font(AppFont.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             if !delivered, let deliveryId = context.attributes.deliveryId {
                                 DeliveryReceivedButton(deliveryId: deliveryId)
                                     .transition(.blurReplace)
@@ -714,6 +722,12 @@ private struct DeliveryLockView: View {
                     }
                     if LA.eta(.delivery) {
                         DeliveryETALine(state: state, tint: DeliveryFace.tint(state))
+                    }
+                    if let more = state.othersActive, more > 0 {
+                        Text(String(format: String(localized: "la_delivery_others"), more))
+                            .font(AppFont.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                 } trailing: {
                     EmptyView()

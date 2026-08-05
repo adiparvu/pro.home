@@ -226,8 +226,13 @@ serve(async (req) => {
       timestamp: Math.floor(Date.now() / 1000),
       event: ended ? 'end' : 'update',
       'content-state': contentState,
+      // Same relevance scale the app uses (LiveActivityService.Relevance):
+      // a problem outranks a routine hop in the Dynamic Island.
+      'relevance-score': isProblem(milestone) ? 90 : urgent ? 85 : 40,
     }
-    if (ended) aps['dismissal-date'] = Math.floor(Date.now() / 1000) + 30
+    // Delivered: keep the summary readable on the Lock Screen for half an
+    // hour (HIG: "15 to 30 minutes is adequate"), not a blink-and-miss 30s.
+    if (ended) aps['dismissal-date'] = Math.floor(Date.now() / 1000) + 1800
     if (urgent || ended) {
       aps.alert = {
         title: fallbackLabel(milestone),

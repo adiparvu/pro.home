@@ -70,6 +70,11 @@ final class DeliveryService {
             notifyStatusChanges(fresh)
             deliveries = fresh
             ServiceCache.save(deliveries, entity: "deliveries", propertyId: propertyId)
+            // Fresh data re-decides the island: a parcel that went out for
+            // delivery earns it, one that arrived releases it with its
+            // delivered summary. Starting fresh islands from a mere data
+            // refresh follows the user's "Start When App Opens" choice.
+            LiveActivityService.shared.syncDeliveries(fresh, mayStart: LiveActivityPrefs.startOnOpen)
         } catch {
             #if DEBUG
             debugLog("DeliveryService.load error:", error)
@@ -96,9 +101,14 @@ final class DeliveryService {
             let stage = d.progressStage
             let previous = map[id]
             if let previous, stage > previous {
+                // The Live Activity alerts these same transitions itself —
+                // when the island narrates this parcel, a parallel local
+                // notification would say the same thing twice (HIG: don't
+                // pair notifications with Live Activities for one update).
+                let islandCovers = LiveActivityService.shared.hasDeliveryActivity(for: d.id)
                 switch stage {
-                case 2: scheduleDeliveryNotification(d, kind: .outForDelivery)
-                case 3: scheduleDeliveryNotification(d, kind: .delivered)
+                case 2 where !islandCovers: scheduleDeliveryNotification(d, kind: .outForDelivery)
+                case 3 where !islandCovers: scheduleDeliveryNotification(d, kind: .delivered)
                 default: break
                 }
             }
@@ -140,8 +150,9 @@ final class DeliveryService {
                 .execute()
                 .value
             deliveries.insert(result, at: 0)
-            // A new active package gets a Live Activity right away.
-            LiveActivityService.shared.syncDelivery(result)
+            // The island re-decides across the whole list — a new parcel
+            // earns it only if it is genuinely in motion.
+            LiveActivityService.shared.syncDeliveries(deliveries)
             // If it has a tracking number, start live courier tracking.
             if result.trackingNumber?.isEmpty == false {
                 await registerTracking(result)
@@ -209,7 +220,7 @@ final class DeliveryService {
             }
             // Status changes flow into the Live Activity (ends it when the
             // package is delivered / returned / missed).
-            LiveActivityService.shared.syncDelivery(result)
+            LiveActivityService.shared.syncDeliveries(deliveries)
             // A tracking number added to a not-yet-tracked parcel starts tracking.
             if result.trackerId == nil, result.trackingNumber?.isEmpty == false {
                 await registerTracking(result)
