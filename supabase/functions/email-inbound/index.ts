@@ -85,9 +85,15 @@ function extractTrackingNumbers(text: string): string[] {
     // email from that store, and a shared bogus reference would merge two
     // different orders into one card (the false-merge vector).
     if (/^0\d{9}$/.test(n)) continue // national mobile/landline (leading 0)
+    // The same numbers with the country code GLUED ON: "+40767024783" matches
+    // as "40767024783" (the + sits just left of the run, so the left-context
+    // guard below never saw digits after it). 402/403/407 = RO landline and
+    // mobile prefixes in international form, with or without the 00 prefix.
+    if (/^(?:00)?40[237]\d{8}$/.test(n)) continue
     const at = m.index ?? 0
     const left = clean.slice(Math.max(0, at - 24), at)
     if (/(?:tel|phone|mobil|contact|fax|\+\d{1,3})\s*[:.]?\s*$/i.test(left)) continue
+    if (/\+\s*$/.test(left)) continue // bare "+" glued to the run — a phone
     const context = clean.slice(Math.max(0, at - 120), at + n.length + 120)
     if (SHIPPING_CONTEXT_RE.test(context)) found.add(n)
   }
